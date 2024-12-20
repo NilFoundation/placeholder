@@ -20,9 +20,8 @@ macro(define_blueprint_example name)
                           ${CMAKE_WORKSPACE_NAME}::hash
                           ${CMAKE_WORKSPACE_NAME}::multiprecision
                           ${CMAKE_WORKSPACE_NAME}::zk
-
-                          ${Boost_LIBRARIES})
-    set_target_properties(${full_example_name} PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED TRUE)
+    )
+    set_target_properties(${full_example_name} PROPERTIES CXX_STANDARD 20 CXX_STANDARD_REQUIRED TRUE)
 endmacro()
 
 

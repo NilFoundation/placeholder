@@ -103,7 +103,7 @@ namespace nil {
                         field_element_ = value_type::zero();
                         auto tmp_iter = input_container_l_;
                         for (std::size_t i = 0; i < container_elements_per_field_element_ && tmp_iter != input_container_r_; ++i) {
-                            field_element_.data <<= input_value_bits_; // TODO: add shift operators to field values
+                            field_element_.data = field_element_.data.base() << input_value_bits_;
                             field_element_ += uint64_t(*tmp_iter++);
                         }
                         element_filled_ = true;

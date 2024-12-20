@@ -31,7 +31,7 @@
 
 #include <nil/marshalling/processing/detail/size_to_type.hpp>
 
-namespace nil {
+namespace nil::crypto3 {
     namespace marshalling {
         namespace processing {
             /// @cond SKIP_DOC

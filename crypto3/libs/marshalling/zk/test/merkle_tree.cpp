@@ -66,7 +66,7 @@ void test_merkle_tree_marshalling(std::size_t tree_depth) {
     using namespace nil::crypto3::marshalling;
     using merkle_tree_type = nil::crypto3::containers::merkle_tree<Hash, Arity>;
     using merkle_tree_marshalling_type =
-            types::merkle_tree<nil::marshalling::field_type<Endianness>, merkle_tree_type>;
+            types::merkle_tree<nil::crypto3::marshalling::field_type<Endianness>, merkle_tree_type>;
 
     std::size_t leafs_number = std::pow(Arity, tree_depth);
     // You can also lazy convert byte stream to field elements stream using <nil/crypto3/hash/block_to_field_elements_wrapper.hpp>
@@ -96,14 +96,14 @@ void test_merkle_tree_marshalling(std::size_t tree_depth) {
     std::vector<std::uint8_t> cv;
     cv.resize(filled_merkle_tree.length(), 0x00);
     auto write_iter = cv.begin();
-    nil::marshalling::status_type status = filled_merkle_tree.write(write_iter, cv.size());
-    BOOST_CHECK(status == nil::marshalling::status_type::success);
+    nil::crypto3::marshalling::status_type status = filled_merkle_tree.write(write_iter, cv.size());
+    BOOST_CHECK(status == nil::crypto3::marshalling::status_type::success);
     // print_merkle_tree(cv.cbegin(), cv.cend(), data[tree_idx].cbegin(), data[tree_idx].cend(), true);
 
     merkle_tree_marshalling_type test_val_read;
     auto read_iter = cv.begin();
     status = test_val_read.read(read_iter, cv.size());
-    BOOST_CHECK(status == nil::marshalling::status_type::success);
+    BOOST_CHECK(status == nil::crypto3::marshalling::status_type::success);
     merkle_tree_type constructed_val_read = types::make_merkle_tree<merkle_tree_type, Endianness>(test_val_read);
     BOOST_CHECK(tree == constructed_val_read);
 }
@@ -122,9 +122,9 @@ using HashTypes = boost::mpl::list<
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(marshalling_merkle_tree_arity_2_test, HashType, HashTypes) {
     std::srand(std::time(0));
-    test_merkle_tree_marshalling<nil::marshalling::option::big_endian, HashType, 2>(2);
-    test_merkle_tree_marshalling<nil::marshalling::option::big_endian, HashType, 2>(4);
-    test_merkle_tree_marshalling<nil::marshalling::option::big_endian, HashType, 2, 320>(8);
+    test_merkle_tree_marshalling<nil::crypto3::marshalling::option::big_endian, HashType, 2>(2);
+    test_merkle_tree_marshalling<nil::crypto3::marshalling::option::big_endian, HashType, 2>(4);
+    test_merkle_tree_marshalling<nil::crypto3::marshalling::option::big_endian, HashType, 2, 320>(8);
 }
 
 // Poseidon hash function supports only Arity 2.
@@ -134,18 +134,18 @@ using BlockHashTypes = boost::mpl::list<
     >;
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(marshalling_merkle_tree_arity_3_test, HashType, BlockHashTypes) {
-    test_merkle_tree_marshalling<nil::marshalling::option::big_endian, HashType, 3>(2);
-    test_merkle_tree_marshalling<nil::marshalling::option::big_endian, HashType, 3>(4);
+    test_merkle_tree_marshalling<nil::crypto3::marshalling::option::big_endian, HashType, 3>(2);
+    test_merkle_tree_marshalling<nil::crypto3::marshalling::option::big_endian, HashType, 3>(4);
 }
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(marshalling_merkle_tree_arity_4_test, HashType, BlockHashTypes) {
-    test_merkle_tree_marshalling<nil::marshalling::option::big_endian, HashType, 4>(2);
-    test_merkle_tree_marshalling<nil::marshalling::option::big_endian, HashType, 4>(4);
+    test_merkle_tree_marshalling<nil::crypto3::marshalling::option::big_endian, HashType, 4>(2);
+    test_merkle_tree_marshalling<nil::crypto3::marshalling::option::big_endian, HashType, 4>(4);
 }
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(marshalling_merkle_tree_arity_5_test, HashType, BlockHashTypes) {
-    test_merkle_tree_marshalling<nil::marshalling::option::big_endian, HashType, 5>(2);
-    test_merkle_tree_marshalling<nil::marshalling::option::big_endian, HashType, 5>(4);
+    test_merkle_tree_marshalling<nil::crypto3::marshalling::option::big_endian, HashType, 5>(2);
+    test_merkle_tree_marshalling<nil::crypto3::marshalling::option::big_endian, HashType, 5>(4);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

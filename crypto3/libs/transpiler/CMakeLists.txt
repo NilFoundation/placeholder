@@ -6,8 +6,6 @@
 # http://www.boost.org/LICENSE_1_0.txt
 #---------------------------------------------------------------------------#
 
-cmake_minimum_required(VERSION 3.22 FATAL_ERROR)
-
 find_package(CM REQUIRED)
 include(CMConfig)
 include(CMSetupVersion)
@@ -27,7 +25,7 @@ target_include_directories(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTER
         $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>)
 
 target_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTERFACE
-        ${Boost_LIBRARIES})
+        Boost::container)
 
 include(CMTest)
 add_tests(test)

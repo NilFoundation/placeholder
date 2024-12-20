@@ -53,19 +53,12 @@ namespace nil {
                     constexpr static const std::size_t number_bits = policy_type::number_bits;
 
                     constexpr static const integral_type modulus =
-                        0x30644E72E131A029B85045B68181585D97816A916871CA8D3C208C16D87CFD47_cppui_modular254;
+                        0x30644E72E131A029B85045B68181585D97816A916871CA8D3C208C16D87CFD47_big_uint254;
 
                     constexpr static const integral_type group_order_minus_one_half =
-                        0x183227397098D014DC2822DB40C0AC2ECBC0B548B438E5469E10460B6C3E7EA3_cppui_modular254;
+                        0x183227397098D014DC2822DB40C0AC2ECBC0B548B438E5469E10460B6C3E7EA3_big_uint254;
 
-                    typedef typename policy_type::modular_backend modular_backend;
-                    constexpr static const modular_params_type modulus_params = modulus.backend();
-                    typedef boost::multiprecision::number<
-                        boost::multiprecision::backends::modular_adaptor<
-                            modular_backend,
-                            boost::multiprecision::backends::modular_params_ct<modular_backend, modulus_params>>>
-                        modular_type;
-
+                    typedef nil::crypto3::multiprecision::auto_big_mod<modulus> modular_type;
                     constexpr static const integral_type mul_generator = 0x03;
 
                     typedef typename detail::element_fp<params<alt_bn128_base_field<254>>> value_type;
@@ -83,9 +76,6 @@ namespace nil {
                 constexpr typename alt_bn128_base_field<254>::integral_type const alt_bn128_base_field<254>::modulus;
 
                 constexpr typename alt_bn128_base_field<254>::integral_type const alt_bn128_base_field<254>::group_order_minus_one_half;
-
-                constexpr typename alt_bn128_base_field<254>::modular_params_type const
-                    alt_bn128_base_field<254>::modulus_params;
 
                 constexpr
                     typename alt_bn128_base_field<254>::integral_type const alt_bn128_base_field<254>::mul_generator;

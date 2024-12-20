@@ -107,8 +107,8 @@ namespace nil {
                         }
 
                         template<typename TIter>
-                        nil::marshalling::status_type read(TIter &iter, std::size_t size) {
-                            nil::marshalling::status_type status = reader_type::process(value(), iter);
+                        nil::crypto3::marshalling::status_type read(TIter &iter, std::size_t size) {
+                            nil::crypto3::marshalling::status_type status = reader_type::process(value(), iter);
                             iter += max_length();
                             return status;
                         }
@@ -119,8 +119,8 @@ namespace nil {
                         }
 
                         template<typename TIter>
-                        nil::marshalling::status_type write(TIter &iter, std::size_t size) const {
-                            nil::marshalling::status_type status = writer_type::process(value(), iter);
+                        nil::crypto3::marshalling::status_type write(TIter &iter, std::size_t size) const {
+                            nil::crypto3::marshalling::status_type status = writer_type::process(value(), iter);
                             iter += max_length();
                             return status;
                         }

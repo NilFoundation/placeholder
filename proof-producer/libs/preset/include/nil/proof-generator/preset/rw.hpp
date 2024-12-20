@@ -15,11 +15,8 @@ namespace nil {
     namespace proof_generator {
         template<typename BlueprintFieldType>
         std::optional<std::string> initialize_rw_circuit(
-                std::optional<nil::crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>>& rw_circuit,
+                std::optional<blueprint::circuit<nil::crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>>>& rw_circuit,
                 std::optional<nil::crypto3::zk::snark::plonk_assignment_table<BlueprintFieldType>>& rw_table) {
-
-            using ArithmetizationType =
-                    nil::crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>;
 
             using ComponentType = nil::blueprint::bbf::rw<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::CONSTRAINTS>;
 

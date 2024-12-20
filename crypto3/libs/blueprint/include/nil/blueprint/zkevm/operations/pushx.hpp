@@ -110,7 +110,7 @@ namespace nil {
                 zkevm_table_type &zkevm_table, const zkevm_machine_interface &machine, zkevm_word_type bytecode_input
             ) {
                 using word_type = typename zkevm_stack::word_type;
-                using integral_type = boost::multiprecision::number<boost::multiprecision::backends::cpp_int_modular_backend<257>>;
+                using integral_type = nil::crypto3::multiprecision::big_uint<257>;
 
                 zkevm_word_type a = word_type(integral_type(bytecode_input) &
                                         ((integral_type(1) << (8*byte_count)) - 1)); // use only byte_count lowest bytes

@@ -43,7 +43,7 @@
 #include <nil/marshalling/inference.hpp>
 #include <nil/detail/type_traits.hpp>
 
-namespace nil {
+namespace nil::crypto3 {
     namespace marshalling {
         namespace detail {
 
@@ -92,7 +92,7 @@ namespace nil {
 
                 template<typename T, size_t SizeArray,
                          typename = typename std::enable_if<
-                             !nil::detail::is_container<typename is_compatible<T>::template type<>>::value>::type>
+                             !detail::is_container<typename is_compatible<T>::template type<>>::value>::type>
                 inline operator std::array<T, SizeArray>() {
 
                     return similar_std_array_marshalling<std::array<T, SizeArray>>();
@@ -100,7 +100,7 @@ namespace nil {
 
                 template<typename T, size_t SizeArray,
                          typename = typename std::enable_if<
-                             !nil::detail::is_container<typename is_compatible<T>::template type<>>::value>::type>
+                             !detail::is_container<typename is_compatible<T>::template type<>>::value>::type>
                 inline operator boost::array<T, SizeArray>() {
 
                     return similar_std_array_marshalling<boost::array<T, SizeArray>>();
@@ -117,7 +117,7 @@ namespace nil {
                 }
 
                 template<typename TOutput, typename = typename std::enable_if<is_compatible<TOutput>::value>::type,
-                         typename = typename std::enable_if<!nil::marshalling::is_container<
+                         typename = typename std::enable_if<!nil::crypto3::marshalling::is_container<
                              typename is_compatible<TOutput>::template type<>>::value>::type>
                 inline operator TOutput() const {
                     using marshalling_type = typename is_compatible<TOutput>::template type<TEndian>;
@@ -131,8 +131,8 @@ namespace nil {
 
                 template<typename OutputRange,
                          typename = typename std::enable_if<
-                             nil::detail::is_range<OutputRange>::value && !is_marshalling_type<OutputRange>::value
-                             && !nil::marshalling::is_container<typename is_compatible<
+                             detail::is_range<OutputRange>::value && !is_marshalling_type<OutputRange>::value
+                             && !nil::crypto3::marshalling::is_container<typename is_compatible<
                                  typename OutputRange::value_type>::template type<>>::value>::type>
                 inline operator OutputRange() {
                     using T = typename OutputRange::value_type;

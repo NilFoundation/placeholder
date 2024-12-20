@@ -44,8 +44,64 @@
 // #include <nil/blueprint/bbf/is_zero.hpp>
 #include <nil/blueprint/bbf/micro_range_check.hpp>
 
+#include <nil/crypto3/zk/snark/systems/plonk/placeholder/prover.hpp>
+#include <nil/crypto3/zk/snark/systems/plonk/placeholder/verifier.hpp>
+#include <nil/crypto3/zk/snark/systems/plonk/placeholder/params.hpp>
+#include <nil/crypto3/zk/snark/systems/plonk/placeholder/preprocessor.hpp>
+
 using namespace nil::crypto3;
 using namespace nil::blueprint;
+
+template<typename FieldType>
+bool check_proof(
+    const circuit<zk::snark::plonk_constraint_system<FieldType>> &bp,
+    const zk::snark::plonk_assignment_table<FieldType> &assignment,
+    const zk::snark::plonk_table_description<FieldType> &desc) {
+
+    std::size_t Lambda = 9;
+
+    typedef nil::crypto3::zk::snark::placeholder_circuit_params<FieldType> circuit_params;
+    using transcript_hash_type = nil::crypto3::hashes::keccak_1600<256>;
+    using merkle_hash_type = nil::crypto3::hashes::keccak_1600<256>;
+    using transcript_type = typename nil::crypto3::zk::transcript::fiat_shamir_heuristic_sequential<transcript_hash_type>;
+    using lpc_params_type = nil::crypto3::zk::commitments::list_polynomial_commitment_params<
+        merkle_hash_type,
+        transcript_hash_type,
+        2 //m
+    >;
+
+    using lpc_type = nil::crypto3::zk::commitments::list_polynomial_commitment<FieldType, lpc_params_type>;
+    using lpc_scheme_type = typename nil::crypto3::zk::commitments::lpc_commitment_scheme<lpc_type>;
+    using lpc_placeholder_params_type = nil::crypto3::zk::snark::placeholder_params<circuit_params, lpc_scheme_type>;
+    typename lpc_type::fri_type::params_type fri_params(1, std::ceil(log2(assignment.rows_amount())), Lambda, 2);
+    lpc_scheme_type lpc_scheme(fri_params);
+
+    std::cout << "Public preprocessor" << std::endl;
+    typename nil::crypto3::zk::snark::placeholder_public_preprocessor<FieldType,
+        lpc_placeholder_params_type>::preprocessed_data_type lpc_preprocessed_public_data =
+            nil::crypto3::zk::snark::placeholder_public_preprocessor<FieldType, lpc_placeholder_params_type>::process(
+            bp, assignment.public_table(), desc, lpc_scheme, 10);
+
+    std::cout << "Private preprocessor" << std::endl;
+    typename nil::crypto3::zk::snark::placeholder_private_preprocessor<FieldType,
+       lpc_placeholder_params_type>::preprocessed_data_type lpc_preprocessed_private_data =
+            nil::crypto3::zk::snark::placeholder_private_preprocessor<FieldType, lpc_placeholder_params_type>::process(
+            bp, assignment.private_table(), desc);
+
+    std::cout << "Prover" << std::endl;
+    auto lpc_proof = nil::crypto3::zk::snark::placeholder_prover<FieldType, lpc_placeholder_params_type>::process(
+            lpc_preprocessed_public_data, std::move(lpc_preprocessed_private_data), desc, bp,
+            lpc_scheme);
+
+    // We must not use the same instance of lpc_scheme.
+    lpc_scheme_type verifier_lpc_scheme(fri_params);
+
+    std::cout << "Verifier" << std::endl;
+    bool verifier_res = nil::crypto3::zk::snark::placeholder_verifier<FieldType, lpc_placeholder_params_type>::process(
+            lpc_preprocessed_public_data.common_data, lpc_proof, desc, bp, verifier_lpc_scheme);
+    return verifier_res;
+}
+
 
 template <typename FieldType, template<typename, bbf::GenerationStage stage> class Component, typename... ComponentStaticInfoArgs>
 void test_circuit_builder(typename Component<FieldType,bbf::GenerationStage::ASSIGNMENT>::raw_input_type raw_input,
@@ -59,7 +115,7 @@ void test_circuit_builder(typename Component<FieldType,bbf::GenerationStage::ASS
     std::cout << "Is_satisfied = " << pass << std::endl;
 
     if (pass) {
-        bool proof = B.check_proof(at, desc);
+        bool proof = check_proof(B.get_circuit(), at, desc);
         std::cout << "Is_proved = " << proof << std::endl;
     }
 }

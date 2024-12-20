@@ -36,8 +36,6 @@
 // #include <nil/crypto3/zk/commitments/polynomial/kzg.hpp>
 #include <nil/crypto3/zk/commitments/polynomial/fri.hpp>
 #include <nil/crypto3/zk/commitments/polynomial/lpc.hpp>
-#include <nil/crypto3/zk/commitments/polynomial/kimchi_pedersen.hpp>
-#include <nil/crypto3/zk/commitments/polynomial/pedersen.hpp>
 #include <nil/crypto3/zk/commitments/type_traits.hpp>
 
 using namespace nil::crypto3;
@@ -65,8 +63,6 @@ BOOST_AUTO_TEST_SUITE(commitments_type_traits_test_suite)
                 zk::is_commitment<zk::commitments::batched_lpc<
                         field_type,
                         zk::commitments::list_polynomial_commitment_params<merkle_hash_type, transcript_hash_type, m>>>::value);
-        static_assert(zk::is_commitment<zk::commitments::pedersen<curve_type>>::value);
-        static_assert(zk::is_commitment<zk::commitments::kimchi_pedersen<curve_type>>::value);
     }
 
 BOOST_AUTO_TEST_SUITE_END()

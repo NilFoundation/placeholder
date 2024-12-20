@@ -50,7 +50,7 @@
 #include <iostream>
 #include <array>
 
-using namespace nil::marshalling;
+using namespace nil::crypto3::marshalling;
 
 int main(int argc, char *argv[]) {
     status_type status;

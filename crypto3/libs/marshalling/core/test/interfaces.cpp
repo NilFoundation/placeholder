@@ -35,16 +35,9 @@
 #include <boost/test/data/monomorphic.hpp>
 
 #include <nil/marshalling/types/integral.hpp>
-#include <nil/marshalling/types/bitmask_value.hpp>
-#include <nil/marshalling/types/enumeration.hpp>
 #include <nil/marshalling/types/array_list.hpp>
 #include <nil/marshalling/types/string.hpp>
-#include <nil/marshalling/types/bitfield.hpp>
-#include <nil/marshalling/types/optional.hpp>
 #include <nil/marshalling/types/bundle.hpp>
-#include <nil/marshalling/types/float_value.hpp>
-#include <nil/marshalling/types/no_value.hpp>
-#include <nil/marshalling/types/variant.hpp>
 
 #include <nil/marshalling/algorithms/pack.hpp>
 
@@ -55,7 +48,7 @@
 #include <cstdio>
 #include <variant>
 
-using namespace nil::marshalling;
+using namespace nil::crypto3::marshalling;
 
 BOOST_AUTO_TEST_SUITE(pack_interfaces_test_suite)
 
@@ -79,28 +72,28 @@ void resize(boost::array<T, ArraySize> &t, size_t count) {
 }
 
 template<typename T, typename TInput>
-typename std::enable_if<!nil::detail::has_begin<TInput>::value, void>::type repack_2(TInput in, size_t result_size) {
+typename std::enable_if<!detail::has_begin<TInput>::value, void>::type repack_2(TInput in, size_t result_size) {
 }
 
 template<typename T, typename TInput>
-typename std::enable_if<!nil::detail::has_begin<TInput>::value, void>::type repack_4(TInput in, size_t result_size) {
+typename std::enable_if<!detail::has_begin<TInput>::value, void>::type repack_4(TInput in, size_t result_size) {
 }
 
 template<typename T, typename TInput>
-typename std::enable_if<!nil::detail::has_begin<T>::value, void>::type repack_5(TInput in, size_t result_size) {
+typename std::enable_if<!detail::has_begin<T>::value, void>::type repack_5(TInput in, size_t result_size) {
 }
 
 template<typename T, typename TInput>
-typename std::enable_if<!nil::detail::has_begin<T>::value || !nil::detail::has_begin<TInput>::value, void>::type
+typename std::enable_if<!detail::has_begin<T>::value || !detail::has_begin<TInput>::value, void>::type
     repack_6(TInput in, size_t result_size) {
 }
 
 template<typename T, typename TInput>
-typename std::enable_if<!nil::detail::has_begin<T>::value, void>::type repack_7(TInput in, size_t result_size) {
+typename std::enable_if<!detail::has_begin<T>::value, void>::type repack_7(TInput in, size_t result_size) {
 }
 
 template<typename T, typename TInput>
-typename std::enable_if<!nil::detail::has_begin<T>::value || !nil::detail::has_begin<TInput>::value, void>::type
+typename std::enable_if<!detail::has_begin<T>::value || !detail::has_begin<TInput>::value, void>::type
     repack_8(TInput in, size_t result_size) {
 }
 
@@ -112,7 +105,7 @@ void repack_1(TInput in, size_t result_size) {
 }
 
 template<typename T, typename TInput>
-typename std::enable_if<nil::detail::has_begin<TInput>::value, void>::type repack_2(TInput in, size_t result_size) {
+typename std::enable_if<detail::has_begin<TInput>::value, void>::type repack_2(TInput in, size_t result_size) {
     status_type status;
     T result = pack(in.begin(), in.end(), status);
     BOOST_CHECK(status == status_type::success);
@@ -127,7 +120,7 @@ void repack_3(TInput in, size_t result_size) {
 }
 
 template<typename T, typename TInput>
-typename std::enable_if<nil::detail::has_begin<TInput>::value, void>::type repack_4(TInput in, size_t result_size) {
+typename std::enable_if<detail::has_begin<TInput>::value, void>::type repack_4(TInput in, size_t result_size) {
     status_type status;
     T result;
     status = pack(in.begin(), in.end(), result);
@@ -135,7 +128,7 @@ typename std::enable_if<nil::detail::has_begin<TInput>::value, void>::type repac
 }
 
 template<typename T, typename TInput>
-typename std::enable_if<nil::detail::has_begin<T>::value, void>::type repack_5(TInput in, size_t result_size) {
+typename std::enable_if<detail::has_begin<T>::value, void>::type repack_5(TInput in, size_t result_size) {
     status_type status;
     T result;
     resize(result, result_size);
@@ -145,7 +138,7 @@ typename std::enable_if<nil::detail::has_begin<T>::value, void>::type repack_5(T
 }
 
 template<typename T, typename TInput>
-typename std::enable_if<nil::detail::has_begin<T>::value && nil::detail::has_begin<TInput>::value, void>::type
+typename std::enable_if<detail::has_begin<T>::value && detail::has_begin<TInput>::value, void>::type
     repack_6(TInput in, size_t result_size) {
     status_type status;
     T result;
@@ -156,7 +149,7 @@ typename std::enable_if<nil::detail::has_begin<T>::value && nil::detail::has_beg
 }
 
 template<typename T, typename TInput>
-typename std::enable_if<nil::detail::has_begin<T>::value, void>::type repack_7(TInput in, size_t result_size) {
+typename std::enable_if<detail::has_begin<T>::value, void>::type repack_7(TInput in, size_t result_size) {
     status_type status;
     T result;
     resize(result, result_size);
@@ -165,7 +158,7 @@ typename std::enable_if<nil::detail::has_begin<T>::value, void>::type repack_7(T
 }
 
 template<typename T, typename TInput>
-typename std::enable_if<nil::detail::has_begin<T>::value && nil::detail::has_begin<TInput>::value, void>::type
+typename std::enable_if<detail::has_begin<T>::value && detail::has_begin<TInput>::value, void>::type
     repack_8(TInput in, size_t result_size) {
     status_type status;
     T result;

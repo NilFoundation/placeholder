@@ -40,7 +40,7 @@ macro(define_benchmark benchmark)
 
     set_target_properties(${full_name}
         PROPERTIES
-        CXX_STANDARD 17
+        CXX_STANDARD 20
         CXX_STANDARD_REQUIRED TRUE)
 
     if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
@@ -49,6 +49,7 @@ macro(define_benchmark benchmark)
         target_compile_options(${full_name} PRIVATE "-fconstexpr-ops-limit=4294967295")
     endif()
 
+    target_precompile_headers(${full_name} REUSE_FROM crypto3_precompiled_headers)
 endmacro()
 
 set(BENCHMARK_NAMES
@@ -59,9 +60,9 @@ set(BENCHMARK_NAMES
     "math/polynomial_dfs"
 
     "multiprecision/modular_adaptor_fixed"
+    "multiprecision/big_int"
 
     "zk/lpc"
-    "zk/pedersen"
 )
 
 foreach(BENCHMARK_NAME ${BENCHMARK_NAMES})

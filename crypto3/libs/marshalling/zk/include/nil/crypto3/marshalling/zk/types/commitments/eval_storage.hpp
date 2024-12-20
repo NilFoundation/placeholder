@@ -59,61 +59,56 @@ namespace nil {
                 struct eval_proof;
 
                 template<typename TTypeBase, typename EvalStorage>
-                    using eval_storage = nil::marshalling::types::bundle<
+                    using eval_storage = nil::crypto3::marshalling::types::bundle<
                     TTypeBase,
                     std::tuple<
                         // batch_info.
                         // We'll check is it good for current EVM instance
                         // All z-s are placed into plain array
-                        nil::marshalling::types::array_list<
+                        nil::crypto3::marshalling::types::standard_array_list<
                             TTypeBase,
-                            field_element<TTypeBase, typename EvalStorage::field_type::value_type>,
-                            nil::marshalling::option::sequence_size_field_prefix<nil::marshalling::types::integral<TTypeBase, std::size_t>>
+                            field_element<TTypeBase, typename EvalStorage::field_type::value_type>
                         >,
 
-                        nil::marshalling::types::array_list<
+                        nil::crypto3::marshalling::types::standard_array_list<
                             TTypeBase,
-                            nil::marshalling::types::integral<TTypeBase, uint8_t>,
-                            nil::marshalling::option::sequence_size_field_prefix<nil::marshalling::types::integral<TTypeBase, std::size_t>>
+                            nil::crypto3::marshalling::types::integral<TTypeBase, uint8_t>
                         >,
 
                         // evaluation_points_num.
-                        nil::marshalling::types::array_list<
+                        nil::crypto3::marshalling::types::standard_array_list<
                             TTypeBase,
-                            nil::marshalling::types::integral<TTypeBase, uint8_t>,
-                            nil::marshalling::option::sequence_size_field_prefix<nil::marshalling::types::integral<TTypeBase, std::size_t>>
+                            nil::crypto3::marshalling::types::integral<TTypeBase, uint8_t>
                         >
                     >
                 >;
 
                 template<typename Endianness, typename EvalStorage>
-                eval_storage<nil::marshalling::field_type<Endianness>, EvalStorage>
+                eval_storage<nil::crypto3::marshalling::field_type<Endianness>, EvalStorage>
                 fill_eval_storage( const EvalStorage &z ){
-                    using TTypeBase = nil::marshalling::field_type<Endianness>;
+                    using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
 
                     nil::crypto3::marshalling::types::batch_info_type batch_info;
 
-                    nil::marshalling::types::array_list<
+                    nil::crypto3::marshalling::types::standard_array_list<
                         TTypeBase,
-                        nil::marshalling::types::integral<TTypeBase, uint8_t>,
-                        nil::marshalling::option::sequence_size_field_prefix<nil::marshalling::types::integral<TTypeBase, std::size_t>>
+                        nil::crypto3::marshalling::types::integral<TTypeBase, uint8_t>
                     > filled_batch_info;
                     auto batches = z.get_batches();
                     for( std::size_t i = 0; i < batches.size(); i++ ){
                         batch_info[batches[i]] = z.get_batch_size(batches[i]);
-                        filled_batch_info.value().push_back(nil::marshalling::types::integral<TTypeBase, uint8_t>(batches[i]));
-                        filled_batch_info.value().push_back(nil::marshalling::types::integral<TTypeBase, uint8_t>(z.get_batch_size(batches[i])));
+                        filled_batch_info.value().push_back(nil::crypto3::marshalling::types::integral<TTypeBase, uint8_t>(batches[i]));
+                        filled_batch_info.value().push_back(nil::crypto3::marshalling::types::integral<TTypeBase, uint8_t>(z.get_batch_size(batches[i])));
                     }
 
-                    nil::marshalling::types::array_list<
+                    nil::crypto3::marshalling::types::standard_array_list<
                         TTypeBase,
-                        nil::marshalling::types::integral<TTypeBase, uint8_t>,
-                        nil::marshalling::option::sequence_size_field_prefix<nil::marshalling::types::integral<TTypeBase, std::size_t>>
+                        nil::crypto3::marshalling::types::integral<TTypeBase, uint8_t>
                     > filled_eval_points_num;
                     for( std::size_t i = 0; i < batches.size(); i++ ){
                         for( std::size_t j = 0; j < z.get_batch_size(batches[i]); j++ ){
                             filled_eval_points_num.value().push_back(
-                                nil::marshalling::types::integral<TTypeBase, uint8_t>(z.get_poly_points_number(batches[i], j))
+                                nil::crypto3::marshalling::types::integral<TTypeBase, uint8_t>(z.get_poly_points_number(batches[i], j))
                             );
                         }
                     }
@@ -126,10 +121,9 @@ namespace nil {
                             }
                         }
                     }
-                    nil::marshalling::types::array_list<
+                    nil::crypto3::marshalling::types::standard_array_list<
                         TTypeBase,
-                        field_element<TTypeBase, typename EvalStorage::field_type::value_type>,
-                        nil::marshalling::option::sequence_size_field_prefix<nil::marshalling::types::integral<TTypeBase, std::size_t>>
+                        field_element<TTypeBase, typename EvalStorage::field_type::value_type>
                     > filled_z = fill_field_element_vector<typename EvalStorage::field_type::value_type, Endianness>(z_val);
 
                     return eval_storage<TTypeBase, EvalStorage>(
@@ -139,13 +133,16 @@ namespace nil {
 
                 template<typename Endianness, typename EvalStorage>
                 EvalStorage make_eval_storage(
-                    const eval_storage<nil::marshalling::field_type<Endianness>, EvalStorage> &filled_storage
-                ){
+                    const eval_storage<nil::crypto3::marshalling::field_type<Endianness>, EvalStorage> &filled_storage)
+                {
                     EvalStorage z;
                     typename nil::crypto3::marshalling::types::batch_info_type batch_info;
                     std::vector<std::uint8_t> eval_points_num;
 
                     auto filled_batch_info = std::get<1>(filled_storage.value()).value();
+                    if (filled_batch_info.size() % 2 != 0) {
+                        throw std::invalid_argument("Wrong length of batch info");
+                    }
                     for( std::size_t i = 0; i < filled_batch_info.size(); i+=2 ){
                         batch_info[filled_batch_info[i].value()] = filled_batch_info[i+1].value();
                         z.set_batch_size(filled_batch_info[i].value(), filled_batch_info[i+1].value());
@@ -153,8 +150,11 @@ namespace nil {
 
                     auto filled_eval_points_num = std::get<2>(filled_storage.value()).value();
                     std::size_t cur = 0;
-                    for( const auto &it:batch_info){
-                        for( std::size_t i = 0; i < it.second; i++ ){
+                    for (const auto &it: batch_info){
+                        for (std::size_t i = 0; i < it.second; i++ ) {
+                            if (cur >= filled_eval_points_num.size()) {
+                                throw std::invalid_argument("Not enough eval points");
+                            }
                             z.set_poly_points_number(it.first, i, filled_eval_points_num[cur].value());
                             cur++;
                         }
@@ -162,9 +162,12 @@ namespace nil {
 
                     auto filled_z = std::get<0>(filled_storage.value()).value();
                     cur = 0;
-                    for( const auto &it:batch_info){
-                        for( std::size_t i = 0; i < it.second; i++ ){
-                            for( std::size_t j = 0; j < z.get_poly_points_number(it.first, i); j++ ){
+                    for (const auto &it: batch_info) {
+                        for (std::size_t i = 0; i < it.second; i++ ) {
+                            for (std::size_t j = 0; j < z.get_poly_points_number(it.first, i); j++ ) {
+                                if (cur >= filled_z.size()) {
+                                    throw std::invalid_argument("Not enough values for Z");
+                                }
                                 z.set(it.first, i, j, filled_z[cur].value());
                                 cur++;
                             }

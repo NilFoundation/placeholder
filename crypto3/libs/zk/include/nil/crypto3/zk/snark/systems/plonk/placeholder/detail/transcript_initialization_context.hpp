@@ -117,13 +117,13 @@ namespace nil {
                         );
 
                         // Marshall the initialization context and push it to the transcript.
-                        using Endianness = nil::marshalling::option::big_endian;
+                        using Endianness = nil::crypto3::marshalling::option::big_endian;
                         auto filled_context = nil::crypto3::marshalling::types::fill_transcript_initialization_context<
                             Endianness, nil::crypto3::zk::snark::detail::transcript_initialization_context<PlaceholderParamsType>>(context);
 
                         std::vector<std::uint8_t> cv(filled_context.length(), 0x00);
                         auto write_iter = cv.begin();
-                        nil::marshalling::status_type status = filled_context.write(write_iter, cv.size());
+                        nil::crypto3::marshalling::status_type status = filled_context.write(write_iter, cv.size());
                         THROW_IF_ERROR_STATUS(status, "transcript_initialization_context::compute_constraint_system_with_params_hash");
 
                         // Append constraint_system to the buffer "cv".

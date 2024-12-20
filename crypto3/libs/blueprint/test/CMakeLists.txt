@@ -36,6 +36,17 @@ if(BLUEPRINT_PLACEHOLDER_PROOF_GEN)
     add_definitions(-DBLUEPRINT_PLACEHOLDER_PROOF_GEN_ENABLED)
 endif()
 
+cm_test_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
+        crypto3::blueprint
+        crypto3::algebra
+        crypto3::zk
+        crypto3::random
+        crypto3::hash
+        Boost::unit_test_framework
+)
+set_target_properties(_cm_internal_tests-crypto3-blueprint-test PROPERTIES CXX_STANDARD 20)
+target_precompile_headers(_cm_internal_tests-crypto3-blueprint-test REUSE_FROM crypto3_precompiled_headers)
+
 macro(define_blueprint_test test)
     string(REPLACE "/" "_" full_test_name blueprint_${test}_test)
 
@@ -49,14 +60,7 @@ macro(define_blueprint_test test)
     target_include_directories(${full_test_name} PRIVATE
                                ${Boost_INCLUDE_DIRS})
 
-    target_link_libraries(${full_test_name}
-        crypto3::blueprint
-        crypto3::algebra
-        crypto3::zk
-        crypto3::random
-    )
-
-    set_target_properties(${full_test_name} PROPERTIES CXX_STANDARD 17)
+    set_target_properties(${full_test_name} PROPERTIES CXX_STANDARD 20)
 
     target_compile_definitions(${full_test_name} PRIVATE TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/zkevm/data/")
 
@@ -72,6 +76,8 @@ macro(define_blueprint_test test)
     elseif(target_type STREQUAL "STATIC_LIB")
 
     endif()
+
+    target_precompile_headers(${full_test_name} REUSE_FROM crypto3_precompiled_headers)
 endmacro()
 
 set(COMMON_TEST_FILES
@@ -84,11 +90,12 @@ set(COMMON_TEST_FILES
     "proxy"
     #"mock/mocked_components"
     "component_batch"
-    "bbf/bbf_wrapper"
+    "bbf/tester"
     "bbf/opcode_poc"
     "bbf/gate_optimizer"
     "bbf/poseidon"
     "bbf/test_circuit_builder"
+    "bbf/row_seletor_test"
     "bbf/detail/range_check_multi"
     "bbf/detail/carry_on_addition"
     "bbf/algebra/fields/non_native/check_mod_p"
@@ -165,7 +172,7 @@ set(PLONK_TESTS_FILES
     #"verifiers/kimchi/detail/prepare_scalars"
     #"verifiers/kimchi/detail/zkpm_evaluate"
     #"verifiers/kimchi/sponge/sponge"
-    "verifiers/kimchi/sponge/oracles"
+    #"verifiers/kimchi/sponge/oracles"
     #"verifiers/kimchi/sponge/transcript_fr"
     #"verifiers/kimchi/sponge/transcript_fq"
     #"verifiers/kimchi/sponge/compare"
@@ -226,12 +233,12 @@ set(ZKEVM_TESTS_FILES
     "zkevm/opcodes/bitwise"
     "zkevm/opcodes/err0"
     "zkevm/opcodes/err1"
-    "zkevm/opcodes/workload"
+    #"zkevm/opcodes/workload"
     "zkevm/opcodes/jumps"
 )
 
 set(ZKEVM_BBF_TESTS_FILES
-    "zkevm_bbf/l1_wrapper"
+    "zkevm_bbf/hardhat"
     "zkevm_bbf/rw"
     "zkevm_bbf/bytecode"
     "zkevm_bbf/copy"
@@ -240,6 +247,13 @@ set(ZKEVM_BBF_TESTS_FILES
     "zkevm_bbf/opcodes/mod_ops"
     "zkevm_bbf/opcodes/bitwise"
     "zkevm_bbf/opcodes/cmp"
+    "zkevm_bbf/opcodes/add_sub"
+    "zkevm_bbf/opcodes/byte_ops"
+    "zkevm_bbf/opcodes/mul"
+    "zkevm_bbf/opcodes/div"
+    "zkevm_bbf/opcodes/jumps"
+    "zkevm_bbf/opcodes/not"
+    "zkevm_bbf/opcodes/exp"
 )
 
 
@@ -258,7 +272,6 @@ SET(ALL_TESTS_FILES
     ${HASHES_TESTS_FILES}
     ${ROUTING_TESTS_FILES}
     ${SCHEMES_TESTS_FILES}
-    ${MERKLE_TREE_TESTS_FILES}
     ${VOTING_TESTS_FILES}
     ${BASIC_COMPONENTS_TESTS_FILES})
 

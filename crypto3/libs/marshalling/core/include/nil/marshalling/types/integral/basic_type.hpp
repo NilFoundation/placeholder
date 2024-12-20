@@ -30,7 +30,7 @@
 
 #include <nil/marshalling/status_type.hpp>
 
-namespace nil {
+namespace nil::crypto3 {
     namespace marshalling {
         namespace types {
             namespace detail {
@@ -45,7 +45,6 @@ namespace nil {
                     using value_type = T;
 
                     using serialized_type = value_type;
-                    using scaling_ratio_type = std::ratio<1, 1>;
 
                     basic_integral() = default;
 

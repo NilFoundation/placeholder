@@ -39,7 +39,7 @@
 #include <nil/marshalling/container/string_view.hpp>
 #include <nil/marshalling/container/type_traits.hpp>
 
-using namespace nil::marshalling;
+using namespace nil::crypto3::marshalling;
 
 BOOST_TEST_DONT_PRINT_LOG_VALUE(status_type)
 

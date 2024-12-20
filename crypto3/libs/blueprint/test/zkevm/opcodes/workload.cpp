@@ -116,14 +116,14 @@ BOOST_AUTO_TEST_CASE(zkevm_workload_test) {
 
     // incorrect test logic, but we have no memory operations so
     for(std::size_t i = 0; i < workload; i++) {
-        opcode_tester.push_opcode(zkevm_opcode::PUSH1, zwordc(0x11_cppui_modular257));
-        opcode_tester.push_opcode(zkevm_opcode::PUSH1, zwordc(0x22_cppui_modular257));
-        opcode_tester.push_opcode(zkevm_opcode::PUSH1, zwordc(0x33_cppui_modular257));
+        opcode_tester.push_opcode(zkevm_opcode::PUSH1, 0x11_big_uint257);
+        opcode_tester.push_opcode(zkevm_opcode::PUSH1, 0x22_big_uint257);
+        opcode_tester.push_opcode(zkevm_opcode::PUSH1, 0x33_big_uint257);
         opcode_tester.push_opcode(implemented_opcodes[i % num_of_opcodes]);
     }
     opcode_tester.push_opcode(zkevm_opcode::RETURN);
 
-    zkevm_machine_type machine = get_empty_machine(opcode_tester.get_bytecode(), zkevm_keccak_hash(opcode_tester.get_bytecode()));
+    zkevm_machine_type machine = get_empty_machine(zkevm_keccak_hash(opcode_tester.get_bytecode()));
     auto opcodes = opcode_tester.get_opcodes();
     for( std::size_t i = 0; i < opcodes.size(); i++ ){
         machine.apply_opcode(opcodes[i].first, opcodes[i].second);  zkevm_table.assign_opcode(machine);

@@ -35,22 +35,15 @@
 #include <boost/test/data/monomorphic.hpp>
 
 #include <nil/marshalling/types/integral.hpp>
-#include <nil/marshalling/types/bitmask_value.hpp>
-#include <nil/marshalling/types/enumeration.hpp>
 #include <nil/marshalling/types/array_list.hpp>
 #include <nil/marshalling/types/string.hpp>
-#include <nil/marshalling/types/bitfield.hpp>
-#include <nil/marshalling/types/optional.hpp>
 #include <nil/marshalling/types/bundle.hpp>
-#include <nil/marshalling/types/float_value.hpp>
-#include <nil/marshalling/types/no_value.hpp>
-#include <nil/marshalling/types/variant.hpp>
 
 #include <nil/marshalling/algorithms/pack.hpp>
 
 #include <cstdio>
 
-using namespace nil::marshalling;
+using namespace nil::crypto3::marshalling;
 
 BOOST_AUTO_TEST_SUITE(pack_imploder_test_suite)
 

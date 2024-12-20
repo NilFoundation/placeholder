@@ -52,9 +52,8 @@ namespace nil {
                         _bytecodes.new_buffer(bytecode);
                     }
 
-                    std::size_t call_id = 0;
                     std::size_t rw_counter = 0;
-                    _rw_operations.push_back(start_rw_operation());
+                    std::size_t call_id = 0;
                     for( auto &pt: pts){
                         boost::property_tree::ptree ptrace = pt.get_child("result.structLogs");
                         std::cout << "PT = " << ptrace.size() << std::endl;
@@ -75,7 +74,7 @@ namespace nil {
                                 memory_next = byte_vector_from_ptree(std::next(it)->second.get_child("memory"));
                                 storage_next = key_value_storage_from_ptree(it->second.get_child("storage"));
                             }
-                            using integral_type = boost::multiprecision::number<boost::multiprecision::backends::cpp_int_modular_backend<257>>;
+                            using integral_type = nil::crypto3::multiprecision::big_uint<257>;
 
                             zkevm_state state; // TODO:optimize
                             state.tx_hash = 0;  // TODO: change it
@@ -84,7 +83,7 @@ namespace nil {
                             state.gas = atoi(it->second.get_child("gas").data().c_str());
                             state.pc = atoi(it->second.get_child("pc").data().c_str());
                             state.rw_counter = rw_counter;
-                            state.bytecode_hash = _bytecodes.get_data()[0].second; // TODO: fix it if possible
+                            state.bytecode_hash = _bytecodes.get_data()[call_id].second; // TODO: fix it if possible
                             state.additional_input = opcode.substr(0,4) == "PUSH"? stack_next[stack_next.size() - 1]: 0;
                             state.tx_finish = (std::distance(it, ptrace.end()) != 1);
                             state.stack_size = stack.size();
@@ -152,6 +151,7 @@ namespace nil {
                                 _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-1, rw_counter++, false, stack[stack.size()-1]));
                                 _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-2, rw_counter++, false, stack[stack.size()-2]));
                                 _rw_operations.push_back(stack_rw_operation(call_id,  stack_next.size()-1, rw_counter++, true, stack_next[stack_next.size()-1]));
+                                _exponentiations.push_back({stack[stack.size() - 1], stack[stack.size() - 2]});
                             }   else if(opcode == "SIGEXTEND") {
                                 // 0x0b
                                 _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-1, rw_counter++, false, stack[stack.size()-1]));
@@ -976,14 +976,14 @@ namespace nil {
             public:
                 virtual zkevm_keccak_buffers keccaks() override {return _keccaks;}
                 virtual zkevm_keccak_buffers bytecodes() override { return _bytecodes;}
-                virtual std::vector<rw_operation> rw_operations() override {return _rw_operations;}
+                virtual rw_operations_vector rw_operations() override {return _rw_operations;}
                 virtual std::vector<copy_event> copy_events() override { return _copy_events;}
                 virtual std::vector<zkevm_state> zkevm_states() override{ return _zkevm_states;}
                 virtual std::vector<std::pair<zkevm_word_type, zkevm_word_type>> exponentiations()override{return _exponentiations;}
             protected:
                 zkevm_keccak_buffers                                     _keccaks;
                 zkevm_keccak_buffers                                     _bytecodes;
-                std::vector<rw_operation>                                _rw_operations;
+                rw_operations_vector                                     _rw_operations;
                 std::vector<copy_event>                                  _copy_events;
                 std::vector<zkevm_state>                                 _zkevm_states;
                 std::vector<std::pair<zkevm_word_type, zkevm_word_type>> _exponentiations;

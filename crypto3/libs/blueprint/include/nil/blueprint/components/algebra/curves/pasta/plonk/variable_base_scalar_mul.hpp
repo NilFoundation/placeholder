@@ -85,18 +85,18 @@ namespace nil {
             struct variable_base_scalar_mul_shifted_consts<typename nil::crypto3::algebra::curves::pallas> {
                 using FieldType = nil::crypto3::algebra::fields::pallas_base_field;
 
-                constexpr static const typename FieldType::value_type shifted_minus_one = 0x224698fc0994a8dd8c46eb2100000000_cppui_modular255;
-                constexpr static const typename FieldType::value_type shifted_zero = 0x200000000000000000000000000000003369e57a0e5efd4c526a60b180000001_cppui_modular255;
-                constexpr static const typename FieldType::value_type shifted_one = 0x224698fc0994a8dd8c46eb2100000001_cppui_modular255;
+                constexpr static const typename FieldType::value_type shifted_minus_one = 0x224698fc0994a8dd8c46eb2100000000_big_uint255;
+                constexpr static const typename FieldType::value_type shifted_zero = 0x200000000000000000000000000000003369e57a0e5efd4c526a60b180000001_big_uint255;
+                constexpr static const typename FieldType::value_type shifted_one = 0x224698fc0994a8dd8c46eb2100000001_big_uint255;
             };
 
             template<>
             struct variable_base_scalar_mul_shifted_consts<typename nil::crypto3::algebra::curves::vesta> {
                 using FieldType = nil::crypto3::algebra::fields::vesta_base_field;
 
-                constexpr static const typename FieldType::value_type shifted_minus_one = 0x448d31f81299f237325a61da00000001_cppui_modular255;
-                constexpr static const typename FieldType::value_type shifted_zero =      0x448d31f81299f237325a61da00000002_cppui_modular255;
-                constexpr static const typename FieldType::value_type shifted_one =       0x448d31f81299f237325a61da00000003_cppui_modular255;
+                constexpr static const typename FieldType::value_type shifted_minus_one = 0x448d31f81299f237325a61da00000001_big_uint255;
+                constexpr static const typename FieldType::value_type shifted_zero =      0x448d31f81299f237325a61da00000002_big_uint255;
+                constexpr static const typename FieldType::value_type shifted_one =       0x448d31f81299f237325a61da00000003_big_uint255;
             };
             ////////////////////////////////
 
@@ -156,8 +156,8 @@ namespace nil {
                 constexpr static const typename BlueprintFieldType::value_type shifted_zero = variable_base_scalar_mul_shifted_consts<CurveType>::shifted_zero;
                 constexpr static const typename BlueprintFieldType::value_type shifted_one = variable_base_scalar_mul_shifted_consts<CurveType>::shifted_one;
 
-                constexpr static const typename BlueprintFieldType::value_type t_q = 0x224698fc0994a8dd8c46eb2100000001_cppui_modular255; // q = 0x40000000000000000000000000000000224698fc0994a8dd8c46eb2100000001_cppui_modular255 = 2**254 + t_q
-                constexpr static const typename BlueprintFieldType::value_type t_p = 0x224698fc094cf91b992d30ed00000001_cppui_modular255; // p = 0x40000000000000000000000000000000224698fc094cf91b992d30ed00000001_cppui_modular255 = 2**254 + t_p (q > p)
+                constexpr static const typename BlueprintFieldType::value_type t_q = 0x224698fc0994a8dd8c46eb2100000001_big_uint255; // q = 0x40000000000000000000000000000000224698fc0994a8dd8c46eb2100000001_big_uint255 = 2**254 + t_q
+                constexpr static const typename BlueprintFieldType::value_type t_p = 0x224698fc094cf91b992d30ed00000001_big_uint255; // p = 0x40000000000000000000000000000000224698fc094cf91b992d30ed00000001_big_uint255 = 2**254 + t_p (q > p)
                 constexpr static const typename BlueprintFieldType::value_type two = 2;
 
                 struct input_type {
@@ -245,9 +245,9 @@ namespace nil {
                 typename CurveType::scalar_field_type::integral_type integral_b =
                     typename CurveType::scalar_field_type::integral_type(b.data);
                 const std::size_t scalar_size = 255;
-                nil::marshalling::status_type status;
+                nil::crypto3::marshalling::status_type status;
                 std::array<bool, scalar_size> bits =
-                    nil::marshalling::pack<nil::marshalling::option::big_endian>(integral_b, status);
+                    nil::crypto3::marshalling::pack<nil::crypto3::marshalling::option::big_endian>(integral_b, status);
                 THROW_IF_ERROR_STATUS(status, "curve_element_variable_base_scalar_mul::generate_assignments");
 
                 typename BlueprintFieldType::value_type z_n2;
@@ -267,7 +267,7 @@ namespace nil {
                     typename CurveType::scalar_field_type::integral_type(aux.data);
                 const std::size_t base_size = 255;
                 std::array<bool, base_size> aux_bits =
-                    nil::marshalling::pack<nil::marshalling::option::big_endian>(integral_aux, status);
+                    nil::crypto3::marshalling::pack<nil::crypto3::marshalling::option::big_endian>(integral_aux, status);
                 THROW_IF_ERROR_STATUS(status, "curve_element_variable_base_scalar_mul::generate_assignments");
 
                 typename BlueprintFieldType::value_type n = 0;

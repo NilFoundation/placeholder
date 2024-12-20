@@ -24,13 +24,13 @@
 #endif
 
 #if defined(TEST_MPF_50)
-#include <nil/crypto3/multiprecision/gmp.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/gmp.hpp>
 #endif
 #if defined(TEST_MPFR_50)
-#include <nil/crypto3/multiprecision/mpfr.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/mpfr.hpp>
 #endif
 #ifdef TEST_CPP_DEC_FLOAT
-#include <nil/crypto3/multiprecision/cpp_dec_float.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/cpp_dec_float.hpp>
 #endif
 
 #include "test.hpp"

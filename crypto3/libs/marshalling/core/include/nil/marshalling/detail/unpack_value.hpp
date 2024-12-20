@@ -43,7 +43,7 @@
 #include <nil/marshalling/inference.hpp>
 #include <nil/detail/type_traits.hpp>
 
-namespace nil {
+namespace nil::crypto3 {
     namespace marshalling {
         namespace detail {
 
@@ -139,7 +139,7 @@ namespace nil {
 
                     //                using marshalling_vector = typename
                     //                std::conditional<marshalling::is_compatible<Input>::fixed_size,
-                    //                nil::marshalling::container::static_vector<marshalling_internal_type,
+                    //                nil::crypto3::marshalling::container::static_vector<marshalling_internal_type,
                     //                marshalling_type::max_length()>, std::vector<marshalling_internal_type>>::type;
                     using marshalling_vector = std::vector<marshalling_internal_type>;
                     marshalling_vector values;
@@ -171,7 +171,7 @@ namespace nil {
 
                     //                using marshalling_vector = typename
                     //                std::conditional<marshalling::is_compatible<Input>::fixed_size,
-                    //                nil::marshalling::container::static_vector<marshalling_internal_type,
+                    //                nil::crypto3::marshalling::container::static_vector<marshalling_internal_type,
                     //                marshalling_type::max_length()>, std::vector<marshalling_internal_type>>::type;
                     using marshalling_vector = std::vector<marshalling_internal_type>;
                     marshalling_vector values;

@@ -132,8 +132,7 @@ namespace nil {
                     using var = crypto3::zk::snark::plonk_variable<typename BlueprintFieldType::value_type>;
                     using non_native_policy_type =
                         nil::blueprint::detail::basic_non_native_policy_field_type<BlueprintFieldType,
-                            boost::multiprecision::number<
-                                boost::multiprecision::backends::cpp_int_modular_backend<256>>>;
+                            nil::crypto3::multiprecision::big_uint<256>>;
                     typename non_native_policy_type::non_native_var_type value;
 
                     pair_var_type(var first, var second) : value({first, second}) {}
@@ -153,8 +152,7 @@ namespace nil {
                     using var = crypto3::zk::snark::plonk_variable<typename BlueprintFieldType::value_type>;
                     using non_native_policy_type =
                         nil::blueprint::detail::basic_non_native_policy_field_type<BlueprintFieldType,
-                            boost::multiprecision::number<
-                                boost::multiprecision::backends::cpp_int_modular_backend<256>>>;
+                            nil::crypto3::multiprecision::big_uint<256>>;
                     typename non_native_policy_type::non_native_var_type a, b;
 
                     two_pair_var_type(var a_first, var a_second, var b_first, var b_second)
@@ -277,8 +275,8 @@ namespace nil {
                         const input_type &instance_input) const override { \
  \
  /*TODO(martun): on the next line we are converting 255-bit number to 8/32/64 bit numbers, probably losing some bits*/\
-                        uint_type a = static_cast<uint_type>(var_value(assignment, instance_input.a).data.backend().base_data()), \
-                                  b = static_cast<uint_type>(var_value(assignment, instance_input.b).data.backend().base_data()); \
+                        uint_type a = static_cast<uint_type>(var_value(assignment, instance_input.a).data.base()), \
+                                  b = static_cast<uint_type>(var_value(assignment, instance_input.b).data.base()); \
                         return {value_type(OP(a, b))}; \
                     } \
  \
@@ -332,7 +330,7 @@ namespace nil {
 /*On the following line we need to convert from signed to unsigned boost::cpp_int, then to our cpp_int_modular, then change the size, then to value_type.*/\
                         return {value_type(result.sign() >= 0 ? 0 : 1), \
                                 value_type(typename BlueprintFieldType::integral_type(typename modular_uint_type::backend_type( \
-                                    uint_type(boost::multiprecision::abs(result)).backend())))}; \
+                                    uint_type(boost::multiprecision::abs(result)))))}; \
                     } \
  \
                     result_type result_builder(const std::size_t start_row_index) const override { \
@@ -527,8 +525,8 @@ namespace nil {
                         int_type result = OP(a, b); \
                         int_type result_top = (top_mask & result) >> 128; \
                         int_type result_bottom = bottom_mask & result; \
-                        modular_uint_type result_top_modular = typename modular_uint_type::backend_type(uint_type(result_top).backend()); \
-                        modular_uint_type result_bottom_modular = typename modular_uint_type::backend_type(uint_type(result_bottom).backend()); \
+                        modular_uint_type result_top_modular = typename modular_uint_type::backend_type(uint_type(result_top)); \
+                        modular_uint_type result_bottom_modular = typename modular_uint_type::backend_type(uint_type(result_bottom)); \
                         return {value_type(result.sign() >= 0 ? 0 : 1), \
                                 value_type(result_top_modular), value_type(result_bottom_modular)}; \
                     } \
@@ -603,8 +601,7 @@ namespace nil {
                     detail::signed_pair_var_type<BlueprintFieldType>,
                     detail::signed_pair_var_type<BlueprintFieldType>>;
 
-                typedef boost::multiprecision::number<
-                    boost::multiprecision::backends::cpp_int_modular_backend<256>> int_type;
+                typedef nil::crypto3::multiprecision::big_uint<256> int_type;
 
                 BOILERPLATING(signed_abs_component_big)
 

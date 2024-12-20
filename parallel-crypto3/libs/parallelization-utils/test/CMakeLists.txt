@@ -13,7 +13,9 @@ if(NOT Boost_UNIT_TEST_FRAMEWORK_FOUND)
 endif()
 
 cm_test_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
-                       ${Boost_LIBRARIES})
+                       Boost::container
+                       Boost::unit_test_framework
+)
 
 macro(define_actor_core_test name)
     set(test_name "actor_core_${name}_test")
@@ -36,7 +38,7 @@ macro(define_actor_core_test name)
 
                                ${Boost_INCLUDE_DIRS})
 
-    set_target_properties(${test_name} PROPERTIES CXX_STANDARD 17)
+    set_target_properties(${test_name} PROPERTIES CXX_STANDARD 20)
 
     get_target_property(target_type Boost::unit_test_framework TYPE)
     if(target_type STREQUAL "SHARED_LIB")

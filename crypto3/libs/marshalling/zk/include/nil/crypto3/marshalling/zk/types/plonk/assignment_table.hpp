@@ -51,38 +51,38 @@ namespace nil {
                 // Table description is marshalled separately, so it can be used in
                 // other parts of system (e.g. DFRI).
                 template<typename TTypeBase>
-                using plonk_assignment_table_description = nil::marshalling::types::bundle<
+                using plonk_assignment_table_description = nil::crypto3::marshalling::types::bundle<
                     TTypeBase, std::tuple<
-                        nil::marshalling::types::integral<TTypeBase, std::size_t>, // witness_amount
-                        nil::marshalling::types::integral<TTypeBase, std::size_t>, // public_input_amount
-                        nil::marshalling::types::integral<TTypeBase, std::size_t>, // constant_amount
-                        nil::marshalling::types::integral<TTypeBase, std::size_t>, // selector_amount
+                        nil::crypto3::marshalling::types::integral<TTypeBase, std::size_t>, // witness_amount
+                        nil::crypto3::marshalling::types::integral<TTypeBase, std::size_t>, // public_input_amount
+                        nil::crypto3::marshalling::types::integral<TTypeBase, std::size_t>, // constant_amount
+                        nil::crypto3::marshalling::types::integral<TTypeBase, std::size_t>, // selector_amount
 
-                        nil::marshalling::types::integral<TTypeBase, std::size_t>, // usable_rows
-                        nil::marshalling::types::integral<TTypeBase, std::size_t> // rows_amount
+                        nil::crypto3::marshalling::types::integral<TTypeBase, std::size_t>, // usable_rows
+                        nil::crypto3::marshalling::types::integral<TTypeBase, std::size_t> // rows_amount
                     >
                 >;
 
                 template<typename Endianness, typename FieldType>
-                plonk_assignment_table_description<nil::marshalling::field_type<Endianness>> fill_assignment_table_description(
+                plonk_assignment_table_description<nil::crypto3::marshalling::field_type<Endianness>> fill_assignment_table_description(
                     const zk::snark::plonk_table_description<FieldType>& desc
                 ) {
-                    using TTypeBase = nil::marshalling::field_type<Endianness>;
-                    using result_type = plonk_assignment_table_description<nil::marshalling::field_type<Endianness>>;
+                    using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
+                    using result_type = plonk_assignment_table_description<nil::crypto3::marshalling::field_type<Endianness>>;
                     using value_type = typename FieldType::value_type;
 
                     return result_type(std::move(std::make_tuple(
-                        nil::marshalling::types::integral<TTypeBase, std::size_t>(desc.witness_columns),
-                        nil::marshalling::types::integral<TTypeBase, std::size_t>(desc.public_input_columns),
-                        nil::marshalling::types::integral<TTypeBase, std::size_t>(desc.constant_columns),
-                        nil::marshalling::types::integral<TTypeBase, std::size_t>(desc.selector_columns),
-                        nil::marshalling::types::integral<TTypeBase, std::size_t>(desc.usable_rows_amount),
-                        nil::marshalling::types::integral<TTypeBase, std::size_t>(desc.rows_amount))));
+                        nil::crypto3::marshalling::types::integral<TTypeBase, std::size_t>(desc.witness_columns),
+                        nil::crypto3::marshalling::types::integral<TTypeBase, std::size_t>(desc.public_input_columns),
+                        nil::crypto3::marshalling::types::integral<TTypeBase, std::size_t>(desc.constant_columns),
+                        nil::crypto3::marshalling::types::integral<TTypeBase, std::size_t>(desc.selector_columns),
+                        nil::crypto3::marshalling::types::integral<TTypeBase, std::size_t>(desc.usable_rows_amount),
+                        nil::crypto3::marshalling::types::integral<TTypeBase, std::size_t>(desc.rows_amount))));
                 }
 
                 template<typename Endianness, typename FieldType>
                 zk::snark::plonk_table_description<FieldType> make_assignment_table_description(
-                        const plonk_assignment_table_description<nil::marshalling::field_type<Endianness>> &filled_description) {
+                        const plonk_assignment_table_description<nil::crypto3::marshalling::field_type<Endianness>> &filled_description) {
 
                     zk::snark::plonk_table_description<FieldType> desc(
                         std::get<0>(filled_description.value()).value(),
@@ -100,64 +100,52 @@ namespace nil {
                 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
                 template<typename TTypeBase, typename PlonkTable>
-                using plonk_assignment_table = nil::marshalling::types::bundle<
+                using plonk_assignment_table = nil::crypto3::marshalling::types::bundle<
                     TTypeBase, std::tuple<
-                        nil::marshalling::types::integral<TTypeBase, std::size_t>, // witness_amount
-                        nil::marshalling::types::integral<TTypeBase, std::size_t>, // public_input_amount
-                        nil::marshalling::types::integral<TTypeBase, std::size_t>, // constant_amount
-                        nil::marshalling::types::integral<TTypeBase, std::size_t>, // selector_amount
+                        nil::crypto3::marshalling::types::integral<TTypeBase, std::size_t>, // witness_amount
+                        nil::crypto3::marshalling::types::integral<TTypeBase, std::size_t>, // public_input_amount
+                        nil::crypto3::marshalling::types::integral<TTypeBase, std::size_t>, // constant_amount
+                        nil::crypto3::marshalling::types::integral<TTypeBase, std::size_t>, // selector_amount
 
-                        nil::marshalling::types::integral<TTypeBase, std::size_t>, // usable_rows
-                        nil::marshalling::types::integral<TTypeBase, std::size_t>, // rows_amount
+                        nil::crypto3::marshalling::types::integral<TTypeBase, std::size_t>, // usable_rows
+                        nil::crypto3::marshalling::types::integral<TTypeBase, std::size_t>, // rows_amount
                         // witnesses
-                        nil::marshalling::types::array_list<
+                        nil::crypto3::marshalling::types::standard_array_list<
                             TTypeBase,
-                            field_element<TTypeBase, typename PlonkTable::field_type::value_type>,
-                            nil::marshalling::option::sequence_size_field_prefix<
-                                nil::marshalling::types::integral<TTypeBase, std::size_t>>
+                            field_element<TTypeBase, typename PlonkTable::field_type::value_type>
                         >,
                         // public_inputs
-                        nil::marshalling::types::array_list<
+                        nil::crypto3::marshalling::types::standard_array_list<
                             TTypeBase,
-                            field_element<TTypeBase, typename PlonkTable::field_type::value_type>,
-                            nil::marshalling::option::sequence_size_field_prefix<
-                                nil::marshalling::types::integral<TTypeBase, std::size_t>>
+                            field_element<TTypeBase, typename PlonkTable::field_type::value_type>
                         >,
                         // constants
-                        nil::marshalling::types::array_list<
+                        nil::crypto3::marshalling::types::standard_array_list<
                             TTypeBase,
-                            field_element<TTypeBase, typename PlonkTable::field_type::value_type>,
-                            nil::marshalling::option::sequence_size_field_prefix<
-                                nil::marshalling::types::integral<TTypeBase, std::size_t>>
+                            field_element<TTypeBase, typename PlonkTable::field_type::value_type>
                         >,
                         // selectors
-                        nil::marshalling::types::array_list<
+                        nil::crypto3::marshalling::types::standard_array_list<
                             TTypeBase,
-                            field_element<TTypeBase, typename PlonkTable::field_type::value_type>,
-                            nil::marshalling::option::sequence_size_field_prefix<
-                                nil::marshalling::types::integral<TTypeBase, std::size_t>>
+                            field_element<TTypeBase, typename PlonkTable::field_type::value_type>
                         >
                     >
                 >;
 
                 template<typename FieldValueType, typename Endianness>
-                nil::marshalling::types::array_list<
-                    nil::marshalling::field_type<Endianness>,
-                    field_element<nil::marshalling::field_type<Endianness>, FieldValueType>,
-                    nil::marshalling::option::sequence_size_field_prefix<
-                        nil::marshalling::types::integral<nil::marshalling::field_type<Endianness>, std::size_t>>>
+                nil::crypto3::marshalling::types::standard_array_list<
+                    nil::crypto3::marshalling::field_type<Endianness>,
+                    field_element<nil::crypto3::marshalling::field_type<Endianness>, FieldValueType>>
                     fill_field_element_vector_from_columns_with_padding(
                         const std::vector<std::vector<FieldValueType>> &columns,
                         const std::size_t size,
                         const FieldValueType &padding) {
 
-                    using TTypeBase = nil::marshalling::field_type<Endianness>;
+                    using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
                     using field_element_type = field_element<TTypeBase, FieldValueType>;
-                    using field_element_vector_type = nil::marshalling::types::array_list<
+                    using field_element_vector_type = nil::crypto3::marshalling::types::standard_array_list<
                         TTypeBase,
-                        field_element_type,
-                        nil::marshalling::option::sequence_size_field_prefix<
-                            nil::marshalling::types::integral<TTypeBase, std::size_t>>>;
+                        field_element_type>;
 
                     field_element_vector_type result;
                     result.value().reserve(size * columns.size());
@@ -173,19 +161,25 @@ namespace nil {
                 }
 
                 template<typename FieldValueType, typename Endianness>
-                std::vector<std::vector<FieldValueType>> make_field_element_columns_vector(
-                    const nil::marshalling::types::array_list<
-                        nil::marshalling::field_type<Endianness>,
-                        field_element<nil::marshalling::field_type<Endianness>, FieldValueType>,
-                        nil::marshalling::option::sequence_size_field_prefix<
-                            nil::marshalling::types::integral<nil::marshalling::field_type<Endianness>, std::size_t>>>
+                std::vector<std::vector<FieldValueType>>
+                make_field_element_columns_vector(
+                    const nil::crypto3::marshalling::types::standard_array_list<
+                        nil::crypto3::marshalling::field_type<Endianness>,
+                        field_element<nil::crypto3::marshalling::field_type<Endianness>, FieldValueType>>
                         &field_elem_vector,
                     const std::size_t columns_amount,
                     const std::size_t rows_amount) {
 
+                    if (field_elem_vector.value().size() != columns_amount * rows_amount) {
+                        throw std::invalid_argument(
+                                "Size of vector does not match the expected data size. Expected: " +
+                                std::to_string(columns_amount * rows_amount) + " got " +
+                                std::to_string(field_elem_vector.value().size()));
+                    }
+
                     std::vector<std::vector<FieldValueType>> result(
                         columns_amount, std::vector<FieldValueType>(rows_amount));
-                    BOOST_ASSERT(field_elem_vector.value().size() == columns_amount * rows_amount);
+
                     std::size_t cur = 0;
                     for (std::size_t i = 0; i < columns_amount; i++) {
                         for (std::size_t j = 0; j < rows_amount; j++, cur++) {
@@ -196,21 +190,21 @@ namespace nil {
                 }
 
                 template<typename Endianness, typename PlonkTable>
-                plonk_assignment_table<nil::marshalling::field_type<Endianness>, PlonkTable> fill_assignment_table(
+                plonk_assignment_table<nil::crypto3::marshalling::field_type<Endianness>, PlonkTable> fill_assignment_table(
                     std::size_t usable_rows,
                     const PlonkTable &assignments
                 ) {
-                    using TTypeBase = nil::marshalling::field_type<Endianness>;
-                    using result_type = plonk_assignment_table<nil::marshalling::field_type<Endianness>, PlonkTable>;
+                    using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
+                    using result_type = plonk_assignment_table<nil::crypto3::marshalling::field_type<Endianness>, PlonkTable>;
                     using value_type = typename PlonkTable::field_type::value_type;
 
                     return result_type(std::move(std::make_tuple(
-                        nil::marshalling::types::integral<TTypeBase, std::size_t>(assignments.witnesses_amount()),
-                        nil::marshalling::types::integral<TTypeBase, std::size_t>(assignments.public_inputs_amount()),
-                        nil::marshalling::types::integral<TTypeBase, std::size_t>(assignments.constants_amount()),
-                        nil::marshalling::types::integral<TTypeBase, std::size_t>(assignments.selectors_amount()),
-                        nil::marshalling::types::integral<TTypeBase, std::size_t>(usable_rows),
-                        nil::marshalling::types::integral<TTypeBase, std::size_t>(assignments.rows_amount()),
+                        nil::crypto3::marshalling::types::integral<TTypeBase, std::size_t>(assignments.witnesses_amount()),
+                        nil::crypto3::marshalling::types::integral<TTypeBase, std::size_t>(assignments.public_inputs_amount()),
+                        nil::crypto3::marshalling::types::integral<TTypeBase, std::size_t>(assignments.constants_amount()),
+                        nil::crypto3::marshalling::types::integral<TTypeBase, std::size_t>(assignments.selectors_amount()),
+                        nil::crypto3::marshalling::types::integral<TTypeBase, std::size_t>(usable_rows),
+                        nil::crypto3::marshalling::types::integral<TTypeBase, std::size_t>(assignments.rows_amount()),
                         fill_field_element_vector_from_columns_with_padding<value_type, Endianness>(
                             assignments.witnesses(),
                             assignments.rows_amount(),
@@ -235,7 +229,7 @@ namespace nil {
                 }
                 template<typename Endianness, typename PlonkTable>
                 std::pair<zk::snark::plonk_table_description<typename PlonkTable::field_type>, PlonkTable> make_assignment_table(
-                        const plonk_assignment_table<nil::marshalling::field_type<Endianness>, PlonkTable> &filled_assignments){
+                        const plonk_assignment_table<nil::crypto3::marshalling::field_type<Endianness>, PlonkTable> &filled_assignments){
 
                     using value_type = typename PlonkTable::field_type::value_type;
 
@@ -248,7 +242,7 @@ namespace nil {
                         std::get<5>(filled_assignments.value()).value()
                     );
 
-                    if ( desc.usable_rows_amount >= desc.rows_amount )
+                    if (desc.usable_rows_amount >= desc.rows_amount)
                         throw std::invalid_argument(
                             "Rows amount should be greater than usable rows amount. Rows amount = " +
                             std::to_string(desc.rows_amount) +
@@ -260,18 +254,21 @@ namespace nil {
                             desc.witness_columns,
                             desc.rows_amount
                         );
+
                     std::vector<std::vector<value_type>> public_inputs =
                         make_field_element_columns_vector<value_type, Endianness>(
                             std::get<7>(filled_assignments.value()),
                             desc.public_input_columns,
                             desc.rows_amount
                         );
+
                     std::vector<std::vector<value_type>> constants =
                         make_field_element_columns_vector<value_type, Endianness>(
                             std::get<8>(filled_assignments.value()),
                             desc.constant_columns,
                             desc.rows_amount
                         );
+
                     std::vector<std::vector<value_type>> selectors =
                         make_field_element_columns_vector<value_type, Endianness>(
                             std::get<9>(filled_assignments.value()),
@@ -279,14 +276,15 @@ namespace nil {
                             desc.rows_amount
                         );
 
+
                     using private_table = typename PlonkTable::private_table_type;
                     using public_table = typename PlonkTable::public_table_type;
 
                     return std::make_pair(desc, PlonkTable(
                         std::make_shared<private_table>(std::move(witnesses)),
                         std::make_shared<public_table>(
-                            std::move(public_inputs), 
-                            std::move(constants), 
+                            std::move(public_inputs),
+                            std::move(constants),
                             std::move(selectors)
                         )
                     ));

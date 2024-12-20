@@ -42,9 +42,6 @@
 #include <nil/marshalling/field_type.hpp>
 #include <nil/marshalling/endianness.hpp>
 
-#include <nil/crypto3/multiprecision/cpp_int_modular.hpp>
-#include <boost/multiprecision/number.hpp>
-
 #include <nil/crypto3/algebra/random_element.hpp>
 
 #include <nil/crypto3/algebra/curves/bls12.hpp>
@@ -113,8 +110,8 @@ template<typename FieldType,
         typename transcript_hash_type>
 struct placeholder_lpc_proof_test_runner {
 
-    using Endianness = nil::marshalling::option::big_endian;
-    using TTypeBase = nil::marshalling::field_type<Endianness>;
+    using Endianness = nil::crypto3::marshalling::option::big_endian;
+    using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
     using field_type = FieldType;
 
     typedef placeholder_circuit_params<field_type> circuit_params;
@@ -215,12 +212,12 @@ struct placeholder_lpc_proof_test_runner {
         cv.resize(filled_placeholder_proof.length(), 0x00);
         auto write_iter = cv.begin();
         auto status = filled_placeholder_proof.write(write_iter, cv.size());
-        BOOST_CHECK(status == nil::marshalling::status_type::success);
+        BOOST_CHECK(status == nil::crypto3::marshalling::status_type::success);
 
         proof_marshalling_type test_val_read;
         auto read_iter = cv.begin();
         status = test_val_read.read(read_iter, cv.size());
-        BOOST_CHECK(status == nil::marshalling::status_type::success);
+        BOOST_CHECK(status == nil::crypto3::marshalling::status_type::success);
         auto constructed_val_read = types::make_placeholder_proof<Endianness, ProofType>(test_val_read);
         BOOST_CHECK(proof == constructed_val_read);
     }
@@ -230,7 +227,7 @@ struct placeholder_lpc_proof_test_runner {
 
         using namespace nil::crypto3::marshalling;
 
-        using TTypeBase = nil::marshalling::field_type<Endianness>;
+        using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
         using proof_marshalling_type = nil::crypto3::marshalling::types::placeholder_partial_evaluation_proof<TTypeBase, ProofType>;
 
         auto filled_placeholder_proof = types::fill_placeholder_partial_evaluation_proof<Endianness, ProofType>(proof);
@@ -241,12 +238,12 @@ struct placeholder_lpc_proof_test_runner {
         cv.resize(filled_placeholder_proof.length(), 0x00);
         auto write_iter = cv.begin();
         auto status = filled_placeholder_proof.write(write_iter, cv.size());
-        BOOST_CHECK(status == nil::marshalling::status_type::success);
+        BOOST_CHECK(status == nil::crypto3::marshalling::status_type::success);
 
         proof_marshalling_type test_val_read;
         auto read_iter = cv.begin();
         status = test_val_read.read(read_iter, cv.size());
-        BOOST_CHECK(status == nil::marshalling::status_type::success);
+        BOOST_CHECK(status == nil::crypto3::marshalling::status_type::success);
         auto constructed_val_read = types::make_placeholder_partial_evaluation_proof<Endianness, ProofType>(test_val_read);
         BOOST_CHECK(proof == constructed_val_read);
     }
@@ -263,7 +260,7 @@ struct placeholder_lpc_proof_test_runner {
     {
         using namespace nil::crypto3::marshalling;
 
-        using TTypeBase = nil::marshalling::field_type<Endianness>;
+        using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
         using proof_marshalling_type = nil::crypto3::marshalling::types::placeholder_aggregated_proof_type<TTypeBase, ProofType>;
 
         auto filled_placeholder_proof = types::fill_placeholder_aggregated_proof<Endianness, AggregatedProofType,  ProofType>(
@@ -276,12 +273,12 @@ struct placeholder_lpc_proof_test_runner {
         cv.resize(filled_placeholder_proof.length(), 0x00);
         auto write_iter = cv.begin();
         auto status = filled_placeholder_proof.write(write_iter, cv.size());
-        BOOST_CHECK(status == nil::marshalling::status_type::success);
+        BOOST_CHECK(status == nil::crypto3::marshalling::status_type::success);
 
         proof_marshalling_type test_val_read;
         auto read_iter = cv.begin();
         status = test_val_read.read(read_iter, cv.size());
-        BOOST_CHECK(status == nil::marshalling::status_type::success);
+        BOOST_CHECK(status == nil::crypto3::marshalling::status_type::success);
         auto constructed_val_read = types::make_placeholder_aggregated_proof<Endianness, AggregatedProofType, ProofType>(test_val_read);
         BOOST_CHECK(proof == constructed_val_read);
     }
@@ -333,7 +330,10 @@ struct placeholder_lpc_proof_test_runner {
                 random_test_initializer.alg_random_engines.template get_alg_engine<field_type>(),
                 random_test_initializer.generic_random_engine
                 );
-        test_placeholder_aggregated_proof( {partial_proofs, lpc_proof}, fri_params);
+        AggregatedProofType aggregated_proof;
+        aggregated_proof.partial_proofs = partial_proofs;
+        aggregated_proof.aggregated_proof = lpc_proof;
+        test_placeholder_aggregated_proof(aggregated_proof, fri_params);
         return true;
     }
 
@@ -535,8 +535,8 @@ struct placeholder_kzg_v2_proof_test_runner : public test_tools::random_test_ini
     void test_placeholder_proof(const ProofType &proof, const CommitmentParamsType& params, std::string output_file = "")
     {
         using namespace nil::crypto3::marshalling;
-        using Endianness = nil::marshalling::option::big_endian;
-        using TTypeBase = nil::marshalling::field_type<Endianness>;
+        using Endianness = nil::crypto3::marshalling::option::big_endian;
+        using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
 
         using proof_marshalling_type = nil::crypto3::marshalling::types::placeholder_proof<TTypeBase, ProofType>;
 
@@ -548,12 +548,12 @@ struct placeholder_kzg_v2_proof_test_runner : public test_tools::random_test_ini
         cv.resize(filled_placeholder_proof.length(), 0x00);
         auto write_iter = cv.begin();
         auto status = filled_placeholder_proof.write(write_iter, cv.size());
-        BOOST_CHECK(status == nil::marshalling::status_type::success);
+        BOOST_CHECK(status == nil::crypto3::marshalling::status_type::success);
 
         proof_marshalling_type test_val_read;
         auto read_iter = cv.begin();
         status = test_val_read.read(read_iter, cv.size());
-        BOOST_CHECK(status == nil::marshalling::status_type::success);
+        BOOST_CHECK(status == nil::crypto3::marshalling::status_type::success);
         auto constructed_val_read = types::make_placeholder_proof<Endianness, ProofType>(test_val_read);
         BOOST_CHECK(proof == constructed_val_read);
     }
@@ -590,7 +590,7 @@ struct placeholder_kzg_v2_proof_test_runner : public test_tools::random_test_ini
                 );
 
         using common_data_type = typename placeholder_public_preprocessor<field_type, kzg_placeholder_params_type>::preprocessed_data_type::common_data_type;
-        using Endianness = nil::marshalling::option::big_endian;
+        using Endianness = nil::crypto3::marshalling::option::big_endian;
 
         test_placeholder_proof(kzg_proof, kzg_params);
         bool verifier_res = placeholder_verifier<field_type, kzg_placeholder_params_type>::process(

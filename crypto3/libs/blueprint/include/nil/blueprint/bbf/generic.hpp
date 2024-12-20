@@ -39,7 +39,6 @@
 #include <nil/crypto3/zk/snark/arithmetization/plonk/constraint_system.hpp>
 // #include <nil/crypto3/zk/snark/arithmetization/plonk/copy_constraint.hpp> // NB: part of the previous include
 
-// #include <nil/blueprint/blueprint/plonk/assignment.hpp>
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
 #include <nil/blueprint/component.hpp>
 //#include <nil/blueprint/manifest.hpp>
@@ -222,7 +221,7 @@ namespace nil {
                             BOOST_ASSERT(C == at.constant(get_col(col,t), get_row(row)));
                         break;
                         default:
-                           throw std::logic_error("Unknown column type."); 
+                           throw std::logic_error("Unknown column type.");
                     }
                     mark_allocated(col, row, t);
                 }
@@ -326,7 +325,7 @@ namespace nil {
 
                 void allocate(TYPE &C, size_t col, size_t row, column_type t) {
                     if (is_allocated(col, row, t)) {
-                        BOOST_LOG_TRIVIAL(warning) << "RE-allocation of " << t << " cell at col = " << col << ", row = " << row << ".\n";
+                    //   BOOST_LOG_TRIVIAL(warning) << "RE-allocation of " << t << " cell at col = " << col << ", row = " << row << ".\n";
                     }
                     if (t == column_type::constant) {
                         auto [has_vars, min_row, max_row] = nil::crypto3::math::expression_row_range_visitor<var>::row_range(C);
@@ -363,6 +362,13 @@ namespace nil {
                     if (A_var != B_var) {
                         copy_constraints->push_back({A_var,B_var});
                     }
+                }
+
+                TYPE relativize(const TYPE& C, int32_t shift) {
+                     auto constraint = C.rotate(shift);
+                     if (!constraint)
+                         throw std::logic_error("Can't shift the constraint in the given direction.");
+                     return *constraint;
                 }
 
                 std::vector<TYPE> relativize(const std::vector<TYPE>& C, int32_t shift) {
@@ -410,8 +416,8 @@ namespace nil {
                     add_constraint(C_rel, get_row(row));
                 }
 
-                                void relative_constrain(TYPE C_rel, std::size_t start_row,  std::size_t end_row) {
-                    if (!is_relative(C_rel)) {
+                void relative_constrain(TYPE C_rel, std::size_t start_row,  std::size_t end_row) {
+                    if (!C_rel.is_relative()) {
                         std::stringstream ss;
                         ss << "Constraint " << C_rel << " has absolute variables, cannot constrain.";
                         throw std::logic_error(ss.str());
@@ -473,7 +479,7 @@ namespace nil {
 
                                 void relative_lookup(std::vector<TYPE> &C, std::string table_name, std::size_t start_row, std::size_t end_row) {
                     for(const TYPE c_part : C) {
-                        if (!is_relative(c_part)) {
+                        if (!c_part.is_relative()) {
                             std::stringstream ss;
                             ss << "Constraint " << c_part << " has absolute variables, cannot constrain.";
                             throw std::logic_error(ss.str());
@@ -532,11 +538,11 @@ namespace nil {
                     std::unordered_map<row_selector<>, std::vector<lookup_constraint_type>> res;
                     for(const auto& [id, data] : *lookup_constraints) {
                         auto it = res.find(data.second);
-                if (it == res.end()) {
-                    res[data.second] = {{id.first, data.first}};
-                } else {
-                    it->second.push_back({id.first, data.first});
-                }
+		        if (it == res.end()) {
+		            res[data.second] = {{id.first, data.first}};
+		        } else {
+		            it->second.push_back({id.first, data.first});
+		        }
                     }
 
                     /*

@@ -21,12 +21,20 @@ if(${SANITIZE})
   add_link_options(-fsanitize=undefined,address,leak)
 endif()
 
+# Add dummy target for the more efficient reusing of precompiled headers
+file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/generated-dummy.cpp)
+add_library(crypto3_precompiled_headers STATIC ${CMAKE_CURRENT_BINARY_DIR}/generated-dummy.cpp)
+set_target_properties(crypto3_precompiled_headers PROPERTIES
+    LINKER_LANGUAGE CXX
+    CXX_STANDARD 20
+    CXX_STANDARD_REQUIRED TRUE
+)
 
 add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/crypto3")
-if ((${PARALLEL_CRYPTO3_ENABLE}) OR (${PROOF_PRODUCER_ENABLE}) OR (${ZKEVM_FRAMEWORK_ENABLE}))
+if ((${PARALLEL_CRYPTO3_ENABLE}) OR (${PROOF_PRODUCER_ENABLE}))
   add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/parallel-crypto3")
 endif()
-if ((${PROOF_PRODUCER_ENABLE}) OR (${ZKEVM_FRAMEWORK_ENABLE}))
+if (${PROOF_PRODUCER_ENABLE})
   add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/proof-producer")
 endif()
 if (${DEBUG_TOOLS_ENABLE})

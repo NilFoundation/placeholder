@@ -71,6 +71,31 @@ namespace nil {
                 }
                 return {result_hi, result_lo};
             }
+
+            zkevm_word_type exp_by_squaring(zkevm_word_type a, zkevm_word_type n) {
+                using integral_type = nil::crypto3::multiprecision::big_uint<257>;
+
+                if (n == 0x00_big_uint257) return 1;
+                if (n == 0x01_big_uint257) return a;
+
+                zkevm_word_type exp = exp_by_squaring(a, zkevm_word_type(integral_type(n) >> 1));
+                zkevm_word_type exp2 = exp * exp;
+                if ((integral_type(n) & 1) == 1) {
+                    return exp2 * a;
+                }
+                return exp2;
+            }
+
+            std::size_t log256(zkevm_word_type d){
+                using integral_type = nil::crypto3::multiprecision::big_uint<257>;
+
+                std::size_t result = 0;
+                while(d > 0){
+                    d = zkevm_word_type(integral_type(d) / integral_type(256u));
+                    result++;
+                }
+                return result;
+            }
         }
     }
 }

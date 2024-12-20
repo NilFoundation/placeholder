@@ -35,9 +35,9 @@ macro(define_containers_example example)
     add_executable(${target_name} ${example}.cpp)
     target_link_libraries(${target_name} PRIVATE
             ${CMAKE_WORKSPACE_NAME}::algebra
-            ${CMAKE_WORKSPACE_NAME}::hash
-            ${Boost_LIBRARIES})
-    set_target_properties(${target_name} PROPERTIES CXX_STANDARD 17)
+            ${CMAKE_WORKSPACE_NAME}::hash)
+
+    set_target_properties(${target_name} PROPERTIES CXX_STANDARD 20)
 endmacro()
 
 set(EXAMPLES_NAMES

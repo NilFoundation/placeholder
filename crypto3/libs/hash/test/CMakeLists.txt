@@ -12,6 +12,9 @@ cm_test_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
                        ${${CURRENT_PROJECT_NAME}_INTERFACE_LIBRARIES}
                        Boost::unit_test_framework)
 
+set_target_properties(_cm_internal_tests-crypto3-hash-test PROPERTIES CXX_STANDARD 20)
+target_precompile_headers(_cm_internal_tests-crypto3-hash-test REUSE_FROM crypto3_precompiled_headers)
+
 macro(define_hash_test name)
     set(test_name "hash_${name}_test")
 
@@ -24,7 +27,7 @@ macro(define_hash_test name)
                                ${Boost_INCLUDE_DIRS})
 
     set_target_properties(${test_name} PROPERTIES
-                          CXX_STANDARD 17
+                          CXX_STANDARD 20
                           CXX_STANDARD_REQUIRED TRUE)
 
     if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
@@ -44,32 +47,18 @@ macro(define_hash_test name)
         target_compile_options(${test_name} PRIVATE "-fconstexpr-ops-limit=4294967295")
     endif()
 
+    target_precompile_headers(${test_name} REUSE_FROM crypto3_precompiled_headers)
 endmacro()
 
 set(TESTS_NAMES
-    "blake2b"
-    "crc"
     "keccak"
     "pack"
-    "ripemd"
-    "sha"
-    "sha1"
     "sha2"
     "sha3"
     "static_digest"
-    "tiger"
     "poseidon"
     "hash_to_curve"
     )
-    # "reinforced_concrete")  # fails
-
-if(CRYPTO3_HASH_PEDERSEN)
-    list(APPEND TESTS_NAMES
-        pedersen
-        find_group_hash
-        h2c
-        h2f)
-endif()
 
 foreach(TEST_NAME ${TESTS_NAMES})
     define_hash_test(${TEST_NAME})

@@ -28,14 +28,13 @@ macro(define_marshalling_test name)
                                ${Boost_INCLUDE_DIRS})
 
     set_target_properties(marshalling_core_${name}_test PROPERTIES
-                          CXX_STANDARD 17
+                          CXX_STANDARD 20
                           CXX_STANDARD_REQUIRED TRUE)
 endmacro()
 
 set(TESTS_NAMES
     "pack"
     "processing"
-    "types"
     "interfaces")
 
 foreach(TEST_NAME ${TESTS_NAMES})

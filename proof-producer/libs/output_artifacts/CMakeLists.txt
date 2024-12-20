@@ -1,5 +1,5 @@
 add_library(proof_generatorOutputArtifacts 
-    SHARED
+    STATIC
     src/output_artifacts.cpp
 )
 
@@ -15,6 +15,7 @@ endif()
 target_link_libraries(proof_generatorOutputArtifacts
                       PUBLIC
                       crypto3::common
+                      Boost::program_options
                       Boost::log
 )
 

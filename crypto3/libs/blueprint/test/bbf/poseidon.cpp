@@ -58,7 +58,7 @@ void test_poseidon(std::vector<typename BlueprintFieldType::value_type> public_i
     raw_input.state = public_input;
 
     auto B = bbf::circuit_builder<FieldType,bbf::components::flexible_poseidon>();
-    auto [at, A] = B.assign(raw_input);
+    auto [at, A, desc] = B.assign(raw_input);
     std::cout << "Is_satisfied = " << B.is_satisfied(at) << std::endl;
 
     for (std::uint32_t i = 0; i < public_input.size(); i++) {
@@ -67,36 +67,6 @@ void test_poseidon(std::vector<typename BlueprintFieldType::value_type> public_i
         std::cout << "real[" << i << "]    : " << A.res[i] << "\n";
         assert(expected_res[i] == A.res[i]);
     }
-
-/*
-    using ArithmetizationType = crypto3::zk::snark::plonk_constraint_system<FieldType>;
-    using AssignmentType = blueprint::assignment<ArithmetizationType>;
-    using stage = nil::blueprint::bbf::GenerationStage;
-    using hash_type = nil::crypto3::hashes::keccak_1600<256>;
-    using component_type =
-        blueprint::bbf::components::flexible_poseidon<FieldType, stage::ASSIGNMENT>;
-    using var = crypto3::zk::snark::plonk_variable<typename BlueprintFieldType::value_type>;
-    constexpr std::size_t Lambda = 5;
-
-    using value_type = typename BlueprintFieldType::value_type;
-    using context_type =
-        typename nil::blueprint::bbf::generic_component<FieldType, stage::ASSIGNMENT>::context_type;
-
-    using Flexible_Poseidon =
-        typename nil::blueprint::bbf::components::flexible_poseidon<BlueprintFieldType,
-                                                                    stage::ASSIGNMENT>;
-    using TYPE =
-        typename nil::blueprint::bbf::generic_component<FieldType, stage::ASSIGNMENT>::TYPE;
-
-    constexpr std::size_t WitnessColumns = 10;
-    auto desc = component_type::get_table_description(WitnessColumns);
-    AssignmentType assignment_instance(desc);
-    context_type ct = context_type(assignment_instance, desc.usable_rows_amount, 0);
-    std::array<TYPE, 3> input = {public_input[0].data, public_input[1].data, public_input[2].data};
-
-    Flexible_Poseidon c1 = Flexible_Poseidon(ct, input);
-
-*/
 }
 
 template<typename FieldType, typename PolicyType>
@@ -129,7 +99,7 @@ void test_poseidon_specfic_data() {
     test_poseidon<FieldType>(input, calculate_expected_poseidon<FieldType, PolicyType>(input));
 
     typename FieldType::value_type threeFFF =
-        0x3FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_cppui_modular256;
+        0x3FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_big_uint256;
     input = {threeFFF, threeFFF, threeFFF};
     test_poseidon<FieldType>(input, calculate_expected_poseidon<FieldType, PolicyType>(input));
 }

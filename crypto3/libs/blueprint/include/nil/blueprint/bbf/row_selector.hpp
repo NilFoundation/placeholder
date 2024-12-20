@@ -61,6 +61,14 @@ namespace nil {
                     return used_rows_.at(row);
                 }
 
+                bool operator==(const row_selector& other) const {
+                    return used_rows_ == other.used_rows_;
+                }
+
+                bool operator[](size_t row) const {
+                    return used_rows_.at(row);
+                }
+
                 // Iterator class
                 class const_iterator {
                 public:

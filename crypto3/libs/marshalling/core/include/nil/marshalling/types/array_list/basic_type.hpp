@@ -39,7 +39,7 @@
 #include <nil/marshalling/types/array_list/type_traits.hpp>
 #include <nil/marshalling/container/type_traits.hpp>
 
-namespace nil {
+namespace nil::crypto3 {
     namespace marshalling {
         namespace types {
             namespace detail {
@@ -291,7 +291,7 @@ namespace nil {
                                 return sum + e.length();
                             });
                     }
-                    
+
                     constexpr std::size_t bit_length_internal(field_elem_tag) const {
                         return bit_field_length(field_elem_tag());
                     }

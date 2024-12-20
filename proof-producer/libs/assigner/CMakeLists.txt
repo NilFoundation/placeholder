@@ -1,4 +1,6 @@
 find_package(Protobuf REQUIRED)
+find_package(absl REQUIRED)
+
 
 file(GLOB PROTO_FILES "proto/*.proto")
 
@@ -23,10 +25,10 @@ foreach(PROTO_FILE ${PROTO_FILES})
     list(APPEND GENERATED_HEADERS ${PROTO_HDR})
 endforeach()
 
-add_library(proof_generatorAssigner SHARED
-            src/trace_parser.cpp
+add_library(proof_generatorAssigner STATIC
             ${PROTO_SRC}
 )
+set_target_properties(proof_generatorAssigner PROPERTIES CXX_STANDARD 20)
 
 target_include_directories(proof_generatorAssigner
                             PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include ${PROTOBUF_INCLUDE_DIR}
@@ -43,6 +45,8 @@ target_link_libraries(proof_generatorAssigner
                         crypto3::common
                         Boost::filesystem
                         Boost::log
+                        absl::strings
+                        absl::log_internal_check_op
                         ${PROTOBUF_LIBRARY}
 )
 

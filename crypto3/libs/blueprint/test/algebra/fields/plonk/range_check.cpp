@@ -143,7 +143,7 @@ void test_range_check_specific_inputs() {
     test_range_check<BlueprintFieldType, WitnessesAmount, R>(-1);
     test_range_check<BlueprintFieldType, WitnessesAmount, R>(value_type(2).pow(R));
     test_range_check<BlueprintFieldType, WitnessesAmount, R>(
-        0x4000000000000000000000000000000000000000000000000000000000000000_cppui_modular256
+        0x4000000000000000000000000000000000000000000000000000000000000000_big_uint256
     );
 }
 

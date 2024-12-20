@@ -86,7 +86,7 @@ namespace nil {
                  * */
                 template<typename Coordinates>
                 struct curve_element_writer<
-                    nil::marshalling::endian::big_endian,
+                    nil::crypto3::marshalling::endian::big_endian,
                     typename algebra::curves::vesta::template g1_type<Coordinates,
                                                                           algebra::curves::forms::short_weierstrass>> {
                     using group_type = typename algebra::curves::vesta::
@@ -94,34 +94,34 @@ namespace nil {
                     using group_value_type = typename group_type::value_type;
                     using coordinates = typename group_value_type::coordinates;
                     using form = typename group_value_type::form;
-                    using endianness = nil::marshalling::endian::big_endian;
+                    using endianness = nil::crypto3::marshalling::endian::big_endian;
                     using params_type = curve_element_marshalling_params<group_type>;
 
                     template<typename TIter>
                     static typename std::enable_if<
                         std::is_same<std::uint8_t, typename std::iterator_traits<TIter>::value_type>::value,
-                        nil::marshalling::status_type>::type
+                        nil::crypto3::marshalling::status_type>::type
                     process(const group_value_type &point, TIter &iter)
                     {
                         if (point.is_zero()) {
                             *iter++ = 0x00;
-                            return nil::marshalling::status_type::success;
+                            return nil::crypto3::marshalling::status_type::success;
                         }
                         typename group_type::curve_type::template g1_type<typename algebra::curves::coordinates::affine, form>::value_type
                             point_affine = point.to_affine();
 
-                        *iter++ = (point_affine.Y.data & 1) == 0u ? 0x02 : 0x03;
-                        write_data<params_type::bit_length(), endianness>(
+                        *iter++ = (point_affine.Y.data.base() & 1u) == 0u ? 0x02 : 0x03;
+                        multiprecision::processing::write_data<params_type::bit_length(), endianness>(
                                 static_cast<typename group_value_type::field_type::integral_type>(point_affine.X.data),
                                 iter);
 
-                        return nil::marshalling::status_type::success;
+                        return nil::crypto3::marshalling::status_type::success;
                     }
                 };
 
                 template<typename Coordinates>
                 struct curve_element_reader<
-                    nil::marshalling::endian::big_endian,
+                    nil::crypto3::marshalling::endian::big_endian,
                     typename algebra::curves::vesta::template g1_type<Coordinates,
                                                                           algebra::curves::forms::short_weierstrass>> {
                     using group_type = typename algebra::curves::vesta::
@@ -129,7 +129,7 @@ namespace nil {
                     using group_value_type = typename group_type::value_type;
                     using coordinates = typename group_value_type::coordinates;
                     using form = typename group_value_type::form;
-                    using endianness = nil::marshalling::endian::big_endian;
+                    using endianness = nil::crypto3::marshalling::endian::big_endian;
                     using params_type = curve_element_marshalling_params<group_type>;
                     using curve_params = typename group_type::params_type;
                     using integral_type = typename group_value_type::field_type::integral_type;
@@ -139,7 +139,7 @@ namespace nil {
                     template<typename TIter>
                     static typename std::enable_if<
                         std::is_same<std::uint8_t, typename std::iterator_traits<TIter>::value_type>::value,
-                        nil::marshalling::status_type>::type
+                        nil::crypto3::marshalling::status_type>::type
                     process(group_value_type &point, TIter &iter)
                     {
                         using chunk_type = typename TIter::value_type;
@@ -148,26 +148,26 @@ namespace nil {
 
                         if (0x00 == prefix) {
                             point = group_value_type::zero();
-                            return nil::marshalling::status_type::success;
+                            return nil::crypto3::marshalling::status_type::success;
                         }
 
                         if (prefix != 0x02 && prefix != 0x03) {
-                            return nil::marshalling::status_type::invalid_msg_data;
+                            return nil::crypto3::marshalling::status_type::invalid_msg_data;
                         }
 
                         constexpr static const std::size_t sizeof_field_element =
                             params_type::bit_length() / (group_value_type::field_type::arity);
-                        integral_type x = read_data<sizeof_field_element, integral_type, endianness>(iter);
+                        integral_type x = multiprecision::processing::read_data<sizeof_field_element, integral_type, endianness>(iter);
 
                         g1_field_value_type x_mod(x);
                         g1_field_value_type y2_mod = x_mod * x_mod * x_mod + curve_params::a * x_mod + curve_params::b;
                         if (!y2_mod.is_square()) {
-                            return nil::marshalling::status_type::invalid_msg_data;
+                            return nil::crypto3::marshalling::status_type::invalid_msg_data;
                         }
 
                         g1_field_value_type y_mod = y2_mod.sqrt();
 
-                        const chunk_type expected_prefix = (y_mod.data & 1) == 0u ? 0x02 : 0x03;
+                        const chunk_type expected_prefix = (y_mod.data.base() & 1u) == 0u ? 0x02 : 0x03;
 
                         if (expected_prefix == prefix) {
                             point = group_value_type(x_mod, y_mod);
@@ -175,7 +175,7 @@ namespace nil {
                             point = group_value_type(x_mod, -y_mod);
                         }
 
-                        return nil::marshalling::status_type::success;
+                        return nil::crypto3::marshalling::status_type::success;
                     }
                 };
 

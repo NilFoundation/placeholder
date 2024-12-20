@@ -34,7 +34,7 @@
 #include <nil/marshalling/assert_type.hpp>
 #include <nil/marshalling/container/static_vector.hpp>
 
-namespace nil {
+namespace nil::crypto3 {
     namespace marshalling {
         namespace container {
             namespace detail {
@@ -1679,10 +1679,10 @@ namespace std {
 
     /// @brief Specializes the std::swap algorithm.
     /// @see <a href="http://en.cppreference.com/w/cpp/string/basic_string/swap2">Reference</a>
-    /// @related nil::marshalling::container::static_string
+    /// @related nil::crypto3::marshalling::container::static_string
     template<std::size_t TSize1, std::size_t TSize2, typename TChar>
-    void swap(nil::marshalling::container::static_string<TSize1, TChar> &str1,
-              nil::marshalling::container::static_string<TSize2, TChar> &str2) {
+    void swap(nil::crypto3::marshalling::container::static_string<TSize1, TChar> &str1,
+              nil::crypto3::marshalling::container::static_string<TSize2, TChar> &str2) {
         str1.swap(str2);
     }
 

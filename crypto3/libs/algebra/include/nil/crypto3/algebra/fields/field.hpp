@@ -25,9 +25,8 @@
 
 #pragma once
 
-#include <boost/multiprecision/number.hpp>
-#include <nil/crypto3/multiprecision/cpp_int_modular.hpp>
-#include <nil/crypto3/multiprecision/modular/modular_adaptor.hpp>
+#include <nil/crypto3/multiprecision/big_uint.hpp>
+#include <nil/crypto3/multiprecision/literals.hpp>
 
 namespace nil {
     namespace crypto3 {
@@ -49,7 +48,6 @@ namespace nil {
 
 #ifdef __ZKLLVM__
                     typedef int integral_type;
-                    typedef int extended_integral_type;
 #else
                     typedef boost::multiprecision::backends::cpp_int_modular_backend<modulus_bits> modular_backend;
 

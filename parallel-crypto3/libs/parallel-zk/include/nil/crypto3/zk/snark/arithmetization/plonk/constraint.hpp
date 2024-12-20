@@ -94,9 +94,9 @@ namespace nil {
                         : math::expression<VariableType>(coeff) {
                     }
 
-                    // Constructor for number<cpp_int_backend<...>>.
-                    template<class BackendType>
-                    plonk_constraint(const boost::multiprecision::number<BackendType> &coeff)
+                    // Constructor for big_uint.
+                    template<std::size_t Bits>
+                    plonk_constraint(const nil::crypto3::multiprecision::big_uint<Bits> &coeff)
                         : math::expression<VariableType>(coeff) {
                     }
 
@@ -215,6 +215,22 @@ namespace nil {
                             });
 
                         return evaluator.evaluate();
+                    }
+
+                    bool is_absolute() const {
+                        return nil::crypto3::math::expression_relativity_check_visitor<VariableType>::is_absolute(*this);
+                    }
+                    bool is_relative() const {
+                        return nil::crypto3::math::expression_relativity_check_visitor<VariableType>::is_relative(*this);
+                    }
+
+                    // Returns the rotated version, or nullptr if it can't be rotated.
+                    std::optional<plonk_constraint> rotate(int32_t shift) const {
+                        auto result = nil::crypto3::math::expression_relativize_visitor<VariableType>::relativize(
+                            *this, shift);
+                        if (!result)
+                            return std::nullopt;
+                        return *result;
                     }
                 };
             }    // namespace snark

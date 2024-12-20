@@ -40,9 +40,6 @@
 #include <nil/marshalling/field_type.hpp>
 #include <nil/marshalling/endianness.hpp>
 
-#include <nil/crypto3/multiprecision/cpp_int_modular.hpp>
-#include <boost/multiprecision/number.hpp>
-
 #include <nil/crypto3/algebra/random_element.hpp>
 #include <nil/crypto3/algebra/curves/bls12.hpp>
 #include <nil/crypto3/algebra/curves/alt_bn128.hpp>
@@ -78,7 +75,7 @@ using namespace nil::crypto3;
 template<typename Endianness, typename FRI>
 void test_fri_proof(typename FRI::proof_type &proof, typename nil::crypto3::marshalling::types::batch_info_type batch_info,
         const typename FRI::params_type& params) {
-    using TTypeBase = nil::marshalling::field_type<Endianness>;
+    using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
 
     auto filled_proof = nil::crypto3::marshalling::types::fill_fri_proof<Endianness, FRI>(proof, batch_info, params);
     auto _proof = nil::crypto3::marshalling::types::make_fri_proof<Endianness, FRI>(filled_proof, batch_info);
@@ -102,12 +99,12 @@ void test_fri_proof(typename FRI::proof_type &proof, typename nil::crypto3::mars
     cv.resize(filled_proof.length(), 0x00);
     auto write_iter = cv.begin();
     auto status = filled_proof.write(write_iter, cv.size());
-    BOOST_CHECK(status == nil::marshalling::status_type::success);
+    BOOST_CHECK(status == nil::crypto3::marshalling::status_type::success);
 
     typename nil::crypto3::marshalling::types::fri_proof<TTypeBase, FRI>::type test_val_read;
     auto read_iter = cv.begin();
     status = test_val_read.read(read_iter, cv.size());
-    BOOST_CHECK(status == nil::marshalling::status_type::success);
+    BOOST_CHECK(status == nil::crypto3::marshalling::status_type::success);
     typename FRI::proof_type constructed_val_read = nil::crypto3::marshalling::types::make_fri_proof<Endianness, FRI>(
             test_val_read, batch_info);
     BOOST_CHECK(proof == constructed_val_read);
@@ -122,8 +119,8 @@ BOOST_FIXTURE_TEST_SUITE(marshalling_fri_proof_elements, test_tools::random_test
     using value_type = typename field_type::value_type;
     using hash_type = nil::crypto3::hashes::keccak_1600<256>;
 
-    using Endianness = nil::marshalling::option::big_endian;
-    using TTypeBase = nil::marshalling::field_type<Endianness>;
+    using Endianness = nil::crypto3::marshalling::option::big_endian;
+    using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
     using FRI = typename nil::crypto3::zk::commitments::detail::basic_batched_fri<field_type, hash_type, hash_type, m>;
 
     BOOST_AUTO_TEST_CASE(polynomial_test) {
@@ -155,17 +152,17 @@ BOOST_FIXTURE_TEST_SUITE(marshalling_fri_proof_elements, test_tools::random_test
         auto _f = nil::crypto3::marshalling::types::make_merkle_proof_vector<Endianness, FRI>(filled);
         BOOST_CHECK(mp == _f);
 
-        using TTypeBase = nil::marshalling::field_type<Endianness>;
+        using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
         std::vector<std::uint8_t> cv;
         cv.resize(filled.length(), 0x00);
         auto write_iter = cv.begin();
         auto status = filled.write(write_iter, cv.size());
-        BOOST_CHECK(status == nil::marshalling::status_type::success);
+        BOOST_CHECK(status == nil::crypto3::marshalling::status_type::success);
 
         nil::crypto3::marshalling::types::merkle_proof_vector_type<TTypeBase, FRI> test_val_read;
         auto read_iter = cv.begin();
         test_val_read.read(read_iter, cv.size());
-        BOOST_CHECK(status == nil::marshalling::status_type::success);
+        BOOST_CHECK(status == nil::crypto3::marshalling::status_type::success);
         auto constructed_val_read = nil::crypto3::marshalling::types::make_merkle_proof_vector<Endianness, FRI>(test_val_read);
         BOOST_CHECK(mp == constructed_val_read);
     }
@@ -220,7 +217,7 @@ BOOST_AUTO_TEST_SUITE_END()
 
 
 BOOST_FIXTURE_TEST_SUITE(marshalling_real_fri_proofs, test_tools::random_test_initializer<algebra::curves::pallas::base_field_type>)
-    using Endianness = nil::marshalling::option::big_endian;
+    using Endianness = nil::crypto3::marshalling::option::big_endian;
 
 BOOST_AUTO_TEST_CASE(marshalling_fri_basic_test) {
     // setup

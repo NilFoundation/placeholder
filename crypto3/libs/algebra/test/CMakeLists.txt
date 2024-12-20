@@ -7,9 +7,7 @@
 #---------------------------------------------------------------------------#
 
 cm_test_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
-
-    Boost::unit_test_framework
-    Boost::random)
+    Boost::unit_test_framework)
 
 add_custom_target(algebra_runtime_tests)
 
@@ -25,7 +23,7 @@ macro(define_runtime_algebra_test name)
 
             ${Boost_INCLUDE_DIRS})
 
-    set_target_properties(${test_name} PROPERTIES CXX_STANDARD 17
+    set_target_properties(${test_name} PROPERTIES CXX_STANDARD 20
             CXX_STANDARD_REQUIRED TRUE)
 
     if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
@@ -46,7 +44,7 @@ macro(define_compile_time_algebra_test name)
 
             ${Boost_INCLUDE_DIRS})
 
-    set_target_properties(algebra_${name}_compile_test PROPERTIES CXX_STANDARD 17)
+    set_target_properties(algebra_${name}_compile_test PROPERTIES CXX_STANDARD 20)
 endmacro()
 
 set(RUNTIME_TESTS_NAMES

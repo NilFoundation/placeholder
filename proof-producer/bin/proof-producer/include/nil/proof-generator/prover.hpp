@@ -67,6 +67,7 @@
 #include <nil/proof-generator/output_artifacts/output_artifacts.hpp>
 #include <nil/proof-generator/file_operations.hpp>
 
+#include <nil/blueprint/blueprint/plonk/circuit.hpp>
 
 namespace nil {
     namespace proof_generator {
@@ -84,7 +85,7 @@ namespace nil {
                 MarshallingType marshalled_data;
                 auto read_iter = v->begin();
                 auto status = marshalled_data.read(read_iter, v->size());
-                if (status != nil::marshalling::status_type::success) {
+                if (status != nil::crypto3::marshalling::status_type::success) {
                     BOOST_LOG_TRIVIAL(error) << "When reading a Marshalled structure from file "
                         << path << ", decoding step failed.";
                     return std::nullopt;
@@ -101,8 +102,8 @@ namespace nil {
                 std::vector<std::uint8_t> v;
                 v.resize(data_for_marshalling.length(), 0x00);
                 auto write_iter = v.begin();
-                nil::marshalling::status_type status = data_for_marshalling.write(write_iter, v.size());
-                if (status != nil::marshalling::status_type::success) {
+                nil::crypto3::marshalling::status_type status = data_for_marshalling.write(write_iter, v.size());
+                if (status != nil::crypto3::marshalling::status_type::success) {
                     BOOST_LOG_TRIVIAL(error) << "Marshalled structure encoding failed";
                     return false;
                 }
@@ -168,14 +169,14 @@ namespace nil {
             using CommonData = typename PublicPreprocessedData::common_data_type;
             using PrivatePreprocessedData = typename nil::crypto3::zk::snark::
                 placeholder_private_preprocessor<BlueprintField, PlaceholderParams>::preprocessed_data_type;
-            using ConstraintSystem = nil::crypto3::zk::snark::plonk_constraint_system<BlueprintField>;
+            using ConstraintSystem = nil::blueprint::circuit<nil::crypto3::zk::snark::plonk_constraint_system<BlueprintField>>;
             using TableDescription = nil::crypto3::zk::snark::plonk_table_description<BlueprintField>;
-            using Endianness = nil::marshalling::option::big_endian;
+            using Endianness = nil::crypto3::marshalling::option::big_endian;
             using FriType = typename Lpc::fri_type;
             using FriParams = typename FriType::params_type;
             using Column = nil::crypto3::zk::snark::plonk_column<BlueprintField>;
             using AssignmentTable = nil::crypto3::zk::snark::plonk_assignment_table<BlueprintField>;
-            using TTypeBase = nil::marshalling::field_type<Endianness>;
+            using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
 
             using TableMarshalling = nil::crypto3::marshalling::types::plonk_assignment_table<TTypeBase, AssignmentTable>;
 
@@ -273,7 +274,7 @@ namespace nil {
                     BOOST_LOG_TRIVIAL(error) << "Proof verification failed";
                     return false;
                 }
-                
+
                 BOOST_LOG_TRIVIAL(info) << "Writing proof to " << proof_file_;
                 auto filled_placeholder_proof =
                     nil::crypto3::marshalling::types::fill_placeholder_proof<Endianness, Proof>(proof, lpc_scheme_->get_fri_params());
@@ -399,7 +400,7 @@ namespace nil {
                 create_lpc_scheme();
 
                 using ProofMarshalling = nil::crypto3::marshalling::types::
-                    placeholder_proof<nil::marshalling::field_type<Endianness>, Proof>;
+                    placeholder_proof<nil::crypto3::marshalling::field_type<Endianness>, Proof>;
 
                 BOOST_LOG_TRIVIAL(info) << "Reading proof from file";
                 auto marshalled_proof = detail::decode_marshalling_from_file<ProofMarshalling>(proof_file_, true);
@@ -552,15 +553,16 @@ namespace nil {
             bool read_circuit(const boost::filesystem::path& circuit_file_) {
                 BOOST_LOG_TRIVIAL(info) << "Read circuit from " << circuit_file_;
 
+                using ZkConstraintSystem = nil::crypto3::zk::snark::plonk_constraint_system<BlueprintField>;
                 using ConstraintMarshalling =
-                    nil::crypto3::marshalling::types::plonk_constraint_system<TTypeBase, ConstraintSystem>;
+                    nil::crypto3::marshalling::types::plonk_constraint_system<TTypeBase, ZkConstraintSystem>;
 
                 auto marshalled_value = detail::decode_marshalling_from_file<ConstraintMarshalling>(circuit_file_);
                 if (!marshalled_value) {
                     return false;
                 }
                 constraint_system_.emplace(
-                    nil::crypto3::marshalling::types::make_plonk_constraint_system<Endianness, ConstraintSystem>(
+                    nil::crypto3::marshalling::types::make_plonk_constraint_system<Endianness, ZkConstraintSystem>(
                         *marshalled_value
                     )
                 );
@@ -583,7 +585,7 @@ namespace nil {
                     return false;
                 }
 
-                writer::write_binary_circuit(out, *constraint_system_, constraint_system_->public_input_sizes());            
+                writer::write_binary_circuit(out, *constraint_system_, constraint_system_->public_input_sizes());
                 return true;
             }
 
@@ -602,7 +604,7 @@ namespace nil {
                 if (!marshalled_table) {
                     return false;
                 }
-            
+
                 auto [table_description, assignment_table] =
                     nil::crypto3::marshalling::types::make_assignment_table<Endianness, AssignmentTable>(
                         *marshalled_table
@@ -632,7 +634,7 @@ namespace nil {
                 using writer = assignment_table_writer<Endianness, BlueprintField>;
 
                 BOOST_LOG_TRIVIAL(info) << "Writing binary assignment table to " << output_filename;
-                
+
                 if (!assignment_table_.has_value() || !table_description_.has_value()) {
                     BOOST_LOG_TRIVIAL(error) << "No assignment table is currently loaded";
                     return false;
@@ -675,8 +677,8 @@ namespace nil {
 
                 const auto write = [&](std::ostream& out) -> bool {
                     return assignment_table_writer<Endianness, BlueprintField>::write_text_assignment(
-                        out, 
-                        assignment_table_.value(), 
+                        out,
+                        assignment_table_.value(),
                         table_description_.value(),
                         opts
                     );
@@ -909,7 +911,7 @@ namespace nil {
 
                 /* Marshalling types */
                 using partial_proof_marshalled_type = nil::crypto3::marshalling::types::
-                    placeholder_proof<nil::marshalling::field_type<Endianness>, Proof>;
+                    placeholder_proof<nil::crypto3::marshalling::field_type<Endianness>, Proof>;
 
                 using initial_proof_marshalling_type = nil::crypto3::marshalling::types::
                     inital_eval_proof<TTypeBase, LpcScheme>;
@@ -993,7 +995,7 @@ namespace nil {
             bool save_proof_of_work(
                 const typename FriType::grinding_type::output_type &proof_of_work,
                 const boost::filesystem::path &output_file) {
-                using POW_marshalling_type = nil::marshalling::types::integral<TTypeBase, typename FriType::grinding_type::output_type>;
+                using POW_marshalling_type = nil::crypto3::marshalling::types::integral<TTypeBase, typename FriType::grinding_type::output_type>;
                 BOOST_LOG_TRIVIAL(info) << "Writing proof of work to " << output_file;
 
                 POW_marshalling_type marshalled_pow(proof_of_work);
@@ -1129,7 +1131,17 @@ namespace nil {
                 return true;
             }
 
-            bool fill_assignment_table(const boost::filesystem::path& trace_file_path) {
+            const ConstraintSystem& get_constraint_system() const {
+                BOOST_ASSERT(constraint_system_);
+                return constraint_system_.value();
+            }
+
+            const AssignmentTable& get_assignment_table() const {
+                BOOST_ASSERT(assignment_table_);
+                return assignment_table_.value();
+            }
+
+            bool fill_assignment_table(const boost::filesystem::path& trace_base_path) {
                 if (!constraint_system_.has_value()) {
                     BOOST_LOG_TRIVIAL(error) << "Circuit is not initialized";
                     return false;
@@ -1138,9 +1150,9 @@ namespace nil {
                     BOOST_LOG_TRIVIAL(error) << "Assignment table is not initialized";
                     return false;
                 }
-                const auto err = fill_assignment_table_single_thread(*assignment_table_, *table_description_, circuit_name_, trace_file_path);
+                const auto err = fill_assignment_table_single_thread(*assignment_table_, *table_description_, circuit_name_, trace_base_path);
                 if (err) {
-                    BOOST_LOG_TRIVIAL(error) << "Can't fill assignment table rom trace " << trace_file_path << ": " << err.value();
+                    BOOST_LOG_TRIVIAL(error) << "Can't fill assignment table from trace " << trace_base_path << ": " << err.value();
                     return false;
                 }
                 return true;

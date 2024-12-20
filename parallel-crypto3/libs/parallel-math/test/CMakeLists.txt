@@ -34,7 +34,7 @@ macro(define_math_test name)
 
                                ${Boost_INCLUDE_DIRS})
 
-    set_target_properties(${test_name} PROPERTIES CXX_STANDARD 17)
+    set_target_properties(${test_name} PROPERTIES CXX_STANDARD 20)
 
 endmacro()
 
@@ -52,7 +52,3 @@ set(TESTS_NAMES
 foreach(TEST_NAME ${TESTS_NAMES})
     define_math_test(${TEST_NAME})
 endforeach()
-
-if(ENABLE_BENCHMARKS)
-    add_subdirectory(benchmarks)
-endif()
