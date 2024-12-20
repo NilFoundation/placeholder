@@ -62,11 +62,10 @@ namespace nil {
                     if constexpr( stage == GenerationStage::ASSIGNMENT ){
                         auto a = w_to_16(current_state.stack_top());
                         auto b = w_to_16(current_state.stack_top(1));
-                        auto s =
-                            is_add
-                                ? w_to_16(add_wrapping(current_state.stack_top(),
-                                                       current_state.stack_top(1)))
-                                : w_to_16(subtract_wrapping(current_state.stack_top(),
+                        auto s = is_add
+                                     ? w_to_16(wrapping_add(current_state.stack_top(),
+                                                            current_state.stack_top(1)))
+                                     : w_to_16(wrapping_sub(current_state.stack_top(),
                                                             current_state.stack_top(1)));
 
                         for( std::size_t i = 0; i < 16; i++){

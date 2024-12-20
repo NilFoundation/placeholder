@@ -342,7 +342,7 @@ namespace nil {
                 // TODO(ioxid): optimize: use bit operations
                 word_type q = b != 0u ? a % b : a;
 
-                word_type v = subtract_wrapping(q, b);
+                word_type v = wrapping_sub(q, b);
 
                 const std::vector<value_type> a_chunks = zkevm_word_to_field_element<BlueprintFieldType>(a);
                 const std::vector<value_type> b_chunks = zkevm_word_to_field_element<BlueprintFieldType>(b);

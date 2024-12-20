@@ -274,7 +274,7 @@ namespace nil {
                             zkevm_word_type sign = (x << (8 * (32 - len))) >> 255;
                             zkevm_word_type result =
                                 zkevm_word_type(
-                                    (subtract_wrapping(zkevm_word_type(1) << 8 * (32 - len), 1)
+                                    (wrapping_sub(zkevm_word_type(1) << 8 * (32 - len), 1)
                                      << 8 * len) *
                                     sign) +
                                 ((x << (8 * (32 - len))) >> (8 * (32 - len)));

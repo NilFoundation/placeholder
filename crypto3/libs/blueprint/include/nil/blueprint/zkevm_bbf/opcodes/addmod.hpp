@@ -175,7 +175,7 @@ namespace nil {
                         zkevm_word_type q = zkevm_word_type(s_full - r_full * N);
                         zkevm_word_type q_out =
                             N != 0u ? q : 0u;  // according to EVM spec s % 0 = 0
-                        zkevm_word_type v = subtract_wrapping(q, N);
+                        zkevm_word_type v = wrapping_sub(q, N);
 
                         a_chunks = zkevm_word_to_field_element<FieldType>(a);
                         b_chunks = zkevm_word_to_field_element<FieldType>(b);

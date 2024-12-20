@@ -152,7 +152,7 @@ namespace nil::crypto3::multiprecision {
                 }
                 result = al - bl;
                 if (s) {
-                    result.negate_wrapping();
+                    result.wrapping_neg_inplace();
                 }
                 return;
             }
@@ -197,7 +197,7 @@ namespace nil::crypto3::multiprecision {
             BOOST_ASSERT(0 == borrow);
 
             if (swapped) {
-                result.negate_wrapping();
+                result.wrapping_neg_inplace();
             }
         }
 
@@ -320,7 +320,7 @@ namespace nil::crypto3::multiprecision {
                 }
                 result = al - bl;
                 if (s) {
-                    result.negate_wrapping();
+                    result.wrapping_neg_inplace();
                 }
                 return;
             }
@@ -366,7 +366,7 @@ namespace nil::crypto3::multiprecision {
             BOOST_ASSERT(0 == borrow);
 
             if (swapped) {
-                result.negate_wrapping();
+                result.wrapping_neg_inplace();
             }
         }
 
@@ -451,7 +451,7 @@ namespace nil::crypto3::multiprecision {
             } else if (as <= 1) {
                 subtract_overflow<Mode>();
                 *pr = b - *pa;
-                result.negate_wrapping();
+                result.wrapping_neg_inplace();
             } else {
                 *pr = static_cast<limb_type>((borrow + *pa) - b);
                 std::size_t i = 1;

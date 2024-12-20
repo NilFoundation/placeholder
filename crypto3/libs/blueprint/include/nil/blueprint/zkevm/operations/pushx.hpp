@@ -112,8 +112,8 @@ namespace nil {
                 using word_type = typename zkevm_stack::word_type;
 
                 zkevm_word_type a =
-                    bytecode_input & subtract_wrapping(word_type(1) << (8 * byte_count),
-                                                       1);  // use only byte_count lowest bytes
+                    bytecode_input & wrapping_sub(word_type(1) << (8 * byte_count),
+                                                  1);  // use only byte_count lowest bytes
 
                 const std::array<std::uint8_t, 32> bytes = w_to_8(a);
                 const std::vector<std::size_t> &witness_cols = zkevm_table.get_opcode_cols();

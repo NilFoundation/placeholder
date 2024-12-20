@@ -36,7 +36,8 @@
 namespace nil {
     namespace blueprint {
         using zkevm_word_type = nil::crypto3::multiprecision::big_uint<256>;
-        inline static constexpr zkevm_word_type neg_one = zkevm_word_type(1).negated_wrapping();
+        inline static constexpr zkevm_word_type neg_one =
+            zkevm_word_type(1).wrapping_neg();
         inline static constexpr zkevm_word_type min_neg = zkevm_word_type(1) << 255;
         inline static constexpr auto extended_zkevm_mod =
             nil::crypto3::multiprecision::big_uint<512>(1) << 256;
@@ -149,7 +150,7 @@ namespace nil {
 
         bool is_negative(zkevm_word_type x) { return x.bit_test(255); }
 
-        zkevm_word_type negate_word(const zkevm_word_type &x) { return x.negated_wrapping(); }
+        zkevm_word_type negate_word(const zkevm_word_type &x) { return x.wrapping_neg(); }
 
         zkevm_word_type abs_word(zkevm_word_type x) { return is_negative(x) ? negate_word(x) : x; }
 

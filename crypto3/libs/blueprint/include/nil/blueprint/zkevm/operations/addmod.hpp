@@ -343,7 +343,7 @@ namespace nil {
                 word_type q = word_type(s_full - r_full * N);
                 word_type q_out = N != 0u ? q : 0u;  // according to EVM spec s % 0 = 0
 
-                word_type v = subtract_wrapping(q, N);
+                word_type v = wrapping_sub(q, N);
 
                 word_type result = q_out;
 

@@ -465,7 +465,7 @@ namespace nil::crypto3::multiprecision {
 
         // Arithmetic operations
 
-        constexpr void negate_wrapping() noexcept {
+        constexpr void wrapping_neg_inplace() noexcept {
             if (is_zero()) {
                 return;
             }
@@ -473,9 +473,9 @@ namespace nil::crypto3::multiprecision {
             ++*this;
         }
 
-        constexpr auto negated_wrapping() const noexcept {
+        constexpr auto wrapping_neg() const noexcept {
             auto result = *this;
-            result.negate_wrapping();
+            result.wrapping_neg_inplace();
             return result;
         }
 
@@ -534,25 +534,25 @@ namespace nil::crypto3::multiprecision {
         }
 
         template<typename T, std::enable_if_t<detail::is_integral_v<T>, int> = 0>
-        friend constexpr auto add_wrapping(const big_uint& a, const T& b) noexcept {
+        friend constexpr auto wrapping_add(const big_uint& a, const T& b) noexcept {
             detail::largest_big_uint_t<big_uint, T> result;
             detail::add<detail::operation_mode::wrapping>(result, a, b);
             return result;
         }
 
         template<typename T, std::enable_if_t<std::is_integral_v<T>, int> = 0>
-        friend constexpr auto add_wrapping(const T& a, const big_uint& b) noexcept {
-            return add_wrapping(b, a);
+        friend constexpr auto wrapping_add(const T& a, const big_uint& b) noexcept {
+            return wrapping_add(b, a);
         }
 
         template<typename T, std::enable_if_t<detail::is_integral_v<T>, int> = 0>
-        friend constexpr auto& add_assign_wrapping(big_uint& a, const T& b) noexcept {
+        friend constexpr auto& wrapping_add_assign(big_uint& a, const T& b) noexcept {
             detail::add<detail::operation_mode::wrapping>(a, a, b);
             return a;
         }
 
         template<std::size_t Bits2>
-        [[nodiscard]] friend constexpr bool add_assign_with_carry(
+        [[nodiscard]] friend constexpr bool overflowing_add_assign(
             big_uint& a, const big_uint<Bits2>& b) noexcept {
             return detail::add_unsigned(a, a, b);
         }
@@ -570,7 +570,7 @@ namespace nil::crypto3::multiprecision {
             if (a_unsigned < b) {
                 throw std::overflow_error("big_uint: subtraction overflow");
             }
-            return add_wrapping(b.negated_wrapping(), a);
+            return wrapping_add(b.wrapping_neg(), a);
         }
 
         template<typename T, std::enable_if_t<detail::is_integral_v<T>, int> = 0>
@@ -580,19 +580,19 @@ namespace nil::crypto3::multiprecision {
         }
 
         template<typename T, std::enable_if_t<detail::is_integral_v<T>, int> = 0>
-        friend constexpr auto subtract_wrapping(const big_uint& a, const T& b) noexcept {
+        friend constexpr auto wrapping_sub(const big_uint& a, const T& b) noexcept {
             detail::largest_big_uint_t<big_uint, T> result;
             detail::subtract<detail::operation_mode::wrapping>(result, a, b);
             return result;
         }
 
         template<typename T, std::enable_if_t<std::is_integral_v<T>, int> = 0>
-        friend constexpr auto subtract_wrapping(const T& a, const big_uint& b) noexcept {
-            return add_wrapping(b.negated_wrapping(), a);
+        friend constexpr auto wrapping_sub(const T& a, const big_uint& b) noexcept {
+            return wrapping_add(b.wrapping_neg(), a);
         }
 
         template<typename T, std::enable_if_t<detail::is_integral_v<T>, int> = 0>
-        friend constexpr auto& subtract_assign_wrapping(big_uint& a, const T& b) noexcept {
+        friend constexpr auto& wrapping_sub_assign(big_uint& a, const T& b) noexcept {
             detail::subtract<detail::operation_mode::wrapping>(a, a, b);
             return a;
         }
@@ -620,32 +620,32 @@ namespace nil::crypto3::multiprecision {
         }
 
         template<typename T, std::enable_if_t<detail::is_integral_v<T>, int> = 0>
-        friend constexpr auto multiply_wrapping(const big_uint& a, const T& b) {
+        friend constexpr auto wrapping_mul(const big_uint& a, const T& b) {
             decltype(auto) b_unsigned = detail::unsigned_abs(b);
             detail::largest_big_uint_t<big_uint, T> result;
             detail::multiply<detail::operation_mode::wrapping>(result, a,
                                                                detail::as_big_uint(b_unsigned));
             if constexpr (std::is_signed_v<T>) {
                 if (b < 0) {
-                    result.negate_wrapping();
+                    result.wrapping_neg_inplace();
                 }
             }
             return result;
         }
 
         template<typename T, std::enable_if_t<std::is_integral_v<T>, int> = 0>
-        friend constexpr auto multiply_wrapping(const T& a, const big_uint& b) {
-            return multiply_wrapping(b, a);
+        friend constexpr auto wrapping_mul(const T& a, const big_uint& b) {
+            return wrapping_mul(b, a);
         }
 
         template<typename T, std::enable_if_t<detail::is_integral_v<T>, int> = 0>
-        friend constexpr auto& multiply_assign_wrapping(big_uint& a, const T& b) {
+        friend constexpr auto& wrapping_mul_assign(big_uint& a, const T& b) {
             decltype(auto) b_unsigned = detail::unsigned_abs(b);
             detail::multiply<detail::operation_mode::wrapping>(a, a,
                                                                detail::as_big_uint(b_unsigned));
             if constexpr (std::is_signed_v<T>) {
                 if (b < 0) {
-                    a.negate_wrapping();
+                    a.wrapping_neg_inplace();
                 }
             }
             return a;

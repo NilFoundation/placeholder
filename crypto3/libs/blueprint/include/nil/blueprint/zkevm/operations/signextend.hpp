@@ -163,7 +163,7 @@ namespace nil {
                 int len = (b < 32) ? int(b) + 1 : 32;
                 word_type sign = (x << (8 * (32 - len))) >> 255;
                 word_type result =
-                    (subtract_wrapping(word_type(1) << 8 * (32 - len), 1) << 8 * len) * sign +
+                    (wrapping_sub(word_type(1) << 8 * (32 - len), 1) << 8 * len) * sign +
                     ((x << (8 * (32 - len))) >> (8 * (32 - len)));
 
                 unsigned int b0 = static_cast<unsigned int>(b % 65536), b0p = (b > 65535) ? 32 : b0;
