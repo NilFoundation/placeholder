@@ -23,10 +23,12 @@ namespace nil::crypto3::multiprecision {
              std::enable_if_t<detail::is_integral_v<std::decay_t<T1>> &&
                                   detail::is_integral_v<std::decay_t<T2>>,
                               int> = 0>
-    constexpr std::decay_t<T1> pow(T1 b, T2 e) {
-        if (is_zero(e)) {
+    constexpr std::decay_t<T1> pow(T1 b, T2 e_original) {
+        if (is_zero(e_original)) {
             return 1u;
         }
+
+        auto e = detail::unsigned_or_throw(e_original);
 
         T1 res = 1u;
 

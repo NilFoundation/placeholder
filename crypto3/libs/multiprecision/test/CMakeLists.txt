@@ -47,6 +47,7 @@ set(MULTIPRECISION_TESTS_NAMES
     "big_uint_arithmetic"
     "big_uint_basic"
     "big_uint_comparison"
+    "integer"
     "inverse"
     "jacobi"
     "miller_rabin"
