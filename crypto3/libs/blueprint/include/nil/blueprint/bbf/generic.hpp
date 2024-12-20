@@ -37,7 +37,6 @@
 #include <nil/crypto3/zk/math/expression.hpp>
 #include <nil/crypto3/zk/math/expression_visitors.hpp>
 #include <nil/crypto3/zk/snark/arithmetization/plonk/constraint_system.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/assignment.hpp>
 // #include <nil/crypto3/zk/snark/arithmetization/plonk/copy_constraint.hpp> // NB: part of the previous include
 
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
@@ -54,7 +53,6 @@ namespace nil {
 
             template<typename FieldType>
             class basic_context {
-                using assignment_type = nil::crypto3::zk::snark::plonk_assignment_table<FieldType>;
                 using assignment_description_type = nil::crypto3::zk::snark::plonk_table_description<FieldType>;
 
                 public:
@@ -177,7 +175,8 @@ namespace nil {
             class context<FieldType, GenerationStage::ASSIGNMENT> : public basic_context<FieldType> { // assignment-specific definition
             public:
                 using TYPE = typename FieldType::value_type;
-                using assignment_type = nil::crypto3::zk::snark::plonk_assignment_table<FieldType>;
+
+                using assignment_type = crypto3::zk::snark::plonk_assignment_table<FieldType>;
                 using assignment_description_type = nil::crypto3::zk::snark::plonk_table_description<FieldType>;
                 using plonk_copy_constraint = crypto3::zk::snark::plonk_copy_constraint<FieldType>;
                 using lookup_input_constraints_type = std::vector<TYPE>;
@@ -294,11 +293,10 @@ namespace nil {
                 using basic_context<FieldType>::col_map;
                 using basic_context<FieldType>::add_rows_to_description;
 
-                using assignment_type = nil::crypto3::zk::snark::plonk_assignment_table<FieldType>;
+                using assignment_type = crypto3::zk::snark::plonk_assignment_table<FieldType>;
                 using assignment_description_type = nil::crypto3::zk::snark::plonk_table_description<FieldType>;
 
                 using basic_context<FieldType>::row_shift;
-
                 using TYPE = constraint_type;
                 using basic_context<FieldType>::get_col;
                 using basic_context<FieldType>::get_row;
@@ -479,7 +477,7 @@ namespace nil {
                     add_lookup_constraint(table_name, C, row);
                 }
 
-                void relative_lookup(std::vector<TYPE> &C, std::string table_name, std::size_t start_row, std::size_t end_row) {
+                                void relative_lookup(std::vector<TYPE> &C, std::string table_name, std::size_t start_row, std::size_t end_row) {
                     for(const TYPE c_part : C) {
                         if (!c_part.is_relative()) {
                             std::stringstream ss;
@@ -629,7 +627,7 @@ namespace nil {
                     lookup_constraints->at(key).second.set_row(stored_row);
                 }
 
-                void add_lookup_constraint(std::string table_name, std::vector<TYPE> &C_rel, std::size_t start_row, std::size_t end_row) {
+                                void add_lookup_constraint(std::string table_name, std::vector<TYPE> &C_rel, std::size_t start_row, std::size_t end_row) {
                     std::size_t stored_start_row = start_row - (is_fresh ? row_shift : 0);
                     std::size_t stored_end_row = end_row - (is_fresh ? row_shift : 0);
                     constraint_id_type C_id = constraint_id_type(C_rel);

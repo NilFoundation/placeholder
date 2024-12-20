@@ -92,10 +92,14 @@ set(COMMON_TEST_FILES
     "component_batch"
     "bbf/tester"
     "bbf/opcode_poc"
-    "bbf/row_seletor_test"
     "bbf/gate_optimizer"
     "bbf/poseidon"
     "bbf/test_circuit_builder"
+    "bbf/row_seletor_test"
+    "bbf/detail/range_check_multi"
+    "bbf/detail/carry_on_addition"
+    "bbf/algebra/fields/non_native/check_mod_p"
+    "bbf/algebra/fields/non_native/flexible_multiplication"
     )
 
 set(NON_NATIVE_TESTS_FILES

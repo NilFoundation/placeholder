@@ -40,6 +40,7 @@
 
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
+#include <nil/blueprint/bbf/bbf_wrapper.hpp>
 #include <nil/blueprint/bbf/circuit_builder.hpp>
 
 #include <nil/blueprint/bbf/tester.hpp>

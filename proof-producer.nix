@@ -6,7 +6,6 @@
   boost,
   gdb,
   lldb,
-  mold,
   protobuf,
   cmake_modules,
   enableDebugging,

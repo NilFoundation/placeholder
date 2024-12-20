@@ -206,11 +206,20 @@ namespace nil {
                 EXP_TABLE   exp_table     = EXP_TABLE(ct1, instance_input, component.max_exponentiations + 1);
                 EXP_CIRCUIT exp_component = EXP_CIRCUIT(ct2, instance_input, component.max_rows, component.max_exponentiations);
 
-                ct.optimize_gates();
+                // compatibility layer: constants
+                auto c_list = ct.get_constants();
+                // std::cout << "const list size = " << c_list.size() << "\n";
+                for(std::size_t i = 0; i < c_list.size(); i++) { // columns
+                    // std::cout << "column size = " << c_list[i].size() << "\n";
+                    for(std::size_t j = 0; j < c_list[i].size(); j++) { // rows
+                        // std::cout << i << ", " << j << ": " << c_list[i][j] << "\n";
+                        assignment.constant(component.C(i), j) = c_list[i][j];
+                    }
+                }
 
-                // compatibility layer: constraint list => gates & selectors
-                std::unordered_map<row_selector<>, std::vector<TYPE>> constraint_list = 
-                    ct.get_constraints();
+                //////////////////////////  Don't use 'ct' below this line, we just moved it!!! /////////////////////////////
+                nil::blueprint::bbf::gates_optimizer<BlueprintFieldType> optimizer(std::move(ct));
+                nil::blueprint::bbf::optimized_gates<BlueprintFieldType> gates = optimizer.optimize_gates();
 
                 for(const auto& [row_list, constraints] : constraint_list) {
                     /*
@@ -229,8 +238,7 @@ namespace nil {
                 }
 
                 // compatibility layer: copy constraint list
-                std::vector<plonk_copy_constraint> copy_constraints = ct.get_copy_constraints();
-                for(const auto& cc : copy_constraints) {
+                for(const auto& cc : gates.copy_constraints) {
                     bp.add_copy_constraint(cc);
                 }
 
@@ -242,12 +250,12 @@ namespace nil {
                 std::unordered_map<row_selector<>, std::vector<std::pair<std::string, std::vector<constraint_type>>>>
                     lookup_constraints = ct.get_lookup_constraints();
                 std::set<std::string> lookup_tables;
-                for(const auto& [row_list, lookup_list] : lookup_constraints) {
+                for(const auto& [selector_id, lookup_list] : gates.lookup_constraints) {
                     std::vector<lookup_constraint_type> lookup_gate;
                     for(const auto& single_lookup_constraint : lookup_list) {
                         std::string table_name = single_lookup_constraint.first;
                         if (lookup_tables.find(table_name) == lookup_tables.end()) {
-                            if (dynamic_lookup_tables.find(table_name) != dynamic_lookup_tables.end()) {
+                            if (gates.dynamic_lookup_tables.find(table_name) != gates.dynamic_lookup_tables.end()) {
                                 bp.reserve_dynamic_table(table_name);
                             } else {
                                 bp.reserve_table(table_name);
@@ -264,7 +272,7 @@ namespace nil {
                 }
 
                 // compatibility layer: dynamic lookup tables - continued
-                for(const auto& [name, area] : dynamic_lookup_tables) {
+                for(const auto& [name, area] : gates.dynamic_lookup_tables) {
                     bp.register_dynamic_table(name);
                     std::size_t selector_index = bp.get_dynamic_lookup_table_selector();
                     for(std::size_t row_index : area.second) {
@@ -279,17 +287,6 @@ namespace nil {
                     }
                     table_specs.lookup_options = {dynamic_lookup_cols};
                     bp.define_dynamic_table(name,table_specs);
-                }
-
-                // compatibility layer: constants
-                auto c_list = ct.get_constants();
-                // std::cout << "const list size = " << c_list.size() << "\n";
-                for(std::size_t i = 0; i < c_list.size(); i++) { // columns
-                    // std::cout << "column size = " << c_list[i].size() << "\n";
-                    for(std::size_t j = 0; j < c_list[i].size(); j++) { // rows
-                        // std::cout << i << ", " << j << ": " << c_list[i][j] << "\n";
-                        assignment.constant(component.C(i), j) = c_list[i][j];
-                    }
                 }
 
                 // std::cout << "Gates amount = " << bp.num_gates() << "\n";

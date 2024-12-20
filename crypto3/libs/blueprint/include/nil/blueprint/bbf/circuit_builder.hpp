@@ -138,9 +138,9 @@ namespace nil {
                             std::pow(2, std::ceil(std::log2(rows_amount)))),
                             rows_amount, 0 // use all rows, start from 0
                         );
-
                     raw_input_type raw_input = {};
-                    auto v = std::tuple_cat(std::make_tuple(ct), generator::form_input(ct,raw_input), static_info_args_storage);
+                    auto a = std::apply(generator::form_input, std::tuple_cat(std::make_tuple(std::ref(ct)),std::make_tuple(raw_input),static_info_args_storage));
+                    auto v = std::tuple_cat(std::make_tuple(std::ref(ct)), a,static_info_args_storage);
                     std::make_from_tuple<generator>(v);
 
                     // constants
@@ -408,11 +408,7 @@ namespace nil {
                 assign(typename Component<FieldType, GenerationStage::ASSIGNMENT>::raw_input_type raw_input) {
                     using generator = Component<FieldType,GenerationStage::ASSIGNMENT>;
                     using assignment_type = crypto3::zk::snark::plonk_assignment_table<FieldType>;
-                    using context_type = typename nil::blueprint::bbf::context<FieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT>;
-
-                    // actually we should use presets to chose the right size and partly fill it
                     assignment_type at = assignment_type(witnesses_amount, public_inputs_amount,
-                        presets.constants_amount(), presets.selectors_amount());
 
                     // copy preset constants
                     for(std::size_t i = 0; i < presets.constants_amount(); i++) {
@@ -425,7 +421,8 @@ namespace nil {
 
                     context_type ct = context_type(at, rows_amount, 0); // use all rows, start from 0
 
-                    auto v = std::tuple_cat(std::make_tuple(ct), generator::form_input(ct,raw_input), static_info_args_storage);
+                    auto a = std::apply(generator::form_input, std::tuple_cat(std::make_tuple(std::ref(ct)),std::make_tuple(raw_input),static_info_args_storage));
+                    auto v = std::tuple_cat(std::make_tuple(std::ref(ct)), a,static_info_args_storage);
                     auto o = std::make_from_tuple<generator>(v);
 
                     crypto3::zk::snark::plonk_table_description<FieldType> desc = at.get_description();
