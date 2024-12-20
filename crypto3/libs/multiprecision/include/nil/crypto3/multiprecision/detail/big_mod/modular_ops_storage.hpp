@@ -33,6 +33,10 @@ namespace nil::crypto3::multiprecision::detail {
 
         static constexpr const modular_ops_t &ops() { return m_modular_ops; }
 
+        constexpr bool compare_eq(const modular_ops_storage_ct & /*other*/) const {
+            return true;
+        }
+
       private:
         static constexpr modular_ops_t m_modular_ops{Modulus};
     };
@@ -48,6 +52,10 @@ namespace nil::crypto3::multiprecision::detail {
         constexpr modular_ops_storage_rt(const big_uint_t &input) : m_modular_ops(input) {}
 
         constexpr const modular_ops_t &ops() const { return m_modular_ops; }
+
+        constexpr bool compare_eq(const modular_ops_storage_rt &other) const {
+            return m_modular_ops.compare_eq(other.m_modular_ops);
+        }
 
       private:
         modular_ops_t m_modular_ops;
