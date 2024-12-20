@@ -201,7 +201,7 @@ namespace nil {
 
                         zkevm_word_type q = b != 0u ? a % b : a;
 
-                        zkevm_word_type v = subtract_wrapping(q, b);
+                        zkevm_word_type v = wrapping_sub(q, b);
                         a_neg = is_negative(input_a);
 
                         input_a_chunks = zkevm_word_to_field_element<FieldType>(input_a);

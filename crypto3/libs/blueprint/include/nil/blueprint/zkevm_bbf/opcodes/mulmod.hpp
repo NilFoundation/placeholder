@@ -226,7 +226,7 @@ namespace nil {
                         zkevm_word_type Nr_p = zkevm_word_type(Nr_integral % extended_zkevm_mod);
                         zkevm_word_type Nr_pp = zkevm_word_type(Nr_integral / extended_zkevm_mod);
 
-                        zkevm_word_type v = subtract_wrapping(q, N);
+                        zkevm_word_type v = wrapping_sub(q, N);
 
                         zkevm_word_type result = q;
 

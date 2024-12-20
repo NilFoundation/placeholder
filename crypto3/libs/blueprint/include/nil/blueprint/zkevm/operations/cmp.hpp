@@ -207,7 +207,7 @@ namespace nil {
                     a = x;
                     c = y;
                 }
-                b = subtract_wrapping(c, a);
+                b = wrapping_sub(c, a);
 
                 const std::vector<value_type> a_chunks = zkevm_word_to_field_element<BlueprintFieldType>(a);
                 const std::vector<value_type> b_chunks = zkevm_word_to_field_element<BlueprintFieldType>(b);

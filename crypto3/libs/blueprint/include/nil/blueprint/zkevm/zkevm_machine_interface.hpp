@@ -232,21 +232,21 @@ namespace nil {
                         case zkevm_opcode::ADD:{
                             word_type a = stack_pop();
                             word_type b = stack_pop();
-                            stack.push(add_wrapping(a, b));
+                            stack.push(wrapping_add(a, b));
                             pc++; gas -=  3;
                             break;
                         }
                         case zkevm_opcode::SUB:{
                             word_type a = stack_pop();
                             word_type b = stack_pop();
-                            stack.push(subtract_wrapping(a, b));
+                            stack.push(wrapping_sub(a, b));
                             pc++; gas -=  3;
                             break;
                         }
                         case zkevm_opcode::MUL:{
                             word_type a = stack_pop();
                             word_type b = stack_pop();
-                            stack.push(multiply_wrapping(a, b));
+                            stack.push(wrapping_mul(a, b));
                             pc++; gas -=  5;
                             break;
                         }
@@ -312,7 +312,7 @@ namespace nil {
                             int len = (b < 32) ? int(b) + 1 : 32;
                             word_type sign = (x << (8 * (32 - len))) >> 255;
                             word_type result =
-                                (subtract_wrapping(word_type(1) << 8 * (32 - len), 1)
+                                (wrapping_sub(word_type(1) << 8 * (32 - len), 1)
                                  << 8 * len) *
                                     sign +
                                 ((x << (8 * (32 - len))) >> (8 * (32 - len)));

@@ -372,62 +372,62 @@ BOOST_AUTO_TEST_SUITE_END()
 BOOST_AUTO_TEST_SUITE(wrapping_operations)
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(addition_positive, T, int_types) {
-    BOOST_CHECK_EQUAL(add_wrapping(20_big_uint7, static_cast<T>(10)), 30_big_uint7);
-    BOOST_CHECK_EQUAL(add_wrapping(static_cast<T>(10), 20_big_uint7), 30_big_uint7);
-    BOOST_CHECK_EQUAL(add_wrapping(120_big_uint7, static_cast<T>(10)), 2_big_uint7);
-    BOOST_CHECK_EQUAL(add_wrapping(static_cast<T>(10), 120_big_uint7), 2_big_uint7);
+    BOOST_CHECK_EQUAL(wrapping_add(20_big_uint7, static_cast<T>(10)), 30_big_uint7);
+    BOOST_CHECK_EQUAL(wrapping_add(static_cast<T>(10), 20_big_uint7), 30_big_uint7);
+    BOOST_CHECK_EQUAL(wrapping_add(120_big_uint7, static_cast<T>(10)), 2_big_uint7);
+    BOOST_CHECK_EQUAL(wrapping_add(static_cast<T>(10), 120_big_uint7), 2_big_uint7);
 }
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(addition_negative, T, signed_types) {
-    BOOST_CHECK_EQUAL(add_wrapping(20_big_uint7, static_cast<T>(-5)), 15_big_uint7);
-    BOOST_CHECK_EQUAL(add_wrapping(static_cast<T>(-5), 20_big_uint7), 15_big_uint7);
-    BOOST_CHECK_EQUAL(add_wrapping(5_big_uint7, static_cast<T>(-20)), 113_big_uint7);
-    BOOST_CHECK_EQUAL(add_wrapping(static_cast<T>(-20), 5_big_uint7), 113_big_uint7);
+    BOOST_CHECK_EQUAL(wrapping_add(20_big_uint7, static_cast<T>(-5)), 15_big_uint7);
+    BOOST_CHECK_EQUAL(wrapping_add(static_cast<T>(-5), 20_big_uint7), 15_big_uint7);
+    BOOST_CHECK_EQUAL(wrapping_add(5_big_uint7, static_cast<T>(-20)), 113_big_uint7);
+    BOOST_CHECK_EQUAL(wrapping_add(static_cast<T>(-20), 5_big_uint7), 113_big_uint7);
 }
 
-BOOST_AUTO_TEST_CASE(negated_wrapping) {
-    BOOST_CHECK_EQUAL(20_big_uint7 .negated_wrapping(), 108_big_uint7);
-    BOOST_CHECK_EQUAL(0_big_uint7 .negated_wrapping(), 0_big_uint7);
+BOOST_AUTO_TEST_CASE(wrapping_neg) {
+    BOOST_CHECK_EQUAL(20_big_uint7 .wrapping_neg(), 108_big_uint7);
+    BOOST_CHECK_EQUAL(0_big_uint7 .wrapping_neg(), 0_big_uint7);
 }
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(subtraction_positive, T, int_types) {
-    BOOST_CHECK_EQUAL(subtract_wrapping(0_big_uint7, 1), 127_big_uint7);
-    BOOST_CHECK_EQUAL(subtract_wrapping(0, 1_big_uint7), 127_big_uint7);
-    BOOST_CHECK_EQUAL(subtract_wrapping(20_big_uint7, static_cast<T>(5)), 15_big_uint7);
-    BOOST_CHECK_EQUAL(subtract_wrapping(static_cast<T>(20), 5_big_uint7), 15_big_uint7);
-    BOOST_CHECK_EQUAL(subtract_wrapping(5_big_uint7, static_cast<T>(20)), 113_big_uint7);
-    BOOST_CHECK_EQUAL(subtract_wrapping(static_cast<T>(5), 20_big_uint7), 113_big_uint7);
+    BOOST_CHECK_EQUAL(wrapping_sub(0_big_uint7, 1), 127_big_uint7);
+    BOOST_CHECK_EQUAL(wrapping_sub(0, 1_big_uint7), 127_big_uint7);
+    BOOST_CHECK_EQUAL(wrapping_sub(20_big_uint7, static_cast<T>(5)), 15_big_uint7);
+    BOOST_CHECK_EQUAL(wrapping_sub(static_cast<T>(20), 5_big_uint7), 15_big_uint7);
+    BOOST_CHECK_EQUAL(wrapping_sub(5_big_uint7, static_cast<T>(20)), 113_big_uint7);
+    BOOST_CHECK_EQUAL(wrapping_sub(static_cast<T>(5), 20_big_uint7), 113_big_uint7);
 }
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(subtraction_negative, T, signed_types) {
-    BOOST_CHECK_EQUAL(subtract_wrapping(0_big_uint7, -1), 1_big_uint7);
-    BOOST_CHECK_EQUAL(subtract_wrapping(-1, 0_big_uint7), 127_big_uint7);
-    BOOST_CHECK_EQUAL(subtract_wrapping(20_big_uint7, static_cast<T>(-10)), 30_big_uint7);
-    BOOST_CHECK_EQUAL(subtract_wrapping(static_cast<T>(-10), 20_big_uint7), 98_big_uint7);
-    BOOST_CHECK_EQUAL(subtract_wrapping(120_big_uint7, static_cast<T>(-10)), 2_big_uint7);
-    BOOST_CHECK_EQUAL(subtract_wrapping(static_cast<T>(-10), 120_big_uint7), 126_big_uint7);
+    BOOST_CHECK_EQUAL(wrapping_sub(0_big_uint7, -1), 1_big_uint7);
+    BOOST_CHECK_EQUAL(wrapping_sub(-1, 0_big_uint7), 127_big_uint7);
+    BOOST_CHECK_EQUAL(wrapping_sub(20_big_uint7, static_cast<T>(-10)), 30_big_uint7);
+    BOOST_CHECK_EQUAL(wrapping_sub(static_cast<T>(-10), 20_big_uint7), 98_big_uint7);
+    BOOST_CHECK_EQUAL(wrapping_sub(120_big_uint7, static_cast<T>(-10)), 2_big_uint7);
+    BOOST_CHECK_EQUAL(wrapping_sub(static_cast<T>(-10), 120_big_uint7), 126_big_uint7);
 }
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(multiplication_positive, T, int_types) {
-    BOOST_CHECK_EQUAL(multiply_wrapping(20_big_uint7, static_cast<T>(2)), 40_big_uint7);
-    BOOST_CHECK_EQUAL(multiply_wrapping(static_cast<T>(2), 20_big_uint7), 40_big_uint7);
-    BOOST_CHECK_EQUAL(multiply_wrapping(70_big_uint7, static_cast<T>(2)), 12_big_uint7);
-    BOOST_CHECK_EQUAL(multiply_wrapping(static_cast<T>(2), 70_big_uint7), 12_big_uint7);
+    BOOST_CHECK_EQUAL(wrapping_mul(20_big_uint7, static_cast<T>(2)), 40_big_uint7);
+    BOOST_CHECK_EQUAL(wrapping_mul(static_cast<T>(2), 20_big_uint7), 40_big_uint7);
+    BOOST_CHECK_EQUAL(wrapping_mul(70_big_uint7, static_cast<T>(2)), 12_big_uint7);
+    BOOST_CHECK_EQUAL(wrapping_mul(static_cast<T>(2), 70_big_uint7), 12_big_uint7);
 }
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(multiplication_negative, T, signed_types) {
-    BOOST_CHECK_EQUAL(multiply_wrapping(20_big_uint7, static_cast<T>(-2)), 88_big_uint7);
-    BOOST_CHECK_EQUAL(multiply_wrapping(static_cast<T>(-2), 20_big_uint7), 88_big_uint7);
-    BOOST_CHECK_EQUAL(multiply_wrapping(70_big_uint7, static_cast<T>(-2)), 116_big_uint7);
-    BOOST_CHECK_EQUAL(multiply_wrapping(static_cast<T>(-2), 70_big_uint7), 116_big_uint7);
+    BOOST_CHECK_EQUAL(wrapping_mul(20_big_uint7, static_cast<T>(-2)), 88_big_uint7);
+    BOOST_CHECK_EQUAL(wrapping_mul(static_cast<T>(-2), 20_big_uint7), 88_big_uint7);
+    BOOST_CHECK_EQUAL(wrapping_mul(70_big_uint7, static_cast<T>(-2)), 116_big_uint7);
+    BOOST_CHECK_EQUAL(wrapping_mul(static_cast<T>(-2), 70_big_uint7), 116_big_uint7);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
 
-BOOST_AUTO_TEST_CASE(add_assign_with_carry_test) {
+BOOST_AUTO_TEST_CASE(overflowing_add_assign_test) {
     auto n = 122_big_uint7;
-    BOOST_CHECK_EQUAL(add_assign_with_carry(n, 4_big_uint7), false);
-    BOOST_CHECK_EQUAL(add_assign_with_carry(n, 4_big_uint7), true);
+    BOOST_CHECK_EQUAL(overflowing_add_assign(n, 4_big_uint7), false);
+    BOOST_CHECK_EQUAL(overflowing_add_assign(n, 4_big_uint7), true);
 }
 
 BOOST_AUTO_TEST_SUITE(bit_operations)

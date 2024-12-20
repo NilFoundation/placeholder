@@ -282,7 +282,7 @@ namespace nil {
                 word_type q = b != 0u ? a % b : a;
                 word_type q_out = b != 0u ? q : 0u;  // according to EVM spec a % 0 = 0
 
-                word_type v = subtract_wrapping(q, b);
+                word_type v = wrapping_sub(q, b);
 
                 word_type result = is_div ? r : q_out;
 

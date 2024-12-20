@@ -163,7 +163,7 @@ namespace nil {
                         zkevm_word_type q_out =
                             b != 0u ? q : 0u;  // according to EVM spec a % 0 = 0
 
-                        zkevm_word_type v = subtract_wrapping(q, b);
+                        zkevm_word_type v = wrapping_sub(q, b);
 
                         zkevm_word_type result = is_div ? r : q_out;
 

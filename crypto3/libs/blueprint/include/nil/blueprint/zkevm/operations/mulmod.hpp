@@ -481,7 +481,7 @@ namespace nil {
                 word_type Nr_p = word_type(Nr_integral % extended_zkevm_mod);
                 word_type Nr_pp = word_type(Nr_integral / extended_zkevm_mod);
 
-                word_type v = subtract_wrapping(q, N);
+                word_type v = wrapping_sub(q, N);
 
                 word_type result = q;
 

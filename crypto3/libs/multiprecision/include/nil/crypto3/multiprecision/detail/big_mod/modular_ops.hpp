@@ -97,7 +97,7 @@ namespace nil::crypto3::multiprecision::detail {
         constexpr void add(big_uint<Bits2> &result, const big_uint<Bits3> &y) const {
             BOOST_ASSERT(result < mod() && y < mod());
 
-            bool carry = add_assign_with_carry(result, y);
+            bool carry = overflowing_add_assign(result, y);
 
             // If we overflow, we need to subtract the modulus, which is
             // the same as adding 2 ^ Bits - Modulus to the remaining part of the number.
