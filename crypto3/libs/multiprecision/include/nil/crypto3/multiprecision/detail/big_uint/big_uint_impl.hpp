@@ -1078,9 +1078,8 @@ namespace nil::crypto3::multiprecision {
 
         constexpr bool bit_test(std::size_t index) const {
             if (index >= Bits) {
+                // NB: we assume there are infinite leading zeros
                 return false;
-                // TODO(ioxid): this throws in multiexp tests
-                // throw std::invalid_argument("fixed precision overflow");
             }
             std::size_t offset = index / limb_bits;
             std::size_t shift = index % limb_bits;
@@ -1347,13 +1346,13 @@ namespace nil::crypto3::multiprecision {
     // For generic code
 
     template<std::size_t Bits>
-    constexpr std::size_t msb(const big_uint<Bits>& a) {
-        return a.msb();
+    constexpr std::size_t lsb(const big_uint<Bits>& a) {
+        return a.lsb();
     }
 
     template<std::size_t Bits>
-    constexpr std::size_t lsb(const big_uint<Bits>& a) {
-        return a.lsb();
+    constexpr std::size_t msb(const big_uint<Bits>& a) {
+        return a.msb();
     }
 
     template<std::size_t Bits>
