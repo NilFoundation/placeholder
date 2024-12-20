@@ -59,7 +59,6 @@ set(BENCHMARK_NAMES
 
     "math/polynomial_dfs"
 
-    "multiprecision/modular_adaptor_fixed"
     "multiprecision/big_mod"
 
     "zk/lpc"
