@@ -7,18 +7,18 @@
 // http://www.boost.org/LICENSE_1_0.txt
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE big_int_benchmark_test
+#define BOOST_TEST_MODULE big_mod_benchmark
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/data/test_case.hpp>
 #include <boost/test/data/monomorphic.hpp>
+#include <boost/test/data/test_case.hpp>
+#include <boost/test/unit_test.hpp>
 
 #include <cstddef>
 #include <iostream>
 
+#include <nil/crypto3/multiprecision/big_mod.hpp>
 #include <nil/crypto3/multiprecision/big_uint.hpp>
 #include <nil/crypto3/multiprecision/literals.hpp>
-#include <nil/crypto3/multiprecision/big_mod.hpp>
 
 #include <nil/crypto3/multiprecision/detail/big_mod/test_support.hpp>
 
@@ -29,21 +29,25 @@ using namespace nil::crypto3::multiprecision::literals;
 constexpr std::size_t Bits = 256;
 using standart_number = nil::crypto3::multiprecision::big_uint<Bits>;
 
-constexpr standart_number modulus_odd = 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f_big_uint256;
-constexpr standart_number modulus_even = 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2e_big_uint256;
+constexpr standart_number modulus_odd =
+    0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f_big_uint256;
+constexpr standart_number modulus_even =
+    0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2e_big_uint256;
 
 using modular_number_ct_odd = nil::crypto3::multiprecision::montgomery_big_mod<modulus_odd>;
 using modular_number_ct_even = nil::crypto3::multiprecision::big_mod<modulus_even>;
 using modular_number_rt_montgomery = nil::crypto3::multiprecision::montgomery_big_mod_rt<Bits>;
 using modular_number_rt = nil::crypto3::multiprecision::big_mod_rt<Bits>;
 
-constexpr standart_number x = 0xb5d724ce6f44c3c587867bbcb417e9eb6fa05e7e2ef029166568f14eb3161387_big_uint256;
+constexpr standart_number x =
+    0xb5d724ce6f44c3c587867bbcb417e9eb6fa05e7e2ef029166568f14eb3161387_big_uint256;
 constexpr modular_number_ct_odd x_mod_ct_odd = x;
 constexpr modular_number_ct_even x_mod_ct_even = x;
 constexpr modular_number_rt_montgomery x_mod_rt_odd{x, modulus_odd};
 constexpr modular_number_rt x_mod_rt_even{x, modulus_even};
 
-constexpr standart_number y = 0xad6e1fcc680392abfb075838eafa513811112f14c593e0efacb6e9d0d7770b4_big_uint256;
+constexpr standart_number y =
+    0xad6e1fcc680392abfb075838eafa513811112f14c593e0efacb6e9d0d7770b4_big_uint256;
 constexpr modular_number_ct_odd y_mod_ct_odd = y;
 constexpr modular_number_ct_even y_mod_ct_even = y;
 constexpr modular_number_rt_montgomery y_mod_rt_odd{y, modulus_odd};
@@ -68,12 +72,10 @@ BOOST_AUTO_TEST_CASE(montgomery_mul_perf_test) {
 BOOST_AUTO_TEST_CASE(big_mod_sub_perf_test) {
     auto x_modular = x_mod_rt_odd;
 
-    nil::crypto3::bench::run_benchmark<>(
-            "[odd modulus][runtime] big_mod_subtract",
-            [&]() {
-                x_modular -= y_mod_rt_odd;
-                return x_modular;
-            });
+    nil::crypto3::bench::run_benchmark<>("[odd modulus][runtime] big_mod_subtract", [&]() {
+        x_modular -= y_mod_rt_odd;
+        return x_modular;
+    });
 
     // Print something so the whole computation is not optimized out.
     std::cout << x_modular << std::endl;
@@ -82,12 +84,10 @@ BOOST_AUTO_TEST_CASE(big_mod_sub_perf_test) {
 BOOST_AUTO_TEST_CASE(big_mod_add_perf_test) {
     auto x_modular = x_mod_rt_odd;
 
-    nil::crypto3::bench::run_benchmark<>(
-            "[odd modulus][runtime] big_mod_add",
-            [&]() {
-                x_modular += y_mod_rt_odd;
-                return x_modular;
-            });
+    nil::crypto3::bench::run_benchmark<>("[odd modulus][runtime] big_mod_add", [&]() {
+        x_modular += y_mod_rt_odd;
+        return x_modular;
+    });
 
     // Print something so the whole computation is not optimized out.
     std::cout << x_modular << std::endl;
@@ -96,12 +96,10 @@ BOOST_AUTO_TEST_CASE(big_mod_add_perf_test) {
 BOOST_AUTO_TEST_CASE(big_mod_mul_perf_test) {
     auto x_modular = x_mod_rt_odd;
 
-    nil::crypto3::bench::run_benchmark<>(
-            "[odd modulus][runtime] big_mod_multiply",
-            [&]() {
-                x_modular *= y_mod_rt_odd;
-                return x_modular;
-            });
+    nil::crypto3::bench::run_benchmark<>("[odd modulus][runtime] big_mod_multiply", [&]() {
+        x_modular *= y_mod_rt_odd;
+        return x_modular;
+    });
 
     // Print something so the whole computation is not optimized out.
     std::cout << x_modular << std::endl;
@@ -128,12 +126,10 @@ BOOST_AUTO_TEST_CASE(montgomery_mul_perf_test) {
 BOOST_AUTO_TEST_CASE(big_mod_sub_perf_test) {
     auto x_modular = x_mod_ct_odd;
 
-    nil::crypto3::bench::run_benchmark<>(
-            "[odd modulus][compile time] big_mod_subtract",
-            [&]() {
-                x_modular -= y_mod_ct_odd;
-                return x_modular;
-            });
+    nil::crypto3::bench::run_benchmark<>("[odd modulus][compile time] big_mod_subtract", [&]() {
+        x_modular -= y_mod_ct_odd;
+        return x_modular;
+    });
 
     // Print something so the whole computation is not optimized out.
     std::cout << x_modular << std::endl;
@@ -142,12 +138,10 @@ BOOST_AUTO_TEST_CASE(big_mod_sub_perf_test) {
 BOOST_AUTO_TEST_CASE(big_mod_add_perf_test) {
     auto x_modular = x_mod_ct_odd;
 
-    nil::crypto3::bench::run_benchmark<>(
-            "[odd modulus][compile time] big_mod_add",
-            [&]() {
-                x_modular += y_mod_ct_odd;
-                return x_modular;
-            });
+    nil::crypto3::bench::run_benchmark<>("[odd modulus][compile time] big_mod_add", [&]() {
+        x_modular += y_mod_ct_odd;
+        return x_modular;
+    });
 
     // Print something so the whole computation is not optimized out.
     std::cout << x_modular << std::endl;
@@ -156,12 +150,10 @@ BOOST_AUTO_TEST_CASE(big_mod_add_perf_test) {
 BOOST_AUTO_TEST_CASE(big_mod_mul_perf_test) {
     auto x_modular = x_mod_ct_odd;
 
-    nil::crypto3::bench::run_benchmark<>(
-            "[odd modulus][compile time] big_mod_multiply",
-            [&]() {
-                x_modular *= y_mod_ct_odd;
-                return x_modular;
-            });
+    nil::crypto3::bench::run_benchmark<>("[odd modulus][compile time] big_mod_multiply", [&]() {
+        x_modular *= y_mod_ct_odd;
+        return x_modular;
+    });
 
     // Print something so the whole computation is not optimized out.
     std::cout << x_modular << std::endl;
@@ -189,12 +181,10 @@ BOOST_AUTO_TEST_CASE(barrett_mul_perf_test) {
 BOOST_AUTO_TEST_CASE(big_mod_sub_perf_test) {
     auto x_modular = x_mod_rt_even;
 
-    nil::crypto3::bench::run_benchmark<>(
-            "[even modulus][runtime] big_mod_subtract",
-            [&]() {
-                x_modular -= y_mod_rt_even;
-                return x_modular;
-            });
+    nil::crypto3::bench::run_benchmark<>("[even modulus][runtime] big_mod_subtract", [&]() {
+        x_modular -= y_mod_rt_even;
+        return x_modular;
+    });
 
     // Print something so the whole computation is not optimized out.
     std::cout << x_modular << std::endl;
@@ -203,12 +193,10 @@ BOOST_AUTO_TEST_CASE(big_mod_sub_perf_test) {
 BOOST_AUTO_TEST_CASE(big_mod_add_perf_test) {
     auto x_modular = x_mod_rt_even;
 
-    nil::crypto3::bench::run_benchmark<>(
-            "[even modulus][runtime] big_mod_add",
-            [&]() {
-                x_modular += y_mod_rt_even;
-                return x_modular;
-            });
+    nil::crypto3::bench::run_benchmark<>("[even modulus][runtime] big_mod_add", [&]() {
+        x_modular += y_mod_rt_even;
+        return x_modular;
+    });
 
     // Print something so the whole computation is not optimized out.
     std::cout << x_modular << std::endl;
@@ -217,12 +205,10 @@ BOOST_AUTO_TEST_CASE(big_mod_add_perf_test) {
 BOOST_AUTO_TEST_CASE(big_mod_mul_perf_test) {
     auto x_modular = x_mod_rt_even;
 
-    nil::crypto3::bench::run_benchmark<>(
-            "[even modulus][runtime] big_mod_multiply",
-            [&]() {
-                x_modular *= y_mod_rt_even;
-                return x_modular;
-            });
+    nil::crypto3::bench::run_benchmark<>("[even modulus][runtime] big_mod_multiply", [&]() {
+        x_modular *= y_mod_rt_even;
+        return x_modular;
+    });
 
     // Print something so the whole computation is not optimized out.
     std::cout << x_modular << std::endl;
@@ -250,12 +236,10 @@ BOOST_AUTO_TEST_CASE(barrett_mul_perf_test) {
 BOOST_AUTO_TEST_CASE(big_mod_sub_perf_test) {
     auto x_modular = x_mod_ct_even;
 
-    nil::crypto3::bench::run_benchmark<>(
-            "[even modulus][compile time] big_mod_subtract",
-            [&]() {
-                x_modular -= y_mod_ct_even;
-                return x_modular;
-            });
+    nil::crypto3::bench::run_benchmark<>("[even modulus][compile time] big_mod_subtract", [&]() {
+        x_modular -= y_mod_ct_even;
+        return x_modular;
+    });
 
     // Print something so the whole computation is not optimized out.
     std::cout << x_modular << std::endl;
@@ -264,12 +248,10 @@ BOOST_AUTO_TEST_CASE(big_mod_sub_perf_test) {
 BOOST_AUTO_TEST_CASE(big_mod_add_perf_test) {
     auto x_modular = x_mod_ct_even;
 
-    nil::crypto3::bench::run_benchmark<>(
-            "[even modulus][compile time] big_mod_add",
-            [&]() {
-                x_modular += y_mod_ct_even;
-                return x_modular;
-            });
+    nil::crypto3::bench::run_benchmark<>("[even modulus][compile time] big_mod_add", [&]() {
+        x_modular += y_mod_ct_even;
+        return x_modular;
+    });
 
     // Print something so the whole computation is not optimized out.
     std::cout << x_modular << std::endl;
@@ -278,12 +260,10 @@ BOOST_AUTO_TEST_CASE(big_mod_add_perf_test) {
 BOOST_AUTO_TEST_CASE(big_mod_mul_perf_test) {
     auto x_modular = x_mod_ct_even;
 
-    nil::crypto3::bench::run_benchmark<>(
-            "[even modulus][compile time] big_mod_multiply",
-            [&]() {
-                x_modular *= y_mod_ct_even;
-                return x_modular;
-            });
+    nil::crypto3::bench::run_benchmark<>("[even modulus][compile time] big_mod_multiply", [&]() {
+        x_modular *= y_mod_ct_even;
+        return x_modular;
+    });
 
     // Print something so the whole computation is not optimized out.
     std::cout << x_modular << std::endl;
