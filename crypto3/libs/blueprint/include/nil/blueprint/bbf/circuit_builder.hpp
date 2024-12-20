@@ -115,7 +115,7 @@ namespace nil {
                     // initialize params according to arguments
                     witnesses_amount = witnesses;
                     public_inputs_amount = public_inputs;
-		    constants_amount = user_constants;
+                    constants_amount = user_constants;
                     rows_amount = rows;
                     presets = crypto3::zk::snark::plonk_assignment_table<FieldType>(0,0,constants_amount,0); // intended extensible
                     generate_constraints();
