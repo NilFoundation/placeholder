@@ -58,6 +58,7 @@ set(TESTS_NAMES
     "static_digest"
     "poseidon"
     "hash_to_curve"
+    "type_traits"
     )
 
 foreach(TEST_NAME ${TESTS_NAMES})

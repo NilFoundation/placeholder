@@ -54,6 +54,7 @@ set(TESTS_NAMES
     "commitment/kzg"
     "commitment/fold_polynomial"
     "commitment/proof_of_work"
+    "commitment/type_traits"
 
     "math/expression"
 
@@ -65,6 +66,7 @@ set(TESTS_NAMES
 #    "systems/plonk/pickles/to_field"
 #    "systems/plonk/pickles/to_group"
 
+    "systems/plonk/type_traits"
     "systems/plonk/placeholder/placeholder_circuits"
     "systems/plonk/placeholder/placeholder_goldilocks"
     "systems/plonk/placeholder/placeholder_lookup_argument"
