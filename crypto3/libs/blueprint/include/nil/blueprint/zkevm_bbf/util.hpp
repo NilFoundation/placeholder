@@ -77,9 +77,9 @@ namespace nil {
                 if (n == 0x01_big_uint256) return a;
 
                 zkevm_word_type exp = exp_by_squaring(a, n >> 1);
-                zkevm_word_type exp2 = exp * exp;
+                zkevm_word_type exp2 = multiply_wrapping(exp, exp);
                 if (n & 1) {
-                    return exp2 * a;
+                    return multiply_wrapping(exp2, a);
                 }
                 return exp2;
             }
