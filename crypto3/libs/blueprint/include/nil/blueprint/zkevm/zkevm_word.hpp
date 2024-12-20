@@ -35,23 +35,21 @@
 
 namespace nil {
     namespace blueprint {
-
-        constexpr inline auto zkevm_modulus =
-                        0x10000000000000000000000000000000000000000000000000000000000000000_big_uint257;
-
-        using zkevm_word_type = nil::crypto3::multiprecision::auto_big_mod<zkevm_modulus>;
-
-        using zkevm_word_integral_type = nil::crypto3::multiprecision::big_uint<257>;
+        using zkevm_word_type = nil::crypto3::multiprecision::big_uint<256>;
+        inline static constexpr zkevm_word_type neg_one = zkevm_word_type(1).negated_wrapping();
+        inline static constexpr zkevm_word_type min_neg = zkevm_word_type(1) << 255;
+        inline static constexpr auto extended_zkevm_mod =
+            nil::crypto3::multiprecision::big_uint<512>(1) << 256;
 
         template<typename BlueprintFieldType>
-        std::vector<typename BlueprintFieldType::value_type> zkevm_word_to_field_element(const zkevm_word_type &word) {
+        std::vector<typename BlueprintFieldType::value_type> zkevm_word_to_field_element(
+            const zkevm_word_type &word) {
             using value_type = typename BlueprintFieldType::value_type;
             std::vector<value_type> chunks;
             constexpr const std::size_t chunk_size = 16;
             constexpr const std::size_t num_chunks = 256 / chunk_size;
-            using integral_type = nil::crypto3::multiprecision::big_uint<257>;
-            constexpr const integral_type mask = (integral_type(1) << chunk_size) - 1;
-            integral_type word_copy = integral_type(word);
+            constexpr const zkevm_word_type mask = (zkevm_word_type(1) << chunk_size) - 1;
+            zkevm_word_type word_copy = word;
             for (std::size_t i = 0; i < num_chunks; ++i) {
                 chunks.push_back(word_copy & mask);
                 word_copy >>= chunk_size;
@@ -102,38 +100,31 @@ namespace nil {
             return result;
         }
 
-        template <typename BlueprintFieldType>
-        typename BlueprintFieldType::value_type w_hi(const zkevm_word_type &val){
-            using integral_type = nil::crypto3::multiprecision::big_uint<257>;
-
-            integral_type mask = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00000000000000000000000000000000_big_uint257;
-            return (integral_type(val) & mask) >> 128;
+        template<typename BlueprintFieldType>
+        typename BlueprintFieldType::value_type w_hi(const zkevm_word_type &val) {
+            static constexpr zkevm_word_type mask =
+                0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00000000000000000000000000000000_big_uint256;
+            return (val & mask) >> 128;
         }
 
-        template <typename BlueprintFieldType>
-        typename BlueprintFieldType::value_type w_lo(const zkevm_word_type &val){
-            using integral_type = nil::crypto3::multiprecision::big_uint<257>;
-
-            integral_type mask = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_big_uint257;
-            return integral_type(val) & mask;
+        template<typename BlueprintFieldType>
+        typename BlueprintFieldType::value_type w_lo(const zkevm_word_type &val) {
+            static constexpr zkevm_word_type mask = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_big_uint256;
+            return val & mask;
         }
 
-        std::array<std::uint8_t, 32> w_to_8(const zkevm_word_type &val){
-            using integral_type = nil::crypto3::multiprecision::big_uint<257>;
-
+        std::array<std::uint8_t, 32> w_to_8(const zkevm_word_type &val) {
             std::array<std::uint8_t, 32> result;
-            integral_type tmp(val);
+            zkevm_word_type tmp(val);
             for(std::size_t i = 0; i < 32; i++){
                 result[31-i] = std::uint8_t(tmp & 0xFF); tmp >>=  8;
             }
             return result;
         }
 
-        std::array<std::size_t, 16> w_to_16(const zkevm_word_type &val){
-            using integral_type = nil::crypto3::multiprecision::big_uint<257>;
-
+        std::array<std::size_t, 16> w_to_16(const zkevm_word_type &val) {
             std::array<std::size_t, 16> result;
-            integral_type tmp(val);
+            zkevm_word_type tmp(val);
             for(std::size_t i = 0; i < 16; i++){
                 result[15-i] = std::size_t(tmp & 0xFFFF); tmp >>=  16;
             }
@@ -150,27 +141,17 @@ namespace nil {
 
         // Return a/b, a%b
         std::pair<zkevm_word_type, zkevm_word_type> eth_div(const zkevm_word_type &a, const zkevm_word_type &b){
-            using integral_type = nil::crypto3::multiprecision::big_uint<257>;
-            integral_type r_integral = b != 0u ? integral_type(a) / integral_type(b) : 0u;
+            zkevm_word_type r_integral = b != 0u ? a / b : 0u;
             zkevm_word_type r = r_integral;
-            zkevm_word_type q = b != 0u ? integral_type(a) % integral_type(b) : 0u;
+            zkevm_word_type q = b != 0u ? a % b : 0u;
             return {r, q};
         }
 
-        bool is_negative(zkevm_word_type x){
-            using integral_type = nil::crypto3::multiprecision::big_uint<257>;
-            return (integral_type(x) > zkevm_modulus/2 - 1);
-        }
+        bool is_negative(zkevm_word_type x) { return x.bit_test(255); }
 
-        zkevm_word_type negate_word(zkevm_word_type x){
-            using integral_type = nil::crypto3::multiprecision::big_uint<257>;
-            return zkevm_word_type(zkevm_modulus - integral_type(x));
-        }
+        zkevm_word_type negate_word(const zkevm_word_type &x) { return x.negated_wrapping(); }
 
-        zkevm_word_type abs_word(zkevm_word_type x){
-            using integral_type = nil::crypto3::multiprecision::big_uint<257>;
-            return is_negative(x)? negate_word(x) : x;
-        }
+        zkevm_word_type abs_word(zkevm_word_type x) { return is_negative(x) ? negate_word(x) : x; }
 
         zkevm_word_type zkevm_keccak_hash(std::vector<uint8_t> input){
             nil::crypto3::hashes::keccak_1600<256>::digest_type d = nil::crypto3::hash<nil::crypto3::hashes::keccak_1600<256>>(input);
@@ -181,20 +162,19 @@ namespace nil {
         }
 
         // Return a/b, a%b
-        std::pair<zkevm_word_type, zkevm_word_type> eth_signed_div(const zkevm_word_type &a, const zkevm_word_type &b_input){
-            using integral_type = nil::crypto3::multiprecision::big_uint<257>;
-
-            zkevm_word_type b = (integral_type(a) == zkevm_modulus - 1) && (integral_type(b_input) == zkevm_modulus/2) ? 1 : b_input;
+        std::pair<zkevm_word_type, zkevm_word_type> eth_signed_div(const zkevm_word_type &a,
+                                                                   const zkevm_word_type &b_input) {
+            zkevm_word_type b = (a == neg_one) && (b_input == min_neg) ? 1u : b_input;
             zkevm_word_type a_abs = abs_word(a),
                         b_abs = abs_word(b);
 
-            integral_type r_integral = (b != 0u)? integral_type(a_abs) / integral_type(b_abs) : 0u;
-            zkevm_word_type r_abs = r_integral,
-                        q_abs = b != 0u ? integral_type(a_abs) % integral_type(b_abs) : a_abs,
-                        r = (is_negative(a) == is_negative(b)) ? r_abs : negate_word(r_abs),
-                        q = is_negative(a)? negate_word(q_abs) : q_abs;
+            // TODO(ioxid): use divide_qr here
+            zkevm_word_type r_abs = b != 0u ? a_abs / b_abs : 0u;
+            zkevm_word_type q_abs = b != 0u ? a_abs % b_abs : a_abs,
+                            r = (is_negative(a) == is_negative(b)) ? r_abs : negate_word(r_abs),
+                            q = is_negative(a) ? negate_word(q_abs) : q_abs;
 
-            zkevm_word_type q_out = b != 0u ? q : 0; // according to EVM spec a % 0 = 0
+            zkevm_word_type q_out = b != 0u ? q : 0u;  // according to EVM spec a % 0 = 0
 
             return {r, q_out};
         }

@@ -46,7 +46,6 @@ namespace nil {
                 using generic_component<FieldType, stage>::lookup_table;
             public:
                 using typename generic_component<FieldType,stage>::TYPE;
-                using integral_type = zkevm_word_integral_type;
 
                 zkevm_exp_bbf(context_type &context_object, const opcode_input_type<FieldType, stage> &current_state):
                     generic_component<FieldType,stage>(context_object, false)
@@ -66,8 +65,8 @@ namespace nil {
                         auto d = w_to_16(current_state.stack_top(1));
                         auto r = w_to_16(exp_by_squaring(current_state.stack_top(), current_state.stack_top(1)));
                         s = 1;
-                        if( integral_type(current_state.stack_top(1)) == 0 ) s = 0;
-                        if( integral_type(current_state.stack_top(1)) == 1 ) s = 0;
+                        if( current_state.stack_top(1) == 0 ) s = 0;
+                        if( current_state.stack_top(1) == 1 ) s = 0;
 
                         std::cout << "\t"
                             << current_state.stack_top() << " ^ "

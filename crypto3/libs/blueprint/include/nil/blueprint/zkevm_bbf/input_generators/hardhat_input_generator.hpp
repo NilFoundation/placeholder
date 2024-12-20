@@ -74,8 +74,6 @@ namespace nil {
                                 memory_next = byte_vector_from_ptree(std::next(it)->second.get_child("memory"));
                                 storage_next = key_value_storage_from_ptree(it->second.get_child("storage"));
                             }
-                            using integral_type = nil::crypto3::multiprecision::big_uint<257>;
-
                             zkevm_state state; // TODO:optimize
                             state.tx_hash = 0;  // TODO: change it
                             state.opcode = opcode_number_from_str(opcode);
@@ -230,8 +228,8 @@ namespace nil {
                                 _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-1, rw_counter++, false, stack[stack.size()-1]));
                                 _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-2, rw_counter++, false, stack[stack.size()-2]));
 
-                                std::size_t length = std::size_t(integral_type(stack[stack.size()-2]));
-                                std::size_t  offset = std::size_t(integral_type(stack[stack.size()-1]));
+                                std::size_t length = std::size_t(stack[stack.size()-2]);
+                                std::size_t  offset = std::size_t(stack[stack.size()-1]);
                                 auto hash_value = stack_next[stack_next.size()-1];
 
                                 std::cout << "\tAdd copy event for KECCAK256 length = " << length << std::endl;
@@ -304,9 +302,9 @@ namespace nil {
                                 _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-2, rw_counter++, false, stack[stack.size()-2]));
                                 _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-3, rw_counter++, false, stack[stack.size()-3]));
 
-                                std::size_t length = std::size_t(integral_type(stack[stack.size()-3]));
-                                std::size_t src = std::size_t(integral_type(stack[stack.size()-2]));
-                                std::size_t dest = std::size_t(integral_type(stack[stack.size()-1]));
+                                std::size_t length = std::size_t(stack[stack.size()-3]);
+                                std::size_t src = std::size_t(stack[stack.size()-2]);
+                                std::size_t dest = std::size_t(stack[stack.size()-1]);
                                 // std::cout << "Length = " << length << std::endl;
                                 // std::cout << "Memory_size " << memory.size() << "=>" << memory_next.size() << std::endl;
 
@@ -475,7 +473,7 @@ namespace nil {
                                 BOOST_ASSERT_MSG(addr < std::numeric_limits<std::size_t>::max(), "Cannot process so large memory address");
                                 // std::cout << "\t\t Address = 0x" << std::hex << addr << std::dec << " memory size " << memory.size() << std::endl;
                                 for( std::size_t i = 0; i < 32; i++){
-                                    _rw_operations.push_back(memory_rw_operation(call_id, addr+i, rw_counter++, false, addr+i < memory.size() ? memory[std::size_t(integral_type(addr+i))]: 0));
+                                    _rw_operations.push_back(memory_rw_operation(call_id, addr+i, rw_counter++, false, addr+i < memory.size() ? memory[std::size_t(addr+i)]: 0));
 
                                 }
                                 _rw_operations.push_back(stack_rw_operation(call_id,  stack_next.size()-1, rw_counter++, true, stack_next[stack_next.size()-1]));
@@ -904,8 +902,8 @@ namespace nil {
                                 std::cout << "\tAdd copy event for RETURN" << std::endl;
                                 _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-1, rw_counter++, false, stack[stack.size()-1]));
                                 _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-2, rw_counter++, false, stack[stack.size()-2]));
-                                std::size_t offset = std::size_t(integral_type(stack[stack.size()-1]));
-                                std::size_t length = std::size_t(integral_type(stack[stack.size()-2]));
+                                std::size_t offset = std::size_t(stack[stack.size()-1]);
+                                std::size_t length = std::size_t(stack[stack.size()-2]);
 
                                 copy_event cpy;
                                 cpy.source_id = call_id;
