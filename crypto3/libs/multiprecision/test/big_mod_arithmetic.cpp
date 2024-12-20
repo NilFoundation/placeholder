@@ -41,7 +41,7 @@ std::vector<T> as_vector(const boost::property_tree::ptree &pt) {
 
 template<typename T>
 auto test_dataset(const std::string &test_name) {
-    static std::string test_data = std::string(TEST_DATA_DIR) + R"(modular_comprehensive.json)";
+    static std::string test_data = std::string(TEST_DATA_DIR) + R"(modular_arithmetic.json)";
     boost::property_tree::ptree test_dataset;
     boost::property_tree::read_json(test_data, test_dataset);
 
@@ -49,8 +49,8 @@ auto test_dataset(const std::string &test_name) {
 }
 
 template<std::size_t Bits, bool Montgomery>
-struct ModularComprehensiveSample {
-    ModularComprehensiveSample(const boost::property_tree::ptree &sample) : ptree(sample) {
+struct ModularArithmeticSample {
+    ModularArithmeticSample(const boost::property_tree::ptree &sample) : ptree(sample) {
         a = sample.get<std::string>("a");
         b = sample.get<std::string>("b");
         m = sample.get<std::string>("m");
@@ -61,11 +61,11 @@ struct ModularComprehensiveSample {
         a_m_pow_b = sample.get<std::string>("a_m_pow_b");
 
         if (Montgomery && !m.bit_test(0)) {
-            throw std::runtime_error("ModularComprehensiveSample: Montgomery requires m to be odd");
+            throw std::runtime_error("ModularArithmeticSample: Montgomery requires m to be odd");
         }
     }
 
-    friend std::ostream &operator<<(std::ostream &os, const ModularComprehensiveSample &sample) {
+    friend std::ostream &operator<<(std::ostream &os, const ModularArithmeticSample &sample) {
         boost::property_tree::json_parser::write_json(os, sample.ptree);
         return os;
     }
@@ -83,7 +83,7 @@ struct ModularComprehensiveSample {
 };
 
 template<std::size_t Bits, bool Montgomery>
-void base_operations_test(const ModularComprehensiveSample<Bits, Montgomery> sample) {
+void base_operations_test(const ModularArithmeticSample<Bits, Montgomery> sample) {
     using modular_number =
         std::conditional_t<Montgomery, montgomery_big_mod_rt<Bits>, big_mod_rt<Bits>>;
 
@@ -106,28 +106,28 @@ void base_operations_test(const ModularComprehensiveSample<Bits, Montgomery> sam
 
 BOOST_AUTO_TEST_SUITE(base_operations)
 
-BOOST_DATA_TEST_CASE(prime_mod_montgomery_130, (test_dataset<ModularComprehensiveSample<130, true>>(
+BOOST_DATA_TEST_CASE(prime_mod_montgomery_130, (test_dataset<ModularArithmeticSample<130, true>>(
                                                    "prime_mod_montgomery_130"))) {
     base_operations_test(sample);
 }
 
 BOOST_DATA_TEST_CASE(even_mod_130,
-                     (test_dataset<ModularComprehensiveSample<130, false>>("even_mod_130"))) {
+                     (test_dataset<ModularArithmeticSample<130, false>>("even_mod_130"))) {
     base_operations_test(sample);
 }
 
 // This one tests 64-bit numbers used in Goldilock fields.
-BOOST_DATA_TEST_CASE(goldilock, (test_dataset<ModularComprehensiveSample<64, true>>("goldilock"))) {
+BOOST_DATA_TEST_CASE(goldilock, (test_dataset<ModularArithmeticSample<64, true>>("goldilock"))) {
     base_operations_test(sample);
 }
 
 BOOST_DATA_TEST_CASE(even_mod_17,
-                     (test_dataset<ModularComprehensiveSample<17, false>>("even_mod_17"))) {
+                     (test_dataset<ModularArithmeticSample<17, false>>("even_mod_17"))) {
     base_operations_test(sample);
 }
 
 BOOST_DATA_TEST_CASE(montgomery_17,
-                     (test_dataset<ModularComprehensiveSample<17, true>>("montgomery_17"))) {
+                     (test_dataset<ModularArithmeticSample<17, true>>("montgomery_17"))) {
     base_operations_test(sample);
 }
 

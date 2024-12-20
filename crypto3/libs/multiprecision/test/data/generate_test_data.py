@@ -22,8 +22,8 @@ def generate_comparison_test_data():
     def gen_arg(bits, rnd):
         if rnd.random() < ZERO_PROB:
             return 0
-        log2 = rnd.random() * bits
-        result = math.floor(2**log2)
+        size = rnd.randint(1, bits)
+        result = rnd.randint(0 if size == 1 else 1 << (size - 1), (1 << size) - 1)
         assert result < 2**bits
         return result
 
@@ -47,7 +47,7 @@ def generate_comparison_test_data():
         f.write(json.dumps(tests, indent=4))
 
 
-def generate_modular_comprehensive_test_data():
+def generate_modular_arithmetic_test_data():
     ZERO_PROB = 0.05
     MAX_BITS_PROB = 0.1
     EQ_PROB = 0.1
@@ -57,9 +57,9 @@ def generate_modular_comprehensive_test_data():
         if rnd.random() < ZERO_PROB:
             return 0
         if rnd.random() < MAX_BITS_PROB:
-            return rnd.randint(2 ** (bits - 1), m - 1)
-        log2 = rnd.random() * bits
-        result = math.floor(2**log2)
+            return rnd.randint(1 << (bits - 1), m - 1)
+        size = rnd.randint(1, bits)
+        result = rnd.randint(0 if size == 1 else 1 << (size - 1), (1 << size) - 1)
         assert result < 2**bits
         return result
 
@@ -73,7 +73,7 @@ def generate_modular_comprehensive_test_data():
         ["montgomery_17", 0x1E241, 17],
     ]
 
-    with open(SOURCE_DIR / "modular_comprehensive.json", "w") as f:
+    with open(SOURCE_DIR / "modular_arithmetic.json", "w") as f:
         tests = {}
         for test_name, m, bits in params:
             assert math.ceil(math.log2(m)) == bits
@@ -102,4 +102,4 @@ def generate_modular_comprehensive_test_data():
 
 if __name__ == "__main__":
     generate_comparison_test_data()
-    generate_modular_comprehensive_test_data()
+    generate_modular_arithmetic_test_data()
