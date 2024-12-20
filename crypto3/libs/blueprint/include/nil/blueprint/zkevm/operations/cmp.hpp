@@ -175,20 +175,15 @@ namespace nil {
 
             void generate_assignments(zkevm_table_type &zkevm_table, const zkevm_machine_interface &machine) override {
                 using word_type = typename zkevm_stack::word_type;
-                using integral_type = nil::crypto3::multiprecision::big_uint<257>;
-
-                auto is_negative = [](word_type x) {
-                     return (integral_type(x) > zkevm_modulus/2 - 1);
-                };
 
                 word_type x = machine.stack_top();
                 word_type y = machine.stack_top(1);
                 word_type r;
 
                 if ((cmp_operation == C_LT) || (cmp_operation == C_SLT)) {
-                    r = (integral_type(x) < integral_type(y));
+                    r = x < y;
                 } else {
-                    r = (integral_type(x) > integral_type(y));
+                    r = x > y;
                 }
 
                 word_type result;
@@ -212,7 +207,7 @@ namespace nil {
                     a = x;
                     c = y;
                 }
-                b = word_type(integral_type(c) + integral_type(r)*zkevm_modulus - integral_type(a));
+                b = subtract_wrapping(c, a);
 
                 const std::vector<value_type> a_chunks = zkevm_word_to_field_element<BlueprintFieldType>(a);
                 const std::vector<value_type> b_chunks = zkevm_word_to_field_element<BlueprintFieldType>(b);
@@ -236,7 +231,7 @@ namespace nil {
                 if (cmp_operation == C_EQ) {
                     assignment.witness(witness_cols[2*chunk_amount], curr_row + 1) =
                         b_sum.is_zero() ? value_type::zero() : value_type::one() * b_sum.inversed();
-                    assignment.witness(witness_cols[chunk_amount + 1], curr_row + 1) = integral_type(result);
+                    assignment.witness(witness_cols[chunk_amount + 1], curr_row + 1) = result;
                 }
 
                 for (std::size_t i = 0; i < chunk_amount; i++) {
@@ -244,9 +239,8 @@ namespace nil {
                 }
 
                 if ((cmp_operation == C_SLT) || (cmp_operation == C_SGT)) {
-                    integral_type two_15 = 32768,
-                                  biggest_a_chunk = integral_type(a) >> (256 - 16),
-                                  biggest_r_chunk = integral_type(c) >> (256 - 16);
+                    word_type two_15 = 32768, biggest_a_chunk = a >> (256 - 16),
+                              biggest_r_chunk = c >> (256 - 16);
 
                     // find the sign bit by adding 2^16/2 to the biggest chunk. The carry-on bit is 1 iff the sign bit is 1
                     assignment.witness(witness_cols[chunk_amount], curr_row + 1) =
@@ -257,7 +251,7 @@ namespace nil {
                         (biggest_r_chunk > two_15 - 1) ? (biggest_r_chunk - two_15) : biggest_r_chunk + two_15;
                     assignment.witness(witness_cols[chunk_amount + 3], curr_row + 1) = (biggest_r_chunk > two_15 - 1);
 
-                    assignment.witness(witness_cols[chunk_amount + 4], curr_row + 1) = integral_type(result);
+                    assignment.witness(witness_cols[chunk_amount + 4], curr_row + 1) = result;
                 }
 
                 // we might want to pack carries more efficiently?

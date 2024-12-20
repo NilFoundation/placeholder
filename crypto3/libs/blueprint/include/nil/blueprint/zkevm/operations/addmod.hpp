@@ -326,26 +326,24 @@ namespace nil {
 
             void generate_assignments(zkevm_table_type &zkevm_table, const zkevm_machine_interface &machine) override {
                 using word_type = typename zkevm_stack::word_type;
-                using integral_type = nil::crypto3::multiprecision::big_uint<257>;
 
                 word_type a = machine.stack_top();
                 word_type b = machine.stack_top(1);
                 word_type N = machine.stack_top(2);
 
-                integral_type s_integral = integral_type(a) + integral_type(b);
-                int is_overflow = (s_integral >= zkevm_modulus);
-                word_type s = word_type(s_integral);
+                auto s_full = nil::crypto3::multiprecision::big_uint<257>(a) + b;
+                int is_overflow = s_full.bit_test(256);
+                word_type s = s_full.truncate<256>();
 
-                integral_type r_integral = N != 0u ? s_integral / integral_type(N) : 0u;
-                bool r_overflow = (r_integral >= zkevm_modulus);
-                word_type r = r_integral;
+                auto r_full = N != 0u ? s_full / N : 0u;
+                bool r_overflow = r_full.bit_test(256);
+                word_type r = r_full.truncate<256>();
 
                 // word_type q = N != 0u ? s % N : s;
-                word_type q = word_type(s_integral - r_integral*integral_type(N));
-                word_type q_out = N != 0u ? q : 0; // according to EVM spec s % 0 = 0
+                word_type q = word_type(s_full - r_full * N);
+                word_type q_out = N != 0u ? q : 0u;  // according to EVM spec s % 0 = 0
 
-                bool t_last = integral_type(q) < integral_type(N);
-                word_type v = word_type(integral_type(q) + integral_type(t_last)*zkevm_modulus - integral_type(N));
+                word_type v = subtract_wrapping(q, N);
 
                 word_type result = q_out;
 

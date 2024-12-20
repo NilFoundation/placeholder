@@ -47,12 +47,11 @@ namespace nil {
                 using generic_component<FieldType, stage>::lookup_table;
             public:
                 using typename generic_component<FieldType,stage>::TYPE;
-                using integral_type = zkevm_word_integral_type;
 
                 zkevm_add_sub_bbf(context_type &context_object, const opcode_input_type<FieldType, stage> &current_state, bool is_add):
                     generic_component<FieldType,stage>(context_object, false)
                 {
-                    integral_type two_128 = integral_type(1) << 128;
+                    zkevm_word_type two_128 = zkevm_word_type(1) << 128;
 
                     std::vector<TYPE> A(16);
                     std::vector<TYPE> B(16);

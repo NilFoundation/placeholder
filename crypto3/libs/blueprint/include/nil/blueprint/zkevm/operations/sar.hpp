@@ -432,37 +432,23 @@ namespace nil {
 
             void generate_assignments(zkevm_table_type &zkevm_table, const zkevm_machine_interface &machine) override {
                 using word_type = typename zkevm_stack::word_type;
-                using integral_type = nil::crypto3::multiprecision::big_uint<257>;
 
                 word_type input_b = machine.stack_top();
                 word_type input_a = machine.stack_top(1);
 
-                auto is_negative = [](word_type x) {
-                     return (integral_type(x) > zkevm_modulus/2 - 1);
-                };
-                auto negate_word = [](word_type x) {
-                    return word_type(zkevm_modulus - integral_type(x));
-                };
-                auto abs_word = [&is_negative, &negate_word](word_type x) {
-                    return is_negative(x)? negate_word(x) : x;
-                };
-
                 word_type a = abs_word(input_a);
 
-                int shift = (integral_type(input_b) < 256) ? int(integral_type(input_b)) : 256;
-                integral_type r_integral = integral_type(a) >> shift;
+                int shift = (input_b < 256) ? int(input_b) : 256;
+                word_type r = a >> shift;
 
-                word_type result = is_negative(input_a) ? (
-                                     (r_integral == 0)? word_type(zkevm_modulus-1) : negate_word(word_type(r_integral))
-                                   ) : word_type(r_integral);
+                word_type result = is_negative(input_a) ? ((r == 0) ? neg_one : negate_word(r)) : r;
 
-                word_type b = word_type(integral_type(1) << shift);
+                word_type b = word_type(1) << shift;
 
-                word_type r = r_integral;
-                word_type q = b != 0u ? a.base() % b.base() : a;
+                // TODO(ioxid): optimize this with bit ops
+                word_type q = b != 0u ? a % b : a;
 
-                bool t_last = integral_type(q) < integral_type(b);
-                word_type v = word_type(integral_type(q) + integral_type(t_last)*zkevm_modulus - integral_type(b));
+                word_type v = subtract_wrapping(q, b);
 
                 const std::vector<value_type> input_a_chunks = zkevm_word_to_field_element<BlueprintFieldType>(input_a);
                 const std::vector<value_type> a_chunks = zkevm_word_to_field_element<BlueprintFieldType>(a);
@@ -481,8 +467,7 @@ namespace nil {
                 for (std::size_t i = 0; i < chunk_amount; i++) {
                     assignment.witness(witness_cols[i], curr_row) = result_chunks[i];
                 }
-                integral_type two_15 = 32768,
-                              biggest_input_a_chunk = integral_type(input_a) >> (256-16);
+                word_type two_15 = 32768, biggest_input_a_chunk = input_a >> (256 - 16);
                 assignment.witness(witness_cols[chunk_amount],curr_row) =
                         (biggest_input_a_chunk > two_15 - 1) ? (biggest_input_a_chunk - two_15) : biggest_input_a_chunk + two_15; // a_aux
                 assignment.witness(witness_cols[chunk_amount + 1],curr_row) = (biggest_input_a_chunk > two_15 - 1); // a_neg
@@ -563,18 +548,19 @@ namespace nil {
                 for (std::size_t i = 0; i < chunk_amount; i++) {
                     assignment.witness(witness_cols[i], curr_row + 5) = input_b_chunks[i];
                 }
-                value_type b0p   = integral_type(input_b) % 16,
-                           b0pp  = (integral_type(input_b) / 16) % 16,
-                           b0ppp = (integral_type(input_b) % 65536) / 256,
-                           I1    = b0ppp.is_zero() ? 0 : b0ppp.inversed();
+                value_type b0p = input_b % 16, b0pp = (input_b / 16) % 16,
+                           b0ppp = (input_b % 65536) / 256,
+                           I1 = b0ppp.is_zero() ? 0 : b0ppp.inversed();
 
                 value_type sum_part_b = 0;
                 for(std::size_t i = 1; i < chunk_amount; i++) {
                     sum_part_b += input_b_chunks[i];
                 }
                 value_type I2 = sum_part_b.is_zero() ? 0 : sum_part_b.inversed(),
-                           z = (1 - b0ppp * I1) * (1 - sum_part_b * I2), // z is zero if input_b >= 256, otherwise it is 1
-                           tp = z * (static_cast<unsigned int>(1) << int(integral_type(input_b) % 16));
+                           z = (1 - b0ppp * I1) *
+                               (1 -
+                                sum_part_b * I2),  // z is zero if input_b >= 256, otherwise it is 1
+                    tp = z * (static_cast<unsigned int>(1) << int(input_b % 16));
 
                 assignment.witness(witness_cols[chunk_amount], curr_row + 5) = b0p;
                 assignment.witness(witness_cols[chunk_amount + 1], curr_row + 5) = b0pp;

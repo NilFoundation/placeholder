@@ -146,7 +146,6 @@ namespace nil {
             void generate_assignments(zkevm_table_type &zkevm_table, const zkevm_machine_interface &machine,
                                       zkevm_word_type additional_input) {
                 using word_type = typename zkevm_stack::word_type;
-                using integral_type = nil::crypto3::multiprecision::big_uint<257>;
                 using circuit_integral_type = typename BlueprintFieldType::integral_type;
                 zkevm_opcode opcode_mnemo = machine.error_opcode();
                 std::size_t opcode_num = zkevm_table.get_opcodes_info().get_opcode_number(opcode_mnemo);
