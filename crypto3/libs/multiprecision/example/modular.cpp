@@ -1,6 +1,5 @@
 //---------------------------------------------------------------------------//
-// Copyright (c) 2020-2021 Mikhail Komarov <nemo@nil.foundation>
-// Copyright (c) 2020-2021 Nikita Kaskov <nbering@nil.foundation>
+// Copyright (c) 2024 Vasiliy Olekhov <vasiliy.olekhov@nil.foundation>
 //
 // MIT License
 //
@@ -22,39 +21,31 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //---------------------------------------------------------------------------//
-// This example demonstrates generation of elements for different structures:
-// * Field modulo p
-// * Elliptic curve point
-// * Extended Field - GT group for pairing-friendly curve
+// This example demonstrates usage of multiprecision modular arithmetic
 
 #include <iostream>
+#include <iomanip>
 
+#include <nil/crypto3/multiprecision/integer.hpp>
 #include <nil/crypto3/multiprecision/literals.hpp>
 
-#include <nil/crypto3/algebra/curves/alt_bn128.hpp>
-#include <nil/crypto3/algebra/curves/bls12.hpp>
-
-#include <nil/crypto3/algebra/random_element.hpp>
-
-using namespace nil::crypto3::algebra;
-
-
-template<typename Type>
-void random_element_example() {
-    typename Type::value_type v = random_element<Type>();
-
-    std::cout << "Got random value:" << v << std::endl;
-}
-
 int main() {
-    std::cout << "ALT_BN128-254 Fq random element choice:" << std::endl;
-    random_element_example<typename fields::alt_bn128_fq<254>>();
+    /* modulus must be known at compile time */
+    constexpr static const nil::crypto3::multiprecision::big_uint<64> p = 0xffffffff00000001_big_uint64;
+    using modular_t = nil::crypto3::multiprecision::montgomery_big_mod<p>;
 
-    std::cout << "BLS12-381 G1 random element choice:" << std::endl;
-    random_element_example<typename curves::bls12<381>::g1_type<>>();
+    modular_t x = 1, y = 1, f;
+    int N = 100;
 
-    std::cout << "BLS12-381 Gt random element choice:" << std::endl;
-    random_element_example<typename curves::bls12<381>::gt_type>();
+    std::cout << N << " Fibonacci numbers (modulo 0x" << std::hex << p << std::dec << ") :" << std::endl;
+    std::cout << std::setw(5) << 0 << ": " << x << std::endl;
+    std::cout << std::setw(5) << 1 << ": " << y << std::endl;
 
+    for(size_t i = 2; i < N; ++i) {
+        f = x + y;
+        std::cout << std::setw(5) << i << ": " << f << std::endl;
+        x = y;
+        y = f;
+    }
     return 0;
 }

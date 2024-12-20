@@ -22,6 +22,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //---------------------------------------------------------------------------//
+// This example shows basic operations on curve elements: addition, subtraction
+// and doubling
 
 #include <iostream>
 

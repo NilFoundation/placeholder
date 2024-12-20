@@ -32,8 +32,6 @@
 
 #include <nil/crypto3/hash/algorithm/hash.hpp>
 
-#include <nil/crypto3/algebra/marshalling.hpp>
-
 #include <nil/crypto3/detail/type_traits.hpp>
 #include <nil/crypto3/algebra/type_traits.hpp>
 #include <nil/crypto3/detail/pack.hpp>

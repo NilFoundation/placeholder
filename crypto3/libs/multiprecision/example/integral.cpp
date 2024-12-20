@@ -1,6 +1,5 @@
 //---------------------------------------------------------------------------//
-// Copyright (c) 2020-2021 Mikhail Komarov <nemo@nil.foundation>
-// Copyright (c) 2020-2021 Nikita Kaskov <nbering@nil.foundation>
+// Copyright (c) 2024 Vasiliy Olekhov <vasiliy.olekhov@nil.foundation>
 //
 // MIT License
 //
@@ -22,39 +21,37 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //---------------------------------------------------------------------------//
-// This example demonstrates generation of elements for different structures:
-// * Field modulo p
-// * Elliptic curve point
-// * Extended Field - GT group for pairing-friendly curve
+// This example demonstrates usage of multiprecision integrals
 
 #include <iostream>
+#include <iomanip>
 
+#include <nil/crypto3/multiprecision/integer.hpp>
 #include <nil/crypto3/multiprecision/literals.hpp>
 
-#include <nil/crypto3/algebra/curves/alt_bn128.hpp>
-#include <nil/crypto3/algebra/curves/bls12.hpp>
-
-#include <nil/crypto3/algebra/random_element.hpp>
-
-using namespace nil::crypto3::algebra;
-
-
-template<typename Type>
-void random_element_example() {
-    typename Type::value_type v = random_element<Type>();
-
-    std::cout << "Got random value:" << v << std::endl;
-}
-
 int main() {
-    std::cout << "ALT_BN128-254 Fq random element choice:" << std::endl;
-    random_element_example<typename fields::alt_bn128_fq<254>>();
+    nil::crypto3::multiprecision::big_uint<128> x = 0x01, y = 0x01;
+    nil::crypto3::multiprecision::big_uint<128> f;
+    size_t N = 180;
 
-    std::cout << "BLS12-381 G1 random element choice:" << std::endl;
-    random_element_example<typename curves::bls12<381>::g1_type<>>();
+    std::cout << N << " Fibonacci numbers:" << std::endl;
+    std::cout << std::setw(5) << 0 << ": " << x << std::endl;
+    std::cout << std::setw(5) << 1 << ": " << y << std::endl;
 
-    std::cout << "BLS12-381 Gt random element choice:" << std::endl;
-    random_element_example<typename curves::bls12<381>::gt_type>();
+    for(size_t i = 2; i < N; ++i) {
+        f = x + y;
+        std::cout << std::setw(5) << i << ": " << f << std::endl;
+        x = y;
+        y = f;
+    }
 
+    N = 30;
+    std::cout << N << " Factorials:" << std::endl;
+    x = 1; f = 1;
+    for(size_t i = 1; i <= N; ++i) {
+        f *= x;
+        x += 1;
+        std::cout << std::setw(5) << i << ": " << f << std::endl;
+    }
     return 0;
 }
