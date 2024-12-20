@@ -232,21 +232,21 @@ namespace nil {
                         case zkevm_opcode::ADD:{
                             word_type a = stack_pop();
                             word_type b = stack_pop();
-                            stack.push(a+b);
+                            stack.push(add_wrapping(a, b));
                             pc++; gas -=  3;
                             break;
                         }
                         case zkevm_opcode::SUB:{
                             word_type a = stack_pop();
                             word_type b = stack_pop();
-                            stack.push(a-b);
+                            stack.push(subtract_wrapping(a, b));
                             pc++; gas -=  3;
                             break;
                         }
                         case zkevm_opcode::MUL:{
                             word_type a = stack_pop();
                             word_type b = stack_pop();
-                            stack.push(a*b);
+                            stack.push(multiply_wrapping(a, b));
                             pc++; gas -=  5;
                             break;
                         }
