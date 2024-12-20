@@ -56,3 +56,7 @@ add_tests(test)
 
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
+if(BUILD_EXAMPLES)
+    add_subdirectory(example)
+endif()
