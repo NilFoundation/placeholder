@@ -7,7 +7,7 @@
 // http://www.boost.org/LICENSE_1_0.txt
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE modular_fixed_multiprecision_test
+#define BOOST_TEST_MODULE modular_adaptor_fixed_benchmark
 
 #define TEST_CPP_INT
 
