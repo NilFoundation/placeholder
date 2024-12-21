@@ -17,8 +17,8 @@
 #include "nil/crypto3/multiprecision/big_mod.hpp"
 #include "nil/crypto3/multiprecision/big_uint.hpp"
 #include "nil/crypto3/multiprecision/detail/integer_ops_base.hpp"
-#include "nil/crypto3/multiprecision/detail/integer_utils.hpp"
 #include "nil/crypto3/multiprecision/inverse.hpp"
+#include "nil/crypto3/multiprecision/unsigned_utils.hpp"
 
 namespace nil::crypto3::multiprecision {
     template<
@@ -37,7 +37,7 @@ namespace nil::crypto3::multiprecision {
                          int> = 0>
     constexpr big_mod_t pow(const big_mod_t &b, const T &e) {
         if (e < 0) {
-            return pow_unsigned(inverse(b), detail::unsigned_abs(e));
+            return pow_unsigned(inverse(b), unsigned_abs(e));
         }
         return pow_unsigned(b, static_cast<std::make_unsigned_t<T>>(e));
     }
@@ -51,7 +51,7 @@ namespace nil::crypto3::multiprecision {
             return 1u;
         }
 
-        auto e = detail::unsigned_or_throw(e_original);
+        auto e = unsigned_or_throw(e_original);
 
         T1 res = 1u;
 
@@ -76,8 +76,8 @@ namespace nil::crypto3::multiprecision {
                                   detail::is_integral_v<std::decay_t<T3>>,
                               int> = 0>
     constexpr std::decay_t<T3> powm(T1 &&b, T2 &&e, T3 &&m) {
-        using big_mod_t = big_mod_rt<std::decay_t<decltype(detail::as_big_uint(
-            detail::unsigned_or_throw(m)))>::Bits>;
+        using big_mod_t = big_mod_rt<
+            std::decay_t<decltype(detail::as_big_uint(unsigned_or_throw(m)))>::Bits>;
         return static_cast<std::decay_t<T3>>(
             pow(big_mod_t(std::forward<T1>(b), std::forward<T3>(m)), std::forward<T2>(e))
                 .base());

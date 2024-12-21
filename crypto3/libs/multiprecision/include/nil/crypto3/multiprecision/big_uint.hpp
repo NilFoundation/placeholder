@@ -41,7 +41,7 @@
 #include "nil/crypto3/multiprecision/detail/big_uint/type_traits.hpp"  // IWYU pragma: export
 #include "nil/crypto3/multiprecision/detail/config.hpp"
 #include "nil/crypto3/multiprecision/detail/endian.hpp"
-#include "nil/crypto3/multiprecision/detail/integer_utils.hpp"
+#include "nil/crypto3/multiprecision/unsigned_utils.hpp"
 
 namespace nil::crypto3::multiprecision {
     /**
@@ -152,7 +152,7 @@ namespace nil::crypto3::multiprecision {
 
         template<typename T, std::enable_if_t<std::is_integral_v<T>, int> = 0>
         constexpr void do_assign_integral(const T& a) {
-            do_assign_integral_unchecked(detail::unsigned_or_throw(a));
+            do_assign_integral_unchecked(unsigned_or_throw(a));
             if constexpr (sizeof(T) * CHAR_BIT > Bits) {
                 if (compare(a) != 0) {
                     throw std::range_error("big_uint: overflow");
@@ -568,7 +568,7 @@ namespace nil::crypto3::multiprecision {
 
         template<typename T, std::enable_if_t<std::is_integral_v<T>, int> = 0>
         friend constexpr auto operator-(const T& a, const big_uint& b) {
-            auto a_unsigned = detail::unsigned_or_throw(a);
+            auto a_unsigned = unsigned_or_throw(a);
             if (a_unsigned < b) {
                 throw std::overflow_error("big_uint: subtraction overflow");
             }
@@ -601,7 +601,7 @@ namespace nil::crypto3::multiprecision {
 
         template<typename T, std::enable_if_t<detail::is_integral_v<T>, int> = 0>
         friend constexpr auto operator*(const big_uint& a, const T& b) {
-            decltype(auto) b_unsigned = detail::unsigned_or_throw(b);
+            decltype(auto) b_unsigned = unsigned_or_throw(b);
             detail::largest_big_uint_t<big_uint, T> result;
             detail::multiply<detail::operation_mode::checked>(
                 result, a, detail::as_big_uint(b_unsigned));
@@ -615,7 +615,7 @@ namespace nil::crypto3::multiprecision {
 
         template<typename T, std::enable_if_t<detail::is_integral_v<T>, int> = 0>
         friend constexpr auto& operator*=(big_uint& a, const T& b) {
-            decltype(auto) b_unsigned = detail::unsigned_or_throw(b);
+            decltype(auto) b_unsigned = unsigned_or_throw(b);
             detail::multiply<detail::operation_mode::checked>(
                 a, a, detail::as_big_uint(b_unsigned));
             return a;
@@ -623,7 +623,7 @@ namespace nil::crypto3::multiprecision {
 
         template<typename T, std::enable_if_t<detail::is_integral_v<T>, int> = 0>
         friend constexpr auto wrapping_mul(const big_uint& a, const T& b) {
-            decltype(auto) b_unsigned = detail::unsigned_abs(b);
+            decltype(auto) b_unsigned = unsigned_abs(b);
             detail::largest_big_uint_t<big_uint, T> result;
             detail::multiply<detail::operation_mode::wrapping>(
                 result, a, detail::as_big_uint(b_unsigned));
@@ -642,7 +642,7 @@ namespace nil::crypto3::multiprecision {
 
         template<typename T, std::enable_if_t<detail::is_integral_v<T>, int> = 0>
         friend constexpr auto& wrapping_mul_assign(big_uint& a, const T& b) {
-            decltype(auto) b_unsigned = detail::unsigned_abs(b);
+            decltype(auto) b_unsigned = unsigned_abs(b);
             detail::multiply<detail::operation_mode::wrapping>(
                 a, a, detail::as_big_uint(b_unsigned));
             if constexpr (std::is_signed_v<T>) {
@@ -662,8 +662,8 @@ namespace nil::crypto3::multiprecision {
                          (std::is_integral_v<T1> && std::is_same_v<T2, big_uint>),
                      int> = 0>
         friend constexpr auto operator/(const T1& a, const T2& b) {
-            decltype(auto) a_unsigned = detail::unsigned_or_throw(a);
-            decltype(auto) b_unsigned = detail::unsigned_or_throw(b);
+            decltype(auto) a_unsigned = unsigned_or_throw(a);
+            decltype(auto) b_unsigned = unsigned_or_throw(b);
             using big_uint_a = std::decay_t<decltype(detail::as_big_uint(a_unsigned))>;
             big_uint_a result;
             big_uint_a modulus;
@@ -674,7 +674,7 @@ namespace nil::crypto3::multiprecision {
 
         template<typename T, std::enable_if_t<detail::is_integral_v<T>, int> = 0>
         friend constexpr auto& operator/=(big_uint& a, const T& b) {
-            decltype(auto) b_unsigned = detail::unsigned_or_throw(b);
+            decltype(auto) b_unsigned = unsigned_or_throw(b);
             big_uint result;
             big_uint modulus;
             detail::divide(&result, a, detail::as_big_uint(b_unsigned), modulus);
@@ -688,8 +688,8 @@ namespace nil::crypto3::multiprecision {
                          (std::is_integral_v<T1> && std::is_same_v<T2, big_uint>),
                      int> = 0>
         friend constexpr auto operator%(const T1& a, const T2& b) {
-            decltype(auto) a_unsigned = detail::unsigned_or_throw(a);
-            decltype(auto) b_unsigned = detail::unsigned_or_throw(b);
+            decltype(auto) a_unsigned = unsigned_or_throw(a);
+            decltype(auto) b_unsigned = unsigned_or_throw(b);
             using big_uint_a = std::decay_t<decltype(detail::as_big_uint(a_unsigned))>;
             big_uint_a modulus;
             detail::divide(static_cast<big_uint_a*>(nullptr),
@@ -700,7 +700,7 @@ namespace nil::crypto3::multiprecision {
 
         template<typename T, std::enable_if_t<detail::is_integral_v<T>, int> = 0>
         friend constexpr auto& operator%=(big_uint& a, const T& b) {
-            decltype(auto) b_unsigned = detail::unsigned_or_throw(b);
+            decltype(auto) b_unsigned = unsigned_or_throw(b);
             big_uint modulus;
             detail::divide(static_cast<big_uint*>(nullptr), a,
                            detail::as_big_uint(b_unsigned), modulus);
@@ -712,7 +712,7 @@ namespace nil::crypto3::multiprecision {
     template<typename T, std::enable_if_t<detail::is_integral_v<T>, int> = 0>           \
     friend constexpr auto operator OP_(const big_uint& a, const T& b) {                 \
         detail::largest_big_uint_t<big_uint, T> result = a;                             \
-        result.METHOD_(detail::as_limb_type_or_big_uint(detail::unsigned_or_throw(b))); \
+        result.METHOD_(detail::as_limb_type_or_big_uint(unsigned_or_throw(b))); \
         return result;                                                                  \
     }                                                                                   \
                                                                                         \
@@ -723,7 +723,7 @@ namespace nil::crypto3::multiprecision {
                                                                                         \
     template<typename T, std::enable_if_t<detail::is_integral_v<T>, int> = 0>           \
     friend constexpr auto& operator OP_ASSIGN_(big_uint & a, const T & b) {             \
-        a.METHOD_(detail::as_limb_type_or_big_uint(detail::unsigned_or_throw(b)));      \
+        a.METHOD_(detail::as_limb_type_or_big_uint(unsigned_or_throw(b)));      \
         return a;                                                                       \
     }
 
@@ -968,7 +968,7 @@ namespace nil::crypto3::multiprecision {
             if (!s_original) {
                 return *this;
             }
-            auto s = detail::unsigned_or_throw(s_original);
+            auto s = unsigned_or_throw(s_original);
 
 #if NIL_CO3_MP_ENDIAN_LITTLE_BYTE && defined(NIL_CO3_MP_USE_LIMB_SHIFT)
             constexpr limb_type limb_shift_mask = limb_bits - 1;
@@ -1015,7 +1015,7 @@ namespace nil::crypto3::multiprecision {
             if (!s_original) {
                 return *this;
             }
-            auto s = detail::unsigned_or_throw(s_original);
+            auto s = unsigned_or_throw(s_original);
 
 #if NIL_CO3_MP_ENDIAN_LITTLE_BYTE && defined(NIL_CO3_MP_USE_LIMB_SHIFT)
             constexpr limb_type limb_shift_mask = limb_bits - 1;
