@@ -10,8 +10,6 @@
 
 #pragma once
 
-// IWYU pragma: private
-
 #include <cstddef>
 
 #include <boost/assert.hpp>

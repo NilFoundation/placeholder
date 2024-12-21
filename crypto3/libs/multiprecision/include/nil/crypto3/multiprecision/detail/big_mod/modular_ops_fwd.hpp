@@ -11,8 +11,6 @@
 
 #pragma once
 
-// IWYU pragma: private
-
 #include <cstddef>
 
 namespace nil::crypto3::multiprecision::detail {

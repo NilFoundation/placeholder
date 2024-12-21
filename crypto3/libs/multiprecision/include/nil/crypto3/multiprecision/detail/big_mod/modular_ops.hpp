@@ -11,8 +11,6 @@
 
 #pragma once
 
-// IWYU pragma: private
-
 #include <climits>
 #include <cstddef>
 #include <limits>
