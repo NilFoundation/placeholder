@@ -340,8 +340,8 @@ namespace nil {
                             word_type a = stack_pop();
                             word_type input_b = stack_pop();
                             int shift = (input_b < 256) ? int(input_b) : 256;
+                            // TODO(ioxid): FIXME: this should be right shift
                             word_type r = a << shift;
-                            // TODO(ioxid): fix
                             // word_type b = word_type(1) << shift;
                             stack.push(r);
                             pc++; gas -= 3;

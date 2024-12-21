@@ -262,7 +262,7 @@ namespace nil::crypto3::multiprecision {
 
       private:
         constexpr std::string decimal_str() const {
-            // TODO(ioxid): this is inefficient
+            // TODO(ioxid): optimize
             std::string result;
             auto copy = *this;
             while (!copy.is_zero()) {
@@ -653,7 +653,7 @@ namespace nil::crypto3::multiprecision {
             return a;
         }
 
-        // TODO(ioxid): maybe add wrapping version of division and modulus, which accepts
+        // TODO(ioxid): maybe add wrapping versions of division and modulus, which accept
         // negative arguments
 
         template<typename T1, typename T2,
