@@ -229,7 +229,9 @@ namespace nil {
                          data[6] * (((one << 384) % L) & ((one << 73) - 1)) +
                          data[7] * (((one << 448) % L) & ((one << 73) - 1)) + q * ((one << 73) - 
                         (crypto3::algebra::curves::ed25519::scalar_field_type::extended_integral_type(L) % (one << 73)));
-                crypto3::algebra::curves::ed25519::scalar_field_type::extended_integral_type r_extended = r;
+                auto r_extended = static_cast<
+                    crypto3::algebra::curves::ed25519::scalar_field_type::extended_integral_type>(
+                    r);
                 auto d = (r_extended) & ((1 << (13)) - 1) + ((r_extended >> 13) & ((1 << (20)) - 1)) * (one << 13) +
                                    ((r_extended >> 33) & ((1 << (20)) - 1)) * (one << 33) +
                                    ((r_extended >> 53) & ((1 << (20)) - 1)) * (one << 53);
@@ -301,9 +303,15 @@ namespace nil {
                 auto constraint_4 =
                     (s_r) * var(component.W(5), 0) +
                     (1 - (s_r)*var(component.W(5), 0)) * var(component.W(6), 0) - 1;
-                crypto3::algebra::curves::ed25519::scalar_field_type::extended_integral_type one = 1;
-                std::array<crypto3::algebra::curves::ed25519::scalar_field_type::extended_integral_type, 5> m = {
-                    ((one << 192) % L), ((one << 256) % L), ((one << 320) % L), ((one << 384) % L), ((one << 448) % L)};
+                using extended_integral_type =
+                    crypto3::algebra::curves::ed25519::scalar_field_type::extended_integral_type;
+                extended_integral_type one = 1;
+                std::array<extended_integral_type, 5> m = {
+                    static_cast<extended_integral_type>((one << 192) % L),
+                    static_cast<extended_integral_type>((one << 256) % L),
+                    static_cast<extended_integral_type>((one << 320) % L),
+                    static_cast<extended_integral_type>((one << 384) % L),
+                    static_cast<extended_integral_type>((one << 448) % L)};
                 auto constraint_5 =
                     var(component.W(0), +1) + var(component.W(1), +1) * (one << 64) +
                     var(component.W(3), +1) * (m[0] & ((one << 73) - 1)) +

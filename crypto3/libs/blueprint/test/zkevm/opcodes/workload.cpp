@@ -116,9 +116,9 @@ BOOST_AUTO_TEST_CASE(zkevm_workload_test) {
 
     // incorrect test logic, but we have no memory operations so
     for(std::size_t i = 0; i < workload; i++) {
-        opcode_tester.push_opcode(zkevm_opcode::PUSH1, 0x11_big_uint257);
-        opcode_tester.push_opcode(zkevm_opcode::PUSH1, 0x22_big_uint257);
-        opcode_tester.push_opcode(zkevm_opcode::PUSH1, 0x33_big_uint257);
+        opcode_tester.push_opcode(zkevm_opcode::PUSH1, 0x11_big_uint256);
+        opcode_tester.push_opcode(zkevm_opcode::PUSH1, 0x22_big_uint256);
+        opcode_tester.push_opcode(zkevm_opcode::PUSH1, 0x33_big_uint256);
         opcode_tester.push_opcode(implemented_opcodes[i % num_of_opcodes]);
     }
     opcode_tester.push_opcode(zkevm_opcode::RETURN);

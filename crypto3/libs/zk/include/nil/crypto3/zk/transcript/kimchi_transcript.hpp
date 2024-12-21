@@ -29,10 +29,9 @@ namespace nil {
 
                 template<typename integral_type>
                 integral_type pack(std::vector<uint64_t> limbs_lsb) {
+                    static_assert(integral_type::Bits % CHAR_BIT == 0);
                     nil::crypto3::marshalling::status_type status;
-                    std::size_t byte_size =
-                            integral_type::Bits / // TODO(ioxid): should round up here
-                            CHAR_BIT;
+                    std::size_t byte_size = integral_type::Bits / CHAR_BIT;
                     std::size_t size = byte_size / sizeof(uint64_t) + (byte_size % sizeof(uint64_t) ? 1 : 0);
                     limbs_lsb.resize(size);
                     std::reverse(limbs_lsb.begin(), limbs_lsb.end());

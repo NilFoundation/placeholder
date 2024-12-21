@@ -32,6 +32,7 @@
 #include <boost/math/constants/constants.hpp>
 
 #include <nil/crypto3/multiprecision/big_uint.hpp>
+#include <nil/crypto3/multiprecision/pow.hpp>
 
 #include <nil/crypto3/algebra/totient.hpp>
 #include <nil/crypto3/algebra/type_traits.hpp>

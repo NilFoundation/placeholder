@@ -29,8 +29,6 @@
 #include <cstddef>
 
 #include <nil/crypto3/multiprecision/big_uint.hpp>
-#include <boost/type_traits/is_integral.hpp>
-#include <boost/multiprecision/number.hpp>
 
 #include <nil/marshalling/field_type.hpp>
 #include <nil/marshalling/types/integral.hpp>

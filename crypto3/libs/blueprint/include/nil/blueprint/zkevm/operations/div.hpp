@@ -216,8 +216,8 @@ namespace nil {
                 zkevm_stack &stack = machine.stack;
                 word_type a = stack.pop();
                 word_type b = stack.pop();
-                word_type result = b.base() != 0u ? a.base() / b.base() : 0u;
-                word_type q = b.base() != 0u ? a.base() % b.base() : a;
+                word_type result = b != 0u ? a / b : 0u;
+                word_type q = b != 0u ? a % b : a;
 
                 const std::vector<value_type> a_chunks = zkevm_word_to_field_element<BlueprintFieldType>(a);
                 const std::vector<value_type> b_chunks = zkevm_word_to_field_element<BlueprintFieldType>(b);

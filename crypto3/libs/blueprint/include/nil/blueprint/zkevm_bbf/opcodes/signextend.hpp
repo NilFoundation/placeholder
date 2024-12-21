@@ -68,8 +68,6 @@ namespace nil {
                                      const opcode_input_type<FieldType, stage> &current_state)
                     : generic_component<FieldType, stage>(context_object, false),
                       res(chunk_amount) {
-                    using integral_type = zkevm_word_integral_type;
-
                     std::vector<TYPE> b_chunks(chunk_amount);
                     std::vector<TYPE> x_chunks(chunk_amount);
                     std::vector<TYPE> r_chunks(chunk_amount);
@@ -98,27 +96,26 @@ namespace nil {
                         zkevm_word_type b = current_state.stack_top();
                         zkevm_word_type x = current_state.stack_top(1);
 
-                        int len = (integral_type(b) < 32) ? int(integral_type(b)) + 1 : 32;
-                        integral_type sign = (integral_type(x) << (8 * (32 - len) + 1)) >> 256;
+                        int len = (b < 32) ? int(b) + 1 : 32;
+                        zkevm_word_type sign = (x << (8 * (32 - len))) >> 255;
                         zkevm_word_type result =
-                            zkevm_word_type(
-                                (((integral_type(1) << 8 * (32 - len)) - 1) << 8 * len) * sign) +
-                            zkevm_word_type((integral_type(x) << (8 * (32 - len) + 1)) >>
-                                            (8 * (32 - len) + 1));
-                        // +1 because integral type is 257 bits long
 
-                        unsigned int b0 = static_cast<unsigned int>(integral_type(b) % 65536);
-                        unsigned int b0p_ui = (integral_type(b) > 65535) ? 32 : b0;
+                            (wrapping_sub(zkevm_word_type(1) << 8 * (32 - len), 1)
+                             << 8 * len) *
+                                    sign +
+                                (x << (8 * (32 - len))) >>
+                            (8 * (32 - len));
+
+                        unsigned int b0 = static_cast<unsigned int>(b % 65536);
+                        unsigned int b0p_ui = (b > 65535) ? 32 : b0;
                         b0p = b0p_ui;
                         unsigned int parity_ui = b0p_ui%2;
                         parity = parity_ui;
                         unsigned int n_ui = (b0p_ui-parity_ui)/2;
                         n = n_ui;
                         unsigned int xn_ui = static_cast<unsigned int>(
-                            (integral_type(x) << (16 * (n_ui > 15 ? 16 : 15 - n_ui) + 1)) >>
-                            (16 * 15 + 1));
+                            (x << (16 * (n_ui > 15 ? 16 : 15 - n_ui))) >> (16 * 15));
                         xn = xn_ui;
-                        // +1 because integral_type is 257 bits long
                         unsigned int xpp_ui = xn_ui % 256;
                         xpp = xpp_ui;
                         xp = (xn - xpp) / 256;

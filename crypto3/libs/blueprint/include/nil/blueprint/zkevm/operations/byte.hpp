@@ -131,22 +131,17 @@ namespace nil {
 
             void generate_assignments(zkevm_table_type &zkevm_table, const zkevm_machine_interface &machine) override {
                 using word_type = typename zkevm_stack::word_type;
-                using integral_type = nil::crypto3::multiprecision::big_uint<257>;
 
                 word_type i = machine.stack_top();
                 word_type x = machine.stack_top(1);
-                int shift = (integral_type(i) < 32) ? int(integral_type(i)) : 32;
-                word_type result = word_type((integral_type(x) << ((8*shift) + 1)) >> (31*8 + 1));
-                                                            // +1 because integral type is 257 bits long
+                int shift = (i < 32) ? int(i) : 32;
+                word_type result = (x << (8 * shift)) >> (31 * 8);
 
-                unsigned int i0 = static_cast<unsigned int>(integral_type(i) % 65536),
-                             i0p = (integral_type(i) > 65535) ? 32 : i0;
+                unsigned int i0 = static_cast<unsigned int>(i % 65536), i0p = (i > 65535) ? 32 : i0;
                 int parity = i0p % 2,
                     n = (i0p - parity) / 2;
-                unsigned int xn = static_cast<unsigned int>((integral_type(x) << (16*n + 1)) >> (16*15 + 1)),
-                                                           // +1 because integral_type is 257 bits long
-                             xpp = xn % 256,
-                             xp = (xn - xpp) / 256;
+                unsigned int xn = static_cast<unsigned int>((x << (16 * n)) >> (16 * 15)),
+                             xpp = xn % 256, xp = (xn - xpp) / 256;
 
                 const std::vector<value_type> i_chunks = zkevm_word_to_field_element<BlueprintFieldType>(i);
                 const std::vector<value_type> x_chunks = zkevm_word_to_field_element<BlueprintFieldType>(x);
@@ -179,7 +174,8 @@ namespace nil {
                 assignment.witness(witness_cols[chunk_amount + 4], curr_row) = xn; // n is the offset from MSW
                 assignment.witness(witness_cols[chunk_amount + 5], curr_row) = xp;
                 assignment.witness(witness_cols[chunk_amount + 6], curr_row) = xpp;
-                assignment.witness(witness_cols[chunk_amount + 7], curr_row) = static_cast<value_type>(integral_type(result));
+                assignment.witness(witness_cols[chunk_amount + 7], curr_row) =
+                    static_cast<value_type>(result);
             }
 
             std::size_t rows_amount() override {
