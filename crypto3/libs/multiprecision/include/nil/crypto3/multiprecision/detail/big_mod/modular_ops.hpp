@@ -160,7 +160,7 @@ namespace nil::crypto3::multiprecision::detail {
         constexpr void barrett_reduce(big_uint<Bits2> &result, big_uint<Bits3> input) const {
             if (!input.is_zero()) {
                 if (input.msb() < 2u * mod().msb() + 1u) {
-                    // TODO(ioxid): too small size here
+                    // NB: this should not overflow because we checked msb
                     big_uint_quadruple_1 t1(input);
 
                     t1 *= m_barrett_mu;

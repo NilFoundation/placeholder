@@ -169,7 +169,7 @@ namespace nil {
             zkevm_word_type a_abs = abs_word(a),
                         b_abs = abs_word(b);
 
-            // TODO(ioxid): use divide_qr here
+            // TODO(ioxid): optimize this, use divide_qr
             zkevm_word_type r_abs = b != 0u ? a_abs / b_abs : 0u;
             zkevm_word_type q_abs = b != 0u ? a_abs % b_abs : a_abs,
                             r = (is_negative(a) == is_negative(b)) ? r_abs : negate_word(r_abs),

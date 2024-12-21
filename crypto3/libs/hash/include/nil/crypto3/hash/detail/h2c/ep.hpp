@@ -100,11 +100,9 @@ namespace nil {
                             e.import_bits(uniform_bytes.begin() + elm_offset,
                                           uniform_bytes.begin() + elm_offset + L);
 
-                            // Sometimes hash is 512 bits, while the group element is 256 or 381 bits.
-                            // In these cases we take the number module the modulus of the group.
-                            // TODO(ioxid): this is not needed
-                            e %= suite_type::p;
-
+                            // Sometimes hash is 512 bits, while the group element is 256
+                            // or 381 bits. In these cases we take the number module the
+                            // modulus of the group.
                             coordinates[j] = modular_type(e);
                         }
                         result[i] = field_value_type(coordinates[0]);
