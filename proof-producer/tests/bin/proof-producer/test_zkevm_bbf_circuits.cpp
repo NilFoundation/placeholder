@@ -61,18 +61,37 @@ TEST_P(ProverTests, FillAssignmentAndCheck) {
 
 using namespace nil::proof_generator::circuits;
 
+// !! note that due to https://github.com/NilFoundation/placeholder/issues/196
+// contracts for these traces were compiled with --no-cbor-metadata flag
+
 // Single call of Counter contract increment function
-const std::string SimpleIncrement = "increment_simple.pb";    
+const std::string SimpleIncrement = "increment_simple";
 INSTANTIATE_TEST_SUITE_P(SimpleRw, ProverTests, ::testing::Values(Input{SimpleIncrement,  RW}));
 INSTANTIATE_TEST_SUITE_P(SimpleBytecode, ProverTests, ::testing::Values(Input{SimpleIncrement,  BYTECODE}));
 INSTANTIATE_TEST_SUITE_P(SimpleCopy, ProverTests, ::testing::Values(Input{SimpleIncrement,  COPY}));
 INSTANTIATE_TEST_SUITE_P(SimpleZkevm, ProverTests, ::testing::Values(Input{SimpleIncrement,  ZKEVM}));
 
 // Multiple calls of Counter contract increment function (several transactions)
-// !! note that due to https://github.com/NilFoundation/placeholder/issues/196
-// contracts for these traces were compiled with --no-cbor-metadata flag
-const std::string MultiTxIncrement = "increment_multi_tx.pb"; 
-INSTANTIATE_TEST_SUITE_P(MultiTxRw, ProverTests, ::testing::Values(Input{MultiTxIncrement,  RW})); 
+const std::string MultiTxIncrement = "increment_multi_tx";
+INSTANTIATE_TEST_SUITE_P(MultiTxRw, ProverTests, ::testing::Values(Input{MultiTxIncrement,  RW}));
 INSTANTIATE_TEST_SUITE_P(MultiTxBytecode, ProverTests, :: testing::Values(Input{MultiTxIncrement,  BYTECODE}));
 INSTANTIATE_TEST_SUITE_P(MultiTxCopy, ProverTests, ::testing::Values(Input{MultiTxIncrement,  COPY}));
 INSTANTIATE_TEST_SUITE_P(MultiTxZkevm, ProverTests, ::testing::Values(Input{MultiTxIncrement,  ZKEVM}));
+
+// Multiple calls of Counter contract increment function within multiple blocks
+// FAILING SO FAR (T.T)
+// const std::string MultiBlockIncrement = "increment_multi_block";
+// INSTANTIATE_TEST_SUITE_P(MultiBlockRw, ProverTests, ::testing::Values(Input{MultiBlockIncrement,  RW}));
+// INSTANTIATE_TEST_SUITE_P(MultiBlockBytecode, ProverTests, :: testing::Values(Input{MultiBlockIncrement,  BYTECODE}));
+// INSTANTIATE_TEST_SUITE_P(MultiBlockCopy, ProverTests, ::testing::Values(Input{MultiBlockIncrement,  COPY}));
+// INSTANTIATE_TEST_SUITE_P(MultiBlockZkevm, ProverTests, ::testing::Values(Input{MultiBlockIncrement,  ZKEVM}));
+
+
+// Useful commands for traces collection:
+// start nild: `./build/bin/nild run --http-port 8529 -l debug --collator-tick-ms 20000`
+//   `collator-tick-ms` here is how long one block is absorbing transactions.
+// compile contract: `solc -o . --bin --abi example/counter.sol --overwrite`
+// increase `defaultNewWalletAmount` value in nil/cmd/nil/internal/wallet/new.go to be able to create account with whale balance
+// ./build/bin/nil wallet new --amount 100000000000000000
+// ./build/bin/nil wallet deploy ./SimpleStorage.bin --abi ./SimpleStorage.abi
+// for i in {1..100}; do ./build/bin/nil wallet send-message 0x0001443b27c605cc3975e05e8eb68eef1913777c increment --abi ./SimpleStorage.abi --no-wait; done

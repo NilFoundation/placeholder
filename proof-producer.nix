@@ -39,6 +39,7 @@ in stdenv.mkDerivation {
   cmakeFlags =
     [
       "-DCMAKE_INSTALL_PREFIX=${placeholder "out"}"
+      "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON" # to allow VSCode navigation/completion/etc
       (if runTests then "-DENABLE_TESTS=ON" else "-DENABLE_TESTS=OFF")
       (if sanitize then "-DSANITIZE=ON" else "-DSANITIZE=OFF")
       "-DPROOF_PRODUCER_ENABLE=TRUE"
