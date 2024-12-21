@@ -19,11 +19,13 @@
 namespace nil {
     namespace proof_generator {
 
- 
+        const char BINARY_SERIALIZATION_EXTENSION[] = ".bin";
         const char BYTECODE_EXTENSION[] = ".bc";
         const char RW_EXTENSION[] = ".rw";
         const char ZKEVM_EXTENSION[] = ".zkevm";
         const char COPY_EXTENSION[] = ".copy";
+        const char MPT_EXTENSION[] = ".mpt";
+        const char EXP_EXTENSION[] = ".exp";
 
         namespace {
 
@@ -38,9 +40,7 @@ namespace nil {
 
             boost::filesystem::path extend_base_path(boost::filesystem::path base,
                                                      const char* extension) {
-                std::string current_extension = base.has_extension() ? base.extension().string() : "";
-                auto new_extension = base.extension().string() + extension;
-                return base.replace_extension(new_extension);
+                return base.string() + extension + BINARY_SERIALIZATION_EXTENSION;
             }
 
             template<typename ProtoTraces>
@@ -120,6 +120,14 @@ namespace nil {
             return extend_base_path(trace_base_path, COPY_EXTENSION);
         }
 
+        boost::filesystem::path get_mpt_trace_path(const boost::filesystem::path& trace_base_path) {
+            return extend_base_path(trace_base_path, MPT_EXTENSION);
+        }
+
+        boost::filesystem::path get_exp_trace_path(const boost::filesystem::path& trace_base_path) {
+            return extend_base_path(trace_base_path, EXP_EXTENSION);
+        }
+
         std::vector<std::uint8_t> string_to_bytes(const std::string& str) {
             std::vector<std::uint8_t> res(str.size());
             for (std::size_t i = 0; i < str.size(); i++) {
@@ -185,7 +193,7 @@ namespace nil {
                     static_cast<uint64_t>(pb_sop.rw_idx()),
                     !pb_sop.is_read(),
                     proto_uint256_to_zkevm_word(pb_sop.value()),
-                    proto_uint256_to_zkevm_word(pb_sop.initial_value()),
+                    proto_uint256_to_zkevm_word(pb_sop.prev_value()),
                     blueprint::zkevm_word_from_string(pb_sop.address().address_bytes())
                 );
                 //TODO root and initial_root?
@@ -278,6 +286,26 @@ namespace nil {
             }
 
             return copy_events;
+        }
+
+        using exp_input = std::pair<blueprint::zkevm_word_type,blueprint::zkevm_word_type>; // base, exponent
+        [[nodiscard]] std::optional<std::vector<std::pair<blueprint::zkevm_word_type,blueprint::zkevm_word_type>>> deserialize_exp_traces_from_file(const boost::filesystem::path& exp_traces_path) {
+            const auto pb_traces = read_pb_traces_from_file<executionproofs::ExpTraces>(exp_traces_path);
+            if (!pb_traces) {
+                return std::nullopt;
+            }
+
+            std::vector<exp_input> exps;
+            exps.reserve(pb_traces->exp_ops_size());
+            for (const auto& pb_exp_op : pb_traces->exp_ops()) {
+                std::cout << "base: " << proto_uint256_to_zkevm_word(pb_exp_op.base()) << " , exponent: " << proto_uint256_to_zkevm_word(pb_exp_op.exponent()) << std::endl;
+                exps.emplace_back(
+                    proto_uint256_to_zkevm_word(pb_exp_op.base()),
+                    proto_uint256_to_zkevm_word(pb_exp_op.exponent())
+                );
+            }
+
+            return exps;
         }
     } // namespace proof_generator
 } // namespace nil
