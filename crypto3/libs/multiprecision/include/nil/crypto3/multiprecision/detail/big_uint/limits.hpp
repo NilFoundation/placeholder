@@ -14,7 +14,10 @@
 #include <cstddef>
 #include <limits>
 
-#include "nil/crypto3/multiprecision/detail/big_uint/big_uint_impl.hpp"
+namespace nil::crypto3::multiprecision {
+    template<std::size_t Bits_>
+    class big_uint;
+}
 
 namespace nil::crypto3::multiprecision::detail {
     template<std::size_t Bits>

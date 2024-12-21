@@ -27,6 +27,7 @@
 
 #include "nil/crypto3/multiprecision/big_mod.hpp"
 #include "nil/crypto3/multiprecision/big_uint.hpp"
+#include "nil/crypto3/multiprecision/pow.hpp"
 
 using namespace nil::crypto3::multiprecision;
 
