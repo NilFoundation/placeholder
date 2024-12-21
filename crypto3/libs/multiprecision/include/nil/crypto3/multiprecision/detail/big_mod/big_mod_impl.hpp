@@ -210,7 +210,7 @@ namespace nil::crypto3::multiprecision {
     }
 
         NIL_CO3_MP_BIG_MOD_OPERATOR_IMPL(+, +=, add)
-        NIL_CO3_MP_BIG_MOD_OPERATOR_IMPL(-, -=, subtract)
+        NIL_CO3_MP_BIG_MOD_OPERATOR_IMPL(-, -=, sub)
         NIL_CO3_MP_BIG_MOD_OPERATOR_IMPL(*, *=, mul)
 
 #undef NIL_CO3_MP_BIG_MOD_OPERATOR_IMPL

@@ -118,7 +118,7 @@ namespace nil::crypto3::multiprecision::detail {
             }
         }
 
-        constexpr void subtract(big_uint_t &a, const big_uint_t &b) const {
+        constexpr void sub(big_uint_t &a, const big_uint_t &b) const {
             if (a < b) {
                 auto v = mod();
                 v -= b;
