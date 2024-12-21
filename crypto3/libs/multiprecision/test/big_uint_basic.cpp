@@ -18,6 +18,7 @@
 
 #include "nil/crypto3/multiprecision/big_uint.hpp"
 #include "nil/crypto3/multiprecision/literals.hpp"
+#include "nil/crypto3/multiprecision/pow.hpp"
 
 NIL_CO3_MP_DEFINE_BIG_UINT_LITERAL(32)
 NIL_CO3_MP_DEFINE_BIG_UINT_LITERAL(33)

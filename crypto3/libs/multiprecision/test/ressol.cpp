@@ -18,6 +18,7 @@
 #include <boost/test/unit_test.hpp>
 
 #include "nil/crypto3/multiprecision/big_uint.hpp"
+#include "nil/crypto3/multiprecision/ressol.hpp"
 
 using namespace nil::crypto3::multiprecision;
 

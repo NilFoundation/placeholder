@@ -29,7 +29,9 @@
 #include <boost/functional/hash.hpp>
 #include <boost/type_index/stl_type_index.hpp>
 
-#include <nil/crypto3/multiprecision/big_uint.hpp>
+#include "nil/crypto3/multiprecision/big_uint.hpp"
+#include "nil/crypto3/multiprecision/gcd.hpp"  // IWYU pragma: keep
+#include "nil/crypto3/multiprecision/pow.hpp"  // IWYU pragma: keep
 
 template<class T>
 struct is_twos_complement_integer : public std::integral_constant<bool, false> {};

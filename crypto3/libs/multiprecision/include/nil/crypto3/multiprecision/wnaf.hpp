@@ -9,13 +9,11 @@
 
 #pragma once
 
-// IWYU pragma: private; include "nil/crypto3/multiprecision/big_uint.hpp"
-
 #include <array>
 #include <cstddef>
 #include <vector>
 
-#include "nil/crypto3/multiprecision/detail/big_uint/big_uint_impl.hpp"
+#include "nil/crypto3/multiprecision/big_uint.hpp"
 
 namespace nil::crypto3::multiprecision {
     namespace detail {
@@ -63,5 +61,4 @@ namespace nil::crypto3::multiprecision {
 
         return res;
     }
-
 }  // namespace nil::crypto3::multiprecision

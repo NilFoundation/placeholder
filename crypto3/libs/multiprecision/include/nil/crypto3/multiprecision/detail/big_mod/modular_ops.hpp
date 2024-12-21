@@ -21,7 +21,7 @@
 
 #include <boost/assert.hpp>
 
-#include "nil/crypto3/multiprecision/detail/big_uint/big_uint_impl.hpp"
+#include "nil/crypto3/multiprecision/big_uint.hpp"
 #include "nil/crypto3/multiprecision/detail/big_uint/storage.hpp"
 #include "nil/crypto3/multiprecision/detail/integer_ops_base.hpp"
 #include "nil/crypto3/multiprecision/detail/integer_utils.hpp"
@@ -61,6 +61,7 @@ namespace nil::crypto3::multiprecision::detail {
       public:
         static constexpr std::size_t Bits = Bits_;
         using big_uint_t = big_uint<Bits>;
+        using base_type = big_uint_t;
         using policy_type = modular_policy<Bits>;
 
         using big_uint_doubled_1 = typename policy_type::big_uint_doubled_1;
@@ -259,6 +260,7 @@ namespace nil::crypto3::multiprecision::detail {
       public:
         static constexpr std::size_t Bits = Bits_;
         using big_uint_t = big_uint<Bits>;
+        using base_type = big_uint_t;
         using policy_type = modular_policy<Bits>;
 
         using big_uint_doubled_1 = typename policy_type::big_uint_doubled_1;

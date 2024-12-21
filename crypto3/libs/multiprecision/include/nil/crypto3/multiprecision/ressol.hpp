@@ -11,34 +11,30 @@
 
 #pragma once
 
-// IWYU pragma: private; include "nil/crypto3/multiprecision/big_uint.hpp"
-
 #include <cstddef>
 #include <stdexcept>
 
 #include <boost/assert.hpp>
+#include <type_traits>
 
-#include "nil/crypto3/multiprecision/detail/big_mod/big_mod_impl.hpp"
-#include "nil/crypto3/multiprecision/detail/big_mod/ops/pow.hpp"
-#include "nil/crypto3/multiprecision/detail/big_uint/big_uint_impl.hpp"
-#include "nil/crypto3/multiprecision/detail/big_uint/ops/jacobi.hpp"
-#include "nil/crypto3/multiprecision/detail/big_uint/storage.hpp"
+#include "nil/crypto3/multiprecision/big_mod.hpp"
+#include "nil/crypto3/multiprecision/big_uint.hpp"
+#include "nil/crypto3/multiprecision/jacobi.hpp"
+#include "nil/crypto3/multiprecision/pow.hpp"
 
 namespace nil::crypto3::multiprecision {
     template<std::size_t Bits>
     constexpr big_uint<Bits> ressol(const big_uint<Bits> &a, const big_uint<Bits> &p) {
         /*
          * The implementation is split for two different cases:
-         *   1. if p mod 4 == 3 we apply Handbook of Applied Cryptography algorithm 3.36 and compute
-         * r directly as r = n(p+1)/4 mod p
+         *   1. if p mod 4 == 3 we apply Handbook of Applied Cryptography algorithm 3.36
+         * and compute r directly as r = n(p+1)/4 mod p
          *   2. otherwise we use Tonelli-Shanks algorithm
          */
         using big_uint_t = big_uint<Bits>;
         using big_uint_padded_t = big_uint<Bits + 1>;
 
-        using ui_type = detail::limb_type;
-
-        big_uint_t two = ui_type(2u);
+        big_uint_t two = 2u;
         big_uint_t res;
 
         if (a.is_zero()) {
@@ -115,8 +111,8 @@ namespace nil::crypto3::multiprecision {
                 ++i;
 
                 if (i >= s) {
-                    // TODO(ioxid): when can this happen? (jacobi said that this should not happen)
-                    // Martun: the value now has a square root
+                    // TODO(ioxid): when can this happen? (jacobi said that this should
+                    // not happen) Martun: the value now has a square root
                     throw std::invalid_argument("Not a quadratic residue");
                 }
             }
@@ -133,5 +129,11 @@ namespace nil::crypto3::multiprecision {
         }
 
         return r_mod.base();
+    }
+
+    template<typename big_mod_t,
+             std::enable_if_t<detail::is_big_mod_v<big_mod_t>, int> = 0>
+    constexpr big_mod_t ressol(const big_mod_t &b) {
+        return big_mod_t(ressol(b.base(), b.mod()), b.ops_storage());
     }
 }  // namespace nil::crypto3::multiprecision

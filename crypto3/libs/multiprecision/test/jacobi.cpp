@@ -15,10 +15,10 @@
 #include <boost/test/unit_test.hpp>
 
 #include "nil/crypto3/multiprecision/big_uint.hpp"
+#include "nil/crypto3/multiprecision/jacobi.hpp"
 #include "nil/crypto3/multiprecision/literals.hpp"
 
 using namespace nil::crypto3::multiprecision;
-using namespace nil::crypto3::multiprecision::literals;
 
 template<typename T>
 void test() {
