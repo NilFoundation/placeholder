@@ -26,8 +26,8 @@
 #include "nil/crypto3/multiprecision/detail/big_mod/modular_ops.hpp"
 #include "nil/crypto3/multiprecision/detail/big_mod/modular_ops_storage.hpp"
 #include "nil/crypto3/multiprecision/detail/big_mod/test_support.hpp"  // IWYU pragma: keep (for get_raw_base)
-#include "nil/crypto3/multiprecision/detail/big_mod/type_traits.hpp"  // IWYU pragma: export
 #include "nil/crypto3/multiprecision/detail/integer_ops_base.hpp"  // IWYU pragma: keep (used for is_zero)
+#include "nil/crypto3/multiprecision/type_traits.hpp"
 
 namespace nil::crypto3::multiprecision {
     template<typename modular_ops_storage_t_>
@@ -43,13 +43,12 @@ namespace nil::crypto3::multiprecision {
         constexpr big_mod_impl() : big_mod_impl(modular_ops_storage_t{}) {}
 
         // Only available in compile-time big_mod, initializes with the given base
-        template<typename T, std::enable_if_t<detail::is_integral_v<T>, int> = 0>
+        template<typename T, std::enable_if_t<is_integral_v<T>, int> = 0>
         constexpr big_mod_impl(const T& b) : big_mod_impl(b, modular_ops_storage_t{}) {}
 
         // Only available in runtime big_mod, initializes with the given base and modulus
         template<typename T1, typename T2,
-                 std::enable_if_t<detail::is_integral_v<T1> && detail::is_integral_v<T2>,
-                                  int> = 0>
+                 std::enable_if_t<is_integral_v<T1> && is_integral_v<T2>, int> = 0>
         constexpr big_mod_impl(const T1& b, const T2& m)
             : big_mod_impl(b, modular_ops_storage_t{m}) {}
 
@@ -97,12 +96,12 @@ namespace nil::crypto3::multiprecision {
         return a.raw_base() OP_ b.raw_base();                                        \
     }                                                                                \
                                                                                      \
-    template<typename T, std::enable_if_t<detail::is_integral_v<T>, int> = 0>        \
+    template<typename T, std::enable_if_t<is_integral_v<T>, int> = 0>                \
     friend constexpr bool operator OP_(const big_mod_impl& a, const T& b) noexcept { \
         return a.base() OP_ b;                                                       \
     }                                                                                \
                                                                                      \
-    template<typename T, std::enable_if_t<detail::is_integral_v<T>, int> = 0>        \
+    template<typename T, std::enable_if_t<is_integral_v<T>, int> = 0>                \
     friend constexpr bool operator OP_(const T& a, const big_mod_impl& b) noexcept { \
         return a OP_ b.base();                                                       \
     }
@@ -162,7 +161,7 @@ namespace nil::crypto3::multiprecision {
         }
 
       private:
-        template<typename S, std::enable_if_t<detail::is_integral_v<S>, int> = 0>
+        template<typename S, std::enable_if_t<is_integral_v<S>, int> = 0>
         static base_type convert_to_raw_base(const S& s, const modular_ops_t& ops) {
             if (nil::crypto3::multiprecision::is_zero(s)) {
                 return base_type{};
@@ -179,11 +178,11 @@ namespace nil::crypto3::multiprecision {
 
       public:
 #define NIL_CO3_MP_BIG_MOD_OPERATOR_IMPL(OP_, OP_ASSIGN_, METHOD_)                       \
-    template<typename T,                                                                 \
-             std::enable_if_t<                                                           \
-                 std::is_same_v<big_mod_impl, T> || detail::is_integral_v<T>, int> = 0>  \
+    template<                                                                            \
+        typename T,                                                                      \
+        std::enable_if_t<std::is_same_v<big_mod_impl, T> || is_integral_v<T>, int> = 0>  \
     friend constexpr auto operator OP_(const big_mod_impl& a, const T& b) noexcept {     \
-        if constexpr (detail::is_big_mod_v<T>) {                                         \
+        if constexpr (is_big_mod_v<T>) {                                                 \
             BOOST_ASSERT(a.ops_storage().compare_eq(b.ops_storage()));                   \
         }                                                                                \
         big_mod_impl result = a;                                                         \
@@ -191,7 +190,7 @@ namespace nil::crypto3::multiprecision {
         return result;                                                                   \
     }                                                                                    \
                                                                                          \
-    template<typename T, std::enable_if_t<detail::is_integral_v<T>, int> = 0>            \
+    template<typename T, std::enable_if_t<is_integral_v<T>, int> = 0>                    \
     friend constexpr auto operator OP_(const T& a, const big_mod_impl& b) noexcept {     \
         big_mod_impl result(b.ops_storage());                                            \
         result.m_raw_base = convert_to_raw_base(a, b.ops());                             \
@@ -199,11 +198,11 @@ namespace nil::crypto3::multiprecision {
         return result;                                                                   \
     }                                                                                    \
                                                                                          \
-    template<typename T,                                                                 \
-             std::enable_if_t<                                                           \
-                 std::is_same_v<big_mod_impl, T> || detail::is_integral_v<T>, int> = 0>  \
+    template<                                                                            \
+        typename T,                                                                      \
+        std::enable_if_t<std::is_same_v<big_mod_impl, T> || is_integral_v<T>, int> = 0>  \
     friend constexpr auto& operator OP_ASSIGN_(big_mod_impl & a, const T & b) noexcept { \
-        if constexpr (detail::is_big_mod_v<T>) {                                         \
+        if constexpr (is_big_mod_v<T>) {                                                 \
             BOOST_ASSERT(a.ops_storage().compare_eq(b.ops_storage()));                   \
         }                                                                                \
         a.ops().METHOD_(a.m_raw_base, convert_to_raw_base(b, a.ops()));                  \
@@ -216,9 +215,9 @@ namespace nil::crypto3::multiprecision {
 
 #undef NIL_CO3_MP_BIG_MOD_OPERATOR_IMPL
 
-        template<typename T, std::enable_if_t<detail::is_integral_v<T> &&
-                                                  !std::numeric_limits<T>::is_signed,
-                                              int> = 0>
+        template<typename T,
+                 std::enable_if_t<is_integral_v<T> && !std::numeric_limits<T>::is_signed,
+                                  int> = 0>
         friend constexpr big_mod_impl pow_unsigned(big_mod_impl b, const T& e) {
             b.ops().pow(b.m_raw_base, b.raw_base(), e);
             return b;
@@ -269,8 +268,7 @@ namespace nil::crypto3::multiprecision {
 
     // For generic code
 
-    template<typename big_mod_t,
-             std::enable_if_t<detail::is_big_mod_v<big_mod_t>, int> = 0>
+    template<typename big_mod_t, std::enable_if_t<is_big_mod_v<big_mod_t>, int> = 0>
     constexpr bool is_zero(const big_mod_t& a) {
         return a.is_zero();
     }

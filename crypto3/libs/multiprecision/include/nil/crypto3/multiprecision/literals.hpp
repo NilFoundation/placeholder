@@ -12,7 +12,8 @@
 #include <array>
 #include <cstddef>
 
-#include "nil/crypto3/multiprecision/big_uint.hpp"
+#include "nil/crypto3/multiprecision/big_uint.hpp"  // IWYU pragma: export
+#include "nil/crypto3/multiprecision/detail/big_uint/parsing.hpp"
 
 namespace nil::crypto3::multiprecision::literals {
     template<char... C>
