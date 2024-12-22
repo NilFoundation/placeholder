@@ -21,20 +21,18 @@
 #include "nil/crypto3/multiprecision/unsigned_utils.hpp"
 
 namespace nil::crypto3::multiprecision {
-    template<
-        typename big_mod_t, typename T,
-        std::enable_if_t<detail::is_big_mod_v<big_mod_t> && detail::is_integral_v<T> &&
-                             !std::numeric_limits<T>::is_signed,
-                         int> = 0>
+    template<typename big_mod_t, typename T,
+             std::enable_if_t<is_big_mod_v<big_mod_t> && is_integral_v<T> &&
+                                  !std::numeric_limits<T>::is_signed,
+                              int> = 0>
     constexpr big_mod_t pow(const big_mod_t &b, const T &e) {
         return pow_unsigned(b, e);
     }
 
-    template<
-        typename big_mod_t, typename T,
-        std::enable_if_t<detail::is_big_mod_v<big_mod_t> && detail::is_integral_v<T> &&
-                             std::numeric_limits<T>::is_signed,
-                         int> = 0>
+    template<typename big_mod_t, typename T,
+             std::enable_if_t<is_big_mod_v<big_mod_t> && is_integral_v<T> &&
+                                  std::numeric_limits<T>::is_signed,
+                              int> = 0>
     constexpr big_mod_t pow(const big_mod_t &b, const T &e) {
         if (e < 0) {
             return pow_unsigned(inverse(b), unsigned_abs(e));
@@ -42,10 +40,10 @@ namespace nil::crypto3::multiprecision {
         return pow_unsigned(b, static_cast<std::make_unsigned_t<T>>(e));
     }
 
-    template<typename T1, typename T2,
-             std::enable_if_t<detail::is_integral_v<std::decay_t<T1>> &&
-                                  detail::is_integral_v<std::decay_t<T2>>,
-                              int> = 0>
+    template<
+        typename T1, typename T2,
+        std::enable_if_t<
+            is_integral_v<std::decay_t<T1>> && is_integral_v<std::decay_t<T2>>, int> = 0>
     constexpr std::decay_t<T1> pow(T1 b, T2 e_original) {
         if (is_zero(e_original)) {
             return 1u;
@@ -71,9 +69,9 @@ namespace nil::crypto3::multiprecision {
     }
 
     template<typename T1, typename T2, typename T3,
-             std::enable_if_t<detail::is_integral_v<std::decay_t<T1>> &&
-                                  detail::is_integral_v<std::decay_t<T2>> &&
-                                  detail::is_integral_v<std::decay_t<T3>>,
+             std::enable_if_t<is_integral_v<std::decay_t<T1>> &&
+                                  is_integral_v<std::decay_t<T2>> &&
+                                  is_integral_v<std::decay_t<T3>>,
                               int> = 0>
     constexpr std::decay_t<T3> powm(T1 &&b, T2 &&e, T3 &&m) {
         using big_mod_t = big_mod_rt<

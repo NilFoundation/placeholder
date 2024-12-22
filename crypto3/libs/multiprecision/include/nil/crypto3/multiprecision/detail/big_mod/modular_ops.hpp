@@ -195,9 +195,10 @@ namespace nil::crypto3::multiprecision::detail {
             std::size_t Bits2, std::size_t Bits3, typename T,
             /// result should fit in the output parameter
             std::enable_if_t<big_uint<Bits2>::Bits >= big_uint_t::Bits &&
-                                 detail::is_integral_v<T> && !std::numeric_limits<T>::is_signed,
+                                 is_integral_v<T> && !std::numeric_limits<T>::is_signed,
                              int> = 0>
-        constexpr void pow(big_uint<Bits2> &result, const big_uint<Bits3> &a, T exp) const {
+        constexpr void pow(big_uint<Bits2> &result, const big_uint<Bits3> &a,
+                           T exp) const {
             /// input parameter should be less than modulus
             BOOST_ASSERT(a < mod());
 
@@ -567,9 +568,10 @@ namespace nil::crypto3::multiprecision::detail {
             std::size_t Bits2, std::size_t Bits3, typename T,
             /// result should fit in the output parameter
             std::enable_if_t<big_uint<Bits2>::Bits >= big_uint_t::Bits &&
-                                 detail::is_integral_v<T> && !std::numeric_limits<T>::is_signed,
+                                 is_integral_v<T> && !std::numeric_limits<T>::is_signed,
                              int> = 0>
-        constexpr void pow(big_uint<Bits2> &result, const big_uint<Bits3> &a, T exp) const {
+        constexpr void pow(big_uint<Bits2> &result, const big_uint<Bits3> &a,
+                           T exp) const {
             /// input parameter should be less than modulus
             BOOST_ASSERT(a < this->mod());
 
