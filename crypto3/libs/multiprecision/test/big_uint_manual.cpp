@@ -7,7 +7,7 @@
 // http://www.boost.org/LICENSE_1_0.txt
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE big_uint_arithmetic_test
+#define BOOST_TEST_MODULE big_uint_manual_test
 
 #include <algorithm>
 #include <climits>
@@ -272,11 +272,13 @@ template<class big_uint_t>
 void test_signed_integer_ops(const std::integral_constant<bool, false>&) {}
 
 template<class big_uint_t>
-inline big_uint_t negate_if_signed(big_uint_t r, const std::integral_constant<bool, true>&) {
+inline big_uint_t negate_if_signed(big_uint_t r,
+                                   const std::integral_constant<bool, true>&) {
     return -r;
 }
 template<class big_uint_t>
-inline big_uint_t negate_if_signed(big_uint_t r, const std::integral_constant<bool, false>&) {
+inline big_uint_t negate_if_signed(big_uint_t r,
+                                   const std::integral_constant<bool, false>&) {
     return r;
 }
 
@@ -322,26 +324,30 @@ void test_integer_overflow() {
             m = pow(m, (std::min)(std::numeric_limits<big_uint_t>::digits - 1, 1000));
             ++m;
             m = negate_if_signed(
-                m, std::integral_constant<bool, std::numeric_limits<big_uint_t>::is_signed>());
+                m, std::integral_constant<bool,
+                                          std::numeric_limits<big_uint_t>::is_signed>());
             if (is_checked_cpp_int<big_uint_t>::value) {
                 BOOST_CHECK_THROW((void)static_cast<Int>(m), std::overflow_error);
             } else {
                 r = static_cast<Int>(m);
                 BOOST_CHECK_EQUAL(r, (std::numeric_limits<Int>::min)());
             }
-        } else if (std::numeric_limits<big_uint_t>::is_signed && !std::is_signed<Int>::value) {
-            // signed to unsigned converison with overflow, it's really not clear what should happen
-            // here!
+        } else if (std::numeric_limits<big_uint_t>::is_signed &&
+                   !std::is_signed<Int>::value) {
+            // signed to unsigned converison with overflow, it's really not clear what
+            // should happen here!
             m = (std::numeric_limits<Int>::max)();
             ++m;
             m = negate_if_signed(
-                m, std::integral_constant<bool, std::numeric_limits<big_uint_t>::is_signed>());
+                m, std::integral_constant<bool,
+                                          std::numeric_limits<big_uint_t>::is_signed>());
             BOOST_CHECK_THROW((void)static_cast<Int>(m), std::range_error);
             // Again with much larger value:
             m = 2u;
             m = pow(m, (std::min)(std::numeric_limits<big_uint_t>::digits - 1, 1000));
             m = negate_if_signed(
-                m, std::integral_constant<bool, std::numeric_limits<big_uint_t>::is_signed>());
+                m, std::integral_constant<bool,
+                                          std::numeric_limits<big_uint_t>::is_signed>());
             BOOST_CHECK_THROW((void)static_cast<Int>(m), std::range_error);
         }
     }
@@ -354,7 +360,8 @@ void test_integer_round_trip() {
         Int r = static_cast<Int>(m);
         BOOST_CHECK_EQUAL(m, r);
         if (std::numeric_limits<big_uint_t>::is_signed &&
-            (std::numeric_limits<big_uint_t>::digits > std::numeric_limits<Int>::digits)) {
+            (std::numeric_limits<big_uint_t>::digits >
+             std::numeric_limits<Int>::digits)) {
             m = (std::numeric_limits<Int>::min)();
             r = static_cast<Int>(m);
             BOOST_CHECK_EQUAL(m, r);
@@ -423,12 +430,18 @@ void test_integer_ops() {  // NOLINT
     if (sizeof(long long) > sizeof(std::size_t)) {
         // extreme values should trigger an exception:
 #ifndef BOOST_NO_EXCEPTIONS
-        BOOST_CHECK_THROW(a >>= (1uLL << (sizeof(long long) * CHAR_BIT - 2)), std::range_error);
-        BOOST_CHECK_THROW(a <<= (1uLL << (sizeof(long long) * CHAR_BIT - 2)), std::range_error);
-        BOOST_CHECK_THROW(a >>= -(1LL << (sizeof(long long) * CHAR_BIT - 2)), std::range_error);
-        BOOST_CHECK_THROW(a <<= -(1LL << (sizeof(long long) * CHAR_BIT - 2)), std::range_error);
-        BOOST_CHECK_THROW(a >>= (1LL << (sizeof(long long) * CHAR_BIT - 2)), std::range_error);
-        BOOST_CHECK_THROW(a <<= (1LL << (sizeof(long long) * CHAR_BIT - 2)), std::range_error);
+        BOOST_CHECK_THROW(a >>= (1uLL << (sizeof(long long) * CHAR_BIT - 2)),
+                          std::range_error);
+        BOOST_CHECK_THROW(a <<= (1uLL << (sizeof(long long) * CHAR_BIT - 2)),
+                          std::range_error);
+        BOOST_CHECK_THROW(a >>= -(1LL << (sizeof(long long) * CHAR_BIT - 2)),
+                          std::range_error);
+        BOOST_CHECK_THROW(a <<= -(1LL << (sizeof(long long) * CHAR_BIT - 2)),
+                          std::range_error);
+        BOOST_CHECK_THROW(a >>= (1LL << (sizeof(long long) * CHAR_BIT - 2)),
+                          std::range_error);
+        BOOST_CHECK_THROW(a <<= (1LL << (sizeof(long long) * CHAR_BIT - 2)),
+                          std::range_error);
 #endif
         // Unless they fit within range:
         a = 2000L;
@@ -501,7 +514,8 @@ void test_integer_ops() {  // NOLINT
     c = a & (b | 1);
     BOOST_CHECK_EQUAL(c, (i & (j | 1)));
 
-    test_complement<big_uint_t>(a, b, c, typename is_twos_complement_integer<big_uint_t>::type());
+    test_complement<big_uint_t>(a, b, c,
+                                typename is_twos_complement_integer<big_uint_t>::type());
 
     a = i;
     b = j;
@@ -603,8 +617,10 @@ void test_integer_ops() {  // NOLINT
         if (std::numeric_limits<big_uint_t>::is_specialized &&
             (!std::numeric_limits<big_uint_t>::is_bounded ||
              (i * 17 < std::numeric_limits<big_uint_t>::digits))) {
-            BOOST_CHECK_EQUAL(lsb(big_uint_t(1) << (i * 17)), static_cast<unsigned>(i * 17));
-            BOOST_CHECK_EQUAL(msb(big_uint_t(1) << (i * 17)), static_cast<unsigned>(i * 17));
+            BOOST_CHECK_EQUAL(lsb(big_uint_t(1) << (i * 17)),
+                              static_cast<unsigned>(i * 17));
+            BOOST_CHECK_EQUAL(msb(big_uint_t(1) << (i * 17)),
+                              static_cast<unsigned>(i * 17));
             BOOST_CHECK(bit_test(big_uint_t(1) << (i * 17), i * 17));
             BOOST_CHECK(!bit_test(big_uint_t(1) << (i * 17), i * 17 + 1));
             if (i) {
@@ -630,16 +646,20 @@ void test_integer_ops() {  // NOLINT
     BOOST_CHECK_EQUAL(powm(big_uint_t(3), big_uint_t(4), big_uint_t(13) + 0), 81 % 13);
     BOOST_CHECK_EQUAL(powm(big_uint_t(3), big_uint_t(4) + 0, big_uint_t(13)), 81 % 13);
     BOOST_CHECK_EQUAL(powm(big_uint_t(3), big_uint_t(4) + 0, 13), 81 % 13);
-    BOOST_CHECK_EQUAL(powm(big_uint_t(3), big_uint_t(4) + 0, big_uint_t(13) + 0), 81 % 13);
+    BOOST_CHECK_EQUAL(powm(big_uint_t(3), big_uint_t(4) + 0, big_uint_t(13) + 0),
+                      81 % 13);
     BOOST_CHECK_EQUAL(powm(big_uint_t(3), 4 + 0, big_uint_t(13)), 81 % 13);
     BOOST_CHECK_EQUAL(powm(big_uint_t(3), 4 + 0, 13), 81 % 13);
     BOOST_CHECK_EQUAL(powm(big_uint_t(3), 4 + 0, big_uint_t(13) + 0), 81 % 13);
     BOOST_CHECK_EQUAL(powm(big_uint_t(3) + 0, big_uint_t(4), big_uint_t(13)), 81 % 13);
     BOOST_CHECK_EQUAL(powm(big_uint_t(3) + 0, big_uint_t(4), 13), 81 % 13);
-    BOOST_CHECK_EQUAL(powm(big_uint_t(3) + 0, big_uint_t(4), big_uint_t(13) + 0), 81 % 13);
-    BOOST_CHECK_EQUAL(powm(big_uint_t(3) + 0, big_uint_t(4) + 0, big_uint_t(13)), 81 % 13);
+    BOOST_CHECK_EQUAL(powm(big_uint_t(3) + 0, big_uint_t(4), big_uint_t(13) + 0),
+                      81 % 13);
+    BOOST_CHECK_EQUAL(powm(big_uint_t(3) + 0, big_uint_t(4) + 0, big_uint_t(13)),
+                      81 % 13);
     BOOST_CHECK_EQUAL(powm(big_uint_t(3) + 0, big_uint_t(4) + 0, 13), 81 % 13);
-    BOOST_CHECK_EQUAL(powm(big_uint_t(3) + 0, big_uint_t(4) + 0, big_uint_t(13) + 0), 81 % 13);
+    BOOST_CHECK_EQUAL(powm(big_uint_t(3) + 0, big_uint_t(4) + 0, big_uint_t(13) + 0),
+                      81 % 13);
     BOOST_CHECK_EQUAL(powm(big_uint_t(3) + 0, 4 + 0, big_uint_t(13)), 81 % 13);
     BOOST_CHECK_EQUAL(powm(big_uint_t(3) + 0, 4 + 0, 13), 81 % 13);
     BOOST_CHECK_EQUAL(powm(big_uint_t(3) + 0, 4 + 0, big_uint_t(13) + 0), 81 % 13);
@@ -769,7 +789,8 @@ template<class T>
 struct lexical_cast_target_type {
     typedef typename std::conditional<
         std::is_signed<T>::value && std::is_integral<T>::value, std::intmax_t,
-        typename std::conditional<std::is_unsigned<T>::value, std::uintmax_t, T>::type>::type type;
+        typename std::conditional<std::is_unsigned<T>::value, std::uintmax_t,
+                                  T>::type>::type type;
 };
 
 template<class big_uint_t, class num_t>
@@ -786,7 +807,8 @@ void test_negative_mixed_minmax(std::integral_constant<bool, true> const&) {
         BOOST_CHECK_EQUAL(mx1, mx2);
 
         if (!std::numeric_limits<big_uint_t>::is_bounded ||
-            (std::numeric_limits<big_uint_t>::digits > std::numeric_limits<num_t>::digits)) {
+            (std::numeric_limits<big_uint_t>::digits >
+             std::numeric_limits<num_t>::digits)) {
             big_uint_t mx3((std::numeric_limits<num_t>::min)() + 1);
             --mx3;
             big_uint_t mx4((std::numeric_limits<num_t>::min)());
@@ -810,27 +832,30 @@ void test_negative_mixed_numeric_limits(std::integral_constant<bool, true> const
     num_t tol = 0;
 #endif
     static const int left_shift = std::numeric_limits<num_t>::digits - 1;
-    num_t n1 =
-        -static_cast<num_t>(1uLL << ((left_shift < 63) && (left_shift > 0) ? left_shift : 10));
+    num_t n1 = -static_cast<num_t>(
+        1uLL << ((left_shift < 63) && (left_shift > 0) ? left_shift : 10));
     num_t n2 = -1;
     num_t n3 = 0;
     num_t n4 = -20;
-    std::ios_base::fmtflags f = std::is_floating_point<num_t>::value ? std::ios_base::scientific
-                                                                     : std::ios_base::fmtflags(0);
+    std::ios_base::fmtflags f = std::is_floating_point<num_t>::value
+                                    ? std::ios_base::scientific
+                                    : std::ios_base::fmtflags(0);
     int digits_to_print =
         std::is_floating_point<num_t>::value && std::numeric_limits<num_t>::is_specialized
             ? std::numeric_limits<num_t>::digits10 + 5
             : 0;
-    if (std::numeric_limits<target_type>::digits <= std::numeric_limits<big_uint_t>::digits) {
+    if (std::numeric_limits<target_type>::digits <=
+        std::numeric_limits<big_uint_t>::digits) {
         BOOST_CHECK_CLOSE(
-            n1, checked_lexical_cast<target_type>(big_uint_t(n1).str(digits_to_print, f)), tol);
+            n1, checked_lexical_cast<target_type>(big_uint_t(n1).str(digits_to_print, f)),
+            tol);
     }
-    BOOST_CHECK_CLOSE(n2, checked_lexical_cast<target_type>(big_uint_t(n2).str(digits_to_print, f)),
-                      0);
-    BOOST_CHECK_CLOSE(n3, checked_lexical_cast<target_type>(big_uint_t(n3).str(digits_to_print, f)),
-                      0);
-    BOOST_CHECK_CLOSE(n4, checked_lexical_cast<target_type>(big_uint_t(n4).str(digits_to_print, f)),
-                      0);
+    BOOST_CHECK_CLOSE(
+        n2, checked_lexical_cast<target_type>(big_uint_t(n2).str(digits_to_print, f)), 0);
+    BOOST_CHECK_CLOSE(
+        n3, checked_lexical_cast<target_type>(big_uint_t(n3).str(digits_to_print, f)), 0);
+    BOOST_CHECK_CLOSE(
+        n4, checked_lexical_cast<target_type>(big_uint_t(n4).str(digits_to_print, f)), 0);
 }
 
 template<class big_uint_t, class num_t>
@@ -840,16 +865,17 @@ template<class big_uint_t, class num_t>
 void test_negative_mixed(std::integral_constant<bool, true> const&) {
     typedef typename std::conditional<
         std::is_convertible<num_t, big_uint_t>::value,
-        typename std::conditional<std::is_integral<num_t>::value && (sizeof(num_t) < sizeof(int)),
+        typename std::conditional<std::is_integral<num_t>::value &&
+                                      (sizeof(num_t) < sizeof(int)),
                                   int, num_t>::type,
         big_uint_t>::type cast_type;
-    typedef typename std::conditional<std::is_convertible<num_t, big_uint_t>::value, num_t,
-                                      big_uint_t>::type simple_cast_type;
-    std::cout << "Testing mixed arithmetic with type: " << typeid(big_uint_t).name() << " and "
-              << typeid(num_t).name() << std::endl;
+    typedef typename std::conditional<std::is_convertible<num_t, big_uint_t>::value,
+                                      num_t, big_uint_t>::type simple_cast_type;
+    std::cout << "Testing mixed arithmetic with type: " << typeid(big_uint_t).name()
+              << " and " << typeid(num_t).name() << std::endl;
     static const int left_shift = std::numeric_limits<num_t>::digits - 1;
-    num_t n1 =
-        -static_cast<num_t>(1uLL << ((left_shift < 63) && (left_shift > 0) ? left_shift : 10));
+    num_t n1 = -static_cast<num_t>(
+        1uLL << ((left_shift < 63) && (left_shift > 0) ? left_shift : 10));
     num_t n2 = -1;
     num_t n3 = 0;
     num_t n4 = -20;
@@ -895,28 +921,32 @@ void test_negative_mixed(std::integral_constant<bool, true> const&) {
     BOOST_CHECK_EQUAL(r, static_cast<cast_type>(n4));
     // Addition:
     r = static_cast<simple_cast_type>(n2);
-    BOOST_CHECK_EQUAL(r + static_cast<simple_cast_type>(n4), static_cast<cast_type>(n2 + n4));
+    BOOST_CHECK_EQUAL(r + static_cast<simple_cast_type>(n4),
+                      static_cast<cast_type>(n2 + n4));
     BOOST_CHECK_EQUAL(big_uint_t(r + static_cast<simple_cast_type>(n4)),
                       static_cast<cast_type>(n2 + n4));
     r += static_cast<simple_cast_type>(n4);
     BOOST_CHECK_EQUAL(r, static_cast<cast_type>(n2 + n4));
     // subtraction:
     r = static_cast<simple_cast_type>(n4);
-    BOOST_CHECK_EQUAL(r - static_cast<simple_cast_type>(n5), static_cast<cast_type>(n4 - n5));
+    BOOST_CHECK_EQUAL(r - static_cast<simple_cast_type>(n5),
+                      static_cast<cast_type>(n4 - n5));
     BOOST_CHECK_EQUAL(big_uint_t(r - static_cast<simple_cast_type>(n5)),
                       static_cast<cast_type>(n4 - n5));
     r -= static_cast<simple_cast_type>(n5);
     BOOST_CHECK_EQUAL(r, static_cast<cast_type>(n4 - n5));
     // Multiplication:
     r = static_cast<simple_cast_type>(n2);
-    BOOST_CHECK_EQUAL(r * static_cast<simple_cast_type>(n4), static_cast<cast_type>(n2 * n4));
+    BOOST_CHECK_EQUAL(r * static_cast<simple_cast_type>(n4),
+                      static_cast<cast_type>(n2 * n4));
     BOOST_CHECK_EQUAL(big_uint_t(r * static_cast<simple_cast_type>(n4)),
                       static_cast<cast_type>(n2 * n4));
     r *= static_cast<simple_cast_type>(n4);
     BOOST_CHECK_EQUAL(r, static_cast<cast_type>(n2 * n4));
     // Division:
     r = static_cast<simple_cast_type>(n1);
-    BOOST_CHECK_EQUAL(r / static_cast<simple_cast_type>(n5), static_cast<cast_type>(n1 / n5));
+    BOOST_CHECK_EQUAL(r / static_cast<simple_cast_type>(n5),
+                      static_cast<cast_type>(n1 / n5));
     BOOST_CHECK_EQUAL(big_uint_t(r / static_cast<simple_cast_type>(n5)),
                       static_cast<cast_type>(n1 / n5));
     r /= static_cast<simple_cast_type>(n5);
@@ -1102,8 +1132,9 @@ void test_negative_mixed(std::integral_constant<bool, true> const&) {
     // Conversion from min and max values:
     //
     test_negative_mixed_minmax<big_uint_t, num_t>(
-        std::integral_constant < bool,
-        std::numeric_limits<big_uint_t>::is_integer&& std::numeric_limits<num_t>::is_integer > ());
+        std::integral_constant < bool, std::numeric_limits<big_uint_t>::is_integer&&
+                                               std::numeric_limits<num_t>::is_integer >
+                                           ());
     //
     // Rval_tue ref overloads:
     //
@@ -1135,11 +1166,13 @@ template<class big_uint_t, class num_t>
 void test_mixed(const std::integral_constant<bool, false>&) {}
 
 template<class big_uint_t>
-inline big_uint_t negate_value(const big_uint_t& val, const std::integral_constant<bool, true>&) {
+inline big_uint_t negate_value(const big_uint_t& val,
+                               const std::integral_constant<bool, true>&) {
     return -val;
 }
 template<class big_uint_t>
-inline big_uint_t negate_value(const big_uint_t& val, const std::integral_constant<bool, false>&) {
+inline big_uint_t negate_value(const big_uint_t& val,
+                               const std::integral_constant<bool, false>&) {
     return val;
 }
 
@@ -1155,28 +1188,31 @@ void test_mixed_numeric_limits(const std::integral_constant<bool, true>&) {
     big_uint_t d;
 
     static const int left_shift = std::numeric_limits<num_t>::digits - 1;
-    num_t n1 =
-        static_cast<num_t>(1uLL << ((left_shift < 63) && (left_shift > 0) ? left_shift : 10));
+    num_t n1 = static_cast<num_t>(
+        1uLL << ((left_shift < 63) && (left_shift > 0) ? left_shift : 10));
     num_t n2 = 1;
     num_t n3 = 0;
     num_t n4 = 20;
 
-    std::ios_base::fmtflags f = std::is_floating_point<num_t>::value ? std::ios_base::scientific
-                                                                     : std::ios_base::fmtflags(0);
+    std::ios_base::fmtflags f = std::is_floating_point<num_t>::value
+                                    ? std::ios_base::scientific
+                                    : std::ios_base::fmtflags(0);
     int digits_to_print =
         std::is_floating_point<num_t>::value && std::numeric_limits<num_t>::is_specialized
             ? std::numeric_limits<num_t>::digits10 + 5
             : 0;
-    // if (std::numeric_limits<target_type>::digits <= std::numeric_limits<big_uint_t>::digits) {
+    // if (std::numeric_limits<target_type>::digits <=
+    // std::numeric_limits<big_uint_t>::digits) {
     //     BOOST_CHECK_CLOSE(n1,
     //     checked_lexical_cast<target_type>(big_uint_t(n1).str(digits_to_print, f)),
     //                       tol);
     // }
-    // BOOST_CHECK_CLOSE(n2, checked_lexical_cast<target_type>(big_uint_t(n2).str(digits_to_print,
-    // f)), 0); BOOST_CHECK_CLOSE(n3,
+    // BOOST_CHECK_CLOSE(n2,
+    // checked_lexical_cast<target_type>(big_uint_t(n2).str(digits_to_print, f)), 0);
+    // BOOST_CHECK_CLOSE(n3,
     // checked_lexical_cast<target_type>(big_uint_t(n3).str(digits_to_print, f)), 0);
-    // BOOST_CHECK_CLOSE(n4, checked_lexical_cast<target_type>(big_uint_t(n4).str(digits_to_print,
-    // f)), 0);
+    // BOOST_CHECK_CLOSE(n4,
+    // checked_lexical_cast<target_type>(big_uint_t(n4).str(digits_to_print, f)), 0);
 }
 template<class big_uint_t, class num_t>
 void test_mixed_numeric_limits(const std::integral_constant<bool, false>&) {}
@@ -1185,11 +1221,12 @@ template<class big_uint_t, class num_t>
 void test_mixed(const std::integral_constant<bool, true>&) {
     typedef typename std::conditional<
         std::is_convertible<num_t, big_uint_t>::value,
-        typename std::conditional<std::is_integral<num_t>::value && (sizeof(num_t) < sizeof(int)),
+        typename std::conditional<std::is_integral<num_t>::value &&
+                                      (sizeof(num_t) < sizeof(int)),
                                   int, num_t>::type,
         big_uint_t>::type cast_type;
-    typedef typename std::conditional<std::is_convertible<num_t, big_uint_t>::value, num_t,
-                                      big_uint_t>::type simple_cast_type;
+    typedef typename std::conditional<std::is_convertible<num_t, big_uint_t>::value,
+                                      num_t, big_uint_t>::type simple_cast_type;
 
     if (std::numeric_limits<big_uint_t>::is_specialized &&
         std::numeric_limits<big_uint_t>::is_bounded &&
@@ -1197,11 +1234,11 @@ void test_mixed(const std::integral_constant<bool, true>&) {
         return;
     }
 
-    std::cout << "Testing mixed arithmetic with type: " << typeid(big_uint_t).name() << " and "
-              << typeid(num_t).name() << std::endl;
+    std::cout << "Testing mixed arithmetic with type: " << typeid(big_uint_t).name()
+              << " and " << typeid(num_t).name() << std::endl;
     static const int left_shift = std::numeric_limits<num_t>::digits - 1;
-    num_t n1 =
-        static_cast<num_t>(1uLL << ((left_shift < 63) && (left_shift > 0) ? left_shift : 10));
+    num_t n1 = static_cast<num_t>(
+        1uLL << ((left_shift < 63) && (left_shift > 0) ? left_shift : 10));
     num_t n2 = 1;
     num_t n3 = 0;
     num_t n4 = 20;
@@ -1245,28 +1282,32 @@ void test_mixed(const std::integral_constant<bool, true>&) {
     BOOST_CHECK_EQUAL(r, static_cast<cast_type>(n4));
     // Addition:
     r = static_cast<simple_cast_type>(n2);
-    BOOST_CHECK_EQUAL(r + static_cast<simple_cast_type>(n4), static_cast<cast_type>(n2 + n4));
+    BOOST_CHECK_EQUAL(r + static_cast<simple_cast_type>(n4),
+                      static_cast<cast_type>(n2 + n4));
     BOOST_CHECK_EQUAL(big_uint_t(r + static_cast<simple_cast_type>(n4)),
                       static_cast<cast_type>(n2 + n4));
     r += static_cast<simple_cast_type>(n4);
     BOOST_CHECK_EQUAL(r, static_cast<cast_type>(n2 + n4));
     // subtraction:
     r = static_cast<simple_cast_type>(n4);
-    BOOST_CHECK_EQUAL(r - static_cast<simple_cast_type>(n5), static_cast<cast_type>(n4 - n5));
+    BOOST_CHECK_EQUAL(r - static_cast<simple_cast_type>(n5),
+                      static_cast<cast_type>(n4 - n5));
     BOOST_CHECK_EQUAL(big_uint_t(r - static_cast<simple_cast_type>(n5)),
                       static_cast<cast_type>(n4 - n5));
     r -= static_cast<simple_cast_type>(n5);
     BOOST_CHECK_EQUAL(r, static_cast<cast_type>(n4 - n5));
     // Multiplication:
     r = static_cast<simple_cast_type>(n2);
-    BOOST_CHECK_EQUAL(r * static_cast<simple_cast_type>(n4), static_cast<cast_type>(n2 * n4));
+    BOOST_CHECK_EQUAL(r * static_cast<simple_cast_type>(n4),
+                      static_cast<cast_type>(n2 * n4));
     BOOST_CHECK_EQUAL(big_uint_t(r * static_cast<simple_cast_type>(n4)),
                       static_cast<cast_type>(n2 * n4));
     r *= static_cast<simple_cast_type>(n4);
     BOOST_CHECK_EQUAL(r, static_cast<cast_type>(n2 * n4));
     // Division:
     r = static_cast<simple_cast_type>(n1);
-    BOOST_CHECK_EQUAL(r / static_cast<simple_cast_type>(n5), static_cast<cast_type>(n1 / n5));
+    BOOST_CHECK_EQUAL(r / static_cast<simple_cast_type>(n5),
+                      static_cast<cast_type>(n1 / n5));
     BOOST_CHECK_EQUAL(big_uint_t(r / static_cast<simple_cast_type>(n5)),
                       static_cast<cast_type>(n1 / n5));
     r /= static_cast<simple_cast_type>(n5);
@@ -1283,10 +1324,11 @@ void test_mixed(const std::integral_constant<bool, true>&) {
     r = static_cast<cast_type>(num_t(4) * n4) / big_uint_t(4);
     BOOST_CHECK_EQUAL(r, static_cast<cast_type>(n4));
 
-    typedef std::integral_constant<bool, (!std::numeric_limits<num_t>::is_specialized ||
-                                          std::numeric_limits<num_t>::is_signed) &&
-                                             (!std::numeric_limits<big_uint_t>::is_specialized ||
-                                              std::numeric_limits<big_uint_t>::is_signed)>
+    typedef std::integral_constant<
+        bool, (!std::numeric_limits<num_t>::is_specialized ||
+               std::numeric_limits<num_t>::is_signed) &&
+                  (!std::numeric_limits<big_uint_t>::is_specialized ||
+                   std::numeric_limits<big_uint_t>::is_signed)>
         signed_tag;
 
     test_negative_mixed<big_uint_t, num_t>(signed_tag());
@@ -1604,8 +1646,9 @@ void test_relationals(T a, T b) {
 #if !defined(min) && !defined(max)
     //   using std::max;
     //   using std::min;
-    // This works, but still causes complaints from inspect.exe, so use brackets to prevent
-    // macrosubstitution, and to explicitly specify type T seems necessary, for reasons unclear.
+    // This works, but still causes complaints from inspect.exe, so use brackets to
+    // prevent macrosubstitution, and to explicitly specify type T seems necessary, for
+    // reasons unclear.
     a = 2;
     b = 5;
     c = 6;

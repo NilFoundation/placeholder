@@ -312,7 +312,7 @@ namespace nil::crypto3::multiprecision {
         constexpr std::string str(
             std::ios_base::fmtflags flags = std::ios_base::hex | std::ios_base::showbase |
                                             std::ios_base::uppercase) const {
-            if (flags & std::ios_base::dec) {
+            if ((flags & std::ios_base::dec) || !(flags & std::ios_base::basefield)) {
                 return decimal_str();
             }
             if (!(flags & std::ios_base::hex)) {
@@ -1221,22 +1221,17 @@ namespace nil::crypto3::multiprecision {
 
         template<typename T>
         void import_bits_fast(T* i, T* j) {
-            std::size_t byte_len = (j - i) * sizeof(*i);
-            std::size_t limb_len = byte_len / sizeof(limb_type);
-            if (byte_len % sizeof(limb_type)) {
-                ++limb_len;
-            }
+            std::size_t copy_len =
+                (std::min)((j - i) * sizeof(T), limb_count() * sizeof(limb_type));
 
-            std::size_t copy_len = (std::min)(byte_len, limb_count() * sizeof(limb_type));
-
-            if (std::any_of(reinterpret_cast<const char*>(i),
-                            reinterpret_cast<const char*>(j),
+            if (std::any_of(reinterpret_cast<const unsigned char*>(i) + copy_len,
+                            reinterpret_cast<const unsigned char*>(j),
                             [](char c) { return c != 0; })) {
                 throw std::overflow_error("import_bits: overflow");
             }
 
-            std::memcpy(limbs(), i, copy_len);
-            std::memset(limbs() + copy_len, 0,
+            std::memcpy(reinterpret_cast<unsigned char*>(limbs()), i, copy_len);
+            std::memset(reinterpret_cast<unsigned char*>(limbs()) + copy_len, 0,
                         limb_count() * sizeof(limb_type) - copy_len);
 
             if (normalize()) {
@@ -1274,7 +1269,9 @@ namespace nil::crypto3::multiprecision {
             std::size_t bitcount = msb() + 1;
 
             std::ptrdiff_t bit_location =
-                msv_first ? static_cast<std::ptrdiff_t>(bitcount - chunk_size) : 0;
+                msv_first ? static_cast<std::ptrdiff_t>(bitcount) -
+                                static_cast<std::ptrdiff_t>(chunk_size)
+                          : 0;
             const std::ptrdiff_t bit_step =
                 msv_first ? (-static_cast<std::ptrdiff_t>(chunk_size))
                           : static_cast<std::ptrdiff_t>(chunk_size);

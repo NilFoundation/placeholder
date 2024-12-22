@@ -9,7 +9,7 @@
 // http://www.boost.org/LICENSE_1_0.txt
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE big_mod_arithmetic_test
+#define BOOST_TEST_MODULE big_mod_randomized_test
 
 #include <cstddef>
 #include <ostream>
@@ -42,7 +42,8 @@ std::vector<T> as_vector(const boost::property_tree::ptree &pt) {
 
 template<typename T>
 auto test_dataset(const std::string &test_name) {
-    static std::string test_data = std::string(TEST_DATA_DIR) + R"(modular_arithmetic.json)";
+    static std::string test_data =
+        std::string(TEST_DATA_DIR) + R"(big_mod_randomized.json)";
     boost::property_tree::ptree test_dataset;
     boost::property_tree::read_json(test_data, test_dataset);
 
@@ -62,11 +63,13 @@ struct ModularArithmeticSample {
         a_m_pow_b = sample.get<std::string>("a_m_pow_b");
 
         if (Montgomery && !m.bit_test(0)) {
-            throw std::runtime_error("ModularArithmeticSample: Montgomery requires m to be odd");
+            throw std::runtime_error(
+                "ModularArithmeticSample: Montgomery requires m to be odd");
         }
     }
 
-    friend std::ostream &operator<<(std::ostream &os, const ModularArithmeticSample &sample) {
+    friend std::ostream &operator<<(std::ostream &os,
+                                    const ModularArithmeticSample &sample) {
         boost::property_tree::json_parser::write_json(os, sample.ptree);
         return os;
     }
@@ -107,18 +110,20 @@ void base_operations_test(const ModularArithmeticSample<Bits, Montgomery> sample
 
 BOOST_AUTO_TEST_SUITE(base_operations)
 
-BOOST_DATA_TEST_CASE(prime_mod_montgomery_130, (test_dataset<ModularArithmeticSample<130, true>>(
-                                                   "prime_mod_montgomery_130"))) {
+BOOST_DATA_TEST_CASE(
+    prime_mod_montgomery_130,
+    (test_dataset<ModularArithmeticSample<130, true>>("prime_mod_montgomery_130"))) {
     base_operations_test(sample);
 }
 
-BOOST_DATA_TEST_CASE(even_mod_130,
-                     (test_dataset<ModularArithmeticSample<130, false>>("even_mod_130"))) {
+BOOST_DATA_TEST_CASE(
+    even_mod_130, (test_dataset<ModularArithmeticSample<130, false>>("even_mod_130"))) {
     base_operations_test(sample);
 }
 
 // This one tests 64-bit numbers used in Goldilock fields.
-BOOST_DATA_TEST_CASE(goldilock, (test_dataset<ModularArithmeticSample<64, true>>("goldilock"))) {
+BOOST_DATA_TEST_CASE(goldilock,
+                     (test_dataset<ModularArithmeticSample<64, true>>("goldilock"))) {
     base_operations_test(sample);
 }
 

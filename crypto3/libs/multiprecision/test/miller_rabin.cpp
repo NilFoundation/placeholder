@@ -30,6 +30,10 @@ BOOST_AUTO_TEST_CASE(miller_rabin_builtin_test) {
     BOOST_CHECK(!miller_rabin_test(27u, 1000));
     BOOST_CHECK(miller_rabin_test(101u, 1000));
     BOOST_CHECK(!miller_rabin_test(207u, 1000));
+    BOOST_CHECK(!miller_rabin_test(100'000u, 1000));
+    BOOST_CHECK(!miller_rabin_test(100'005u, 1000));
+    BOOST_CHECK(miller_rabin_test(1'000'000'007u, 1000));
+    BOOST_CHECK(miller_rabin_test(1'000'000'009u, 1000));
 }
 
 BOOST_AUTO_TEST_CASE(miller_rabin_big_uint_test) {
@@ -40,6 +44,10 @@ BOOST_AUTO_TEST_CASE(miller_rabin_big_uint_test) {
     BOOST_CHECK(!miller_rabin_test(27_big_uint128, 1000));
     BOOST_CHECK(miller_rabin_test(101_big_uint128, 1000));
     BOOST_CHECK(!miller_rabin_test(207_big_uint128, 1000));
+    BOOST_CHECK(!miller_rabin_test(100000_big_uint128, 1000));
+    BOOST_CHECK(!miller_rabin_test(100005_big_uint128, 1000));
+    BOOST_CHECK(miller_rabin_test(1000000007_big_uint128, 1000));
+    BOOST_CHECK(miller_rabin_test(1000000009_big_uint128, 1000));
 }
 
 BOOST_AUTO_TEST_SUITE_END()
