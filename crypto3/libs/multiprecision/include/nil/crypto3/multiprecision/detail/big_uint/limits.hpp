@@ -84,7 +84,7 @@ namespace std {
         static constexpr number_type denorm_min() { return 0; }
         static constexpr bool is_iec559 = false;
         static constexpr bool is_bounded = true;
-        static constexpr bool is_modulo = true;
+        static constexpr bool is_modulo = false;
         static constexpr bool traps = false;
         static constexpr bool tinyness_before = false;
     };
