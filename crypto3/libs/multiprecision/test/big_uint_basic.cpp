@@ -8,11 +8,14 @@
 
 #define BOOST_TEST_MODULE big_uint_basic_test
 
+#include <array>
 #include <cstdint>
 #include <ios>
+#include <iterator>
 #include <stdexcept>
 #include <tuple>
 #include <utility>
+#include <vector>
 
 #include <boost/test/unit_test.hpp>
 
@@ -72,6 +75,21 @@ BOOST_AUTO_TEST_CASE(to_string_decimal_big) {
     constexpr auto a = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000000000000000001_big_uint224;
     BOOST_CHECK_EQUAL(a.str(std::ios_base::dec),
                       "26959946667150639794667015087019630673557916260026308143510066298881");
+}
+
+BOOST_AUTO_TEST_CASE(to_string_format_flags) {
+    BOOST_CHECK_EQUAL(1002_big_uint64 .str(), "0x3EA");
+    BOOST_CHECK_EQUAL(1002_big_uint64 .str(std::ios_base::hex), "3ea");
+    BOOST_CHECK_EQUAL(1002_big_uint64 .str(std::ios_base::hex | std::ios_base::showbase),
+                      "0x3ea");
+    BOOST_CHECK_EQUAL(1002_big_uint64 .str(std::ios_base::hex | std::ios_base::uppercase),
+                      "3EA");
+    BOOST_CHECK_EQUAL(1002_big_uint64 .str(std::ios_base::hex | std::ios_base::showbase |
+                                           std::ios_base::uppercase),
+                      "0x3EA");
+    BOOST_CHECK_EQUAL(1002_big_uint64 .str(std::ios_base::dec), "1002");
+    BOOST_CHECK_EQUAL(1002_big_uint64 .str(std::ios_base::dec | std::ios_base::showbase),
+                      "1002");
 }
 
 BOOST_AUTO_TEST_CASE(ops) {
@@ -250,6 +268,9 @@ BOOST_AUTO_TEST_CASE(conversion_to_shorter_number) {
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+using big_uint_types =
+    std::tuple<big_uint<7>, big_uint<16>, big_uint<32>, big_uint<64>, big_uint<256>>;
 
 using int_types = std::tuple<std::int8_t, std::int16_t, std::int32_t, std::int64_t,  //
                              std::uint8_t, std::uint16_t, std::uint32_t, uint64_t,   //
@@ -542,4 +563,104 @@ BOOST_AUTO_TEST_CASE(powm_test) {
     BOOST_CHECK_EQUAL(powm(2_big_uint7, 4_big_uint7, 5), 1);
     BOOST_CHECK_EQUAL(powm(2_big_uint7, 4, 5_big_uint7), 1_big_uint7);
     BOOST_CHECK_EQUAL(powm(2, 4, 5), 1);
+}
+
+BOOST_AUTO_TEST_CASE(import_test) {
+    big_uint<64> val;
+    std::array<std::uint8_t, 8> arr1{0x12, 0x34, 0x56, 0x78, 0x90, 0xab, 0xcd, 0xef};
+    val.import_bits(arr1.begin(), arr1.end(), 8, true);
+    BOOST_CHECK_EQUAL(val, 0x1234567890abcdef_big_uint64);
+
+    std::array<std::uint8_t, 8> arr2{0x12, 0x34, 0x56, 0x78, 0x90, 0xab, 0xcd, 0xef};
+    val.import_bits(arr2.begin(), arr2.end(), 8, false);
+    BOOST_CHECK_EQUAL(val, 0xefcdab9078563412_big_uint64);
+
+    std::array<std::uint8_t, 1> arr3{0x01};
+    val.import_bits(arr3.begin(), arr3.end(), 8, true);
+    BOOST_CHECK_EQUAL(val, 0x1_big_uint64);
+
+    std::array<std::uint8_t, 1> arr4{0x01};
+    val.import_bits(arr4.begin(), arr4.end(), 8, false);
+    BOOST_CHECK_EQUAL(val, 0x1_big_uint64);
+
+    std::array<std::uint8_t, 1> arr5{0x00};
+    val.import_bits(arr5.begin(), arr5.end(), 8, true);
+    BOOST_CHECK_EQUAL(val, 0x0_big_uint64);
+
+    std::array<std::uint8_t, 2> arr6{0x00, 0x00};
+    val.import_bits(arr6.begin(), arr6.end(), 8, true);
+    BOOST_CHECK_EQUAL(val, 0x0_big_uint64);
+
+    std::array<std::uint8_t, 2> arr7{0x01, 0x00};
+    val.import_bits(arr7.begin(), arr7.end(), 8, true);
+    BOOST_CHECK_EQUAL(val, 0x100_big_uint64);
+
+    std::array<std::uint8_t, 2> arr8{0x01, 0x00};
+    val.import_bits(arr8.begin(), arr8.end(), 8, false);
+    BOOST_CHECK_EQUAL(val, 0x1_big_uint64);
+
+    std::array<std::uint8_t, 16> arr9{};
+    val.import_bits(arr9.begin(), arr9.end(), 8, true);
+    BOOST_CHECK_EQUAL(val, 0x0_big_uint64);
+    val.import_bits(arr9.begin(), arr9.end(), 8, false);
+    BOOST_CHECK_EQUAL(val, 0x0_big_uint64);
+}
+
+BOOST_AUTO_TEST_CASE(import_overflow) {
+    big_uint<14> val;
+    std::array<std::uint8_t, 8> arr1{0x12, 0x34, 0x56, 0x78, 0x90, 0xab, 0xcd, 0xef};
+    BOOST_CHECK_THROW((val.import_bits(arr1.begin(), arr1.end(), 8, true)),
+                      std::overflow_error);
+    BOOST_CHECK_THROW((val.import_bits(arr1.begin(), arr1.end(), 8, false)),
+                      std::overflow_error);
+
+    std::array<std::uint8_t, 2> arr3{0xff, 0xff};
+    BOOST_CHECK_THROW((val.import_bits(arr3.begin(), arr3.end(), 8, true)),
+                      std::overflow_error);
+    BOOST_CHECK_THROW((val.import_bits(arr3.begin(), arr3.end(), 8, false)),
+                      std::overflow_error);
+
+    big_uint<64> val2;
+
+    std::array<std::uint64_t, 2> arr4{0xff, 0xff};
+    BOOST_CHECK_THROW((val2.import_bits(arr4.begin(), arr4.end(), 64, true)),
+                      std::overflow_error);
+    BOOST_CHECK_THROW((val2.import_bits(arr4.begin(), arr4.end(), 64, false)),
+                      std::overflow_error);
+}
+
+BOOST_AUTO_TEST_CASE(export_test) {
+    big_uint<64> val = 0x1234567890abcdef_big_uint64;
+    std::vector<std::uint8_t> result;
+
+    val.export_bits(std::back_inserter(result), 8, true);
+    BOOST_TEST(result == (std::vector<std::uint8_t>{0x12, 0x34, 0x56, 0x78, 0x90, 0xab,
+                                                    0xcd, 0xef}),
+               boost::test_tools::per_element());
+    result.clear();
+
+    val.export_bits(std::back_inserter(result), 8, false);
+    BOOST_TEST(result == (std::vector<std::uint8_t>{0xef, 0xcd, 0xab, 0x90, 0x78, 0x56,
+                                                    0x34, 0x12}),
+               boost::test_tools::per_element());
+    result.clear();
+
+    val.export_bits(std::back_inserter(result), 4, true);
+    BOOST_TEST(result == (std::vector<std::uint8_t>{0x01, 0x02, 0x03, 0x04, 0x05, 0x06,
+                                                    0x07, 0x08, 0x09, 0x00, 0x0a, 0x0b,
+                                                    0x0c, 0x0d, 0x0e, 0x0f}),
+               boost::test_tools::per_element());
+    result.clear();
+
+    val = 0x2_big_uint64;
+
+    val.export_bits(std::back_inserter(result), 1, true);
+    BOOST_TEST(result == (std::vector<std::uint8_t>{0x01, 0x00}),
+               boost::test_tools::per_element());
+    result.clear();
+
+    val.export_bits(std::back_inserter(result), 1, false);
+    BOOST_TEST(result == (std::vector<std::uint8_t>{0x00, 0x01}),
+               boost::test_tools::per_element());
+    result.clear();
 }
