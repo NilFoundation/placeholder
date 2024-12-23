@@ -86,13 +86,11 @@ namespace nil {
                     for (std::size_t i = 0; i < N; i++) {
                         for (std::size_t j = 0; j < m; j++) {
                             auto elm_offset = L * (j + i * m);
-                            import_bits(e, uniform_bytes.begin() + elm_offset,
-                                        uniform_bytes.begin() + elm_offset + L);
-                            // Sometimes hash is 512 bits, while the group element is 256 or 381 bits.
-                            // In these cases we take the number module the modulus of the group.
-                            // TODO(ioxid): this is not needed
-                            e %= suite_type::p;
-
+                            e.import_bits(uniform_bytes.begin() + elm_offset,
+                                          uniform_bytes.begin() + elm_offset + L);
+                            // Sometimes hash is 512 bits, while the group element is 256
+                            // or 381 bits. In these cases we take the number module the
+                            // modulus of the group.
                             coordinates[j] = modular_type(e);
                         }
                         result[i] = field_value_type(coordinates[0], coordinates[1]);

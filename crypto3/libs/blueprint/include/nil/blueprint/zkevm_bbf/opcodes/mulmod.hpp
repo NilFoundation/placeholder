@@ -141,7 +141,6 @@ namespace nil {
                                  const opcode_input_type<FieldType, stage> &current_state,
                                  bool make_links = true)
                     : generic_component<FieldType, stage>(context_object), res(chunk_amount) {
-                    using integral_type = zkevm_word_integral_type;
                     using extended_integral_type = nil::crypto3::multiprecision::big_uint<512>;
                     // The central relation is a * b = s = Nr + q, q < N.
 
@@ -211,36 +210,23 @@ namespace nil {
                         zkevm_word_type N = current_state.stack_top(2);
                         zkevm_word_type a = N != 0u ? input_a : 0;
                         extended_integral_type s_integral =
-                            extended_integral_type(integral_type(a)) *
-                            extended_integral_type(integral_type(b));
+                            extended_integral_type(a) * extended_integral_type(b);
 
-                        zkevm_word_type sp =
-                            zkevm_word_type(s_integral % extended_integral_type(zkevm_modulus));
-                        zkevm_word_type spp =
-                            zkevm_word_type(s_integral / extended_integral_type(zkevm_modulus));
+                        zkevm_word_type sp = zkevm_word_type(s_integral % extended_zkevm_mod);
+                        zkevm_word_type spp = zkevm_word_type(s_integral / extended_zkevm_mod);
 
                         extended_integral_type r_integral =
-                            N != 0u ? s_integral / extended_integral_type(integral_type(N)) : 0u;
-                        zkevm_word_type rp =
-                            zkevm_word_type(r_integral % extended_integral_type(zkevm_modulus));
-                        zkevm_word_type rpp =
-                            zkevm_word_type(r_integral / extended_integral_type(zkevm_modulus));
+                            N != 0u ? s_integral / extended_integral_type(N) : 0u;
+                        zkevm_word_type rp = zkevm_word_type(r_integral % extended_zkevm_mod);
+                        zkevm_word_type rpp = zkevm_word_type(r_integral / extended_zkevm_mod);
 
                         zkevm_word_type q =
-                            N != 0u ? zkevm_word_type(s_integral %
-                                                      extended_integral_type(integral_type(N)))
-                                    : 0u;
-                        extended_integral_type Nr_integral =
-                            s_integral - extended_integral_type(integral_type(q));
-                        zkevm_word_type Nr_p =
-                            zkevm_word_type(Nr_integral % extended_integral_type(zkevm_modulus));
-                        zkevm_word_type Nr_pp =
-                            zkevm_word_type(Nr_integral / extended_integral_type(zkevm_modulus));
+                            N != 0u ? zkevm_word_type(s_integral % extended_integral_type(N)) : 0u;
+                        extended_integral_type Nr_integral = s_integral - extended_integral_type(q);
+                        zkevm_word_type Nr_p = zkevm_word_type(Nr_integral % extended_zkevm_mod);
+                        zkevm_word_type Nr_pp = zkevm_word_type(Nr_integral / extended_zkevm_mod);
 
-                        bool t_last = integral_type(q) < integral_type(N);
-                        zkevm_word_type v = zkevm_word_type(integral_type(q) +
-                                                            integral_type(t_last) * zkevm_modulus -
-                                                            integral_type(N));
+                        zkevm_word_type v = wrapping_sub(q, N);
 
                         zkevm_word_type result = q;
 

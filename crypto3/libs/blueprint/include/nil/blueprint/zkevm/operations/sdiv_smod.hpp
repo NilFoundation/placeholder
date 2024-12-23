@@ -479,7 +479,6 @@ namespace nil {
 
             void generate_assignments(zkevm_table_type &zkevm_table, const zkevm_machine_interface &machine) override {
                 using word_type = typename zkevm_stack::word_type;
-                using integral_type = nil::crypto3::multiprecision::big_uint<257>;
 
                 word_type a = machine.stack_top();
                 word_type b_input = machine.stack_top(1);
@@ -487,30 +486,18 @@ namespace nil {
                 // According to Yellow paper, the result of -2^255 / -1 should be -2^255 (Yellow paper, page 30)
                 // To achive that we need to replace b = -1 by b = 1 in this special case. This also helps the SMOD operation
 
-                word_type b = (integral_type(a) == zkevm_modulus - 1) && (integral_type(b_input) == zkevm_modulus/2) ? 1 : b_input;
-
-                auto is_negative = [](word_type x) {
-                     return (integral_type(x) > zkevm_modulus/2 - 1);
-                };
-                auto negate_word = [](word_type x) {
-                    return word_type(zkevm_modulus - integral_type(x));
-                };
-                auto abs_word = [&is_negative, &negate_word](word_type x) {
-                    return is_negative(x)? negate_word(x) : x;
-                };
+                word_type b = (a == neg_one) && (b_input == min_neg) ? 1 : b_input;
 
                 word_type a_abs = abs_word(a),
                           b_abs = abs_word(b);
 
-                integral_type r_integral = (b != 0u)? integral_type(a_abs) / integral_type(b_abs) : 0u;
-                word_type r_abs = r_integral,
-                          q_abs = b != 0u ? integral_type(a_abs) % integral_type(b_abs) : integral_type(a_abs),
+                word_type r_abs = b != 0u ? a_abs / b_abs : 0u;
+                word_type q_abs = b != 0u ? a_abs % b_abs : a_abs,
                           r = (is_negative(a) == is_negative(b)) ? r_abs : negate_word(r_abs),
-                          q = is_negative(a)? negate_word(q_abs) : q_abs;
+                          q = is_negative(a) ? negate_word(q_abs) : q_abs;
 
-                word_type q_out = b != 0u ? q : 0; // according to EVM spec a % 0 = 0
-                bool t_last = integral_type(q_abs) < integral_type(b_abs);
-                word_type v = word_type(integral_type(q_abs) + integral_type(t_last)*zkevm_modulus - integral_type(b_abs));
+                word_type q_out = b != 0u ? q : 0u;  // according to EVM spec a % 0 = 0
+                word_type v = wrapping_sub(q_abs, b_abs);
 
                 word_type result = is_div ? r : q_out;
 
@@ -590,10 +577,8 @@ namespace nil {
 
                 // compute signs of a,b and q
                 // x + 2^15 = x_aux + 2^16*x_neg
-                integral_type two_15 = 32768,
-                              biggest_a_chunk = integral_type(a) >> (256 - 16),
-                              biggest_b_chunk = integral_type(b) >> (256 - 16),
-                              biggest_q_chunk = integral_type(q) >> (256 - 16);
+                word_type two_15 = 32768, biggest_a_chunk = a >> (256 - 16),
+                          biggest_b_chunk = b >> (256 - 16), biggest_q_chunk = q >> (256 - 16);
 
                 assignment.witness(witness_cols[5 + chunk_amount], curr_row + 1) =
                         (biggest_a_chunk > two_15 - 1) ? (biggest_a_chunk - two_15) : biggest_a_chunk + two_15; // a_aux

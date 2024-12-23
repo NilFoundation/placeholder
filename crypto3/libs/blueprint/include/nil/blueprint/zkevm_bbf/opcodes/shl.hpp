@@ -97,8 +97,6 @@ namespace nil {
                               const opcode_input_type<FieldType, stage> &current_state)
                     : generic_component<FieldType, stage>(context_object, false),
                       res(chunk_amount) {
-                    using integral_type = zkevm_word_integral_type;
-
                     TYPE first_carryless;
                     TYPE second_carryless;
 
@@ -141,21 +139,20 @@ namespace nil {
                         zkevm_word_type input_b = current_state.stack_top();
                         zkevm_word_type a = current_state.stack_top(1);
 
-                        int shift =
-                            (integral_type(input_b) < 256) ? int(integral_type(input_b)) : 256;
+                        int shift = (input_b < 256) ? int(input_b) : 256;
 
-                        zkevm_word_type result = zkevm_word_type(integral_type(a) << shift);
+                        zkevm_word_type result = a << shift;
 
-                        zkevm_word_type b = zkevm_word_type(integral_type(1) << shift);
+                        zkevm_word_type b = zkevm_word_type(1) << shift;
 
                         input_b_chunks = zkevm_word_to_field_element<FieldType>(input_b);
                         a_chunks = zkevm_word_to_field_element<FieldType>(a);
                         b_chunks = zkevm_word_to_field_element<FieldType>(b);
                         r_chunks = zkevm_word_to_field_element<FieldType>(result);
 
-                        b0p = integral_type(input_b) % 16;
-                        b0pp = (integral_type(input_b) / 16) % 16;
-                        b0ppp = (integral_type(input_b) % 65536) / 256;
+                        b0p = input_b % 16;
+                        b0pp = (input_b / 16) % 16;
+                        b0ppp = (input_b % 65536) / 256;
                         I1 = b0ppp.is_zero() ? 0 : b0ppp.inversed();
 
                         sum_b = 0;
@@ -165,7 +162,7 @@ namespace nil {
                         I2 = sum_b.is_zero() ? 0 : sum_b.inversed();
                         z = (1 - b0ppp * I1) *
                             (1 - sum_b * I2);  // z is zero if input_b >= 256, otherwise it is 1
-                        tp = z * (static_cast<unsigned int>(1) << int(integral_type(input_b) % 16));
+                        tp = z * (static_cast<unsigned int>(1) << int(input_b % 16));
 
                         // note that we don't assign 64-chunks for a/b, as we can build them from
                         // 16-chunks with constraints under the same logic we only assign the 16 -

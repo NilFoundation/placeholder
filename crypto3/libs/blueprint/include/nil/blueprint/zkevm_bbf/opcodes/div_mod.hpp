@@ -130,8 +130,6 @@ namespace nil {
                                   const opcode_input_type<FieldType, stage> &current_state,
                                   bool is_div)
                     : generic_component<FieldType, stage>(context_object, false),res(chunk_amount) {
-                    using integral_type = zkevm_word_integral_type;
-
                     std::vector<TYPE> c_1_chunks(4);
                     TYPE c_2;
                     TYPE carry[carry_amount + 1];
@@ -160,17 +158,12 @@ namespace nil {
                         zkevm_word_type a = current_state.stack_top();
                         zkevm_word_type b = current_state.stack_top(1);
 
+                        zkevm_word_type r = b != 0u ? a / b : 0u;
+                        zkevm_word_type q = b != 0u ? a % b : a;
+                        zkevm_word_type q_out =
+                            b != 0u ? q : 0u;  // according to EVM spec a % 0 = 0
 
-                        integral_type r_integral =
-                            b != 0u ? integral_type(a) / integral_type(b) : 0u;
-                        zkevm_word_type r = r_integral;
-                        zkevm_word_type q = b != 0u ? integral_type(a) % integral_type(b) : a;
-                        zkevm_word_type q_out = b != 0u ? q : 0;  // according to EVM spec a % 0 = 0
-
-                        bool t_last = integral_type(q) < integral_type(b);
-                        zkevm_word_type v = zkevm_word_type(integral_type(q) +
-                                                            integral_type(t_last) * zkevm_modulus -
-                                                            integral_type(b));
+                        zkevm_word_type v = wrapping_sub(q, b);
 
                         zkevm_word_type result = is_div ? r : q_out;
 

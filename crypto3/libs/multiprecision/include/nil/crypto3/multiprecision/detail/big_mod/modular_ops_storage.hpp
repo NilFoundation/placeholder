@@ -11,27 +11,21 @@
 
 #pragma once
 
-// IWYU pragma: private
-
-#include <cstddef>
-#include <type_traits>
-
-#include "nil/crypto3/multiprecision/detail/big_uint/big_uint_impl.hpp"
-
 namespace nil::crypto3::multiprecision::detail {
-    // Compile-time storage for modular arithmetic operations. Stores them in a constexpr variable.
-    template<const auto &Modulus, template<std::size_t> typename modular_ops_template>
+    // Compile-time storage for modular arithmetic operations. Stores them in a constexpr
+    // variable.
+    template<const auto &Modulus, typename modular_ops_t_>
     class modular_ops_storage_ct {
       public:
-        using big_uint_t = std::decay_t<decltype(Modulus)>;
-        static constexpr std::size_t Bits = big_uint_t::Bits;
-        using modular_ops_t = modular_ops_template<Bits>;
-
-        static_assert(Bits == Modulus.msb() + 1, "modulus bit width should match used precision");
+        using modular_ops_t = modular_ops_t_;
 
         constexpr modular_ops_storage_ct() {}
 
         static constexpr const modular_ops_t &ops() { return m_modular_ops; }
+
+        constexpr bool compare_eq(const modular_ops_storage_ct & /*other*/) const {
+            return true;
+        }
 
       private:
         static constexpr modular_ops_t m_modular_ops{Modulus};
@@ -39,15 +33,19 @@ namespace nil::crypto3::multiprecision::detail {
 
     // Runtime storage for modular arithmetic operations. Stores them in a plain variable
     // constructed at runtime.
-    template<std::size_t Bits, template<std::size_t> typename modular_ops_template>
+    template<typename modular_ops_t_>
     class modular_ops_storage_rt {
       public:
-        using big_uint_t = big_uint<Bits>;
-        using modular_ops_t = modular_ops_template<Bits>;
+        using modular_ops_t = modular_ops_t_;
 
-        constexpr modular_ops_storage_rt(const big_uint_t &input) : m_modular_ops(input) {}
+        constexpr modular_ops_storage_rt(const typename modular_ops_t::base_type &input)
+            : m_modular_ops(input) {}
 
         constexpr const modular_ops_t &ops() const { return m_modular_ops; }
+
+        constexpr bool compare_eq(const modular_ops_storage_rt &other) const {
+            return m_modular_ops.compare_eq(other.m_modular_ops);
+        }
 
       private:
         modular_ops_t m_modular_ops;

@@ -131,8 +131,6 @@ namespace nil {
                               const opcode_input_type<FieldType, stage> &current_state)
                     : generic_component<FieldType, stage>(context_object, false),
                       res(chunk_amount) {
-                    using integral_type = zkevm_word_integral_type;
-
                     TYPE first_carryless;
                     TYPE second_carryless;
                     TYPE third_carryless;
@@ -184,20 +182,14 @@ namespace nil {
                         zkevm_word_type input_b = current_state.stack_top();
                         zkevm_word_type a = current_state.stack_top(1);
 
-                        int shift =
-                            (integral_type(input_b) < 256) ? int(integral_type(input_b)) : 256;
-                        integral_type r_integral = integral_type(a) >> shift;
+                        int shift = (input_b < 256) ? int(input_b) : 256;
+                        zkevm_word_type result = a >> shift;
 
-                        zkevm_word_type b = zkevm_word_type(integral_type(1) << shift);
+                        zkevm_word_type b = zkevm_word_type(1) << shift;
 
-                        zkevm_word_type result =
-                            r_integral;
-                        zkevm_word_type q = b != 0u ? integral_type(a) % integral_type(b) : a;
+                        zkevm_word_type q = b != 0u ? a % b : a;
 
-                        bool t_last = integral_type(q) < integral_type(b);
-                        zkevm_word_type v = zkevm_word_type(integral_type(q) +
-                                                            integral_type(t_last) * zkevm_modulus -
-                                                            integral_type(b));
+                        zkevm_word_type v = wrapping_sub(q, b);
 
                         input_b_chunks = zkevm_word_to_field_element<FieldType>(input_b);
                         a_chunks = zkevm_word_to_field_element<FieldType>(a);
@@ -206,9 +198,9 @@ namespace nil {
                         q_chunks = zkevm_word_to_field_element<FieldType>(q);
                         v_chunks = zkevm_word_to_field_element<FieldType>(v);
 
-                        b0p = integral_type(input_b) % 16;
-                        b0pp = (integral_type(input_b) / 16) % 16;
-                        b0ppp = (integral_type(input_b) % 65536) / 256;
+                        b0p = input_b % 16;
+                        b0pp = (input_b / 16) % 16;
+                        b0ppp = (input_b % 65536) / 256;
                         I1 = b0ppp.is_zero() ? 0 : b0ppp.inversed();
 
                         sum_part_b = 0;
@@ -220,7 +212,7 @@ namespace nil {
                         z = (1 - b0ppp * I1) *
                             (1 -
                              sum_part_b * I2);  // z is zero if input_b >= 256, otherwise it is 1
-                        tp = z * (static_cast<unsigned int>(1) << int(integral_type(input_b) % 16));
+                        tp = z * (static_cast<unsigned int>(1) << int(input_b % 16));
                         b_sum_inverse = b_sum.is_zero() ? 0 : b_sum.inversed();
                         b_zero = 1 - b_sum_inverse * b_sum;
 

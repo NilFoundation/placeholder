@@ -1,7 +1,12 @@
-///////////////////////////////////////////////////////////////
-//  Copyright 2012 John Maddock. Distributed under the Boost
-//  Software License, Version 1.0. (See accompanying file
-//  LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt
+//---------------------------------------------------------------------------//
+// Copyright (c) 2012 John Maddock
+// Copyright (c) 2018-2020 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2024 Andrey Nefedov <ioxid@nil.foundation>
+//
+// Distributed under the Boost Software License, Version 1.0
+// See accompanying file LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt
+//---------------------------------------------------------------------------//
 
 #pragma once
 
@@ -9,7 +14,10 @@
 #include <cstddef>
 #include <limits>
 
-#include "nil/crypto3/multiprecision/detail/big_uint/big_uint_impl.hpp"
+namespace nil::crypto3::multiprecision {
+    template<std::size_t Bits_>
+    class big_uint;
+}
 
 namespace nil::crypto3::multiprecision::detail {
     template<std::size_t Bits>
@@ -76,7 +84,7 @@ namespace std {
         static constexpr number_type denorm_min() { return 0; }
         static constexpr bool is_iec559 = false;
         static constexpr bool is_bounded = true;
-        static constexpr bool is_modulo = true;
+        static constexpr bool is_modulo = false;
         static constexpr bool traps = false;
         static constexpr bool tinyness_before = false;
     };

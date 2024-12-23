@@ -1,3 +1,11 @@
+# ---------------------------------------------------------------------------#
+# Copyright (c) 2024 Andrey Nefedov <ioxid@nil.foundation>
+#
+# Distributed under the Boost Software License, Version 1.0
+# See accompanying file LICENSE_1_0.txt or copy at
+# http://www.boost.org/LICENSE_1_0.txt
+# ---------------------------------------------------------------------------#
+
 import random
 import math
 import json
@@ -14,8 +22,8 @@ def generate_comparison_test_data():
     def gen_arg(bits, rnd):
         if rnd.random() < ZERO_PROB:
             return 0
-        log2 = rnd.random() * bits
-        result = math.floor(2**log2)
+        size = rnd.randint(1, bits)
+        result = rnd.randint(0 if size == 1 else 1 << (size - 1), (1 << size) - 1)
         assert result < 2**bits
         return result
 
@@ -23,23 +31,67 @@ def generate_comparison_test_data():
 
     bits = [[12, 17], [260, 130], [128, 256]]
 
-    with open(SOURCE_DIR / "comparison.json", "w") as f:
+    with open(SOURCE_DIR / "big_uint_randomized.json", "w") as f:
         tests = {}
         for a_bits, b_bits in bits:
+            max_bits = max(a_bits, b_bits)
             cases = []
             for i in range(TEST_CASES):
                 a = gen_arg(a_bits, rnd)
+
                 if a < 2 ** b_bits and rnd.random() < EQ_PROB:
                     b = a
                 else:
                     b = gen_arg(b_bits, rnd)
+
+                mod = 2**max_bits
+
                 cmp_a_b = -1 if a < b else (0 if a == b else 1)
-                cases.append({"a": hex(a), "b": hex(b), "cmp_a_b": cmp_a_b})
-            tests[f"test_comparison_{a_bits}_{b_bits}"] = cases
+
+                a_add_b = a + b
+                if a_add_b >= mod:
+                    a_add_b = None
+                a_sub_b = a - b
+                if a_sub_b < 0:
+                    a_sub_b = None
+                a_mul_b = a * b
+                if a_mul_b >= mod:
+                    a_mul_b = None
+
+                a_div_b = a // b if b != 0 else None
+                a_mod_b = a % b if b != 0 else None
+
+                a_wrapping_add_b = (a + b) % mod
+                a_wrapping_sub_b = (a - b + mod) % mod
+                a_wrapping_mul_b = (a * b) % mod
+
+                a_or_b = a | b
+                a_and_b = a & b
+                a_xor_b = a ^ b
+
+                cases.append(
+                    {
+                        "a": hex(a),
+                        "b": hex(b),
+                        "a_add_b": hex(a_add_b) if a_add_b is not None else "",
+                        "a_sub_b": hex(a_sub_b) if a_sub_b is not None else "",
+                        "a_mul_b": hex(a_mul_b) if a_mul_b is not None else "",
+                        "a_div_b": hex(a_div_b) if a_div_b is not None else "",
+                        "a_mod_b": hex(a_mod_b) if a_mod_b is not None else "",
+                        "a_wrapping_add_b": hex(a_wrapping_add_b),
+                        "a_wrapping_sub_b": hex(a_wrapping_sub_b),
+                        "a_wrapping_mul_b": hex(a_wrapping_mul_b),
+                        "a_or_b": hex(a_or_b),
+                        "a_and_b": hex(a_and_b),
+                        "a_xor_b": hex(a_xor_b),
+                        "cmp_a_b": cmp_a_b,
+                    }
+                )
+            tests[f"base_operations_{a_bits}_{b_bits}"] = cases
         f.write(json.dumps(tests, indent=4))
 
 
-def generate_modular_comprehensive_test_data():
+def generate_modular_arithmetic_test_data():
     ZERO_PROB = 0.05
     MAX_BITS_PROB = 0.1
     EQ_PROB = 0.1
@@ -49,9 +101,9 @@ def generate_modular_comprehensive_test_data():
         if rnd.random() < ZERO_PROB:
             return 0
         if rnd.random() < MAX_BITS_PROB:
-            return rnd.randint(2 ** (bits - 1), m - 1)
-        log2 = rnd.random() * bits
-        result = math.floor(2**log2)
+            return rnd.randint(1 << (bits - 1), m - 1)
+        size = rnd.randint(1, bits)
+        result = rnd.randint(0 if size == 1 else 1 << (size - 1), (1 << size) - 1)
         assert result < 2**bits
         return result
 
@@ -65,7 +117,7 @@ def generate_modular_comprehensive_test_data():
         ["montgomery_17", 0x1E241, 17],
     ]
 
-    with open(SOURCE_DIR / "modular_comprehensive.json", "w") as f:
+    with open(SOURCE_DIR / "big_mod_randomized.json", "w") as f:
         tests = {}
         for test_name, m, bits in params:
             assert math.ceil(math.log2(m)) == bits
@@ -94,4 +146,4 @@ def generate_modular_comprehensive_test_data():
 
 if __name__ == "__main__":
     generate_comparison_test_data()
-    generate_modular_comprehensive_test_data()
+    generate_modular_arithmetic_test_data()

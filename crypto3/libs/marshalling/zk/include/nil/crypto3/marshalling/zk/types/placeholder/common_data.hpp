@@ -149,7 +149,7 @@ namespace nil {
                     >::value) {
                         auto integral = typename CommonDataType::field_type::integral_type(common_data.vk.constraint_system_with_params_hash.data);
                         std::vector<unsigned char> blob;
-                        export_bits(integral, std::back_inserter(blob), 8);
+                        integral.export_bits(std::back_inserter(blob), 8);
                         for( std::size_t i = blob.size(); i > 0; i--){
                             filled_constraint_system_with_params_hash.value().push_back(
                                 nil::crypto3::marshalling::types::integral<TTypeBase, octet_type>(blob[i-1])
@@ -247,7 +247,7 @@ namespace nil {
                             blob.push_back(std::uint8_t(std::get<13>(filled_common_data.value()).value()[i].value()));
                         }
                         typename CommonDataType::field_type::integral_type newval;
-                        import_bits(newval, blob.begin(), blob.end(), 8, false);
+                        newval.import_bits(blob.begin(), blob.end(), 8, false);
                         vk.constraint_system_with_params_hash = typename CommonDataType::field_type::value_type(newval);
                     } else {
                         for( std::size_t i = 0; i < std::get<13>(filled_common_data.value()).value().size(); i++){

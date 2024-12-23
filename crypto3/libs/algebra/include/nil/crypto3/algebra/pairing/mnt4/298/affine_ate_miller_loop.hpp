@@ -26,6 +26,8 @@
 #ifndef CRYPTO3_ALGEBRA_PAIRING_MNT4_298_AFFINE_ATE_MILLER_LOOP_HPP
 #define CRYPTO3_ALGEBRA_PAIRING_MNT4_298_AFFINE_ATE_MILLER_LOOP_HPP
 
+#include <nil/crypto3/multiprecision/wnaf.hpp>
+
 #include <nil/crypto3/algebra/curves/mnt4.hpp>
 #include <nil/crypto3/algebra/pairing/detail/mnt4/298/params.hpp>
 #include <nil/crypto3/algebra/pairing/detail/forms/short_weierstrass/projective/types.hpp>
