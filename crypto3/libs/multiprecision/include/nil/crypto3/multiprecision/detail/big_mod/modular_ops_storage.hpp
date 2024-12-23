@@ -12,7 +12,8 @@
 #pragma once
 
 namespace nil::crypto3::multiprecision::detail {
-    // Compile-time storage for modular arithmetic operations. Stores them in a constexpr variable.
+    // Compile-time storage for modular arithmetic operations. Stores them in a constexpr
+    // variable.
     template<const auto &Modulus, typename modular_ops_t_>
     class modular_ops_storage_ct {
       public:

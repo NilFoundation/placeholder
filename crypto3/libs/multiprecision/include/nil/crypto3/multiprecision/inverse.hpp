@@ -16,10 +16,10 @@
 
 #include <boost/assert.hpp>
 
-#include "nil/crypto3/multiprecision/big_mod.hpp"
 #include "nil/crypto3/multiprecision/big_uint.hpp"
 #include "nil/crypto3/multiprecision/detail/big_int.hpp"
 #include "nil/crypto3/multiprecision/detail/extended_euclidean_algorithm.hpp"
+#include "nil/crypto3/multiprecision/type_traits.hpp"
 
 namespace nil::crypto3::multiprecision {
     template<std::size_t Bits>
