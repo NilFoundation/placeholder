@@ -3,19 +3,25 @@
 
 #include <nil/proof-generator/preset/preset.hpp>
 
+#include <nil/proof-generator/assigner/options.hpp>
 #include <nil/proof-generator/assigner/bytecode.hpp>
 #include <nil/proof-generator/assigner/rw.hpp>
 #include <nil/proof-generator/assigner/copy.hpp>
 #include <nil/proof-generator/assigner/zkevm.hpp>
+#include <nil/proof-generator/assigner/trace_parser.hpp>
 
 
 namespace nil {
     namespace proof_generator {
 
+        using AssignmentTableFiller = std::function<std::optional<std::string>(
+            crypto3::zk::snark::plonk_assignment_table<nil::crypto3::algebra::fields::pallas_fq>& assignment_table,
+            const boost::filesystem::path& trace_base_path,
+            const AssignerOptions& options)
+        >;
+
         template<typename BlueprintFieldType>
-        std::map<const std::string, std::function<std::optional<std::string>(
-                    nil::crypto3::zk::snark::plonk_assignment_table<BlueprintFieldType>& assignment_table,
-                    const boost::filesystem::path& trace_base_path)>> circuit_selector = {
+        std::map<const std::string, AssignmentTableFiller> circuit_selector = {
                 {circuits::BYTECODE, fill_bytecode_assignment_table<BlueprintFieldType>},
                 {circuits::RW, fill_rw_assignment_table<BlueprintFieldType>},
                 {circuits::ZKEVM, fill_zkevm_assignment_table<BlueprintFieldType>},
@@ -60,15 +66,16 @@ namespace nil {
         }
 
         template<typename BlueprintFieldType>
-        std::optional<std::string> fill_assignment_table_single_thread(nil::crypto3::zk::snark::plonk_assignment_table<BlueprintFieldType>& assignment_table,
-                                                                       nil::crypto3::zk::snark::plonk_table_description<BlueprintFieldType>& desc,
+        std::optional<std::string> fill_assignment_table_single_thread(crypto3::zk::snark::plonk_assignment_table<BlueprintFieldType>& assignment_table,
+                                                                       crypto3::zk::snark::plonk_table_description<BlueprintFieldType>& desc,
                                                                        const std::string& circuit_name,
-                                                                       const boost::filesystem::path& trace_base_path) {
+                                                                       const boost::filesystem::path& trace_base_path,
+                                                                       const AssignerOptions& options = {}) {
             auto find_it = circuit_selector<BlueprintFieldType>.find(circuit_name);
             if (find_it == circuit_selector<BlueprintFieldType>.end()) {
                 return "Unknown circuit name " + circuit_name;
             }
-            const auto err = find_it->second(assignment_table, trace_base_path);
+            const auto err = find_it->second(assignment_table, trace_base_path, options);
             if (err) {
                 return err;
             }
