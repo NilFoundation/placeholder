@@ -86,8 +86,8 @@ struct ArithmeticSample {
         return os;
     }
 
-    big_uint<ResBits> a;
-    big_uint<ResBits> b;
+    big_uint<Bits1> a;
+    big_uint<Bits2> b;
     std::optional<big_uint<ResBits>> a_add_b;
     std::optional<big_uint<ResBits>> a_sub_b;
     std::optional<big_uint<ResBits>> a_mul_b;
