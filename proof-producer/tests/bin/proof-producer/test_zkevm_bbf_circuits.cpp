@@ -20,7 +20,7 @@ namespace {
 
 class ProverTests: public ::testing::TestWithParam<Input> {
 
-    protected:
+    public:
         using CurveType = nil::crypto3::algebra::curves::pallas;
         using HashType = nil::crypto3::hashes::keccak_1600<256>;
         using ConstraintSystem = nil::proof_generator::Prover<CurveType, HashType>::ConstraintSystem;
@@ -95,3 +95,19 @@ INSTANTIATE_TEST_SUITE_P(MultiTxZkevm, ProverTests, ::testing::Values(Input{Mult
 // ./build/bin/nil wallet new --amount 100000000000000000
 // ./build/bin/nil wallet deploy ./SimpleStorage.bin --abi ./SimpleStorage.abi
 // for i in {1..100}; do ./build/bin/nil wallet send-message 0x0001443b27c605cc3975e05e8eb68eef1913777c increment --abi ./SimpleStorage.abi --no-wait; done
+
+
+// RW trace is picked from another trace set and has different trace_idx
+TEST(ProverTest, TraceIndexMismatch) {
+    const std::string trace_base_path = std::string(TEST_DATA_DIR) + "/broken_index/increment_simple.pb";
+    nil::proof_generator::Prover<ProverTests::CurveType, ProverTests::HashType> prover(
+                        ProverTests::lambda,
+                        ProverTests::expand_factor,
+                        ProverTests::max_quotient_chunks,
+                        ProverTests::grind,
+                        ZKEVM
+    );
+
+    ASSERT_TRUE(prover.setup_prover());
+    ASSERT_FALSE(prover.fill_assignment_table(trace_base_path));
+}
