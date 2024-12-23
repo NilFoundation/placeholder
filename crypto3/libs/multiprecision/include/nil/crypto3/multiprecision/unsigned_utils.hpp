@@ -14,6 +14,10 @@
 #include "nil/crypto3/multiprecision/type_traits.hpp"
 
 namespace nil::crypto3::multiprecision {
+    // unsigned_abs returns the absolute value of a signed type as an unsigned type.
+    // Unlike std::abs there is no special case for std::numeric_limits<T>::min().
+    // For unsigned types returns it as is including keeping the reference type
+
     template<typename T,
              std::enable_if_t<std::is_integral_v<T> && std::is_signed_v<T>, int> = 0>
     constexpr std::make_unsigned_t<T> unsigned_abs(T x) {
@@ -28,6 +32,10 @@ namespace nil::crypto3::multiprecision {
     constexpr decltype(auto) unsigned_abs(T&& x) {
         return std::forward<T>(x);
     }
+
+    // unsigned_or_throw returns the value of a signed type as an unsigned type.
+    // If the value is negative throws std::range_error
+    // For unsigned types returns it as is including keeping the reference type.
 
     template<typename T, std::enable_if_t<std::is_signed_v<T>, int> = 0>
     constexpr std::make_unsigned_t<T> unsigned_or_throw(const T& a) {

@@ -17,8 +17,8 @@
 #include "nil/crypto3/multiprecision/detail/big_int.hpp"
 
 namespace nil::crypto3::multiprecision::detail {
-    // a^(-1) mod p
-    // http://www-math.ucdenver.edu/~wcherowi/courses/m5410/exeucalg.html
+    // Classical Extended Euclidean Algorithm
+    // https://web.archive.org/web/20230511143526/http://www-math.ucdenver.edu/~wcherowi/courses/m5410/exeucalg.html
     template<std::size_t Bits>
     constexpr big_int<Bits> extended_euclidean_algorithm(big_int<Bits> num1,
                                                          big_int<Bits> num2,
@@ -31,7 +31,6 @@ namespace nil::crypto3::multiprecision::detail {
         bezout_x = 1u;
         bezout_y = 0u;
 
-        // Extended Euclidean Algorithm
         while (!num2.is_zero()) {
             big_int<Bits> quotient;
             big_int<Bits> remainder;

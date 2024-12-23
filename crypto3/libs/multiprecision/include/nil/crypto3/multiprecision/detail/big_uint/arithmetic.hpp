@@ -36,6 +36,7 @@ namespace nil::crypto3::multiprecision {
 
         // Addition/subtraction
 
+        // Constexpr-friendly addition. Does not throw because it returns carry.
         template<std::size_t Bits1, std::size_t Bits2, std::size_t Bits3>
         [[nodiscard]] constexpr bool add_constexpr_unsigned(big_uint<Bits1>& result,
                                                             const big_uint<Bits2>& a,
@@ -123,9 +124,7 @@ namespace nil::crypto3::multiprecision {
             }
         }
 
-        //
-        // Core subtraction routine:
-        //
+        /// Constexpr-friendly subtraction.
         template<operation_mode Mode, std::size_t Bits1, std::size_t Bits2, std::size_t Bits3>
         constexpr void subtract_constexpr_unsigned(big_uint<Bits1>& result,
                                                    const big_uint<Bits2>& a,
@@ -206,10 +205,6 @@ namespace nil::crypto3::multiprecision {
         //
         // This is the key addition routine:
         //
-        //
-        // This optimization is limited to: GCC, LLVM, ICC (Intel), MSVC for x86_64 and i386.
-        // If your architecture and compiler supports ADC intrinsic, please file a bug.
-        //
         // As of May, 2020 major compilers don't recognize carry chain though adc
         // intrinsics are used to hint compilers to use ADC and still compilers don't
         // unroll the loop efficiently (except LLVM) so manual unrolling is done.
@@ -218,6 +213,8 @@ namespace nil::crypto3::multiprecision {
         // ADX processor extensions, even though the addc instruction has been available
         // for basically all x86 processors.  That means gcc-9, clang-9, msvc-14.2 and up
         // are required to support these intrinsics.
+        //
+        // Returns carry so does not throw.
         //
         template<std::size_t Bits1, std::size_t Bits2, std::size_t Bits3>
         [[nodiscard]] constexpr bool add_unsigned(big_uint<Bits1>& result, const big_uint<Bits2>& a,
@@ -372,6 +369,7 @@ namespace nil::crypto3::multiprecision {
         }
 
 #else
+        // Fallback to the constexpr-friendly versions when no intrinsics are available
 
         template<std::size_t Bits1, std::size_t Bits2, std::size_t Bits3>
         [[nodiscard]] constexpr bool add_unsigned(big_uint<Bits1>& result, const big_uint<Bits2>& a,
@@ -386,7 +384,7 @@ namespace nil::crypto3::multiprecision {
         }
 
 #endif
-
+        // Add one limb
         template<std::size_t Bits1, std::size_t Bits2>
         [[nodiscard]] constexpr limb_type add_unsigned(big_uint<Bits1>& result,
                                                        const big_uint<Bits2>& a,
@@ -428,15 +426,12 @@ namespace nil::crypto3::multiprecision {
             return carry;
         }
 
-        //
-        // And again to subtract a single limb:
-        //
+        // Subtract one limb
         template<operation_mode Mode, std::size_t Bits1, std::size_t Bits2>
         constexpr void subtract_unsigned(big_uint<Bits1>& result, const big_uint<Bits2>& a,
                                          const limb_type& b) {
             static_assert(Bits1 >= Bits2, "invalid argument size");
 
-            // Subtract one limb.
             std::size_t as = a.used_limbs();
             result.zero_after(as);
             constexpr double_limb_type borrow = static_cast<double_limb_type>(max_limb_value) + 1;
@@ -468,6 +463,7 @@ namespace nil::crypto3::multiprecision {
             }
         }
 
+        // Check if the addition will overflow and throw if in checked mode
         template<operation_mode Mode>
         constexpr void check_addition(bool carry) noexcept(Mode == operation_mode::wrapping) {
             if constexpr (Mode == operation_mode::checked) {
@@ -477,6 +473,7 @@ namespace nil::crypto3::multiprecision {
             }
         }
 
+        // Addition which correctly handles signed and unsigned types
         template<operation_mode Mode, std::size_t Bits1, std::size_t Bits2, typename T>
         constexpr void add(big_uint<Bits1>& result, const big_uint<Bits2>& a,
                            const T& b) noexcept(Mode == operation_mode::wrapping) {
@@ -493,6 +490,7 @@ namespace nil::crypto3::multiprecision {
             }
         }
 
+        // Subtraction which correctly handles signed and unsigned types
         template<operation_mode Mode, std::size_t Bits1, std::size_t Bits2, typename T>
         constexpr void subtract(big_uint<Bits1>& result, const big_uint<Bits2>& a,
                                 const T& b) noexcept(Mode == operation_mode::wrapping) {
@@ -511,9 +509,8 @@ namespace nil::crypto3::multiprecision {
 
         // Modulus/divide
 
-        // This should be called only for creation of Montgomery and
-        // Barett params, not during "normal" execution, so we do not
-        // care about the execution speed.
+        // These implementations are pretty fast for our use case (number with < 1000
+        // bits)
 
         template<std::size_t Bits1, std::size_t Bits2>
         constexpr void divide(big_uint<Bits1>* div, const big_uint<Bits1>& x,
@@ -753,9 +750,6 @@ namespace nil::crypto3::multiprecision {
             }
         }
 
-        // This is called during creation of Montgomery and Barett
-        // params, calculation of inverse element and montgomery_reduce. If they are slow
-        // or multiplication is needed in some other hot path this should be optimized.
         template<operation_mode Mode, std::size_t Bits1, std::size_t Bits2, typename T>
         constexpr void multiply(big_uint<Bits1>& final_result, const big_uint<Bits2>& a,
                                 const T& b_orig) {

@@ -33,7 +33,9 @@ namespace nil::crypto3::multiprecision {
      * The sign bit is stored separately from the rest of the integer.
      *
      * @note
-     * Like big_uint, this is not optimized. It is provided for convenience.
+     * Unlike big_uint does not implement all arithmetic operations with all basic types.
+     * It is only used internally for extended euclidean algorithm. It should be pretty
+     * optimized for the use case, e.g. no unnecessary copying.
      */
     template<std::size_t Bits_>
     class big_int {
