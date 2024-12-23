@@ -14,22 +14,29 @@ from pathlib import Path
 SOURCE_DIR = Path(__file__).resolve().parent
 
 
-def generate_comparison_test_data():
+def generate_big_uint_test_data():
     ZERO_PROB = 0.05
+    MAX_BITS_PROB = 0.1
+    NEAR_MAX_PROB = 0.1
     EQ_PROB = 0.1
     TEST_CASES = 1000
 
     def gen_arg(bits, rnd):
         if rnd.random() < ZERO_PROB:
             return 0
-        size = rnd.randint(1, bits)
-        result = rnd.randint(0 if size == 1 else 1 << (size - 1), (1 << size) - 1)
+        if rnd.random() < NEAR_MAX_PROB:
+            return 2**bits - rnd.randint(1, 2 ** (bits // 10))
+        if rnd.random() < MAX_BITS_PROB:
+            size = bits
+        else:
+            size = rnd.randint(1, bits)
+        result = rnd.randint(0 if size == 1 else 2 ** (size - 1), (2**size) - 1)
         assert result < 2**bits
         return result
 
     rnd = random.Random(0)
 
-    bits = [[12, 17], [260, 130], [128, 256]]
+    bits = [[12, 17], [260, 130], [128, 256], [128, 128]]
 
     with open(SOURCE_DIR / "big_uint_randomized.json", "w") as f:
         tests = {}
@@ -91,7 +98,7 @@ def generate_comparison_test_data():
         f.write(json.dumps(tests, indent=4))
 
 
-def generate_modular_arithmetic_test_data():
+def generate_big_mod_test_data():
     ZERO_PROB = 0.05
     MAX_BITS_PROB = 0.1
     EQ_PROB = 0.1
@@ -145,5 +152,5 @@ def generate_modular_arithmetic_test_data():
 
 
 if __name__ == "__main__":
-    generate_comparison_test_data()
-    generate_modular_arithmetic_test_data()
+    generate_big_uint_test_data()
+    generate_big_mod_test_data()
