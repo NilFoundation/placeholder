@@ -14,11 +14,11 @@
 #include "nil/crypto3/multiprecision/detail/config.hpp"
 #include "nil/crypto3/multiprecision/detail/int128.hpp"
 
-#if __has_include(<adcintrin.h>)
+#if __has_include(<immintrin.h>)
 
 #define NIL_CO3_MP_HAS_INTRINSICS
 
-#include <adcintrin.h>
+#include <immintrin.h>  // IWYU pragma: keep (this is a portable umbrella header for intrinsics)
 
 namespace nil::crypto3::multiprecision::detail {
 
@@ -31,12 +31,15 @@ namespace nil::crypto3::multiprecision::detail {
     }
 
     NIL_CO3_MP_FORCEINLINE unsigned char subborrow_limb(unsigned char carry, limb_type a,
-                                                        limb_type b, limb_type* p_result) {
+                                                        limb_type b,
+                                                        limb_type* p_result) {
         using cast_type = unsigned long long;
         return _subborrow_u64(carry, a, b, reinterpret_cast<cast_type*>(p_result));
     }
 
 #else
+
+#warning "Missing immintrin.h, addcarry and subborrow optimizations disabled" 
 
     NIL_CO3_MP_FORCEINLINE unsigned char addcarry_limb(unsigned char carry, limb_type a,
                                                        limb_type b, limb_type* p_result) {
@@ -45,7 +48,8 @@ namespace nil::crypto3::multiprecision::detail {
     }
 
     NIL_CO3_MP_FORCEINLINE unsigned char subborrow_limb(unsigned char carry, limb_type a,
-                                                        limb_type b, limb_type* p_result) {
+                                                        limb_type b,
+                                                        limb_type* p_result) {
         using cast_type = unsigned int;
         return _subborrow_u32(carry, a, b, reinterpret_cast<cast_type*>(p_result));
     }
