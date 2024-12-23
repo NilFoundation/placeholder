@@ -1,6 +1,10 @@
 #ifndef PROOF_GENERATOR_LIBS_ASSIGNER_TRACE_PARSER_HPP_
 #define PROOF_GENERATOR_LIBS_ASSIGNER_TRACE_PARSER_HPP_
 
+#include <exception>
+#include <iterator>
+#include <optional>
+#include <utility>
 #include <vector>
 #include <string>
 #include <cstdint>
@@ -13,8 +17,10 @@
 #include <nil/blueprint/zkevm_bbf/types/rw_operation.hpp>
 #include <nil/blueprint/zkevm_bbf/types/zkevm_state.hpp>
 #include <nil/blueprint/zkevm_bbf/types/copy_event.hpp>
+#include <nil/blueprint/assert.hpp>
 
 #include <nil/proof-generator/assigner/trace.pb.h>
+#include <nil/proof-generator/assigner/options.hpp>
 
 namespace nil {
     namespace proof_generator {
@@ -137,9 +143,49 @@ namespace nil {
             return res;
         }
 
-        [[nodiscard]] std::optional<std::unordered_map<std::string, std::string>> deserialize_bytecodes_from_file(const boost::filesystem::path& bytecode_trace_path) {
+        [[nodiscard]] std::string get_trace_extension(const boost::filesystem::path& trace_path) {
+            return trace_path.extension().string();
+        }
+
+        using TraceIndex = uint64_t; // value expected to be the same for all traces from the same set
+        using TraceIndexOpt = std::optional<TraceIndex>;
+
+        inline bool check_trace_index(const AssignerOptions& options, TraceIndexOpt base, TraceIndex index) {
+            if (base.has_value() && index != *base) {
+                BOOST_LOG_TRIVIAL(warning) << "Trace index mismatch: expected " << *base << ", got " << index;
+                if (!options.ignore_index_mismatch) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+
+        template <typename TraceType>
+        struct DeserializeResult {
+            TraceType value;
+            TraceIndex index;
+        };
+
+        template <typename T>
+        using DeserializeResultOpt = std::optional<DeserializeResult<T>>;
+
+        using BytecodeTraces = std::unordered_map<std::string, std::string>; // contract address -> bytecode
+        using RWTraces = blueprint::bbf::rw_operations_vector;
+        using ZKEVMTraces = std::vector<blueprint::bbf::zkevm_state>;
+        using CopyEvents = std::vector<blueprint::bbf::copy_event>;
+        using ExpTraces = std::vector<exp_input>;
+
+        [[nodiscard]] DeserializeResultOpt<BytecodeTraces> deserialize_bytecodes_from_file(
+            const boost::filesystem::path& bytecode_trace_path,
+            const AssignerOptions& opts,
+            TraceIndexOpt base_index = {}
+        ) {
             const auto pb_traces = read_pb_traces_from_file<executionproofs::BytecodeTraces>(bytecode_trace_path);
             if (!pb_traces) {
+                return std::nullopt;
+            }
+            if (!check_trace_index(opts, base_index, pb_traces->trace_idx())) {
                 return std::nullopt;
             }
 
@@ -150,12 +196,22 @@ namespace nil {
                 contract_bytecodes.emplace(bytecode.first, bytecode.second);
             }
 
-            return contract_bytecodes;
+            return DeserializeResult<BytecodeTraces>{
+                std::move(contract_bytecodes), 
+                pb_traces->trace_idx()
+            };
         }
 
-        [[nodiscard]] std::optional<blueprint::bbf::rw_operations_vector> deserialize_rw_traces_from_file(const boost::filesystem::path& rw_traces_path) {
+        [[nodiscard]] DeserializeResultOpt<RWTraces> deserialize_rw_traces_from_file(
+            const boost::filesystem::path& rw_traces_path,
+            const AssignerOptions& opts,
+            TraceIndexOpt base_index = {}
+        ) {
             const auto pb_traces = read_pb_traces_from_file<executionproofs::RWTraces>(rw_traces_path);
             if (!pb_traces) {
+                return std::nullopt;
+            }
+            if (!check_trace_index(opts, base_index, pb_traces->trace_idx())) {
                 return std::nullopt;
             }
 
@@ -208,12 +264,22 @@ namespace nil {
                                      << "memory  " << pb_traces->memory_ops_size() << "\n"
                                      << "storage " << pb_traces->storage_ops_size() << "\n";
 
-            return rw_traces;
+            return DeserializeResult<RWTraces>{
+                std::move(rw_traces), 
+                pb_traces->trace_idx()
+            };
         }
 
-        [[nodiscard]] std::optional<std::vector<blueprint::bbf::zkevm_state>> deserialize_zkevm_state_traces_from_file(const boost::filesystem::path& zkevm_traces_path) {
+        [[nodiscard]] DeserializeResultOpt<ZKEVMTraces> deserialize_zkevm_state_traces_from_file(
+            const boost::filesystem::path& zkevm_traces_path,
+            const AssignerOptions& opts,
+            TraceIndexOpt base_index = {}
+        ) {
             const auto pb_traces = read_pb_traces_from_file<executionproofs::ZKEVMTraces>(zkevm_traces_path);
             if (!pb_traces) {
+                return std::nullopt;
+            }
+            if (!check_trace_index(opts, base_index, pb_traces->trace_idx())) {
                 return std::nullopt;
             }
 
@@ -247,12 +313,22 @@ namespace nil {
                 zkevm_states.back().error_opcode = static_cast<uint64_t>(pb_state.error_opcode());
             }
 
-            return zkevm_states;
+            return DeserializeResult<ZKEVMTraces>{
+                std::move(zkevm_states), 
+                pb_traces->trace_idx()
+            };
         }
 
-        [[nodiscard]] std::optional<std::vector<blueprint::bbf::copy_event>> deserialize_copy_events_from_file(const boost::filesystem::path& copy_traces_file) {
+        [[nodiscard]] DeserializeResultOpt<CopyEvents> deserialize_copy_events_from_file(
+            const boost::filesystem::path& copy_traces_file,
+            const AssignerOptions& opts,
+            TraceIndexOpt base_index = {}
+        ) {
             const auto pb_traces = read_pb_traces_from_file<executionproofs::CopyTraces>(copy_traces_file);
             if (!pb_traces) {
+                return std::nullopt;
+            }
+            if (!check_trace_index(opts, base_index, pb_traces->trace_idx())) {
                 return std::nullopt;
             }
 
@@ -286,26 +362,39 @@ namespace nil {
                 copy_events.push_back(std::move(event));
             }
 
-            return copy_events;
+            return DeserializeResult<CopyEvents>{
+                std::move(copy_events), 
+                pb_traces->trace_idx()
+            };
         }
 
-        [[nodiscard]] std::optional<std::vector<exp_input>> deserialize_exp_traces_from_file(const boost::filesystem::path& exp_traces_path) {
+        [[nodiscard]] DeserializeResultOpt<ExpTraces> deserialize_exp_traces_from_file(
+            const boost::filesystem::path& exp_traces_path,
+            const AssignerOptions& opts,
+            TraceIndexOpt base_index = {}
+        ) {
             const auto pb_traces = read_pb_traces_from_file<executionproofs::ExpTraces>(exp_traces_path);
             if (!pb_traces) {
+                return std::nullopt;
+            }
+            if (!check_trace_index(opts, base_index, pb_traces->trace_idx())) {
                 return std::nullopt;
             }
 
             std::vector<exp_input> exps;
             exps.reserve(pb_traces->exp_ops_size());
             for (const auto& pb_exp_op : pb_traces->exp_ops()) {
-                std::cout << "base: " << proto_uint256_to_zkevm_word(pb_exp_op.base()) << " , exponent: " << proto_uint256_to_zkevm_word(pb_exp_op.exponent()) << std::endl;
+                BOOST_LOG_TRIVIAL(trace) << "base: " << proto_uint256_to_zkevm_word(pb_exp_op.base()) << " , exponent: " << proto_uint256_to_zkevm_word(pb_exp_op.exponent()) << std::endl;
                 exps.emplace_back(
                     proto_uint256_to_zkevm_word(pb_exp_op.base()),
                     proto_uint256_to_zkevm_word(pb_exp_op.exponent())
                 );
             }
 
-            return exps;
+            return DeserializeResult<ExpTraces>{
+                std::move(exps), 
+                pb_traces->trace_idx()    
+            };
         }
     } // namespace proof_generator
 } // namespace nil
