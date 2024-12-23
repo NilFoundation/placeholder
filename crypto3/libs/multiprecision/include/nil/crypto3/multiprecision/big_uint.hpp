@@ -104,10 +104,10 @@ namespace nil::crypto3::multiprecision {
         }
 
         // Zeros out everything after limb[i]
-        constexpr void zero_after(std::size_t start_index) noexcept {
-            auto pr = this->limbs();
-            for (std::size_t i = start_index; i < this->limb_count(); ++i) {
-                pr[i] = 0;
+        NIL_CO3_MP_FORCEINLINE constexpr void zero_after(
+            std::size_t start_index) noexcept {
+            for (std::size_t i = start_index; i < static_limb_count; ++i) {
+                limbs()[i] = 0;
             }
         }
 
@@ -1327,7 +1327,7 @@ namespace nil::crypto3::multiprecision {
         friend constexpr bool detail::add_constexpr_unsigned(
             big_uint<Bits1>& result, const big_uint<Bits2>& a,
             const big_uint<Bits3>& b) noexcept;
-        template<detail::operation_mode Mode, std::size_t Bits1, std::size_t Bits2,
+        template<detail::operation_mode Mode, bool GuaranteedGreater, std::size_t Bits1, std::size_t Bits2,
                  std::size_t Bits3>
         friend constexpr void detail::subtract_constexpr_unsigned(
             big_uint<Bits1>& result, const big_uint<Bits2>& a, const big_uint<Bits3>& b);
@@ -1335,8 +1335,8 @@ namespace nil::crypto3::multiprecision {
         friend constexpr bool detail::add_unsigned(big_uint<Bits1>& result,
                                                    const big_uint<Bits2>& a,
                                                    const big_uint<Bits3>& b) noexcept;
-        template<detail::operation_mode Mode, std::size_t Bits1, std::size_t Bits2,
-                 std::size_t Bits3>
+        template<detail::operation_mode Mode, bool GuaranteedGreater, std::size_t Bits1,
+                 std::size_t Bits2, std::size_t Bits3>
         friend constexpr void detail::subtract_unsigned(big_uint<Bits1>& result,
                                                         const big_uint<Bits2>& a,
                                                         const big_uint<Bits3>& b);
