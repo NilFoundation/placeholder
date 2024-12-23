@@ -103,7 +103,7 @@ namespace boost {
                 BOOST_MP_ASSERT(0 == borrow);
             }
 
-#ifdef CO3_MP_HAS_IMMINTRIN_H
+#ifdef BOOST_MP_HAS_IMMINTRIN_H
             //
             // This is the key addition routine where all the argument types are non-trivial cpp_int's:
             //
@@ -151,6 +151,7 @@ namespace boost {
                     typename cpp_int_modular_backend<Bits>::const_limb_pointer pb = b.limbs();
                     typename cpp_int_modular_backend<Bits>::limb_pointer pr = result.limbs();
 
+                    std::size_t i = 0;
                     unsigned char carry = 0;
 #if defined(BOOST_MSVC) && !defined(BOOST_HAS_INT128) && defined(_M_X64)
                     //
@@ -204,7 +205,7 @@ namespace boost {
                     const cpp_int_modular_backend<Bits>& b) noexcept {
                 BOOST_MP_ASSERT(!eval_lt(a, b));
 
-#ifndef TO3_MP_NO_CONSTEXPR_DETECTION
+#ifndef BOOST_MP_NO_CONSTEXPR_DETECTION
                 if (BOOST_MP_IS_CONST_EVALUATED(a.size())) {
                     subtract_unsigned_constexpr(result, a, b);
                 } else
@@ -235,7 +236,7 @@ namespace boost {
                     // Special case for 32-bit limbs on 64-bit architecture - we can process
                     // 2 limbs with each instruction.
                     //
-                    for (; i + 8 <= m; i += 8) {
+                    for (; i + 8 <= s; i += 8) {
                         borrow = _subborrow_u64(borrow, *reinterpret_cast<const unsigned long long*>(pa + i),
                                                 *reinterpret_cast<const unsigned long long*>(pb + i),
                                                 reinterpret_cast<unsigned long long*>(pr + i));
@@ -250,7 +251,7 @@ namespace boost {
                                                 reinterpret_cast<unsigned long long*>(pr + i + 6));
                     }
 #else
-                    for (; i + 4 <= m; i += 4) {
+                    for (; i + 4 <= s; i += 4) {
                         borrow = boost::multiprecision::detail::subborrow_limb(borrow, pa[i], pb[i], pr + i);
                         borrow = boost::multiprecision::detail::subborrow_limb(borrow, pa[i + 1], pb[i + 1],
                                                                                       pr + i + 1);
@@ -260,7 +261,7 @@ namespace boost {
                                                                                       pr + i + 3);
                     }
 #endif
-                    for (; i < m; ++i)
+                    for (; i < s; ++i)
                         borrow = boost::multiprecision::detail::subborrow_limb(borrow, pa[i], pb[i], pr + i);
 
                     BOOST_MP_ASSERT(0 == borrow);
