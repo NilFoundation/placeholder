@@ -164,18 +164,23 @@ void base_operations_test(const ArithmeticSample<Bits1, Bits2> sample) {
 
 BOOST_AUTO_TEST_SUITE(base_operations)
 
-BOOST_DATA_TEST_CASE(test_comparison_12_17,
+BOOST_DATA_TEST_CASE(base_operations_12_17,
                      (test_dataset<ArithmeticSample<12, 17>>("base_operations_12_17"))) {
     base_operations_test(sample);
 }
 
-BOOST_DATA_TEST_CASE(test_comparison_260_130, (test_dataset<ArithmeticSample<260, 130>>(
+BOOST_DATA_TEST_CASE(base_operations_260_130, (test_dataset<ArithmeticSample<260, 130>>(
                                                   "base_operations_260_130"))) {
     base_operations_test(sample);
 }
 
-BOOST_DATA_TEST_CASE(test_comparison_128_256, (test_dataset<ArithmeticSample<128, 256>>(
+BOOST_DATA_TEST_CASE(base_operations_128_256, (test_dataset<ArithmeticSample<128, 256>>(
                                                   "base_operations_128_256"))) {
+    base_operations_test(sample);
+}
+
+BOOST_DATA_TEST_CASE(base_operations_128_128, (test_dataset<ArithmeticSample<128, 128>>(
+                                                  "base_operations_128_128"))) {
     base_operations_test(sample);
 }
 
