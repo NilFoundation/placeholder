@@ -22,14 +22,14 @@ namespace nil::crypto3::multiprecision {
 namespace nil::crypto3::multiprecision::detail {
     template<std::size_t Bits>
     constexpr big_uint<Bits> get_min() {
-        constexpr big_uint<Bits> val = 0u;
-        return val;
+        constexpr big_uint<Bits> value = 0u;
+        return value;
     }
 
     template<std::size_t Bits>
     constexpr big_uint<Bits> get_max() {
-        constexpr auto val = ~big_uint<Bits>(0u);
-        return val;
+        constexpr auto value = ~big_uint<Bits>(0u);
+        return value;
     }
 
     constexpr std::size_t calc_digits10(std::size_t d) {
@@ -60,7 +60,8 @@ namespace std {
         }
         static constexpr number_type lowest() { return (min)(); }
         static constexpr int digits = number_type::Bits;
-        static constexpr int digits10 = nil::crypto3::multiprecision::detail::calc_digits10(digits);
+        static constexpr int digits10 =
+            nil::crypto3::multiprecision::detail::calc_digits10(digits);
         static constexpr int max_digits10 =
             nil::crypto3::multiprecision::detail::calc_digits10(digits);
         static constexpr bool is_signed = false;

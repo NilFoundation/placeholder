@@ -53,15 +53,15 @@ namespace nil::crypto3::multiprecision {
 
         template<class T,
                  std::enable_if_t<std::is_integral_v<T> && std::is_signed_v<T>, int> = 0>
-        constexpr big_int(T val) : m_abs(unsigned_abs(val)) {
-            if (val < 0) {
+        constexpr big_int(T value) : m_abs(unsigned_abs(value)) {
+            if (value < 0) {
                 negate_inplace();
             }
         }
 
         template<class T, std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>,
                                            int> = 0>
-        constexpr big_int(T val) : m_abs(val) {}
+        constexpr big_int(T value) : m_abs(value) {}
 
         template<std::size_t Bits2>
         constexpr big_int(const big_int<Bits2>& other)
@@ -84,10 +84,10 @@ namespace nil::crypto3::multiprecision {
 
         template<typename T,
                  std::enable_if_t<std::is_integral_v<T> && std::is_signed_v<T>, int> = 0>
-        constexpr big_int& operator=(T val) {
+        constexpr big_int& operator=(T value) {
             m_negative = false;
-            m_abs = unsigned_abs(val);
-            if (val < 0) {
+            m_abs = unsigned_abs(value);
+            if (value < 0) {
                 negate_inplace();
             }
             return *this;
@@ -95,9 +95,9 @@ namespace nil::crypto3::multiprecision {
 
         template<typename T, std::enable_if_t<
                                  std::is_integral_v<T> && std::is_unsigned_v<T>, int> = 0>
-        constexpr big_int& operator=(T val) {
+        constexpr big_int& operator=(T value) {
             m_negative = false;
-            m_abs = val;
+            m_abs = value;
             return *this;
         }
 
@@ -114,7 +114,7 @@ namespace nil::crypto3::multiprecision {
         // Cast to integral types
 
         template<typename T, std::enable_if_t<std::is_integral_v<T>, int> = 0>
-        explicit constexpr operator T() const noexcept{
+        explicit constexpr operator T() const noexcept {
             return multiplied_by_sign(static_cast<T>(abs()));
         }
 
@@ -294,10 +294,10 @@ namespace nil::crypto3::multiprecision {
 
         // Hash
 
-        friend constexpr std::size_t hash_value(const big_int& val) noexcept {
+        friend constexpr std::size_t hash_value(const big_int& value) noexcept {
             std::size_t result = 0;
-            boost::hash_combine(result, val.abs());
-            boost::hash_combine(result, val.negative());
+            boost::hash_combine(result, value.abs());
+            boost::hash_combine(result, value.negative());
             return result;
         }
 
