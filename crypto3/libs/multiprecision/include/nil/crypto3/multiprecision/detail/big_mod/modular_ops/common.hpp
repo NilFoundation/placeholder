@@ -26,8 +26,6 @@ namespace nil::crypto3::multiprecision::detail {
       public:
         constexpr common_modular_ops(const base_type &m) : m_mod(m) {}
 
-        constexpr const auto &mod() const { return m_mod; }
-
         constexpr bool compare_eq(const common_modular_ops &other) const {
             return mod() == other.mod();
         }
@@ -64,7 +62,9 @@ namespace nil::crypto3::multiprecision::detail {
             }
         }
 
-      protected:
+        constexpr const auto &mod() const { return m_mod; }
+
+      private:
         base_type m_mod;
     };
 
