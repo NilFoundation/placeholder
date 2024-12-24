@@ -365,6 +365,10 @@ namespace nil::crypto3::multiprecision::detail {
             result = res;
         }
 
+        constexpr void increment(base_type &a) const { this->add(a, m_one); }
+
+        constexpr void decrement(base_type &a) const { this->sub(a, m_one); }
+
         // Adjust to/from modular form
 
         template<typename T,
