@@ -51,14 +51,16 @@ namespace nil::crypto3::multiprecision {
         template<std::size_t Bits2>
         constexpr big_int(const big_uint<Bits2>& b) : m_abs(b) {}
 
-        template<class T, std::enable_if_t<std::is_integral_v<T> && std::is_signed_v<T>, int> = 0>
+        template<class T,
+                 std::enable_if_t<std::is_integral_v<T> && std::is_signed_v<T>, int> = 0>
         constexpr big_int(T val) : m_abs(unsigned_abs(val)) {
             if (val < 0) {
                 negate();
             }
         }
 
-        template<class T, std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, int> = 0>
+        template<class T, std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>,
+                                           int> = 0>
         constexpr big_int(T val) : m_abs(val) {}
 
         template<std::size_t Bits2>
@@ -91,15 +93,16 @@ namespace nil::crypto3::multiprecision {
             return *this;
         }
 
-        template<typename T,
-                 std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, int> = 0>
+        template<typename T, std::enable_if_t<
+                                 std::is_integral_v<T> && std::is_unsigned_v<T>, int> = 0>
         constexpr big_int& operator=(T val) {
             m_negative = false;
             m_abs = val;
             return *this;
         }
 
-        constexpr std::string str(std::ios_base::fmtflags flags = std::ios_base::dec) const {
+        constexpr std::string str(
+            std::ios_base::fmtflags flags = std::ios_base::dec) const {
             return (negative() ? std::string("-") : std::string("")) + m_abs.str(flags);
         }
 
@@ -125,7 +128,9 @@ namespace nil::crypto3::multiprecision {
 
         constexpr bool negative() const { return m_negative; }
 
-        constexpr int sign() const noexcept { return negative() ? -1 : (m_abs.is_zero() ? 0 : 1); }
+        constexpr int sign() const noexcept {
+            return negative() ? -1 : (m_abs.is_zero() ? 0 : 1);
+        }
 
         constexpr const unsigned_type& abs() const { return m_abs; }
 
@@ -166,7 +171,9 @@ namespace nil::crypto3::multiprecision {
 
 #undef NIL_CO3_MP_BIG_INT_IMPL_OPERATOR
 
-        NIL_CO3_MP_FORCEINLINE constexpr bool is_zero() const noexcept { return abs().is_zero(); }
+        NIL_CO3_MP_FORCEINLINE constexpr bool is_zero() const noexcept {
+            return abs().is_zero();
+        }
 
         // Arithmetic operations
 
@@ -209,7 +216,9 @@ namespace nil::crypto3::multiprecision {
 
         friend constexpr auto operator+(const big_int& a) noexcept { return a; }
 
-        friend constexpr auto operator-(const big_int& a, const big_int& b) { return a + (-b); }
+        friend constexpr auto operator-(const big_int& a, const big_int& b) {
+            return a + (-b);
+        }
 
         friend constexpr auto& operator-=(big_int& a, const big_int& b) {
             a = a - b;
@@ -242,9 +251,10 @@ namespace nil::crypto3::multiprecision {
         }
 
         friend constexpr auto operator*(const big_int& a, const big_int& b) {
+            // TODO(ioxid): optimize: use wrapping/unchecked mul here
             big_int result = a.m_abs * b.m_abs;
             if (a.sign() * b.sign() < 0) {
-                result = -result;
+                result.negate();
             }
             return result;
         }
@@ -337,8 +347,8 @@ namespace nil::crypto3::multiprecision {
     // To efficiently compute quotient and remainder at the same time
 
     template<std::size_t Bits1, std::size_t Bits2>
-    constexpr void divide_qr(const big_int<Bits1>& a, const big_int<Bits2>& b, big_int<Bits1>& q,
-                             big_int<Bits1>& r) {
+    constexpr void divide_qr(const big_int<Bits1>& a, const big_int<Bits2>& b,
+                             big_int<Bits1>& q, big_int<Bits1>& r) {
         detail::divide(&q.m_abs, a.m_abs, b.m_abs, r.m_abs);
         q.m_negative = false;
         r.m_negative = false;
@@ -351,7 +361,8 @@ namespace nil::crypto3::multiprecision {
 
 template<std::size_t Bits>
 struct std::hash<nil::crypto3::multiprecision::big_int<Bits>> {
-    std::size_t operator()(const nil::crypto3::multiprecision::big_int<Bits>& a) const noexcept {
+    std::size_t operator()(
+        const nil::crypto3::multiprecision::big_int<Bits>& a) const noexcept {
         return boost::hash<nil::crypto3::multiprecision::big_int<Bits>>{}(a);
     }
 };

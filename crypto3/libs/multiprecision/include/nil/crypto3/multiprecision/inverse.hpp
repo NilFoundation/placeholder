@@ -18,15 +18,15 @@
 
 #include "nil/crypto3/multiprecision/big_uint.hpp"
 #include "nil/crypto3/multiprecision/detail/big_int.hpp"
-#include "nil/crypto3/multiprecision/detail/extended_euclidean_algorithm.hpp"
+#include "nil/crypto3/multiprecision/detail/half_extended_euclidean_algorithm.hpp"
 #include "nil/crypto3/multiprecision/type_traits.hpp"
 
 namespace nil::crypto3::multiprecision {
     template<std::size_t Bits>
     constexpr big_uint<Bits> inverse_mod(const big_uint<Bits>& a,
                                          const big_uint<Bits>& m) {
-        big_int<Bits> aa = a, mm = m, x, y, g;
-        g = detail::extended_euclidean_algorithm(aa, mm, x, y);
+        big_int<Bits> aa = a, mm = m, x, g;
+        g = detail::half_extended_euclidean_algorithm(aa, mm, x);
         if (g != 1u) {
             throw std::invalid_argument("no multiplicative inverse");
         }

@@ -20,32 +20,26 @@ namespace nil::crypto3::multiprecision::detail {
     // Classical Extended Euclidean Algorithm
     // https://web.archive.org/web/20230511143526/http://www-math.ucdenver.edu/~wcherowi/courses/m5410/exeucalg.html
     template<std::size_t Bits>
-    constexpr big_int<Bits> extended_euclidean_algorithm(big_int<Bits> num1,
-                                                         big_int<Bits> num2,
-                                                         big_int<Bits>& bezout_x,
-                                                         big_int<Bits>& bezout_y) {
-        big_int<Bits> x, y;
-        y = 1u;
-        x = 0u;
+    constexpr big_int<Bits> half_extended_euclidean_algorithm(big_int<Bits> num1,
+                                                              big_int<Bits> num2,
+                                                              big_int<Bits>& bezout_x) {
+        big_int<Bits> x = 0u;
 
         bezout_x = 1u;
-        bezout_y = 0u;
+
+        big_int<Bits> quotient;
+        big_int<Bits> remainder;
+        big_int<Bits> temp_x;
 
         while (!num2.is_zero()) {
-            big_int<Bits> quotient;
-            big_int<Bits> remainder;
-
             divide_qr(num1, num2, quotient, remainder);
 
             num1 = num2;
             num2 = remainder;
 
-            big_int<Bits> temp_x = x, temp_y = y;
+            temp_x = x;
             x = bezout_x - quotient * x;
             bezout_x = temp_x;
-
-            y = bezout_y - quotient * y;
-            bezout_y = temp_y;
         }
 
         return num1;
