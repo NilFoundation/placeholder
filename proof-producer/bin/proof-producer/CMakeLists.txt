@@ -80,6 +80,10 @@ function(setup_proof_generator_target)
         target_compile_options(${ARG_TARGET_NAME} PRIVATE "-fconstexpr-ops-limit=4294967295")
     endif ()
 
+    if(PROOF_PRODUCER_STATIC_BINARIES)
+        target_link_options(${ARG_TARGET_NAME} PRIVATE -static -static-libgcc -static-libstdc++)
+    endif()
+
 endfunction()
 
 set(SINGLE_THREADED_TARGET "${CURRENT_PROJECT_NAME}-single-threaded")

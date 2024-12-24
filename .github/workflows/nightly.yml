@@ -19,6 +19,13 @@ jobs:
       always() && !cancelled()
     secrets: inherit
 
+  build-linux-proof-producer-deb-package:
+    name: Build deb package
+    uses: ./.github/workflows/deb-package-proof-producer-bundler.yaml
+    if: |
+      always() && !cancelled()
+    secrets: inherit
+
   post-telemetry:
     name: Post test results in Open Telemetry format
     runs-on: [self-hosted, Linux, X64, aws_autoscaling]

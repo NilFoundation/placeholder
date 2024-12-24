@@ -1,0 +1,23 @@
+name: Check Linux bundlers
+
+on:
+  workflow_call:
+
+jobs:
+  build-deb-package:
+    name: "Build proof-producer deb package"
+    runs-on: [self-hosted, Linux, X64, aws_autoscaling]
+    steps:
+      # https://github.com/actions/checkout/issues/1552
+      - name: Clean up after previous checkout
+        run: chmod +w -R ${GITHUB_WORKSPACE}; rm -rf ${GITHUB_WORKSPACE}/*;
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build proof-producer deb package
+        run: |
+          nix bundle --bundler . .#proof-producer
+          ls -l ./deb-package-proof-producer/proof-producer_*_amd64.deb

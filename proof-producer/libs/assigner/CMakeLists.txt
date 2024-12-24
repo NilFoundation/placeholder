@@ -1,6 +1,4 @@
-find_package(Protobuf REQUIRED)
-find_package(absl REQUIRED)
-
+find_package(Protobuf CONFIG REQUIRED)
 
 file(GLOB PROTO_FILES "proto/*.proto")
 
@@ -14,7 +12,7 @@ foreach(PROTO_FILE ${PROTO_FILES})
 
     add_custom_command(
         OUTPUT ${PROTO_HDR} ${PROTO_SRC}
-        COMMAND ${PROTOBUF_PROTOC_EXECUTABLE}
+        COMMAND protobuf::protoc
         ARGS --cpp_out=${OUTPUT_DIR} --proto_path ${PROTO_DIR} ${PROTO_FILE}
         DEPENDS ${PROTO_FILE}
         COMMENT "Generating ${PROTO_SRC} and ${PROTO_HDR} from ${PROTO_FILE}"
@@ -25,13 +23,13 @@ foreach(PROTO_FILE ${PROTO_FILES})
     list(APPEND GENERATED_HEADERS ${PROTO_HDR})
 endforeach()
 
-add_library(proof_generatorAssigner STATIC
+add_library(proof_generatorAssigner
             ${PROTO_SRC}
 )
 set_target_properties(proof_generatorAssigner PROPERTIES CXX_STANDARD 20)
 
 target_include_directories(proof_generatorAssigner
-                            PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include ${PROTOBUF_INCLUDE_DIR}
+                            PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
 find_package(Boost REQUIRED COMPONENTS filesystem log)
@@ -43,11 +41,9 @@ target_link_libraries(proof_generatorAssigner
                         PUBLIC
                         proof_generatorPreset
                         crypto3::common
+                        protobuf::libprotobuf
                         Boost::filesystem
                         Boost::log
-                        absl::strings
-                        absl::log_internal_check_op
-                        ${PROTOBUF_LIBRARY}
 )
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")

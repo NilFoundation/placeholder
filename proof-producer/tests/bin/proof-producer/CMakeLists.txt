@@ -46,6 +46,12 @@ function(add_prover_test target)
         crypto3::common
     )
 
+    if(PROOF_PRODUCER_STATIC_BINARIES)
+        # TODO: try to avoid completely static linking here, it's not necessary, but otherwise build fails for some reason
+        target_link_options(${target}_single_thread PRIVATE -static -static-libgcc -static-libstdc++)
+        target_link_options(${target}_multi_thread PRIVATE -static -static-libgcc -static-libstdc++)
+    endif()
+
     add_dependencies(tests_prover_single_thread ${target}_single_thread)
     add_dependencies(tests_prover_multi_thread ${target}_multi_thread)
 
