@@ -17,6 +17,7 @@
 
 #include <boost/assert.hpp>
 
+#include "nil/crypto3/multiprecision/detail/integer_ops_base.hpp"
 #include "nil/crypto3/multiprecision/type_traits.hpp"
 #include "nil/crypto3/multiprecision/unsigned_utils.hpp"
 
@@ -56,10 +57,10 @@ namespace nil::crypto3::multiprecision::detail {
         }
 
         constexpr void decrement(base_type &a) const {
-            ++a;
-            if (a == mod()) {
-                a = 0u;
+            if (is_zero(a)) {
+                a = m_mod;
             }
+            --a;
         }
 
         constexpr const auto &mod() const { return m_mod; }
