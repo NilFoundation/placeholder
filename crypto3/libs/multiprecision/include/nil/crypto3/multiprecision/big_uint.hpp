@@ -554,6 +554,24 @@ namespace nil::crypto3::multiprecision {
             return a;
         }
 
+        template<typename T, std::enable_if_t<is_integral_v<T>, int> = 0>
+        friend constexpr auto unchecked_add(const big_uint& a, const T& b) noexcept {
+            detail::largest_big_uint_t<big_uint, T> result;
+            detail::add<detail::operation_mode::unchecked>(result, a, b);
+            return result;
+        }
+
+        template<typename T, std::enable_if_t<std::is_integral_v<T>, int> = 0>
+        friend constexpr auto unchecked_add(const T& a, const big_uint& b) noexcept {
+            return unchecked_add(b, a);
+        }
+
+        template<typename T, std::enable_if_t<is_integral_v<T>, int> = 0>
+        friend constexpr auto& unchecked_add_assign(big_uint& a, const T& b) noexcept {
+            detail::add<detail::operation_mode::unchecked>(a, a, b);
+            return a;
+        }
+
         template<std::size_t Bits2>
         [[nodiscard]] friend constexpr bool overflowing_add_assign(
             big_uint& a, const big_uint<Bits2>& b) noexcept {
@@ -601,11 +619,33 @@ namespace nil::crypto3::multiprecision {
         }
 
         template<typename T, std::enable_if_t<is_integral_v<T>, int> = 0>
+        friend constexpr auto unchecked_sub(const big_uint& a, const T& b) noexcept {
+            detail::largest_big_uint_t<big_uint, T> result;
+            detail::subtract<detail::operation_mode::unchecked>(result, a, b);
+            return result;
+        }
+
+        template<typename T, std::enable_if_t<std::is_integral_v<T>, int> = 0>
+        friend constexpr auto unchecked_sub(const T& a, const big_uint& b) noexcept {
+            if constexpr (std::is_signed_v<T>) {
+                BOOST_ASSERT_MSG(a >= 0, "big_uint: nonnegative value expected");
+            }
+            auto a_unsigned = unsigned_abs(a);
+            BOOST_ASSERT_MSG(a_unsigned >= b, "big_uint: subtraction overflow");
+            return wrapping_add(b.wrapping_neg(), a);
+        }
+
+        template<typename T, std::enable_if_t<is_integral_v<T>, int> = 0>
+        friend constexpr auto& unchecked_sub_assign(big_uint& a, const T& b) noexcept {
+            detail::subtract<detail::operation_mode::unchecked>(a, a, b);
+            return a;
+        }
+
+        template<typename T, std::enable_if_t<is_integral_v<T>, int> = 0>
         friend constexpr auto operator*(const big_uint& a, const T& b) {
             decltype(auto) b_unsigned = unsigned_or_throw(b);
             detail::largest_big_uint_t<big_uint, T> result;
-            detail::multiply<detail::operation_mode::checked>(
-                result, a, detail::as_big_uint(b_unsigned));
+            detail::multiply<detail::operation_mode::checked>(result, a, b_unsigned);
             return result;
         }
 
@@ -617,8 +657,7 @@ namespace nil::crypto3::multiprecision {
         template<typename T, std::enable_if_t<is_integral_v<T>, int> = 0>
         friend constexpr auto& operator*=(big_uint& a, const T& b) {
             decltype(auto) b_unsigned = unsigned_or_throw(b);
-            detail::multiply<detail::operation_mode::checked>(
-                a, a, detail::as_big_uint(b_unsigned));
+            detail::multiply<detail::operation_mode::checked>(a, a, b_unsigned);
             return a;
         }
 
@@ -626,8 +665,7 @@ namespace nil::crypto3::multiprecision {
         friend constexpr auto wrapping_mul(const big_uint& a, const T& b) {
             decltype(auto) b_unsigned = unsigned_abs(b);
             detail::largest_big_uint_t<big_uint, T> result;
-            detail::multiply<detail::operation_mode::wrapping>(
-                result, a, detail::as_big_uint(b_unsigned));
+            detail::multiply<detail::operation_mode::wrapping>(result, a, b_unsigned);
             if constexpr (std::is_signed_v<T>) {
                 if (b < 0) {
                     result.wrapping_neg_inplace();
@@ -644,13 +682,38 @@ namespace nil::crypto3::multiprecision {
         template<typename T, std::enable_if_t<is_integral_v<T>, int> = 0>
         friend constexpr auto& wrapping_mul_assign(big_uint& a, const T& b) {
             decltype(auto) b_unsigned = unsigned_abs(b);
-            detail::multiply<detail::operation_mode::wrapping>(
-                a, a, detail::as_big_uint(b_unsigned));
+            detail::multiply<detail::operation_mode::wrapping>(a, a, b_unsigned);
             if constexpr (std::is_signed_v<T>) {
                 if (b < 0) {
                     a.wrapping_neg_inplace();
                 }
             }
+            return a;
+        }
+
+        template<typename T, std::enable_if_t<is_integral_v<T>, int> = 0>
+        friend constexpr auto unchecked_mul(const big_uint& a, const T& b) {
+            if constexpr (std::is_signed_v<T>) {
+                BOOST_ASSERT_MSG(b >= 0, "big_uint: nonnegative value expected");
+            }
+            decltype(auto) b_unsigned = unsigned_abs(b);
+            detail::largest_big_uint_t<big_uint, T> result;
+            detail::multiply<detail::operation_mode::unchecked>(result, a, b_unsigned);
+            return result;
+        }
+
+        template<typename T, std::enable_if_t<std::is_integral_v<T>, int> = 0>
+        friend constexpr auto unchecked_mul(const T& a, const big_uint& b) {
+            return unchecked_mul(b, a);
+        }
+
+        template<typename T, std::enable_if_t<is_integral_v<T>, int> = 0>
+        friend constexpr auto& unchecked_mul_assign(big_uint& a, const T& b) {
+            if constexpr (std::is_signed_v<T>) {
+                BOOST_ASSERT_MSG(b >= 0, "big_uint: nonnegative value expected");
+            }
+            decltype(auto) b_unsigned = unsigned_abs(b);
+            detail::multiply<detail::operation_mode::unchecked>(a, a, b_unsigned);
             return a;
         }
 
