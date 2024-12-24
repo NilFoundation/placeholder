@@ -275,4 +275,10 @@ BOOST_AUTO_TEST_CASE(bad_negation) {
     BOOST_CHECK(-res == x);
 }
 
+BOOST_AUTO_TEST_CASE(goldilocks_multiplication_noncanonical) {
+    goldilocks_mod a = 0xEB17187D25277580ULL;
+    goldilocks_mod b = 0xBF79143CE60CA966ULL;
+    BOOST_CHECK_EQUAL((a * b).base(), 0x8);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
