@@ -33,7 +33,7 @@ namespace nil::crypto3::multiprecision {
 
     namespace detail {
 
-        enum class operation_mode { checked, wrapping };
+        enum class operation_mode { checked, unchecked, wrapping };
 
         // Addition/subtraction
 
@@ -116,9 +116,11 @@ namespace nil::crypto3::multiprecision {
         }
 
         template<operation_mode Mode>
-        constexpr void subtract_overflow() noexcept(Mode == operation_mode::wrapping) {
+        constexpr void subtract_overflow() noexcept(Mode != operation_mode::checked) {
             if constexpr (Mode == operation_mode::checked) {
                 throw std::overflow_error("big_uint: subtraction overflow");
+            } else if constexpr (Mode == operation_mode::unchecked) {
+                BOOST_ASSERT_MSG(false, "big_uint: multiplication overflow");
             }
         }
 
@@ -504,19 +506,21 @@ namespace nil::crypto3::multiprecision {
 
         // Check if the addition will overflow and throw if in checked mode
         template<operation_mode Mode>
-        constexpr void check_addition(bool carry) noexcept(Mode ==
-                                                           operation_mode::wrapping) {
+        constexpr void check_addition(bool carry) noexcept(Mode !=
+                                                           operation_mode::checked) {
             if constexpr (Mode == operation_mode::checked) {
                 if (carry) {
                     throw std::overflow_error("fixed precision overflow");
                 }
+            } else if constexpr (Mode == operation_mode::unchecked) {
+                BOOST_ASSERT_MSG(!carry, "big_uint: multiplication overflow");
             }
         }
 
         // Addition which correctly handles signed and unsigned types
         template<operation_mode Mode, std::size_t Bits1, std::size_t Bits2, typename T>
         constexpr void add(big_uint<Bits1>& result, const big_uint<Bits2>& a,
-                           const T& b) noexcept(Mode == operation_mode::wrapping) {
+                           const T& b) noexcept(Mode != operation_mode::checked) {
             static_assert(is_integral_v<T>);
             if constexpr (std::is_signed_v<T>) {
                 auto b_abs = unsigned_abs(b);
@@ -535,7 +539,7 @@ namespace nil::crypto3::multiprecision {
         // Subtraction which correctly handles signed and unsigned types
         template<operation_mode Mode, std::size_t Bits1, std::size_t Bits2, typename T>
         constexpr void subtract(big_uint<Bits1>& result, const big_uint<Bits2>& a,
-                                const T& b) noexcept(Mode == operation_mode::wrapping) {
+                                const T& b) noexcept(Mode != operation_mode::checked) {
             static_assert(is_integral_v<T>);
             if constexpr (std::is_signed_v<T>) {
                 auto b_abs = unsigned_abs(b);
@@ -788,12 +792,14 @@ namespace nil::crypto3::multiprecision {
         // Multiplication
 
         template<operation_mode Mode>
-        constexpr void multiplication_overflow_when(bool condition) noexcept(
-            Mode == operation_mode::wrapping) {
+        constexpr void multiplication_overflow_when(bool overflow) noexcept(
+            Mode != operation_mode::checked) {
             if constexpr (Mode == operation_mode::checked) {
-                if (condition) {
+                if (overflow) {
                     throw std::overflow_error("big_uint: multiplication overflow");
                 }
+            } else if constexpr (Mode == operation_mode::unchecked) {
+                BOOST_ASSERT_MSG(!overflow, "big_uint: multiplication overflow");
             }
         }
 
