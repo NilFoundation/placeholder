@@ -31,7 +31,6 @@
 #endif
 
 #include <vector>
-#include <limits>
 
 #include <nil/crypto3/math/detail/field_utils.hpp>
 
@@ -47,42 +46,31 @@ namespace nil {
 
             using namespace nil::crypto3::algebra;
 
-            template<typename FieldType, typename ValueType, typename Allocator>
+            template<typename FieldType, typename ValueType>
             class evaluation_domain;
 
-            template<typename FieldType, typename ValueType = typename FieldType::value_type,
-                     typename Allocator = std::allocator<ValueType>>
-            class basic_radix2_domain : public evaluation_domain<FieldType, ValueType, Allocator> {
+            template<typename FieldType, typename ValueType = typename FieldType::value_type>
+            class basic_radix2_domain : public evaluation_domain<FieldType, ValueType> {
                 typedef typename FieldType::value_type field_value_type;
                 typedef ValueType value_type;
-                typedef std::vector<field_value_type, Allocator> container_type;
-                typedef std::pair<container_type, container_type> cache_type;
-                typedef typename evaluation_domain<FieldType, ValueType, Allocator>::polynomial_dfs_type polynomial_dfs_type;
-                std::shared_ptr<cache_type> fft_cache;
-                typedef sycl::buffer<value_type, 1> buffer_type;
-                typedef std::pair<buffer_type, buffer_type> cache_buffer_type;
-                std::shared_ptr<cache_buffer_type> fft_cache_buffer;
+                typedef std::pair<std::vector<field_value_type>, std::vector<field_value_type>> cache_type;
 
                 void create_fft_cache() {
-                    fft_cache = std::make_shared<cache_type>(container_type(),
-                                                             container_type());
-                    detail::create_fft_cache<FieldType, Allocator>(this->m, omega, fft_cache->first);
-                    detail::create_fft_cache<FieldType, Allocator>(this->m, omega.inversed(), fft_cache->second);
-                    fft_cache_buffer = std::make_shared<cache_buffer_type>(
-                        buffer_type(fft_cache->first.data(), sycl::range<1>(this->m), sycl::property::buffer::use_host_ptr()),
-                        buffer_type(fft_cache->second.data(), sycl::range<1>(this->m), sycl::property::buffer::use_host_ptr()));
+                    fft_cache = std::make_shared<cache_type>(std::vector<field_value_type>(),
+                                                             std::vector<field_value_type>());
+                    detail::create_fft_cache<FieldType>(this->m, omega, fft_cache->first);
+                    detail::create_fft_cache<FieldType>(this->m, omega.inversed(), fft_cache->second);
                 }
 
             public:
                 typedef FieldType field_type;
 
                 field_value_type omega;
-                const field_value_type sconst;
+                std::shared_ptr<cache_type> fft_cache;
 
                 basic_radix2_domain(const std::size_t m)
-                        : evaluation_domain<FieldType, ValueType, Allocator>(m),
-                          omega(unity_root<FieldType>(m)),
-                          sconst(field_value_type(m).inversed()) {
+                        : evaluation_domain<FieldType, ValueType>(m),
+                          omega(unity_root<FieldType>(m)) {
                     if (m <= 1)
                         throw std::invalid_argument("basic_radix2(): expected m > 1");
 
@@ -97,69 +85,52 @@ namespace nil {
                     create_fft_cache();
                 }
 
-                void fft(polynomial_dfs_type &a, std::size_t zero_from_size = 0) override {
-                    if (a.size() != this->m) {
-                        if (a.size() < this->m) {
-                            a.get_storage().resize(this->m, value_type::zero());
-                        } else {
-                            throw std::invalid_argument("basic_radix2: expected a.size() == this->m");
-                        }
-                    }
-                    if (zero_from_size != 0 && zero_from_size < a.size()) {
-                        // resize the vector on the GPU
-                        if constexpr (std::is_same_v<Allocator, uninitialized_allocator<value_type>>) {
-                            value_type zero = value_type::zero();
-                            GLOBAL_QUEUE.submit(
-                                [&](sycl::handler& cgh) {
-                                    auto a_acc = a.val_buf->template get_access<sycl::access::mode::read_write>(cgh);
-                                    cgh.parallel_for(sycl::range<1>(a.size() - zero_from_size), [=](sycl::id<1> index) {
-                                        new (&a_acc[zero_from_size + index]) value_type(zero);
-                                    });
-                                });
-                            GLOBAL_QUEUE.wait();
-                        }
-                        // if default allocator we have already prefilled with zeros
-                    }
-
-                    detail::basic_radix2_fft_cached<FieldType, polynomial_dfs_type, Allocator>(a, fft_cache_buffer->first);
+                std::shared_ptr<cache_type> get_fft_cache() override {
+                    return fft_cache;
                 }
 
-                void inverse_fft(polynomial_dfs_type &a) override {
+                void fft(std::vector<value_type> &a) override {
                     if (a.size() != this->m) {
                         if (a.size() < this->m) {
-                            a.get_storage().resize(this->m, value_type::zero());
+                            a.resize(this->m, value_type::zero());
                         } else {
                             throw std::invalid_argument("basic_radix2: expected a.size() == this->m");
                         }
                     }
 
-                    detail::basic_radix2_fft_cached<FieldType, polynomial_dfs_type, Allocator>(a, fft_cache_buffer->second);
-
-                    const std::size_t n = a.size();
-                    const field_value_type& sconst = this->sconst;
-                    GLOBAL_QUEUE.submit(
-                        [&](sycl::handler& cgh) {
-                            auto a_acc = a.val_buf->template get_access<sycl::access::mode::read_write>(cgh);
-                            cgh.parallel_for(sycl::range<1>(n), [=](sycl::id<1> index) {
-                                a_acc[index] *= sconst;
-                            });
-                        });
-                    GLOBAL_QUEUE.wait();
+                    detail::basic_radix2_fft_cached<FieldType>(a, fft_cache->first);
                 }
 
-                container_type evaluate_all_lagrange_polynomials(const field_value_type &t) override {
-                    return detail::basic_radix2_evaluate_all_lagrange_polynomials<FieldType, Allocator>(this->m, t);
+                void inverse_fft(std::vector<value_type> &a) override {
+                    if (a.size() != this->m) {
+                        if (a.size() < this->m) {
+                            a.resize(this->m, value_type::zero());
+                        } else {
+                            throw std::invalid_argument("basic_radix2: expected a.size() == this->m");
+                        }
+                    }
+
+                    detail::basic_radix2_fft_cached<FieldType>(a, fft_cache->second);
+
+                    const field_value_type sconst = field_value_type(a.size()).inversed();
+                    nil::crypto3::parallel_foreach(a.begin(), a.end(), [&sconst](value_type& a_i){
+                        a_i *= sconst;
+                    });
                 }
 
-                container_type evaluate_all_lagrange_polynomials(
-                        const typename container_type::const_iterator &t_powers_begin,
-                        const typename container_type::const_iterator &t_powers_end) override {
+                std::vector<field_value_type> evaluate_all_lagrange_polynomials(const field_value_type &t) override {
+                    return detail::basic_radix2_evaluate_all_lagrange_polynomials<FieldType>(this->m, t);
+                }
+
+                std::vector<value_type> evaluate_all_lagrange_polynomials(
+                        const typename std::vector<value_type>::const_iterator &t_powers_begin,
+                        const typename std::vector<value_type>::const_iterator &t_powers_end) override {
                     if (std::size_t(std::distance(t_powers_begin, t_powers_end)) < this->m) {
                         throw std::invalid_argument(
                                 "basic_radix2: expected std::distance(t_powers_begin, t_powers_end) >= this->m");
                     }
-                    container_type tmp(t_powers_begin, t_powers_begin + this->m);
-                    //this->inverse_fft(tmp);
+                    std::vector<value_type> tmp(t_powers_begin, t_powers_begin + this->m);
+                    this->inverse_fft(tmp);
                     return tmp;
                 }
 
@@ -182,7 +153,7 @@ namespace nil {
                     return z;
                 }
 
-                void add_poly_z(const field_value_type &coeff, container_type &H) override {
+                void add_poly_z(const field_value_type &coeff, std::vector<field_value_type> &H) override {
                     if (H.size() != this->m + 1)
                         throw std::invalid_argument("basic_radix2: expected H.size() == this->m+1");
 
@@ -190,15 +161,11 @@ namespace nil {
                     H[0] -= coeff;
                 }
 
-                void divide_by_z_on_coset(container_type &P) override {
+                void divide_by_z_on_coset(std::vector<field_value_type> &P) override {
                     const field_value_type coset = fields::arithmetic_params<FieldType>::multiplicative_generator;
                     const field_value_type Z_inverse_at_coset = this->compute_vanishing_polynomial(coset).inversed();
                     nil::crypto3::parallel_foreach(P.begin(), P.end(), [&Z_inverse_at_coset](field_value_type& v){v *= Z_inverse_at_coset;});
                 }
-
-                //const void prefetch_fft_cache() override {
-                //    GLOBAL_QUEUE.prefetch(fft_cache->first.data(), sizeof(value_type) * this->m);
-                //}
 
                 bool operator==(const basic_radix2_domain &rhs) const {
                     return isEqual(rhs) && omega == rhs.omega;

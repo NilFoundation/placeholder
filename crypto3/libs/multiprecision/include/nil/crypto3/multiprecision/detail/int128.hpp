@@ -1,8 +1,8 @@
 #pragma once
 
-#if defined(__SIZEOF_INT128__)
-#define NIL_CO3_MP_HAS_INT128
-#endif
+//#if defined(__SIZEOF_INT128__)
+//#define NIL_CO3_MP_HAS_INT128
+//#endif
 
 // same again for __int128:
 #if defined(NIL_CO3_MP_HAS_INT128) && defined(__cplusplus)

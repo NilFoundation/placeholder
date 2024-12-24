@@ -9,10 +9,10 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
 endif ()
 
 if(DEFINED CMAKE_BUILD_TYPE)
-  if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -ggdb")
-    set(BOOST_FORCEINLINE "OFF") # improves debugging traces
-  endif()
+  #if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+    #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -ggdb")
+    #set(BOOST_FORCEINLINE "OFF") # improves debugging traces
+  #endif()
 endif()
 
 option(SANITIZE "Build sanitizers" FALSE)

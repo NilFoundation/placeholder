@@ -5,7 +5,7 @@
 #include "nil/crypto3/multiprecision/detail/helper_macros.hpp"
 #include "nil/crypto3/multiprecision/detail/int128.hpp"
 
-#if __has_include(<immintrin.h>)
+/*#if __has_include(<immintrin.h>)
 
 #define NIL_CO3_MP_HAS_IMMINTRIN_H
 
@@ -53,4 +53,4 @@ namespace nil::crypto3::multiprecision::detail {
 
 #endif
 
-#endif
+#endif*/

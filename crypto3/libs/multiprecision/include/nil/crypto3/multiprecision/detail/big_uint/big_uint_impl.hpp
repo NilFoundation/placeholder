@@ -111,7 +111,7 @@ namespace nil::crypto3::multiprecision {
         // Assignment
 
         template<typename T,
-                 std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, int> = 0>
+                 std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T> || std::is_same_v<T, unsigned __int128>, int> = 0>
         constexpr void do_assign_integral(const T& a) noexcept {
             if constexpr (sizeof(T) <= sizeof(limb_type)) {
                 this->limbs()[0] = a;
@@ -209,7 +209,7 @@ namespace nil::crypto3::multiprecision {
         }
 
         template<typename T,
-                 std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, int> = 0>
+                 std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T> || std::is_same_v<T, unsigned __int128>, int> = 0>
         constexpr big_uint& operator=(T val) noexcept {
             do_assign_integral(val);
             return *this;
