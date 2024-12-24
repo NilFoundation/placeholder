@@ -23,7 +23,8 @@
 #include <boost/assert.hpp>
 #include <boost/functional/hash.hpp>
 
-#include "nil/crypto3/multiprecision/detail/big_mod/modular_ops.hpp"
+#include "nil/crypto3/multiprecision/detail/big_mod/modular_ops/barrett.hpp"
+#include "nil/crypto3/multiprecision/detail/big_mod/modular_ops/montgomery.hpp"
 #include "nil/crypto3/multiprecision/detail/big_mod/modular_ops_storage.hpp"
 #include "nil/crypto3/multiprecision/detail/big_mod/test_support.hpp"  // IWYU pragma: keep (for get_raw_base)
 #include "nil/crypto3/multiprecision/detail/integer_ops_base.hpp"  // IWYU pragma: keep (used for is_zero)
@@ -273,7 +274,7 @@ namespace nil::crypto3::multiprecision {
         return a.is_zero();
     }
 
-    // Actual big integer modular types
+    // User-facing big integer modular types
 
     // Montgomery modular big integer type with compile-time modulus. Modulus should be a
     // static big_uint constant.

@@ -1,6 +1,7 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2024 Martun Karapetyan <martun@nil.foundation>
 // Copyright (c) 2024 Vasiliy Olekhov <vasiliy.olekhov@nil.foundation>
+// Copyright (c) 2024 Andrey Nefedov <ioxid@nil.foundation>
 //
 // Distributed under the Boost Software License, Version 1.0
 // See accompanying file LICENSE_1_0.txt or copy at
@@ -18,6 +19,7 @@
 
 #include <nil/crypto3/multiprecision/big_mod.hpp>
 #include <nil/crypto3/multiprecision/big_uint.hpp>
+#include <nil/crypto3/multiprecision/inverse.hpp>
 #include <nil/crypto3/multiprecision/literals.hpp>
 
 #include <nil/crypto3/multiprecision/detail/big_mod/test_support.hpp>
