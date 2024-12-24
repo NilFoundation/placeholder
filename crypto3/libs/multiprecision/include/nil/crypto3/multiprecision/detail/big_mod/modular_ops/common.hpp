@@ -22,9 +22,11 @@
 #include "nil/crypto3/multiprecision/unsigned_utils.hpp"
 
 namespace nil::crypto3::multiprecision::detail {
-    template<typename base_type>
+    template<typename base_type_>
     class common_modular_ops {
       public:
+        using base_type = base_type_;
+
         constexpr common_modular_ops(const base_type &m) : m_mod(m) {}
 
         constexpr bool compare_eq(const common_modular_ops &other) const {
@@ -63,10 +65,15 @@ namespace nil::crypto3::multiprecision::detail {
             --a;
         }
 
+        constexpr void adjust_regular(base_type &result, const base_type &input) const {
+            BOOST_ASSERT(input < this->mod());
+            result = input;
+        }
+
         constexpr const auto &mod() const { return m_mod; }
 
       private:
-        base_type m_mod;
+        base_type m_mod{};
     };
 
     // Helper methods for initialization using adjust_modular from appropriate modular_ops

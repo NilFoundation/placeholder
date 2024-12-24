@@ -38,7 +38,7 @@ namespace nil::crypto3::multiprecision::detail {
       public:
         static constexpr std::size_t Bits = Bits_;
         using big_uint_t = big_uint<Bits>;
-        using base_type = big_uint_t;
+        using base_type = big_uint<Bits>;
 
         static constexpr std::size_t limb_count = big_uint_t::static_limb_count;
 

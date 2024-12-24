@@ -23,7 +23,7 @@ namespace nil::crypto3::multiprecision::detail {
 
         static constexpr const modular_ops_t &ops() { return m_modular_ops; }
 
-        constexpr bool compare_eq(const modular_ops_storage_ct & /*other*/) const {
+        static constexpr bool compare_eq(const modular_ops_storage_ct & /*other*/) {
             return true;
         }
 

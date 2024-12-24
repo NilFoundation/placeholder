@@ -40,7 +40,8 @@ namespace nil::crypto3::multiprecision {
 
     template<typename big_mod_t, std::enable_if_t<is_big_mod_v<big_mod_t>, int> = 0>
     constexpr big_mod_t inverse(const big_mod_t& modular) {
-        return big_mod_t(inverse_mod(modular.base(), modular.mod()),
+        return big_mod_t(inverse_mod(detail::as_big_uint(modular.base()),
+                                     detail::as_big_uint(modular.mod())),
                          modular.ops_storage());
     }
 }  // namespace nil::crypto3::multiprecision
