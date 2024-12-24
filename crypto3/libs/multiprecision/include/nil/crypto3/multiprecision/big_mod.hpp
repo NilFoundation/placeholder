@@ -26,9 +26,10 @@
 #include "nil/crypto3/multiprecision/detail/big_mod/modular_ops/barrett.hpp"
 #include "nil/crypto3/multiprecision/detail/big_mod/modular_ops/montgomery.hpp"
 #include "nil/crypto3/multiprecision/detail/big_mod/modular_ops_storage.hpp"
-#include "nil/crypto3/multiprecision/detail/big_mod/test_support.hpp"  // IWYU pragma: keep (for get_raw_base)
 #include "nil/crypto3/multiprecision/detail/integer_ops_base.hpp"  // IWYU pragma: keep (used for is_zero)
 #include "nil/crypto3/multiprecision/type_traits.hpp"
+
+#include "nil/crypto3/multiprecision/detail/big_mod/test_support.hpp"  // IWYU pragma: keep (for get_raw_base)
 
 namespace nil::crypto3::multiprecision {
     template<typename modular_ops_storage_t_>
@@ -294,13 +295,18 @@ namespace nil::crypto3::multiprecision {
     template<std::size_t Bits>
     using big_mod_rt = big_mod_rt_impl<Bits, detail::barrett_modular_ops>;
 
+    // Goldilocks modular type, not optimized atm
+    constexpr big_uint<64> goldilocks_modulus = 0xffffffff00000001ULL;
+    using goldilocks_mod = montgomery_big_mod<goldilocks_modulus>;
+
     // Modular big integer type with compile-time modulus, which automatically uses
     // montomery form whenever possible (i.e. for odd moduli). Modulus should be a static
     // big_uint constant.
     template<const auto& modulus>
-    using auto_big_mod =
+    using auto_big_mod = std::conditional_t<
+        modulus == goldilocks_modulus, goldilocks_mod,
         std::conditional_t<detail::check_montgomery_constraints(modulus),
-                           montgomery_big_mod<modulus>, big_mod<modulus>>;
+                           montgomery_big_mod<modulus>, big_mod<modulus>>>;
 }  // namespace nil::crypto3::multiprecision
 
 // std::hash specializations
