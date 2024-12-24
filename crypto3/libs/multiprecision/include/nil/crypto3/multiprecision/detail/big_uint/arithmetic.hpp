@@ -39,7 +39,7 @@ namespace nil::crypto3::multiprecision {
 
         // Constexpr-friendly addition. Does not throw because it returns carry.
         template<std::size_t Bits1, std::size_t Bits2, std::size_t Bits3>
-        [[nodiscard]] constexpr bool add_constexpr_unsigned(
+        [[nodiscard]] constexpr bool add_unsigned_constexpr(
             big_uint<Bits1>& result, const big_uint<Bits2>& a,
             const big_uint<Bits3>& b) noexcept {
             static_assert(Bits1 >= Bits2 && Bits2 >= Bits3, "invalid argument size");
@@ -125,7 +125,7 @@ namespace nil::crypto3::multiprecision {
         /// Constexpr-friendly subtraction.
         template<operation_mode Mode, bool GuaranteedGreater = false, std::size_t Bits1,
                  std::size_t Bits2, std::size_t Bits3>
-        constexpr void subtract_constexpr_unsigned(big_uint<Bits1>& result,
+        constexpr void subtract_unsigned_constexpr(big_uint<Bits1>& result,
                                                    const big_uint<Bits2>& a,
                                                    const big_uint<Bits3>& b) {
             static_assert(Bits1 >= Bits2, "invalid argument size");
@@ -168,7 +168,7 @@ namespace nil::crypto3::multiprecision {
                 int c = a.compare(b);
                 if (c < 0) {
                     subtract_overflow<Mode>();
-                    subtract_constexpr_unsigned<Mode, /*GuaranteedGreater=*/true>(result,
+                    subtract_unsigned_constexpr<Mode, /*GuaranteedGreater=*/true>(result,
                                                                                   b, a);
                     result.wrapping_neg_inplace();
                     return;
@@ -229,7 +229,7 @@ namespace nil::crypto3::multiprecision {
                 return add_unsigned(result, b, a);
             } else {
                 if (std::is_constant_evaluated()) {
-                    return add_constexpr_unsigned(result, a, b);
+                    return add_unsigned_constexpr(result, a, b);
                 }
 
                 static_assert(Bits2 >= Bits3);
@@ -325,7 +325,7 @@ namespace nil::crypto3::multiprecision {
             static_assert(Bits1 >= Bits2, "invalid argument size");
 
             if (std::is_constant_evaluated()) {
-                subtract_constexpr_unsigned<Mode>(result, a, b);
+                subtract_unsigned_constexpr<Mode>(result, a, b);
                 return;
             }
 
@@ -406,9 +406,9 @@ namespace nil::crypto3::multiprecision {
                                                   const big_uint<Bits2>& a,
                                                   const big_uint<Bits3>& b) noexcept {
             if constexpr (Bits2 >= Bits3) {
-                return add_constexpr_unsigned(result, a, b);
+                return add_unsigned_constexpr(result, a, b);
             } else {
-                return add_constexpr_unsigned(result, b, a);
+                return add_unsigned_constexpr(result, b, a);
             }
         }
 
@@ -417,7 +417,7 @@ namespace nil::crypto3::multiprecision {
         constexpr void subtract_unsigned(big_uint<Bits1>& result,
                                          const big_uint<Bits2>& a,
                                          const big_uint<Bits3>& b) {
-            subtract_constexpr_unsigned<Mode>(result, a, b);
+            subtract_unsigned_constexpr<Mode>(result, a, b);
         }
 
 #endif
