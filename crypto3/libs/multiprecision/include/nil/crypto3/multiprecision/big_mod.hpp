@@ -225,8 +225,8 @@ namespace nil::crypto3::multiprecision {
 
         // Hash
 
-        friend constexpr std::size_t hash_value(const big_mod_impl& val) noexcept {
-            return hash_value(val.raw_base());
+        friend constexpr std::size_t hash_value(const big_mod_impl& value) noexcept {
+            return hash_value(value.raw_base());
             // mod() is ignored because we don't allow comparing numbers with different
             // moduli anyway
         }
