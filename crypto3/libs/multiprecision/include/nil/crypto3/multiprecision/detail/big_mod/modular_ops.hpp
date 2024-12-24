@@ -117,7 +117,7 @@ namespace nil::crypto3::multiprecision::detail {
             }
         }
 
-        constexpr void negate(big_uint_t &raw_base) const {
+        constexpr void negate_inplace(big_uint_t &raw_base) const {
             if (!raw_base.is_zero()) {
                 auto initial_raw_base = raw_base;
                 raw_base = mod();
@@ -648,7 +648,7 @@ namespace nil::crypto3::multiprecision::detail {
     constexpr void init_raw_base(big_uint<Bits> &raw_base, T b, const modular_ops_t &ops) {
         ops.adjust_modular(raw_base, detail::as_big_uint(unsigned_abs(b)));
         if (b < 0) {
-            ops.negate(raw_base);
+            ops.negate_inplace(raw_base);
         }
     }
 
