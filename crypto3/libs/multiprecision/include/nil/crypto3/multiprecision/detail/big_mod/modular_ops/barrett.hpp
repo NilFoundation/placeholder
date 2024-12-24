@@ -30,27 +30,13 @@ namespace nil::crypto3::multiprecision::detail {
         static constexpr std::size_t Bits = Bits_;
         using big_uint_t = big_uint<Bits>;
         using base_type = big_uint_t;
-        using policy_type = modular_policy<Bits>;
-
-        using big_uint_doubled_1 = typename policy_type::big_uint_doubled_1;
-        using big_uint_quadruple_1 = typename policy_type::big_uint_quadruple_1;
-        using big_uint_padded_limbs = typename policy_type::big_uint_padded_limbs;
-        using big_uint_doubled_limbs = typename policy_type::big_uint_doubled_limbs;
-        using big_uint_doubled_padded_limbs =
-            typename policy_type::big_uint_doubled_padded_limbs;
-
-        static constexpr std::size_t limb_count = policy_type::limb_count;
-        static constexpr std::size_t limb_bits = policy_type::limb_bits;
 
         constexpr barrett_modular_ops(const big_uint_t &m)
             : common_big_uint_modular_ops<Bits_>(m), m_barrett_mu(0u) {
-            std::size_t bit = 2u * (1u + this->m_mod.msb());
+            std::size_t bit = 2u * (1u + this->mod().msb());
             m_barrett_mu.bit_set(bit);
-            m_barrett_mu /= this->m_mod;
+            m_barrett_mu /= this->mod();
         }
-
-      private:
-        constexpr const auto &mu() const { return m_barrett_mu; }
 
       protected:
         template<std::size_t Bits2>
@@ -67,9 +53,9 @@ namespace nil::crypto3::multiprecision::detail {
             if (!input.is_zero()) {
                 if (input.msb() < 2u * this->mod().msb() + 1u) {
                     // NB: this should not overflow because we checked msb
-                    big_uint_quadruple_1 t1(input);
+                    big_uint<4 * Bits + 1> t1(input);
 
-                    t1 *= m_barrett_mu;
+                    t1 *= mu();
                     std::size_t shift_size = 2u * (1u + this->mod().msb());
                     t1 >>= shift_size;
                     t1 *= this->mod();
@@ -91,7 +77,7 @@ namespace nil::crypto3::multiprecision::detail {
                  // result should fit in the output parameter
                  std::enable_if_t<big_uint<Bits2>::Bits >= big_uint_t::Bits, int> = 0>
         constexpr void mul(big_uint<Bits2> &result, const big_uint<Bits3> &y) const {
-            big_uint_doubled_limbs tmp = result;
+            big_uint<2 * Bits> tmp = result;
             tmp *= y;
             barrett_reduce(result, tmp);
         }
@@ -116,7 +102,7 @@ namespace nil::crypto3::multiprecision::detail {
                 return;
             }
 
-            big_uint_doubled_limbs base(a), res(1u);
+            big_uint<2 * Bits> base(a), res(1u);
 
             while (true) {
                 bool lsb = bit_test(exp, 0u);
@@ -149,7 +135,9 @@ namespace nil::crypto3::multiprecision::detail {
             result = input;
         }
 
-      protected:
-        big_uint_doubled_1 m_barrett_mu;
+      private:
+        constexpr const auto &mu() const { return m_barrett_mu; }
+
+        big_uint<2 * Bits + 1> m_barrett_mu;
     };
 }  // namespace nil::crypto3::multiprecision::detail

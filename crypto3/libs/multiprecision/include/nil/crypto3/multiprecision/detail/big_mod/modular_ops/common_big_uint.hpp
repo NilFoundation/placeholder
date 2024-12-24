@@ -22,38 +22,13 @@
 
 namespace nil::crypto3::multiprecision::detail {
     template<std::size_t Bits>
-    struct modular_policy {
-        using big_uint_t = big_uint<Bits>;
-
-        static constexpr std::size_t limb_count = big_uint_t::static_limb_count;
-        static constexpr std::size_t limb_bits = big_uint_t::limb_bits;
-
-        static constexpr std::size_t BitsCount_doubled = 2u * Bits;
-        static constexpr std::size_t BitsCount_doubled_1 = BitsCount_doubled + 1;
-        static constexpr std::size_t BitsCount_quadruple_1 = 2u * BitsCount_doubled + 1;
-        static constexpr std::size_t BitsCount_padded_limbs =
-            limb_count * limb_bits + limb_bits;
-        static constexpr std::size_t BitsCount_doubled_limbs =
-            2u * limb_count * limb_bits;
-        static constexpr std::size_t BitsCount_doubled_padded_limbs =
-            BitsCount_doubled_limbs + limb_bits;
-
-        using big_uint_doubled = big_uint<BitsCount_doubled>;
-        using big_uint_doubled_1 = big_uint<BitsCount_doubled_1>;
-        using big_uint_quadruple_1 = big_uint<BitsCount_quadruple_1>;
-        using big_uint_padded_limbs = big_uint<BitsCount_padded_limbs>;
-        using big_uint_doubled_limbs = big_uint<BitsCount_doubled_limbs>;
-        using big_uint_doubled_padded_limbs = big_uint<BitsCount_doubled_padded_limbs>;
-    };
-
-    template<std::size_t Bits>
     class common_big_uint_modular_ops : public common_modular_ops<big_uint<Bits>> {
       public:
         using big_uint_t = big_uint<Bits>;
 
         constexpr common_big_uint_modular_ops(const big_uint_t &m)
             : common_modular_ops<big_uint<Bits>>(m),
-              m_mod_compliment(this->m_mod.wrapping_neg()) {}
+              m_mod_compliment(this->mod().wrapping_neg()) {}
 
         template<std::size_t Bits2, std::size_t Bits3,
                  // result should fit in the output parameter
@@ -77,6 +52,7 @@ namespace nil::crypto3::multiprecision::detail {
       protected:
         constexpr const auto &mod_compliment() const { return m_mod_compliment; }
 
+      private:
         big_uint_t m_mod_compliment;
     };
 }  // namespace nil::crypto3::multiprecision::detail
