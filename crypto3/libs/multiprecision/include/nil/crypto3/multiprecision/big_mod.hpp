@@ -128,7 +128,7 @@ namespace nil::crypto3::multiprecision {
 
         // Arithmetic operations
 
-        constexpr void negate() { ops().negate(m_raw_base); }
+        constexpr void negate_inplace() { ops().negate_inplace(m_raw_base); }
 
         constexpr auto& operator++() noexcept {
             ops().increment(m_raw_base);
@@ -156,7 +156,7 @@ namespace nil::crypto3::multiprecision {
 
         constexpr auto operator-() const noexcept {
             auto result = *this;
-            result.negate();
+            result.negate_inplace();
             return result;
         }
 

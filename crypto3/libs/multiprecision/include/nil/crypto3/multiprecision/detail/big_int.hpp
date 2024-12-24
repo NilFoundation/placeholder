@@ -55,7 +55,7 @@ namespace nil::crypto3::multiprecision {
                  std::enable_if_t<std::is_integral_v<T> && std::is_signed_v<T>, int> = 0>
         constexpr big_int(T val) : m_abs(unsigned_abs(val)) {
             if (val < 0) {
-                negate();
+                negate_inplace();
             }
         }
 
@@ -88,7 +88,7 @@ namespace nil::crypto3::multiprecision {
             m_negative = false;
             m_abs = unsigned_abs(val);
             if (val < 0) {
-                negate();
+                negate_inplace();
             }
             return *this;
         }
@@ -134,7 +134,7 @@ namespace nil::crypto3::multiprecision {
 
         constexpr const unsigned_type& abs() const noexcept { return m_abs; }
 
-        constexpr void negate() noexcept {
+        constexpr void negate_inplace() noexcept {
             if (m_abs.is_zero()) {
                 return;
             }
@@ -193,7 +193,7 @@ namespace nil::crypto3::multiprecision {
                 auto a_m_abs = a.m_abs;
                 a.m_abs = b.m_abs;
                 a.m_abs -= a_m_abs;
-                a.negate();
+                a.negate_inplace();
             }
             return a;
         }
@@ -246,14 +246,14 @@ namespace nil::crypto3::multiprecision {
         }
 
         friend constexpr auto operator-(big_int a) noexcept {
-            a.negate();
+            a.negate_inplace();
             return a;
         }
 
         friend constexpr auto operator*(const big_int& a, const big_int& b) noexcept {
             big_int result = unchecked_mul(a.m_abs, b.m_abs);
             if (a.sign() * b.sign() < 0) {
-                result.negate();
+                result.negate_inplace();
             }
             return result;
         }
@@ -261,7 +261,7 @@ namespace nil::crypto3::multiprecision {
         friend constexpr auto& operator*=(big_int& a, const big_int& b) noexcept {
             unchecked_mul_assign(a.m_abs, b.m_abs);
             if (b.sign() < 0) {
-                a.negate();
+                a.negate_inplace();
             }
             return a;
         }
@@ -269,7 +269,7 @@ namespace nil::crypto3::multiprecision {
         friend constexpr auto operator/(const big_int& a, const big_int& b) {
             big_int result = a.m_abs / b.m_abs;
             if (a.negative() != b.negative()) {
-                result.negate();
+                result.negate_inplace();
             }
             return result;
         }
@@ -282,7 +282,7 @@ namespace nil::crypto3::multiprecision {
         friend constexpr auto operator%(const big_int& a, const big_int& b) {
             big_int result = a.m_abs % b.m_abs;
             if (a.negative() != b.negative()) {
-                result.negate();
+                result.negate_inplace();
             }
             return result;
         }
@@ -355,8 +355,8 @@ namespace nil::crypto3::multiprecision {
         q.m_negative = false;
         r.m_negative = false;
         if (a.negative() != b.negative()) {
-            q.negate();
-            r.negate();
+            q.negate_inplace();
+            r.negate_inplace();
         }
     }
 }  // namespace nil::crypto3::multiprecision
