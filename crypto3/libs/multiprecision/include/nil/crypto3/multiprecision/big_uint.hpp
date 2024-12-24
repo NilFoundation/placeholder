@@ -27,13 +27,12 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
-#include <system_error>
 #include <type_traits>
 
 #include <boost/assert.hpp>
 #include <boost/functional/hash.hpp>
 
-#include "nil/crypto3/multiprecision/detail/big_mod/modular_ops_fwd.hpp"  // IWYU pragma: keep (used for friend declarations)
+#include "nil/crypto3/multiprecision/detail/big_mod/modular_ops/fwd.hpp"  // IWYU pragma: keep (used for friend declarations)
 #include "nil/crypto3/multiprecision/detail/big_uint/arithmetic.hpp"
 #include "nil/crypto3/multiprecision/detail/big_uint/internal_conversions.hpp"
 #include "nil/crypto3/multiprecision/detail/big_uint/parsing.hpp"
@@ -54,10 +53,10 @@ namespace nil::crypto3::multiprecision {
      * This is a class that represents a big unsigned integer with a fixed size in bits.
      *
      * @note
-     * Addition and subtraction operations are optimized, while multiplication and
-     * division are not. Multiplication and division should be used in compile time or in
-     * non-performance critical code. If you need fast arithmetic, you probably are
-     * looking for big_mod, which implements fast modular arithmetic.
+     * All arithmetic operations and conversions are safe by default, they throw
+     * on overflow. If you want arithmetic modulo 2^Bits you can use wrapping_*
+     * functions. There are also unchecked_* operations, these assert on overflow so
+     * overflows in them are not checked in release builds.
      */
     template<std::size_t Bits_>
     class big_uint {
