@@ -16,13 +16,13 @@
 
 #include "nil/crypto3/multiprecision/big_uint.hpp"
 #include "nil/crypto3/multiprecision/detail/big_int.hpp"
-#include "nil/crypto3/multiprecision/detail/extended_euclidean_algorithm.hpp"
+#include "nil/crypto3/multiprecision/detail/half_extended_euclidean_algorithm.hpp"
 
 namespace nil::crypto3::multiprecision {
     template<std::size_t Bits>
     constexpr big_uint<Bits> gcd(const big_uint<Bits>& a, const big_uint<Bits>& b) {
-        big_int<Bits> aa = a, bb = b, x, y, g;
-        g = detail::extended_euclidean_algorithm(aa, bb, x, y);
+        big_int<Bits> aa = a, bb = b, x, g;
+        g = detail::half_extended_euclidean_algorithm(aa, bb, x);
         BOOST_ASSERT(!g.negative());
         return g.abs();
     }
