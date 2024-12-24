@@ -16,6 +16,7 @@
 #include <boost/test/data/test_case.hpp>
 #include <boost/test/unit_test.hpp>
 
+#include <cstdint>
 #include <string>
 #include <tuple>
 
@@ -64,18 +65,19 @@ struct BarrettRuntimeCase {
     static constexpr auto name = "[   barrett][     runtime]";
 };
 
-constexpr big_uint<64> x_64 = 0xbf02e7bacaf6f977ULL;
-constexpr big_uint<64> y_64 = 0x95ac1bce79f93335ULL;
+constexpr std::uint64_t x_64 = 0xbf02e7bacaf6f977ULL;
+constexpr std::uint64_t y_64 = 0x95ac1bce79f93335ULL;
+constexpr big_uint<64> goldilocks_modulus_big_uint = goldilocks_modulus;
 
 struct GoldilocksMontgomery {
-    using big_mod_t = montgomery_big_mod<goldilocks_modulus>;
+    using big_mod_t = montgomery_big_mod<goldilocks_modulus_big_uint>;
     static constexpr big_mod_t x{x_64};
     static constexpr big_mod_t y{y_64};
     static constexpr auto name = "[montgomery][  goldilocks]";
 };
 
 struct GoldilocksBarrett {
-    using big_mod_t = big_mod<goldilocks_modulus>;
+    using big_mod_t = big_mod<goldilocks_modulus_big_uint>;
     static constexpr big_mod_t x{x_64};
     static constexpr big_mod_t y{y_64};
     static constexpr auto name = "[   barrett][  goldilocks]";

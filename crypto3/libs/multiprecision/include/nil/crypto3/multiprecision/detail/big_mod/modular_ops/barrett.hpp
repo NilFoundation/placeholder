@@ -130,11 +130,6 @@ namespace nil::crypto3::multiprecision::detail {
             barrett_reduce(result, detail::as_big_uint(input));
         }
 
-        constexpr void adjust_regular(big_uint_t &result, const big_uint_t &input) const {
-            BOOST_ASSERT(input < this->mod());
-            result = input;
-        }
-
       private:
         constexpr const auto &mu() const { return m_barrett_mu; }
 

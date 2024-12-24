@@ -24,6 +24,7 @@
 #include <boost/functional/hash.hpp>
 
 #include "nil/crypto3/multiprecision/detail/big_mod/modular_ops/barrett.hpp"
+#include "nil/crypto3/multiprecision/detail/big_mod/modular_ops/goldilocks.hpp"  // IWYU pragma: export
 #include "nil/crypto3/multiprecision/detail/big_mod/modular_ops/montgomery.hpp"
 #include "nil/crypto3/multiprecision/detail/big_mod/modular_ops_storage.hpp"
 #include "nil/crypto3/multiprecision/detail/integer_ops_base.hpp"  // IWYU pragma: keep (used for is_zero)
@@ -125,7 +126,12 @@ namespace nil::crypto3::multiprecision {
         constexpr std::string str(
             std::ios_base::fmtflags flags = std::ios_base::hex | std::ios_base::showbase |
                                             std::ios_base::uppercase) const {
-            return base().str(flags);
+            if constexpr (std::is_integral_v<base_type>) {
+                // TODO(ioxid): support formating flags
+                return std::to_string(base());
+            } else {
+                return base().str(flags);
+            }
         }
 
         // Arithmetic operations
@@ -252,7 +258,7 @@ namespace nil::crypto3::multiprecision {
         // Data
 
         modular_ops_storage_t m_modular_ops_storage;
-        base_type m_raw_base;
+        base_type m_raw_base{};
 
         // Friends
 
@@ -296,8 +302,7 @@ namespace nil::crypto3::multiprecision {
     using big_mod_rt = big_mod_rt_impl<Bits, detail::barrett_modular_ops>;
 
     // Goldilocks modular type, not optimized atm
-    constexpr big_uint<64> goldilocks_modulus = 0xffffffff00000001ULL;
-    using goldilocks_mod = montgomery_big_mod<goldilocks_modulus>;
+    using goldilocks_mod = big_mod_impl<detail::goldilocks_modular_ops_storage>;
 
     // Modular big integer type with compile-time modulus, which automatically uses
     // montomery form whenever possible (i.e. for odd moduli). Modulus should be a static
