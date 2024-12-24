@@ -1324,12 +1324,12 @@ namespace nil::crypto3::multiprecision {
         friend class big_uint;
 
         template<std::size_t Bits1, std::size_t Bits2, std::size_t Bits3>
-        friend constexpr bool detail::add_constexpr_unsigned(
+        friend constexpr bool detail::add_unsigned_constexpr(
             big_uint<Bits1>& result, const big_uint<Bits2>& a,
             const big_uint<Bits3>& b) noexcept;
-        template<detail::operation_mode Mode, bool GuaranteedGreater, std::size_t Bits1, std::size_t Bits2,
-                 std::size_t Bits3>
-        friend constexpr void detail::subtract_constexpr_unsigned(
+        template<detail::operation_mode Mode, bool GuaranteedGreater, std::size_t Bits1,
+                 std::size_t Bits2, std::size_t Bits3>
+        friend constexpr void detail::subtract_unsigned_constexpr(
             big_uint<Bits1>& result, const big_uint<Bits2>& a, const big_uint<Bits3>& b);
         template<std::size_t Bits1, std::size_t Bits2, std::size_t Bits3>
         friend constexpr bool detail::add_unsigned(big_uint<Bits1>& result,
