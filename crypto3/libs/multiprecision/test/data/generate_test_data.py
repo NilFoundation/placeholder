@@ -119,7 +119,7 @@ def generate_big_mod_test_data():
     params = [
         ["prime_mod_montgomery_130", 0x314107B9EF725F87FA08F9FDADD4F48BB, 130],
         ["even_mod_130", 0x314107B9EF725F87FA08F9FDADD4F48BA, 130],
-        ["goldilock", 0xFFFFFFFF00000001, 64],
+        ["goldilocks", 0xFFFFFFFF00000001, 64],
         ["even_mod_17", 0x1E240, 17],
         ["montgomery_17", 0x1E241, 17],
     ]
