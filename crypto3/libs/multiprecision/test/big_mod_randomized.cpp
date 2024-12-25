@@ -119,12 +119,20 @@ void base_operations_test(
     BOOST_CHECK_EQUAL(a_m - b_m, sample.a_m_sub_b_m);
     BOOST_CHECK_EQUAL(a_m * b_m, sample.a_m_mul_b_m);
 
+    modular_number_t x = a_m;
+    x += b_m;
+    BOOST_CHECK_EQUAL(x, sample.a_m_add_b_m);
+    x = a_m;
+    x -= b_m;
+    BOOST_CHECK_EQUAL(x, sample.a_m_sub_b_m);
+    x = a_m;
+    x *= b_m;
+    BOOST_CHECK_EQUAL(x, sample.a_m_mul_b_m);
+
     BOOST_CHECK_EQUAL(a_m == b_m, sample.a_eq_b);
     BOOST_CHECK_EQUAL(a_m != b_m, !sample.a_eq_b);
 
-    if constexpr (!std::is_same_v<modular_number_t, goldilocks_mod>) {
-        BOOST_CHECK_EQUAL(pow(a_m, b), sample.a_m_pow_b);
-    }
+    BOOST_CHECK_EQUAL(pow(a_m, b), sample.a_m_pow_b);
 }
 
 BOOST_AUTO_TEST_SUITE(base_operations)
