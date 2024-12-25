@@ -26,6 +26,7 @@ namespace nil::crypto3::multiprecision::detail {
     class common_modular_ops {
       public:
         using base_type = base_type_;
+        using pow_unsigned_intermediate_type = base_type;
 
         static_assert(is_integral_v<base_type>);
 
@@ -67,6 +68,8 @@ namespace nil::crypto3::multiprecision::detail {
             --a;
         }
 
+        static constexpr base_type one() { return 1u; }
+
         constexpr void adjust_regular(base_type &result, const base_type &input) const {
             BOOST_ASSERT(input < this->mod());
             result = input;
@@ -77,6 +80,40 @@ namespace nil::crypto3::multiprecision::detail {
       private:
         base_type m_mod{};
     };
+
+    template<
+        typename T, typename modular_ops_t,
+        std::enable_if_t<is_integral_v<T> && !std::numeric_limits<T>::is_signed, int> = 0>
+    constexpr void pow_unsigned(typename modular_ops_t::base_type &result,
+                                const typename modular_ops_t::base_type &a, T exp,
+                                const modular_ops_t &ops) {
+        // input parameter should be less than modulus
+        BOOST_ASSERT(a < ops.mod());
+
+        if (is_zero(exp)) {
+            result = ops.one();
+            return;
+        }
+        if (ops.mod() == 1u) {
+            result = 0u;
+            return;
+        }
+
+        typename modular_ops_t::pow_unsigned_intermediate_type base = a, res = ops.one();
+
+        while (true) {
+            bool lsb = bit_test(exp, 0u);
+            exp >>= 1u;
+            if (lsb) {
+                ops.mul(res, base);
+                if (is_zero(exp)) {
+                    break;
+                }
+            }
+            ops.mul(base, base);
+        }
+        result = static_cast<typename modular_ops_t::base_type>(res);
+    }
 
     // Helper methods for initialization using adjust_modular from appropriate modular_ops
 

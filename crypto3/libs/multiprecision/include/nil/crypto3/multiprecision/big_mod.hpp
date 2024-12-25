@@ -227,7 +227,7 @@ namespace nil::crypto3::multiprecision {
                  std::enable_if_t<is_integral_v<T> && !std::numeric_limits<T>::is_signed,
                                   int> = 0>
         friend constexpr big_mod_impl pow_unsigned(big_mod_impl b, const T& e) {
-            b.ops().pow_unsigned(b.m_raw_base, b.raw_base(), e);
+            detail::pow_unsigned(b.m_raw_base, b.raw_base(), e, b.ops());
             return b;
         }
 
