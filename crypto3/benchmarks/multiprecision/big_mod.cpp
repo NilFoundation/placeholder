@@ -135,3 +135,12 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(inverse_perf, Case, cases) {
         return x_modular;
     });
 }
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(pow_perf, Case, cases) {
+    auto raw_base = detail::get_raw_base(Case::x);
+    const auto &mod_ops = Case::x.ops_storage().ops();
+    run_benchmark<>(std::string(Case::name) + " direct pow", [&]() {
+        mod_ops.pow_unsigned(raw_base, raw_base, 0xf309d588016520ddULL);
+        return raw_base;
+    });
+}
