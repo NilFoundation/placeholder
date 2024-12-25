@@ -18,15 +18,15 @@
 
 #include "nil/crypto3/multiprecision/big_uint.hpp"
 #include "nil/crypto3/multiprecision/detail/big_int.hpp"
-#include "nil/crypto3/multiprecision/detail/extended_euclidean_algorithm.hpp"
+#include "nil/crypto3/multiprecision/detail/half_extended_euclidean_algorithm.hpp"
 #include "nil/crypto3/multiprecision/type_traits.hpp"
 
 namespace nil::crypto3::multiprecision {
     template<std::size_t Bits>
     constexpr big_uint<Bits> inverse_mod(const big_uint<Bits>& a,
                                          const big_uint<Bits>& m) {
-        big_int<Bits> aa = a, mm = m, x, y, g;
-        g = detail::extended_euclidean_algorithm(aa, mm, x, y);
+        big_int<Bits> aa = a, mm = m, x, g;
+        g = detail::half_extended_euclidean_algorithm(aa, mm, x);
         if (g != 1u) {
             throw std::invalid_argument("no multiplicative inverse");
         }
@@ -40,7 +40,8 @@ namespace nil::crypto3::multiprecision {
 
     template<typename big_mod_t, std::enable_if_t<is_big_mod_v<big_mod_t>, int> = 0>
     constexpr big_mod_t inverse(const big_mod_t& modular) {
-        return big_mod_t(inverse_mod(modular.base(), modular.mod()),
+        return big_mod_t(inverse_mod(detail::as_big_uint(modular.base()),
+                                     detail::as_big_uint(modular.mod())),
                          modular.ops_storage());
     }
 }  // namespace nil::crypto3::multiprecision

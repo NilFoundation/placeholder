@@ -51,15 +51,17 @@ namespace nil::crypto3::multiprecision {
         template<std::size_t Bits2>
         constexpr big_int(const big_uint<Bits2>& b) : m_abs(b) {}
 
-        template<class T, std::enable_if_t<std::is_integral_v<T> && std::is_signed_v<T>, int> = 0>
-        constexpr big_int(T val) : m_abs(unsigned_abs(val)) {
-            if (val < 0) {
-                negate();
+        template<class T,
+                 std::enable_if_t<std::is_integral_v<T> && std::is_signed_v<T>, int> = 0>
+        constexpr big_int(T value) : m_abs(unsigned_abs(value)) {
+            if (value < 0) {
+                negate_inplace();
             }
         }
 
-        template<class T, std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, int> = 0>
-        constexpr big_int(T val) : m_abs(val) {}
+        template<class T, std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>,
+                                           int> = 0>
+        constexpr big_int(T value) : m_abs(value) {}
 
         template<std::size_t Bits2>
         constexpr big_int(const big_int<Bits2>& other)
@@ -82,24 +84,25 @@ namespace nil::crypto3::multiprecision {
 
         template<typename T,
                  std::enable_if_t<std::is_integral_v<T> && std::is_signed_v<T>, int> = 0>
-        constexpr big_int& operator=(T val) {
+        constexpr big_int& operator=(T value) {
             m_negative = false;
-            m_abs = unsigned_abs(val);
-            if (val < 0) {
-                negate();
+            m_abs = unsigned_abs(value);
+            if (value < 0) {
+                negate_inplace();
             }
             return *this;
         }
 
-        template<typename T,
-                 std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, int> = 0>
-        constexpr big_int& operator=(T val) {
+        template<typename T, std::enable_if_t<
+                                 std::is_integral_v<T> && std::is_unsigned_v<T>, int> = 0>
+        constexpr big_int& operator=(T value) {
             m_negative = false;
-            m_abs = val;
+            m_abs = value;
             return *this;
         }
 
-        constexpr std::string str(std::ios_base::fmtflags flags = std::ios_base::dec) const {
+        constexpr std::string str(
+            std::ios_base::fmtflags flags = std::ios_base::dec) const {
             return (negative() ? std::string("-") : std::string("")) + m_abs.str(flags);
         }
 
@@ -111,7 +114,7 @@ namespace nil::crypto3::multiprecision {
         // Cast to integral types
 
         template<typename T, std::enable_if_t<std::is_integral_v<T>, int> = 0>
-        explicit constexpr operator T() const {
+        explicit constexpr operator T() const noexcept {
             return multiplied_by_sign(static_cast<T>(abs()));
         }
 
@@ -123,13 +126,15 @@ namespace nil::crypto3::multiprecision {
 
         // Utilities
 
-        constexpr bool negative() const { return m_negative; }
+        constexpr bool negative() const noexcept { return m_negative; }
 
-        constexpr int sign() const noexcept { return negative() ? -1 : (m_abs.is_zero() ? 0 : 1); }
+        constexpr int sign() const noexcept {
+            return negative() ? -1 : (m_abs.is_zero() ? 0 : 1);
+        }
 
-        constexpr const unsigned_type& abs() const { return m_abs; }
+        constexpr const unsigned_type& abs() const noexcept { return m_abs; }
 
-        constexpr void negate() {
+        constexpr void negate_inplace() noexcept {
             if (m_abs.is_zero()) {
                 return;
             }
@@ -166,7 +171,9 @@ namespace nil::crypto3::multiprecision {
 
 #undef NIL_CO3_MP_BIG_INT_IMPL_OPERATOR
 
-        NIL_CO3_MP_FORCEINLINE constexpr bool is_zero() const noexcept { return abs().is_zero(); }
+        NIL_CO3_MP_FORCEINLINE constexpr bool is_zero() const noexcept {
+            return abs().is_zero();
+        }
 
         // Arithmetic operations
 
@@ -186,12 +193,12 @@ namespace nil::crypto3::multiprecision {
                 auto a_m_abs = a.m_abs;
                 a.m_abs = b.m_abs;
                 a.m_abs -= a_m_abs;
-                a.negate();
+                a.negate_inplace();
             }
             return a;
         }
 
-        constexpr auto& operator++() {
+        constexpr auto& operator++() noexcept {
             if (negative()) {
                 --m_abs;
                 normalize();
@@ -201,7 +208,7 @@ namespace nil::crypto3::multiprecision {
             return *this;
         }
 
-        friend constexpr auto operator++(big_int& a, int) {
+        friend constexpr auto operator++(big_int& a, int) noexcept {
             auto copy = a;
             ++a;
             return copy;
@@ -209,14 +216,16 @@ namespace nil::crypto3::multiprecision {
 
         friend constexpr auto operator+(const big_int& a) noexcept { return a; }
 
-        friend constexpr auto operator-(const big_int& a, const big_int& b) { return a + (-b); }
+        friend constexpr auto operator-(const big_int& a, const big_int& b) noexcept {
+            return a + (-b);
+        }
 
-        friend constexpr auto& operator-=(big_int& a, const big_int& b) {
+        friend constexpr auto& operator-=(big_int& a, const big_int& b) noexcept {
             a = a - b;
             return a;
         }
 
-        constexpr auto& operator--() {
+        constexpr auto& operator--() noexcept {
             if (negative()) {
                 ++m_abs;
                 return *this;
@@ -230,34 +239,37 @@ namespace nil::crypto3::multiprecision {
             return *this;
         }
 
-        friend constexpr auto operator--(big_int& a, int) {
+        friend constexpr auto operator--(big_int& a, int) noexcept {
             auto copy = a;
             --a;
             return copy;
         }
 
         friend constexpr auto operator-(big_int a) noexcept {
-            a.negate();
+            a.negate_inplace();
             return a;
         }
 
-        friend constexpr auto operator*(const big_int& a, const big_int& b) {
-            big_int result = a.m_abs * b.m_abs;
+        friend constexpr auto operator*(const big_int& a, const big_int& b) noexcept {
+            big_int result = unchecked_mul(a.m_abs, b.m_abs);
             if (a.sign() * b.sign() < 0) {
-                result = -result;
+                result.negate_inplace();
             }
             return result;
         }
 
-        friend constexpr auto& operator*=(big_int& a, const big_int& b) {
-            a = a * b;
+        friend constexpr auto& operator*=(big_int& a, const big_int& b) noexcept {
+            unchecked_mul_assign(a.m_abs, b.m_abs);
+            if (b.sign() < 0) {
+                a.negate_inplace();
+            }
             return a;
         }
 
         friend constexpr auto operator/(const big_int& a, const big_int& b) {
             big_int result = a.m_abs / b.m_abs;
             if (a.negative() != b.negative()) {
-                result.negate();
+                result.negate_inplace();
             }
             return result;
         }
@@ -270,7 +282,7 @@ namespace nil::crypto3::multiprecision {
         friend constexpr auto operator%(const big_int& a, const big_int& b) {
             big_int result = a.m_abs % b.m_abs;
             if (a.negative() != b.negative()) {
-                result.negate();
+                result.negate_inplace();
             }
             return result;
         }
@@ -282,10 +294,10 @@ namespace nil::crypto3::multiprecision {
 
         // Hash
 
-        friend constexpr std::size_t hash_value(const big_int& val) noexcept {
+        friend constexpr std::size_t hash_value(const big_int& value) noexcept {
             std::size_t result = 0;
-            boost::hash_combine(result, val.abs());
-            boost::hash_combine(result, val.negative());
+            boost::hash_combine(result, value.abs());
+            boost::hash_combine(result, value.negative());
             return result;
         }
 
@@ -304,13 +316,13 @@ namespace nil::crypto3::multiprecision {
         }
 
         template<typename T>
-        constexpr void multiply_by_sign(T& a) const {
+        constexpr void multiply_by_sign(T& a) const noexcept {
             if (negative()) {
                 a = -a;
             }
         }
         template<typename T>
-        constexpr T multiplied_by_sign(const T& a) const {
+        constexpr T multiplied_by_sign(const T& a) const noexcept {
             if (negative()) {
                 return -a;
             }
@@ -330,28 +342,29 @@ namespace nil::crypto3::multiprecision {
     // For generic code
 
     template<std::size_t Bits>
-    constexpr bool is_zero(const big_int<Bits>& a) {
+    constexpr bool is_zero(const big_int<Bits>& a) noexcept {
         return a.is_zero();
     }
 
     // To efficiently compute quotient and remainder at the same time
 
     template<std::size_t Bits1, std::size_t Bits2>
-    constexpr void divide_qr(const big_int<Bits1>& a, const big_int<Bits2>& b, big_int<Bits1>& q,
-                             big_int<Bits1>& r) {
+    constexpr void divide_qr(const big_int<Bits1>& a, const big_int<Bits2>& b,
+                             big_int<Bits1>& q, big_int<Bits1>& r) {
         detail::divide(&q.m_abs, a.m_abs, b.m_abs, r.m_abs);
         q.m_negative = false;
         r.m_negative = false;
         if (a.negative() != b.negative()) {
-            q.negate();
-            r.negate();
+            q.negate_inplace();
+            r.negate_inplace();
         }
     }
 }  // namespace nil::crypto3::multiprecision
 
 template<std::size_t Bits>
 struct std::hash<nil::crypto3::multiprecision::big_int<Bits>> {
-    std::size_t operator()(const nil::crypto3::multiprecision::big_int<Bits>& a) const noexcept {
+    std::size_t operator()(
+        const nil::crypto3::multiprecision::big_int<Bits>& a) const noexcept {
         return boost::hash<nil::crypto3::multiprecision::big_int<Bits>>{}(a);
     }
 };
