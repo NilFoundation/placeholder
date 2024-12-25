@@ -140,7 +140,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(pow_perf, Case, cases) {
     auto raw_base = detail::get_raw_base(Case::x);
     const auto &mod_ops = Case::x.ops_storage().ops();
     run_benchmark<>(std::string(Case::name) + " direct pow", [&]() {
-        mod_ops.pow_unsigned(raw_base, raw_base, 0xf309d588016520ddULL);
+        detail::pow_unsigned(raw_base, raw_base, 0xf309d588016520ddULL, mod_ops);
         return raw_base;
     });
 }

@@ -20,7 +20,6 @@
 
 #include "nil/crypto3/multiprecision/big_uint.hpp"
 #include "nil/crypto3/multiprecision/detail/big_mod/modular_ops/common_big_uint.hpp"
-#include "nil/crypto3/multiprecision/detail/integer_ops_base.hpp"
 
 namespace nil::crypto3::multiprecision::detail {
     // Barrett modular operations and basic operations like negation and increment
@@ -30,6 +29,7 @@ namespace nil::crypto3::multiprecision::detail {
         static constexpr std::size_t Bits = Bits_;
         using big_uint_t = big_uint<Bits>;
         using base_type = big_uint_t;
+        using pow_unsigned_intermediate_type = big_uint<Bits * 2>;
 
         constexpr barrett_modular_ops(const big_uint_t &m)
             : common_big_uint_modular_ops<Bits_>(m), m_barrett_mu(0u) {
@@ -39,11 +39,6 @@ namespace nil::crypto3::multiprecision::detail {
         }
 
       protected:
-        template<std::size_t Bits2>
-        constexpr void barrett_reduce(big_uint<Bits2> &result) const {
-            barrett_reduce(result, result);
-        }
-
         template<std::size_t Bits2, std::size_t Bits3,
                  std::enable_if_t<
                      // result should fit in the output parameter
@@ -75,45 +70,21 @@ namespace nil::crypto3::multiprecision::detail {
       public:
         template<std::size_t Bits2, std::size_t Bits3,
                  // result should fit in the output parameter
-                 std::enable_if_t<big_uint<Bits2>::Bits >= big_uint_t::Bits, int> = 0>
+                 std::enable_if_t<Bits2 >= Bits * 2, int> = 0>
         constexpr void mul(big_uint<Bits2> &result, const big_uint<Bits3> &y) const {
+            BOOST_ASSERT(result < this->mod() && y < this->mod());
+            result *= y;
+            barrett_reduce(result, result);
+        }
+
+        template<std::size_t Bits2, std::size_t Bits3,
+                 // result should fit in the output parameter
+                 std::enable_if_t<Bits2 >= Bits && (Bits2 < Bits * 2), int> = 0>
+        constexpr void mul(big_uint<Bits2> &result, const big_uint<Bits3> &y) const {
+            BOOST_ASSERT(result < this->mod() && y < this->mod());
             big_uint<2 * Bits> tmp = result;
             tmp *= y;
             barrett_reduce(result, tmp);
-        }
-
-        template<typename T,
-                 std::enable_if_t<is_integral_v<T> && !std::numeric_limits<T>::is_signed,
-                                  int> = 0>
-        constexpr void pow_unsigned(base_type &result, const base_type &a, T exp) const {
-            // input parameter should be less than modulus
-            BOOST_ASSERT(a < this->mod());
-
-            if (is_zero(exp)) {
-                result = 1u;
-                return;
-            }
-            if (this->mod() == 1u) {
-                result = 0u;
-                return;
-            }
-
-            big_uint<2 * Bits> base = a, res = 1u;
-
-            while (true) {
-                bool lsb = bit_test(exp, 0u);
-                exp >>= 1u;
-                if (lsb) {
-                    res *= base;
-                    barrett_reduce(res);
-                    if (is_zero(exp)) {
-                        break;
-                    }
-                }
-                base *= base;
-                barrett_reduce(base);
-            }
-            result = static_cast<base_type>(res);
         }
 
         // Adjust to/from modular form

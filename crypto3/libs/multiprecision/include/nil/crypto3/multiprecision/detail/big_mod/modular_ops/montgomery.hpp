@@ -40,6 +40,7 @@ namespace nil::crypto3::multiprecision::detail {
         static constexpr std::size_t Bits = Bits_;
         using big_uint_t = big_uint<Bits>;
         using base_type = big_uint<Bits>;
+        using pow_unsigned_intermediate_type = base_type;
 
         static constexpr std::size_t limb_count = big_uint_t::static_limb_count;
 
@@ -52,7 +53,7 @@ namespace nil::crypto3::multiprecision::detail {
 
             big_uint<2 * limb_count * limb_bits + 1> r;
             r.bit_set(2 * limb_count * limb_bits);
-            this->barrett_reduce(r);
+            this->barrett_reduce(r, r);
 
             // Here we are intentionally throwing away half of the bits of r, it's
             // correct.
@@ -330,37 +331,7 @@ namespace nil::crypto3::multiprecision::detail {
             }
         }
 
-        template<typename T,
-                 std::enable_if_t<is_integral_v<T> && !std::numeric_limits<T>::is_signed,
-                                  int> = 0>
-        constexpr void pow_unsigned(base_type &result, const base_type &a, T exp) const {
-            // input parameter should be less than modulus
-            BOOST_ASSERT(a < this->mod());
-
-            if (is_zero(exp)) {
-                result = m_one;
-                return;
-            }
-            if (this->mod() == 1u) {
-                result = 0u;
-                return;
-            }
-
-            big_uint_t base = a, res = m_one;
-
-            while (true) {
-                bool lsb = bit_test(exp, 0u);
-                exp >>= 1u;
-                if (lsb) {
-                    mul(res, base);
-                    if (is_zero(exp)) {
-                        break;
-                    }
-                }
-                mul(base, base);
-            }
-            result = res;
-        }
+        constexpr base_type one() const { return m_one; }
 
         constexpr void increment(base_type &a) const { this->add(a, m_one); }
 
