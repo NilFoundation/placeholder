@@ -143,14 +143,15 @@ BOOST_DATA_TEST_CASE(
 
 // This one tests 64-bit numbers used in Goldilock fields.
 BOOST_DATA_TEST_CASE(
-    goldilock_montgomery,
-    (test_dataset<ModularArithmeticSample<montgomery_big_mod_rt<64>>>("goldilock"))) {
+    goldilocks_montgomery,
+    (test_dataset<ModularArithmeticSample<montgomery_big_mod_rt<64>>>("goldilocks"))) {
     base_operations_test(sample);
 }
 
 BOOST_DATA_TEST_CASE(
-    goldilock, (test_dataset<ModularArithmeticSample<goldilocks_mod, /*fixed_mod=*/true>>(
-                   "goldilock"))) {
+    goldilocks,
+    (test_dataset<ModularArithmeticSample<goldilocks_mod, /*fixed_mod=*/true>>(
+        "goldilocks"))) {
     base_operations_test(sample);
 }
 
