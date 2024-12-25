@@ -95,6 +95,39 @@ Goldilocks::new(t2)
             template<typename T,
                      std::enable_if_t<
                          is_integral_v<T> && !std::numeric_limits<T>::is_signed, int> = 0>
+            constexpr void pow_unsigned(base_type &result, const base_type &a,
+                                        T exp) const {
+                // input parameter should be less than modulus
+                BOOST_ASSERT(a < this->mod());
+
+                if (is_zero(exp)) {
+                    result = 1u;
+                    return;
+                }
+                if (this->mod() == 1u) {
+                    result = 0u;
+                    return;
+                }
+
+                base_type base = a, res = 1u;
+
+                while (true) {
+                    bool lsb = bit_test(exp, 0u);
+                    exp >>= 1u;
+                    if (lsb) {
+                        mul(res, base);
+                        if (is_zero(exp)) {
+                            break;
+                        }
+                    }
+                    mul(base, base);
+                }
+                result = res;
+            }
+
+            template<typename T,
+                     std::enable_if_t<
+                         is_integral_v<T> && !std::numeric_limits<T>::is_signed, int> = 0>
             static constexpr void adjust_modular(base_type &result, const T &input) {
                 result = static_cast<std::uint64_t>(input % goldilocks_modulus);
             }

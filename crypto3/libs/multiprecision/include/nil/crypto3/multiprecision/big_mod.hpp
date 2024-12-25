@@ -78,15 +78,19 @@ namespace nil::crypto3::multiprecision {
 
         // Components
 
-        constexpr base_type base() const {
+      private:
+        constexpr base_type internal_base() const {
             base_type result;
             ops().adjust_regular(result, raw_base());
             return result;
         }
 
-        constexpr const base_type& mod() const { return ops().mod(); }
+      public:
+        constexpr auto base() const { return detail::as_big_uint(internal_base()); }
 
-        explicit constexpr operator base_type() const { return base(); }
+        constexpr decltype(auto) mod() const { return detail::as_big_uint(ops().mod()); }
+
+        explicit constexpr operator auto() const { return base(); }
 
         explicit constexpr operator bool() const { return !is_zero(); }
 
@@ -101,12 +105,12 @@ namespace nil::crypto3::multiprecision {
                                                                                      \
     template<typename T, std::enable_if_t<is_integral_v<T>, int> = 0>                \
     friend constexpr bool operator OP_(const big_mod_impl& a, const T& b) noexcept { \
-        return a.base() OP_ b;                                                       \
+        return a.internal_base() OP_ b;                                              \
     }                                                                                \
                                                                                      \
     template<typename T, std::enable_if_t<is_integral_v<T>, int> = 0>                \
     friend constexpr bool operator OP_(const T& a, const big_mod_impl& b) noexcept { \
-        return a OP_ b.base();                                                       \
+        return a OP_ b.internal_base();                                              \
     }
 
         NIL_CO3_MP_BIG_MOD_COMPARISON_IMPL(==)
@@ -118,7 +122,7 @@ namespace nil::crypto3::multiprecision {
             // In barrett form raw_base is the same as base
             // In montgomery form raw_base is base multiplied by r, so it is zero iff base
             // is
-            return raw_base().is_zero();
+            return nil::crypto3::multiprecision::is_zero(raw_base());
         }
 
         // String conversion
@@ -126,12 +130,8 @@ namespace nil::crypto3::multiprecision {
         constexpr std::string str(
             std::ios_base::fmtflags flags = std::ios_base::hex | std::ios_base::showbase |
                                             std::ios_base::uppercase) const {
-            if constexpr (std::is_integral_v<base_type>) {
-                // TODO(ioxid): support formating flags
-                return std::to_string(base());
-            } else {
-                return base().str(flags);
-            }
+            // TODO(ioxid): optimize when base_type is not big_uint
+            return base().str(flags);
         }
 
         // Arithmetic operations
@@ -227,14 +227,14 @@ namespace nil::crypto3::multiprecision {
                  std::enable_if_t<is_integral_v<T> && !std::numeric_limits<T>::is_signed,
                                   int> = 0>
         friend constexpr big_mod_impl pow_unsigned(big_mod_impl b, const T& e) {
-            b.ops().pow(b.m_raw_base, b.raw_base(), e);
+            b.ops().pow_unsigned(b.m_raw_base, b.raw_base(), e);
             return b;
         }
 
         // Hash
 
         friend constexpr std::size_t hash_value(const big_mod_impl& value) noexcept {
-            return hash_value(value.raw_base());
+            return boost::hash<base_type>{}(value.raw_base());
             // mod() is ignored because we don't allow comparing numbers with different
             // moduli anyway
         }
@@ -294,8 +294,8 @@ namespace nil::crypto3::multiprecision {
 
     // Simple modular big integer type with compile-time modulus. Modulus should be a
     // static big_uint constant. Uses barret optimizations.
-    template<const auto& modulus>
-    using big_mod = big_mod_ct_impl<modulus, detail::barrett_modular_ops>;
+    template<const auto& Modulus>
+    using big_mod = big_mod_ct_impl<Modulus, detail::barrett_modular_ops>;
 
     // Simple modular big integer type with runtime modulus. Uses barret optimizations.
     template<std::size_t Bits>
@@ -307,11 +307,11 @@ namespace nil::crypto3::multiprecision {
     // Modular big integer type with compile-time modulus, which automatically uses
     // montomery form whenever possible (i.e. for odd moduli). Modulus should be a static
     // big_uint constant.
-    template<const auto& modulus>
+    template<const auto& Modulus>
     using auto_big_mod = std::conditional_t<
-        modulus == goldilocks_modulus, goldilocks_mod,
-        std::conditional_t<detail::check_montgomery_constraints(modulus),
-                           montgomery_big_mod<modulus>, big_mod<modulus>>>;
+        Modulus == goldilocks_modulus, goldilocks_mod,
+        std::conditional_t<detail::modulus_supports_montgomery(Modulus),
+                           montgomery_big_mod<Modulus>, big_mod<Modulus>>>;
 }  // namespace nil::crypto3::multiprecision
 
 // std::hash specializations
@@ -335,5 +335,13 @@ struct std::hash<
         return boost::hash<
             nil::crypto3::multiprecision::big_mod_rt_impl<Bits, modular_ops_template>>{}(
             a);
+    }
+};
+
+template<>
+struct std::hash<nil::crypto3::multiprecision::goldilocks_mod> {
+    std::size_t operator()(
+        const nil::crypto3::multiprecision::goldilocks_mod& a) const noexcept {
+        return boost::hash<nil::crypto3::multiprecision::goldilocks_mod>{}(a);
     }
 };
