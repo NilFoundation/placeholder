@@ -82,14 +82,10 @@ namespace nil::crypto3::multiprecision::detail {
             barrett_reduce(result, tmp);
         }
 
-        template<
-            std::size_t Bits2, std::size_t Bits3, typename T,
-            // result should fit in the output parameter
-            std::enable_if_t<big_uint<Bits2>::Bits >= big_uint_t::Bits &&
-                                 is_integral_v<T> && !std::numeric_limits<T>::is_signed,
-                             int> = 0>
-        constexpr void pow(big_uint<Bits2> &result, const big_uint<Bits3> &a,
-                           T exp) const {
+        template<typename T,
+                 std::enable_if_t<is_integral_v<T> && !std::numeric_limits<T>::is_signed,
+                                  int> = 0>
+        constexpr void pow_unsigned(base_type &result, const base_type &a, T exp) const {
             // input parameter should be less than modulus
             BOOST_ASSERT(a < this->mod());
 
@@ -102,7 +98,7 @@ namespace nil::crypto3::multiprecision::detail {
                 return;
             }
 
-            big_uint<2 * Bits> base(a), res(1u);
+            big_uint<2 * Bits> base = a, res = 1u;
 
             while (true) {
                 bool lsb = bit_test(exp, 0u);
@@ -117,7 +113,7 @@ namespace nil::crypto3::multiprecision::detail {
                 base *= base;
                 barrett_reduce(base);
             }
-            result = static_cast<big_uint<Bits2>>(res);
+            result = static_cast<base_type>(res);
         }
 
         // Adjust to/from modular form

@@ -27,6 +27,8 @@ namespace nil::crypto3::multiprecision::detail {
       public:
         using base_type = base_type_;
 
+        static_assert(is_integral_v<base_type>);
+
         constexpr common_modular_ops(const base_type &m) : m_mod(m) {}
 
         constexpr bool compare_eq(const common_modular_ops &other) const {
@@ -34,7 +36,7 @@ namespace nil::crypto3::multiprecision::detail {
         }
 
         constexpr void negate_inplace(base_type &raw_base) const {
-            if (!raw_base.is_zero()) {
+            if (!is_zero(raw_base)) {
                 auto initial_raw_base = raw_base;
                 raw_base = mod();
                 raw_base -= initial_raw_base;

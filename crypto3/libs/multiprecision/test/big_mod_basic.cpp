@@ -8,17 +8,17 @@
 
 #define BOOST_TEST_MODULE big_mod_basic_test
 
-#include <cstdint>
-#include <utility>
-
 #include <boost/test/unit_test.hpp>
+
+#include <cstdint>
+#include <type_traits>
+#include <utility>
 
 #include "nil/crypto3/multiprecision/big_mod.hpp"
 #include "nil/crypto3/multiprecision/big_uint.hpp"
 #include "nil/crypto3/multiprecision/literals.hpp"
 
 using namespace nil::crypto3::multiprecision;
-using namespace nil::crypto3::multiprecision::literals;
 
 NIL_CO3_MP_DEFINE_BIG_UINT_LITERAL(2)
 NIL_CO3_MP_DEFINE_BIG_UINT_LITERAL(32)
@@ -26,11 +26,17 @@ NIL_CO3_MP_DEFINE_BIG_UINT_LITERAL(36)
 NIL_CO3_MP_DEFINE_BIG_UINT_LITERAL(57)
 NIL_CO3_MP_DEFINE_BIG_UINT_LITERAL(60)
 
-using namespace nil::crypto3::multiprecision::literals;
+constexpr big_uint<64> goldilocks_modulus_big_uint = 0xFFFFFFFF00000001ULL;
+static_assert(std::is_same_v<auto_big_mod<goldilocks_modulus_big_uint>, goldilocks_mod>);
 
-constexpr auto mod = 0x123456789ABCDEF_big_uint57;
-using montgomery_big_mod_t = montgomery_big_mod<mod>;
-using big_mod_t = big_mod<mod>;
+constexpr auto odd_mod = 0x123456789ABCDEF_big_uint57;
+constexpr auto even_mod = 0x123456789ABCDEE_big_uint57;
+
+static_assert(std::is_same_v<auto_big_mod<odd_mod>, montgomery_big_mod<odd_mod>>);
+static_assert(std::is_same_v<auto_big_mod<even_mod>, big_mod<even_mod>>);
+
+using montgomery_big_mod_t = montgomery_big_mod<odd_mod>;
+using big_mod_t = big_mod<odd_mod>;
 
 BOOST_AUTO_TEST_SUITE(smoke)
 
@@ -196,25 +202,30 @@ BOOST_AUTO_TEST_CASE(multilimb) {
 BOOST_AUTO_TEST_CASE(big) {
     static constexpr auto mod =
         0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000000000000000001_big_uint224;
-    big_mod<mod> a = 0xC5067EE5D80302E0561545A8467C6D5C98BC4D37672EB301C38CE9A9_big_uint224;
+    big_mod<mod> a =
+        0xC5067EE5D80302E0561545A8467C6D5C98BC4D37672EB301C38CE9A9_big_uint224;
 
-    big_mod<mod> b = 0xE632329C42040E595D127EB6889D22215DBE56F540425C705D6BF83_big_uint224;
+    big_mod<mod> b =
+        0xE632329C42040E595D127EB6889D22215DBE56F540425C705D6BF83_big_uint224;
 
-    BOOST_CHECK_EQUAL((a * b).base(),
-                      0x107BC09A9F3443A6F6458495ADD98CBA1FCD15F17D0EAB66302FEFA6_big_uint224);
+    BOOST_CHECK_EQUAL(
+        (a * b).base(),
+        0x107BC09A9F3443A6F6458495ADD98CBA1FCD15F17D0EAB66302FEFA6_big_uint224);
 }
 
 BOOST_AUTO_TEST_CASE(big_assign) {
     static constexpr auto mod =
         0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000000000000000001_big_uint224;
-    big_mod<mod> a = 0xC5067EE5D80302E0561545A8467C6D5C98BC4D37672EB301C38CE9A9_big_uint224;
+    big_mod<mod> a =
+        0xC5067EE5D80302E0561545A8467C6D5C98BC4D37672EB301C38CE9A9_big_uint224;
 
-    big_mod<mod> b = 0xE632329C42040E595D127EB6889D22215DBE56F540425C705D6BF83_big_uint224;
+    big_mod<mod> b =
+        0xE632329C42040E595D127EB6889D22215DBE56F540425C705D6BF83_big_uint224;
 
     a *= b;
 
-    BOOST_CHECK_EQUAL(a.base(),
-                      0x107BC09A9F3443A6F6458495ADD98CBA1FCD15F17D0EAB66302FEFA6_big_uint224);
+    BOOST_CHECK_EQUAL(
+        a.base(), 0x107BC09A9F3443A6F6458495ADD98CBA1FCD15F17D0EAB66302FEFA6_big_uint224);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

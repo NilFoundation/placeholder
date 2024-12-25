@@ -25,10 +25,11 @@
 #include "nil/crypto3/multiprecision/detail/integer_ops_base.hpp"
 
 namespace nil::crypto3::multiprecision::detail {
-    template<std::size_t Bits>
-    constexpr bool check_montgomery_constraints(const big_uint<Bits> &m) {
+    template<typename T>
+    constexpr bool modulus_supports_montgomery(const T &m) {
+        static_assert(is_integral_v<T> && !std::numeric_limits<T>::is_signed);
         // Check m % 2 == 0
-        return m.bit_test(0u);
+        return bit_test(m, 0u);
     }
 
     // Montgomery modular operations. Uses Barrett reduction internally and inherits
@@ -43,7 +44,7 @@ namespace nil::crypto3::multiprecision::detail {
         static constexpr std::size_t limb_count = big_uint_t::static_limb_count;
 
         constexpr montgomery_modular_ops(const big_uint_t &m) : barrett_modular_ops<Bits_>(m) {
-            if (!check_montgomery_constraints(m)) {
+            if (!modulus_supports_montgomery(m)) {
                 throw std::invalid_argument("module not usable with montgomery");
             }
 
@@ -329,14 +330,10 @@ namespace nil::crypto3::multiprecision::detail {
             }
         }
 
-        template<
-            std::size_t Bits2, std::size_t Bits3, typename T,
-            // result should fit in the output parameter
-            std::enable_if_t<big_uint<Bits2>::Bits >= big_uint_t::Bits &&
-                                 is_integral_v<T> && !std::numeric_limits<T>::is_signed,
-                             int> = 0>
-        constexpr void pow(big_uint<Bits2> &result, const big_uint<Bits3> &a,
-                           T exp) const {
+        template<typename T,
+                 std::enable_if_t<is_integral_v<T> && !std::numeric_limits<T>::is_signed,
+                                  int> = 0>
+        constexpr void pow_unsigned(base_type &result, const base_type &a, T exp) const {
             // input parameter should be less than modulus
             BOOST_ASSERT(a < this->mod());
 
@@ -349,7 +346,7 @@ namespace nil::crypto3::multiprecision::detail {
                 return;
             }
 
-            big_uint_t base(a), res = m_one;
+            big_uint_t base = a, res = m_one;
 
             while (true) {
                 bool lsb = bit_test(exp, 0u);
