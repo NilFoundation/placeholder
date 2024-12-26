@@ -28,6 +28,7 @@
 #include <cstdlib>
 #include <ctime>
 // #include <nil/blueprint/bbf/hashes/keccak/keccak_round_bbf_wrapper.hpp>
+#include <nil/blueprint/bbf/circuit_builder.hpp>
 #include <nil/blueprint/bbf/hashes/keccak/keccak_round.hpp>
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
@@ -38,7 +39,7 @@
 #include <nil/crypto3/hash/keccak.hpp>
 #include <nil/crypto3/zk/snark/arithmetization/plonk/params.hpp>
 #include <random>
-#include <nil/blueprint/bbf/circuit_builder.hpp>
+
 #include "../../../test_plonk_component.hpp"
 const int r[5][5] = {{0, 36, 3, 41, 18},
                      {1, 44, 10, 45, 2},
@@ -149,13 +150,14 @@ void test_bbf_keccak_round(const std::array<typename field_type::value_type, 25>
                            typename field_type::value_type RC, bool xor_with_mes,
                            const std::array<typename field_type::value_type, 25> &expected_res) {
 
-    typename bbf::keccak_round<field_type, bbf::GenerationStage::ASSIGNMENT>::raw_input_type raw_input = {inner_state, message_chunks, RC};
+    typename bbf::keccak_round<field_type, bbf::GenerationStage::ASSIGNMENT>::raw_input_type
+        raw_input = {inner_state, message_chunks, RC};
     auto B = bbf::circuit_builder<field_type, bbf::keccak_round, bool>(xor_with_mes);
     auto [at, A, desc] = B.assign(raw_input);
     std::cout << "Is_satisfied = " << B.is_satisfied(at) << std::endl;
     for (std::size_t i = 0; i < 25; i++) {
         assert(expected_res[i] == A.inner_state[i]);
-    }    
+    }
 }
 template<typename BlueprintFieldType, bool xor_with_mes>
 void test_keccak_round_bbf_random() {
@@ -178,15 +180,17 @@ void test_keccak_round_bbf_random() {
     }
     auto random_value = integral_type(dis(gen)) & mask;
     RC = to_sparse<BlueprintFieldType>(value_type(random_value));
-    auto expected_result = sparse_round_function<BlueprintFieldType, xor_with_mes>(inner_state, padded_message_chunk, RC);
-    test_bbf_keccak_round<BlueprintFieldType>(inner_state, padded_message_chunk, RC, xor_with_mes, expected_result);
+    auto expected_result = sparse_round_function<BlueprintFieldType, xor_with_mes>(
+        inner_state, padded_message_chunk, RC);
+    test_bbf_keccak_round<BlueprintFieldType>(inner_state, padded_message_chunk, RC, xor_with_mes,
+                                              expected_result);
 }
 BOOST_AUTO_TEST_SUITE(blueprint_plonk_test_suite)
 BOOST_AUTO_TEST_CASE(blueprint_plonk_hashes_keccak_round_bbf_random_pallas) {
     using field_type = nil::crypto3::algebra::curves::pallas::base_field_type;
     using value_type = typename field_type::value_type;
     test_keccak_round_bbf_random<field_type, false>();
-    // test_keccak_round_bbf_random<field_type, true>();
+    test_keccak_round_bbf_random<field_type, true>();
 }
 BOOST_AUTO_TEST_CASE(blueprint_plonk_hashes_keccak_round_bbf_not_random_pallas) {
     using field_type = nil::crypto3::algebra::curves::pallas::base_field_type;

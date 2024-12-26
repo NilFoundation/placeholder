@@ -50,15 +50,20 @@ namespace nil {
 
               public:
                 using typename generic_component<FieldType, stage>::TYPE;
-                using typename generic_component<FieldType,stage>::table_params;
-                using raw_input_type = typename std::conditional<stage == GenerationStage::ASSIGNMENT, keccak_dynamic_raw_input<FieldType>,std::tuple<>>::type;
+                using typename generic_component<FieldType, stage>::table_params;
+                using raw_input_type =
+                    typename std::conditional<stage == GenerationStage::ASSIGNMENT,
+                                              keccak_dynamic_raw_input<FieldType>,
+                                              std::tuple<>>::type;
                 using integral_type = typename FieldType::integral_type;
                 using value_type = typename FieldType::value_type;
                 using KECCAK_ROUND = typename bbf::keccak_round<FieldType, stage>;
 
                 struct input_type {
                     TYPE rlc_challenge;
-                    std::vector<std::tuple<std::vector<std::uint8_t>, std::pair<value_type, value_type>>> input;
+                    std::vector<
+                        std::tuple<std::vector<std::uint8_t>, std::pair<value_type, value_type>>>
+                        input;
                 };
 
                 const std::size_t block_rows_amount = 6247;
@@ -186,11 +191,12 @@ namespace nil {
                     constexpr std::size_t public_inputs = 1;
                     constexpr std::size_t constants = 1;
                     std::size_t rows = 6247 * max_blocks;
+                    rows = rows < 72000 ? 72000 : rows;
                     return {witness, public_inputs, constants, rows};
                 }
 
-                static std::tuple<input_type> form_input(context_type &context_object, raw_input_type raw_input) {
-                    
+                static std::tuple<input_type> form_input(context_type &context_object,
+                                                         raw_input_type raw_input) {
                     input_type input;
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
                         input.input = raw_input.input;
@@ -215,9 +221,9 @@ namespace nil {
                     std::size_t first_in_block;
                     TYPE rlc;
                     TYPE rlc_before;
-                    TYPE RLC[max_blocks];
+                    TYPE RLC;
                     // constants
-                    
+
                     keccak_map m[max_blocks];
                     std::array<TYPE, 25> state;
                     std::vector<uint8_t> msg = std::vector<uint8_t>();
@@ -225,13 +231,13 @@ namespace nil {
                     std::pair<TYPE, TYPE> hash;
 
                     TYPE C[26];
-                    
+
                     C[0] = value_type(0);
                     allocate(C[0], 0, 0, column_type::constant);
                     C[1] = value_type(1);
                     allocate(C[1], 0, 1, column_type::constant);
-                    for(std::size_t i = 2; i < 26; i++){
-                        C[i] = value_type(calculate_sparse(integral_type(round_constant[i-2])));
+                    for (std::size_t i = 2; i < 26; i++) {
+                        C[i] = value_type(calculate_sparse(integral_type(round_constant[i - 2])));
                         allocate(C[i], 0, i, column_type::constant);
                     }
 
@@ -247,7 +253,8 @@ namespace nil {
                                 input_idx++;
                             } else {
                                 msg = {};
-                                // hash = {TYPE(0xbc36789e7a1e281436464229828f817d), TYPE(6612f7b477d66591ff96a9e064bcc98a)}; // edit me
+                                hash = {TYPE(integral_type(0xc5d2460186f7233c927e7db2dcc703c0_big_uint256)),
+                                        TYPE(integral_type(0xe500b653ca82273b7bfad8045d85a470_big_uint256))};
                             }
 
                             padded_msg = msg;
@@ -255,8 +262,8 @@ namespace nil {
                             while (padded_msg.size() % 136 != 0) {
                                 padded_msg.push_back(0);
                             }
-                            RLC[block_counter] = calculateRLC<FieldType>(msg, theta);
-                            std::cout << "RLC = " << std::hex << RLC[block_counter] << std::dec
+                            RLC = calculateRLC<FieldType>(msg, theta);
+                            std::cout << "RLC = " << std::hex << RLC << std::dec
                                       << std::endl;
 
                             for (std::size_t block = 0; block < padded_msg.size() / 136; block++) {
@@ -272,7 +279,7 @@ namespace nil {
                                 m[block_counter].h.l = msg.size() - block * 136;
                                 m[block_counter].h.hash_hi = hash.first;
                                 m[block_counter].h.hash_lo = hash.second;
-                                m[block_counter].h.RLC = RLC[block_counter];
+                                m[block_counter].h.RLC = RLC;
                                 m[block_counter].h.rlc_before = rlc;
                                 m[block_counter].h.r = theta;
 
@@ -282,7 +289,7 @@ namespace nil {
                                 m[block_counter].f.l = msg.size() - block * 136;
                                 m[block_counter].f.hash_hi = hash.first;
                                 m[block_counter].f.hash_lo = hash.second;
-                                m[block_counter].f.RLC = RLC[block_counter];
+                                m[block_counter].f.RLC = RLC;
                                 m[block_counter].f.r = theta;
 
                                 for (std::size_t i = 0; i < state_rows_amount; i++) {
@@ -328,7 +335,7 @@ namespace nil {
                                 m[block_counter].s[3].ch = s16_chunks[1];
                                 m[block_counter].s[4].ch = s16_chunks[3];
 
-                                for (std::size_t i = 1; i < state_rows_amount;i++) {
+                                for (std::size_t i = 1; i < state_rows_amount; i++) {
                                     m[block_counter].s[i].out =
                                         m[block_counter].s[i - 1].XOR *
                                             (integral_type(1) << (48 * 3)) +
@@ -360,8 +367,8 @@ namespace nil {
                                     auto sp1 = pack<FieldType>(
                                         integral_type(padded_msg[msg_idx + 3]) * 256 +
                                         integral_type(padded_msg[msg_idx + 2]));
-                                    TYPE sp0_prev = ( i > 0) ? m[block_counter].c[i - 1].sp0 : 0;
-                                    TYPE sp1_prev = ( i > 0) ? m[block_counter].c[i - 1].sp1 : 0;
+                                    TYPE sp0_prev = (i > 0) ? m[block_counter].c[i - 1].sp0 : 0;
+                                    TYPE sp1_prev = (i > 0) ? m[block_counter].c[i - 1].sp1 : 0;
                                     m[block_counter].c[i].sp0 = sp0;
                                     m[block_counter].c[i].sp1 = sp1;
 
@@ -483,18 +490,22 @@ namespace nil {
                                         swap_bytes<FieldType>(unpack<FieldType>(chunks[2]));
                                     m[block_counter].u[i].ch3 =
                                         swap_bytes<FieldType>(unpack<FieldType>(chunks[3]));
-                                    if ( i == 0 ){
+                                    if (i == 0) {
                                         m[block_counter].u[i].hash_chunk =
                                             m[block_counter].u[i].ch3 * (chunk_factor << (16 * 2)) +
                                             m[block_counter].u[i].ch2 * (chunk_factor << (16)) +
                                             m[block_counter].u[i].ch1 * chunk_factor +
                                             m[block_counter].u[i].ch0;
-                                    }else{
+                                    } else {
                                         m[block_counter].u[i].hash_chunk =
-                                            m[block_counter].u[i - 1].ch3 * (chunk_factor << (16 * 6)) +
-                                            m[block_counter].u[i - 1].ch2 * (chunk_factor << (16 * 5)) +
-                                            m[block_counter].u[i - 1].ch1 * (chunk_factor << (16 * 4)) +
-                                            m[block_counter].u[i - 1].ch0 * (chunk_factor << (16 * 3)) +
+                                            m[block_counter].u[i - 1].ch3 *
+                                                (chunk_factor << (16 * 6)) +
+                                            m[block_counter].u[i - 1].ch2 *
+                                                (chunk_factor << (16 * 5)) +
+                                            m[block_counter].u[i - 1].ch1 *
+                                                (chunk_factor << (16 * 4)) +
+                                            m[block_counter].u[i - 1].ch0 *
+                                                (chunk_factor << (16 * 3)) +
                                             m[block_counter].u[i].ch3 * (chunk_factor << (16 * 2)) +
                                             m[block_counter].u[i].ch2 * (chunk_factor << (16)) +
                                             m[block_counter].u[i].ch1 * chunk_factor +
@@ -521,10 +532,12 @@ namespace nil {
                             }
                         }
                     }
-                    
+
                     row = 0;
+                    std::array<TYPE, 25> inner_state;
+                    std::fill(inner_state.begin(), inner_state.end(), C[0]);
                     for (std::size_t block_counter = 0; block_counter < max_blocks;
-                            block_counter++) {
+                         block_counter++) {
                         allocate(m[block_counter].h.L, 0, row);
                         allocate(m[block_counter].h.RLC, 1, row);
                         allocate(m[block_counter].h.hash_hi, 2, row);
@@ -578,12 +591,19 @@ namespace nil {
                         }
 
                         size_t old_row = row;
-                        if(stage == GenerationStage::CONSTRAINTS){
+                        if (stage == GenerationStage::CONSTRAINTS) {
+                            for (std::size_t i = 0; i < 5; i++) {
+                                copy_constrain(inner_state[5 * i], m[block_counter].s[i].s0);
+                                copy_constrain(inner_state[5 * i + 1], m[block_counter].s[i].s1);
+                                copy_constrain(inner_state[5 * i + 2], m[block_counter].s[i].s2);
+                                copy_constrain(inner_state[5 * i + 3], m[block_counter].s[i].s3);
+                                copy_constrain(inner_state[5 * i + 4], m[block_counter].s[i].s4);
+                            }
                             std::array<TYPE, 17> pmc;
                             for (std::size_t i = 0; i < 17; i++) {
                                 pmc[i] = m[block_counter].c[2 * i + 1].chunk;
                             }
-                            std::array<TYPE, 25> inner_state;
+
                             for (std::size_t i = 0; i < 5; i++) {
                                 inner_state[5 * i] = m[block_counter].s[i].S0;
                                 inner_state[5 * i + 1] = m[block_counter].s[i].S1;
@@ -594,8 +614,8 @@ namespace nil {
                             inner_state[16] = m[block_counter].s[2].out;
 
                             for (std::size_t j = 0; j < 24; ++j) {
-                                typename KECCAK_ROUND::input_type round_input = {inner_state,
-                                                                                    pmc, C[j + 2]};
+                                typename KECCAK_ROUND::input_type round_input = {inner_state, pmc,
+                                                                                 C[j + 2]};
 
                                 if (j == 0) {
                                     context_type ct = context_object.subcontext(
@@ -617,7 +637,7 @@ namespace nil {
                             }
                         }
 
-                        if(row == old_row) row += 6202;  // 6202 = 291 + 23*257 total round rows
+                        if (row == old_row) row += 6202;  // 6202 = 291 + 23*257 total round rows
 
                         for (std::size_t i = 0; i < unsparser_rows_amount; i++) {
                             allocate(m[block_counter].u[i].SP, 0, row);
@@ -631,6 +651,10 @@ namespace nil {
                             allocate(m[block_counter].u[i].ch3, 8, row);
                             allocate(m[block_counter].u[i].hash_chunk, 9, row);
                             row++;
+
+                            if (stage == GenerationStage::CONSTRAINTS) {
+                                copy_constrain(m[block_counter].u[i].SP, inner_state[i]);
+                            }
                         }
 
                         allocate(m[block_counter].f.L, 0, row);
@@ -646,43 +670,52 @@ namespace nil {
                         allocate(m[block_counter].f.is_first, 10, row);
                         allocate(m[block_counter].f.r, 14, row);
                         row++;
-                        std::cout << "final rows: " << row << std::endl;
                     }
 
                     // gates:
-                    
+
                     for (std::size_t block_counter = 0; block_counter < max_blocks;
-                            block_counter++) {
+                         block_counter++) {
                         // Is_first and is_last definition
+                        constrain(m[block_counter].h.is_first * (m[block_counter].h.is_first - 1));
+                        constrain(m[block_counter].h.is_last * (m[block_counter].h.is_last - 1));
                         constrain(m[block_counter].h.is_first *
-                                    (m[block_counter].h.is_first - 1));
-                        constrain(m[block_counter].h.is_last *
-                                    (m[block_counter].h.is_last - 1));
-                        constrain(m[block_counter].h.is_first *
-                                    (m[block_counter].h.L - m[block_counter].h.l));
-                        // lookup constraint m.h.is_last * m.h.l at
-                        // keccak_pack_table/range_check_135
+                                  (m[block_counter].h.L - m[block_counter].h.l));
+                        lookup(m[block_counter].h.is_last * m[block_counter].h.l,
+                               "keccak_pack_table/range_check_135");
 
                         // Hash computation correctness
-                        constrain(
-                            m[block_counter].h.is_last *
-                            (m[block_counter].h.hash_hi - m[block_counter].h.hash_cur_hi));
-                        constrain(
-                            m[block_counter].h.is_last *
-                            (m[block_counter].h.hash_lo - m[block_counter].h.hash_cur_lo));
+                        constrain(m[block_counter].h.is_last *
+                                  (m[block_counter].h.hash_hi - m[block_counter].h.hash_cur_hi));
+                        constrain(m[block_counter].h.is_last *
+                                  (m[block_counter].h.hash_lo - m[block_counter].h.hash_cur_lo));
 
                         // RLC computation correctness
                         constrain(m[block_counter].h.is_first *
-                                    (m[block_counter].h.rlc_before - m[block_counter].h.L));
+                                  (m[block_counter].h.rlc_before - m[block_counter].h.L));
                         constrain(m[block_counter].h.is_last *
-                                    (m[block_counter].h.rlc_after - m[block_counter].h.RLC));
+                                  (m[block_counter].h.rlc_after - m[block_counter].h.RLC));
+
+                        // BT3
+                        copy_constrain(m[block_counter].h.is_first, m[block_counter].f.is_first);
+                        copy_constrain(m[block_counter].h.is_last, m[block_counter].f.is_last);
+                        copy_constrain(m[block_counter].h.L, m[block_counter].f.L);
+                        copy_constrain(m[block_counter].h.l, m[block_counter].f.l);
+                        copy_constrain(m[block_counter].h.hash_hi, m[block_counter].f.hash_hi);
+                        copy_constrain(m[block_counter].h.hash_lo, m[block_counter].f.hash_lo);
+                        copy_constrain(m[block_counter].h.RLC, m[block_counter].f.RLC);
+                        copy_constrain(m[block_counter].h.r, m[block_counter].f.r);
 
                         // copy constraint r with public input
-                        copy_constrain(instance_input.rlc_challenge, m[block_counter].h.r);
-                        copy_constrain(instance_input.rlc_challenge, m[block_counter].f.r);
+                        if (make_links) {
+                            copy_constrain(instance_input.rlc_challenge,
+                                           m[block_counter].h.r);  // HF9
+                        }
 
                         constrain((1 - m[0].h.is_first));
                         constrain((1 - m[0].f.is_first));
+                        lookup(m[block_counter].h.L, "keccak_pack_table/range_check_16bit");
+                        lookup(m[block_counter].h.l, "keccak_pack_table/range_check_16bit");
                         if (block_counter > 0) {
                             constrain((1 - m[block_counter - 1].f.is_last) *
                                       m[block_counter].h.is_first);
@@ -702,10 +735,23 @@ namespace nil {
                                        m[block_counter - 1].f.rlc_before));
                             constrain((1 - m[block_counter].h.is_first) *
                                       (1 - m[block_counter].h.is_last) *
-                                      (m[block_counter].h.l - m[block_counter - 1].f.l - 136));
-                            // lookup constraint m.h.L, m.h.l at
-                            // keccak_pack_table/range_check_16bit
+                                      (m[block_counter - 1].f.l - m[block_counter].h.l - 136));
                         }
+
+                        copy_constrain(m[block_counter].s[3].S1,
+                                       m[block_counter].s[4].out);  // ST11
+                        copy_constrain(m[block_counter].s[0].ch,
+                                       m[block_counter].h.is_last);  // ST8
+                        // ST12
+                        copy_constrain(m[block_counter].s[2].rng, m[block_counter].s[1].ch);
+                        copy_constrain(m[block_counter].s[3].rng, m[block_counter].s[2].XOR);
+                        copy_constrain(m[block_counter].s[4].rng, m[block_counter].s[2].ch);
+
+                        // ST10
+                        copy_constrain(m[block_counter].s[1].rng, m[block_counter].s[3].XOR);
+                        copy_constrain(m[block_counter].s[2].rng, m[block_counter].s[3].ch);
+                        copy_constrain(m[block_counter].s[3].rng, m[block_counter].s[4].XOR);
+                        copy_constrain(m[block_counter].s[4].rng, m[block_counter].s[4].ch);
 
                         // State transitions
                         for (std::size_t i = 0; i < state_rows_amount; i++) {
@@ -727,43 +773,46 @@ namespace nil {
                             if (i > 0) {
                                 constrain(m[block_counter].s[i].is_first -
                                           m[block_counter].s[i - 1].is_first);
-                                constrain(m[block_counter].s[i].out -
-                                          m[block_counter].s[i - 1].XOR *
-                                              (integral_type(1) << (48 * 3)) -
-                                          m[block_counter].s[i - 1].ch *
-                                              (integral_type(1) << (48 * 2)) -
-                                          m[block_counter].s[i].XOR *
-                                              (integral_type(1) << (48)) -
-                                          m[block_counter].s[i].ch);
+                                constrain(
+                                    m[block_counter].s[i].out -
+                                    m[block_counter].s[i - 1].XOR * (integral_type(1) << (48 * 3)) -
+                                    m[block_counter].s[i - 1].ch * (integral_type(1) << (48 * 2)) -
+                                    m[block_counter].s[i].XOR * (integral_type(1) << (48)) -
+                                    m[block_counter].s[i].ch);
                             }
                             // lookup constraint s.rng at keccak_pack_table/sparse_16bit
-                            // lookup(m[block_counter].s[i].rng,
-                            // "keccak_pack_table/sparse_16bit");
+                            lookup(m[block_counter].s[i].rng, "keccak_pack_table/sparse_16bit");
                         }
                         // XOR constraints
-                        constrain((m[block_counter].s[1].rng - sparse_x80 -
-                                    m[block_counter].s[0].rng) *
-                                    (m[block_counter].s[0].rng - sparse_x7f +
-                                    m[block_counter].s[1].rng));
-                        constrain((m[block_counter].s[1].rng - sparse_x7f +
-                                   m[block_counter].s[0].rng) *
-                                  (m[block_counter].s[0].XOR + sparse_x80 -
-                                   m[block_counter].s[1].rng));
-                        constrain((m[block_counter].s[1].rng - sparse_x80 -
-                                    m[block_counter].s[0].rng) *
-                                    (m[block_counter].s[0].XOR - sparse_x80 -
-                                    m[block_counter].s[1].rng));
                         constrain(
-                            (m[block_counter].s[1].XOR -
-                                m[block_counter].s[0].ch * m[block_counter].s[0].XOR -
-                                (1 - m[block_counter].s[0].ch) * m[block_counter].s[1].rng));
-                        
+                            (m[block_counter].s[1].rng - sparse_x80 - m[block_counter].s[0].rng) *
+                            (m[block_counter].s[0].rng - sparse_x7f + m[block_counter].s[1].rng));
+                        constrain(
+                            (m[block_counter].s[1].rng - sparse_x7f + m[block_counter].s[0].rng) *
+                            (m[block_counter].s[0].XOR + sparse_x80 - m[block_counter].s[1].rng));
+                        constrain(
+                            (m[block_counter].s[1].rng - sparse_x80 - m[block_counter].s[0].rng) *
+                            (m[block_counter].s[0].XOR - sparse_x80 - m[block_counter].s[1].rng));
+                        constrain((m[block_counter].s[1].XOR -
+                                   m[block_counter].s[0].ch * m[block_counter].s[0].XOR -
+                                   (1 - m[block_counter].s[0].ch) * m[block_counter].s[1].rng));
+
                         // Chunk constraints
                         TYPE chunk_factor = TYPE(integral_type(1) << 48);
-                        
+
+                        copy_constrain(m[block_counter].c[0].l_before,
+                                       m[block_counter].h.l);  // LC2
+                        copy_constrain(m[block_counter].c[0].rlc_before,
+                                       m[block_counter].h.rlc_before);  // RLC1
+                        copy_constrain(m[block_counter].c[chunks_rows_amount - 1].rlc,
+                                       m[block_counter].h.rlc_after);  // RLC2
                         for (std::size_t i = 0; i < chunks_rows_amount; i++) {
-                            auto diff =
-                                m[block_counter].c[i].l_before - m[block_counter].c[i].l;
+                            if (make_links) {
+                                copy_constrain(instance_input.rlc_challenge,
+                                               m[block_counter].c[i].r);  // RLC3
+                            }
+
+                            auto diff = m[block_counter].c[i].l_before - m[block_counter].c[i].l;
                             constrain(diff * (diff - 1) * (diff - 2) * (diff - 3) * (diff - 4));
                             constrain(diff * (diff - 1) * (diff - 2) * (diff - 4) *
                                       (m[block_counter].c[i].b3 - 1));
@@ -790,19 +839,20 @@ namespace nil {
                                       (diff - 2) * (diff - 3) * (diff - 4) *
                                       m[block_counter].c[i].b3);
                             if (i > 0) {
+                                copy_constrain(m[block_counter].c[i].first_in_block, C[0]);
+
                                 constrain(m[block_counter].c[i].chunk -
-                                          m[block_counter].c[i].sp1 * chunk_factor *
-                                              chunk_factor * chunk_factor -
-                                          m[block_counter].c[i].sp0 * chunk_factor *
+                                          m[block_counter].c[i].sp1 * chunk_factor * chunk_factor *
                                               chunk_factor -
+                                          m[block_counter].c[i].sp0 * chunk_factor * chunk_factor -
                                           m[block_counter].c[i - 1].sp1 * chunk_factor -
                                           m[block_counter].c[i - 1].sp0);
 
                                 auto diff_prev = m[block_counter].c[i - 1].l_before -
                                                  m[block_counter].c[i - 1].l;
-                                constrain((1 - m[block_counter].c[i].first_in_block) *
-                                          (m[block_counter].c[i].l_before -
-                                           m[block_counter].c[i - 1].l));
+                                constrain(
+                                    (1 - m[block_counter].c[i].first_in_block) *
+                                    (m[block_counter].c[i].l_before - m[block_counter].c[i - 1].l));
                                 constrain((1 - m[block_counter].c[i].first_in_block) * diff *
                                           (diff_prev - 4));
                                 constrain((1 - m[block_counter].c[i].first_in_block) *
@@ -822,39 +872,95 @@ namespace nil {
                                           (diff_prev - diff - 2) * (diff_prev - diff - 3) *
                                           m[block_counter].c[i].b3);
 
-                                constrain((1-m[block_counter].c[i].first_in_block) * (m[block_counter].c[i].rlc_before - m[block_counter].c[i-1].rlc));
+                                constrain((1 - m[block_counter].c[i].first_in_block) *
+                                          (m[block_counter].c[i].rlc_before -
+                                           m[block_counter].c[i - 1].rlc));
+                            } else {
+                                copy_constrain(m[block_counter].c[i].first_in_block, C[1]);
                             }
 
-                            constrain(m[block_counter].c[i].r2 - m[block_counter].c[i].r * m[block_counter].c[i].r);
-                            constrain(m[block_counter].c[i].r4 - m[block_counter].c[i].r2 * m[block_counter].c[i].r2);
-                            constrain(diff*(diff-1)*(diff-2)*(diff-3)*(m[block_counter].c[i].rlc - 
-                                m[block_counter].c[i].r4 * m[block_counter].c[i].rlc_before - 
-                                m[block_counter].c[i].r2*m[block_counter].c[i].r*m[block_counter].c[i].b0 -
-                                m[block_counter].c[i].r2 * m[block_counter].c[i].b1 - m[block_counter].c[i].r * m[block_counter].c[i].b2 - m[block_counter].c[i].b3));
+                            lookup(m[block_counter].c[i].b0, "keccak_pack_table/range_check");
+                            lookup(m[block_counter].c[i].b1, "keccak_pack_table/range_check");
+                            lookup(m[block_counter].c[i].b2, "keccak_pack_table/range_check");
+                            lookup(m[block_counter].c[i].b3, "keccak_pack_table/range_check");
+                            lookup({m[block_counter].c[i].b1 * 256 + m[block_counter].c[i].b0,
+                                    m[block_counter].c[i].sp0},
+                                   "keccak_pack_table/extended");
+                            lookup({m[block_counter].c[i].b3 * 256 + m[block_counter].c[i].b2,
+                                    m[block_counter].c[i].sp1},
+                                   "keccak_pack_table/extended");
 
-                            constrain(diff*(diff-1)*(diff-2)*(diff-4)*(m[block_counter].c[i].rlc - 
-                                m[block_counter].c[i].r2 * m[block_counter].c[i].r * m[block_counter].c[i].rlc_before - 
-                                m[block_counter].c[i].r2 * m[block_counter].c[i].b0 -
-                                m[block_counter].c[i].r * m[block_counter].c[i].b1 - m[block_counter].c[i].b2));
+                            constrain(m[block_counter].c[i].r2 -
+                                      m[block_counter].c[i].r * m[block_counter].c[i].r);
+                            constrain(m[block_counter].c[i].r4 -
+                                      m[block_counter].c[i].r2 * m[block_counter].c[i].r2);
+                            constrain(diff * (diff - 1) * (diff - 2) * (diff - 3) *
+                                      (m[block_counter].c[i].rlc -
+                                       m[block_counter].c[i].r4 * m[block_counter].c[i].rlc_before -
+                                       m[block_counter].c[i].r2 * m[block_counter].c[i].r *
+                                           m[block_counter].c[i].b0 -
+                                       m[block_counter].c[i].r2 * m[block_counter].c[i].b1 -
+                                       m[block_counter].c[i].r * m[block_counter].c[i].b2 -
+                                       m[block_counter].c[i].b3));
 
-                            constrain(diff*(diff-1)*(diff-3)*(diff-4)*(m[block_counter].c[i].rlc - 
-                                m[block_counter].c[i].r2 * m[block_counter].c[i].rlc_before - 
-                                m[block_counter].c[i].r * m[block_counter].c[i].b0 -m[block_counter].c[i].b1));
+                            constrain(diff * (diff - 1) * (diff - 2) * (diff - 4) *
+                                      (m[block_counter].c[i].rlc -
+                                       m[block_counter].c[i].r2 * m[block_counter].c[i].r *
+                                           m[block_counter].c[i].rlc_before -
+                                       m[block_counter].c[i].r2 * m[block_counter].c[i].b0 -
+                                       m[block_counter].c[i].r * m[block_counter].c[i].b1 -
+                                       m[block_counter].c[i].b2));
 
-                            constrain(diff*(diff-2)*(diff-3)*(diff-4)*(m[block_counter].c[i].rlc - 
-                                m[block_counter].c[i].r * m[block_counter].c[i].rlc_before - m[block_counter].c[i].b0));
+                            constrain(diff * (diff - 1) * (diff - 3) * (diff - 4) *
+                                      (m[block_counter].c[i].rlc -
+                                       m[block_counter].c[i].r2 * m[block_counter].c[i].rlc_before -
+                                       m[block_counter].c[i].r * m[block_counter].c[i].b0 -
+                                       m[block_counter].c[i].b1));
 
-                            constrain((diff-1)*(diff-2)*(diff-3)*(diff-4)*(m[block_counter].c[i].rlc - m[block_counter].c[i].rlc_before));
+                            constrain(diff * (diff - 2) * (diff - 3) * (diff - 4) *
+                                      (m[block_counter].c[i].rlc -
+                                       m[block_counter].c[i].r * m[block_counter].c[i].rlc_before -
+                                       m[block_counter].c[i].b0));
+
+                            constrain(
+                                (diff - 1) * (diff - 2) * (diff - 3) * (diff - 4) *
+                                (m[block_counter].c[i].rlc - m[block_counter].c[i].rlc_before));
                         }
 
                         // Unparser constraints
-                        //TYPE sparsed_factor = TYPE(integral_type(1) << 48);
-                        TYPE ufactor =  TYPE(integral_type(1) << 16);
-                        for(std::size_t i = 0; i < unsparser_rows_amount; i++){
-                            constrain(m[block_counter].u[i].SP - m[block_counter].u[i].sp0 * (integral_type(1) << (48*3)) - m[block_counter].u[i].sp1 * (integral_type(1) << (48*2)) - m[block_counter].u[i].sp2 * (integral_type(1) << 48) - m[block_counter].u[i].sp3);
+                        copy_constrain(m[block_counter].h.hash_cur_hi,
+                                       m[block_counter].u[1].hash_chunk);  // UN8
+                        copy_constrain(m[block_counter].h.hash_cur_lo,
+                                       m[block_counter].u[3].hash_chunk);  // UN8
+                        integral_type sparsed_factor = (integral_type(1) << 48);
+                        integral_type ufactor = (integral_type(1) << 16);
+                        for (std::size_t i = 0; i < unsparser_rows_amount; i++) {
+                            constrain(m[block_counter].u[i].SP -
+                                      m[block_counter].u[i].sp0 * (sparsed_factor << 96) -
+                                      m[block_counter].u[i].sp1 * (sparsed_factor << 48) -
+                                      m[block_counter].u[i].sp2 * sparsed_factor -
+                                      m[block_counter].u[i].sp3);
+                            if (i > 0) {
+                                constrain(m[block_counter].u[i].hash_chunk -
+                                          m[block_counter].u[i - 1].ch3 * (ufactor << (16 * 6)) -
+                                          m[block_counter].u[i - 1].ch2 * (ufactor << (16 * 5)) -
+                                          m[block_counter].u[i - 1].ch1 * (ufactor << (16 * 4)) -
+                                          m[block_counter].u[i - 1].ch0 * (ufactor << (16 * 3)) -
+                                          m[block_counter].u[i].ch3 * (ufactor << (16 * 2)) -
+                                          m[block_counter].u[i].ch2 * (ufactor << (16)) -
+                                          m[block_counter].u[i].ch1 * ufactor -
+                                          m[block_counter].u[i].ch0);
+                            }
+                            lookup({m[block_counter].u[i].ch0, m[block_counter].u[i].sp0},
+                                   "keccak_pack_table/extended_swap");
+                            lookup({m[block_counter].u[i].ch1, m[block_counter].u[i].sp1},
+                                   "keccak_pack_table/extended_swap");
+                            lookup({m[block_counter].u[i].ch2, m[block_counter].u[i].sp2},
+                                   "keccak_pack_table/extended_swap");
+                            lookup({m[block_counter].u[i].ch3, m[block_counter].u[i].sp3},
+                                   "keccak_pack_table/extended_swap");
                         }
                     }
-
                 }
             };
         }  // namespace bbf

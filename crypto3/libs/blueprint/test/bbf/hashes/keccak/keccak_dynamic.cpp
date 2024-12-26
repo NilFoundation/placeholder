@@ -87,70 +87,70 @@ BOOST_AUTO_TEST_SUITE(bn254_test_suite)
 
 BOOST_AUTO_TEST_CASE(keccak_1_short_message) {
     nil::crypto3::test_tools::random_test_initializer<field_type> rnd;
-    test_keccaks<field_type, 1>({{{0},calculate_hash<field_type>({0})}}, rnd);
+    test_keccaks<field_type, 2>({{{0},calculate_hash<field_type>({0})}}, rnd);
 }
 
 BOOST_AUTO_TEST_CASE(keccak_2_short_messages) {
     nil::crypto3::test_tools::random_test_initializer<field_type> rnd;
-    test_keccaks<field_type, 2>({{{0, 0},calculate_hash<field_type>({0, 0})}, {{1,2,3,4,5}, calculate_hash<field_type>({1,2,3,4,5})}}, rnd);
+    test_keccaks<field_type, 10>({{{0, 0},calculate_hash<field_type>({0, 0})}, {{1,2,3,4,5}, calculate_hash<field_type>({1,2,3,4,5})}}, rnd);
 }
-// BOOST_AUTO_TEST_CASE(keccak_1_N_message) {
-//     nil::crypto3::test_tools::random_test_initializer<field_type> rnd;
-//     std::size_t N = 5;
-//     for (std::size_t i = 0; i < std::size_t(boost::unit_test::framework::master_test_suite().argc - 1); i++) {
-//         std:: cout << boost::unit_test::framework::master_test_suite().argv[i] << std::endl;
-//         if (std::string(boost::unit_test::framework::master_test_suite().argv[i]) == "--n") {
-//             if (std::regex_match(boost::unit_test::framework::master_test_suite().argv[i + 1],
-//                                 std::regex(("((\\+|-)?[[:digit:]]+)(\\.(([[:digit:]]+)?))?")))) {
-//                 N = atoi(boost::unit_test::framework::master_test_suite().argv[i + 1]);
-//                 break;
-//             }
-//         }
-//     }
-//     std::vector<std::uint8_t> msg(N);
-//     for( std::size_t i = 0; i < N; i++ ){ msg[i] = (rnd.generic_random_engine()) % 256; }
-//     test_keccaks<field_type>({{msg,calculate_hash<field_type>(msg)}}, rnd);
-// }
-// BOOST_AUTO_TEST_CASE(keccak_1_N_zeroes) {
-//     nil::crypto3::test_tools::random_test_initializer<field_type> rnd;
-//     std::size_t N = 5;
-//     for (std::size_t i = 0; i < std::size_t(boost::unit_test::framework::master_test_suite().argc - 1); i++) {
-//         std:: cout << boost::unit_test::framework::master_test_suite().argv[i] << std::endl;
-//         if (std::string(boost::unit_test::framework::master_test_suite().argv[i]) == "--n") {
-//             if (std::regex_match(boost::unit_test::framework::master_test_suite().argv[i + 1],
-//                                 std::regex(("((\\+|-)?[[:digit:]]+)(\\.(([[:digit:]]+)?))?")))) {
-//                 N = atoi(boost::unit_test::framework::master_test_suite().argv[i + 1]);
-//                 break;
-//             }
-//         }
-//     }
-//     std::vector<std::uint8_t> msg(N, 0x0);
-//     test_keccaks<field_type>({{msg,calculate_hash<field_type>(msg)}}, rnd);
-// }
-// BOOST_AUTO_TEST_CASE(keccak_1_long_message) {
-//     nil::crypto3::test_tools::random_test_initializer<field_type> rnd;
-//     std::vector<uint8_t> msg(500, 5);
-//     test_keccaks<field_type>({{msg,calculate_hash<field_type>(msg)}}, rnd);
-// }
-// BOOST_AUTO_TEST_CASE(keccak_2_long_messages) {
-//     nil::crypto3::test_tools::random_test_initializer<field_type> rnd;
-//     std::vector<uint8_t> msg1(136, 6);
-//     std::vector<uint8_t> msg2(277, 7);
-//     test_keccaks<field_type>({{msg1,calculate_hash<field_type>(msg1)}, {msg2,calculate_hash<field_type>(msg2)}}, rnd);
-// }
+BOOST_AUTO_TEST_CASE(keccak_1_N_message) {
+    nil::crypto3::test_tools::random_test_initializer<field_type> rnd;
+    std::size_t N = 5;
+    for (std::size_t i = 0; i < std::size_t(boost::unit_test::framework::master_test_suite().argc - 1); i++) {
+        std:: cout << boost::unit_test::framework::master_test_suite().argv[i] << std::endl;
+        if (std::string(boost::unit_test::framework::master_test_suite().argv[i]) == "--n") {
+            if (std::regex_match(boost::unit_test::framework::master_test_suite().argv[i + 1],
+                                std::regex(("((\\+|-)?[[:digit:]]+)(\\.(([[:digit:]]+)?))?")))) {
+                N = atoi(boost::unit_test::framework::master_test_suite().argv[i + 1]);
+                break;
+            }
+        }
+    }
+    std::vector<std::uint8_t> msg(N);
+    for( std::size_t i = 0; i < N; i++ ){ msg[i] = (rnd.generic_random_engine()) % 256; }
+    test_keccaks<field_type>({{msg,calculate_hash<field_type>(msg)}}, rnd);
+}
+BOOST_AUTO_TEST_CASE(keccak_1_N_zeroes) {
+    nil::crypto3::test_tools::random_test_initializer<field_type> rnd;
+    std::size_t N = 5;
+    for (std::size_t i = 0; i < std::size_t(boost::unit_test::framework::master_test_suite().argc - 1); i++) {
+        std:: cout << boost::unit_test::framework::master_test_suite().argv[i] << std::endl;
+        if (std::string(boost::unit_test::framework::master_test_suite().argv[i]) == "--n") {
+            if (std::regex_match(boost::unit_test::framework::master_test_suite().argv[i + 1],
+                                std::regex(("((\\+|-)?[[:digit:]]+)(\\.(([[:digit:]]+)?))?")))) {
+                N = atoi(boost::unit_test::framework::master_test_suite().argv[i + 1]);
+                break;
+            }
+        }
+    }
+    std::vector<std::uint8_t> msg(N, 0x0);
+    test_keccaks<field_type>({{msg,calculate_hash<field_type>(msg)}}, rnd);
+}
+BOOST_AUTO_TEST_CASE(keccak_1_long_message) {
+    nil::crypto3::test_tools::random_test_initializer<field_type> rnd;
+    std::vector<uint8_t> msg(500, 5);
+    test_keccaks<field_type>({{msg,calculate_hash<field_type>(msg)}}, rnd);
+}
+BOOST_AUTO_TEST_CASE(keccak_2_long_messages) {
+    nil::crypto3::test_tools::random_test_initializer<field_type> rnd;
+    std::vector<uint8_t> msg1(136, 6);
+    std::vector<uint8_t> msg2(277, 7);
+    test_keccaks<field_type>({{msg1,calculate_hash<field_type>(msg1)}, {msg2,calculate_hash<field_type>(msg2)}}, rnd);
+}
 
-// BOOST_AUTO_TEST_CASE(keccak_test_hello_world){
-//     nil::crypto3::test_tools::random_test_initializer<field_type> rnd;
-//     std::vector<std::uint8_t> msg = {
-//         0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x33,
-//         0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x44, 0x44, 0x44, 0x44, 0x44, 0x44, 0x44, 0x44, 0x55,
-//         0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x77,
-//         0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x88, 0x88, 0x88, 0x88, 0x88, 0x88, 0x88, 0x88, 0x99,
-//         0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xbb,
-//         0xbb, 0xbb, 0xbb, 0xbb, 0xbb, 0xbb, 0xbb, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xdd,
-//         0xdd, 0xdd, 0xdd, 0xdd, 0xdd, 0xdd, 0xdd, 0xee, 0xee, 0xee, 0xee, 0xee, 0xee, 0xee, 0xee, 0xff,
-//         0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xab, 0xab, 0xab, 0xab, 0xab, 0xab, 0xab, 0xab, 0x68,
-//         0x65, 0x6c, 0xff, 0xff, 0xff, 0xff, 0xff, 0x00, 0x6c, 0x6f, 0x20, 0x77, 0x6f, 0x72, 0x6c};
-//     test_keccaks<field_type>({{msg, calculate_hash<field_type>(msg)}}, rnd);
-// }
+BOOST_AUTO_TEST_CASE(keccak_test_hello_world){
+    nil::crypto3::test_tools::random_test_initializer<field_type> rnd;
+    std::vector<std::uint8_t> msg = {
+        0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x33,
+        0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x44, 0x44, 0x44, 0x44, 0x44, 0x44, 0x44, 0x44, 0x55,
+        0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x77,
+        0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x77, 0x88, 0x88, 0x88, 0x88, 0x88, 0x88, 0x88, 0x88, 0x99,
+        0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xbb,
+        0xbb, 0xbb, 0xbb, 0xbb, 0xbb, 0xbb, 0xbb, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xdd,
+        0xdd, 0xdd, 0xdd, 0xdd, 0xdd, 0xdd, 0xdd, 0xee, 0xee, 0xee, 0xee, 0xee, 0xee, 0xee, 0xee, 0xff,
+        0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xab, 0xab, 0xab, 0xab, 0xab, 0xab, 0xab, 0xab, 0x68,
+        0x65, 0x6c, 0xff, 0xff, 0xff, 0xff, 0xff, 0x00, 0x6c, 0x6f, 0x20, 0x77, 0x6f, 0x72, 0x6c};
+    test_keccaks<field_type>({{msg, calculate_hash<field_type>(msg)}}, rnd);
+}
 BOOST_AUTO_TEST_SUITE_END()
