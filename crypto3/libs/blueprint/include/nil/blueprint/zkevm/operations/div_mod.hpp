@@ -278,14 +278,11 @@ namespace nil {
                 using word_type = typename zkevm_stack::word_type;
                 word_type a = machine.stack_top();
                 word_type b = machine.stack_top(1);
-                using integral_type = nil::crypto3::multiprecision::big_uint<257>;
-                integral_type r_integral = b != 0u ? integral_type(a) / integral_type(b) : 0u;
-                word_type r = r_integral;
-                word_type q = b != 0u ? integral_type(a) % integral_type(b) : a;
-                word_type q_out = b != 0u ? q : 0; // according to EVM spec a % 0 = 0
+                word_type r = b != 0u ? a / b : 0u;
+                word_type q = b != 0u ? a % b : a;
+                word_type q_out = b != 0u ? q : 0u;  // according to EVM spec a % 0 = 0
 
-                bool t_last = integral_type(q) < integral_type(b);
-                word_type v = word_type(integral_type(q) + integral_type(t_last)*zkevm_modulus - integral_type(b));
+                word_type v = wrapping_sub(q, b);
 
                 word_type result = is_div ? r : q_out;
 

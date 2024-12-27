@@ -223,16 +223,15 @@ namespace nil {
 
             void generate_assignments(zkevm_table_type &zkevm_table, const zkevm_machine_interface &machine) override {
                 using word_type = typename zkevm_stack::word_type;
-                using integral_type = nil::crypto3::multiprecision::big_uint<257>;
 
                 word_type a = machine.stack_top();
                 word_type input_b = machine.stack_top(1);
 
-                int shift = (integral_type(input_b) < 256) ? int(integral_type(input_b)) : 256;
+                int shift = (input_b < 256) ? int(input_b) : 256;
 
-                word_type result = word_type(integral_type(a) << shift);
+                word_type result = a << shift;
 
-                word_type b = word_type(integral_type(1) << shift);
+                word_type b = word_type(1) << shift;
 
                 const std::vector<value_type> input_b_chunks = zkevm_word_to_field_element<BlueprintFieldType>(input_b);
                 const std::vector<value_type> a_chunks = zkevm_word_to_field_element<BlueprintFieldType>(a);
@@ -240,18 +239,18 @@ namespace nil {
                 const std::vector<value_type> r_chunks = zkevm_word_to_field_element<BlueprintFieldType>(result);
                 const std::size_t chunk_amount = a_chunks.size();
 
-                value_type b0p   = integral_type(input_b) % 16,
-                           b0pp  = (integral_type(input_b) / 16) % 16,
-                           b0ppp = (integral_type(input_b) % 65536) / 256,
-                           I1    = b0ppp.is_zero() ? 0 : b0ppp.inversed();
+                value_type b0p = input_b % 16, b0pp = (input_b / 16) % 16,
+                           b0ppp = (input_b % 65536) / 256,
+                           I1 = b0ppp.is_zero() ? 0 : b0ppp.inversed();
 
                 value_type sum_b = 0;
                 for(std::size_t i = 1; i < chunk_amount; i++) {
                     sum_b += input_b_chunks[i];
                 }
                 value_type I2 = sum_b.is_zero() ? 0 : sum_b.inversed(),
-                           z = (1 - b0ppp * I1) * (1 - sum_b * I2), // z is zero if input_b >= 256, otherwise it is 1
-                           tp = z * (static_cast<unsigned int>(1) << int(integral_type(input_b) % 16));
+                           z = (1 - b0ppp * I1) *
+                               (1 - sum_b * I2),  // z is zero if input_b >= 256, otherwise it is 1
+                    tp = z * (static_cast<unsigned int>(1) << int(input_b % 16));
 
                 // note that we don't assign 64-chunks for a/b, as we can build them from 16-chunks with constraints
                 // under the same logic we only assign the 16-bit chunks for carries

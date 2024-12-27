@@ -1,3 +1,11 @@
+//---------------------------------------------------------------------------//
+// Copyright (c) 2024 Andrey Nefedov <ioxid@nil.foundation>
+//
+// Distributed under the Boost Software License, Version 1.0
+// See accompanying file LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt
+//---------------------------------------------------------------------------//
+
 #pragma once
 
 #include <bit>
@@ -49,7 +57,7 @@ namespace nil::crypto3::multiprecision {
                 }
             }
             if (bits > Bits) {
-                throw std::invalid_argument("not enough bits to store literal");
+                throw std::range_error("not enough bits to store literal");
             }
             return result;
         }
