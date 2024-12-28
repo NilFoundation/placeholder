@@ -136,8 +136,6 @@ namespace nil {
                                     bool is_div)
                     : generic_component<FieldType, stage>(context_object, false),
                       res(chunk_amount) {
-                    using integral_type = nil::crypto3::multiprecision::big_uint<257>;
-
                     std::vector<TYPE> c_1_chunks(4);
                     TYPE c_2;
                     TYPE carry[3][carry_amount + 1];
@@ -197,36 +195,21 @@ namespace nil {
                         zkevm_word_type a = current_state.stack_top();
                         zkevm_word_type b_input = current_state.stack_top(1);
 
-                        bool overflow = (integral_type(a) == zkevm_modulus - 1) &&
-                                        (integral_type(b_input) == zkevm_modulus / 2);
+                        bool overflow = (a == neg_one) && (b_input == min_neg);
                         zkevm_word_type b = overflow ? 1 : b_input;
                         is_overflow = overflow;
 
-                        auto is_negative = [](zkevm_word_type x) {
-                            return (integral_type(x) > zkevm_modulus / 2 - 1);
-                        };
-                        auto negate_word = [](zkevm_word_type x) {
-                            return zkevm_word_type(zkevm_modulus - integral_type(x));
-                        };
-                        auto abs_word = [&is_negative, &negate_word](zkevm_word_type x) {
-                            return is_negative(x) ? negate_word(x) : x;
-                        };
-
                         zkevm_word_type a_abs = abs_word(a), b_abs = abs_word(b);
 
-                        integral_type r_integral =
-                            (b != 0u) ? integral_type(a_abs) / integral_type(b_abs) : 0u;
-                        zkevm_word_type r_abs = r_integral,
-                                        q_abs = b != 0u ? integral_type(a_abs) % integral_type(b_abs) : a_abs,
+                        zkevm_word_type r_abs = b != 0u ? a_abs / b_abs : 0u;
+                        zkevm_word_type q_abs = b != 0u ? a_abs % b_abs : a_abs,
                                         r = (is_negative(a) == is_negative(b)) ? r_abs
                                                                                : negate_word(r_abs),
                                         q = is_negative(a) ? negate_word(q_abs) : q_abs;
 
-                        zkevm_word_type q_out = b != 0u ? q : 0;  // according to EVM spec a % 0 = 0
-                        bool t_last = integral_type(q_abs) < integral_type(b_abs);
-                        zkevm_word_type v = zkevm_word_type(integral_type(q_abs) +
-                                                            integral_type(t_last) * zkevm_modulus -
-                                                            integral_type(b_abs));
+                        zkevm_word_type q_out =
+                            b != 0u ? q : 0u;  // according to EVM spec a % 0 = 0
+                        zkevm_word_type v = wrapping_sub(q, b);
                         zkevm_word_type result = is_div ? r : q_out;
 
                         a_chunks = zkevm_word_to_field_element<FieldType>(a);
@@ -298,9 +281,9 @@ namespace nil {
 
                         // compute signs of a,b and q
                         // x + 2^15 = x_aux + 2^16*x_neg
-                        biggest_a_chunk = integral_type(a) >> (256 - 16);
-                        biggest_b_chunk = integral_type(b) >> (256 - 16);
-                        biggest_q_chunk = integral_type(q) >> (256 - 16);
+                        biggest_a_chunk = a >> (256 - 16);
+                        biggest_b_chunk = b >> (256 - 16);
+                        biggest_q_chunk = q >> (256 - 16);
 
                         a_aux = (biggest_a_chunk > two_15 - 1) ? (biggest_a_chunk - two_15)
                                                                : biggest_a_chunk + two_15;

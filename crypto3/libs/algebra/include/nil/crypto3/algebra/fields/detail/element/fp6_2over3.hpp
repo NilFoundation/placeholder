@@ -26,6 +26,8 @@
 #ifndef CRYPTO3_ALGEBRA_FIELDS_ELEMENT_FP6_2OVER3_HPP
 #define CRYPTO3_ALGEBRA_FIELDS_ELEMENT_FP6_2OVER3_HPP
 
+#include <nil/crypto3/multiprecision/wnaf.hpp>
+
 #include <nil/crypto3/algebra/fields/detail/exponentiation.hpp>
 #include <nil/crypto3/algebra/fields/detail/element/operations.hpp>
 

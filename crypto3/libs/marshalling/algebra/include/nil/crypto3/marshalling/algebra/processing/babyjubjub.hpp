@@ -145,8 +145,15 @@ namespace nil {
                                           (params_type::bit_length() / 8 + (params_type::bit_length() % 8 ? 1 : 0)),
                                       "wrong size");
 
-                        base_integral_type y =
-                            multiprecision::processing::read_data<params_type::bit_length(), base_integral_type, endianness>(iter);
+                        static_assert(
+                            std::is_same_v<base_integral_type,
+                                           nil::crypto3::multiprecision::big_uint<254>>);
+                        static_assert(params_type::bit_length() == 254);
+
+                        auto y_raw = multiprecision::processing::read_data<
+                            256, nil::crypto3::multiprecision::big_uint<256>, endianness>(
+                            iter);
+                        base_integral_type y = y_raw.template truncate<254>();
                         bool sign = *(iter + encoded_size - 1) & (1 << 6);
 
                         auto decoded_point_affine =

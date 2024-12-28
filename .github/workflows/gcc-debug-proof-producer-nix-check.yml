@@ -19,5 +19,4 @@ jobs:
 
       - name: Build and run proof-producer in debug mode
         run: |
-          nix run .#multi-threaded  -- --help
-          nix run .#single-threaded -- --help
+          nix build .#packages.x86_64-linux.proof-producer-debug-tests

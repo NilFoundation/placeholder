@@ -133,7 +133,7 @@ namespace nil {
                 using word_type = typename zkevm_stack::word_type;
                 word_type a = machine.stack_top();
                 word_type b = machine.stack_top(1);
-                word_type result = is_add ? a + b : a - b;
+                word_type result = is_add ? wrapping_add(a, b) : wrapping_sub(a, b);
                 // TODO: after memory logic would become more complicated here
                 if (!is_add) {
                     std::swap(result, a);

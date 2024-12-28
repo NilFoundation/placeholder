@@ -109,8 +109,8 @@ word_type random_word_type(nil::crypto3::random::algebraic_engine<FieldType> &g)
 }
 
 word_type exp_by_squaring(word_type a, word_type n) {
-    if (n == 0x00_big_uint257) return 1;
-    if (n == 0x01_big_uint257) return a;
+    if (n == 0x00_big_uint256) return 1;
+    if (n == 0x01_big_uint256) return a;
 
     word_type exp = exp_by_squaring(a, n >> 1);
     word_type exp2 = exp * exp;
@@ -128,15 +128,12 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_exp_wrapper_test) {
     std::size_t max_exps = 2;
     std::vector<std::array<word_type, 3>> inputs;
 
-    word_type a1 =
-        0xa00e9bd49962d7b217963a3daed6f4591c2bdbd41562d5f1446dc932ac9e1975_big_uint257;
-    word_type d1 =
-        0xacab9c07aa7d08b7652965f01307cf5a3ed09cbf08325c10af9d2029e918ac7d_big_uint257;
-    word_type A1 =
-        0x22fcc8f007a53fb4d231a691075afd85980214380e16a5994ff90de783c28b85_big_uint257;
-    word_type a2 = 0x2_big_uint257;
-    word_type d2 = 0x100_big_uint257;
-    word_type A2 = 0x0_big_uint257;
+    word_type a1 = 0xa00e9bd49962d7b217963a3daed6f4591c2bdbd41562d5f1446dc932ac9e1975_big_uint256;
+    word_type d1 = 0xacab9c07aa7d08b7652965f01307cf5a3ed09cbf08325c10af9d2029e918ac7d_big_uint256;
+    word_type A1 = 0x22fcc8f007a53fb4d231a691075afd85980214380e16a5994ff90de783c28b85_big_uint256;
+    word_type a2 = 0x2_big_uint256;
+    word_type d2 = 0x100_big_uint256;
+    word_type A2 = 0x0_big_uint256;
 
     inputs.push_back({a1, d1, A1});
     inputs.push_back({a2, d2, A2});

@@ -29,9 +29,9 @@ namespace nil {
 
             // Convert protobuf Uint256 to zkevm_word_type
             [[nodiscard]] blueprint::zkevm_word_type proto_uint256_to_zkevm_word(const executionproofs::Uint256& pb_uint) {
-                blueprint::zkevm_word_integral_type result = 0;
+                blueprint::zkevm_word_type result = 0;
                 for (size_t i = 0; i < pb_uint.word_parts_size() && i < 4; i++) {
-                    result |= (static_cast<blueprint::zkevm_word_integral_type>(pb_uint.word_parts(i)) << (i * 64));
+                    result |= (static_cast<blueprint::zkevm_word_type>(pb_uint.word_parts(i)) << (i * 64));
                 }
                 return result;
             }

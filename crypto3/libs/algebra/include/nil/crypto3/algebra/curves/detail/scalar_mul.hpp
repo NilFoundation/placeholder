@@ -31,6 +31,7 @@
 #include <nil/crypto3/algebra/type_traits.hpp>
 
 #include <nil/crypto3/multiprecision/big_uint.hpp>
+#include <nil/crypto3/multiprecision/wnaf.hpp>
 
 #include <nil/crypto3/algebra/wnaf.hpp>
 

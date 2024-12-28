@@ -47,12 +47,11 @@ namespace nil {
                 using generic_component<FieldType, stage>::lookup_table;
             public:
                 using typename generic_component<FieldType,stage>::TYPE;
-                using integral_type = zkevm_word_integral_type;
 
                 zkevm_add_sub_bbf(context_type &context_object, const opcode_input_type<FieldType, stage> &current_state, bool is_add):
                     generic_component<FieldType,stage>(context_object, false)
                 {
-                    integral_type two_128 = integral_type(1) << 128;
+                    zkevm_word_type two_128 = zkevm_word_type(1) << 128;
 
                     std::vector<TYPE> A(16);
                     std::vector<TYPE> B(16);
@@ -63,10 +62,11 @@ namespace nil {
                     if constexpr( stage == GenerationStage::ASSIGNMENT ){
                         auto a = w_to_16(current_state.stack_top());
                         auto b = w_to_16(current_state.stack_top(1));
-                        auto s =
-                            is_add ?
-                            w_to_16(current_state.stack_top() + current_state.stack_top(1)):
-                            w_to_16(current_state.stack_top() - current_state.stack_top(1));
+                        auto s = is_add
+                                     ? w_to_16(wrapping_add(current_state.stack_top(),
+                                                            current_state.stack_top(1)))
+                                     : w_to_16(wrapping_sub(current_state.stack_top(),
+                                                            current_state.stack_top(1)));
 
                         for( std::size_t i = 0; i < 16; i++){
                             A[i] = is_add? a[i]: s[i];

@@ -46,7 +46,6 @@ namespace nil {
                 using generic_component<FieldType, stage>::lookup_table;
             public:
                 using typename generic_component<FieldType,stage>::TYPE;
-                using integral_type = zkevm_word_integral_type;
 
                 zkevm_byte_bbf(context_type &context_object, const opcode_input_type<FieldType, stage> &current_state):
                     generic_component<FieldType,stage>(context_object, false)

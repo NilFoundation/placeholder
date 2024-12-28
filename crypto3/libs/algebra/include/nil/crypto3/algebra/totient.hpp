@@ -25,6 +25,8 @@
 #ifndef CRYPTO3_ALGEBRA_TOTIENT_HPP
 #define CRYPTO3_ALGEBRA_TOTIENT_HPP
 
+#include <nil/crypto3/multiprecision/gcd.hpp>
+
 #include <nil/crypto3/algebra/primes.hpp>
 
 namespace nil {

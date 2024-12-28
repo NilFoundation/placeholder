@@ -31,8 +31,10 @@
 #include <nil/crypto3/algebra/fields/detail/exponentiation.hpp>
 #include <nil/crypto3/algebra/fields/detail/element/operations.hpp>
 
-#include <nil/crypto3/multiprecision/big_uint.hpp>
 #include <nil/crypto3/multiprecision/big_mod.hpp>
+#include <nil/crypto3/multiprecision/big_uint.hpp>
+#include <nil/crypto3/multiprecision/pow.hpp>
+#include <nil/crypto3/multiprecision/ressol.hpp>
 
 #include <type_traits>
 
@@ -208,7 +210,7 @@ namespace nil {
                         }
 
                         constexpr element_fp inversed() const {
-                            return element_fp(inverse_extended_euclidean_algorithm(data));
+                            return element_fp(inverse(data));
                         }
 
                         constexpr element_fp squared() const {

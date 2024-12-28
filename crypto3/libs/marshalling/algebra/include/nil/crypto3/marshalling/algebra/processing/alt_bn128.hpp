@@ -186,7 +186,16 @@ namespace nil {
                         chunk_type I_bit = *iter & 0x80;
                         chunk_type S_bit = *iter & 0x40;
 
-                        integral_type x = multiprecision::processing::read_data<sizeof_field_element, integral_type, endianness>(iter);
+                        static_assert(
+                            std::is_same_v<integral_type,
+                                           nil::crypto3::multiprecision::big_uint<254>>);
+                        static_assert(sizeof_field_element == 254);
+
+                        auto x_raw = multiprecision::processing::read_data<
+                            256, nil::crypto3::multiprecision::big_uint<256>, endianness>(
+                            iter);
+                        integral_type x =
+                            x_raw.template truncate<254>();  // remove I_bit and S_bit
 
                         if (I_bit) {
                             // point at infinity
@@ -245,8 +254,16 @@ namespace nil {
                         chunk_type I_bit = *iter & 0x80;
                         chunk_type S_bit = *iter & 0x40;
 
+                        static_assert(
+                            std::is_same_v<integral_type,
+                                           nil::crypto3::multiprecision::big_uint<254>>);
+                        static_assert(sizeof_field_element == 254);
+
                         TIter read_iter = iter;
-                        integral_type x_1 = multiprecision::processing::read_data<sizeof_field_element, integral_type, endianness>(read_iter);
+                        auto x_1_raw = multiprecision::processing::read_data<
+                            256, nil::crypto3::multiprecision::big_uint<256>, endianness>(
+                            read_iter);
+                        integral_type x_1 = x_1_raw.template truncate<254>();
                         read_iter += sizeof_field_element_chunks_count;
                         integral_type x_0 = multiprecision::processing::read_data<sizeof_field_element, integral_type, endianness>(read_iter);
 

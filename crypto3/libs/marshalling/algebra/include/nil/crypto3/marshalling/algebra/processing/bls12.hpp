@@ -319,7 +319,15 @@ namespace nil {
                             return nil::crypto3::marshalling::status_type::success;
                         }
 
-                        integral_type x = multiprecision::processing::read_data<sizeof_field_element, integral_type, endianness>(iter);
+                        static_assert(
+                            std::is_same_v<integral_type,
+                                           nil::crypto3::multiprecision::big_uint<381>>);
+                        static_assert(sizeof_field_element == 381);
+
+                        auto x_raw = multiprecision::processing::read_data<
+                            384, nil::crypto3::multiprecision::big_uint<384>, endianness>(
+                            iter);
+                        integral_type x = x_raw.template truncate<381>();
 
                         g1_field_value_type x_mod(x);
                         g1_field_value_type y2_mod = x_mod.pow(3u) + group_type::params_type::b;
@@ -383,7 +391,16 @@ namespace nil {
 
                         TIter read_iter = iter;
 
-                        integral_type x_1 = multiprecision::processing::read_data<sizeof_field_element, integral_type, endianness>(read_iter);
+                        static_assert(
+                            std::is_same_v<integral_type,
+                                           nil::crypto3::multiprecision::big_uint<381>>);
+                        static_assert(sizeof_field_element == 384);
+
+                        auto x_1_raw = multiprecision::processing::read_data<
+                            384, nil::crypto3::multiprecision::big_uint<384>, endianness>(
+                            iter);
+                        integral_type x_1 = x_1_raw.template truncate<381>();
+
                         read_iter += sizeof_field_element_chunks_count;
 
                         integral_type x_0 = multiprecision::processing::read_data<sizeof_field_element, integral_type, endianness>(read_iter);
@@ -448,7 +465,15 @@ namespace nil {
                             return nil::crypto3::marshalling::status_type::success;
                         }
 
-                        integral_type x = multiprecision::processing::read_data<sizeof_field_element, integral_type, endianness>(iter);
+                        static_assert(
+                            std::is_same_v<integral_type,
+                                           nil::crypto3::multiprecision::big_uint<377>>);
+                        static_assert(sizeof_field_element == 377);
+
+                        auto x_raw = multiprecision::processing::read_data<
+                            384, nil::crypto3::multiprecision::big_uint<384>, endianness>(
+                            iter);
+                        integral_type x = x_raw.template truncate<377>();
 
                         g1_field_value_type x_mod(x);
                         g1_field_value_type y2_mod = x_mod.pow(3u) + group_type::params_type::b;
@@ -512,7 +537,16 @@ namespace nil {
 
                         TIter read_iter = iter;
 
-                        integral_type x_1 = multiprecision::processing::read_data<sizeof_field_element, integral_type, endianness>(read_iter);
+                        static_assert(
+                            std::is_same_v<integral_type,
+                                           nil::crypto3::multiprecision::big_uint<377>>);
+                        static_assert(sizeof_field_element == 384);
+
+                        auto x_1_raw = multiprecision::processing::read_data<
+                            384, nil::crypto3::multiprecision::big_uint<384>, endianness>(
+                            iter);
+                        integral_type x_1 = x_1_raw.template truncate<377>();
+
                         read_iter += sizeof_field_element_chunks_count;
 
                         integral_type x_0 = multiprecision::processing::read_data<sizeof_field_element, integral_type, endianness>(read_iter);

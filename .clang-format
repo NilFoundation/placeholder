@@ -3,7 +3,7 @@ Language: Cpp
 BasedOnStyle: Google
 
 AccessModifierOffset: -2
-ColumnLimit: 100
+ColumnLimit: 90
 IndentWidth: 4
 InsertNewlineAtEOF: true
 NamespaceIndentation: All
