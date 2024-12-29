@@ -89,7 +89,7 @@ w = [1, 3, 35, 9, 27, 30].
 
 Now let’s see how we can enter this R1CS into =nil;Crypto3 Blueprint, produce proofs and verify them. We will use the `blueprint_variable` type to declare our variables. See the file `test.cpp` for the full code.
 
-First lets define the finite field where all our values live, and initialize the curve parameters:
+First let's define the finite field where all our values live, and initialize the curve parameters:
 
 ```
 typedef libff::Fr<default_r1cs_ppzksnark_pp> field_type;

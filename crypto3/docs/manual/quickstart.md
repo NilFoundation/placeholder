@@ -3,7 +3,7 @@
 Quickstart
 ========================
 
-By the end of this guide ,you will have set up a development environment for crypto3 projects 
+By the end of this guide, you will have set up a development environment for crypto3 projects
 and be able to run an example.This will enable you to test ideas quickly and further explore the 
 API's of the suite.
 

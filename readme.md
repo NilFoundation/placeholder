@@ -1,51 +1,102 @@
-# =nil; Foundation's Cryptography Suite
+# =nil; Foundation
 [![Discord](https://img.shields.io/discord/969303013749579846.svg?logo=discord&style=flat-square)](https://discord.gg/KmTAEjbmM3)
 [![Telegram](https://img.shields.io/badge/Telegram-2CA5E0?style=flat-square&logo=telegram&logoColor=dark)](https://t.me/nilfoundation)
 [![Twitter](https://img.shields.io/twitter/follow/nil_foundation)](https://twitter.com/nil_foundation)
 
-Placeholder repository is a collection of various nil-projects. Check out subfolders for more.
-Supported by [=nil; Foundation](https://nil.foundation)
- 
+This repository is a collection of various nil-projects related to zero-knowledge proof. Check out subfolders for more.
+Supported by [=nil; Foundation](https://nil.foundation).
+
 ## Contents
-1. [Dependencies](#Dependencies)
-2. [Build](#Build)
-3. [Licence](#Licence)
+1. [Structure](#structure)
+2. [Dependencies](#dependencies)
+3. [Build & test](#build_&_test)
+4. [Contributing](#contributing)
+5. [Community](#community)
+6. [Licence](#Licence)
 
-### Dependencies
+## Structure
+root
+├── crypto3
+├── debug-tools
+├── parallel-crypto3
+├── proof-producer
 
-Install nix using the following command:
+## Dependencies
+- [clang](https://clang.llvm.org/) (>= 11.0)/GCC (>= 10.0)/MSVC (>= 14.20)
+- [cmake](https://cmake.org) (>= 3.6)
+- [boost](https://boost.org) (>= 1.76)
 
-```
+All dependencies managed by `nix`.
+
+So first install nix using the following command:
+
+```bash
 curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
 ```
 
-### Build
+then allow `nix-command` and `flakes` experimental features by adding line
 
-For most cases, you want to have an incremental build:
-```
-nix develop .#crypto3-debug-tests
-eval "$configurePhase" // automatically move to the build directory
-eval "$buildPhase"
-eval "$checkPhase"
+```bash
+experimental-features = nix-command flakes
 ```
 
-if you want to build a single test:
-```
-nix develop .#crypto3-debug-tests
-eval "$configurePhase" // automatically move to the build directory
-ninja TEST_NAME
+in nix configuration file (`/etc/nix/nix.conf`).
+
+## Build & test
+To activate Nix development environment:
+
+```bash
+nix develop
 ```
 
-To build and test an individual project (crypto3, for example):
+To run all tests:
+
+```bash
+nix flake check
 ```
-nix build -L .?#checks.x86_64-linux.crypto3-gcc
+
+To build an individual derivation:
+```bash
+nix build -L .#<derivation>
 ```
+For example:
+```bash
+nix build -L .#proof-producer
+```
+
 To list all available nix-targets, call
-```
+```bash
 nix flake show
 ```
 
-### Licence
+For incremental build:
+```bash
+nix develop .#<derivation>
+eval "$configurePhase" // automatically move to the build directory
+eval "$buildPhase" // build
+eval "$checkPhase" // run tests
+```
 
+if you want to build a single target:
+```bash
+nix develop .#<derivation>
+eval "$configurePhase" // automatically move to the build directory
+ninja <target>
+```
+
+## Contributing
+See [contributing](./docs/manual/contributing.md) for contribution guidelines.
+
+## Community
+You can contact us
+ several ways:
+ * E-Mail. Just drop a line to [nemo@nil.foundation](mailto:nemo@nil.foundation).
+ * Telegram Group. Join our Telegram group [@nilfoundation](https://t.me/nilfoundation) and ask any question in there.
+ * Discord [channel](https://discord.gg/KmTAEjbmM3) for discussions.
+ * Issue. Issue which does not belong to any particular module (or you just don't know where to put it) can be
+  created in this repository. The team will answer that.
+ * Discussion Topic (proposal, tutorial request, suggestion, etc). Would be happy to discuss that in the repository's GitHub [Discussions](https://github.com/NilFoundation/crypto3/discussions)
+
+## Licence
 The software is provided under [MIT](LICENSE) Licence.
 
