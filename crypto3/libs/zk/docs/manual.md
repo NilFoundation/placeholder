@@ -27,7 +27,7 @@ bp.set_input_sizes(1);
 ```
 
 Note, that the first allocated variable on the blueprint is a constant 1. So, the variables on the blueprint would
-be `1` , `res`, `A[0]`, ..., `A[n-1]`, `B[0]`, ..., `B[n-1]`.
+be `1`, `res`, `A[0]`, ..., `A[n-1]`, `B[0]`, ..., `B[n-1]`.
 
 To specify which variables are public and which ones are private we use the function `set_input_sizes(1)`, so only `res`
 value is a primary input. Thus, usually, the primary input is allocated before the auxiliary input in the program.

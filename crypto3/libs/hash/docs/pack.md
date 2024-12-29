@@ -129,7 +129,7 @@ order we have the reverse order of input chunks in the *out* array.
 
 An interested reader may wonder why changing of endiannesses leads to such a strange effect. Well, the answer to this
 question lies in the following convention: all data divided into chunks with units ordered in `big_unit_big_bit`
-endianness will stay unchanged when tranforming to data with chunk units ordered in `big_unit_big_bit` endianness. Let
+endianness will stay unchanged when transforming to data with chunk units ordered in `big_unit_big_bit` endianness. Let
 us explain it with the following example.
 
 ```cpp
@@ -162,7 +162,7 @@ struct1 [label="0x12 | 0x34 | 0x56 | 0x78 | 0x90 | 0xab | 0xcd | 0xef"];
 } @enddot
 
 Here it is easy to see that the data from `input` was just concatenated into the `output` data with no additional
-tranformations. Now, notice that the first and the second example described in this section implicitly rely on the
+transformations. Now, notice that the first and the second example described in this section implicitly rely on the
 above-described convention. In the first example the input data is concatenated in reverse byte order, and in the second
 example the byte order is reversed after the input data concatenation.
 
@@ -214,7 +214,7 @@ To conclude, there are three types of reversals that we must deal with in pack a
 
 In this section we suppose that the chunk type of input and output data is integral.
 
-Data chunk order reversal tranforms a group of consecutive input chunks with units in `InputEndianness` order into an
+Data chunk order reversal transforms a group of consecutive input chunks with units in `InputEndianness` order into an
 output chunk with units in `OutputEndianness` order and can be described as follows.
 
 1. Check whether `InputEndianness` or `OutputEndianness` is `little_bit`. This condition determines the data chunk order
