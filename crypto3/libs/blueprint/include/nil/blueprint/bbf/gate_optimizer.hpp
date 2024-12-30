@@ -73,6 +73,7 @@ namespace nil {
                     size_t next_selector_id = selectors_.size();
                     if (iter == selectors_.end()) {
                         selectors_.insert({selector, next_selector_id});
+                        // std::cout << "Added a selector " << selector << " which now has id " << next_selector_id << std::endl;
                         return next_selector_id;
                     }
                     return iter->second;
@@ -110,8 +111,9 @@ namespace nil {
             std::ostream& operator<<(std::ostream& os, const optimized_gates<FieldType>& gates) {
                 for (const auto& [selector, id]: gates.selectors_) {
                     auto iter = gates.constraint_list.find(id);
+                    os << "Selector #" << id << " " << selector << std::endl;
+                    os << "Constraints: " << std::endl;
                     if (iter != gates.constraint_list.end()) {
-                        os << "Selector #" << id << " " << selector << std::endl;
                         for (const auto &constraint : iter->second) {
                             os << constraint << std::endl;
                         }
@@ -188,7 +190,6 @@ namespace nil {
                     }
                     for (const auto& [row_list, lookup_list] : lookup_constraints) {
                         size_t id = result.add_selector(row_list);
-//std::cout << "Processing lookup constraint with row list " << row_list << ", got id = " << id << std::endl;
                         result.lookup_constraints[id] = std::move(lookup_list);
                     }
                     return result;
@@ -216,12 +217,6 @@ namespace nil {
                     if (n == 0)
                         return {};
 
-                    // Compute vertex degrees
-                    std::vector<size_t> degrees(n, 0);
-                    for (size_t i = 0; i < n; i++) {
-                        degrees[i] = adj[i].size();
-                    }
-
                     // All vertices initially uncolored
                     std::vector<size_t> color(n, std::numeric_limits<size_t>::max());  
                     std::unordered_set<size_t> uncolored; 
@@ -231,6 +226,15 @@ namespace nil {
                     size_t currentColor = 0;
 
                     while (!uncolored.empty()) {
+                        // Compute vertex degrees for uncolored vertices only.
+                        std::vector<size_t> degrees(n, 0);
+                        for (size_t i: uncolored) {
+                            for (size_t j : adj[i]) {
+                                if (uncolored.find(j) != uncolored.end())
+                                    degrees[i]++;
+                            }
+                        }
+
                         // Step 1: Pick the vertex with the largest degree from the uncolored set
                         size_t startVertex = *std::max_element(uncolored.begin(), uncolored.end(), 
                                                           [&](size_t a, size_t b) {
@@ -238,36 +242,41 @@ namespace nil {
                                                           });
 
                         // Start a new color class
-                        std::vector<size_t> colorClass;
-                        colorClass.push_back(startVertex);
+                        color[startVertex] = currentColor;
                         uncolored.erase(startVertex);
 
                         // H is the set of vertices to consider adding
                         // Initially, it's all remaining uncolored vertices
                         std::unordered_set<size_t> H = uncolored;
 
-                        // We'll keep track of how many neighbors in the color class each vertex has
-                        std::vector<size_t> inClassNeighborsCount(n, 0);
-
-                        // Update counts for the startVertex's neighbors
+                        // Throw out the neighbors of 'startVertex', those can't be included in the color class.
                         for (auto w : adj[startVertex]) {
-                            if (H.find(w) != H.end()) {
-                                inClassNeighborsCount[w]++;
-                            }
+                            H.erase(w);
                         }
 
                         // Iteratively add vertices to the color class
                         while (!H.empty()) {
-                            // Pick the vertex in H with the largest inClassNeighborsCount
+                            // Pick the vertex in H with the largest # of neighbours that are adjacent to 
+                            // some vertex in the color set S.
                             // Tie-break by highest degree
                             size_t candidate = 0;
                             bool found = false;
-                            size_t bestValue = 0;   // best number of neighbors in class
-                            size_t bestDegree = 0;  // tie-break by degree
+                            // best number of neighbors that are adjacent to vertices in class, I.E. are uncolored,
+                            // but not in H.
+                            size_t bestValue = 0;
+                            // tie-break by number of neighbors not in the color class,
+                            // I.E. the degree of the vertex in the uncolored graph.
+                            size_t bestDegree = 0;  
 
-                            for (auto v : H) {
-                                size_t val = inClassNeighborsCount[v];
-                                if (!found || val > bestValue || (val == bestValue && degrees[v] > bestDegree)) {
+                            for (auto v : uncolored) {
+                                size_t val = 0;
+                                for (size_t v2: adj[v]) {
+                                    // If v2 is an uncolored vertex, but it's not in H, that's because
+                                    // it is adjacent to a vertex in the color set.
+                                    if (uncolored.find(v2) != uncolored.end() && H.find(v2) == H.end())
+                                        val++;
+                                }
+                                if (!found || val > bestValue || (val == bestValue && degrees[v] < bestDegree)) {
                                     bestValue = val;
                                     bestDegree = degrees[v];
                                     candidate = v;
@@ -275,27 +284,14 @@ namespace nil {
                                 }
                             }
 
-                            if (!found || bestValue == 0) {
-                                // No vertex in H is connected to the color class, so we can't grow it further
-                                break;
-                            }
-
                             // Add candidate to the color class
-                            colorClass.push_back(candidate);
-                            H.erase(candidate);
                             uncolored.erase(candidate);
+                            color[candidate] = currentColor;
+                            H.erase(candidate);
 
-                            // Update inClassNeighborsCount for the neighbors of the candidate
                             for (auto w : adj[candidate]) {
-                                if (H.find(w) != H.end()) {
-                                    inClassNeighborsCount[w]++;
-                                }
+                                H.erase(w);
                             }
-                        }
-
-                        // Assign the currentColor to all vertices in colorClass
-                        for (auto v : colorClass) {
-                            color[v] = currentColor;
                         }
 
                         currentColor++;
@@ -419,7 +415,7 @@ namespace nil {
                     // Now merge all the lookups on selectors in the same group.
                     for (const auto& [selector_id, lookup_list] : gates.lookup_constraints) {
                         std::vector<lookup_constraint_type> lookup_gate;
-                        for(const auto& single_lookup_constraint : lookup_list) {
+                        for (const auto& single_lookup_constraint : lookup_list) {
                             const std::string& table_name = single_lookup_constraint.first;
                             size_t group_id = selector_groups[table_name][selector_id];
 
