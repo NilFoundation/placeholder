@@ -58,4 +58,4 @@ ninja algebra_curves_test
 
 ## Usage
 
-The suite is used as a header-only libraries.
+The suite is used as header-only libraries.

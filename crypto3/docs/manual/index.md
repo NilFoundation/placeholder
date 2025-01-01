@@ -30,7 +30,7 @@ root
 │   ├── block: block ciphers
 │   ├── blueprint: components and circuits for zk schemes
 │   ├── codec: encoding/decoding algorithms
-│   ├── containers: containers and generic commitment schemes for accumulating data, includes Merkle Tree
+│   ├── containers: containers for accumulating data, includes Merkle Tree
 │   ├── hash: hashing algorithms
 │   ├── kdf: key derivation functions 
 │   ├── mac: message authentication codes
