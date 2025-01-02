@@ -1,10 +1,10 @@
 #ifndef PROOF_GENERATOR_LIBS_ASSIGNER_TRACE_PARSER_HPP_
 #define PROOF_GENERATOR_LIBS_ASSIGNER_TRACE_PARSER_HPP_
 
-#include <exception>
-#include <iterator>
-#include <optional>
 #include <utility>
+#include <fstream>
+#include <ios>
+#include <optional>
 #include <vector>
 #include <string>
 #include <cstdint>
@@ -21,6 +21,7 @@
 
 #include <nil/proof-generator/assigner/trace.pb.h>
 #include <nil/proof-generator/assigner/options.hpp>
+#include "proto_hash.h"
 
 namespace nil {
     namespace proof_generator {
@@ -61,6 +62,13 @@ namespace nil {
                 if (!pb_traces.ParseFromIstream(&file)) {
                     return std::nullopt;
                 }
+
+                if (pb_traces.proto_hash() != PROTO_HASH) {
+                    BOOST_LOG_TRIVIAL(error) << "Compatibility check failed for trace file " << filename.c_str()
+                                             << ": proto version mismatch";
+                    return std::nullopt;
+
+                }
                 return pb_traces;
             }
 
@@ -83,7 +91,7 @@ namespace nil {
 
                 const auto it = mapping_.find(pb_participant.location());
                 if (it == mapping_.end()) {
-                    BOOST_LOG_TRIVIAL(warning) << "Unknown copy operand type: " << static_cast<int>(pb_participant.location());
+                    BOOST_LOG_TRIVIAL(error) << "Unknown copy operand type: " << static_cast<int>(pb_participant.location());
                     return std::nullopt;
                 }
 

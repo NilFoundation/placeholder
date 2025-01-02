@@ -92,3 +92,18 @@ TEST(ProverTest, TraceIndexMismatch) {
     ASSERT_TRUE(prover.setup_prover());
     ASSERT_FALSE(prover.fill_assignment_table(trace_base_path));
 }
+
+// Trace files contain different proto hash
+TEST(ProverTest, DifferentProtoHash) {
+    const std::string trace_base_path = std::string(TEST_DATA_DIR) + "/different_proto/increment_simple.pb";
+    nil::proof_generator::Prover<ProverTests::CurveType, ProverTests::HashType> prover(
+                        ProverTests::lambda,
+                        ProverTests::expand_factor,
+                        ProverTests::max_quotient_chunks,
+                        ProverTests::grind,
+                        ZKEVM
+    );
+
+    ASSERT_TRUE(prover.setup_prover());
+    ASSERT_FALSE(prover.fill_assignment_table(trace_base_path));
+}
