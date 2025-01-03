@@ -238,10 +238,10 @@ namespace nil {
                     return val.max_size();
                 }
                 void reserve(size_type _n) {
-                    return val.reserve(_n);
+                    val.reserve(_n);
                 }
                 void shrink_to_fit() BOOST_NOEXCEPT {
-                    return val.shrink_to_fit();
+                    val.shrink_to_fit();
                 }
 
                 reference operator[](size_type _n) BOOST_NOEXCEPT {

@@ -182,10 +182,10 @@ namespace nil {
                     return it.max_size();
                 }
                 void reserve(size_type _n) {
-                    return it.reserve(_n);
+                    it.reserve(_n);
                 }
                 void shrink_to_fit() BOOST_NOEXCEPT {
-                    return it.shrink_to_fit();
+                    it.shrink_to_fit();
                 }
 
                 reference operator[](size_type _n) BOOST_NOEXCEPT {
@@ -277,11 +277,11 @@ namespace nil {
                 }
 
                 void resize(size_type _sz) {
-                    return it.resize(_sz);
+                    it.resize(_sz);
                 }
 
                 void resize(size_type _sz, const_reference _x) {
-                    return it.resize(_sz, _x);
+                    it.resize(_sz, _x);
                 }
 
                 void swap(polynomial_view& other) {
