@@ -50,6 +50,7 @@ namespace nil {
                     typedef int integral_type;
 #else
                     typedef nil::crypto3::multiprecision::big_uint<modulus_bits> integral_type;
+                    typedef nil::crypto3::multiprecision::big_uint<16 * modulus_bits> extended_integral_type;
 #endif
                 };
 
