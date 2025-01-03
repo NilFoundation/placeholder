@@ -256,11 +256,11 @@ namespace nil {
                 }
 
                 void reserve(size_type _n) {
-                    return val.reserve(_n);
+                    val.reserve(_n);
                 }
 
                 void shrink_to_fit() BOOST_NOEXCEPT {
-                    return val.shrink_to_fit();
+                    val.shrink_to_fit();
                 }
 
                 reference operator[](size_type _n) BOOST_NOEXCEPT {
@@ -359,11 +359,11 @@ namespace nil {
                 }
 
                 void resize(size_type _sz) {
-                    return val.resize(_sz);
+                    val.resize(_sz);
                 }
 
                 void resize(size_type _sz, const_reference _x) {
-                    return val.resize(_sz, _x);
+                    val.resize(_sz, _x);
                 }
 
                 void swap(polynomial& other) {

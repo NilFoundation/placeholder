@@ -468,8 +468,8 @@ namespace nil {
                 }
 
                 // accesible only at GenerationStage::CONSTRAINTS !
-                void relative_lookup(std::vector<TYPE> &C, std::string table_name, std::size_t row) {
-                    for(const TYPE c_part : C) {
+                void relative_lookup(const std::vector<TYPE> &C, std::string table_name, std::size_t row) {
+                    for(const TYPE& c_part : C) {
                         if (!c_part.is_relative()) {
                             std::stringstream ss;
                             ss << "Constraint " << c_part << " has absolute variables, cannot constrain.";
@@ -479,8 +479,8 @@ namespace nil {
                     add_lookup_constraint(table_name, C, row);
                 }
 
-                void relative_lookup(std::vector<TYPE> &C, std::string table_name, std::size_t start_row, std::size_t end_row) {
-                    for(const TYPE c_part : C) {
+                void relative_lookup(const std::vector<TYPE> &C, std::string table_name, std::size_t start_row, std::size_t end_row) {
+                    for(const TYPE& c_part : C) {
                         if (!c_part.is_relative()) {
                             std::stringstream ss;
                             ss << "Constraint " << c_part << " has absolute variables, cannot constrain.";
@@ -629,7 +629,8 @@ namespace nil {
                     lookup_constraints->at(key).second.set_row(stored_row);
                 }
 
-                void add_lookup_constraint(std::string table_name, std::vector<TYPE> &C_rel, std::size_t start_row, std::size_t end_row) {
+                void add_lookup_constraint(const std::string& table_name, const std::vector<TYPE> &C_rel, 
+                        std::size_t start_row, std::size_t end_row) {
                     std::size_t stored_start_row = start_row - (is_fresh ? row_shift : 0);
                     std::size_t stored_end_row = end_row - (is_fresh ? row_shift : 0);
                     constraint_id_type C_id = constraint_id_type(C_rel);
