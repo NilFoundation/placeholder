@@ -8,10 +8,12 @@
   lldb,
   mold,
   protobuf,
+  glibc,
   cmake_modules,
   enableDebugging,
   gtest,
   enableDebug ? false,
+  staticBuild ? true,
   runTests ? false,
   sanitize? false,
   crypto3_tests? false,
@@ -23,18 +25,20 @@ let
   inherit (lib) optional;
 in stdenv.mkDerivation {
   name = "Proof-producer";
+  pname = "proof-producer";
 
   src = lib.sourceByRegex ./. ["^proof-producer(/.*)?$" "^crypto3(/.*)?$" "^parallel-crypto3(/.*)?$" "CMakeLists.txt"];
   hardeningDisable = [ "fortify" ];
 
-  nativeBuildInputs = [ cmake ninja pkg-config protobuf ] ++
+  nativeBuildInputs = [ cmake ninja pkg-config ] ++
                        (lib.optional (!stdenv.isDarwin) gdb) ++
                        (lib.optional (stdenv.isDarwin) lldb);
 
   # enableDebugging will keep debug symbols in boost
   propagatedBuildInputs = [ (if enableDebug then (enableDebugging boost) else boost) ];
 
-  buildInputs = [cmake_modules gtest];
+  buildInputs = [cmake_modules gtest protobuf] ++
+                  ( lib.optional (staticBuild) glibc.static );
 
   cmakeFlags =
     [
@@ -46,11 +50,12 @@ in stdenv.mkDerivation {
       (if parallel_crypto3_tets then "-DBUILD_PARALLEL_CRYPTO3_TESTS=TRUE" else "")
       (if parallel_crypto3_bechmarks then "-DENABLE_BENCHMARKS=ON" else "-DENABLE_BENCHMARKS=OFF")
       (if crypto3_bechmarks then "-DBUILD_CRYPTO3_BENCH_TESTS=ON" else "-DBUILD_CRYPTO3_BENCH_TESTS=OFF")
+      (if staticBuild then "-DPROOF_PRODUCER_STATIC_BINARIES=ON" else "-DPROOF_PRODUCER_STATIC_BINARIES=OFF")
       "-G Ninja"
     ];
 
-    cmakeBuildType = if enableDebug then "Debug" else "Release";
-    doCheck = runTests;
+  cmakeBuildType = if enableDebug then "Debug" else "Release";
+  doCheck = runTests;
 
   checkPhase = ''
     # JUNIT file without explicit file name is generated after the name of the master test suite inside `CMAKE_CURRENT_SOURCE_DIR`

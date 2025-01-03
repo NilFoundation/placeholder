@@ -16,10 +16,22 @@
   outputs = { self, nixpkgs, flake-utils, nix-3rdparty, ... }:
     (flake-utils.lib.eachDefaultSystem (system:
       let
+        revCount = self.revCount or self.dirtyRevCount or 1;
+        version = "0.0.1-${toString revCount}";
         pkgs = import nixpkgs {
           inherit system;
           overlays = [ nix-3rdparty.overlays.${system}.default ];
         };
+
+        # For proof-producer, our main target is statically linked binaries,
+        # so we should pass static libraries as build inputs
+        staticOverlay = final: prev: {
+          boost = prev.pkgsStatic.boost.override{ enableShared = false;};
+          protobuf = (prev.pkgsStatic.protobuf.override { enableShared = false;});
+          gtest = (prev.pkgsStatic.gtest.override { static = true;});
+        };
+        staticPkgs = pkgs.extend staticOverlay;
+
       in rec {
         packages = rec {
           crypto3 = (pkgs.callPackage ./crypto3.nix {
@@ -80,19 +92,19 @@
             runTests = false;
           });
 
-          proof-producer = (pkgs.callPackage ./proof-producer.nix {
+          proof-producer = (staticPkgs.callPackage ./proof-producer.nix {
             runTests = false;
             enableDebug = false;
           });
-          proof-producer-tests = (pkgs.callPackage ./proof-producer.nix {
+          proof-producer-tests = (staticPkgs.callPackage ./proof-producer.nix {
             runTests = true;
             enableDebug = false;
           });
-          proof-producer-debug-tests = (pkgs.callPackage ./proof-producer.nix {
+          proof-producer-debug-tests = (staticPkgs.callPackage ./proof-producer.nix {
             enableDebug = true;
             runTests = true;
           });
-          proof-producer-clang-debug = (pkgs.callPackage ./proof-producer.nix {
+          proof-producer-clang-debug = (staticPkgs.callPackage ./proof-producer.nix {
             stdenv = pkgs.llvmPackages_19.stdenv;
             enableDebug = true;
             runTests = false;
@@ -102,6 +114,7 @@
           });
 
           develop = (pkgs.callPackage ./proof-producer.nix {
+            staticBuild = false;
             enableDebug = true;
             runTests = true;
             sanitize = true;
@@ -112,6 +125,7 @@
           });
 
           develop-clang = (pkgs.callPackage ./proof-producer.nix {
+            staticBuild = false;
             stdenv = pkgs.llvmPackages_19.stdenv;
             enableDebug = true;
             runTests = true;
@@ -187,16 +201,17 @@
             benchmarkTests = true;
           });
 
-          proof-producer-gcc = (pkgs.callPackage ./proof-producer.nix {
+          proof-producer-gcc = (staticPkgs.callPackage ./proof-producer.nix {
             runTests = true;
             enableDebug = false;
           });
-          proof-producer-clang = (pkgs.callPackage ./proof-producer.nix {
+          proof-producer-clang = (staticPkgs.callPackage ./proof-producer.nix {
             stdenv = pkgs.llvmPackages_19.stdenv;
             runTests = true;
             enableDebug = false;
           });
           proof-producer-clang-sanitize = (pkgs.callPackage ./proof-producer.nix {
+            staticBuild = false;
             stdenv = pkgs.llvmPackages_19.stdenv;
             runTests = true;
             enableDebug = false;
@@ -227,5 +242,30 @@
             program = "${self.packages.${system}.proof-producer}/bin/proof-producer-multi-threaded";
           };
         };
+        bundlers = rec {
+          deb = pkg:
+            pkgs.stdenv.mkDerivation {
+              name = "deb-package-${pkg.pname}";
+              pname = "deb-package-${pkg.pname}";
+              buildInputs = [ pkgs.fpm ];
+
+              unpackPhase = "true";
+              buildPhase = ''
+                mkdir -p ./usr
+                cp -r ${pkg}/bin ./usr/
+                chmod -R u+rw,g+r,o+r ./usr
+                chmod -R u+rwx,g+rx,o+rx ./usr/bin
+                ${pkgs.fpm}/bin/fpm -s dir -t deb --name ${pkg.pname} -v ${version} --deb-use-file-permissions usr
+              '';
+              installPhase = ''
+                mkdir -p $out
+                cp -r *.deb $out
+              '';
+            };
+          default = deb;
+        };
       }));
 }
+
+# To make deb package with proof-producer:
+# nix bundle --bundler . .#proof-producer

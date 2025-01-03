@@ -20,6 +20,16 @@ include(CMConfig)
 include(CMDeploy)
 include(CMSetupVersion)
 
+option(PROOF_PRODUCER_STATIC_BINARIES "Link proof-producer binaries statically" OFF)
+
+if(PROOF_PRODUCER_STATIC_BINARIES)
+    set(BUILD_SHARED_LIBS OFF)
+    set(Boost_USE_STATIC_LIBS ON)
+else()
+    set(BUILD_SHARED_LIBS OFF)  # TODO: fix invalid-pch issue with precompiled headers to build shared libraries
+    set(Boost_USE_STATIC_LIBS OFF)
+endif()
+
 cm_project(proof-producer WORKSPACE_NAME ${CMAKE_WORKSPACE_NAME} LANGUAGES CXX)
 
 # The file compile_commands.json is generated in build directory, so LSP could
@@ -27,7 +37,7 @@ cm_project(proof-producer WORKSPACE_NAME ${CMAKE_WORKSPACE_NAME} LANGUAGES CXX)
 # If Nix is used, LSP could not guess the locations of implicit include
 # directories, so we need to include them explicitly.
 if(CMAKE_EXPORT_COMPILE_COMMANDS)
-  set(CMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES 
+  set(CMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES
       ${CMAKE_CXX_IMPLICIT_INCLUDE_DIRECTORIES})
 endif()
 
