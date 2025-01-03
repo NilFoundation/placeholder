@@ -57,28 +57,6 @@
 
 using namespace nil::crypto3;
 
-inline std::vector<std::size_t> generate_random_step_list(const std::size_t r, const std::size_t max_step) {
-    using dist_type = std::uniform_int_distribution<int>;
-    static std::random_device random_engine;
-
-    std::vector<std::size_t> step_list;
-    std::size_t steps_sum = 0;
-    while (steps_sum != r) {
-        if (r - steps_sum <= max_step) {
-            while (r - steps_sum != 1) {
-                step_list.emplace_back(r - steps_sum - 1);
-                steps_sum += step_list.back();
-            }
-            step_list.emplace_back(1);
-            steps_sum += step_list.back();
-        } else {
-            step_list.emplace_back(dist_type(1, max_step)(random_engine));
-            steps_sum += step_list.back();
-        }
-    }
-    return step_list;
-}
-
 BOOST_AUTO_TEST_SUITE(fri_test_suite)
 
 template<typename FieldType, typename PolynomialType>
