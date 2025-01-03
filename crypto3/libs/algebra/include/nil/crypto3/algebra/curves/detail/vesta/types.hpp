@@ -55,7 +55,6 @@ namespace nil {
 #ifdef __ZKLLVM__
 #else
                         using integral_type = typename base_field_type::integral_type;
-                        using extended_integral_type = typename base_field_type::extended_integral_type;
 #endif
                         template<typename Form, typename Coordinates>
                         using g1_type = vesta_g1<Form, Coordinates>;

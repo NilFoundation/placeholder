@@ -111,7 +111,6 @@ namespace nil {
                         integral_type mask = (1 << bit_size_rc) - 1;
 
                         TYPE Y[num_chunks][num_rc_chunks];
-                        TYPE YI[num_chunks];
                         TYPE X[num_chunks];
                         TYPE C[num_chunks];
 
@@ -127,11 +126,6 @@ namespace nil {
                                     Y[i][j] = y_integral;
                                     x_integral >>= bit_size_rc;
                                 }
-
-                                if (first_chunk_size != 0) {
-                                    YI[i] = integral_type(Y[i][num_rc_chunks - 1].data) *
-                                            (integral_type(1) << (bit_size_rc - first_chunk_size));
-                                }
                             }
                         }
 
@@ -145,15 +139,10 @@ namespace nil {
                                 C[i] -= Y[i][j] * power;
                                 power <<= bit_size_rc;
                             }
-                            allocate(C[i]);
                             constrain(C[i]);
 
                             if (first_chunk_size != 0) {
-                                allocate(YI[i]);
-                                lookup(YI[i], "chunk_16_bits/full");
-                                constrain(YI[i] - Y[i][num_rc_chunks - 1] *
-                                                      (integral_type(1)
-                                                       << (bit_size_rc - first_chunk_size)));
+                                lookup(Y[i][num_rc_chunks - 1] *(integral_type(1) << (bit_size_rc - first_chunk_size)), "chunk_16_bits/full");
                             }
 
                             if (make_links) {

@@ -16,8 +16,6 @@ include(CMSetupVersion)
 cm_workspace(crypto3)
 cm_setup_version(VERSION 0.3.0 PREFIX ${CMAKE_WORKSPACE_NAME})
 
-option(BUILD_SHARED_LIBS "Build shared library" FALSE) # TODO: it makes no sense for header-only lib, remove
-option(Boost_USE_STATIC_LIBS "Use static libraries for Boost" OFF)
 option(BUILD_TESTS "Enable tests" TRUE) # used by CMTest module; If set to false, tests are removed from crypto3::all target. User still can build individual ones.
 option(BUILD_CRYPTO3_TESTS "Enable tests" FALSE)
 option(BUILD_CRYPTO3_BENCH_TESTS "Build performance benchmark tests" FALSE)

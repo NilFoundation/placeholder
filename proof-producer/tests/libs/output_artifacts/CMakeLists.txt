@@ -34,6 +34,12 @@ function(add_output_artifacts_test target)
         crypto3::common
     )
 
+    if(PROOF_PRODUCER_STATIC_BINARIES)
+        # TODO: try to avoid completely static linking here, it's not necessary, but otherwise build fails for some reason
+        target_link_options(${target}_single_thread PRIVATE -static -static-libgcc -static-libstdc++)
+        target_link_options(${target}_multi_thread PRIVATE -static -static-libgcc -static-libstdc++)
+    endif()
+
     target_precompile_headers(${target}_single_thread REUSE_FROM proof_generatorOutputArtifacts)
     target_precompile_headers(${target}_multi_thread  REUSE_FROM proof_generatorOutputArtifacts)
 

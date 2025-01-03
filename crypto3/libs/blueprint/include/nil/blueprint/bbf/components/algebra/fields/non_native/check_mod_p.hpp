@@ -52,6 +52,7 @@ namespace nil {
                     using TYPE = typename FieldType::value_type;
                     std::vector<TYPE> x;
                     std::vector<TYPE> pp;
+                    TYPE zero;
                 };
 
                 template<typename FieldType, GenerationStage stage>
@@ -73,10 +74,12 @@ namespace nil {
                   public:
                     std::vector<TYPE> inp_x;
                     std::vector<TYPE> inp_pp;
+                    TYPE inp_zero;
+                    TYPE output;
 
                     static table_params get_minimal_requirements(std::size_t num_chunks,
                                                                  std::size_t bit_size_chunk,
-                                                                 bool expect_overflow) {
+                                                                 bool expect_output) {
                         static const std::size_t bit_size_rc = 16;
                         std::size_t num_rc_chunks = (bit_size_chunk / bit_size_rc) + (bit_size_chunk % bit_size_rc > 0);
 
@@ -89,29 +92,32 @@ namespace nil {
                         return {witness, public_inputs, constants, rows};
                     }
 
-                    static std::tuple<std::vector<TYPE>,std::vector<TYPE>> form_input(context_type &context_object,
+                    static std::tuple<std::vector<TYPE>,std::vector<TYPE>,TYPE> form_input(context_type &context_object,
                                                                     raw_input_type raw_input,
                                                                     std::size_t num_chunks,
                                                                     std::size_t bit_size_chunk,
-                                                                    bool expect_overflow) {
+                                                                    bool expect_output) {
                         std::vector<TYPE> input_x(num_chunks);
                         std::vector<TYPE> input_pp(num_chunks);
+                        TYPE input_zero;
                         if constexpr (stage == GenerationStage::ASSIGNMENT) {
                             for (std::size_t i = 0; i < num_chunks; i++) {
                                 input_x[i] = raw_input.x[i];
                                 input_pp[i] = raw_input.pp[i];
                             }
+                            input_zero =raw_input.zero;
                         }
                         for (std::size_t i = 0; i < num_chunks; i++)
                         {
                             context_object.allocate(input_x[i], 0, i, column_type::public_input);
                             context_object.allocate(input_pp[i], 0, i+num_chunks, column_type::public_input);
                         }
-                        return std::make_tuple(input_x,input_pp);
+                        context_object.allocate(input_zero,0,2*num_chunks + 1,column_type::public_input);
+                        return std::make_tuple(input_x,input_pp,input_zero);
                     }
 
-                    check_mod_p(context_type &context_object, std::vector<TYPE> input_x, std::vector<TYPE> input_pp,
-                                      std::size_t num_chunks, std::size_t bit_size_chunk,bool expect_overflow,
+                    check_mod_p(context_type &context_object, std::vector<TYPE> input_x, std::vector<TYPE> input_pp, TYPE input_zero,
+                                      std::size_t num_chunks, std::size_t bit_size_chunk,bool expect_output,
                                       bool make_links = true)
                         : generic_component<FieldType, stage>(context_object) {
                         using integral_type = typename FieldType::integral_type;
@@ -119,19 +125,20 @@ namespace nil {
                         using Carry_On_Addition = typename bbf::components::carry_on_addition<FieldType,stage>;
                         using Range_Check = typename bbf::components::range_check_multi<FieldType,stage>;
 
-                        Carry_On_Addition ca = Carry_On_Addition(context_object,input_x,input_pp,num_chunks,bit_size_chunk,make_links);
-                        Range_Check rc = Range_Check(context_object, ca.res_z,num_chunks,bit_size_chunk,make_links);
+                        Carry_On_Addition ca = Carry_On_Addition(context_object,input_x,input_pp,num_chunks,bit_size_chunk);
+                        Range_Check rc = Range_Check(context_object, ca.res_z,num_chunks,bit_size_chunk);
                         
-                        if(expect_overflow){
-                            constrain(ca.res_c - 1);
+                        if(expect_output){
+                            output = ca.res_c;
                         }
                         else{
-                            constrain(ca.res_c);
+                            copy_constrain(ca.res_c,input_zero);
                         }
 
                         for (std::size_t i = 0; i < num_chunks; i++) {
                             inp_x.push_back(input_x[i]);
                             inp_pp.push_back(input_pp[i]);
+                            inp_zero = input_zero;
                         }
 
                     }

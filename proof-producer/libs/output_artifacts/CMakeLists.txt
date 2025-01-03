@@ -1,5 +1,4 @@
 add_library(proof_generatorOutputArtifacts 
-    STATIC
     src/output_artifacts.cpp
 )
 

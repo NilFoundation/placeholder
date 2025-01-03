@@ -143,7 +143,7 @@ namespace nil {
                             res_z.push_back(Z[i]);
                         }
                         res_c = C[num_chunks-1];
-                        }
+                    }
                 };
 
             }  // namespace components
