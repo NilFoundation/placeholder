@@ -96,6 +96,8 @@ set(COMMON_TEST_FILES
     "bbf/gate_optimizer"
     "bbf/poseidon"
     "bbf/test_circuit_builder"
+    "bbf/keccak_round"
+    "bbf/keccak_dynamic"
     )
 
 set(NON_NATIVE_TESTS_FILES
