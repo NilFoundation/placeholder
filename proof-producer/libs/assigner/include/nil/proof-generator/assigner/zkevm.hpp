@@ -61,6 +61,13 @@ namespace nil {
             }
             input.copy_events = copy_events.value();
 
+            // const auto exp_trace_path = get_exp_trace_path(trace_base_path);
+            // const auto exp_operations = deserialize_exp_traces_from_file(exp_trace_path);
+            // if (!exp_operations) {
+            //     return "can't read exp operations from file: " + exp_trace_path.string();
+            // }
+            // input.exponentiations = exp_operations.value();
+
             auto start = std::chrono::high_resolution_clock::now();
             ComponentType instance(
                 context_object,
