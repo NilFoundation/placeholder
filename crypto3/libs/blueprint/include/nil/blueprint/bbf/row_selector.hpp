@@ -129,13 +129,17 @@ namespace nil {
                     return used_rows_.count();
                 }
 
-				// This one is the maximal allowed index, I.E. the actual size.
+                // This one is the maximal allowed index, I.E. the actual size.
                 std::size_t max_index() const {
                     return used_rows_.size();
                 }
 
                 bool empty() const {
                     return used_rows_.none();
+                }
+
+                bool intersects(const row_selector& other) const {
+                    return used_rows_.intersects(other.used_rows_);
                 }
 
                 // TODO: delete this, if not used.
