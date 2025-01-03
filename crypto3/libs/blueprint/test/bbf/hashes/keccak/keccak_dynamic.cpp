@@ -30,7 +30,6 @@
 #include <cstdlib>
 #include <ctime>
 #include <random>
-// #include <nil/blueprint/bbf/hashes/keccak/keccak_dynamic_bbf_wrapper.hpp>
 #include <nil/blueprint/bbf/hashes/keccak/keccak_dynamic.hpp>
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
@@ -87,7 +86,7 @@ BOOST_AUTO_TEST_SUITE(bn254_test_suite)
 
 BOOST_AUTO_TEST_CASE(keccak_1_short_message) {
     nil::crypto3::test_tools::random_test_initializer<field_type> rnd;
-    test_keccaks<field_type, 1>({{{0},calculate_hash<field_type>({0})}}, rnd);
+    test_keccaks<field_type, 2>({{{0},calculate_hash<field_type>({0})}}, rnd);
 }
 
 BOOST_AUTO_TEST_CASE(keccak_2_short_messages) {

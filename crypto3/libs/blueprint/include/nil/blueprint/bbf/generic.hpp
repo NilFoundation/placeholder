@@ -489,17 +489,6 @@ namespace nil {
                     add_lookup_constraint(table_name, C, start_row, end_row);
                 }
 
-                void relative_lookup(std::vector<TYPE> &C, std::string table_name, std::size_t start_row, std::size_t end_row) {
-                    for(const TYPE c_part : C) {
-                        if (!is_relative(c_part)) {
-                            std::stringstream ss;
-                            ss << "Constraint " << c_part << " has absolute variables, cannot constrain.";
-                            throw std::logic_error(ss.str());
-                        }
-                    }
-                    add_lookup_constraint(table_name, C, start_row, end_row);
-                }
-
                 void lookup_table(std::string name, std::vector<std::size_t> W, std::size_t from_row, std::size_t num_rows) {
                     if (lookup_tables->find(name) != lookup_tables->end()) {
                         BOOST_LOG_TRIVIAL(error) << "Double declaration of dynamic lookup table '" << name << "'!\n";

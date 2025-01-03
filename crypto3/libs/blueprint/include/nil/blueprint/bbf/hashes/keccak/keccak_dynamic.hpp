@@ -50,8 +50,11 @@ namespace nil {
 
               public:
                 using typename generic_component<FieldType, stage>::TYPE;
-                using typename generic_component<FieldType,stage>::table_params;
-                using raw_input_type = typename std::conditional<stage == GenerationStage::ASSIGNMENT, keccak_dynamic_raw_input<FieldType>,std::tuple<>>::type;
+                using typename generic_component<FieldType, stage>::table_params;
+                using raw_input_type =
+                    typename std::conditional<stage == GenerationStage::ASSIGNMENT,
+                                              keccak_dynamic_raw_input<FieldType>,
+                                              std::tuple<>>::type;
                 using integral_type = typename FieldType::integral_type;
                 using value_type = typename FieldType::value_type;
                 using KECCAK_ROUND = typename bbf::keccak_round<FieldType, stage>;
@@ -188,11 +191,12 @@ namespace nil {
                     constexpr std::size_t public_inputs = 1;
                     constexpr std::size_t constants = 1;
                     std::size_t rows = 6247 * max_blocks;
+                    rows = rows < 72000 ? 72000 : rows;
                     return {witness, public_inputs, constants, rows};
                 }
 
-                static std::tuple<input_type> form_input(context_type &context_object, raw_input_type raw_input) {
-                    
+                static std::tuple<input_type> form_input(context_type &context_object,
+                                                         raw_input_type raw_input) {
                     input_type input;
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
                         input.input = raw_input.input;
@@ -240,7 +244,7 @@ namespace nil {
                     std::size_t row = 0;
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
                         TYPE theta = instance_input.rlc_challenge;
-                        // std::cout << "RLC challenge = " << theta << std::endl;
+                        std::cout << "RLC challenge = " << theta << std::endl;
 
                         while (block_counter < max_blocks) {
                             if (input_idx < instance_input.input.size()) {
@@ -259,14 +263,14 @@ namespace nil {
                                 padded_msg.push_back(0);
                             }
                             RLC = calculateRLC<FieldType>(msg, theta);
-                            // std::cout << "RLC = " << std::hex << RLC << std::dec
-                            //           << std::endl;
+                            std::cout << "RLC = " << std::hex << RLC << std::dec
+                                      << std::endl;
 
                             for (std::size_t block = 0; block < padded_msg.size() / 136; block++) {
                                 l = msg.size() - block * 136;
                                 bool is_first = (block == 0 ? 1 : 0);
                                 bool is_last = ((block == padded_msg.size() / 136 - 1) ? 1 : 0);
-                                // std::cout << "Is_last = " << is_last << std::endl;
+                                std::cout << "Is_last = " << is_last << std::endl;
                                 if (is_first) rlc = msg.size();
 
                                 m[block_counter].h.is_first = is_first;
@@ -458,17 +462,17 @@ namespace nil {
                                     state[i] = inner_state[i];
                                 }
 
-                                // std::cout << "Sparse hash chunks : " << std::endl;
+                                std::cout << "Sparse hash chunks : " << std::endl;
                                 std::array<TYPE, 4> result;
                                 for (std::size_t i = 0; i < 4; i++) {
                                     TYPE sparse_value = inner_state[i];
                                     result[i] = sparse_value;
                                     // std::cout << "\t" << std::hex << sparse_value << std::dec <<
                                     // std::endl;
-                                    // TYPE regular = unpack<FieldType>(sparse_value);
-                                    // std::cout << "\t" << std::hex << regular << std::dec << " ";
+                                    TYPE regular = unpack<FieldType>(sparse_value);
+                                    std::cout << "\t" << std::hex << regular << std::dec << " ";
                                 }
-                                // std::cout << std::endl;
+                                std::cout << std::endl;
 
                                 integral_type chunk_factor = integral_type(1) << 16;
                                 for (std::size_t i = 0; i < unsparser_rows_amount; i++) {
@@ -511,18 +515,18 @@ namespace nil {
                                 m[block_counter].h.hash_cur_hi = m[block_counter].u[1].hash_chunk;
                                 m[block_counter].h.hash_cur_lo = m[block_counter].u[3].hash_chunk;
 
-                                // if (is_last) {
-                                //     std::cout << "Previous hash: " << std::hex
-                                //               << m[block_counter].h.hash_hi << " "
-                                //               << m[block_counter].h.hash_lo << " " << std::endl;
-                                //     std::cout << "Current hash: " << std::hex
-                                //               << m[block_counter].h.hash_cur_hi << " "
-                                //               << m[block_counter].h.hash_cur_lo << " " << std::endl;
-                                //     std::cout << "Final hash: " << std::hex
-                                //               << m[block_counter].u[1].hash_chunk << " "
-                                //               << m[block_counter].u[3].hash_chunk << std::dec
-                                //               << std::endl;
-                                // }
+                                if (is_last) {
+                                    std::cout << "Previous hash: " << std::hex
+                                              << m[block_counter].h.hash_hi << " "
+                                              << m[block_counter].h.hash_lo << " " << std::endl;
+                                    std::cout << "Current hash: " << std::hex
+                                              << m[block_counter].h.hash_cur_hi << " "
+                                              << m[block_counter].h.hash_cur_lo << " " << std::endl;
+                                    std::cout << "Final hash: " << std::hex
+                                              << m[block_counter].u[1].hash_chunk << " "
+                                              << m[block_counter].u[3].hash_chunk << std::dec
+                                              << std::endl;
+                                }
                                 row += 5;
                                 block_counter++;
                             }
