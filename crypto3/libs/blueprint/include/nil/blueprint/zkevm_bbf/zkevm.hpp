@@ -77,7 +77,7 @@ namespace nil {
                     std::size_t max_zkevm_rows,
                     std::size_t max_copy,
                     std::size_t max_rw,
-                    std::size_t max_keccak_blocks,
+                    std::size_t max_exponentations,
                     std::size_t max_bytecode
                 ){
                     std::size_t implemented_opcodes_amount = get_implemented_opcodes_list().size();
@@ -89,7 +89,7 @@ namespace nil {
                     witness_amount += CopyTable::get_witness_amount();
                     witness_amount += 10;
                     nil::crypto3::zk::snark::plonk_table_description<FieldType> desc(witness_amount, 1, 5, 20);
-                    desc.usable_rows_amount = std::max(max_zkevm_rows, std::max(std::max(max_copy, max_rw), std::max(max_keccak_blocks, max_bytecode)) + 1);
+                    desc.usable_rows_amount = std::max(max_zkevm_rows, std::max(std::max(max_copy, max_rw), std::max(max_exponentations, max_bytecode)) + 1);
                     return desc;
                 }
 
@@ -99,7 +99,7 @@ namespace nil {
                     std::size_t max_zkevm_rows,
                     std::size_t max_copy,
                     std::size_t max_rw,
-                    std::size_t max_keccak_blocks,
+                    std::size_t max_exponentations,
                     std::size_t max_bytecode,
                     std::size_t max_exponentiations = 50 // TODO:remove it later
                 ) :generic_component<FieldType,stage>(context_object), implemented_opcodes(get_implemented_opcodes_list()) {
@@ -527,7 +527,7 @@ namespace nil {
                         tmp[3] = context_object.relativize(evm_opcode_constraint, -1);
                         tmp[4] = context_object.relativize(evm_opcode_constraint * all_states[1].bytecode_hash_hi, -1);
                         tmp[5] = context_object.relativize(evm_opcode_constraint * all_states[1].bytecode_hash_lo, -1);
-                        
+
                         // TODO(oclaw): bytecode check is disabled since hash algorithm for circuits is not finalized yet
                         // https://github.com/NilFoundation/placeholder/issues/205
                         // context_object.relative_lookup(tmp, "zkevm_bytecode", 1, max_zkevm_rows-1);

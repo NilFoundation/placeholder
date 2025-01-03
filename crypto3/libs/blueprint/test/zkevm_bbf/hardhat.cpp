@@ -47,12 +47,13 @@
 
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
-#include <nil/blueprint/bbf/l1_wrapper.hpp>
+
 #include <nil/blueprint/zkevm_bbf/zkevm.hpp>
 #include <nil/blueprint/zkevm_bbf/rw.hpp>
 #include <nil/blueprint/zkevm_bbf/copy.hpp>
 #include <nil/blueprint/zkevm_bbf/bytecode.hpp>
 #include <nil/blueprint/zkevm_bbf/keccak.hpp>
+#include <nil/blueprint/zkevm_bbf/exp.hpp>
 
 #include "./test_l1_wrapper.hpp"
 
@@ -85,6 +86,8 @@ public:
         std::size_t max_rw = max_sizes.max_rw;
         std::size_t max_copy = max_sizes.max_copy;
         std::size_t max_zkevm_rows = max_sizes.max_zkevm_rows;
+        std::size_t max_exponentiations = max_sizes.max_exponentiations;
+        std::size_t max_exp_rows = max_sizes.max_exp_rows;
 
         typename nil::blueprint::bbf::copy<field_type,nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type copy_assignment_input;
         typename nil::blueprint::bbf::copy<field_type,nil::blueprint::bbf::GenerationStage::CONSTRAINTS>::input_type copy_constraint_input;
@@ -118,6 +121,10 @@ public:
         bytecode_assignment_input.keccak_buffers = circuit_inputs.keccaks();
         bool result;
 
+        typename nil::blueprint::bbf::exponentiation<field_type,nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type exp_assignment_input;
+        typename nil::blueprint::bbf::exponentiation<field_type,nil::blueprint::bbf::GenerationStage::CONSTRAINTS>::input_type exp_constraint_input;
+        exp_assignment_input = circuit_inputs.exponentiations();
+
         // Max_rows, max_bytecode, max_rw
         result = test_bbf_component<field_type, nil::blueprint::bbf::zkevm>(
             "zkevm",
@@ -125,8 +132,18 @@ public:
             max_zkevm_rows,
             max_copy,
             max_rw,
-            max_keccak_blocks,
+            max_exponentiations,
             max_bytecode
+        );
+        BOOST_ASSERT(result);
+        // std::cout << std::endl;
+
+        // Max_copy, Max_rw, Max_keccak, Max_bytecode
+        result =test_bbf_component<field_type, nil::blueprint::bbf::exponentiation>(
+            "exp",
+            {}, exp_assignment_input, exp_constraint_input,
+            max_exp_rows,
+            max_exponentiations
         );
         BOOST_ASSERT(result);
         std::cout << std::endl;
@@ -184,6 +201,7 @@ BOOST_AUTO_TEST_CASE(minimal_math) {
     max_sizes.max_copy = 500;
     max_sizes.max_zkevm_rows = 500;
     max_sizes.max_exponentiations = 50;
+    max_sizes.max_exp_rows = 500;
 
     complex_test<field_type>(bytecodes, pts, max_sizes);
 }
@@ -200,6 +218,7 @@ BOOST_AUTO_TEST_CASE(modular_operations) {
     max_sizes.max_copy = 500;
     max_sizes.max_zkevm_rows = 500;
     max_sizes.max_exponentiations = 50;
+    max_sizes.max_exp_rows = 500;
 
     complex_test<field_type>(bytecodes, pts, max_sizes);
 }
@@ -215,6 +234,7 @@ BOOST_AUTO_TEST_CASE(exp) {
     max_sizes.max_rw = 1000;
     max_sizes.max_copy = 500;
     max_sizes.max_zkevm_rows = 2000;
+    max_sizes.max_exp_rows = 500;
     max_sizes.max_exponentiations = 50;
 
     complex_test<field_type>(bytecodes, pts, max_sizes);
@@ -232,6 +252,7 @@ BOOST_AUTO_TEST_CASE(keccak) {
     max_sizes.max_copy = 500;
     max_sizes.max_zkevm_rows = 500;
     max_sizes.max_exponentiations = 50;
+    max_sizes.max_exp_rows = 500;
 
     complex_test<field_type>(bytecodes, pts, max_sizes);
 }
@@ -248,6 +269,7 @@ BOOST_AUTO_TEST_CASE(mstore8) {
     max_sizes.max_copy = 3000;
     max_sizes.max_zkevm_rows = 4500;
     max_sizes.max_exponentiations = 50;
+    max_sizes.max_exp_rows = 500;
 
     complex_test<field_type>(bytecodes, pts, max_sizes);
 }
@@ -264,6 +286,7 @@ BOOST_AUTO_TEST_CASE(meminit) {
     max_sizes.max_copy = 3000;
     max_sizes.max_zkevm_rows = 10000;
     max_sizes.max_exponentiations = 50;
+    max_sizes.max_exp_rows = 500;
 
     complex_test<field_type>(bytecodes, pts, max_sizes);
 }
@@ -280,7 +303,10 @@ BOOST_AUTO_TEST_CASE(calldatacopy) {
     max_sizes.max_copy = 3000;
     max_sizes.max_zkevm_rows = 4500;
     max_sizes.max_exponentiations = 50;
+    max_sizes.max_exp_rows = 500;
 
     complex_test<field_type>(bytecodes, pts, max_sizes);
 }
+
+
 BOOST_AUTO_TEST_SUITE_END()

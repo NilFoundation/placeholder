@@ -48,6 +48,7 @@ in stdenv.mkDerivation {
     cd crypto3
     # remove || true after all tests are fixed under clang-sanitizers check:
     ctest --verbose --output-on-failure -R > test_errors.txt || true
+    cat test_errors.txt
     cd ..
     mkdir -p ${placeholder "out"}/test-logs
     find .. -type f -name '*_test.xml' -exec cp {} ${placeholder "out"}/test-logs \;
