@@ -173,7 +173,7 @@ namespace nil {
                     std::unordered_map<row_selector<>, std::vector<constraint_type>> constraint_list = context_->get_constraints();
                     std::map<std::string, std::pair<std::vector<std::size_t>, row_selector<>>>
                         dynamic_lookup_tables = context_->get_dynamic_lookup_tables();
-                    std::vector<plonk_copy_constraint> copy_constraints = context_->get_copy_constraints();
+                    result.copy_constraints = context_->get_copy_constraints();
                     std::unordered_map<row_selector<>, std::vector<typename context_type::lookup_constraint_type>>
                         lookup_constraints = context_->get_lookup_constraints();
                     context_.reset(nullptr);
