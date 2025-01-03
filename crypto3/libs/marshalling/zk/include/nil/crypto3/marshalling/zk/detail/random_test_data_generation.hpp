@@ -110,29 +110,6 @@ typename FRI::merkle_proof_type generate_random_merkle_proof(std::size_t tree_de
     return mp1;
 }
 
-inline std::vector<std::size_t>
-generate_random_step_list(const std::size_t r, const std::size_t max_step, boost::random::mt11213b &rnd) {
-    using dist_type = std::uniform_int_distribution<int>;
-
-    std::vector<std::size_t> step_list;
-    std::size_t steps_sum = 0;
-    while (steps_sum != r) {
-        if (r - steps_sum <= max_step) {
-            while (r - steps_sum != 1) {
-                step_list.emplace_back(r - steps_sum - 1);
-                steps_sum += step_list.back();
-            }
-            step_list.emplace_back(1);
-            steps_sum += step_list.back();
-        } else {
-            step_list.emplace_back(dist_type(1, max_step)(rnd));
-            steps_sum += step_list.back();
-        }
-    }
-
-    return step_list;
-}
-
 template<typename FRI>
 typename FRI::polynomial_values_type generate_random_polynomial_values(
         size_t step,
