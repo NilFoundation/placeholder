@@ -9,6 +9,8 @@
 
 #pragma once
 
+//Use this line instead if you have issues with mac
+//#include <machine/endian.h>
 #include <bits/endian.h>
 
 #define NIL_CO3_MP_ENDIAN_BIG_BYTE 0

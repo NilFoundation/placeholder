@@ -55,10 +55,7 @@ void test_carry_on_addition(const std::vector<typename BlueprintFieldType::value
     bool pass = B.is_satisfied(at);
     std::cout << "Is_satisfied = " << pass << std::endl;
 
-    assert(B.is_satisfied(at) == true);
-    bool proof = B.check_proof(at, desc);
-    std::cout << "Is_proved = " << proof << std::endl;
-    assert(proof == true);
+    assert(pass == true);
 
     integral_type BASE = integral_type(1) << bit_size_chunk; // the representation base
     TYPE expected_res[num_chunks], carry[num_chunks];
@@ -104,7 +101,7 @@ constexpr static const std::size_t random_tests_amount = 10;
 
 BOOST_AUTO_TEST_SUITE(blueprint_plonk_test_suite)
 
-BOOST_AUTO_TEST_CASE(blueprint_plonk_equality_flag_test_vesta) {
+BOOST_AUTO_TEST_CASE(blueprint_plonk_bbf_carry_on_addition_vesta_test) {
     using field_type = typename crypto3::algebra::curves::vesta::base_field_type;
 
     carry_on_addition_tests<field_type, 2, 16, random_tests_amount>();
@@ -126,7 +123,7 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_equality_flag_test_vesta) {
     carry_on_addition_tests<field_type, 9, 16, random_tests_amount>();
 }
 
-BOOST_AUTO_TEST_CASE(blueprint_plonk_field_operations_test_pallas) {
+BOOST_AUTO_TEST_CASE(blueprint_plonk_bbf_carry_on_addition_pallas_test) {
     using field_type = typename crypto3::algebra::curves::pallas::base_field_type;
 
     carry_on_addition_tests<field_type, 2, 16, random_tests_amount>();

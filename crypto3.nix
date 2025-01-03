@@ -6,6 +6,7 @@
   boost,
   gdb,
   lldb,
+  mold,
   cmake_modules,
   enableDebugging,
   enableDebug ? false,

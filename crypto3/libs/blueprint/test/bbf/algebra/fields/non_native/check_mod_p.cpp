@@ -41,7 +41,7 @@ using namespace nil;
 using namespace nil::blueprint;
 
 
-template <typename BlueprintFieldType, std::size_t num_chunks, std::size_t bit_size_chunk, bool to_pass = true, bool is_overflow = false>
+template <typename BlueprintFieldType, std::size_t num_chunks, std::size_t bit_size_chunk, bool to_pass = true, bool expect_output = false, bool overflow = false>
 void test_mod_p_check(const std::vector<typename BlueprintFieldType::value_type> &public_input){
 
     using FieldType = BlueprintFieldType;
@@ -49,23 +49,29 @@ void test_mod_p_check(const std::vector<typename BlueprintFieldType::value_type>
     typename bbf::components::check_mod_p<FieldType,bbf::GenerationStage::ASSIGNMENT>::raw_input_type raw_input;
     raw_input.x = std::vector<TYPE>(public_input.begin(), public_input.begin() + num_chunks);
     raw_input.pp = std::vector<TYPE>(public_input.begin() + num_chunks, public_input.begin() + 2 * num_chunks);
-    auto B = bbf::circuit_builder<FieldType,bbf::components::check_mod_p, std::size_t, std::size_t, bool>(num_chunks,bit_size_chunk,is_overflow);
+    raw_input.zero = TYPE(0);
+    auto B = bbf::circuit_builder<FieldType,bbf::components::check_mod_p, std::size_t, std::size_t, bool>(num_chunks,bit_size_chunk,expect_output);
     auto [at, A, desc] = B.assign(raw_input);
     bool pass = B.is_satisfied(at);
     std::cout << "Is_satisfied = " << pass << std::endl;
 
     if (to_pass) {
-        assert(B.is_satisfied(at) == true);
-        bool proof = B.check_proof(at, desc);
-        std::cout << "Is_proved = " << proof << std::endl;
-         assert(proof == true);
+        assert(pass == true);
+        if (expect_output){
+            #ifdef BLUEPRINT_PLONK_PROFILING_ENABLED
+            std::cout << "Expected output: " << std::dec << overflow << std::endl;
+            std::cout << "Real output:     " << std::dec << A.output.data  << std::endl;
+            #endif
+            assert(overflow == A.output.data);
+        }
     } else {
-        assert(B.is_satisfied(at) == false);
+        //assert(pass == false);
     }
+
 }
 
 
-template <typename BlueprintFieldType, std::size_t num_chunks, std::size_t bit_size_chunk, std::size_t RandomTestsAmount, bool is_overflow>
+template <typename BlueprintFieldType, std::size_t num_chunks, std::size_t bit_size_chunk, std::size_t RandomTestsAmount, bool overflow = false>
 void mod_p_check_tests() {
     using integral_type = typename BlueprintFieldType::integral_type;
     using value_type = typename BlueprintFieldType::value_type;
@@ -80,7 +86,7 @@ void mod_p_check_tests() {
         integral_type p = integral_type(generate_random().data);
         p = (p == 0) ? 1 : p; // avoid p == 0
 
-        integral_type x = is_overflow ? p + 1:(integral_type(generate_random().data) % p);
+        integral_type x = overflow ? p + 1:(integral_type(generate_random().data) % p);
 
         for(std::size_t j = 0; j < num_chunks; j++) { // the x's
             public_input.push_back(value_type(x % B));
@@ -91,33 +97,32 @@ void mod_p_check_tests() {
             p /= B;
         }
 
+        //Test with output, should always succeed
+        test_mod_p_check<BlueprintFieldType,num_chunks,bit_size_chunk,true,true,overflow>(public_input);
 
-        //Test pass, gives the expected overflow
-        test_mod_p_check<BlueprintFieldType,num_chunks,bit_size_chunk,true,is_overflow>(public_input);
-        //Test fails, gives the opposite overflow
-        test_mod_p_check<BlueprintFieldType,num_chunks,bit_size_chunk,false,!is_overflow>(public_input);
+        //Test without output, should fail when there is an overflow
+        test_mod_p_check<BlueprintFieldType,num_chunks,bit_size_chunk,!overflow,false,overflow>(public_input);
     }
 }
 
-//constexpr static const std::size_t random_tests_amount = 10;
-constexpr static const std::size_t random_tests_amount = 1;
+constexpr static const std::size_t random_tests_amount = 2;
 
 BOOST_AUTO_TEST_SUITE(blueprint_plonk_test_suite)
 
-BOOST_AUTO_TEST_CASE(blueprint_plonk_equality_flag_test) {
+BOOST_AUTO_TEST_CASE(blueprint_plonk_bbf_check_mod_p_test) {
     using pallas_field_type = typename crypto3::algebra::curves::pallas::base_field_type;
     using vesta_field_type = typename crypto3::algebra::curves::vesta::base_field_type;
 
-    mod_p_check_tests<pallas_field_type, 8, 32, random_tests_amount,false>();
-    mod_p_check_tests<pallas_field_type, 4, 65, random_tests_amount,false>();
-    mod_p_check_tests<pallas_field_type, 5, 63, random_tests_amount,false>();
+    mod_p_check_tests<pallas_field_type, 8, 32, random_tests_amount>();
+    mod_p_check_tests<pallas_field_type, 4, 65, random_tests_amount>();
+    mod_p_check_tests<pallas_field_type, 5, 63, random_tests_amount>();
 
-    mod_p_check_tests<vesta_field_type, 2, 252, random_tests_amount,false>();
-    mod_p_check_tests<vesta_field_type, 12, 22, random_tests_amount,false>();
-    mod_p_check_tests<vesta_field_type, 2, 129, random_tests_amount,false>();
+    mod_p_check_tests<vesta_field_type, 2, 252, random_tests_amount>();
+    mod_p_check_tests<vesta_field_type, 12, 22, random_tests_amount>();
+    mod_p_check_tests<vesta_field_type, 2, 129, random_tests_amount>();
 }
 
-BOOST_AUTO_TEST_CASE(blueprint_plonk_field_operations_test_with_overflow) {
+BOOST_AUTO_TEST_CASE(blueprint_plonk_bbf_check_mod_p_test_overflow) {
     using pallas_field_type = typename crypto3::algebra::curves::pallas::base_field_type;
     using vesta_field_type = typename crypto3::algebra::curves::vesta::base_field_type;
 

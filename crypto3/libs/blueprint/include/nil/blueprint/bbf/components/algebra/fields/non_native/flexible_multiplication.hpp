@@ -166,8 +166,10 @@ namespace nil {
                         TYPE q_n;
                         TYPE r_n;
                         TYPE p_n;
+                        TYPE ZERO;
 
                         if constexpr (stage == GenerationStage::ASSIGNMENT) {
+                            ZERO = 0;
                         for (std::size_t i = 0; i < num_chunks; ++i) {
                             X[i] = input_x[i];
                             Y[i] = input_y[i];
@@ -261,15 +263,14 @@ namespace nil {
                             allocate(B[2*i+1]);
                             constrain(B[2*i] + B[2*i+1]*b_shift - A[i]);
                         }
+                        allocate(ZERO);
+
+                        Range_Check rc1 = Range_Check(context_object, R,num_chunks,bit_size_chunk);
+                        Range_Check rc2 = Range_Check(context_object, Q,num_chunks,bit_size_chunk);
+                        Range_Check rc3 = Range_Check(context_object, B,num_chunks,bit_size_chunk);
                                                 
-                        Check_Mod_P c1 = Check_Mod_P(context_object, R,PP,num_chunks,bit_size_chunk,false,make_links);
-                        Check_Mod_P c2 = Check_Mod_P(context_object, Q,PP,num_chunks,bit_size_chunk,false,make_links);
-
-                        //In original flexible_multiplication
-                        //Range_Check rc = Range_Check(context_object, R,num_chunks,bit_size_chunk,make_links);
-
-                        //In ECDSA implementation doc
-                        Range_Check rc = Range_Check(context_object, B,num_chunks,bit_size_chunk,make_links);
+                        Check_Mod_P c1 = Check_Mod_P(context_object, R,PP,ZERO,num_chunks,bit_size_chunk,false);
+                        Check_Mod_P c2 = Check_Mod_P(context_object, Q,PP,ZERO,num_chunks,bit_size_chunk,false);
 
                         //Starting b\n
                         if(num_chunks>2){
@@ -286,7 +287,7 @@ namespace nil {
                                  B_X[i].push_back(X[num_chunks - 3]);
                                 allocate(B_X[i][num_chunks-2]);
                                 allocate(B_X[i][num_chunks-1]);
-                                Range_Check(context_object, B_X[i],num_chunks,bit_size_chunk,make_links);
+                                Range_Check(context_object, B_X[i],num_chunks,bit_size_chunk);
                             }    
                         }                 
 

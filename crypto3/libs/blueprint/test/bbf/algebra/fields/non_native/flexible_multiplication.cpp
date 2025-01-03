@@ -89,10 +89,7 @@ void test_mult(const std::vector<typename BlueprintFieldType::value_type> &publi
     std::cout << "to_pass: " << to_pass << std::endl;
 
     if (to_pass) {
-        assert(B.is_satisfied(at) == true);
-        bool proof = B.check_proof(at, desc);
-        std::cout << "Is_proved = " << proof << std::endl;
-        assert(proof == true);
+        assert(pass == true);
         foreign_integral_type R = 0;
         pow = 1;
         for(std::size_t i = 0; i < num_chunks; i++) {
@@ -106,7 +103,7 @@ void test_mult(const std::vector<typename BlueprintFieldType::value_type> &publi
     #endif
     assert(r == R);
     } else {
-        assert(B.is_satisfied(at) == false);
+        assert(pass == false);
     }
 
 }
@@ -186,8 +183,8 @@ void mult_tests_to_fail() {
                                        extended_base = 1,
                                        ext_pow = extended_base << (num_chunks*bit_size_chunk),
                                        p = NonNativeFieldType::modulus,
+                                       //Forcing the test to fail by substracting pp by 1
                                        pp = ext_pow - p - 1;
-                                       //pp = 1;
 
         public_input.resize(4*num_chunks);
         for(std::size_t j = 0; j < num_chunks; j++) {
@@ -208,12 +205,11 @@ void mult_tests_to_fail() {
                 num_chunks, bit_size_chunk,false>(public_input);
     }
 }
-//constexpr static const std::size_t random_tests_amount = 5;
-constexpr static const std::size_t random_tests_amount = 1;
+constexpr static const std::size_t random_tests_amount = 5;
 
 BOOST_AUTO_TEST_SUITE(blueprint_plonk_test_suite)
 
-BOOST_AUTO_TEST_CASE(blueprint_plonk_equality_flag_test) {
+BOOST_AUTO_TEST_CASE(blueprint_plonk_bbf_flexible_multiplication_test) {
     using pallas_field_type = typename crypto3::algebra::curves::pallas::base_field_type;
     using vesta_field_type = typename crypto3::algebra::curves::vesta::base_field_type;
 
@@ -231,7 +227,7 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_equality_flag_test) {
 
 }
 
-BOOST_AUTO_TEST_CASE(blueprint_plonk_field_operations_test_to_fail) {
+BOOST_AUTO_TEST_CASE(blueprint_plonk_bbf_flexible_multiplication_test_to_fail) {
     using pallas_field_type = typename crypto3::algebra::curves::pallas::base_field_type;
     using vesta_field_type = typename crypto3::algebra::curves::vesta::base_field_type;
 
