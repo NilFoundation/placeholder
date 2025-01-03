@@ -1,6 +1,9 @@
 #ifndef PROOF_GENERATOR_LIBS_ASSIGNER_TRACE_PARSER_HPP_
 #define PROOF_GENERATOR_LIBS_ASSIGNER_TRACE_PARSER_HPP_
 
+#include <fstream>
+#include <ios>
+#include <optional>
 #include <vector>
 #include <string>
 #include <cstdint>
@@ -15,11 +18,12 @@
 #include <nil/blueprint/zkevm_bbf/types/copy_event.hpp>
 
 #include <nil/proof-generator/assigner/trace.pb.h>
+#include "proto_hash.h"
 
 namespace nil {
     namespace proof_generator {
 
- 
+
         const char BYTECODE_EXTENSION[] = ".bc";
         const char RW_EXTENSION[] = ".rw";
         const char ZKEVM_EXTENSION[] = ".zkevm";
@@ -54,6 +58,11 @@ namespace nil {
                 if (!pb_traces.ParseFromIstream(&file)) {
                     return std::nullopt;
                 }
+                if (pb_traces.proto_hash() != PROTO_HASH) {
+                    BOOST_LOG_TRIVIAL(error) << "Compatibility check failed for trace file " << filename.c_str()
+                                             << ": proto version mismatch";
+                    return std::nullopt;
+                }
                 return pb_traces;
             }
 
@@ -76,7 +85,7 @@ namespace nil {
 
                 const auto it = mapping_.find(pb_participant.location());
                 if (it == mapping_.end()) {
-                    BOOST_LOG_TRIVIAL(warning) << "Unknown copy operand type: " << static_cast<int>(pb_participant.location());
+                    BOOST_LOG_TRIVIAL(error) << "Unknown copy operand type: " << static_cast<int>(pb_participant.location());
                     return std::nullopt;
                 }
 
@@ -185,7 +194,7 @@ namespace nil {
                     static_cast<uint64_t>(pb_sop.rw_idx()),
                     !pb_sop.is_read(),
                     proto_uint256_to_zkevm_word(pb_sop.value()),
-                    proto_uint256_to_zkevm_word(pb_sop.initial_value()),
+                    proto_uint256_to_zkevm_word(pb_sop.prev_value()),
                     blueprint::zkevm_word_from_string(pb_sop.address().address_bytes())
                 );
                 //TODO root and initial_root?

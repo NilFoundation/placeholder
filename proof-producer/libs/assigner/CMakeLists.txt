@@ -23,13 +23,23 @@ foreach(PROTO_FILE ${PROTO_FILES})
     list(APPEND GENERATED_HEADERS ${PROTO_HDR})
 endforeach()
 
+# Write header file with version of trace proto spec
+set(TRACE_PROTO_FILE ${CMAKE_CURRENT_SOURCE_DIR}/proto/trace.proto)
+set(PROTO_HASH_HEADER "${CMAKE_CURRENT_BINARY_DIR}/proto_hash.h")
+add_custom_command(
+                   OUTPUT ${PROTO_HASH_HEADER}
+                   COMMAND bash -c "echo \"#pragma once\" > ${PROTO_HASH_HEADER}"
+                   COMMAND bash -c "echo \"#define PROTO_HASH \\\"`sha256sum ${TRACE_PROTO_FILE} | awk '{print $1}'`\\\"\" >> ${PROTO_HASH_HEADER}"
+                   VERBATIM)
+
 add_library(proof_generatorAssigner
             ${PROTO_SRC}
+            ${PROTO_HASH_HEADER}
 )
 set_target_properties(proof_generatorAssigner PROPERTIES CXX_STANDARD 20)
 
 target_include_directories(proof_generatorAssigner
-                            PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
+                            PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include ${CMAKE_CURRENT_BINARY_DIR}
 )
 
 find_package(Boost REQUIRED COMPONENTS filesystem log)
@@ -48,9 +58,9 @@ target_link_libraries(proof_generatorAssigner
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     target_compile_options(proof_generatorAssigner PRIVATE "-fconstexpr-steps=2147483647")
-    
+
     # without it abseil-cpp fails to link with clang19-compiled code, see https://github.com/llvm/llvm-project/issues/102443
-    target_compile_options(proof_generatorAssigner PRIVATE "-fclang-abi-compat=17") 
+    target_compile_options(proof_generatorAssigner PRIVATE "-fclang-abi-compat=17")
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     target_compile_options(proof_generatorAssigner PRIVATE "-fconstexpr-ops-limit=4294967295")
 endif ()
