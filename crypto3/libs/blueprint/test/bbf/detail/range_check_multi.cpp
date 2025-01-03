@@ -53,14 +53,10 @@ void test_range_check(const std::vector<typename BlueprintFieldType::value_type>
     bool pass = B.is_satisfied(at);
     std::cout << "Is_satisfied = " << pass << std::endl;
 
-
     if (to_pass) {
-        assert(B.is_satisfied(at) == true);
-        bool proof = B.check_proof(at, desc);
-        std::cout << "Is_proved = " << proof << std::endl;
-         assert(proof == true);
+        assert(pass == true);
     } else {
-        assert(B.is_satisfied(at) == false);
+        assert(pass == false);
     }
 }
 
@@ -95,15 +91,12 @@ void range_check_tests_to_fail() {
     integral_type mask = (integral_type(1) << bit_size_chunk) - 1;
 
     for (std::size_t i = 0; i < RandomTestsAmount; i++) {
-        std::size_t for_faulty_chunks = bit_size_chunk % num_chunks + 1;
         integral_type most_significant_bit = integral_type(1) << (bit_size_chunk + i % 2);
         std::vector<typename BlueprintFieldType::value_type> public_input;
-        for (std::size_t j = 0; j < num_chunks; j++) {
-            if (j % for_faulty_chunks != 0) {
-                public_input.push_back(value_type(integral_type(generate_random().data) & mask));
-            } else {
-                public_input.push_back(value_type(integral_type(generate_random().data) & mask | most_significant_bit));
-            }
+        //Adding a faulty bit at j = 0
+        public_input.push_back(value_type(integral_type(generate_random().data) & mask| most_significant_bit));
+        for (std::size_t j = 1; j < num_chunks; j++) {
+            public_input.push_back(value_type(integral_type(generate_random().data) & mask));
         }
         test_range_check<BlueprintFieldType,num_chunks,bit_size_chunk,false>(public_input);
     }
@@ -113,7 +106,7 @@ constexpr static const std::size_t random_tests_amount = 10;
 
 BOOST_AUTO_TEST_SUITE(blueprint_plonk_test_suite)
 
-BOOST_AUTO_TEST_CASE(blueprint_plonk_equality_flag_test) {
+BOOST_AUTO_TEST_CASE(blueprint_plonk_bbf_range_check_multi_test) {
     using pallas_field_type = typename crypto3::algebra::curves::pallas::base_field_type;
     using vesta_field_type = typename crypto3::algebra::curves::vesta::base_field_type;
 

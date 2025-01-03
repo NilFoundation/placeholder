@@ -49,7 +49,7 @@ namespace nil {
             namespace components {
                 // Multiplication in non-native field with k-chunks and p > n, x * y - p * q - r = 0
                 // Parameters: num_chunks = k, bit_size_chunk = b, T = k*b
-                // native field module = n, non-native field module = p, pp = 2^T - p
+                // native field module = n, non-native field module = p, pp = 2^T - p ( or -p(mod2^t))
                 // NB: 2^T * n > p^2 + p
                 // Input: x[0],..., x[k-1], y[0],..., y[k-1], p[0],..., p[k-1], pp[0],...,p[k-1]
                 // Output: r[0],..., r[k-1]
@@ -80,8 +80,11 @@ namespace nil {
                                                   flexible_multiplication_raw_input<FieldType>,
                                                   std::tuple<>>::type;
 
-                    using NonNativeFieldVariant = std::variant<crypto3::algebra::curves::pallas::base_field_type,
-                                                               crypto3::algebra::curves::vesta::base_field_type>;
+                    using NonNativeIntegralVariant = std::variant<
+                        nil::crypto3::multiprecision::big_uint<2* crypto3::algebra::curves::pallas::base_field_type::modulus_bits>,
+                        nil::crypto3::multiprecision::big_uint<2* crypto3::algebra::curves::vesta::base_field_type::modulus_bits>
+                    >;
+
 
                   public:
                     std::vector<TYPE> inp_x;
@@ -90,7 +93,7 @@ namespace nil {
                     std::vector<TYPE> inp_pp;
                     std::vector<TYPE> res;
 
-                    static table_params get_minimal_requirements(NonNativeFieldVariant non_native_field, std::size_t num_chunks,
+                    static table_params get_minimal_requirements(NonNativeIntegralVariant non_native_double,std::size_t num_chunks,
                                                                  std::size_t bit_size_chunk) {
                         //The 6 variables chunks fit in 2 rows, and there is a 3rd additionnal row available for the constraint values
                         std::size_t witness =3*num_chunks;
@@ -103,7 +106,7 @@ namespace nil {
 
                     static std::tuple<std::vector<TYPE>,std::vector<TYPE>,std::vector<TYPE>,std::vector<TYPE>> form_input(context_type &context_object,                    
                                                                     raw_input_type raw_input,
-                                                                    NonNativeFieldVariant non_native_field,
+                                                                    NonNativeIntegralVariant non_native_modulus,
                                                                     std::size_t num_chunks,
                                                                     std::size_t bit_size_chunk) {
                         std::vector<TYPE> input_x(num_chunks);
@@ -131,19 +134,19 @@ namespace nil {
 
                     
                     flexible_multiplication(context_type &context_object, std::vector<TYPE> input_x, std::vector<TYPE> input_y,std::vector<TYPE> input_p,std::vector<TYPE> input_pp,
-                                            NonNativeFieldVariant non_native_field,
+                                            NonNativeIntegralVariant foreign_integral_type,
                                             std::size_t num_chunks, std::size_t bit_size_chunk,
                                             bool make_links = true)
                         : generic_component<FieldType, stage>(context_object),
-                          non_native_field(std::move(non_native_field)) {
+                          foreign_integral_type(std::move(foreign_integral_type)) {
                             
 
-                        auto visit_result = std::visit([](auto&& field) {
-                            using NonNativeFieldType = std::decay_t<decltype(field)>;
-                            return typename NonNativeFieldType::extended_integral_type{};
-                        }, non_native_field);
+                        auto visit_result = std::visit(
+                            [](auto&& field) -> decltype(field) { return field; },
+                            foreign_integral_type
+                        );
 
-                        using foreign_extended_integral_type = decltype(visit_result); 
+                        using double_non_native_integral_type = decltype(visit_result);
                         using native_integral_type = typename FieldType::integral_type;
 
                         using Check_Mod_P = typename bbf::components::check_mod_p<FieldType,stage>;
@@ -166,47 +169,48 @@ namespace nil {
                         TYPE q_n;
                         TYPE r_n;
                         TYPE p_n;
+                        TYPE ZERO;
 
                         if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                        for (std::size_t i = 0; i < num_chunks; ++i) {
-                            X[i] = input_x[i];
-                            Y[i] = input_y[i];
-                            P[i] = input_p[i];
-                            PP[i] = input_pp[i];
-                        }
-                        foreign_extended_integral_type foreign_p = 0,
-                                               foreign_x = 0,
-                                               foreign_y = 0,
-                                               pow = 1;
-                        
-                        for (std::size_t i = 0; i < num_chunks; ++i) {
-                            foreign_x += foreign_extended_integral_type(native_integral_type(X[i].data)) * pow;
-                            foreign_y += foreign_extended_integral_type(native_integral_type(Y[i].data)) * pow;
-                            foreign_p += foreign_extended_integral_type(native_integral_type(P[i].data)) * pow;
-                            pow <<= bit_size_chunk;
+                                ZERO = 0;
+                            for (std::size_t i = 0; i < num_chunks; ++i) {
+                                X[i] = input_x[i];
+                                Y[i] = input_y[i];
+                                P[i] = input_p[i];
+                                PP[i] = input_pp[i];
+                            }
+                            double_non_native_integral_type foreign_p = 0,
+                                                foreign_x = 0,
+                                                foreign_y = 0,
+                                                pow = 1;
+                            
+                            for (std::size_t i = 0; i < num_chunks; ++i) {
+                                foreign_x += double_non_native_integral_type(native_integral_type(X[i].data)) * pow;
+                                foreign_y += double_non_native_integral_type(native_integral_type(Y[i].data)) * pow;
+                                foreign_p += double_non_native_integral_type(native_integral_type(P[i].data)) * pow;
+                                pow <<= bit_size_chunk;
+                            }
+
+                            double_non_native_integral_type foreign_r = (foreign_x * foreign_y) % foreign_p, // r = x*y % p
+                                                            foreign_q = (foreign_x * foreign_y - foreign_r) / foreign_p; // q = (x*y - r)/p
+                            double_non_native_integral_type mask = (double_non_native_integral_type(1) << bit_size_chunk) - 1;
+                            for (std::size_t j = 0; j < num_chunks; ++j) {
+                                Q[j] = TYPE(foreign_q & mask);
+                                R[j] = TYPE(foreign_r & mask);
+                                foreign_q >>= bit_size_chunk;
+                                foreign_r >>= bit_size_chunk;
+                            }
+
                         }
 
-                        foreign_extended_integral_type foreign_r = (foreign_x * foreign_y) % foreign_p, // r = x*y % p
-                                                        foreign_q = (foreign_x * foreign_y - foreign_r) / foreign_p; // q = (x*y - r)/p
-                        foreign_extended_integral_type mask = (foreign_extended_integral_type(1) << bit_size_chunk) - 1;
-                        for (std::size_t j = 0; j < num_chunks; ++j) {
-                            Q[j] = TYPE(foreign_q & mask);
-                            R[j] = TYPE(foreign_r & mask);
-                            foreign_q >>= bit_size_chunk;
-                            foreign_r >>= bit_size_chunk;
-                        }
-
-                        }
-
-                        for (std::size_t i = 0; i < num_chunks; ++i)
-                        {
+                        for (std::size_t i = 0; i < num_chunks; ++i){
                             allocate(X[i]);
                             allocate(Y[i]);
                             allocate(PP[i]);
                             allocate(Q[i]);
                             allocate(R[i]);
                             allocate(P[i]);
-                            }
+                        }
 
                         native_integral_type pow = 1;
                         for (std::size_t j = 0; j < num_chunks; ++j) {
@@ -217,14 +221,22 @@ namespace nil {
                             p_n += P[j] * pow;
                             pow <<= bit_size_chunk;
                         }
+
                         allocate(x_n);
                         allocate(y_n);
                         allocate(q_n);
                         allocate(p_n);
                         allocate(r_n);
+                        //constrain X*Y - Q*P - R = 0
                         constrain(x_n * y_n - q_n * p_n - r_n);
 
                         // computation mod 2^T
+                        // (mod 2^t)xy + qp' = [x_0, x_1, x_2, x_3] ⋅ [y_0, y_1, y_2, y_3] + [q_0, q_1, q_2, q_3] ⋅ [pp_0, pp_1, pp_2, pp_3]
+                        //    z_0 = x_0 ⋅ y_0 + q_0 ⋅ pp_0
+                        //    z_1 = x_0 ⋅ y_1 + x_1 ⋅ y_0 + q_0 ⋅ pp_1 + q_1 ⋅ pp_0
+                        //    z_2 = x_0 ⋅ y_2 + x_1 ⋅ y_1 + x_2 ⋅ y_0 + q_0 ⋅ pp_2 + q_1 ⋅ pp_1 + q_2 ⋅ pp_0
+                        //    z_3 = x_0 ⋅ y_3 + x_1 ⋅ y_2 + x_2 ⋅ y_1 + x_3 ⋅ y_0 + q_0 ⋅ pp_3 + q_1 ⋅ pp_2 + q_2 ⋅ pp_1 + q_3 ⋅ pp_0
+                        //   Result = z_0 ⋅ 2^{0b} + z_1 ⋅ 2^{1b} + z_2 ⋅ 2^{2b} + z_3 ⋅ 2^{3b}
                         for (std::size_t i = 0; i < num_chunks; ++i) {
                             Z[i] = TYPE(0);
                             for (std::size_t j = 0; j <= i; ++j) {
@@ -232,6 +244,7 @@ namespace nil {
                             }
                             allocate(Z[i]);
                         }
+
 
                         if constexpr (stage == GenerationStage::ASSIGNMENT) {
                             A[0] = Z[0] - R[0];
@@ -251,25 +264,40 @@ namespace nil {
                         native_integral_type b_shift = native_integral_type(1) << bit_size_chunk;
                         allocate(A[0]);
                         constrain(A[0]*b_shift - Z[0] + R[0]);
+                        // constrain that the last t bits of z are equal to r:
+                        // z_0 - r_0 = a_0 ⋅ 2^b
+                        // z_1 + a_0 - r_1 = a_1 ⋅ 2^b
+                        // z_2 + a_1 - r_2 = a_2 ⋅ 2^b
+                        // z_3 + a_2 - r_3 = a_3 ⋅ 2^b
                         for (std::size_t i = 1; i < num_chunks; ++i) {
                             allocate(A[i]);
                             constrain(A[i]*b_shift - Z[i] - A[i-1]+ R[i]);
                         }
+
+                        // If there is a fault in the computation:
+                        // a'_0 = a_0 + 2^{3b+1} 
+                        // a'_1 = a_1 + 2^{2b+1}, a'_2 = a_2 + 2^{b+1}
+                        //
+                        // This results in a faulty `a_2`, which can cause an error in `z_3 - r_3`.
+                        // The same issue applies for `a_1`. However, higher `a_i` values will only 
+                        // interfere with other `a_j` values and not with `z_i` or `r_i`.
+                        //
+                        // a_0 = b_0 + b_1 ⋅ 2^b
+                        // a_1 = b_2 + b_3 ⋅ 2^b
 
                         for (std::size_t i = 0; i < num_chunks - 2; ++i) {
                             allocate(B[2*i]);
                             allocate(B[2*i+1]);
                             constrain(B[2*i] + B[2*i+1]*b_shift - A[i]);
                         }
+                        allocate(ZERO);
+
+                        Range_Check rc1 = Range_Check(context_object, R,num_chunks,bit_size_chunk);
+                        Range_Check rc2 = Range_Check(context_object, Q,num_chunks,bit_size_chunk);
+                        Range_Check rc3 = Range_Check(context_object, B,num_chunks,bit_size_chunk);
                                                 
-                        Check_Mod_P c1 = Check_Mod_P(context_object, R,PP,num_chunks,bit_size_chunk,false,make_links);
-                        Check_Mod_P c2 = Check_Mod_P(context_object, Q,PP,num_chunks,bit_size_chunk,false,make_links);
-
-                        //In original flexible_multiplication
-                        //Range_Check rc = Range_Check(context_object, R,num_chunks,bit_size_chunk,make_links);
-
-                        //In ECDSA implementation doc
-                        Range_Check rc = Range_Check(context_object, B,num_chunks,bit_size_chunk,make_links);
+                        Check_Mod_P c1 = Check_Mod_P(context_object, R,PP,ZERO,num_chunks,bit_size_chunk,false);
+                        Check_Mod_P c2 = Check_Mod_P(context_object, Q,PP,ZERO,num_chunks,bit_size_chunk,false);
 
                         //Starting b\n
                         if(num_chunks>2){
@@ -280,22 +308,22 @@ namespace nil {
                                 for (std::size_t j = 0; j < num_chunks - 2; ++j) {
                                     B_X[i].push_back(B[j + i * (num_chunks - 2)]);
                                     allocate(B_X[i][j]);
-                                    }
+                                }
 
-                                 B_X[i].push_back(X[num_chunks - 3]);    
-                                 B_X[i].push_back(X[num_chunks - 3]);
+                                B_X[i].push_back(X[num_chunks - 3]);    
+                                B_X[i].push_back(X[num_chunks - 3]);
                                 allocate(B_X[i][num_chunks-2]);
                                 allocate(B_X[i][num_chunks-1]);
-                                Range_Check(context_object, B_X[i],num_chunks,bit_size_chunk,make_links);
+                                Range_Check(context_object, B_X[i],num_chunks,bit_size_chunk);
                             }    
                         }                 
 
                         if (make_links) {
-                        for (std::size_t i = 0; i < num_chunks; ++i) {
-                            copy_constrain(X[i], input_x[i]);
-                            copy_constrain(Y[i], input_y[i]);
-                            copy_constrain(P[i], input_p[i]);
-                            copy_constrain(PP[i], input_pp[i]);
+                            for (std::size_t i = 0; i < num_chunks; ++i) {
+                                copy_constrain(X[i], input_x[i]);
+                                copy_constrain(Y[i], input_y[i]);
+                                copy_constrain(P[i], input_p[i]);
+                                copy_constrain(PP[i], input_pp[i]);
                             }
                         }
 
@@ -311,7 +339,7 @@ namespace nil {
                     }
                     
                   private:
-                    NonNativeFieldVariant non_native_field;
+                    NonNativeIntegralVariant foreign_integral_type;
                 };
 
             }  // namespace components

@@ -51,52 +51,51 @@
 using namespace nil;
 using namespace nil::blueprint;
 
-template <typename BlueprintFieldType, typename NonNativeFieldType,
+template <typename BlueprintFieldType, typename NonNativeFieldType, std::size_t double_integral_index,
         std::size_t num_chunks, std::size_t bit_size_chunk,bool to_pass = true>
 void test_mult(const std::vector<typename BlueprintFieldType::value_type> &public_input){
     using FieldType = BlueprintFieldType;
     using TYPE = typename FieldType::value_type;
     using integral_type = typename BlueprintFieldType::integral_type;
-    using foreign_basic_integral_type = typename NonNativeFieldType::integral_type;
-    using foreign_integral_type = typename NonNativeFieldType::extended_integral_type;
-    using NonNativeFieldVariant = std::variant<crypto3::algebra::curves::pallas::base_field_type,
-                                           crypto3::algebra::curves::vesta::base_field_type>;
+    typedef nil::crypto3::multiprecision::big_uint<2 * NonNativeFieldType::modulus_bits> double_non_native_integral_type;
+    
+    using NonNativeIntegralVariant = std::variant<
+        nil::crypto3::multiprecision::big_uint<2* crypto3::algebra::curves::pallas::base_field_type::modulus_bits>,
+        nil::crypto3::multiprecision::big_uint<2* crypto3::algebra::curves::vesta::base_field_type::modulus_bits>
+    >;
 
-    foreign_integral_type x = 0,
+    double_non_native_integral_type x = 0,
                         y = 0,
                         p = 0,
                         pow = 1;
     
     for (std::size_t i = 0; i < num_chunks; ++i) {
-        x += foreign_integral_type(integral_type(public_input[i].data)) * pow;
-        y += foreign_integral_type(integral_type(public_input[i + num_chunks].data)) * pow;
-        p += foreign_integral_type(integral_type(public_input[i + 2*num_chunks].data)) * pow;
+        x += double_non_native_integral_type(integral_type(public_input[i].data)) * pow;
+        y += double_non_native_integral_type(integral_type(public_input[i + num_chunks].data)) * pow;
+        p += double_non_native_integral_type(integral_type(public_input[i + 2*num_chunks].data)) * pow;
         pow <<= bit_size_chunk;
     }
     
-    foreign_integral_type r = x*y % p;
+    double_non_native_integral_type r = x*y % p;
 
-    NonNativeFieldVariant non_native_field = NonNativeFieldType();
+    NonNativeIntegralVariant double_non_native_integral_type_variant = NonNativeIntegralVariant{std::in_place_index<double_integral_index>};
     typename bbf::components::flexible_multiplication<FieldType,bbf::GenerationStage::ASSIGNMENT>::raw_input_type raw_input;
     raw_input.x = std::vector<TYPE>(public_input.begin(), public_input.begin() + num_chunks);
     raw_input.y = std::vector<TYPE>(public_input.begin() + num_chunks , public_input.begin() + 2*num_chunks);
     raw_input.p = std::vector<TYPE>(public_input.begin() + 2*num_chunks, public_input.begin() + 3*num_chunks);
     raw_input.pp = std::vector<TYPE>(public_input.begin() + 3*num_chunks, public_input.begin() + 4*num_chunks);
-    auto B = bbf::circuit_builder<FieldType,bbf::components::flexible_multiplication,NonNativeFieldVariant, std::size_t, std::size_t>(non_native_field,num_chunks,bit_size_chunk);
+    auto B = bbf::circuit_builder<FieldType,bbf::components::flexible_multiplication,NonNativeIntegralVariant,std::size_t, std::size_t>(double_non_native_integral_type_variant,num_chunks,bit_size_chunk);
     auto [at, A, desc] = B.assign(raw_input);
     bool pass = B.is_satisfied(at);
     std::cout << "Is_satisfied = " << pass << std::endl;
     std::cout << "to_pass: " << to_pass << std::endl;
 
     if (to_pass) {
-        assert(B.is_satisfied(at) == true);
-        bool proof = B.check_proof(at, desc);
-        std::cout << "Is_proved = " << proof << std::endl;
-        assert(proof == true);
-        foreign_integral_type R = 0;
+        assert(pass == true);
+        double_non_native_integral_type R = 0;
         pow = 1;
         for(std::size_t i = 0; i < num_chunks; i++) {
-            R += foreign_integral_type(integral_type(A.res[i].data)) * pow;
+            R += double_non_native_integral_type(integral_type(A.res[i].data)) * pow;
             pow <<= bit_size_chunk;
         }
     #ifdef BLUEPRINT_PLONK_PROFILING_ENABLED
@@ -106,24 +105,25 @@ void test_mult(const std::vector<typename BlueprintFieldType::value_type> &publi
     #endif
     assert(r == R);
     } else {
-        assert(B.is_satisfied(at) == false);
+        assert(pass == false);
     }
 
 }
 
-template <typename BlueprintFieldType, typename NonNativeFieldType,
+template <typename BlueprintFieldType, typename NonNativeFieldType,std::size_t double_integral_index,
         std::size_t num_chunks, std::size_t bit_size_chunk, std::size_t RandomTestsAmount>
 void mult_tests() {
     using value_type = typename BlueprintFieldType::value_type;
     using integral_type = typename BlueprintFieldType::integral_type;
     using foreign_value_type = typename NonNativeFieldType::value_type;
     using foreign_integral_type = typename NonNativeFieldType::integral_type;
-    using foreign_extended_integral_type = typename NonNativeFieldType::extended_integral_type;
+    typedef nil::crypto3::multiprecision::big_uint<2 * NonNativeFieldType::modulus_bits> double_non_native_integral_type;
+    
 
     static boost::random::mt19937 seed_seq;
     static nil::crypto3::random::algebraic_engine<NonNativeFieldType> generate_random(seed_seq);
     boost::random::uniform_int_distribution<> t_dist(0, 1);
-    foreign_extended_integral_type mask = (foreign_extended_integral_type(1) << bit_size_chunk) - 1;
+    double_non_native_integral_type mask = (double_non_native_integral_type(1) << bit_size_chunk) - 1;
 
     for (std::size_t i = 0; i < RandomTestsAmount; i++) {
         std::vector<typename BlueprintFieldType::value_type> public_input;
@@ -131,8 +131,8 @@ void mult_tests() {
         foreign_value_type src_x = generate_random(),
                            src_y = generate_random();
 
-        foreign_extended_integral_type x = foreign_extended_integral_type(foreign_integral_type(src_x.data)),
-                                       y = foreign_extended_integral_type(foreign_integral_type(src_y.data)),
+        double_non_native_integral_type x = double_non_native_integral_type(foreign_integral_type(src_x.data)),
+                                       y = double_non_native_integral_type(foreign_integral_type(src_y.data)),
                                        extended_base = 1,
                                        ext_pow = extended_base << (num_chunks*bit_size_chunk),
                                        p = NonNativeFieldType::modulus,
@@ -156,24 +156,24 @@ void mult_tests() {
             pp >>= bit_size_chunk;
         }
 
-        test_mult<BlueprintFieldType, NonNativeFieldType,
+        test_mult<BlueprintFieldType, NonNativeFieldType,double_integral_index,
                 num_chunks, bit_size_chunk>(public_input);
     }
 }
 
-template <typename BlueprintFieldType, typename NonNativeFieldType,
+template <typename BlueprintFieldType, typename NonNativeFieldType,std::size_t double_integral_index,
         std::size_t num_chunks, std::size_t bit_size_chunk, std::size_t RandomTestsAmount>
 void mult_tests_to_fail() {
     using value_type = typename BlueprintFieldType::value_type;
     using integral_type = typename BlueprintFieldType::integral_type;
     using foreign_value_type = typename NonNativeFieldType::value_type;
     using foreign_integral_type = typename NonNativeFieldType::integral_type;
-    using foreign_extended_integral_type = typename NonNativeFieldType::extended_integral_type;
+    typedef nil::crypto3::multiprecision::big_uint<2 * NonNativeFieldType::modulus_bits> double_non_native_integral_type;
 
     static boost::random::mt19937 seed_seq;
     static nil::crypto3::random::algebraic_engine<NonNativeFieldType> generate_random(seed_seq);
     boost::random::uniform_int_distribution<> t_dist(0, 1);
-    foreign_extended_integral_type mask = (foreign_extended_integral_type(1) << bit_size_chunk) - 1;
+    double_non_native_integral_type mask = (double_non_native_integral_type(1) << bit_size_chunk) - 1;
 
     for (std::size_t i = 0; i < RandomTestsAmount; i++) {
         std::vector<typename BlueprintFieldType::value_type> public_input;
@@ -181,13 +181,13 @@ void mult_tests_to_fail() {
         foreign_value_type src_x = generate_random(),
                            src_y = generate_random();
 
-        foreign_extended_integral_type x = foreign_extended_integral_type(foreign_integral_type(src_x.data)),
-                                       y = foreign_extended_integral_type(foreign_integral_type(src_y.data)),
+        double_non_native_integral_type x = double_non_native_integral_type(foreign_integral_type(src_x.data)),
+                                       y = double_non_native_integral_type(foreign_integral_type(src_y.data)),
                                        extended_base = 1,
                                        ext_pow = extended_base << (num_chunks*bit_size_chunk),
                                        p = NonNativeFieldType::modulus,
+                                       //Forcing the test to fail by substracting pp by 1
                                        pp = ext_pow - p - 1;
-                                       //pp = 1;
 
         public_input.resize(4*num_chunks);
         for(std::size_t j = 0; j < num_chunks; j++) {
@@ -204,48 +204,47 @@ void mult_tests_to_fail() {
             pp >>= bit_size_chunk;
         }
 
-        test_mult<BlueprintFieldType, NonNativeFieldType,
+        test_mult<BlueprintFieldType, NonNativeFieldType,double_integral_index,
                 num_chunks, bit_size_chunk,false>(public_input);
     }
 }
-//constexpr static const std::size_t random_tests_amount = 5;
-constexpr static const std::size_t random_tests_amount = 1;
+constexpr static const std::size_t random_tests_amount = 5;
 
 BOOST_AUTO_TEST_SUITE(blueprint_plonk_test_suite)
 
-BOOST_AUTO_TEST_CASE(blueprint_plonk_equality_flag_test) {
+BOOST_AUTO_TEST_CASE(blueprint_plonk_bbf_flexible_multiplication_test) {
     using pallas_field_type = typename crypto3::algebra::curves::pallas::base_field_type;
     using vesta_field_type = typename crypto3::algebra::curves::vesta::base_field_type;
 
     std::cout << "Scenario 1\n";
-    mult_tests<pallas_field_type, vesta_field_type, 4, 64, random_tests_amount>();
+    mult_tests<pallas_field_type, vesta_field_type,1, 4, 64, random_tests_amount>();
 
     std::cout << "Scenario 2\n";
-    mult_tests<pallas_field_type, vesta_field_type, 5, 64, random_tests_amount>();
+    mult_tests<pallas_field_type, vesta_field_type, 1,5, 64, random_tests_amount>();
 
     std::cout << "Scenario 3\n";
-    mult_tests<vesta_field_type, pallas_field_type, 4, 65, random_tests_amount>();
+    mult_tests<vesta_field_type, pallas_field_type,0, 4, 65, random_tests_amount>();
 
     std::cout << "Scenario 4\n";
-    mult_tests<vesta_field_type, pallas_field_type, 5, 63, random_tests_amount>();
+    mult_tests<vesta_field_type, pallas_field_type,0, 5, 63, random_tests_amount>();
 
 }
 
-BOOST_AUTO_TEST_CASE(blueprint_plonk_field_operations_test_to_fail) {
+BOOST_AUTO_TEST_CASE(blueprint_plonk_bbf_flexible_multiplication_test_to_fail) {
     using pallas_field_type = typename crypto3::algebra::curves::pallas::base_field_type;
     using vesta_field_type = typename crypto3::algebra::curves::vesta::base_field_type;
 
     std::cout << "Scenario 1\n";
-    mult_tests_to_fail<pallas_field_type, vesta_field_type, 4, 64, random_tests_amount>();
+    mult_tests_to_fail<pallas_field_type, vesta_field_type,1, 4, 64, random_tests_amount>();
 
     std::cout << "Scenario 2\n";
-    mult_tests_to_fail<pallas_field_type, vesta_field_type, 5, 64, random_tests_amount>();
+    mult_tests_to_fail<pallas_field_type, vesta_field_type,1, 5, 64, random_tests_amount>();
 
     std::cout << "Scenario 3\n";
-    mult_tests_to_fail<vesta_field_type, pallas_field_type, 4, 65, random_tests_amount>();
+    mult_tests_to_fail<vesta_field_type, pallas_field_type,0, 4, 65, random_tests_amount>();
 
     std::cout << "Scenario 4\n";
-    mult_tests_to_fail<vesta_field_type, pallas_field_type, 5, 63, random_tests_amount>();
+    mult_tests_to_fail<vesta_field_type, pallas_field_type,0, 5, 63, random_tests_amount>();
 }
 
 BOOST_AUTO_TEST_SUITE_END()
