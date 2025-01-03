@@ -92,7 +92,7 @@ namespace nil {
                      return {11,1,0,max_rows_amount};
                 }
 
-                static std::tuple<input_type> form_input(context_type &context_object, raw_input_type raw_input) {
+                static std::tuple<input_type> form_input(context_type &context_object, raw_input_type raw_input,std::size_t max_rows_amount) {
                      input_type res;
                      if constexpr (stage == GenerationStage::ASSIGNMENT) {
                          res = raw_input.B;
