@@ -36,8 +36,6 @@
 #include <boost/container/static_vector.hpp>
 #include <boost/parameter/value_type.hpp>
 
-#include <nil/crypto3/detail/make_array.hpp>
-
 #include <nil/crypto3/hash/accumulators/bits_count.hpp>
 #include <nil/crypto3/hash/accumulators/parameters/iterator_last.hpp>
 #include <nil/crypto3/hash/accumulators/parameters/words_to_consume.hpp>
@@ -73,7 +71,7 @@ namespace nil {
                                                                                                     length_bits;
                     typedef typename boost::uint_t<length_type_bits>::least length_type;
                     constexpr static const std::size_t length_words = length_bits / word_bits;
-                    BOOST_STATIC_ASSERT(!length_bits || length_bits % word_bits == 0);
+                    BOOST_STATIC_ASSERT(length_bits % word_bits == 0);
 
                 public:
                     typedef typename hash_type::digest_type result_type;

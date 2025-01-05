@@ -99,7 +99,7 @@ namespace nil {
                     InputValue tmp = in;
                     unit_reverser<InputEndianness, OutputEndianness, UnitBits>::reverse(tmp);
                     bit_reverser<InputEndianness, OutputEndianness, UnitBits>::reverse(tmp);
-                    out |= unbounded_shl<shift>(low_bits<InputBits>(OutputValue(tmp)));
+                    out |= low_bits<OutputBits>(OutputValue(tmp), (size_t)InputBits) << shift;
                 }
             };
 

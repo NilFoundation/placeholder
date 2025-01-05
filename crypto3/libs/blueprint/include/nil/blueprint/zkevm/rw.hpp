@@ -309,10 +309,10 @@ namespace nil {
                     bool neq = true;
                     std::size_t diff_ind = 0;
                     for(; diff_ind < sorting.size(); diff_ind++){
-                        if(
-                            assignment.witness(component.W(sorting[diff_ind]), start_row_index+i) !=
-                            assignment.witness(component.W(sorting[diff_ind]), start_row_index+i - 1)
-                        ) break;
+                        auto w = component.W(sorting[diff_ind]);
+                        auto w1 = assignment.witness(w, start_row_index+i);
+                        auto w2 = assignment.witness(w, start_row_index+i - 1);
+                        if( w1 !=w2) break;
                     }
                     if( diff_ind < 30 ){
                         assignment.witness(component.W(component_type::VALUE_BEFORE_HI), start_row_index + i) = w_hi<BlueprintFieldType>(rw_trace[i].value_prev);

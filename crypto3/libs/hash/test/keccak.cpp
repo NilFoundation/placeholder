@@ -296,10 +296,6 @@ BOOST_FIXTURE_TEST_CASE(keccak_224_accumulator, fixture<224>) {
 
     hash_t::digest_type s = extract::hash<hash_t>(acc);
 
-#ifdef CRYPTO3_HASH_SHOW_PROGRESS
-    std::printf("%s\n", std::to_string(s).data());
-#endif
-
     BOOST_CHECK_EQUAL("c30411768506ebe1c2871b1ee2e87d38df342317300a9b97a95ec6a8", std::to_string(s).data());
 }
 
@@ -312,10 +308,6 @@ BOOST_FIXTURE_TEST_CASE(keccak_256_accumulator, fixture<256>) {
 
     hash_t::digest_type s = extract::hash<hash_t>(acc);
 
-#ifdef CRYPTO3_HASH_SHOW_PROGRESS
-    std::printf("%s\n", std::to_string(s).data());
-#endif
-
     BOOST_CHECK_EQUAL("4e03657aea45a94fc7d47ba826c8d667c0d1e6e33a64a036ec44f58fa12d6c45", std::to_string(s).data());
 }
 
@@ -327,10 +319,6 @@ BOOST_FIXTURE_TEST_CASE(keccak_384_accumulator, fixture<384>) {
     acc(m, accumulators::bits = 24);
 
     hash_t::digest_type s = extract::hash<hash_t>(acc);
-
-#ifdef CRYPTO3_HASH_SHOW_PROGRESS
-    std::printf("%s\n", std::to_string(s).data());
-#endif
 
     BOOST_CHECK_EQUAL(
         "f7df1165f033337be098e7d288ad6a2f74409d7a60b49c36642218de161b1f99"
@@ -347,10 +335,6 @@ BOOST_FIXTURE_TEST_CASE(keccak_512_accumulator, fixture<512>) {
 
     hash_t::digest_type s = extract::hash<hash_t>(acc);
 
-#ifdef CRYPTO3_HASH_SHOW_PROGRESS
-    std::printf("%s\n", std::to_string(s).data());
-#endif
-
     BOOST_CHECK_EQUAL(
         "18587dc2ea106b9a1563e32b3312421ca164c7f1f07bc922a9c83d77cea3a1e5"
         "d0c69910739025372dc14ac9642629379540c17e2a65b19d77aa511a9d00bb96",
@@ -365,10 +349,6 @@ BOOST_AUTO_TEST_CASE(keccak_224_preprocessor1) {
     accumulator_set<hashes::keccak_1600<224>> acc;
     hashes::keccak_1600<224>::digest_type s = extract::hash<hashes::keccak_1600<224>>(acc);
 
-#ifdef CRYPTO3_HASH_SHOW_PROGRESS
-    std::printf("%s\n", std::to_string(s).data());
-#endif
-
     BOOST_CHECK_EQUAL("f71837502ba8e10837bdd8d365adb85591895602fc552b48b7390abd", std::to_string(s).data());
 }
 
@@ -381,20 +361,12 @@ BOOST_AUTO_TEST_CASE(keccak_224_preprocessor2) {
 
     hashes::keccak_1600<224>::digest_type s = extract::hash<hashes::keccak_1600<224>>(acc);
 
-#ifdef CRYPTO3_HASH_SHOW_PROGRESS
-    std::printf("%s\n", std::to_string(s).data());
-#endif
-
     BOOST_CHECK_EQUAL("c30411768506ebe1c2871b1ee2e87d38df342317300a9b97a95ec6a8", std::to_string(s).data());
 }
 
 BOOST_AUTO_TEST_CASE(keccak_256_preprocessor1) {
     accumulator_set<hashes::keccak_1600<256>> acc;
     hashes::keccak_1600<256>::digest_type s = extract::hash<hashes::keccak_1600<256>>(acc);
-
-#ifdef CRYPTO3_HASH_SHOW_PROGRESS
-    std::printf("%s\n", std::to_string(s).data());
-#endif
 
     BOOST_CHECK_EQUAL("c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470", std::to_string(s).data());
 }
@@ -408,20 +380,12 @@ BOOST_AUTO_TEST_CASE(keccak_256_preprocessor2) {
 
     hashes::keccak_1600<256>::digest_type s = extract::hash<hashes::keccak_1600<256>>(acc);
 
-#ifdef CRYPTO3_HASH_SHOW_PROGRESS
-    std::printf("%s\n", std::to_string(s).data());
-#endif
-
     BOOST_CHECK_EQUAL("4e03657aea45a94fc7d47ba826c8d667c0d1e6e33a64a036ec44f58fa12d6c45", std::to_string(s).data());
 }
 
 BOOST_AUTO_TEST_CASE(keccak_384_preprocessor1) {
     accumulator_set<hashes::keccak_1600<384>> acc;
     hashes::keccak_1600<384>::digest_type s = extract::hash<hashes::keccak_1600<384>>(acc);
-
-#ifdef CRYPTO3_HASH_SHOW_PROGRESS
-    std::printf("%s\n", std::to_string(s).data());
-#endif
 
     BOOST_CHECK_EQUAL(
         "2c23146a63a29acf99e73b88f8c24eaa7dc60aa771780ccc006afbfa8fe2479b"
@@ -438,10 +402,6 @@ BOOST_AUTO_TEST_CASE(keccak_384_preprocessor2) {
 
     hashes::keccak_1600<384>::digest_type s = extract::hash<hashes::keccak_1600<384>>(acc);
 
-#ifdef CRYPTO3_HASH_SHOW_PROGRESS
-    std::printf("%s\n", std::to_string(s).data());
-#endif
-
     BOOST_CHECK_EQUAL(
         "f7df1165f033337be098e7d288ad6a2f74409d7a60b49c36642218de161b1f99"
         "f8c681e4afaf31a34db29fb763e3c28e",
@@ -451,10 +411,6 @@ BOOST_AUTO_TEST_CASE(keccak_384_preprocessor2) {
 BOOST_AUTO_TEST_CASE(keccak_512_preprocessor1) {
     accumulator_set<hashes::keccak_1600<512>> acc;
     hashes::keccak_1600<512>::digest_type s = extract::hash<hashes::keccak_1600<512>>(acc);
-
-#ifdef CRYPTO3_HASH_SHOW_PROGRESS
-    std::printf("%s\n", std::to_string(s).data());
-#endif
 
     BOOST_CHECK_EQUAL(
         "0eab42de4c3ceb9235fc91acffe746b29c29a8c366b7c60e4e67c466f36a4304"
@@ -470,10 +426,6 @@ BOOST_AUTO_TEST_CASE(keccak_512_preprocessor2) {
     acc(UINT64_C(0x0000000000000063), accumulators::bits = 8);
 
     hashes::keccak_1600<512>::digest_type s = extract::hash<hashes::keccak_1600<512>>(acc);
-
-#ifdef CRYPTO3_HASH_SHOW_PROGRESS
-    std::printf("%s\n", std::to_string(s).data());
-#endif
 
     BOOST_CHECK_EQUAL(
         "18587dc2ea106b9a1563e32b3312421ca164c7f1f07bc922a9c83d77cea3a1e5"

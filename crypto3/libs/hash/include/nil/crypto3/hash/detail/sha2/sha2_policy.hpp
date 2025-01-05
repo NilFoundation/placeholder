@@ -28,6 +28,7 @@
 
 #include <array>
 #include <cstdint>
+#include <bit>
 
 #include <nil/crypto3/hash/shacal2.hpp>
 
@@ -56,7 +57,10 @@ namespace nil {
                     constexpr static const std::size_t block_words = block_cipher_type::key_words;
                     typedef typename block_cipher_type::key_type block_type;
 
-                    constexpr static const std::size_t length_bits = word_bits * 2;
+                    // length_bits is the number of bits required to write the length of the block.
+                    // For some reason we want it to write in 'words', so we want this to be a multiple of 'word_bits'.
+                    // So take the bit length and round up to 'word_bits' bits.
+                    constexpr static const std::size_t length_bits = ((std::bit_width(state_bits) + word_bits - 1) / word_bits) * word_bits;
 
                     typedef typename stream_endian::big_octet_big_bit digest_endian;
                 };

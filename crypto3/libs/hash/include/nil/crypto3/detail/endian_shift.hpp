@@ -46,9 +46,9 @@ namespace nil {
                 constexpr static const std::size_t word_bits = basic_functions<WordBits>::word_bits;
                 typedef typename basic_functions<WordBits>::word_type word_type;
 
+                // Shift to most significant bits according to endianness
                 static word_type &to_msb(word_type &w, std::size_t shift) {
-                    // shift to most significant bits according to endianness
-                    w = unbounded_shl(w, shift);
+                    w <<= shift;
                     return w;
                 }
             };
@@ -60,30 +60,44 @@ namespace nil {
                 constexpr static const std::size_t word_bits = basic_functions<WordBits>::word_bits;
                 typedef typename basic_functions<WordBits>::word_type word_type;
 
+                // Shift towards the most significant bits according to endianness
                 static word_type &to_msb(word_type &w, std::size_t shift) {
-                    // shift to most significant bits according to endianness
+                    if (shift == 0)
+                        return w;
+                    if (shift == word_bits) {
+                        w = 0;
+                        return w;
+                    }
                     std::size_t shift_rem = shift % UnitBits;
                     std::size_t shift_unit_bits = shift - shift_rem;
 
+                    // First shift by 'shift_rem' bits, the rest is just normal shifts in the opposite direction.
                     std::size_t sz[2] = {UnitBits - shift_rem, shift_rem};
                     word_type masks[2];
-                    masks[0] = unbounded_shl(low_bits<word_bits>(~word_type(), sz[0]), shift_unit_bits);
-                    masks[1] =
-                        unbounded_shl(low_bits<word_bits>(~word_type(), sz[1]), shift_unit_bits + UnitBits + sz[0]);
+                    masks[0] = low_bits<word_bits>(~word_type(), sz[0]) << shift_unit_bits;
+                    
+                    // We are not going to use masks[1], if "shift_unit_bits + UnitBits == word_bits".
+                    if (shift_unit_bits + UnitBits != word_bits) {
+                        masks[1] = high_bits<word_bits>(~word_type(), sz[1]) << 
+                            (shift_unit_bits + UnitBits);
+                    }
                     std::size_t bits_left = word_bits - shift;
 
                     word_type w_combined = 0;
                     int ind = 0;
 
                     while (bits_left) {
-                        w_combined |= (!ind ? unbounded_shl(w & masks[0], shift_rem) :
-                                              unbounded_shr(w & masks[1], UnitBits + sz[0]));
+                        w_combined |= (!ind ? ((w & masks[0]) << shift_rem) :
+                                              ((w & masks[1]) >> (UnitBits + sz[0])));
                         bits_left -= sz[ind];
-                        masks[ind] = unbounded_shl(masks[ind], UnitBits);
+                        masks[ind] <<= UnitBits;
                         ind = 1 - ind;
                     }
 
-                    w = unbounded_shr(w_combined, shift_unit_bits);
+                    // Now 'w_combined' is w (the part of w that we are interested in), but shifted by 'shift_rem' bits.
+                    // Shift by 'shift_unit_bits' bits in the opposite direction.
+                    w = w_combined >> shift_unit_bits;
+
                     return w;
                 }
             };
@@ -95,29 +109,37 @@ namespace nil {
                 constexpr static const std::size_t word_bits = basic_functions<WordBits>::word_bits;
                 typedef typename basic_functions<WordBits>::word_type word_type;
 
+                // Shift to most significant bits according to endianness
                 static word_type &to_msb(word_type &w, std::size_t shift) {
-                    // shift to most significant bits according to endianness
                     std::size_t shift_rem = shift % UnitBits;
                     std::size_t shift_unit_bits = shift - shift_rem;
 
+                    // First shift by 'shift_rem' bits, the rest is just normal shifts in the opposite direction.
                     std::size_t sz[2] = {UnitBits - shift_rem, shift_rem};
-                    word_type masks[2] = {
-                        unbounded_shr(high_bits<word_bits, word_type>(~word_type(), sz[0]), shift_unit_bits),
-                        unbounded_shr(high_bits<word_bits, word_type>(~word_type(), sz[1]), shift_unit_bits + UnitBits + sz[0])};
+                    word_type masks[2];
+                    masks[0] = high_bits<word_bits, word_type>(~word_type(), sz[0]) >> shift_unit_bits;
+
+                    // We are not going to use masks[1], if "shift_unit_bits + UnitBits == word_bits".
+                    if (shift_unit_bits + UnitBits != word_bits) {
+                        masks[1] = low_bits<word_bits, word_type>(~word_type(), sz[1]) >> (shift_unit_bits + UnitBits);
+                    }
 
                     std::size_t bits_left = word_bits - shift;
                     word_type w_combined = 0;
                     int ind = 0;
 
                     while (bits_left) {
-                        w_combined |= (!ind ? unbounded_shr(w & masks[0], shift_rem) :
-                                              unbounded_shl(w & masks[1], UnitBits + sz[0]));
+                        w_combined |= (!ind ? (w & masks[0] >> shift_rem) :
+                                              (w & masks[1] << (UnitBits + sz[0])));
                         bits_left -= sz[ind];
-                        masks[ind] = unbounded_shr(masks[ind], UnitBits);
+                        masks[ind] >>= UnitBits;
                         ind = 1 - ind;
                     }
 
-                    w = unbounded_shl(w_combined, shift_unit_bits);
+                    // Now 'w_combined' is w (the part of w that we are interested in), but shifted by 'shift_rem' bits.
+                    // Shift by 'shift_unit_bits' bits in the opposite direction.
+                    w = w_combined << shift_unit_bits;
+
                     return w;
                 }
             };
@@ -129,10 +151,9 @@ namespace nil {
                 constexpr static const std::size_t word_bits = basic_functions<WordBits>::word_bits;
                 typedef typename basic_functions<WordBits>::word_type word_type;
 
+                // Shift to most significant bits according to endianness
                 static word_type &to_msb(word_type &w, std::size_t shift) {
-
-                    // shift to most significant bits according to endianness
-                    w = unbounded_shr(w, shift);
+                    w >>= shift;
                     return w;
                 }
             };

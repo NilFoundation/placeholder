@@ -26,7 +26,6 @@
 #define CRYPTO3_SHA3_PADDING_HPP
 
 #include <nil/crypto3/detail/inject.hpp>
-#include <nil/crypto3/detail/unbounded_shift.hpp>
 #include <nil/crypto3/hash/detail/keccak/keccak_padding.hpp>
 #include <nil/crypto3/hash/detail/sha3/sha3_policy.hpp>
 
@@ -63,7 +62,7 @@ namespace nil {
                         std::vector<block_type> padded_blocks;
                         block_type new_block = block;
                         // set variable to 01
-                        word_type sha_specific_bits = unbounded_shr(high_bits<word_bits>(~word_type(), 1), 1);
+                        word_type sha_specific_bits = high_bits<word_bits>(~word_type(), 1) >> 1;
                         // get how many bits from it could fit into current block
                         const std::size_t sha_specific_bits_n_for_first_block = std::min(block_bits - block_seen, std::size_t{2});
                         // inject this amount of bits
