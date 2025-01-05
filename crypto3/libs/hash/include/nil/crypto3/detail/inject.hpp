@@ -31,7 +31,6 @@
 #include <nil/crypto3/detail/endian_shift.hpp>
 #include <nil/crypto3/detail/reverser.hpp>
 #include <nil/crypto3/detail/stream_endian.hpp>
-#include <nil/crypto3/detail/unbounded_shift.hpp>
 
 namespace nil {
     namespace crypto3 {
@@ -91,7 +90,7 @@ namespace nil {
                         word_type src_mask = high_bits<WordBits, word_type>(~word_type(), bits_this_round);
                         word_type bits_to_inject = w_src & src_mask;
                         // Shift bits_to_inject to align with the destination position
-                        bits_to_inject = unbounded_shr(bits_to_inject, cur_word_bits_offset);
+                        bits_to_inject >>= cur_word_bits_offset;
 
                         // Which bits in dst word we have to keep
                         word_type dst_mask = high_bits<WordBits, word_type>(~word_type(), cur_word_bits_offset) |
@@ -101,7 +100,8 @@ namespace nil {
                         b_dst[cur_word_idx] |= bits_to_inject; // Set the new bits
 
                         // Update cursor and remaining bits for next round, shift w_src
-                        w_src = unbounded_shl(w_src, bits_this_round);
+                        w_src = bits_this_round == word_bits ? 0u : (w_src << bits_this_round);
+
                         b_dst_cursor += bits_this_round;
                         n_bits -= bits_this_round;
                     }

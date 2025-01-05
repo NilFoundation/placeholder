@@ -27,9 +27,6 @@
 #ifndef CRYPTO3_ALGEBRA_VECTOR_CLASS_HPP
 #define CRYPTO3_ALGEBRA_VECTOR_CLASS_HPP
 
-#include <nil/crypto3/detail/same_value.hpp>
-#include <nil/crypto3/detail/assert.hpp>
-
 #include <array>
 #include <cstddef>
 
@@ -49,7 +46,6 @@ namespace nil {
             template<typename T, std::size_t N>
             struct vector {
                 static_assert(N != 0, "vector must contain at least one element");
-                // CRYPTO3_DETAIL_ASSERT_ARITHMETIC(T)
 
                 using value_type = T;
                 using size_type = std::size_t;

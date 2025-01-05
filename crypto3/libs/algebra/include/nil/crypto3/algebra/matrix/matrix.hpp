@@ -30,8 +30,6 @@
 #include <array>
 #include <tuple>
 
-#include <nil/crypto3/detail/assert.hpp>
-
 #include <nil/crypto3/algebra/vector/utility.hpp>
 #include <nil/crypto3/algebra/vector/vector.hpp>
 
@@ -51,8 +49,6 @@ namespace nil {
             template<typename T, std::size_t N, std::size_t M>
             struct matrix {
                 static_assert(N != 0 && M != 0, "matrix must have have positive dimensions");
-
-                // CRYPTO3_DETAIL_ASSERT_ARITHMETIC(T)
 
                 using value_type = T;
                 using size_type = std::size_t;

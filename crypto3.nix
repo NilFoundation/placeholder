@@ -46,9 +46,7 @@ in stdenv.mkDerivation {
     # JUNIT file without explicit file name is generated after the name of the master test suite inside `CMAKE_CURRENT_SOURCE_DIR`
     export BOOST_TEST_LOGGER=JUNIT:HRF
     cd crypto3
-    # remove || true after all tests are fixed under clang-sanitizers check:
-    ctest --verbose --output-on-failure -R > test_errors.txt || true
-    cat test_errors.txt
+    ctest --verbose --output-on-failure -R | tee test_errors.txt
     cd ..
     mkdir -p ${placeholder "out"}/test-logs
     find .. -type f -name '*_test.xml' -exec cp {} ${placeholder "out"}/test-logs \;

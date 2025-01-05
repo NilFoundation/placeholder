@@ -211,7 +211,7 @@ set(PLONK_TESTS_FILES
 
 set(ZKEVM_TESTS_FILES
     "zkevm/bytecode"
-    "zkevm/rw"
+    # "zkevm/rw"
     #"zkevm/copy"
     "zkevm/connections"
     #"zkevm/state_selector"

@@ -29,8 +29,6 @@
 
 #include <algorithm>
 
-#include <nil/crypto3/detail/assert.hpp>
-
 #include <nil/crypto3/algebra/vector/vector.hpp>
 #include <nil/crypto3/algebra/vector/math.hpp>
 

@@ -27,7 +27,6 @@
 #define CRYPTO3_DETAIL_EXPLODER_HPP
 
 #include <nil/crypto3/detail/stream_endian.hpp>
-#include <nil/crypto3/detail/unbounded_shift.hpp>
 #include <nil/crypto3/detail/reverser.hpp>
 
 #include <boost/integer.hpp>
@@ -122,7 +121,7 @@ namespace nil {
                 template<typename InputValue, typename OutputIterator>
                 inline static void step(InputValue const &in, OutputIterator &out) {
                     typedef typename outvalue_helper<OutputIterator, OutputBits>::type OutValue;
-                    OutValue tmp = OutValue(low_bits<OutputBits>(unbounded_shr<shift>(in)));
+                    OutValue tmp = low_bits<InputBits>((shift == InputBits) ? 0u : in >> shift, OutputBits);
                     unit_reverser<InputEndianness, OutputEndianness, UnitBits>::reverse(tmp);
                     bit_reverser<InputEndianness, OutputEndianness, UnitBits>::reverse(tmp);
                     *out++ = tmp;

@@ -28,6 +28,7 @@
 #define CRYPTO3_ALGEBRA_VECTOR_UTILITY_HPP
 
 #include <nil/crypto3/algebra/vector/vector.hpp>
+#include <nil/crypto3/detail/same_value.hpp>
 
 #include <tuple>
 

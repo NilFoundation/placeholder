@@ -28,7 +28,6 @@
 #define CRYPTO3_ALGEBRA_SCALAR_MATH_HPP
 
 #include <nil/crypto3/algebra/type_traits.hpp>
-#include <nil/crypto3/detail/assert.hpp>
 
 namespace nil {
     namespace crypto3 {
@@ -74,7 +73,6 @@ namespace nil {
              */
             template<typename T>
             constexpr nil::crypto3::algebra::remove_complex_t<T> abs(T x) {
-                // CRYPTO3_DETAIL_ASSERT_ARITHMETIC(T);
                 if constexpr (algebra::is_complex_v<T>)
                     return sqrt(x.real() * x.real() + x.imag() * x.imag());
                 else
@@ -136,7 +134,6 @@ namespace nil {
              */
             template<typename T>
             constexpr T conj(T x) {
-                // CRYPTO3_DETAIL_ASSERT_ARITHMETIC(T);
                 if constexpr (algebra::is_complex_v<T>)
                     return {x.real(), -x.imag()};
                 else

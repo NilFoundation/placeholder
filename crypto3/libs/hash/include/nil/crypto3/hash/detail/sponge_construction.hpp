@@ -41,7 +41,7 @@ namespace nil {
              * @tparam DigestBits
              *
              * The Sponge construction builds a block hashes from a
-             * one-way compressor.  As this version operated on the block
+             * one-way compressor. As this version operated on the block
              * level, it doesn't contain any padding or other strengthening.
              * For a Wide Pipe construction, use a digest that will
              * truncate the internal state.
@@ -84,11 +84,11 @@ namespace nil {
                     using namespace nil::crypto3::detail;
 
                     std::array<word_type, digest_words> squeezed_blocks_holder;
-                    constexpr static std::size_t blocks_needed_for_digest =  digest_bits / block_bits + (digest_bits % block_bits == 0 ? 0 : 1);
+                    constexpr static std::size_t blocks_needed_for_digest = 
+                        digest_bits / block_bits + (digest_bits % block_bits == 0 ? 0 : 1);
                     for (std::size_t i = 0; i < blocks_needed_for_digest; ++i) {
                         std::size_t dest_offset = i * block_words;
                         block_type squeezed = squeeze();
-                        // TODO: check if this will break in case >1. sinse there could be not enough squeezed_blocks_holder
                         pack_from<endian_type, word_bits, word_bits>(
                             squeezed.begin(),
                             squeezed.begin() + std::min(squeezed.size(), squeezed_blocks_holder.size() - dest_offset),
@@ -96,8 +96,15 @@ namespace nil {
                         );
                     }
 
-                    std::array<octet_type, digest_bits / octet_bits> d_full;
-                    pack_from<endian_type, word_bits, octet_bits>(squeezed_blocks_holder.begin(), squeezed_blocks_holder.end(), d_full.begin());
+                    // Here 'squeezed_blocks_holder' can have more bytes than needed.
+                    // Suppose we had 224 bits hash, then 'squeezed_blocks_holder' has 4x64 bits.
+                    // We will convert all 4x64 bits into 'd_full', then use as many octets as required.
+                    // TODO(martun): add tests for this case, check that this works as expected. Maybe taking the first 224 bits
+                    // for the wrong endianness may take the wrong bits.
+                    std::array<octet_type, digest_words * word_bits / octet_bits> d_full;
+
+                    pack_from<endian_type, word_bits, octet_bits>(
+                        squeezed_blocks_holder.begin(), squeezed_blocks_holder.end(), d_full.begin());
 
                     digest_type d;
                     std::copy(d_full.begin(), d_full.begin() + digest_bytes, d.begin());

@@ -63,7 +63,7 @@ namespace nil {
             inline void reverse_byte(byte_type &b) {
 
 #if (BOOST_ARCH_CURRENT_WORD_BITS == 32)
-                b = unbounded_shr<16>(((b * 0x0802LU & 0x22110LU) | (b * 0x8020LU & 0x88440LU)) * 0x10101LU);
+                b = (((b * 0x0802LU & 0x22110LU) | (b * 0x8020LU & 0x88440LU)) * 0x10101LU) >> 16;
 #elif (BOOST_ARCH_CURRENT_WORD_BITS == 64)
                 b = (b * 0x0202020202ULL & 0x010884422010ULL) % 1023;
 #else
@@ -93,9 +93,9 @@ namespace nil {
 
                 inline static void reverse(UnitType &in, UnitType &out) {
                     int const shift = UnitBits - (CHAR_BIT + k);
-                    byte_type byte = byte_type(low_bits<CHAR_BIT>(unbounded_shr(in, shift)));
+                    byte_type byte = byte_type(low_bits<UnitBits>(in >> shift, CHAR_BIT));
                     reverse_byte(byte);
-                    out |= unbounded_shl(low_bits<CHAR_BIT>(UnitType(byte)), shift);
+                    out |= low_bits<UnitBits>(UnitType(byte), CHAR_BIT) << shift;
 
                     next_type::reverse(in, out);
                 }
@@ -178,9 +178,9 @@ namespace nil {
                 template<typename ValueType>
                 inline static void reverse(ValueType &in, ValueType &out) {
                     int const shift = InputBits - (UnitBits + k);
-                    UnitType unit = UnitType(low_bits<UnitBits>(unbounded_shr(in, shift)));
+                    UnitType unit = UnitType(low_bits<InputBits>(in >> shift, UnitBits));
                     reverse_bits(unit);
-                    out |= unbounded_shl(low_bits<UnitBits>(ValueType(unit)), shift);
+                    out |= low_bits<InputBits>(ValueType(unit), UnitBits) << shift;
 
                     next_type::reverse(in, out);
                 }
@@ -339,9 +339,9 @@ namespace nil {
                 template<typename ValueType>
                 inline static void reverse(ValueType &in, ValueType &out) {
                     int const shift = InputBits - (UnitBits + k);
-                    UnitType unit = UnitType(low_bits<UnitBits>(unbounded_shr(in, shift)));
+                    UnitType unit = low_bits<InputBits>(in >> shift, UnitBits);
                     boost::endian::endian_reverse_inplace(unit);
-                    out |= unbounded_shl(low_bits<UnitBits>(ValueType(unit)), shift);
+                    out |= low_bits<InputBits>(ValueType(unit), UnitBits) << shift;
 
                     next_type::reverse(in, out);
                 }

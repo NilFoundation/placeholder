@@ -168,8 +168,8 @@ namespace nil {
 
                 for (std::size_t i = 0; i < 8; i++) {
                     assignment.witness(component.W(i), row + 3) = data[i];
-                    k = k + data[i] * (shft % L);
-                    shft *= 0x10000000000000000_big_uint512; 
+                    k = k + data[i] * shft;
+                    shft = wrapping_mul(shft, 0x10000000000000000_big_uint512) % L;
                 }
 
                 auto r = k % L;

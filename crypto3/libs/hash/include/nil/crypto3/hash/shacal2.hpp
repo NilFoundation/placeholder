@@ -89,7 +89,11 @@ namespace nil {
                     struct params_type {
 
                         constexpr static const std::size_t value_bits = ValueBits;
-                        constexpr static const std::size_t length_bits = policy_type::word_bits * 2;
+
+                        // length_bits is the number of bits required to write the length of the block.
+                        // For some reason we want it to write in 'words', so we want this to be a multiple of 'word_bits'.
+                        // So take the bit length and round up to 'word_bits' bits.
+                        constexpr static const std::size_t length_bits = ((std::bit_width(block_bits) + word_bits - 1) / word_bits) * word_bits;
                     };
 
                     typedef block_stream_processor<Mode, StateAccumulator, params_type> type;

@@ -78,8 +78,10 @@ namespace nil {
                 typedef static_digest<digest_bits> digest_type;
 
             protected:
+                // 'length_bits' is the number of bits required to write the length of a single block.
+                // It will normally be 8 bits, since our blocks are 2^8 = 256 bits, or 16 if larger.
+                // Most probably we will never have a block larger than 2^16 bits.
                 constexpr static const std::size_t length_bits = Params::length_bits;
-                // FIXME: do something more intelligent than capping at 64
                 constexpr static const std::size_t length_type_bits = length_bits < word_bits ? word_bits :
                                                                       length_bits > 64        ? 64 :
                                                                                                 length_bits;

@@ -154,10 +154,6 @@ BOOST_AUTO_TEST_CASE(sha2_224_shortmsg_bit) {
     std::array<bool, 5> a = {0, 1, 1, 0, 1};
     hashes::sha2<224>::digest_type d = hash<hashes::sha2<224>>(a);
 
-#ifdef CRYPTO3_HASH_SHOW_PROGRESS
-    std::printf("%s\n", std::to_string(d).data());
-#endif
-
     BOOST_CHECK_EQUAL("e3b048552c3c387bcab37f6eb06bb79b96a4aee5ff27f51531a9551c", std::to_string(d).data());
 }
 
@@ -168,10 +164,6 @@ BOOST_AUTO_TEST_CASE(sha2_224_shortmsg_bit1) {
     std::array<bool, 10> a = {0, 1, 0, 1, 0, 0, 0, 0, 0, 1};
     hashes::sha2<224>::digest_type d = hash<hashes::sha2<224>>(a);
 
-#ifdef CRYPTO3_HASH_SHOW_PROGRESS
-    std::printf("%s\n", std::to_string(d).data());
-#endif
-
     BOOST_CHECK_EQUAL("869944dc261b4affdcd429d00f0bc5c43f2fe545bef20a77980098cd", std::to_string(d).data());
 }
 
@@ -179,9 +171,7 @@ BOOST_AUTO_TEST_CASE(sha2_224_shortmsg_bit2) {
     // C.1/1
     std::array<bool, 5> a = {0, 1, 1, 0, 1};
     hashes::sha2<256>::digest_type d = hash<hashes::sha2<256>>(a);
-#ifdef CRYPTO3_HASH_SHOW_PROGRESS
-    std::printf("%s\n", std::to_string(d).data());
-#endif
+
     BOOST_CHECK_EQUAL("d6d3e02a31a84a8caa9718ed6c2057be09db45e7823eb5079ce7a573a3760f95", std::to_string(d).data());
 }
 
@@ -226,9 +216,7 @@ BOOST_AUTO_TEST_CASE(sha2_384_shortmsg_bit) {
     // D.1/1
     std::array<bool, 5> a = {0, 0, 0, 1, 0};
     hashes::sha2<384>::digest_type d = hash<hashes::sha2<384>>(a);
-#ifdef CRYPTO3_HASH_SHOW_PROGRESS
-    std::printf("%s\n", std::to_string(d).data());
-#endif
+
     BOOST_CHECK_EQUAL(
         "8d17be79e32b6718e07d8a603eb84ba0478f7fcfd1bb93995f7d1149e09143ac1ffcfc56820e469f3878d957a15a3fe4",
         std::to_string(d).data());
@@ -259,9 +247,7 @@ BOOST_AUTO_TEST_CASE(sha2_512_shortmsg_bit) {
     // E.1/1
     std::array<bool, 5> a = {1, 0, 1, 1, 0};
     hashes::sha2<512>::digest_type d = hash<hashes::sha2<512>>(a);
-#ifdef CRYPTO3_HASH_SHOW_PROGRESS
-    std::printf("%s\n", std::to_string(d).data());
-#endif
+
     BOOST_CHECK_EQUAL(
         "d4ee29a9e90985446b913cf1d1376c836f4be2c1cf3cada0720a6bf4857d886a7ecb3c4e4c0fa8c7f95214e41dc1b0d21b22a84cc03bf8"
         "ce4845f34dd5bdbad4",
@@ -303,10 +289,6 @@ BOOST_FIXTURE_TEST_CASE(sha2_256_accumulator2, fixture<256>) {
 
     hash_t::digest_type s = extract::hash<hash_t>(acc);
 
-#ifdef CRYPTO3_HASH_SHOW_PROGRESS
-    std::printf("%s\n", std::to_string(s).data());
-#endif
-
     BOOST_CHECK_EQUAL("ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad", std::to_string(s).data());
 }
 
@@ -331,10 +313,6 @@ BOOST_FIXTURE_TEST_CASE(sha2_256_accumulator3, fixture<256>) {
     acc(m2, accumulators::bits = 64 + 64 + 64);
 
     s = extract::hash<hash_t>(acc);
-
-#ifdef CRYPTO3_HASH_SHOW_PROGRESS
-    std::printf("%s\n", std::to_string(s).data());
-#endif
 
     // echo -n "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnoamnopnopqmnopnopqmnopnopq" | sha256sum
     BOOST_CHECK_EQUAL("26eba60be9d10a6484d03392b011d481b33e9b0038175942876ced989c68cab1", std::to_string(s).data());
@@ -377,10 +355,6 @@ BOOST_FIXTURE_TEST_CASE(sha2_384_accumulator2, fixture<384>) {
 
     hash_t::digest_type s = extract::hash<hash_t>(acc);
 
-#ifdef CRYPTO3_HASH_SHOW_PROGRESS
-    std::printf("%s\n", std::to_string(s).data());
-#endif
-
     BOOST_CHECK_EQUAL(
         "cb00753f45a35e8bb5a03d699ac65007272c32ab0eded163"
         "1a8b605a43ff5bed8086072ba1e7cc2358baeca134c825a7",
@@ -415,10 +389,6 @@ BOOST_FIXTURE_TEST_CASE(sha2_512_accumulator2, fixture<512>) {
     acc(m, accumulators::bits = 24);
 
     hash_t::digest_type s = extract::hash<hash_t>(acc);
-
-#ifdef CRYPTO3_HASH_SHOW_PROGRESS
-    std::printf("%s\n", std::to_string(s).data());
-#endif
 
     BOOST_CHECK_EQUAL(
         "ddaf35a193617abacc417349ae20413112e6fa4e89a97ea20a9eeee64b55d39a"
@@ -462,10 +432,6 @@ BOOST_AUTO_TEST_CASE(sha256_preprocessor1) {
     accumulator_set<hashes::sha2<256>> acc;
     hashes::sha2<256>::digest_type s = extract::hash<hashes::sha2<256>>(acc);
 
-#ifdef CRYPTO3_HASH_SHOW_PROGRESS
-    std::printf("%s\n", std::to_string(s).data());
-#endif
-
     BOOST_CHECK_EQUAL("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", std::to_string(s).data());
 }
 
@@ -478,10 +444,6 @@ BOOST_AUTO_TEST_CASE(sha256_preprocessor2) {
 
     hashes::sha2<256>::digest_type s = extract::hash<hashes::sha2<256>>(acc);
 
-#ifdef CRYPTO3_HASH_SHOW_PROGRESS
-    std::printf("%s\n", std::to_string(s).data());
-#endif
-
     BOOST_CHECK_EQUAL("ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad", std::to_string(s).data());
 }
 
@@ -493,10 +455,6 @@ BOOST_AUTO_TEST_CASE(sha256_preprocessor3) {
         acc(0x61000000, accumulators::bits = 8);
     }
     hashes::sha2<256>::digest_type s = extract::hash<hashes::sha2<256>>(acc);
-
-#ifdef CRYPTO3_HASH_SHOW_PROGRESS
-    std::printf("%s\n", std::to_string(s).data());
-#endif
 
     BOOST_CHECK_EQUAL("f506898cc7c2e092f9eb9fadae7ba50383f5b46a2a4fe5597dbb553a78981268", std::to_string(s).data());
 }
@@ -515,10 +473,6 @@ BOOST_AUTO_TEST_CASE(sha256_preprocessor4) {
 
     hashes::sha2<256>::digest_type s = extract::hash<hashes::sha2<256>>(acc);
 
-#ifdef CRYPTO3_HASH_SHOW_PROGRESS
-    std::printf("%s\n", std::to_string(s).data());
-#endif
-
     BOOST_CHECK_EQUAL("7d3e74a05d7db15bce4ad9ec0658ea98e3f06eeecf16b4c6fff2da457ddc2f34", std::to_string(s).data());
 }
 
@@ -533,10 +487,6 @@ BOOST_AUTO_TEST_CASE(sha256_preprocessor5) {
 
     acc(m1, accumulators::bits = 63 * 8);
     hashes::sha2<256>::digest_type s = extract::hash<hashes::sha2<256>>(acc);
-
-#ifdef CRYPTO3_HASH_SHOW_PROGRESS
-    std::printf("%s\n", std::to_string(s).data());
-#endif
 
     BOOST_CHECK_EQUAL("7d3e74a05d7db15bce4ad9ec0658ea98e3f06eeecf16b4c6fff2da457ddc2f34", std::to_string(s).data());
 }
@@ -553,10 +503,6 @@ BOOST_AUTO_TEST_CASE(sha256_preprocessor6) {
     acc(m1, accumulators::bits = 64 * 8);
     hashes::sha2<256>::digest_type s = extract::hash<hashes::sha2<256>>(acc);
 
-#ifdef CRYPTO3_HASH_SHOW_PROGRESS
-    std::printf("%s\n", std::to_string(s).data());
-#endif
-
     BOOST_CHECK_EQUAL("ffe054fe7ae0cb6dc65c3af9b61d5209f439851db43d0ba5997337df154668eb", std::to_string(s).data());
 }
 
@@ -569,20 +515,12 @@ BOOST_AUTO_TEST_CASE(sha256_preprocessor7) {
     }
     hashes::sha2<256>::digest_type s = extract::hash<hashes::sha2<256>>(acc);
 
-#ifdef CRYPTO3_HASH_SHOW_PROGRESS
-    std::printf("%s\n", std::to_string(s).data());
-#endif
-
     BOOST_CHECK_EQUAL("cdc76e5c9914fb9281a1c7e284d73e67f1809a48a497200e046d39ccc7112cd0", std::to_string(s).data());
 }
 
 BOOST_AUTO_TEST_CASE(sha384_preprocessor1) {
     accumulator_set<hashes::sha2<384>> acc;
     hashes::sha2<384>::digest_type s = extract::hash<hashes::sha2<384>>(acc);
-
-#ifdef CRYPTO3_HASH_SHOW_PROGRESS
-    std::printf("%s\n", std::to_string(s).data());
-#endif
 
     BOOST_CHECK_EQUAL(
         "38b060a751ac96384cd9327eb1b1e36a21fdb71114be0743"
@@ -597,10 +535,6 @@ BOOST_AUTO_TEST_CASE(sha384_preprocessor2) {
     acc(UINT64_C(0x6200000000000000), accumulators::bits = 8);
     acc(UINT64_C(0x6300000000000000), accumulators::bits = 8);
     hashes::sha2<384>::digest_type s = extract::hash<hashes::sha2<384>>(acc);
-
-#ifdef CRYPTO3_HASH_SHOW_PROGRESS
-    std::printf("%s\n", std::to_string(s).data());
-#endif
 
     BOOST_CHECK_EQUAL(
         "cb00753f45a35e8bb5a03d699ac65007272c32ab0eded163"
@@ -617,10 +551,6 @@ BOOST_AUTO_TEST_CASE(sha384_preprocessor3) {
     }
     hashes::sha2<384>::digest_type s = extract::hash<hashes::sha2<384>>(acc);
 
-#ifdef CRYPTO3_HASH_SHOW_PROGRESS
-    std::printf("%s\n", std::to_string(s).data());
-#endif
-
     BOOST_CHECK_EQUAL(
         "9d0e1809716474cb086e834e310a4a1ced149e9c00f24852"
         "7972cec5704c2a5b07b8b3dc38ecc4ebae97ddd87f3d8985",
@@ -630,10 +560,6 @@ BOOST_AUTO_TEST_CASE(sha384_preprocessor3) {
 BOOST_AUTO_TEST_CASE(sha512_preprocessor1) {
     accumulator_set<hashes::sha2<512>> acc;
     hashes::sha2<512>::digest_type s = extract::hash<hashes::sha2<512>>(acc);
-
-#ifdef CRYPTO3_HASH_SHOW_PROGRESS
-    std::printf("%s\n", std::to_string(s).data());
-#endif
 
     BOOST_CHECK_EQUAL(
         "cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce"
@@ -650,10 +576,6 @@ BOOST_AUTO_TEST_CASE(sha512_preprocessor2) {
 
     hashes::sha2<512>::digest_type s = extract::hash<hashes::sha2<512>>(acc);
 
-#ifdef CRYPTO3_HASH_SHOW_PROGRESS
-    std::printf("%s\n", std::to_string(s).data());
-#endif
-
     BOOST_CHECK_EQUAL(
         "ddaf35a193617abacc417349ae20413112e6fa4e89a97ea20a9eeee64b55d39a"
         "2192992a274fc1a836ba3c23a3feebbd454d4423643ce80e2a9ac94fa54ca49f",
@@ -668,10 +590,6 @@ BOOST_AUTO_TEST_CASE(sha512_preprocessor3) {
     }
     hashes::sha2<512>::digest_type s = extract::hash<hashes::sha2<512>>(acc);
 
-#ifdef CRYPTO3_HASH_SHOW_PROGRESS
-    std::printf("%s\n", std::to_string(s).data());
-#endif
-
     BOOST_CHECK_EQUAL(
         "e718483d0ce769644e2e42c7bc15b4638e1f98b13b2044285632a803afa973eb"
         "de0ff244877ea60a4cb0432ce577c31beb009c5c2c49aa2e4eadb217ad8cc09b",
@@ -680,9 +598,6 @@ BOOST_AUTO_TEST_CASE(sha512_preprocessor3) {
 
 BOOST_AUTO_TEST_CASE(sha224_range_hash) {
     hashes::sha2<224>::digest_type h = hash<hashes::sha2<224>>(std::string("abc"));
-#ifdef CRYPTO3_HASH_SHOW_PROGRESS
-    std::printf("%s\n", std::to_string(s).data());
-#endif
     BOOST_CHECK_EQUAL("23097d223405d8228642a477bda255b32aadbce4bda0b3f7e36c9da7", std::to_string(h).data());
 }
 
