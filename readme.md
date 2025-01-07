@@ -68,6 +68,7 @@ To list all available nix-targets, call
 ```bash
 nix flake show
 ```
+If the build fails with OOM, cores number to use could be set with `--cores` [option](https://nix.dev/manual/nix/2.25/command-ref/nix-build.html#opt-cores).
 
 For incremental build:
 ```bash
@@ -99,4 +100,3 @@ You can contact us
 
 ## Licence
 The software is provided under [MIT](LICENSE) Licence.
-

@@ -36,6 +36,7 @@ in stdenv.mkDerivation {
       (if runTests then "-DBUILD_CRYPTO3_TESTS=TRUE" else "-DBUILD_CRYPTO3_TESTS=False")
       (if sanitize then "-DSANITIZE=ON" else "-DSANITIZE=OFF")
       (if benchmarkTests then "-DBUILD_CRYPTO3_BENCH_TESTS=ON" else "-DBUILD_CRYPTO3_BENCH_TESTS=OFF")
+      "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON" # to allow VSCode navigation/completion/etc
       "-G Ninja"
     ];
 

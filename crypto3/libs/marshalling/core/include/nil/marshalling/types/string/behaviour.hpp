@@ -26,12 +26,9 @@
 #ifndef MARSHALLING_STRING_BEHAVIOUR_HPP
 #define MARSHALLING_STRING_BEHAVIOUR_HPP
 
-#include <vector>
-
 #include <nil/marshalling/type_traits.hpp>
 #include <nil/marshalling/status_type.hpp>
 #include <nil/marshalling/container/static_string.hpp>
-#include <nil/marshalling/container/string_view.hpp>
 #include <nil/marshalling/types/string/basic_type.hpp>
 #include <nil/marshalling/types/detail/adapt_basic_field.hpp>
 #include <nil/marshalling/types/detail/options_parser.hpp>
