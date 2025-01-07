@@ -53,7 +53,6 @@ namespace nil {
 
                         using g1_field_type = base_field_type;
                         using integral_type = typename base_field_type::integral_type;
-#endif
                         template<typename Form, typename Coordinates>
                         using g1_type = vesta_g1<Form, Coordinates>;
                     };

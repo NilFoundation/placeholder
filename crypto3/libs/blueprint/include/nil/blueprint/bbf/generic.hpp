@@ -37,9 +37,9 @@
 #include <nil/crypto3/zk/math/expression.hpp>
 #include <nil/crypto3/zk/math/expression_visitors.hpp>
 #include <nil/crypto3/zk/snark/arithmetization/plonk/constraint_system.hpp>
+#include <nil/crypto3/zk/snark/arithmetization/plonk/assignment.hpp>
 // #include <nil/crypto3/zk/snark/arithmetization/plonk/copy_constraint.hpp> // NB: part of the previous include
 
-// #include <nil/blueprint/blueprint/plonk/assignment.hpp>
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
 #include <nil/blueprint/component.hpp>
 //#include <nil/blueprint/manifest.hpp>
@@ -54,6 +54,7 @@ namespace nil {
 
             template<typename FieldType>
             class basic_context {
+                using assignment_type = nil::crypto3::zk::snark::plonk_assignment_table<FieldType>;
                 using assignment_description_type = nil::crypto3::zk::snark::plonk_table_description<FieldType>;
 
                 public:
@@ -176,8 +177,7 @@ namespace nil {
             class context<FieldType, GenerationStage::ASSIGNMENT> : public basic_context<FieldType> { // assignment-specific definition
             public:
                 using TYPE = typename FieldType::value_type;
-
-                using assignment_type = crypto3::zk::snark::plonk_assignment_table<FieldType>;
+                using assignment_type = nil::crypto3::zk::snark::plonk_assignment_table<FieldType>;
                 using assignment_description_type = nil::crypto3::zk::snark::plonk_table_description<FieldType>;
                 using plonk_copy_constraint = crypto3::zk::snark::plonk_copy_constraint<FieldType>;
                 using lookup_input_constraints_type = std::vector<TYPE>;
@@ -298,7 +298,7 @@ namespace nil {
                 using basic_context<FieldType>::col_map;
                 using basic_context<FieldType>::add_rows_to_description;
 
-                using assignment_type = crypto3::zk::snark::plonk_assignment_table<FieldType>;
+                using assignment_type = nil::crypto3::zk::snark::plonk_assignment_table<FieldType>;
                 using assignment_description_type = nil::crypto3::zk::snark::plonk_table_description<FieldType>;
 
                 using basic_context<FieldType>::row_shift;
@@ -370,6 +370,13 @@ namespace nil {
                     }
                 }
 
+                TYPE relativize(const TYPE& C, int32_t shift) {
+                     auto constraint = C.rotate(shift);
+                     if (!constraint)
+                         throw std::logic_error("Can't shift the constraint in the given direction.");
+                     return *constraint;
+                }
+
                 std::vector<TYPE> relativize(const std::vector<TYPE>& C, int32_t shift) {
                     std::vector<TYPE> res;
                     for(const TYPE& c_part : C) {
@@ -415,8 +422,8 @@ namespace nil {
                     add_constraint(C_rel, get_row(row));
                 }
 
-                                void relative_constrain(TYPE C_rel, std::size_t start_row,  std::size_t end_row) {
-                    if (!is_relative(C_rel)) {
+                void relative_constrain(TYPE C_rel, std::size_t start_row,  std::size_t end_row) {
+                    if (!C_rel.is_relative()) {
                         std::stringstream ss;
                         ss << "Constraint " << C_rel << " has absolute variables, cannot constrain.";
                         throw std::logic_error(ss.str());
@@ -465,8 +472,8 @@ namespace nil {
                 }
 
                 // accesible only at GenerationStage::CONSTRAINTS !
-                void relative_lookup(std::vector<TYPE> &C, std::string table_name, std::size_t row) {
-                    for(const TYPE c_part : C) {
+                void relative_lookup(const std::vector<TYPE> &C, std::string table_name, std::size_t row) {
+                    for(const TYPE& c_part : C) {
                         if (!c_part.is_relative()) {
                             std::stringstream ss;
                             ss << "Constraint " << c_part << " has absolute variables, cannot constrain.";
@@ -476,9 +483,9 @@ namespace nil {
                     add_lookup_constraint(table_name, C, row);
                 }
 
-                                void relative_lookup(std::vector<TYPE> &C, std::string table_name, std::size_t start_row, std::size_t end_row) {
-                    for(const TYPE c_part : C) {
-                        if (!is_relative(c_part)) {
+                void relative_lookup(const std::vector<TYPE> &C, std::string table_name, std::size_t start_row, std::size_t end_row) {
+                    for(const TYPE& c_part : C) {
+                        if (!c_part.is_relative()) {
                             std::stringstream ss;
                             ss << "Constraint " << c_part << " has absolute variables, cannot constrain.";
                             throw std::logic_error(ss.str());
@@ -537,11 +544,11 @@ namespace nil {
                     std::unordered_map<row_selector<>, std::vector<lookup_constraint_type>> res;
                     for(const auto& [id, data] : *lookup_constraints) {
                         auto it = res.find(data.second);
-                if (it == res.end()) {
-                    res[data.second] = {{id.first, data.first}};
-                } else {
-                    it->second.push_back({id.first, data.first});
-                }
+		        if (it == res.end()) {
+		            res[data.second] = {{id.first, data.first}};
+		        } else {
+		            it->second.push_back({id.first, data.first});
+		        }
                     }
 
                     /*
@@ -626,7 +633,8 @@ namespace nil {
                     lookup_constraints->at(key).second.set_row(stored_row);
                 }
 
-                                void add_lookup_constraint(std::string table_name, std::vector<TYPE> &C_rel, std::size_t start_row, std::size_t end_row) {
+                void add_lookup_constraint(const std::string& table_name, const std::vector<TYPE> &C_rel, 
+                        std::size_t start_row, std::size_t end_row) {
                     std::size_t stored_start_row = start_row - (is_fresh ? row_shift : 0);
                     std::size_t stored_end_row = end_row - (is_fresh ? row_shift : 0);
                     constraint_id_type C_id = constraint_id_type(C_rel);
