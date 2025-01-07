@@ -65,7 +65,7 @@ void test_mod_p_check(const std::vector<typename BlueprintFieldType::value_type>
             assert(overflow == A.output.data);
         }
     } else {
-        //assert(pass == false);
+        assert(pass == false);
     }
 
 }
