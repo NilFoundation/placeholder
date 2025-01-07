@@ -46,12 +46,7 @@ namespace nil {
                     constexpr static const std::size_t modulus_bits = ModulusBits;
                     constexpr static const std::size_t number_bits = ModulusBits;
 
-#ifdef __ZKLLVM__
-                    typedef int integral_type;
-                    typedef int extended_integral_type;
-#else
                     typedef nil::crypto3::multiprecision::big_uint<modulus_bits> integral_type;
-#endif
                 };
 
             }    // namespace fields

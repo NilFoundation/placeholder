@@ -57,7 +57,13 @@ namespace nil {
                 std::unordered_map<size_t, std::vector<constraint_type>> constraint_list;
                 std::vector<plonk_copy_constraint> copy_constraints;
                 std::map<std::string, std::pair<std::vector<std::size_t>, size_t>> dynamic_lookup_tables;
-                std::unordered_map<size_t, std::vector<typename context_type::lookup_constraint_type>> lookup_constraints;
+
+                // Lookup constraints with single selector are stored here.
+                std::unordered_map<size_t, std::vector<lookup_constraint_type>> lookup_constraints;
+
+                // The following lookup constraints are grouped with non-intersecting selectors.
+                // grouped_lookups[table_name][group_id][selector_id] maps to the lookup inputs for the given selector.
+                std::unordered_map<std::string, std::unordered_map<size_t, std::unordered_map<size_t, lookup_input_constraints_type>>> grouped_lookups;
 
                 // We will map each selector to the corresponding id.
                 std::unordered_map<row_selector<>, size_t> selectors_;
@@ -67,6 +73,7 @@ namespace nil {
                     size_t next_selector_id = selectors_.size();
                     if (iter == selectors_.end()) {
                         selectors_.insert({selector, next_selector_id});
+                        // std::cout << "Added a selector " << selector << " which now has id " << next_selector_id << std::endl;
                         return next_selector_id;
                     }
                     return iter->second;
@@ -104,13 +111,14 @@ namespace nil {
             std::ostream& operator<<(std::ostream& os, const optimized_gates<FieldType>& gates) {
                 for (const auto& [selector, id]: gates.selectors_) {
                     auto iter = gates.constraint_list.find(id);
-		    		if (iter != gates.constraint_list.end()) {
-                    	os << "Selector #" << id << " " << selector << std::endl;
-                    	for (const auto &constraint : iter->second) {
-                    	    os << constraint << std::endl;
-                    	}
-                    	os << "--------------------------------------------------------------" << std::endl;
-		    		}
+                    os << "Selector #" << id << " " << selector << std::endl;
+                    os << "Constraints: " << std::endl;
+                    if (iter != gates.constraint_list.end()) {
+                        for (const auto &constraint : iter->second) {
+                            os << constraint << std::endl;
+                        }
+                        os << "--------------------------------------------------------------" << std::endl;
+                    }
                 }
                 return os;
             }
@@ -165,7 +173,7 @@ namespace nil {
                     std::unordered_map<row_selector<>, std::vector<constraint_type>> constraint_list = context_->get_constraints();
                     std::map<std::string, std::pair<std::vector<std::size_t>, row_selector<>>>
                         dynamic_lookup_tables = context_->get_dynamic_lookup_tables();
-                    std::vector<plonk_copy_constraint> copy_constraints = context_->get_copy_constraints();
+                    result.copy_constraints = context_->get_copy_constraints();
                     std::unordered_map<row_selector<>, std::vector<typename context_type::lookup_constraint_type>>
                         lookup_constraints = context_->get_lookup_constraints();
                     context_.reset(nullptr);
@@ -182,7 +190,6 @@ namespace nil {
                     }
                     for (const auto& [row_list, lookup_list] : lookup_constraints) {
                         size_t id = result.add_selector(row_list);
-//std::cout << "Processing lookup constraint with row list " << row_list << ", got id = " << id << std::endl;
                         result.lookup_constraints[id] = std::move(lookup_list);
                     }
                     return result;
@@ -192,8 +199,8 @@ namespace nil {
                     optimized_gates<FieldType> result = context_to_gates();
                     // optimized_gates<FieldType> result = gates_storage_;
                     // std::cout << "Before: \n\n" << result << std::endl;
-                    // optimize_selectors_by_shifting(result);
                     optimize_selectors_by_shifting(result);
+                    optimize_lookups_by_grouping(result);
                     // std::cout << "After: \n\n" << result << std::endl;
                     return result;
                 }
@@ -201,6 +208,231 @@ namespace nil {
 
             private:
 
+                /** RLF (Recursive Largest First) algorithm for graph coloring.
+                 *  \param[in] adj - Adjacency list of the graph.
+                 *  \returns A vector that contains color of each vertex.
+                 */
+                std::vector<size_t> colorGraph(const std::vector<std::vector<size_t>>& adj) {
+                    size_t n = adj.size();
+                    if (n == 0)
+                        return {};
+
+                    // All vertices initially uncolored
+                    std::vector<size_t> color(n, std::numeric_limits<size_t>::max());  
+                    std::unordered_set<size_t> uncolored; 
+                    for (size_t i = 0; i < n; i++)
+                        uncolored.insert(i);
+
+                    size_t currentColor = 0;
+
+                    while (!uncolored.empty()) {
+                        // Compute vertex degrees for uncolored vertices only.
+                        std::vector<size_t> degrees(n, 0);
+                        for (size_t i: uncolored) {
+                            for (size_t j : adj[i]) {
+                                if (uncolored.find(j) != uncolored.end())
+                                    degrees[i]++;
+                            }
+                        }
+
+                        // Step 1: Pick the vertex with the largest degree from the uncolored set
+                        size_t startVertex = *std::max_element(uncolored.begin(), uncolored.end(), 
+                                                          [&](size_t a, size_t b) {
+                                                              return degrees[a] < degrees[b];
+                                                          });
+
+                        // Start a new color class
+                        color[startVertex] = currentColor;
+                        uncolored.erase(startVertex);
+
+                        // H is the set of vertices to consider adding
+                        // Initially, it's all remaining uncolored vertices
+                        std::unordered_set<size_t> H = uncolored;
+
+                        // Throw out the neighbors of 'startVertex', those can't be included in the color class.
+                        for (auto w : adj[startVertex]) {
+                            H.erase(w);
+                        }
+
+                        // Iteratively add vertices to the color class
+                        while (!H.empty()) {
+                            // Pick the vertex in H with the largest # of neighbours that are adjacent to 
+                            // some vertex in the color set S.
+                            // Tie-break by highest degree
+                            size_t candidate = 0;
+                            bool found = false;
+                            // best number of neighbors that are adjacent to vertices in class, I.E. are uncolored,
+                            // but not in H.
+                            size_t bestValue = 0;
+                            // tie-break by number of neighbors not in the color class,
+                            // I.E. the degree of the vertex in the uncolored graph.
+                            size_t bestDegree = 0;  
+
+                            for (auto v : uncolored) {
+                                size_t val = 0;
+                                for (size_t v2: adj[v]) {
+                                    // If v2 is an uncolored vertex, but it's not in H, that's because
+                                    // it is adjacent to a vertex in the color set.
+                                    if (uncolored.find(v2) != uncolored.end() && H.find(v2) == H.end())
+                                        val++;
+                                }
+                                if (!found || val > bestValue || (val == bestValue && degrees[v] < bestDegree)) {
+                                    bestValue = val;
+                                    bestDegree = degrees[v];
+                                    candidate = v;
+                                    found = true;
+                                }
+                            }
+
+                            // Add candidate to the color class
+                            uncolored.erase(candidate);
+                            color[candidate] = currentColor;
+                            H.erase(candidate);
+
+                            for (auto w : adj[candidate]) {
+                                H.erase(w);
+                            }
+                        }
+
+                        currentColor++;
+                    }
+
+                    return color;
+                }
+
+                /** Creates and returns a graph in the form of an adjucency list.
+                 */
+                std::vector<std::vector<size_t>> create_selector_intersection_graph(
+                        const optimized_gates<FieldType>& gates,
+                        const std::vector<size_t>& used_selectors,
+                        const std::unordered_map<size_t, size_t>& selector_id_to_index) {
+                    std::vector<std::vector<size_t>> adj;
+                    // Create the graph.
+                    adj.resize(used_selectors.size());
+                    for (const auto& [row_list1, selector_id1]: gates.selectors_) {
+                        if (selector_id_to_index.find(selector_id1) == selector_id_to_index.end())
+                            continue;
+                        for (const auto& [row_list2, selector_id2]: gates.selectors_) {
+                            if (selector_id2 >= selector_id1 || selector_id_to_index.find(selector_id2) == selector_id_to_index.end())
+                                continue;
+                            if (row_list1.intersects(row_list2))    {
+                                // Add an edge.
+                                adj[selector_id_to_index.at(selector_id1)].push_back(selector_id_to_index.at(selector_id2));
+                                adj[selector_id_to_index.at(selector_id2)].push_back(selector_id_to_index.at(selector_id1));
+                            }
+                        }
+                    }
+                    return adj;
+                }
+
+                std::vector<std::vector<size_t>> get_subgraph(
+                        const std::vector<std::vector<size_t>>& graph,
+                        const std::vector<size_t>& all_lookup_selectors,
+                        const std::unordered_map<size_t, size_t>& selector_id_to_index,
+                        const std::vector<size_t>& subset_selectors) {
+                    std::unordered_map<size_t, size_t> selector_id_to_subset_index;
+                    for (size_t i = 0; i < subset_selectors.size(); ++i) {
+                        selector_id_to_subset_index[subset_selectors[i]] = i;
+                    }
+
+                    std::vector<std::vector<size_t>> result(subset_selectors.size());
+                    for (size_t i = 0; i < subset_selectors.size(); ++i) {
+                        // 'id' is actually an index of selector in the 'all_lookup_selectors'.
+                        for (size_t id: graph[selector_id_to_index.at(subset_selectors[i])]) {
+                            result[i].push_back(selector_id_to_subset_index[all_lookup_selectors[id]]);
+                        }
+                    }
+                    return result;
+                }
+
+                std::unordered_map<size_t, size_t> group_selectors(
+                        const std::vector<std::vector<size_t>>& graph,
+                        const std::vector<size_t>& all_lookup_selectors,
+                        const std::unordered_map<size_t, size_t>& selector_id_to_index,
+                        const std::vector<size_t>& used_selectors) {
+                    std::vector<std::vector<size_t>> graph_subset = get_subgraph(
+                        graph, all_lookup_selectors, selector_id_to_index, used_selectors);
+
+                    // coloring[i] is the group_id of used_selectors[i].
+                    std::vector<size_t> coloring = colorGraph(graph_subset);
+
+                    // Now run over the returned coloring and map it back.
+                    std::unordered_map<size_t, size_t> result;
+                    for (size_t i = 0; i < coloring.size(); ++i) {
+                        result[used_selectors[i]] = coloring[i];
+                    }
+                    return result;
+                }
+
+                /** This function tries to reduce the number of lookups by grouping them. If 2 lookups use non-intersecting 
+                 *  selectors, they can be merged into 1 like.
+                 *  Imagine lookup inputs {L0 ... Lm} with selector s1, and {l0 ... lm} with selector s2, then we can merge them into
+                 *  lookup inputs { s1 * L0 + s2 * l0, ...  , s1 * Lm + s2 * lm } with selector that selects all the rows.
+                 *  We cannot optimally group the selectors into the minimal number of groups, that's an NP-complete problem
+                 *  called graph coloring problem. We will use Brooks' algorithm, it's some simple heuristic thing.
+                 */
+                void optimize_lookups_by_grouping(optimized_gates<FieldType>& gates) {
+                    std::vector<size_t> all_lookup_selectors;
+                    std::unordered_map<size_t, size_t> selector_id_to_index;
+
+                    for (const auto& [row_list, selector_id]: gates.selectors_) {
+                        if (gates.lookup_constraints.find(selector_id) != gates.lookup_constraints.end()) {
+                            all_lookup_selectors.push_back(selector_id);
+                            selector_id_to_index[selector_id] = all_lookup_selectors.size() - 1;
+                        }
+                    }
+
+                    // Create an adjacency list of the whole large graph, since taking intersections of selectors is not super fast.
+                    std::vector<std::vector<size_t>> adj = create_selector_intersection_graph(
+                        gates, all_lookup_selectors, selector_id_to_index);
+
+                    // For each table, create the list of used selectors.
+                    std::unordered_map<std::string, std::vector<size_t>> selectors_per_table;
+                    for(const auto& [selector_id, lookup_list] : gates.lookup_constraints) {
+                        for(const auto& single_lookup_constraint : lookup_list) {
+                            const auto& table_name = single_lookup_constraint.first;
+                            selectors_per_table[table_name].push_back(selector_id);
+                        }
+                    }
+
+                    // For each table, group the selectors.
+
+                    // Maps table name to a [map of selector id -> # of the group it belongs to].
+                    std::unordered_map<std::string, std::unordered_map<size_t, size_t>> selector_groups;
+                    std::unordered_map<std::string, std::unordered_map<size_t, size_t>> group_sizes;
+                    for (const auto& [table_name, selectors] : selectors_per_table) {
+                        // Maps group_id -> # of selectors in it.
+                        selector_groups[table_name] = group_selectors(adj, all_lookup_selectors, selector_id_to_index, selectors);
+
+                        // Count the size of each group, we need to not touch groups of size 1.
+                        for (const auto& [selector_id, group_index]: selector_groups[table_name]) {
+                            group_sizes[table_name][group_index]++;
+                        }
+                    }
+
+                    std::unordered_map<size_t, std::vector<typename context_type::lookup_constraint_type>> new_lookup_constraints;
+
+                    // Now merge all the lookups on selectors in the same group.
+                    for (const auto& [selector_id, lookup_list] : gates.lookup_constraints) {
+                        std::vector<lookup_constraint_type> lookup_gate;
+                        for (const auto& single_lookup_constraint : lookup_list) {
+                            const std::string& table_name = single_lookup_constraint.first;
+                            size_t group_id = selector_groups[table_name][selector_id];
+
+                            // If the group size is 1, don't touch it.
+                            if (group_sizes[table_name][group_id] == 1) {
+                                new_lookup_constraints[selector_id].push_back(
+                                    {table_name, std::move(single_lookup_constraint.second)});
+                            } else {
+                                gates.grouped_lookups[table_name][group_id][selector_id] =
+                                    std::move(single_lookup_constraint.second);
+                            }
+                        }
+                    }
+
+                    gates.lookup_constraints = std::move(new_lookup_constraints);
+                }
+ 
                 /** This function tries to reduce the number of selectors required by rotating the constraints by +-1.
                  */
                 void optimize_selectors_by_shifting(optimized_gates<FieldType>& gates) {
@@ -212,11 +444,11 @@ namespace nil {
                     std::vector<std::pair<size_t, int>> chosen_selectors = choose_selectors(
                         left_shifts, right_shifts);
 
-					//std::cout << "The following selector shifts were selected: \n";
-					//for (size_t i = 0; i < chosen_selectors.size(); ++i) {
-					//	std::cout << "#" << i << " -> " << "#" << chosen_selectors[i].first << " shifted " << chosen_selectors[i].second << std::endl;
-					//}
-					//std::cout << std::endl;
+                    //std::cout << "The following selector shifts were selected: \n";
+                    //for (size_t i = 0; i < chosen_selectors.size(); ++i) {
+                    //  std::cout << "#" << i << " -> " << "#" << chosen_selectors[i].first << " shifted " << chosen_selectors[i].second << std::endl;
+                    //}
+                    //std::cout << std::endl;
 
                     // Maps the old selector ID to the new one, only for the selectors to be used.
                     std::map<size_t, size_t> new_selector_mapping;
@@ -285,15 +517,20 @@ namespace nil {
                             }
                         }
                     }
-					// Update the selector ids.
-                	for (auto& [selector, id]: gates.selectors_) {
-						if (new_selector_mapping.find(id) != new_selector_mapping.end())
+                    // Update the selector ids.
+                    for (auto& [selector, id]: gates.selectors_) {
+                        if (new_selector_mapping.find(id) != new_selector_mapping.end())
                             result.selectors_.insert({ std::move(selector), new_selector_mapping[id] });
-					}
+                    }
+
+                    // Update the selector ids in dynamic lookups.
+                    for(auto& [name, area] : gates.dynamic_lookup_tables) {
+                        area.second = new_selector_mapping[area.second];
+                    }
 
                     gates.constraint_list = std::move(result.constraint_list);
                     gates.lookup_constraints = std::move(result.lookup_constraints);
-					gates.selectors_ = result.selectors_;
+                    gates.selectors_ = result.selectors_;
                 }
 
                 /**
@@ -324,7 +561,7 @@ namespace nil {
                     }
 
                     // For each node go to the left and right as far as possible.
-					// Then run over the chain of selectors and make the decisions.
+                    // Then run over the chain of selectors and make the decisions.
                     for (size_t i = 0; i < N; ++i) {
                         // We may already have a decision for the current node.
                         if (chosen_shifts[i].first != -1)
@@ -372,7 +609,7 @@ namespace nil {
                                     chosen_shifts[chain[j - 1]] = {chain[j - 1], 0};
                                     chosen_shifts[chain[j]] = {chain[j - 1], -1};
 
-									// Check if chain[j - 2] can be skipped by rotating it to the right.
+                                    // Check if chain[j - 2] can be skipped by rotating it to the right.
                                     if (j >= 2 && right_shifts[chain[j - 2]] == chain[j - 1]) {
                                         chosen_shifts[chain[j - 2]] = {chain[j - 1], +1};
                                     }
