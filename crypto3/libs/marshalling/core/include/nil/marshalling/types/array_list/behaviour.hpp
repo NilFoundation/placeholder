@@ -42,21 +42,6 @@ namespace nil::crypto3 {
         namespace types {
             namespace detail {
 
-                template<bool THasOrigDataViewStorage>
-                struct array_list_orig_data_view_storage_type;
-
-                template<>
-                struct array_list_orig_data_view_storage_type<true> {
-                    template<typename TElement>
-                    using type = nil::crypto3::marshalling::container::array_view<TElement>;
-                };
-
-                template<>
-                struct array_list_orig_data_view_storage_type<false> {
-                    template<typename TElement>
-                    using type = std::vector<TElement>;
-                };
-
                 template<bool THasSequenceFixedSizeUseFixedSizeStorage>
                 struct array_list_sequence_fixed_size_use_fixed_size_storage_type;
 
@@ -69,9 +54,7 @@ namespace nil::crypto3 {
                 template<>
                 struct array_list_sequence_fixed_size_use_fixed_size_storage_type<false> {
                     template<typename TElement, typename TOpt>
-                    using type = typename array_list_orig_data_view_storage_type<
-                        TOpt::has_orig_data_view && std::is_integral<TElement>::value
-                        && (sizeof(TElement) == sizeof(std::uint8_t))>::template type<TElement>;
+                    using type = std::vector<TElement>;
                 };
 
                 template<bool THasFixedSizeStorage>
@@ -90,25 +73,9 @@ namespace nil::crypto3 {
                         TOpt::has_sequence_fixed_size_use_fixed_size_storage>::template type<TElement, TOpt>;
                 };
 
-                template<bool THasCustomStorage>
-                struct array_list_custom_array_list_storage_type;
-
-                template<>
-                struct array_list_custom_array_list_storage_type<true> {
-                    template<typename TElement, typename TOpt>
-                    using type = typename TOpt::custom_storage_type;
-                };
-
-                template<>
-                struct array_list_custom_array_list_storage_type<false> {
-                    template<typename TElement, typename TOpt>
-                    using type = typename array_list_fixed_size_storage_type<
-                        TOpt::has_fixed_size_storage>::template type<TElement, TOpt>;
-                };
-
                 template<typename TElement, typename TOpt>
-                using array_list_storage_type_type = typename array_list_custom_array_list_storage_type<
-                    TOpt::has_custom_storage_type>::template type<TElement, TOpt>;
+                using array_list_storage_type_type = typename array_list_fixed_size_storage_type<
+                    TOpt::has_fixed_size_storage>::template type<TElement, TOpt>;
 
                 template<typename TFieldBase, typename TElement, typename... TOptions>
                 using array_list_base_type = adapt_basic_field_type<

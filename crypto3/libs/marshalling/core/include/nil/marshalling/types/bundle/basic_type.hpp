@@ -46,7 +46,6 @@ namespace nil::crypto3 {
                 class basic_bundle : public TFieldBase {
                 public:
                     using value_type = TMembers;
-                    using version_type = typename TFieldBase::version_type;
 
                     basic_bundle() = default;
 
@@ -262,14 +261,6 @@ namespace nil::crypto3 {
                     void write_from_until_no_status(TIter &iter) const {
                         processing::template tuple_for_each_from_until<TFromIdx, TUntilIdx>(
                             value(), make_write_no_status_helper(iter));
-                    }
-
-                    static constexpr bool is_version_dependent() {
-                        return common_funcs::are_members_version_dependent<value_type>();
-                    }
-
-                    bool set_version(version_type version) {
-                        return common_funcs::set_version_for_members(value(), version);
                     }
 
                 private:

@@ -41,21 +41,12 @@ namespace nil::crypto3 {
             protected:
                 // Use big endian by default
                 using endian_type = nil::crypto3::marshalling::endian::big_endian;
-
-                // Use unsigned type by default for versioning
-                using version_type = unsigned;
             };
 
             template<typename TEndian, typename... TOptions>
             class field_base<nil::crypto3::marshalling::option::endian<TEndian>, TOptions...> : public field_base<TOptions...> {
             protected:
                 using endian_type = TEndian;
-            };
-
-            template<typename T, typename... TOptions>
-            class field_base<nil::crypto3::marshalling::option::version_type<T>, TOptions...> : public field_base<TOptions...> {
-            protected:
-                using version_type = T;
             };
 
             template<typename... TTuple, typename... TOptions>

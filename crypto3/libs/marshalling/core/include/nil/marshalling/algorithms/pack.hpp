@@ -24,8 +24,8 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef MARSHALLING_REPACK_NEW_HPP
-#define MARSHALLING_REPACK_NEW_HPP
+#ifndef MARSHALLING_PACK_HPP
+#define MARSHALLING_PACK_HPP
 
 #include <nil/marshalling/detail/repack_value.hpp>
 
@@ -287,4 +287,4 @@ namespace nil::crypto3 {
     }    // namespace marshalling
 }    // namespace nil
 
-#endif    // MARSHALLING_REPACK_NEW_HPP
+#endif    // MARSHALLING_PACK_HPP

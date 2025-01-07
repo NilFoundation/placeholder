@@ -35,9 +35,11 @@ namespace nil::crypto3 {
         namespace types {
             namespace detail {
 
+                template<typename TFieldBase, typename T, typename Enable = void>
+                class basic_integral;
+
                 template<typename TFieldBase, typename T>
-                class basic_integral : public TFieldBase {
-                    static_assert(std::is_integral<T>::value, "T must be integral value");
+                class basic_integral<TFieldBase, T, std::enable_if_t<std::is_integral_v<T>>> : public TFieldBase {
 
                     using base_impl_type = TFieldBase;
 

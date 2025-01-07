@@ -101,36 +101,6 @@ namespace nil::crypto3 {
                     static const bool value = (sizeof(test<T, typename T::const_pointer>(nullptr)) == sizeof(Yes));
                 };
 
-                template<typename TVersionType, bool TVersionDependent>
-                struct version_storage;
-
-                template<typename TVersionType>
-                struct version_storage<TVersionType, true> {
-                protected:
-                    TVersionType version_ = TVersionType();
-                };
-
-                template<typename TVersionType>
-                struct version_storage<TVersionType, false> { };
-
-                template<typename TElem, bool TIsIntegral>
-                struct array_list_elem_version_dependency_helper;
-
-                template<typename TElem>
-                struct array_list_elem_version_dependency_helper<TElem, true> {
-                    static const bool value = false;
-                };
-
-                template<typename TElem>
-                struct array_list_elem_version_dependency_helper<TElem, false> {
-                    static const bool value = TElem::is_version_dependent();
-                };
-
-                template<typename TElem>
-                constexpr bool array_list_element_is_version_dependent() {
-                    return array_list_elem_version_dependency_helper<TElem, std::is_integral<TElem>::value>::value;
-                }
-
             }    // namespace detail
         }        // namespace types
     }            // namespace marshalling

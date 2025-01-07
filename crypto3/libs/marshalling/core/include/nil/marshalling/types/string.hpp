@@ -50,25 +50,7 @@ namespace nil::crypto3 {
             ///     of the field.@n
             ///     Supported options are:
             ///     @li @ref nil::crypto3::marshalling::option::fixed_size_storage
-            ///     @li @ref nil::crypto3::marshalling::option::custom_storage_type
             ///     @li @ref nil::crypto3::marshalling::option::sequence_size_field_prefix
-            ///     @li @ref nil::crypto3::marshalling::option::sequence_ser_length_field_prefix
-            ///     @li @ref nil::crypto3::marshalling::option::sequence_size_forcing_enabled
-            ///     @li @ref nil::crypto3::marshalling::option::sequence_length_forcing_enabled
-            ///     @li @ref nil::crypto3::marshalling::option::sequence_fixed_size
-            ///     @li @ref nil::crypto3::marshalling::option::sequence_termination_field_suffix
-            ///     @li @ref nil::crypto3::marshalling::option::sequence_trailing_field_suffix
-            ///     @li @ref nil::crypto3::marshalling::option::default_value_initializer
-            ///     @li @ref nil::crypto3::marshalling::option::contents_validator
-            ///     @li @ref nil::crypto3::marshalling::option::contents_refresher
-            ///     @li @ref nil::crypto3::marshalling::option::has_custom_read
-            ///     @li @ref nil::crypto3::marshalling::option::has_custom_refresh
-            ///     @li @ref nil::crypto3::marshalling::option::fail_on_invalid
-            ///     @li @ref nil::crypto3::marshalling::option::ignore_invalid
-            ///     @li @ref nil::crypto3::marshalling::option::orig_data_view
-            ///     @li @ref nil::crypto3::marshalling::option::empty_serialization
-            ///     @li @ref nil::crypto3::marshalling::option::invalid_by_default
-            ///     @li @ref nil::crypto3::marshalling::option::version_storage
             /// @extends nil::crypto3::marshalling::field_type
             /// @headerfile nil/marshalling/types/string.hpp
             template<typename TFieldBase, typename... TOptions>
@@ -78,9 +60,6 @@ namespace nil::crypto3 {
             public:
                 /// @brief endian_type used for serialization.
                 using endian_type = typename base_impl_type::endian_type;
-
-                /// @brief Version type
-                using version_type = typename base_impl_type::version_type;
 
                 /// @brief All the options provided to this class bundled into struct.
                 using parsed_options_type = detail::options_parser<TOptions...>;
@@ -128,11 +107,7 @@ namespace nil::crypto3 {
 
                 /// @brief Read field value from input data sequence
                 /// @details By default, the read operation will try to consume all the
-                ///     data available, unless size limiting option (such as
-                ///     nil::crypto3::marshalling::option::sequence_size_field_prefix,
-                ///     nil::crypto3::marshalling::option::sequence_fixed_size,
-                ///     nil::crypto3::marshalling::option::sequence_size_forcing_enabled,
-                ///     nil::crypto3::marshalling::option::sequence_length_forcing_enabled) is used.
+                ///     data available.
                 /// @param[in, out] iter Iterator to read the data.
                 /// @param[in] len Number of bytes available for reading.
                 /// @return Status of read operation.
@@ -140,11 +115,6 @@ namespace nil::crypto3 {
                 template<typename TIter>
                 status_type read(TIter &iter, std::size_t len) {
                     status_type es = base_impl_type::read(iter, len);
-                    using TagTmp = typename std::conditional<parsed_options_type::has_sequence_fixed_size,
-                                                             adjustment_needed_tag,
-                                                             no_adjustment_tag>::type;
-
-                    adjust_value(TagTmp());
                     return es;
                 }
 
@@ -156,11 +126,6 @@ namespace nil::crypto3 {
                 template<typename TIter>
                 void read_no_status(TIter &iter) {
                     base_impl_type::read_no_status(iter);
-                    using TagTmp = typename std::conditional<parsed_options_type::has_sequence_fixed_size,
-                                                             adjustment_needed_tag,
-                                                             no_adjustment_tag>::type;
-
-                    adjust_value(TagTmp());
                 }
 
                 /// @brief Get access to the value storage.
@@ -191,9 +156,7 @@ namespace nil::crypto3 {
 
                 /// @brief Write current field value to output data sequence
                 /// @details By default, the write operation will write all the
-                ///     characters the field contains. If nil::crypto3::marshalling::option::sequence_fixed_size option
-                ///     is used, the number of characters, that is going to be written, is
-                ///     exactly as the option specifies. If underlying string storage
+                ///     characters the field contains. If underlying string storage
                 ///     doesn't contain enough data, the '\0' characters will
                 ///     be appended to the written sequence until the required amount of
                 ///     elements is reached.
@@ -224,56 +187,6 @@ namespace nil::crypto3 {
                 /// @brief Get maximal length that is required to serialise field of this type.
                 static constexpr std::size_t max_length() {
                     return base_impl_type::max_length();
-                }
-
-                /// @brief Force number of characters that must be read in the next read()
-                ///     invocation.
-                /// @details Exists only if nil::crypto3::marshalling::option::sequence_size_forcing_enabled option has been
-                ///     used.
-                /// @param[in] count Number of elements to read during following read operation.
-                void force_read_elem_count(std::size_t count) {
-                    base_impl_type::force_read_elem_count(count);
-                }
-
-                /// @brief Clear forcing of the number of characters that must be read in
-                ///     the next read() invocation.
-                /// @details Exists only if nil::crypto3::marshalling::option::sequence_size_forcing_enabled option has been
-                ///     used.
-                void clear_read_elem_count() {
-                    base_impl_type::clear_read_elem_count();
-                }
-
-                /// @brief Force available length for the next read() invocation.
-                /// @details Exists only if @ref nil::crypto3::marshalling::option::sequence_length_forcing_enabled option has been
-                ///     used.
-                /// @param[in] count Number of elements to read during following read operation.
-                void force_read_length(std::size_t count) {
-                    return base_impl_type::force_read_length(count);
-                }
-
-                /// @brief Clear forcing of the available length in the next read()
-                ///     invocation.
-                /// @details Exists only if @ref nil::crypto3::marshalling::option::sequence_length_forcing_enabled option has been
-                ///     used.
-                void clear_read_length_forcing() {
-                    return base_impl_type::clear_read_length_forcing();
-                }
-
-                /// @brief Compile time check if this class is version dependent
-                static constexpr bool is_version_dependent() {
-                    return parsed_options_type::has_custom_version_update || base_impl_type::is_version_dependent();
-                }
-
-                /// @brief Get version of the field.
-                /// @details Exists only if @ref nil::crypto3::marshalling::option::version_storage option has been provided.
-                version_type get_version() const {
-                    return base_impl_type::get_version();
-                }
-
-                /// @brief Default implementation of version update.
-                /// @return @b true in case the field contents have changed, @b false otherwise
-                bool set_version(version_type version) {
-                    return base_impl_type::set_version(version);
                 }
 
             protected:

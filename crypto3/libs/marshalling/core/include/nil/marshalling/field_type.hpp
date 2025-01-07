@@ -52,9 +52,6 @@ namespace nil::crypto3 {
             ///     @ref nil::crypto3::marshalling::endian::little_endian
             using endian_type = typename base_impl_type::endian_type;
 
-            /// @brief Version type
-            using version_type = typename base_impl_type::version_type;
-
             /// @brief Default validity check
             /// @details Always returns true, can be overriden by the derived class
             /// @return Always @b true
@@ -67,20 +64,6 @@ namespace nil::crypto3 {
             ///     derived class
             /// @return Always @b false
             static constexpr bool refresh() {
-                return false;
-            }
-
-            /// @brief Default check of whether the field is version dependent.
-            /// @return Always @b false.
-            static constexpr bool is_version_dependent() {
-                return false;
-            }
-
-            /// @brief Default version update functionality
-            /// @details Does nothing and returns false, can be overriden by the
-            ///     derived class
-            /// @return Always @b false
-            static constexpr bool set_version(version_type) {
                 return false;
             }
 

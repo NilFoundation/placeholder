@@ -43,19 +43,6 @@ namespace nil::crypto3 {
         namespace types {
             namespace detail {
 
-                template<bool THasOrigDataViewStorage>
-                struct string_orig_data_view_storage_type;
-
-                template<>
-                struct string_orig_data_view_storage_type<true> {
-                    using type = nil::crypto3::marshalling::container::string_view;
-                };
-
-                template<>
-                struct string_orig_data_view_storage_type<false> {
-                    using type = std::string;
-                };
-
                 template<bool THasSequenceFixedSizeUseFixedSizeStorage>
                 struct string_fixed_size_use_fixed_size_storage_type;
 
@@ -68,7 +55,7 @@ namespace nil::crypto3 {
                 template<>
                 struct string_fixed_size_use_fixed_size_storage_type<false> {
                     template<typename TOpt>
-                    using type = typename string_orig_data_view_storage_type<TOpt::has_orig_data_view>::type;
+                    using type = std::string;
                 };
 
                 template<bool THasFixedSizeStorage>
@@ -87,25 +74,9 @@ namespace nil::crypto3 {
                         TOpt::has_sequence_fixed_size_use_fixed_size_storage>::template type<TOpt>;
                 };
 
-                template<bool THasCustomStorage>
-                struct string_custom_string_storage_type;
-
-                template<>
-                struct string_custom_string_storage_type<true> {
-                    template<typename TOpt>
-                    using type = typename TOpt::custom_storage_type;
-                };
-
-                template<>
-                struct string_custom_string_storage_type<false> {
-                    template<typename TOpt>
-                    using type =
-                        typename string_fixed_size_storage_type<TOpt::has_fixed_size_storage>::template type<TOpt>;
-                };
-
                 template<typename TOpt>
                 using string_storage_type =
-                    typename string_custom_string_storage_type<TOpt::has_custom_storage_type>::template type<TOpt>;
+                    typename string_fixed_size_storage_type<TOpt::has_fixed_size_storage>::template type<TOpt>;
 
                 template<typename TFieldBase, typename... TOptions>
                 using string_base_type = adapt_basic_field_type<
