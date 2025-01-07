@@ -45,19 +45,11 @@ namespace nil::crypto3 {
             namespace detail {
 
                 template<typename TFieldBase, typename TStorage>
-                class basic_array_list
-                    : public TFieldBase,
-                      public detail::version_storage<
-                          typename TFieldBase::version_type,
-                          detail::array_list_element_is_version_dependent<typename TStorage::value_type>()> {
+                class basic_array_list : public TFieldBase {
                     using base_impl_type = TFieldBase;
-                    using version_base_impl = detail::version_storage<
-                        typename TFieldBase::version_type,
-                        detail::array_list_element_is_version_dependent<typename TStorage::value_type>()>;
 
                 public:
                     using endian_type = typename base_impl_type::endian_type;
-                    using version_type = typename base_impl_type::version_type;
 
                     using element_type = typename TStorage::value_type;
                     using value_type = TStorage;
@@ -95,7 +87,6 @@ namespace nil::crypto3 {
 
                     element_type &create_back() {
                         value_.emplace_back();
-                        update_elem_version(value_.back(), version_tag());
                         return value_.back();
                     }
 
@@ -242,14 +233,6 @@ namespace nil::crypto3 {
                         common_funcs::write_sequence_no_status_n(*this, count, iter);
                     }
 
-                    static constexpr bool is_version_dependent() {
-                        return detail::array_list_element_is_version_dependent<element_type>();
-                    }
-
-                    bool set_version(version_type version) {
-                        return set_version_internal(version, version_tag());
-                    }
-
                 private:
                     struct field_elem_tag { };
                     struct integral_elem_tag { };
@@ -258,8 +241,6 @@ namespace nil::crypto3 {
                     struct raw_data_tag { };
                     struct assign_exists_tag { };
                     struct assign_missing_tag { };
-                    struct version_dependent_tag { };
-                    struct no_version_dependency_tag { };
 
                     using elem_tag = typename std::conditional<std::is_integral<element_type>::value, integral_elem_tag,
                                                                field_elem_tag>::type;
@@ -267,10 +248,6 @@ namespace nil::crypto3 {
                     using field_length_tag =
                         typename std::conditional<detail::array_list_field_has_var_length<element_type>::value,
                                                   var_length_tag, fixed_length_tag>::type;
-
-                    using version_tag =
-                        typename std::conditional<detail::array_list_element_is_version_dependent<element_type>(),
-                                                  version_dependent_tag, no_version_dependency_tag>::type;
 
                     constexpr std::size_t length_internal(field_elem_tag) const {
                         return field_length(field_length_tag());
@@ -557,28 +534,6 @@ namespace nil::crypto3 {
                     template<typename TIter>
                     void read_no_status_internal_n(std::size_t count, TIter &iter, raw_data_tag) {
                         read_internal(iter, count, raw_data_tag());
-                    }
-
-                    bool update_elem_version(element_type &elem, version_dependent_tag) {
-                        return elem.set_version(version_base_impl::version_);
-                    }
-
-                    static constexpr bool update_elem_version(element_type &, no_version_dependency_tag) {
-                        return false;
-                    }
-
-                    bool set_version_internal(version_type version, version_dependent_tag) {
-                        version_base_impl::version_ = version;
-                        bool updated = false;
-                        for (auto &elem : value()) {
-                            updated = elem.set_version(version) || updated;
-                        }
-
-                        return updated;
-                    }
-
-                    static constexpr bool set_version_internal(version_type, no_version_dependency_tag) {
-                        return false;
                     }
 
                     value_type value_;

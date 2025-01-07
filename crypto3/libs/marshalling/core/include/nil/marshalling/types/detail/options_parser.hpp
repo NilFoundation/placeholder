@@ -28,7 +28,6 @@
 
 #include <tuple>
 #include <nil/marshalling/options.hpp>
-#include <nil/marshalling/compile_control.hpp>
 
 namespace nil::crypto3 {
     namespace marshalling {
@@ -41,13 +40,9 @@ namespace nil::crypto3 {
                 template<>
                 class options_parser<> {
                 public:
-                    static const bool has_orig_data_view = false;
-                    static const bool has_custom_storage_type = false;
                     static const bool has_fixed_size_storage = false;
                     static const bool has_sequence_fixed_size_use_fixed_size_storage = false;
                     static const bool has_sequence_size_field_prefix = false;
-                    static const bool has_custom_version_update = false;
-
                 };
 
                 template<typename TSizeField, typename... TOptions>
@@ -58,20 +53,6 @@ namespace nil::crypto3 {
                     using sequence_size_field_prefix = TSizeField;
                 };
 
-                template<typename... TOptions>
-                class options_parser<nil::crypto3::marshalling::option::orig_data_view, TOptions...>
-                    : public options_parser<TOptions...> {
-                public:
-                    static const bool has_orig_data_view = true;
-                };
-
-                template<typename TType, typename... TOptions>
-                class options_parser<nil::crypto3::marshalling::option::custom_storage_type<TType>, TOptions...>
-                    : public options_parser<TOptions...> {
-                public:
-                    static const bool has_custom_storage_type = true;
-                    using custom_storage_type = TType;
-                };
                 template<std::size_t TSize, typename... TOptions>
                 class options_parser<nil::crypto3::marshalling::option::fixed_size_storage<TSize>, TOptions...>
                     : public options_parser<TOptions...> {
@@ -84,13 +65,6 @@ namespace nil::crypto3 {
                     : public options_parser<TOptions...> {
                 public:
                     static const bool has_sequence_fixed_size_use_fixed_size_storage = true;
-                };
-
-                template<typename... TOptions>
-                class options_parser<nil::crypto3::marshalling::option::has_custom_version_update, TOptions...>
-                    : public options_parser<TOptions...> {
-                public:
-                    static const bool has_custom_version_update = true;
                 };
 
                 template<typename... TTupleOptions, typename... TOptions>

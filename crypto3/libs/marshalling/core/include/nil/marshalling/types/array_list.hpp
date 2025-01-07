@@ -74,27 +74,7 @@ namespace nil::crypto3 {
             ///     of the field.@n
             ///     Supported options are:
             ///     @li @ref nil::crypto3::marshalling::option::fixed_size_storage
-            ///     @li @ref nil::crypto3::marshalling::option::custom_storage_type
             ///     @li @ref nil::crypto3::marshalling::option::sequence_size_field_prefix
-            ///     @li @ref nil::crypto3::marshalling::option::sequence_ser_length_field_prefix
-            ///     @li @ref nil::crypto3::marshalling::option::sequence_elem_ser_length_field_prefix
-            ///     @li @ref nil::crypto3::marshalling::option::sequence_elem_fixed_ser_length_field_prefix
-            ///     @li @ref nil::crypto3::marshalling::option::sequence_size_forcing_enabled
-            ///     @li @ref nil::crypto3::marshalling::option::sequence_length_forcing_enabled
-            ///     @li @ref nil::crypto3::marshalling::option::sequence_fixed_size
-            ///     @li @ref nil::crypto3::marshalling::option::sequence_termination_field_suffix
-            ///     @li @ref nil::crypto3::marshalling::option::sequence_trailing_field_suffix
-            ///     @li @ref nil::crypto3::marshalling::option::default_value_initializer
-            ///     @li @ref nil::crypto3::marshalling::option::contents_validator
-            ///     @li @ref nil::crypto3::marshalling::option::contents_refresher
-            ///     @li @ref nil::crypto3::marshalling::option::has_custom_read
-            ///     @li @ref nil::crypto3::marshalling::option::has_custom_refresh
-            ///     @li @ref nil::crypto3::marshalling::option::fail_on_invalid
-            ///     @li @ref nil::crypto3::marshalling::option::ignore_invalid
-            ///     @li @ref nil::crypto3::marshalling::option::orig_data_view (valid only if TElement is integral type
-            ///         of 1 byte size.
-            ///     @li @ref nil::crypto3::marshalling::option::empty_serialization
-            ///     @li @ref nil::crypto3::marshalling::option::version_storage
             /// @extends nil::crypto3::marshalling::field_type
             /// @headerfile nil/marshalling/types/array_list.hpp
             template<typename TFieldBase, typename TElement, typename... TOptions>
@@ -104,9 +84,6 @@ namespace nil::crypto3 {
             public:
                 /// @brief endian_type used for serialization.
                 using endian_type = typename base_impl_type::endian_type;
-
-                /// @brief Version type
-                using version_type = typename base_impl_type::version_type;
 
                 /// @brief All the options provided to this class bundled into struct.
                 using parsed_options_type = detail::options_parser<TOptions...>;
@@ -174,10 +151,7 @@ namespace nil::crypto3 {
                 /// @brief Read field value from input data sequence
                 /// @details By default, the read operation will try to consume all the
                 ///     data available, unless size limiting option (such as
-                ///     nil::crypto3::marshalling::option::sequence_size_field_prefix,
-                ///     nil::crypto3::marshalling::option::sequence_fixed_size,
-                ///     nil::crypto3::marshalling::option::sequence_size_forcing_enabled,
-                ///     nil::crypto3::marshalling::option::sequence_length_forcing_enabled) is used.
+                ///     nil::crypto3::marshalling::option::sequence_size_field_prefix) is used.
                 /// @param[in, out] iter Iterator to read the data.
                 /// @param[in] len Number of bytes available for reading.
                 /// @return Status of read operation.
@@ -225,9 +199,7 @@ namespace nil::crypto3 {
                 }
 
                 /// @brief Check validity of the field value.
-                /// @details The collection is valid if all the elements are valid. In case
-                ///     nil::crypto3::marshalling::option::contents_validator option is used, the validator,
-                ///     it provides, is invoked IN ADDITION to the validation of the elements.
+                /// @details The collection is valid if all the elements are valid.
                 /// @return true in case the field's value is valid, false otherwise.
                 bool valid() const {
                     return base_impl_type::valid();
@@ -250,33 +222,10 @@ namespace nil::crypto3 {
                     return base_impl_type::max_length();
                 }
 
-                /// @brief Compile time check if this class is version dependent
-                static constexpr bool is_version_dependent() {
-                    return parsed_options_type::has_custom_version_update || base_impl_type::is_version_dependent();
-                }
-
-                /// @brief Get version of the field.
-                /// @details Exists only if @ref nil::crypto3::marshalling::option::version_storage option has been provided.
-                version_type get_version() const {
-                    return base_impl_type::get_version();
-                }
-
-                /// @brief Default implementation of version update.
-                /// @return @b true in case the field contents have changed, @b false otherwise
-                bool set_version(version_type version) {
-                    return base_impl_type::set_version(version);
-                }
-
             protected:
                 using base_impl_type::read_data;
                 using base_impl_type::write_data;
 
-            private:
-                static_assert(
-                    (!parsed_options_type::has_orig_data_view)
-                        || (std::is_integral<TElement>::value && (sizeof(TElement) == sizeof(std::uint8_t))),
-                    "Usage of nil::crypto3::marshalling::option::orig_data_view option is allowed only for raw binary data "
-                    "(std::uint8_t) types.");
             };
 
             /// @brief Equivalence comparison operator.

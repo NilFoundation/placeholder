@@ -52,32 +52,6 @@ namespace nil::crypto3 {
             ///     <a href="http://en.cppreference.com/w/cpp/utility/tuple">std::tuple</a>.
             /// @tparam TOptions Zero or more options that modify/refine default behaviour
             ///     of the field.@n
-            ///     Supported options are:
-            ///     @li @ref nil::crypto3::marshalling::option::default_value_initializer - All wrapped fields may
-            ///         specify their independent default value initializers. It is
-            ///         also possible to provide initializer for the bundle field which
-            ///         will set appropriate values to the fields based on some
-            ///         internal logic.
-            ///     @li @ref nil::crypto3::marshalling::option::contents_validator - All wrapped fields may specify
-            ///         their independent validators. The bundle field considered to
-            ///         be valid if all the wrapped fields are valid. This option though,
-            ///         provides an ability to add extra validation logic that can
-            ///         observe value of more than one wrapped fields. For example,
-            ///         protocol specifies that if one specific field has value X, than
-            ///         other field is NOT allowed to have value Y.
-            ///     @li @ref nil::crypto3::marshalling::option::contents_refresher - The default refreshing
-            ///         behaviour is to call the @b refresh() member function of every
-            ///         member field. This option provides an ability to set a custom
-            ///         "refreshing" logic.
-            ///     @li @ref nil::crypto3::marshalling::option::custom_value_reader - It may be required to implement
-            ///         custom reading functionality instead of default behaviour of
-            ///         invoking read() member function of every member field. It is possible
-            ///         to provide cusom reader functionality using nil::crypto3::marshalling::option::custom_value_reader
-            ///         option.
-            ///     @li @ref nil::crypto3::marshalling::option::has_custom_read
-            ///     @li @ref nil::crypto3::marshalling::option::has_custom_refresh
-            ///     @li @ref nil::crypto3::marshalling::option::empty_serialization
-            ///     @li @ref nil::crypto3::marshalling::option::version_storage
             /// @extends nil::crypto3::marshalling::field_type
             /// @headerfile nil/marshalling/types/bundle.hpp
             /// @see @ref MARSHALLING_FIELD_MEMBERS_ACCESS()
@@ -94,9 +68,6 @@ namespace nil::crypto3 {
             public:
                 /// @brief endian_type used for serialization.
                 using endian_type = typename base_impl_type::endian_type;
-
-                /// @brief Version type
-                using version_type = typename base_impl_type::version_type;
 
                 /// @brief All the options provided to this class bundled into struct.
                 using parsed_options_type = detail::options_parser<TOptions...>;
@@ -483,23 +454,6 @@ namespace nil::crypto3 {
                     return base_impl_type::refresh();
                 }
 
-                /// @brief Compile time check if this class is version dependent
-                static constexpr bool is_version_dependent() {
-                    return parsed_options_type::has_custom_version_update || base_impl_type::is_version_dependent();
-                }
-
-                /// @brief Get version of the field.
-                /// @details Exists only if @ref nil::crypto3::marshalling::option::version_storage option has been provided.
-                version_type get_version() const {
-                    return base_impl_type::get_version();
-                }
-
-                /// @brief Default implementation of version update.
-                /// @return @b true in case the field contents have changed, @b false otherwise
-                bool set_version(version_type version) {
-                    return base_impl_type::set_version(version);
-                }
-
             protected:
                 using base_impl_type::read_data;
                 using base_impl_type::write_data;
@@ -513,10 +467,6 @@ namespace nil::crypto3 {
                     "nil::crypto3::marshalling::option::sequence_size_field_prefix option is not applicable to bundle field");
                 static_assert(!parsed_options_type::has_fixed_size_storage,
                               "nil::crypto3::marshalling::option::fixed_size_storage option is not applicable to bundle field");
-                static_assert(!parsed_options_type::has_custom_storage_type,
-                              "nil::crypto3::marshalling::option::custom_storage_type option is not applicable to bundle field");
-                static_assert(!parsed_options_type::has_orig_data_view,
-                              "nil::crypto3::marshalling::option::orig_data_view option is not applicable to bundle field");
             };
 
             /// @brief Equality comparison operator.

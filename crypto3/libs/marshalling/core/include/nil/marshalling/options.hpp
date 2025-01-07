@@ -32,7 +32,6 @@
 #include <tuple>
 #include <type_traits>
 #include <limits>
-#include <ratio>
 #include <cstdint>
 #include <cstddef>
 
@@ -49,25 +48,6 @@ namespace nil::crypto3 {
         }
 
         namespace option {
-            namespace detail {
-
-                template<typename T>
-                struct is_ratio_t {
-                    static const bool value = false;
-                };
-
-                template<std::intmax_t TNum, std::intmax_t TDen>
-                struct is_ratio_t<std::ratio<TNum, TDen>> {
-                    static const bool value = true;
-                };
-
-                template<typename T>
-                constexpr bool is_ratio() {
-                    return is_ratio_t<T>::value;
-                }
-
-            }    // namespace detail
-
             // message/field_t common options
 
             /// @brief options to specify endian.
@@ -100,23 +80,6 @@ namespace nil::crypto3 {
             /// @headerfile nil/marshalling/options.hpp
             template<std::size_t TSize>
             struct fixed_size_storage { };
-
-            /// @brief Set custom storage type for fields like nil::crypto3::marshalling::types::string or
-            ///     nil::crypto3::marshalling::types::array_list.
-            /// @details By default nil::crypto3::marshalling::types::string uses
-            ///     <a href="http://en.cppreference.com/w/cpp/string/basic_string">std::string</a>
-            ///     and nil::crypto3::marshalling::types::array_list uses
-            ///     <a href="http://en.cppreference.com/w/cpp/container/vector">std::vector</a> as
-            ///     their internal storage types. The @ref fixed_size_storage option forces
-            ///     them to use nil::crypto3::marshalling::container::static_string and
-            ///     nil::crypto3::marshalling::container::static_vector instead. This option can be used to provide any other
-            ///     third party type. Such type must define the same public interface as @b std::string (when used with
-            ///     nil::crypto3::marshalling::types::string) or @b std::vector (when used with
-            ///     nil::crypto3::marshalling::types::array_list).
-            /// @tparam TType Custom storage type
-            /// @headerfile nil/marshalling/options.hpp
-            template<typename TType>
-            struct custom_storage_type { };
 
             /// @brief Option that modifies the default behaviour of collection fields to
             ///     prepend the serialized data with number of @b elements information.
@@ -155,32 +118,6 @@ namespace nil::crypto3 {
             ///     the storage area size.
             /// @headerfile nil/marshalling/options.hpp
             struct sequence_fixed_size_use_fixed_size_storage { };
-
-            /// @brief Use "view" on original raw data instead of copying it.
-            /// @details Can be used with @ref nil::crypto3::marshalling::types::string and raw data @ref
-            /// nil::crypto3::marshalling::types::array_list,
-            ///     will force usage of @ref nil::crypto3::marshalling::container::string_view and
-            ///     nil::crypto3::marshalling::container::array_view respectively as data storage type.
-            /// @note The original data must be preserved until destruction of the field
-            ///     that uses the "view".
-            /// @note Incompatible with other options that contol data storage type,
-            ///     such as @ref nil::crypto3::marshalling::option::custom_storage_type or @ref
-            ///     nil::crypto3::marshalling::option::fixed_size_storage
-            /// @headerfile nil/marshalling/options.hpp
-            struct orig_data_view { };
-
-            /// @brief Provide type to be used for versioning
-            /// @tparam T Type of the version value. Expected to be unsigned integral one.
-            template<typename T>
-            struct version_type {
-                static_assert(std::is_integral<T>::value, "Only unsigned integral types are supported for versions");
-                static_assert(std::is_unsigned<T>::value, "Only unsigned integral types are supported for versions");
-            };
-
-            /// @brief Mark this class to have custom
-            ///     implementation of version update functionality.
-            /// @headerfile nil/marshalling/options.hpp
-            struct has_custom_version_update { };
 
         }    // namespace option
     }        // namespace marshalling

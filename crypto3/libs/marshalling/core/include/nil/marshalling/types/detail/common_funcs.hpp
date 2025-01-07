@@ -149,45 +149,7 @@ namespace nil::crypto3 {
                         return 0xffff;
                     }
 
-                    template<typename TFields>
-                    static constexpr bool are_members_version_dependent() {
-                        return processing::tuple_type_accumulate<TFields>(
-                            false, version_dependency_checker());
-                    }
-
-                    template<typename TFields, typename TVersionType>
-                    static bool set_version_for_members(TFields &fields, TVersionType version) {
-                        return processing::tuple_accumulate(fields, false,
-                                                                              make_version_updater(version));
-                    }
-
-                private:
-                    struct version_dependency_checker {
-                        template<typename TField>
-                        constexpr bool operator()(bool soFar) const {
-                            return TField::is_version_dependent() || soFar;
-                        }
-                    };
-
-                    template<typename TVerType>
-                    class version_updater {
-                    public:
-                        explicit version_updater(TVerType val) : version_(val) {
-                        }
-
-                        template<typename TField>
-                        bool operator()(bool soFar, TField &field) const {
-                            return field.set_version(static_cast<typename TField::version_type>(version_)) || soFar;
-                        }
-
                     private:
-                        TVerType version_;
-                    };
-
-                    template<typename TVerType>
-                    static version_updater<TVerType> make_version_updater(TVerType val) {
-                        return version_updater<TVerType>(val);
-                    }
                 };
 
             }    // namespace detail
