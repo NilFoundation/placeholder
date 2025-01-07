@@ -91,10 +91,10 @@ void range_check_tests_to_fail() {
     integral_type mask = (integral_type(1) << bit_size_chunk) - 1;
 
     for (std::size_t i = 0; i < RandomTestsAmount; i++) {
-        integral_type most_significant_bit = integral_type(1) << (bit_size_chunk + i % 2);
+        integral_type most_significant_bit = integral_type(1) << (bit_size_chunk);
         std::vector<typename BlueprintFieldType::value_type> public_input;
         //Adding a faulty bit at j = 0
-        public_input.push_back(value_type(integral_type(generate_random().data) & mask| most_significant_bit));
+        public_input.push_back(value_type(integral_type(generate_random().data) & mask | most_significant_bit));
         for (std::size_t j = 1; j < num_chunks; j++) {
             public_input.push_back(value_type(integral_type(generate_random().data) & mask));
         }
