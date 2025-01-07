@@ -26,11 +26,11 @@
 #ifndef MARSHALLING_ARRAY_LIST_BEHAVIOUR_HPP
 #define MARSHALLING_ARRAY_LIST_BEHAVIOUR_HPP
 
+#include <span>
 #include <vector>
 
 #include <nil/marshalling/status_type.hpp>
 #include <nil/marshalling/container/static_vector.hpp>
-#include <nil/marshalling/container/array_view.hpp>
 #include <nil/marshalling/types/array_list/basic_type.hpp>
 #include <nil/marshalling/types/detail/adapt_basic_field.hpp>
 #include <nil/marshalling/types/detail/options_parser.hpp>
