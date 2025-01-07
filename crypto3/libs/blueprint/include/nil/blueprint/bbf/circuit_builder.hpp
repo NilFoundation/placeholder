@@ -217,15 +217,19 @@ namespace nil {
                     }
 
                     for (const auto& [table_name, grouped_lookups] : gates.grouped_lookups) {
+                        // Create table will only create it, if it does not already exist.
                         size_t table_index = create_table(table_name, lookup_table_names, gates);
-                        for (const auto& [ group_id, lookups] : grouped_lookups) {
-                            lookup_input_constraints_type lookup_gate;
+                        for (const auto& [group_id, lookups] : grouped_lookups) {
+                            std::vector<lookup_constraint_type> merged_lookup_gate;
+                            lookup_input_constraints_type merged_lookup_input;
                             for (const auto& [selector_id, lookup_inputs] : lookups) {
-                                lookup_gate += lookup_inputs * expression_type(var(selector_id, 0, false, var::column_type::selector));
+                                merged_lookup_input += merged_lookup_input *
+                                    expression_type(var(selector_id, 0, false, var::column_type::selector));
                             }
-                            bp.add_lookup_gate(full_selector_id, (const std::vector<lookup_constraint_type>&)lookup_gate);
+                            merged_lookup_gate.push_back({table_index, merged_lookup_input});
+                            bp.add_lookup_gate(full_selector_id, merged_lookup_gate);
                         }
-                    }
+                    } 
 
                     // compatibility layer: dynamic lookup tables - continued
                     for(const auto& [name, area] : gates.dynamic_lookup_tables) {
