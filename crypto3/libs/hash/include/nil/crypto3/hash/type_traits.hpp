@@ -108,20 +108,11 @@ namespace nil {
             template<typename PolicyType>
             struct poseidon;
 
-            template<typename Params, typename Hash, typename Group>
-            struct find_group_hash;
-
             template<typename Field, typename Hash, typename Params>
             struct h2f;
 
             template<typename Group, typename Hash, typename Params>
             struct h2c;
-
-            template<typename Hash>
-            struct is_find_group_hash : std::integral_constant<bool, false> { };
-
-            template<typename Params, typename Hash, typename Group>
-            struct is_find_group_hash<find_group_hash<Params, Hash, Group>> : std::integral_constant<bool, true> { };
 
             template<typename Hash>
             struct is_h2f : std::integral_constant<bool, false> { };
