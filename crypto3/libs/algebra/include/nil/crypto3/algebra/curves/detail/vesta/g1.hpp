@@ -54,29 +54,7 @@ namespace nil {
 
                         constexpr static const std::size_t value_bits =
                             field_type::value_bits + 1;    ///< size of the base field in bits
-#ifdef __ZKLLVM__
-                        typedef __zkllvm_curve_vesta value_type;
-
-                        static value_type make_value(
-                            typename field_type::value_type affine_one_X,
-                            typename field_type::value_type affine_one_Y) {
-                            return __builtin_assigner_vesta_curve_init(affine_one_X, affine_one_Y);
-                        }
-
-                        static value_type one () {
-                            return make_value(
-                                0x40000000000000000000000000000000224698fc0994a8dd8c46eb2100000000_big_uint256,
-                                0x2_big_uint256
-                                );
-                        }
-
-                        static value_type zero () {
-                            return make_value(0, 1);
-                        }
-
-#else
                         using value_type = curve_element<params_type, Form, Coordinates>;
-#endif
                     };
 
                 }    // namespace detail

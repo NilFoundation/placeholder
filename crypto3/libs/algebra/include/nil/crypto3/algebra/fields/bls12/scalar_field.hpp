@@ -55,9 +55,6 @@ namespace nil {
                     constexpr static const std::size_t arity = 1;
 
                     typedef typename policy_type::integral_type integral_type;
-#ifdef __ZKLLVM__
-                    typedef __zkllvm_field_bls12381_scalar value_type;
-#else
 
                     constexpr static const integral_type modulus =
                         0x73EDA753299D7D483339D80809A1D80553BDA402FFFE5BFEFFFFFFFF00000001_big_uint255;
@@ -67,7 +64,6 @@ namespace nil {
 
                     typedef nil::crypto3::multiprecision::auto_big_mod<modulus> modular_type;
                     typedef typename detail::element_fp<params<bls12_scalar_field<381>>> value_type;
-#endif
                 };
 
                 template<>
@@ -80,9 +76,6 @@ namespace nil {
                     constexpr static const std::size_t arity = 1;
 
                     typedef typename policy_type::integral_type integral_type;
-#ifdef __ZKLLVM__
-                    // typedef __zkllvm_field__bls377_scalar value_type;
-#else
 
                     constexpr static const integral_type modulus =
                         0x12AB655E9A2CA55660B44D1E5C37B00159AA76FED00000010A11800000000001_big_uint253;
@@ -91,7 +84,6 @@ namespace nil {
 
                     typedef nil::crypto3::multiprecision::auto_big_mod<modulus> modular_type;
                     typedef typename detail::element_fp<params<bls12_scalar_field<377>>> value_type;
-#endif
                 };
 
                 constexpr typename std::size_t const bls12_scalar_field<381>::modulus_bits;
@@ -103,13 +95,10 @@ namespace nil {
                 constexpr typename std::size_t const bls12_scalar_field<381>::value_bits;
                 constexpr typename std::size_t const bls12_scalar_field<377>::value_bits;
 
-#ifdef __ZKLLVM__
-#else
                 constexpr typename bls12_scalar_field<381>::integral_type const bls12_scalar_field<381>::modulus;
                 constexpr typename bls12_scalar_field<377>::integral_type const bls12_scalar_field<377>::modulus;
                 constexpr typename bls12_scalar_field<381>::integral_type const bls12_scalar_field<381>::group_order_minus_one_half;
                 constexpr typename bls12_scalar_field<377>::integral_type const bls12_scalar_field<377>::group_order_minus_one_half;
-#endif
                 template<std::size_t Version = 381>
                 using bls12_fr = bls12_scalar_field<Version>;
 

@@ -10,10 +10,6 @@
 #ifndef CRYPTO3_HASH_POSEIDON_HPP
 #define CRYPTO3_HASH_POSEIDON_HPP
 
-#ifdef __ZKLLVM__
-#include <nil/crypto3/algebra/curves/pallas.hpp>
-#else
-
 #include <nil/crypto3/hash/accumulators/hash.hpp>
 #include <nil/crypto3/hash/detail/poseidon/poseidon_sponge.hpp>
 #include <nil/crypto3/hash/detail/poseidon/poseidon_functions.hpp>
@@ -21,24 +17,10 @@
 #include <nil/crypto3/hash/detail/sponge_construction.hpp>
 #include <nil/crypto3/hash/detail/stream_processors/stream_processors_enum.hpp>
 
-#endif
-
 namespace nil {
     namespace crypto3 {
         namespace hashes {
 
-#ifdef __ZKLLVM__
-            class poseidon {
-            public:
-                typedef typename algebra::curves::pallas::base_field_type::value_type block_type;
-
-                struct process{
-                    block_type operator()(block_type first_input_block, block_type second_input_block){
-                        return __builtin_assigner_poseidon_pallas_base({0, first_input_block, second_input_block})[2];
-                    }
-                };
-            };
-#else
             template<typename PolicyType>
             struct poseidon {
             public:
@@ -94,7 +76,6 @@ namespace nil {
                 constexpr static detail::stream_processor_type stream_processor = detail::stream_processor_type::Raw;
                 using accumulator_tag = accumulators::tag::algebraic_hash<original_poseidon<PolicyType>>;
             };
-#endif
         }    // namespace hashes
     }        // namespace crypto3
 }    // namespace nil

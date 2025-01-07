@@ -54,25 +54,18 @@ namespace nil {
 
                     typedef typename policy_type::integral_type integral_type;
                     using extended_integral_type = nil::crypto3::multiprecision::big_uint<2 * policy_type::modulus_bits>;
-#ifdef __ZKLLVM__
-                    typedef __zkllvm_field_curve25519_scalar value_type;
-#else
 
                     constexpr static const integral_type modulus =
                         0x1000000000000000000000000000000014def9dea2f79cd65812631a5cf5d3ed_big_uint253;
 
                     typedef nil::crypto3::multiprecision::auto_big_mod<modulus> modular_type;
                     typedef typename detail::element_fp<params<curve25519_scalar_field>> value_type;
-#endif
                 };
                 constexpr typename std::size_t const curve25519_scalar_field::modulus_bits;
                 constexpr typename std::size_t const curve25519_scalar_field::number_bits;
                 constexpr typename std::size_t const curve25519_scalar_field::value_bits;
 
-#ifdef __ZKLLVM__
-#else
                 constexpr typename curve25519_scalar_field::integral_type const curve25519_scalar_field::modulus;
-#endif
                 using curve25519_fr = curve25519_scalar_field;
             }    // namespace fields
         }        // namespace algebra

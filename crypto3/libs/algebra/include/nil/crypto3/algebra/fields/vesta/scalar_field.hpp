@@ -41,16 +41,8 @@ namespace nil {
                 /**
                  * @brief A struct representing a vesta curve.
                  */
-#ifdef __ZKLLVM__
-                    class vesta_scalar_field {
-                    public:
-                        typedef __zkllvm_field_vesta_scalar value_type;
-                    };
-#else
                 using vesta_scalar_field = pallas_base_field;
-
                 using vesta_fr = vesta_scalar_field;
-#endif
             }    // namespace fields
         }        // namespace algebra
     }            // namespace crypto3
