@@ -53,9 +53,6 @@ namespace nil {
                     constexpr static const std::size_t arity = 1;
 
                     typedef typename policy_type::integral_type integral_type;
-#ifdef __ZKLLVM__
-                    typedef __zkllvm_field_bls12381_base value_type;
-#else
 
                     constexpr static const integral_type modulus =
                         0x1A0111EA397FE69A4B1BA7B6434BACD764774B84F38512BF6730D2A0F6B0F6241EABFFFEB153FFFFB9FEFFFFFFFFAAAB_big_uint381;
@@ -65,7 +62,6 @@ namespace nil {
 
                     typedef nil::crypto3::multiprecision::auto_big_mod<modulus> modular_type;
                     typedef typename detail::element_fp<params<bls12_base_field<381>>> value_type;
-#endif
                 };
 
                 template<>
@@ -78,9 +74,6 @@ namespace nil {
                     constexpr static const std::size_t arity = 1;
 
                     typedef typename policy_type::integral_type integral_type;
-#ifdef __ZKLLVM__
-                    // typedef __zkllvm_field_bls12377_base value_type;
-#else
 
                     constexpr static const integral_type modulus =
                         0x1AE3A4617C510EAC63B05C06CA1493B1A22D9F300F5138F1EF3622FBA094800170B5D44300000008508C00000000001_big_uint377;
@@ -91,7 +84,6 @@ namespace nil {
                     typedef nil::crypto3::multiprecision::auto_big_mod<modulus> modular_type;
 
                     typedef typename detail::element_fp<params<bls12_base_field<377>>> value_type;
-#endif
                 };
 
                 constexpr typename std::size_t const bls12_base_field<381>::modulus_bits;
@@ -103,14 +95,11 @@ namespace nil {
                 constexpr typename std::size_t const bls12_base_field<381>::value_bits;
                 constexpr typename std::size_t const bls12_base_field<377>::value_bits;
 
-#ifdef __ZKLLVM__
-#else
                 constexpr typename bls12_base_field<381>::integral_type const bls12_base_field<381>::modulus;
                 constexpr typename bls12_base_field<377>::integral_type const bls12_base_field<377>::modulus;
 
                 constexpr typename bls12_base_field<381>::integral_type const bls12_base_field<381>::group_order_minus_one_half;
                 constexpr typename bls12_base_field<377>::integral_type const bls12_base_field<377>::group_order_minus_one_half;
-#endif
                 template<std::size_t Version = 381>
                 using bls12_fq = bls12_base_field<Version>;
 

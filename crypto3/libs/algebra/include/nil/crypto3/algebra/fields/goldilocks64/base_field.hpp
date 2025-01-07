@@ -48,9 +48,6 @@ namespace nil {
                     constexpr static const std::size_t arity = 1;
 
                     typedef typename policy_type::integral_type integral_type;
-#ifdef __ZKLLVM__
-                    typedef __zkllvm_field_goldilocks64_base value_type;
-#else
                     // 2^64 - 2^32 + 1
                     constexpr static const integral_type modulus =
                         0xFFFFFFFF00000001_big_uint64;
@@ -58,18 +55,13 @@ namespace nil {
 
                     typedef nil::crypto3::multiprecision::auto_big_mod<modulus> modular_type;
                     typedef typename detail::element_fp<params<goldilocks64_base_field>> value_type;
-#endif
                 };
 
                 constexpr typename std::size_t const goldilocks64_base_field::modulus_bits;
                 constexpr typename std::size_t const goldilocks64_base_field::number_bits;
                 constexpr typename std::size_t const goldilocks64_base_field::value_bits;
 
-#ifdef __ZKLLVM__
-#else
-                constexpr typename goldilocks64_base_field::integral_type const goldilocks64_base_field::modulus;
                 constexpr typename goldilocks64_base_field::integral_type const goldilocks64_base_field::group_order_minus_one_half;
-#endif
                 using goldilocks64_fq = goldilocks64_base_field;
 
                 using goldilocks64 = goldilocks64_base_field;

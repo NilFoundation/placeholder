@@ -50,9 +50,6 @@ namespace nil {
                     constexpr static const std::size_t arity = 1;
 
                     typedef typename policy_type::integral_type integral_type;
-#ifdef __ZKLLVM__
-                    typedef __zkllvm_field_vesta_base value_type;
-#else
 
                     constexpr static const integral_type modulus =
                         0x40000000000000000000000000000000224698fc0994a8dd8c46eb2100000001_big_uint255;
@@ -60,17 +57,13 @@ namespace nil {
 
                     typedef nil::crypto3::multiprecision::auto_big_mod<modulus> modular_type;
                     typedef typename detail::element_fp<params<vesta_base_field>> value_type;
-#endif
                 };
 
                 constexpr typename std::size_t const vesta_base_field::modulus_bits;
                 constexpr typename std::size_t const vesta_base_field::number_bits;
                 constexpr typename std::size_t const vesta_base_field::value_bits;
 
-#ifdef __ZKLLVM__
-#else
                 constexpr typename vesta_base_field::integral_type const vesta_base_field::modulus;
-#endif
                 using vesta_fq = vesta_base_field;
             }    // namespace fields
         }        // namespace algebra

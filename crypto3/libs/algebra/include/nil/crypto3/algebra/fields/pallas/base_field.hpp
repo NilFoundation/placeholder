@@ -47,9 +47,6 @@ namespace nil {
                     constexpr static const std::size_t arity = 1;
 
                     typedef typename policy_type::integral_type integral_type;
-#ifdef __ZKLLVM__
-                    typedef __zkllvm_field_pallas_base value_type;
-#else
 
                     constexpr static const integral_type modulus =
                         0x40000000000000000000000000000000224698fc094cf91b992d30ed00000001_big_uint255;
@@ -58,18 +55,14 @@ namespace nil {
 
                     typedef nil::crypto3::multiprecision::auto_big_mod<modulus> modular_type;
                     typedef typename detail::element_fp<params<pallas_base_field>> value_type;
-#endif
                 };
 
                 constexpr typename std::size_t const pallas_base_field::modulus_bits;
                 constexpr typename std::size_t const pallas_base_field::number_bits;
                 constexpr typename std::size_t const pallas_base_field::value_bits;
 
-#ifdef __ZKLLVM__
-#else
                 constexpr typename pallas_base_field::integral_type const pallas_base_field::modulus;
                 constexpr typename pallas_base_field::integral_type const pallas_base_field::group_order_minus_one_half;
-#endif
 
                 using pallas_fq = pallas_base_field;
             }    // namespace fields

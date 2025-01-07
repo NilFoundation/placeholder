@@ -54,9 +54,6 @@ namespace nil {
                     using extended_integral_type = nil::crypto3::multiprecision::big_uint<2 * policy_type::modulus_bits>;
 
                     typedef typename policy_type::integral_type integral_type;
-#ifdef __ZKLLVM__
-                    typedef __zkllvm_field_curve25519_base value_type;
-#else
                     constexpr static const integral_type modulus =
                         0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffed_big_uint255;
                     constexpr static const integral_type group_order_minus_one_half =
@@ -64,17 +61,13 @@ namespace nil {
 
                     typedef nil::crypto3::multiprecision::auto_big_mod<modulus> modular_type;
                     typedef typename detail::element_fp<params<curve25519_base_field>> value_type;
-#endif
                 };
 
                 constexpr typename std::size_t const curve25519_base_field::modulus_bits;
                 constexpr typename std::size_t const curve25519_base_field::number_bits;
                 constexpr typename std::size_t const curve25519_base_field::value_bits;
 
-#ifdef __ZKLLVM__
-#else
                 constexpr typename curve25519_base_field::integral_type const curve25519_base_field::modulus;
-#endif
                 using curve25519_fq = curve25519_base_field;
 
                 using ed25519 = curve25519_base_field;

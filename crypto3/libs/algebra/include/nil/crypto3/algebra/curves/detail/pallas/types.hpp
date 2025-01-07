@@ -51,10 +51,7 @@ namespace nil {
                         using scalar_field_type = fields::pallas_scalar_field;
 
                         using g1_field_type = base_field_type;
-#ifdef __ZKLLVM__
-#else
                         using integral_type = typename base_field_type::integral_type;
-#endif
                         template<typename Form, typename Coordinates>
                         using g1_type = pallas_g1<Form, Coordinates>;
                     };

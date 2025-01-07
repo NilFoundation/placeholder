@@ -25,24 +25,14 @@
 #ifndef CRYPTO3_HASH_HPP
 #define CRYPTO3_HASH_HPP
 
-#ifdef __ZKLLVM__
-#else
 #include <nil/crypto3/detail/type_traits.hpp>
 #include <nil/crypto3/hash/hash_value.hpp>
 #include <nil/crypto3/hash/hash_state.hpp>
 #include <nil/crypto3/hash/type_traits.hpp>
 
-#endif
-
 namespace nil {
     namespace crypto3 {
 
-#ifdef __ZKLLVM__
-        template <class HashType>
-        typename HashType::block_type hash(typename HashType::block_type block0, typename HashType::block_type block1){
-           return typename HashType::process()(block0, block1);
-        }
-#else
         /*!
          * @defgroup hashes Hash Functions & Checksums
          *
@@ -384,7 +374,6 @@ namespace nil {
             return HashImpl(wrapped_value, HashAccumulator());
         }
 
-#endif    // #ifdef __ZKLLVM__ else
     }    // namespace crypto3
 }    // namespace nil
 

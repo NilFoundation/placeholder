@@ -27,9 +27,6 @@
 #ifndef CRYPTO3_HASH_SHA2_HPP
 #define CRYPTO3_HASH_SHA2_HPP
 
-#ifdef __ZKLLVM__
-#include <nil/crypto3/algebra/curves/pallas.hpp>
-#else
 #include <nil/crypto3/hash/accumulators/hash.hpp>
 #include <nil/crypto3/hash/detail/sha2/sha2_policy.hpp>
 #include <nil/crypto3/hash/detail/state_adder.hpp>
@@ -37,7 +34,6 @@
 #include <nil/crypto3/hash/detail/merkle_damgard_construction.hpp>
 #include <nil/crypto3/hash/detail/merkle_damgard_padding.hpp>
 #include <nil/crypto3/hash/detail/stream_processors/stream_processors_enum.hpp>
-#endif
 
 namespace nil {
     namespace crypto3 {
@@ -47,20 +43,6 @@ namespace nil {
              * @tparam Version
              * @ingroup hashes
              */
-#ifdef __ZKLLVM__
-            template<std::size_t Version>
-            class sha2 {
-            public:
-                typedef __attribute__((ext_vector_type(2)))
-                typename algebra::curves::pallas::base_field_type::value_type block_type;
-
-                struct process{
-                    block_type operator()(block_type first_input_block, block_type second_input_block){
-                        return __builtin_assigner_sha2_256_pallas_base(first_input_block, second_input_block);
-                    }
-                };
-            };
-#else
             template<std::size_t Version>
             class sha2 {
             public:
@@ -102,7 +84,6 @@ namespace nil {
                 constexpr static detail::stream_processor_type stream_processor = detail::stream_processor_type::Block;
                 using accumulator_tag = accumulators::tag::hash<sha2<Version>>;
             };
-#endif
         }    // namespace hashes
     }        // namespace crypto3
 }    // namespace nil

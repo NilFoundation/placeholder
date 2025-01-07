@@ -48,15 +48,6 @@ namespace nil {
                 return PairingPolicy::precompute_g2::process(P);
             }
 
-#ifdef __ZKLLVM__
-            template<typename PairingCurveType, typename PairingPolicy = pairing::pairing_policy<PairingCurveType>>
-            typename PairingCurveType::gt_type::value_type
-                pair(const typename PairingCurveType::template g1_type<>::value_type v1,
-                     const typename PairingCurveType::template g2_type<>::value_type v2) {
-                return __builtin_assigner_bls12_optimal_ate_pairing(v1, v2);
-            }
-
-#else
             template<typename PairingCurveType, typename PairingPolicy = pairing::pairing_policy<PairingCurveType>>
             typename PairingCurveType::gt_type::value_type
                 pair(const typename PairingCurveType::template g1_type<>::value_type &v1,
@@ -66,7 +57,6 @@ namespace nil {
 
                 return PairingPolicy::miller_loop::process(prec_P, prec_Q);
             }
-#endif
 
             template<typename PairingCurveType, typename PairingPolicy = pairing::pairing_policy<PairingCurveType>>
             std::optional<typename PairingCurveType::gt_type::value_type>
