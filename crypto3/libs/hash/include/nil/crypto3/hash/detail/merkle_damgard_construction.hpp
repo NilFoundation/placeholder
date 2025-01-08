@@ -78,16 +78,18 @@ namespace nil {
                 typedef static_digest<digest_bits> digest_type;
 
             protected:
-                // 'length_bits' is the number of bits required to write the length of a single block.
-                // It will normally be 8 bits, since our blocks are 2^8 = 256 bits, or 16 if larger.
-                // Most probably we will never have a block larger than 2^16 bits.
+                // 'length_bits' is the number of bits required to write the length of the message.
+                // Depending on the hash function, it's either 64 or 128 bits, even though the value is stored in 64-bit
+                // integers, since we never hash messages longer than 2^64 bits. 
                 constexpr static const std::size_t length_bits = Params::length_bits;
+                // We can consider to stop thresholding the length to 64 bits, but we don't want to. We never use messages
+                // larger than 2^64 bits.
                 constexpr static const std::size_t length_type_bits = length_bits < word_bits ? word_bits :
                                                                       length_bits > 64        ? 64 :
                                                                                                 length_bits;
                 typedef typename boost::uint_t<length_type_bits>::least length_type;
                 constexpr static const std::size_t length_words = length_bits / word_bits;
-                BOOST_STATIC_ASSERT(!length_bits || length_bits % word_bits == 0);
+                BOOST_STATIC_ASSERT(length_bits % word_bits == 0);
 
             public:
                 template<typename Integer = std::size_t>
@@ -153,12 +155,15 @@ namespace nil {
                     using namespace nil::crypto3::detail;
 
                     std::array<length_type, 1> length_array = {{length}};
-                    std::array<word_type, length_words> length_words_array;
-                    pack<endian_type, endian_type, length_bits, word_bits>(length_array.begin(), length_array.end(),
-                                                                           length_words_array.begin());
-                    // Append length
-                    for (std::size_t i = length_words; i; --i)
-                        block[block_words - i] = length_words_array[length_words - i];
+                    std::array<word_type, length_type_bits / word_bits> length_words_array;
+                    pack<endian_type, endian_type, length_type_bits, word_bits>(
+                        length_array.begin(), length_array.end(),
+                        length_words_array.begin());
+
+                    // Append length, but from the end. We were required to write length in 'length_bits' bits,
+                    // but actually used just 'length_type_bits' bits.
+                    for (int i = length_type_bits / word_bits; i > 0; --i)
+                        block[block_words - i] = length_words_array[length_type_bits / word_bits - i];
                 }
 
                 template<typename Dummy>
