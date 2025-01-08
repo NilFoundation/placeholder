@@ -63,7 +63,7 @@ namespace nil {
                     std::vector<TYPE> pp;
                 };
 
-                template<typename FieldType, GenerationStage stage>
+                template<typename FieldType, GenerationStage stage, typename NonNativeFieldType>
                 class flexible_multiplication : public generic_component<FieldType, stage> {
                     using generic_component<FieldType, stage>::allocate;
                     using generic_component<FieldType, stage>::copy_constrain;
@@ -79,12 +79,24 @@ namespace nil {
                         typename std::conditional<stage == GenerationStage::ASSIGNMENT,
                                                   flexible_multiplication_raw_input<FieldType>,
                                                   std::tuple<>>::type;
-
-                    using NonNativeIntegralVariant = std::variant<
+          
+                    using NonNativeIntegralExtendedVariant = std::variant<
                         nil::crypto3::multiprecision::big_uint<2* crypto3::algebra::curves::pallas::base_field_type::modulus_bits>,
                         nil::crypto3::multiprecision::big_uint<2* crypto3::algebra::curves::vesta::base_field_type::modulus_bits>
                     >;
 
+                    template<typename T>
+                    struct NonNativeFieldTypeIndex;
+
+                    template<>
+                    struct NonNativeFieldTypeIndex<crypto3::algebra::curves::pallas::base_field_type> {
+                        static constexpr std::size_t value = 0;
+                    };
+
+                    template<>
+                    struct NonNativeFieldTypeIndex<crypto3::algebra::curves::vesta::base_field_type> {
+                        static constexpr std::size_t value = 1;
+                    };
 
                   public:
                     std::vector<TYPE> inp_x;
@@ -93,8 +105,7 @@ namespace nil {
                     std::vector<TYPE> inp_pp;
                     std::vector<TYPE> res;
 
-                    static table_params get_minimal_requirements(NonNativeIntegralVariant non_native_double,std::size_t num_chunks,
-                                                                 std::size_t bit_size_chunk) {
+                    static table_params get_minimal_requirements(std::size_t num_chunks,std::size_t bit_size_chunk) {
                         //The 6 variables chunks fit in 2 rows, and there is a 3rd additionnal row available for the constraint values
                         std::size_t witness =3*num_chunks;
                         constexpr std::size_t public_inputs = 1;
@@ -106,7 +117,6 @@ namespace nil {
 
                     static std::tuple<std::vector<TYPE>,std::vector<TYPE>,std::vector<TYPE>,std::vector<TYPE>> form_input(context_type &context_object,                    
                                                                     raw_input_type raw_input,
-                                                                    NonNativeIntegralVariant non_native_modulus,
                                                                     std::size_t num_chunks,
                                                                     std::size_t bit_size_chunk) {
                         std::vector<TYPE> input_x(num_chunks);
@@ -134,19 +144,13 @@ namespace nil {
 
                     
                     flexible_multiplication(context_type &context_object, std::vector<TYPE> input_x, std::vector<TYPE> input_y,std::vector<TYPE> input_p,std::vector<TYPE> input_pp,
-                                            NonNativeIntegralVariant foreign_integral_type,
                                             std::size_t num_chunks, std::size_t bit_size_chunk,
                                             bool make_links = true)
-                        : generic_component<FieldType, stage>(context_object),
-                          foreign_integral_type(std::move(foreign_integral_type)) {
+                        : generic_component<FieldType, stage>(context_object) {
                             
+                        using double_non_native_integral_type = typename std::variant_alternative_t<
+                            NonNativeFieldTypeIndex<NonNativeFieldType>::value, NonNativeIntegralExtendedVariant>;
 
-                        auto visit_result = std::visit(
-                            [](auto&& field) -> decltype(field) { return field; },
-                            foreign_integral_type
-                        );
-
-                        using double_non_native_integral_type = decltype(visit_result);
                         using native_integral_type = typename FieldType::integral_type;
 
                         using Check_Mod_P = typename bbf::components::check_mod_p<FieldType,stage>;
@@ -337,11 +341,27 @@ namespace nil {
                             res.push_back(R[i]);
                         }
                     }
-                    
-                  private:
-                    NonNativeIntegralVariant foreign_integral_type;
+
                 };
 
+                template<typename FieldType, GenerationStage stage>
+                class pallas_flexible_multiplication : public flexible_multiplication<FieldType, stage, 
+                                                                                        crypto3::algebra::curves::pallas::base_field_type> {
+                    
+                    using Base = flexible_multiplication<FieldType, stage, crypto3::algebra::curves::pallas::base_field_type>;
+                    public:
+                        using Base::Base;
+                };
+
+                template<typename FieldType, GenerationStage stage>
+                class vesta_flexible_multiplication : public flexible_multiplication<FieldType, stage, 
+                                                                                        crypto3::algebra::curves::vesta::base_field_type>  {
+                    
+                    using Base = flexible_multiplication<FieldType, stage, crypto3::algebra::curves::vesta::base_field_type>;
+                    public:
+                        using Base::Base;
+                };
+            
             }  // namespace components
         }  // namespace bbf
     }  // namespace blueprint
