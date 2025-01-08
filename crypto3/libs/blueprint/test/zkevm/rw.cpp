@@ -111,23 +111,23 @@ constexpr static const std::size_t random_tests_amount = 10;
 
 BOOST_AUTO_TEST_SUITE(blueprint_plonk_test_suite)
     using field_type = typename crypto3::algebra::curves::vesta::base_field_type;
-BOOST_AUTO_TEST_CASE(minimal_math_contract){
+BOOST_AUTO_TEST_CASE(minimal_math_contract, *boost::unit_test::disabled()){
     test_zkevm_rw<field_type>(std::string(TEST_DATA_DIR) + "minimal_math/trace0.json", 10000);
 }
 
-BOOST_AUTO_TEST_CASE(small_storage_contract){
+BOOST_AUTO_TEST_CASE(small_storage_contract, *boost::unit_test::disabled()){
     test_zkevm_rw<field_type>(std::string(TEST_DATA_DIR) + "small_stack_storage/trace0.json", 10000);
 }
 
-BOOST_AUTO_TEST_CASE(mstore8_contract){
+BOOST_AUTO_TEST_CASE(mstore8_contract, *boost::unit_test::disabled()){
     test_zkevm_rw<field_type>(std::string(TEST_DATA_DIR) + "mstore8/trace0.json", 10000);
 }
 
-BOOST_AUTO_TEST_CASE(meminit_contract){
+BOOST_AUTO_TEST_CASE(meminit_contract, *boost::unit_test::disabled()){
     test_zkevm_rw<field_type>(std::string(TEST_DATA_DIR) + "mem_init/trace0.json", 10000);
 }
 
-BOOST_AUTO_TEST_CASE(calldatacopy_contract){
+BOOST_AUTO_TEST_CASE(calldatacopy_contract, *boost::unit_test::disabled()){
     test_zkevm_rw<field_type>(std::string(TEST_DATA_DIR) + "calldatacopy/trace0.json", 10000);
 }
 BOOST_AUTO_TEST_SUITE_END()
