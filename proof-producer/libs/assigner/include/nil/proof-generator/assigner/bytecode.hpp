@@ -19,8 +19,6 @@ namespace nil {
         std::optional<std::string> fill_bytecode_assignment_table(nil::crypto3::zk::snark::plonk_assignment_table<BlueprintFieldType>& assignment_table,
                                                              const boost::filesystem::path& trace_base_path,
                                                              const AssignerOptions& options) {
-            // TODO: print full name here, not only base
-            BOOST_LOG_TRIVIAL(debug) << "fill bytecode table from " << trace_base_path << "\n";
 
             using ComponentType = nil::blueprint::bbf::bytecode<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT>;
 
@@ -30,6 +28,7 @@ namespace nil {
             input.rlc_challenge = limits::RLC_CHALLENGE;
 
             const auto bytecode_trace_path = get_bytecode_trace_path(trace_base_path);
+            BOOST_LOG_TRIVIAL(debug) << "fill bytecode table from " << bytecode_trace_path << "\n";
             const auto contract_bytecodes = deserialize_bytecodes_from_file(bytecode_trace_path, options);
             if (!contract_bytecodes) {
                 return "can't read bytecode trace from file: " + bytecode_trace_path.string();

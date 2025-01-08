@@ -14,14 +14,15 @@
 namespace nil {
     namespace proof_generator {
 
+        template<typename BlueprintFieldType>
         using AssignmentTableFiller = std::function<std::optional<std::string>(
-            crypto3::zk::snark::plonk_assignment_table<nil::crypto3::algebra::fields::pallas_fq>& assignment_table,
+            crypto3::zk::snark::plonk_assignment_table<BlueprintFieldType>& assignment_table,
             const boost::filesystem::path& trace_base_path,
             const AssignerOptions& options)
         >;
 
         template<typename BlueprintFieldType>
-        std::map<const std::string, AssignmentTableFiller> circuit_selector = {
+        std::map<const std::string, AssignmentTableFiller<BlueprintFieldType>> circuit_selector = {
                 {circuits::BYTECODE, fill_bytecode_assignment_table<BlueprintFieldType>},
                 {circuits::RW, fill_rw_assignment_table<BlueprintFieldType>},
                 {circuits::ZKEVM, fill_zkevm_assignment_table<BlueprintFieldType>},

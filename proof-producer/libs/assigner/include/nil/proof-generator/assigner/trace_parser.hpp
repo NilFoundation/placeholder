@@ -143,10 +143,6 @@ namespace nil {
             return res;
         }
 
-        [[nodiscard]] std::string get_trace_extension(const boost::filesystem::path& trace_path) {
-            return trace_path.extension().string();
-        }
-
         using TraceIndex = uint64_t; // value expected to be the same for all traces from the same set
         using TraceIndexOpt = std::optional<TraceIndex>;
 
@@ -159,7 +155,6 @@ namespace nil {
             }
             return true;
         }
-
 
         template <typename TraceType>
         struct DeserializeResult {
@@ -197,7 +192,7 @@ namespace nil {
             }
 
             return DeserializeResult<BytecodeTraces>{
-                std::move(contract_bytecodes), 
+                std::move(contract_bytecodes),
                 pb_traces->trace_idx()
             };
         }
@@ -265,7 +260,7 @@ namespace nil {
                                      << "storage " << pb_traces->storage_ops_size() << "\n";
 
             return DeserializeResult<RWTraces>{
-                std::move(rw_traces), 
+                std::move(rw_traces),
                 pb_traces->trace_idx()
             };
         }
@@ -314,7 +309,7 @@ namespace nil {
             }
 
             return DeserializeResult<ZKEVMTraces>{
-                std::move(zkevm_states), 
+                std::move(zkevm_states),
                 pb_traces->trace_idx()
             };
         }
@@ -363,7 +358,7 @@ namespace nil {
             }
 
             return DeserializeResult<CopyEvents>{
-                std::move(copy_events), 
+                std::move(copy_events),
                 pb_traces->trace_idx()
             };
         }
@@ -392,8 +387,8 @@ namespace nil {
             }
 
             return DeserializeResult<ExpTraces>{
-                std::move(exps), 
-                pb_traces->trace_idx()    
+                std::move(exps),
+                pb_traces->trace_idx()
             };
         }
     } // namespace proof_generator
