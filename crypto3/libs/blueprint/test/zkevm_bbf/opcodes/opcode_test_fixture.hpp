@@ -46,6 +46,13 @@
 #include <nil/crypto3/zk/snark/systems/plonk/placeholder/params.hpp>
 #include <nil/crypto3/zk/snark/systems/plonk/placeholder/preprocessor.hpp>
 
+#include <nil/blueprint/zkevm_bbf/zkevm.hpp>
+#include <nil/blueprint/zkevm_bbf/rw.hpp>
+#include <nil/blueprint/zkevm_bbf/copy.hpp>
+#include <nil/blueprint/zkevm_bbf/bytecode.hpp>
+#include <nil/blueprint/zkevm_bbf/keccak.hpp>
+#include <nil/blueprint/zkevm_bbf/exp.hpp>
+
 #include "../test_l1_wrapper.hpp"
 
 using namespace nil::crypto3;
@@ -74,6 +81,8 @@ public:
         std::size_t max_rw = max_sizes.max_rw;
         std::size_t max_copy = max_sizes.max_copy;
         std::size_t max_zkevm_rows = max_sizes.max_zkevm_rows;
+        std::size_t max_exponentiations = max_sizes.max_exponentiations;
+        std::size_t max_exp_rows = max_sizes.max_exp_rows;
 
         typename nil::blueprint::bbf::copy<BlueprintFieldType,nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type copy_assignment_input;
         typename nil::blueprint::bbf::copy<BlueprintFieldType,nil::blueprint::bbf::GenerationStage::CONSTRAINTS>::input_type copy_constraint_input;
@@ -105,6 +114,12 @@ public:
         bytecode_assignment_input.rlc_challenge = 7;
         bytecode_assignment_input.bytecodes = circuit_inputs.bytecodes();
         bytecode_assignment_input.keccak_buffers = circuit_inputs.keccaks();
+
+
+        typename nil::blueprint::bbf::exponentiation<BlueprintFieldType,nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type exp_assignment_input;
+        typename nil::blueprint::bbf::exponentiation<BlueprintFieldType,nil::blueprint::bbf::GenerationStage::CONSTRAINTS>::input_type exp_constraint_input;
+        exp_assignment_input = circuit_inputs.exponentiations();
+
         bool result;
 
         // Max_rows, max_bytecode, max_rw
@@ -114,8 +129,17 @@ public:
             max_zkevm_rows,
             max_copy,
             max_rw,
-            max_keccak_blocks,
+            max_exponentiations,
             max_bytecode
+        );
+        BOOST_CHECK(result);
+        std::cout << std::endl;
+
+        result = test_bbf_component<BlueprintFieldType, nil::blueprint::bbf::exponentiation>(
+            "exp",
+            {}, exp_assignment_input, exp_constraint_input,
+            max_exp_rows,
+            max_exponentiations
         );
         BOOST_CHECK(result);
         std::cout << std::endl;

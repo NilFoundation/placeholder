@@ -83,7 +83,8 @@ BOOST_AUTO_TEST_CASE(exp) {
     opcode_tester.push_opcode(zkevm_opcode::PUSH32, 2);
     opcode_tester.push_opcode(
         zkevm_opcode::PUSH32,
-        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff_big_uint256);
+        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff_big_uint256
+    );
     opcode_tester.push_opcode(zkevm_opcode::EXP);
     opcode_tester.push_opcode(
         zkevm_opcode::PUSH32,
@@ -126,6 +127,7 @@ BOOST_AUTO_TEST_CASE(exp) {
     max_sizes.max_copy = 500;
     max_sizes.max_zkevm_rows = 300;
     max_sizes.max_exponentiations = 50;
+    max_sizes.max_exp_rows = 10000;
     complex_opcode_test<field_type>(opcode_tester, max_sizes);
 }
 BOOST_AUTO_TEST_SUITE_END()

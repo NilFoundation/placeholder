@@ -497,7 +497,7 @@ namespace nil {
                         //    field_tag is 0
                         //    value is boolean
                         //    initial_value is 0
-                        //    state_root eqauls state_root_prev
+                        //    state_root equals state_root_prev
                         //    value column at previous rotation equals value_prev at current rotation
                         special_constraints[TX_ACCESS_LIST_ACCOUNT_STORAGE_OP].push_back(context_object.relativize(tx_access_list_account_selector * field_type[1], -1));
                         special_constraints[TX_ACCESS_LIST_ACCOUNT_STORAGE_OP].push_back(context_object.relativize(tx_access_list_account_selector * value_hi[1], -1));
