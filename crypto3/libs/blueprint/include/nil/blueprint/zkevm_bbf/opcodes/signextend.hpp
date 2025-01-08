@@ -99,12 +99,13 @@ namespace nil {
                         int len = (b < 32) ? int(b) + 1 : 32;
                         zkevm_word_type sign = (x << (8 * (32 - len))) >> 255;
                         zkevm_word_type result =
-
-                            (wrapping_sub(zkevm_word_type(1) << 8 * (32 - len), 1)
-                             << 8 * len) *
-                                    sign +
-                                (x << (8 * (32 - len))) >>
-                            (8 * (32 - len));
+                            wrapping_add(
+                                wrapping_mul(
+                                    (wrapping_sub(zkevm_word_type(1) << 8 * (32 - len), 1) << 8 * len),
+                                    sign
+                                ),
+                                ((x << (8 * (32 - len))) >> (8 * (32 - len)))
+                            );
 
                         unsigned int b0 = static_cast<unsigned int>(b % 65536);
                         unsigned int b0p_ui = (b > 65535) ? 32 : b0;
