@@ -63,6 +63,7 @@ namespace nil {
             }
             input.copy_events = std::move(copy_events->value);
 
+            // TODO: fix assignment table filling
             // const auto exp_trace_path = get_exp_trace_path(trace_base_path);
             // const auto exp_operations = deserialize_exp_traces_from_file(exp_trace_path, options, contract_bytecodes->index);
             // if (!exp_operations) {
