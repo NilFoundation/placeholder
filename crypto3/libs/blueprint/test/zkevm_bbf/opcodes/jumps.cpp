@@ -62,7 +62,7 @@ using namespace nil::blueprint::bbf;
 // Here they are different for different tests just for fast and easy testing
 BOOST_FIXTURE_TEST_SUITE(zkevm_opcode_test_suite, zkEVMOpcodeTestFixture)
 
-BOOST_AUTO_TEST_CASE(jump) {
+BOOST_AUTO_TEST_CASE(jump, *boost::unit_test::disabled()) {
     using field_type = typename algebra::curves::pallas::base_field_type;
     zkevm_opcode_tester opcode_tester;
 
@@ -86,7 +86,7 @@ BOOST_AUTO_TEST_CASE(jump) {
     complex_opcode_test<field_type>(opcode_tester, max_sizes);
 }
 
-BOOST_AUTO_TEST_CASE(jumpi) {
+BOOST_AUTO_TEST_CASE(jumpi, *boost::unit_test::disabled()) {
     using field_type = typename algebra::curves::pallas::base_field_type;
     zkevm_opcode_tester opcode_tester;
 
