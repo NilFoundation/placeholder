@@ -257,16 +257,6 @@ namespace nil {
                         has_const_iterator<Container>::value && has_begin<Container>::value && has_end<Container>::value;
             };
 
-            //template<typename T>
-            //struct is_codec {
-            //    static const bool value = has_encoded_value_type<T>::value && has_encoded_value_bits<T>::value &&
-            //                              has_decoded_value_type<T>::value && has_decoded_value_bits<T>::value &&
-            //                              has_encoded_block_type<T>::value && has_encoded_block_bits<T>::value &&
-            //                              has_decoded_block_type<T>::value && has_decoded_block_bits<T>::value &&
-            //                              has_encode<T>::value && has_decode<T>::value;
-            //    typedef T type;
-            //};
-
             template<typename T>
             struct is_block_cipher {
                 static const bool value =
