@@ -145,7 +145,9 @@ void test_bbf_keccak_round(const std::array<typename field_type::value_type, 25>
         raw_input = {inner_state, message_chunks, RC};
     auto B = bbf::circuit_builder<field_type, bbf::keccak_round, bool>(xor_with_mes);
     auto [at, A, desc] = B.assign(raw_input);
-    std::cout << "Is_satisfied = " << B.is_satisfied(at) << std::endl;
+    bool is_satisfied = B.is_satisfied(at);
+    std::cout << "Is_satisfied = " << is_satisfied << std::endl;
+    assert(is_satisfied);
     for (std::size_t i = 0; i < 25; i++) {
         assert(expected_res[i] == A.inner_state[i]);
     }

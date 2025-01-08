@@ -576,11 +576,11 @@ namespace nil {
                     row_offset += 10;  // 2*5
 
                     for (int index = 0; index < 5; ++index) {
-                        allocate(C_rot[index], 1, row_offset + 3 * index);
+                        allocate(C_rot[index], 9, row_offset + 3 * index);
                         allocate(C_copy[index], 0, row_offset + 3 * index);
-                        allocate(C_smaller_part[index], 4, row_offset + 3 * index);
-                        allocate(C_bigger_part[index], 5, row_offset + 3 * index);
-                        allocate(C_bound_smaller[index], 6, row_offset + 3 * index);
+                        allocate(C_smaller_part[index], 12, row_offset + 3 * index);
+                        allocate(C_bigger_part[index], 13, row_offset + 3 * index);
+                        allocate(C_bound_smaller[index], 14, row_offset + 3 * index);
                         allocate(C_bound_bigger[index], 0, row_offset + 3 * index + 1);
                         allocate(big_rot_constant[index], 0, row_offset + 3 * index,
                                  column_type::constant);
@@ -589,11 +589,11 @@ namespace nil {
                         allocate(rot_constants[index][1], 0, row_offset + 3 * index + 2,
                                  column_type::constant);
                         for (std::size_t j = 0; j < rotate_num_chunks; j++) {
-                            allocate(C_rot_small_chunks[index][j], 7 + j, row_offset + 3 * index);
+                            allocate(C_rot_small_chunks[index][j], 1 + j, row_offset + 3 * index);
                             allocate(C_rot_big_chunks[index][j], 1 + j, row_offset + 3 * index + 1);
                         }
-                        allocate(C_rot_shift[index], 2, row_offset + 3 * index);
-                        allocate(C_rot_shift_minus[index], 3, row_offset + 3 * index);
+                        allocate(C_rot_shift[index], 10, row_offset + 3 * index);
+                        allocate(C_rot_shift_minus[index], 11, row_offset + 3 * index);
                     }
                     row_offset += 15;  // 3*5
 
@@ -615,11 +615,11 @@ namespace nil {
 
                     // rho/pi allocations
                     for (int index = 0; index < 24; ++index) {
-                        allocate(B[perm[index + 1]], 1, row_offset + 3 * index);
+                        allocate(B[perm[index + 1]], 9, row_offset + 3 * index);
                         allocate(A2_copy[perm[index]], 0, row_offset + 3 * index);
-                        allocate(B_smaller_part[index], 4, row_offset + 3 * index);
-                        allocate(B_bigger_part[index], 5, row_offset + 3 * index);
-                        allocate(B_bound_smaller[index], 6, row_offset + 3 * index);
+                        allocate(B_smaller_part[index], 12, row_offset + 3 * index);
+                        allocate(B_bigger_part[index], 13, row_offset + 3 * index);
+                        allocate(B_bound_smaller[index], 14, row_offset + 3 * index);
                         allocate(B_bound_bigger[index], 0, row_offset + 3 * index + 1);
                         allocate(big_rot_constant[index + 5], 0, row_offset + 3 * index,
                                  column_type::constant);
@@ -628,11 +628,11 @@ namespace nil {
                         allocate(rot_constants[index + 5][1], 0, row_offset + 3 * index + 2,
                                  column_type::constant);
                         for (std::size_t j = 0; j < rotate_num_chunks; j++) {
-                            allocate(B_small_chunks[index][j], 7 + j, row_offset + 3 * index);
+                            allocate(B_small_chunks[index][j], 1 + j, row_offset + 3 * index);
                             allocate(B_big_chunks[index][j], 1 + j, row_offset + 3 * index + 1);
                         }
-                        allocate(B_rot_shift[index], 2, row_offset + 3 * index);
-                        allocate(B_rot_shift_minus[index], 3, row_offset + 3 * index);
+                        allocate(B_rot_shift[index], 10, row_offset + 3 * index);
+                        allocate(B_rot_shift_minus[index], 11, row_offset + 3 * index);
                     }
                     row_offset += 3 * 24;
 
