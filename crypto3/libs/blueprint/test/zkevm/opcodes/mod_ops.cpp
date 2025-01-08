@@ -49,7 +49,7 @@ BOOST_AUTO_TEST_CASE(zkevm_mod_ops_test) {
     using zkevm_machine_type = zkevm_machine_interface;
     assignment_type assignment(0, 0, 0, 0);
     circuit_type circuit;
-    zkevm_circuit<field_type> evm_circuit(assignment, circuit, 159,1200);
+    zkevm_circuit<field_type> evm_circuit(assignment, circuit, 159,2000);
     nil::crypto3::zk::snark::pack_lookup_tables_horizontal(
         circuit.get_reserved_indices(),
         circuit.get_reserved_tables(),
