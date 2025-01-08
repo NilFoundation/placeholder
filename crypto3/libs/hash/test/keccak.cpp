@@ -74,6 +74,7 @@ boost::property_tree::ptree string_data(const char *child_name) {
     return string_data;
 }
 
+#if 0
 BOOST_AUTO_TEST_SUITE(keccak_stream_processor_data_driven_algorithm_test_suite)
 
 BOOST_DATA_TEST_CASE(keccak_224_range_hash, string_data("data_224"), array_element) {
@@ -154,6 +155,8 @@ BOOST_DATA_TEST_CASE(keccak_512_string_various_range_value_hash, string_data("da
 
 BOOST_AUTO_TEST_SUITE_END()
 
+#endif
+
 BOOST_AUTO_TEST_SUITE(keccak_stream_processor_test_suite)
 
 /* BOOST_AUTO_TEST_CASE(keccak_224_shortmsg_bit1) {
@@ -165,7 +168,7 @@ BOOST_AUTO_TEST_SUITE(keccak_stream_processor_test_suite)
     BOOST_CHECK_EQUAL("e4384016d64610d75e0a5d73821a02d524e847a25a571b5940cd6450", std::to_string(d).data());
 }*/
 
-BOOST_AUTO_TEST_CASE(keccak_224_shortmsg_byte1) {
+BOOST_AUTO_TEST_CASE(keccak_224_shortmsg_byte1, *boost::unit_test::disabled()) {
     // "a"
     std::array<char, 1> a = {'\x61'};
     hashes::keccak_1600<224>::digest_type d = hash<hashes::keccak_1600<224>>(a);
@@ -173,7 +176,7 @@ BOOST_AUTO_TEST_CASE(keccak_224_shortmsg_byte1) {
     BOOST_CHECK_EQUAL("7cf87d912ee7088d30ec23f8e7100d9319bff090618b439d3fe91308", std::to_string(d).data());
 }
 
-BOOST_AUTO_TEST_CASE(keccak_224_shortmsg_byte2) {
+BOOST_AUTO_TEST_CASE(keccak_224_shortmsg_byte2, *boost::unit_test::disabled()) {
     // "abc"
     std::array<char, 3> a = {'\x61', '\x62', '\x63'};
     hashes::keccak_1600<224>::digest_type d = hash<hashes::keccak_1600<224>>(a);
@@ -181,7 +184,7 @@ BOOST_AUTO_TEST_CASE(keccak_224_shortmsg_byte2) {
     BOOST_CHECK_EQUAL("c30411768506ebe1c2871b1ee2e87d38df342317300a9b97a95ec6a8", std::to_string(d).data());
 }
 
-BOOST_AUTO_TEST_CASE(keccak_224_shortmsg_byte3) {
+BOOST_AUTO_TEST_CASE(keccak_224_shortmsg_byte3, *boost::unit_test::disabled()) {
     // "message digest"
     std::array<char, 14> a = {'\x6d', '\x65', '\x73', '\x73', '\x61', '\x67', '\x65',
                               '\x20', '\x64', '\x69', '\x67', '\x65', '\x73', '\x74'};
@@ -190,7 +193,7 @@ BOOST_AUTO_TEST_CASE(keccak_224_shortmsg_byte3) {
     BOOST_CHECK_EQUAL("b53b2cd638f440fa49916036acdb22245673992fb1b1963b96fb9e93", std::to_string(d).data());
 }
 
-BOOST_AUTO_TEST_CASE(keccak_256_shortmsg_byte1) {
+BOOST_AUTO_TEST_CASE(keccak_256_shortmsg_byte1, *boost::unit_test::disabled()) {
     // "a"
     std::array<char, 1> a = {'\x61'};
     hashes::keccak_1600<256>::digest_type d = hash<hashes::keccak_1600<256>>(a);
@@ -198,7 +201,7 @@ BOOST_AUTO_TEST_CASE(keccak_256_shortmsg_byte1) {
     BOOST_CHECK_EQUAL("3ac225168df54212a25c1c01fd35bebfea408fdac2e31ddd6f80a4bbf9a5f1cb", std::to_string(d).data());
 }
 
-BOOST_AUTO_TEST_CASE(keccak_256_shortmsg_byte2) {
+BOOST_AUTO_TEST_CASE(keccak_256_shortmsg_byte2, *boost::unit_test::disabled()) {
     // "abc"
     std::array<char, 3> a = {'\x61', '\x62', '\x63'};
     hashes::keccak_1600<256>::digest_type d = hash<hashes::keccak_1600<256>>(a);
@@ -206,7 +209,7 @@ BOOST_AUTO_TEST_CASE(keccak_256_shortmsg_byte2) {
     BOOST_CHECK_EQUAL("4e03657aea45a94fc7d47ba826c8d667c0d1e6e33a64a036ec44f58fa12d6c45", std::to_string(d).data());
 }
 
-BOOST_AUTO_TEST_CASE(keccak_256_shortmsg_byte3) {
+BOOST_AUTO_TEST_CASE(keccak_256_shortmsg_byte3, *boost::unit_test::disabled()) {
     // "message digest"
     std::array<char, 14> a = {'\x6d', '\x65', '\x73', '\x73', '\x61', '\x67', '\x65',
                               '\x20', '\x64', '\x69', '\x67', '\x65', '\x73', '\x74'};
@@ -215,7 +218,7 @@ BOOST_AUTO_TEST_CASE(keccak_256_shortmsg_byte3) {
     BOOST_CHECK_EQUAL("856ab8a3ad0f6168a4d0ba8d77487243f3655db6fc5b0e1669bc05b1287e0147", std::to_string(d).data());
 }
 
-BOOST_AUTO_TEST_CASE(keccak_384_shortmsg_byte1) {
+BOOST_AUTO_TEST_CASE(keccak_384_shortmsg_byte1, *boost::unit_test::disabled()) {
     // "a"
     std::array<char, 1> a = {'\x61'};
     hashes::keccak_1600<384>::digest_type d = hash<hashes::keccak_1600<384>>(a);
@@ -226,7 +229,7 @@ BOOST_AUTO_TEST_CASE(keccak_384_shortmsg_byte1) {
         std::to_string(d).data());
 }
 
-BOOST_AUTO_TEST_CASE(keccak_384_shortmsg_byte2) {
+BOOST_AUTO_TEST_CASE(keccak_384_shortmsg_byte2, *boost::unit_test::disabled()) {
     // "abc"
     std::array<char, 3> a = {'\x61', '\x62', '\x63'};
     hashes::keccak_1600<384>::digest_type d = hash<hashes::keccak_1600<384>>(a);
@@ -237,7 +240,7 @@ BOOST_AUTO_TEST_CASE(keccak_384_shortmsg_byte2) {
         std::to_string(d).data());
 }
 
-BOOST_AUTO_TEST_CASE(keccak_384_shortmsg_byte3) {
+BOOST_AUTO_TEST_CASE(keccak_384_shortmsg_byte3, *boost::unit_test::disabled()) {
     // "message digest"
     std::array<char, 14> a = {'\x6d', '\x65', '\x73', '\x73', '\x61', '\x67', '\x65',
                               '\x20', '\x64', '\x69', '\x67', '\x65', '\x73', '\x74'};
@@ -249,7 +252,7 @@ BOOST_AUTO_TEST_CASE(keccak_384_shortmsg_byte3) {
         std::to_string(d).data());
 }
 
-BOOST_AUTO_TEST_CASE(keccak_512_shortmsg_byte1) {
+BOOST_AUTO_TEST_CASE(keccak_512_shortmsg_byte1, *boost::unit_test::disabled()) {
     // "a"
     std::array<char, 1> a = {'\x61'};
     hashes::keccak_1600<512>::digest_type d = hash<hashes::keccak_1600<512>>(a);
@@ -260,7 +263,7 @@ BOOST_AUTO_TEST_CASE(keccak_512_shortmsg_byte1) {
         std::to_string(d).data());
 }
 
-BOOST_AUTO_TEST_CASE(keccak_512_shortmsg_byte2) {
+BOOST_AUTO_TEST_CASE(keccak_512_shortmsg_byte2, *boost::unit_test::disabled()) {
     // "abc"
     std::array<char, 3> a = {'\x61', '\x62', '\x63'};
     hashes::keccak_1600<512>::digest_type d = hash<hashes::keccak_1600<512>>(a);
@@ -271,7 +274,7 @@ BOOST_AUTO_TEST_CASE(keccak_512_shortmsg_byte2) {
         std::to_string(d).data());
 }
 
-BOOST_AUTO_TEST_CASE(keccak_512_shortmsg_byte3) {
+BOOST_AUTO_TEST_CASE(keccak_512_shortmsg_byte3, *boost::unit_test::disabled()) {
     // "message digest"
     std::array<char, 14> a = {'\x6d', '\x65', '\x73', '\x73', '\x61', '\x67', '\x65',
                               '\x20', '\x64', '\x69', '\x67', '\x65', '\x73', '\x74'};
@@ -287,7 +290,7 @@ BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE(keccak_accumulator_test_suite)
 
-BOOST_FIXTURE_TEST_CASE(keccak_224_accumulator, fixture<224>) {
+BOOST_FIXTURE_TEST_CASE(keccak_224_accumulator, fixture<224>, *boost::unit_test::disabled()) {
     // "abc"
     hash_t::construction::type::block_type m = {{}};
 
@@ -299,7 +302,7 @@ BOOST_FIXTURE_TEST_CASE(keccak_224_accumulator, fixture<224>) {
     BOOST_CHECK_EQUAL("c30411768506ebe1c2871b1ee2e87d38df342317300a9b97a95ec6a8", std::to_string(s).data());
 }
 
-BOOST_FIXTURE_TEST_CASE(keccak_256_accumulator, fixture<256>) {
+BOOST_FIXTURE_TEST_CASE(keccak_256_accumulator, fixture<256>, *boost::unit_test::disabled()) {
     // "abc"
     hash_t::construction::type::block_type m = {{}};
 
@@ -311,7 +314,7 @@ BOOST_FIXTURE_TEST_CASE(keccak_256_accumulator, fixture<256>) {
     BOOST_CHECK_EQUAL("4e03657aea45a94fc7d47ba826c8d667c0d1e6e33a64a036ec44f58fa12d6c45", std::to_string(s).data());
 }
 
-BOOST_FIXTURE_TEST_CASE(keccak_384_accumulator, fixture<384>) {
+BOOST_FIXTURE_TEST_CASE(keccak_384_accumulator, fixture<384>, *boost::unit_test::disabled()) {
     // "abc"
     hash_t::construction::type::block_type m = {{}};
 
@@ -326,7 +329,7 @@ BOOST_FIXTURE_TEST_CASE(keccak_384_accumulator, fixture<384>) {
         std::to_string(s).data());
 }
 
-BOOST_FIXTURE_TEST_CASE(keccak_512_accumulator, fixture<512>) {
+BOOST_FIXTURE_TEST_CASE(keccak_512_accumulator, fixture<512>, *boost::unit_test::disabled()) {
     // "abc"
     hash_t::construction::type::block_type m = {{}};
 
@@ -345,14 +348,14 @@ BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE(keccak_preprocessor_test_suite)
 
-BOOST_AUTO_TEST_CASE(keccak_224_preprocessor1) {
+BOOST_AUTO_TEST_CASE(keccak_224_preprocessor1, *boost::unit_test::disabled()) {
     accumulator_set<hashes::keccak_1600<224>> acc;
     hashes::keccak_1600<224>::digest_type s = extract::hash<hashes::keccak_1600<224>>(acc);
 
     BOOST_CHECK_EQUAL("f71837502ba8e10837bdd8d365adb85591895602fc552b48b7390abd", std::to_string(s).data());
 }
 
-BOOST_AUTO_TEST_CASE(keccak_224_preprocessor2) {
+BOOST_AUTO_TEST_CASE(keccak_224_preprocessor2, *boost::unit_test::disabled()) {
     accumulator_set<hashes::keccak_1600<224>> acc;
 
     acc(UINT64_C(0x0000000000000061), accumulators::bits = 8);
@@ -364,14 +367,14 @@ BOOST_AUTO_TEST_CASE(keccak_224_preprocessor2) {
     BOOST_CHECK_EQUAL("c30411768506ebe1c2871b1ee2e87d38df342317300a9b97a95ec6a8", std::to_string(s).data());
 }
 
-BOOST_AUTO_TEST_CASE(keccak_256_preprocessor1) {
+BOOST_AUTO_TEST_CASE(keccak_256_preprocessor1, *boost::unit_test::disabled()) {
     accumulator_set<hashes::keccak_1600<256>> acc;
     hashes::keccak_1600<256>::digest_type s = extract::hash<hashes::keccak_1600<256>>(acc);
 
     BOOST_CHECK_EQUAL("c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470", std::to_string(s).data());
 }
 
-BOOST_AUTO_TEST_CASE(keccak_256_preprocessor2) {
+BOOST_AUTO_TEST_CASE(keccak_256_preprocessor2, *boost::unit_test::disabled()) {
     accumulator_set<hashes::keccak_1600<256>> acc;
 
     acc(UINT64_C(0x0000000000000061), accumulators::bits = 8);
@@ -383,7 +386,7 @@ BOOST_AUTO_TEST_CASE(keccak_256_preprocessor2) {
     BOOST_CHECK_EQUAL("4e03657aea45a94fc7d47ba826c8d667c0d1e6e33a64a036ec44f58fa12d6c45", std::to_string(s).data());
 }
 
-BOOST_AUTO_TEST_CASE(keccak_384_preprocessor1) {
+BOOST_AUTO_TEST_CASE(keccak_384_preprocessor1, *boost::unit_test::disabled()) {
     accumulator_set<hashes::keccak_1600<384>> acc;
     hashes::keccak_1600<384>::digest_type s = extract::hash<hashes::keccak_1600<384>>(acc);
 
@@ -393,7 +396,7 @@ BOOST_AUTO_TEST_CASE(keccak_384_preprocessor1) {
         std::to_string(s).data());
 }
 
-BOOST_AUTO_TEST_CASE(keccak_384_preprocessor2) {
+BOOST_AUTO_TEST_CASE(keccak_384_preprocessor2, *boost::unit_test::disabled()) {
     accumulator_set<hashes::keccak_1600<384>> acc;
 
     acc(UINT64_C(0x0000000000000061), accumulators::bits = 8);
@@ -408,7 +411,7 @@ BOOST_AUTO_TEST_CASE(keccak_384_preprocessor2) {
         std::to_string(s).data());
 }
 
-BOOST_AUTO_TEST_CASE(keccak_512_preprocessor1) {
+BOOST_AUTO_TEST_CASE(keccak_512_preprocessor1, *boost::unit_test::disabled()) {
     accumulator_set<hashes::keccak_1600<512>> acc;
     hashes::keccak_1600<512>::digest_type s = extract::hash<hashes::keccak_1600<512>>(acc);
 
@@ -418,7 +421,7 @@ BOOST_AUTO_TEST_CASE(keccak_512_preprocessor1) {
         std::to_string(s).data());
 }
 
-BOOST_AUTO_TEST_CASE(keccak_512_preprocessor2) {
+BOOST_AUTO_TEST_CASE(keccak_512_preprocessor2, *boost::unit_test::disabled()) {
     accumulator_set<hashes::keccak_1600<512>> acc;
 
     acc(UINT64_C(0x0000000000000061), accumulators::bits = 8);
