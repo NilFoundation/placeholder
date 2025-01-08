@@ -213,7 +213,7 @@ namespace nil {
                             // It is suppose to avoid overflow of the type zkevm_word_type
                             auto s_full = nil::crypto3::multiprecision::big_uint<257>(a) + b;
                             auto r_full = modulus != 0u ? s_full / modulus : 0u;
-                            zkevm_word_type q = zkevm_word_type(s_full - r_full * modulus);
+                            zkevm_word_type q = wrapping_sub(s_full, wrapping_mul(r_full, modulus)).truncate<256>();
                             zkevm_word_type result = modulus != 0u ? q : 0u;
                             _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, result));
                             stack.push_back(result);
