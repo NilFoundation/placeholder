@@ -58,14 +58,6 @@ set(TESTS_NAMES
 
     "math/expression"
 
-#    "routing_algorithms/test_routing_algorithms"
-
-#    "systems/plonk/pickles/pickles"
-#    "systems/plonk/pickles/kimchi"
-#    "systems/plonk/pickles/oracles"
-#    "systems/plonk/pickles/to_field"
-#    "systems/plonk/pickles/to_group"
-
     "systems/plonk/type_traits"
     "systems/plonk/placeholder/placeholder_circuits"
     "systems/plonk/placeholder/placeholder_goldilocks"
@@ -78,9 +70,6 @@ set(TESTS_NAMES
     "systems/plonk/placeholder/placeholder_quotient_polynomial_chunks"
 
     "transcript/transcript"
-
-#   TODO: either delete this code with the test, or fix it later.
-#    "transcript/kimchi_transcript"
 
     "systems/plonk/plonk_constraint")
 

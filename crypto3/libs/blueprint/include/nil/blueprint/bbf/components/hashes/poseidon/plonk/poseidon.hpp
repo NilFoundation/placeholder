@@ -72,9 +72,9 @@ namespace nil {
                     constexpr static const std::size_t sbox_alpha =
                         nil::blueprint::bbf::components::detail::poseidon_constants<
                             FieldType>::sbox_alpha;
-                    constexpr static const std::size_t mina_version =
+                    constexpr static const std::size_t pasta_version =
                         nil::blueprint::bbf::components::detail::poseidon_constants<
-                            FieldType>::mina_version;
+                            FieldType>::pasta_version;
 
                     constexpr static const std::array<
                         std::array<typename FieldType::value_type, state_size>, state_size>
@@ -160,8 +160,8 @@ namespace nil {
 
                         static_assert(state_size == 3);
 
-                        // Mina version
-                        if (mina_version) {
+                        // Pasta version
+                        if (pasta_version) {
                             // First full rounds
                             for (std::size_t i = 0; i < full_rounds_amount / 2; i++) {
                                 for (std::size_t j = 0; j < state_size; j++) {

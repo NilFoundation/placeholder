@@ -128,7 +128,7 @@ BOOST_AUTO_TEST_SUITE(recursive_circuit1)
 
     using curve_type = algebra::curves::pallas;
     using field_type = typename curve_type::base_field_type;
-    using policy = hashes::detail::mina_poseidon_policy<field_type>;
+    using policy = hashes::detail::pasta_poseidon_policy<field_type>;
     using merkle_hash_type = hashes::poseidon<policy>;
     using transcript_hash_type = hashes::poseidon<policy>;
 
@@ -311,7 +311,7 @@ BOOST_AUTO_TEST_SUITE(recursive_circuit2)
 
     struct placeholder_test_params {
         using BlueprintFieldType = algebra::curves::pallas::base_field_type;
-        using policy = hashes::detail::mina_poseidon_policy<field_type>;
+        using policy = hashes::detail::pasta_poseidon_policy<field_type>;
         using merkle_hash_type = hashes::poseidon<policy>;
         using transcript_hash_type = hashes::poseidon<policy>;
 
@@ -420,7 +420,7 @@ BOOST_AUTO_TEST_SUITE(recursive_circuit3)
 
     struct placeholder_test_params {
         using BlueprintFieldType = algebra::curves::pallas::base_field_type;
-        using policy = hashes::detail::mina_poseidon_policy<field_type>;
+        using policy = hashes::detail::pasta_poseidon_policy<field_type>;
         using merkle_hash_type = hashes::poseidon<policy>;
         using transcript_hash_type = hashes::poseidon<policy>;
 
@@ -523,7 +523,7 @@ BOOST_AUTO_TEST_SUITE(recursive_circuit4)
 
     struct placeholder_test_params {
         using BlueprintFieldType = algebra::curves::pallas::base_field_type;
-        using policy = hashes::detail::mina_poseidon_policy<field_type>;
+        using policy = hashes::detail::pasta_poseidon_policy<field_type>;
         using merkle_hash_type = hashes::poseidon<policy>;
         using transcript_hash_type = hashes::poseidon<policy>;
 
@@ -627,7 +627,7 @@ BOOST_AUTO_TEST_SUITE(recursive_circuit5_chunk10)
 
     struct placeholder_test_params {
         using BlueprintFieldType = algebra::curves::pallas::base_field_type;
-        using policy = hashes::detail::mina_poseidon_policy<field_type>;
+        using policy = hashes::detail::pasta_poseidon_policy<field_type>;
         using merkle_hash_type = hashes::poseidon<policy>;
         using transcript_hash_type = hashes::poseidon<policy>;
 
@@ -731,7 +731,7 @@ BOOST_AUTO_TEST_SUITE(recursive_circuit5_chunk100)
 
     struct placeholder_test_params {
         using BlueprintFieldType = algebra::curves::pallas::base_field_type;
-        using policy = hashes::detail::mina_poseidon_policy<field_type>;
+        using policy = hashes::detail::pasta_poseidon_policy<field_type>;
         using merkle_hash_type = hashes::poseidon<policy>;
         using transcript_hash_type = hashes::poseidon<policy>;
 
@@ -837,7 +837,7 @@ BOOST_AUTO_TEST_SUITE(recursive_circuit6)
 
     struct placeholder_test_params {
         using BlueprintFieldType = algebra::curves::pallas::base_field_type;
-        using policy = hashes::detail::mina_poseidon_policy<field_type>;
+        using policy = hashes::detail::pasta_poseidon_policy<field_type>;
         using merkle_hash_type = hashes::poseidon<policy>;
         using transcript_hash_type = hashes::poseidon<policy>;
 
@@ -942,7 +942,7 @@ BOOST_AUTO_TEST_SUITE(recursive_circuit7)
 
     struct placeholder_test_params {
         using BlueprintFieldType = algebra::curves::pallas::base_field_type;
-        using policy = hashes::detail::mina_poseidon_policy<field_type>;
+        using policy = hashes::detail::pasta_poseidon_policy<field_type>;
         using merkle_hash_type = hashes::poseidon<policy>;
         using transcript_hash_type = hashes::poseidon<policy>;
 
@@ -1049,7 +1049,7 @@ BOOST_AUTO_TEST_SUITE(recursive_circuit7_chunk10)
 
     struct placeholder_test_params {
         using BlueprintFieldType = algebra::curves::pallas::base_field_type;
-        using policy = hashes::detail::mina_poseidon_policy<field_type>;
+        using policy = hashes::detail::pasta_poseidon_policy<field_type>;
         using merkle_hash_type = hashes::poseidon<policy>;
         using transcript_hash_type = hashes::poseidon<policy>;
 

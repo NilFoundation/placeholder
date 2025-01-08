@@ -6,9 +6,11 @@
 // See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt
 //---------------------------------------------------------------------------//
+// Constants for custom implementation of Poseidon over Pasta curves
+// Original Poseidon hash specs use alt-bn254 curve
 
-#ifndef CRYPTO3_HASH_POSEIDON_KIMCHI_CONSTANTS_HPP
-#define CRYPTO3_HASH_POSEIDON_KIMCHI_CONSTANTS_HPP
+#ifndef CRYPTO3_HASH_POSEIDON_PASTA_CONSTANTS_HPP
+#define CRYPTO3_HASH_POSEIDON_PASTA_CONSTANTS_HPP
 
 #include <nil/crypto3/hash/detail/poseidon/poseidon_policy.hpp>
 
@@ -21,14 +23,14 @@ namespace nil {
             namespace detail {
 
                 template<typename poseidon_policy_type>
-                struct poseidon_kimchi_constants_data;
+                struct poseidon_pasta_constants_data;
 
-                // All kimchi constants are taken from the Mina implementation(https://github.com/o1-labs/proof-systems/blob/a36c088b3e81d17f5720abfff82a49cf9cb1ad5b/poseidon/src/pasta/) and converted from dec to hex.
+                // All constants are taken from the Mina implementation(https://github.com/o1-labs/proof-systems/blob/a36c088b3e81d17f5720abfff82a49cf9cb1ad5b/poseidon/src/pasta/) and converted from dec to hex.
                 template<typename FieldType, std::size_t Rate>
-                struct poseidon_kimchi_constants_data_base;
+                struct poseidon_pasta_constants_data_base;
 
                 template<>
-                struct poseidon_kimchi_constants_data_base<typename nil::crypto3::algebra::fields::pallas_base_field, 2> {
+                struct poseidon_pasta_constants_data_base<typename nil::crypto3::algebra::fields::pallas_base_field, 2> {
                     using FieldType = nil::crypto3::algebra::fields::pallas_base_field;
 
                     constexpr static const std::size_t state_words = 3;
@@ -335,7 +337,7 @@ namespace nil {
                 };
 
                 template<>
-                struct poseidon_kimchi_constants_data_base<typename nil::crypto3::algebra::fields::vesta_base_field, 2> {
+                struct poseidon_pasta_constants_data_base<typename nil::crypto3::algebra::fields::vesta_base_field, 2> {
                     using FieldType = nil::crypto3::algebra::fields::vesta_base_field;
 
                     constexpr static const std::size_t state_words = 3;
@@ -642,8 +644,8 @@ namespace nil {
                 };
 
                 template<typename poseidon_policy_type>
-                struct poseidon_kimchi_constants_data
-                        : poseidon_kimchi_constants_data_base<
+                struct poseidon_pasta_constants_data
+                        : poseidon_pasta_constants_data_base<
                                 typename poseidon_policy_type::field_type,
                                 poseidon_policy_type::block_words> {
                 };
@@ -653,4 +655,4 @@ namespace nil {
     }            // namespace crypto3
 }    // namespace nil
 
-#endif    // CRYPTO3_HASH_POSEIDON_KIMCHI_CONSTANTS_HPP
+#endif    // CRYPTO3_HASH_POSEIDON_PASTA_CONSTANTS_HPP

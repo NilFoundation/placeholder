@@ -19,7 +19,7 @@
 
 #include <nil/crypto3/hash/detail/poseidon/poseidon_policy.hpp>
 #include <nil/crypto3/hash/detail/poseidon/original_constants.hpp>
-#include <nil/crypto3/hash/detail/poseidon/kimchi_constants.hpp>
+#include <nil/crypto3/hash/detail/poseidon/pasta_constants.hpp>
 
 #include <boost/assert.hpp>
 #include <type_traits>
@@ -44,9 +44,12 @@ namespace nil {
                     constexpr static const std::size_t part_rounds = policy_type::part_rounds;
                     typedef algebra::matrix<element_type, full_rounds + part_rounds, state_words> round_constants_type;
 
-                    // Choose which constants we want, original or kimchi. We may later add
+                    // Choose which constants we want, original or Pasta. We may later add
                     // other sets of constants here.
-                    typedef typename std::conditional<PolicyType::mina_version, poseidon_kimchi_constants_data<policy_type>, poseidon_original_constants_data<policy_type>>::type constants_data_type;
+                    using constants_data_type = std::conditional_t<
+                        PolicyType::pasta_version,
+                        poseidon_pasta_constants_data<policy_type>,
+                        poseidon_original_constants_data<policy_type>>;
 
                     poseidon_constants() {
                         // Transpose the matrix.

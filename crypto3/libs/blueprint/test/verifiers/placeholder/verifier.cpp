@@ -99,7 +99,7 @@ struct default_zkllvm_params {
         nil::crypto3::zk::snark::plonk_table<field_type, ColumnType>;
 
     using ColumnsRotationsType = std::vector<std::set<int>>;
-    using poseidon_policy = nil::crypto3::hashes::detail::mina_poseidon_policy<field_type>;
+    using poseidon_policy = nil::crypto3::hashes::detail::pasta_poseidon_policy<field_type>;
     using Hash = nil::crypto3::hashes::poseidon<poseidon_policy>;
     using transcript_hash_type = Hash;
     using circuit_params_type = nil::crypto3::zk::snark::placeholder_circuit_params<field_type>;
@@ -248,7 +248,7 @@ struct dst_params{
 
     using ColumnsRotationsType = std::vector<std::set<int>>;
     static const std::size_t Lambda = 9;//ParametersPolicy::lambda;
-    using poseidon_policy = nil::crypto3::hashes::detail::mina_poseidon_policy<field_type>;
+    using poseidon_policy = nil::crypto3::hashes::detail::pasta_poseidon_policy<field_type>;
     using Hash = nil::crypto3::hashes::poseidon<poseidon_policy>;
     using circuit_params = nil::crypto3::zk::snark::placeholder_circuit_params<field_type>;
 };

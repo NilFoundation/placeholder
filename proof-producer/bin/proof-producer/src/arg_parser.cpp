@@ -230,7 +230,7 @@ namespace nil {
 
 #define HASH_TYPES                                                                       \
     X(nil::crypto3::hashes::keccak_1600<256>, "keccak")                                  \
-    X(nil::crypto3::hashes::poseidon<nil::crypto3::hashes::detail::mina_poseidon_policy< \
+    X(nil::crypto3::hashes::poseidon<nil::crypto3::hashes::detail::pasta_poseidon_policy< \
           typename nil::crypto3::algebra::curves::pallas::base_field_type>>,             \
       "poseidon")                                                                        \
     X(nil::crypto3::hashes::sha2<256>, "sha256")

@@ -154,7 +154,7 @@ using field_type = typename curve_type::base_field_type;
 using HashTypes = boost::mpl::list<
         nil::crypto3::hashes::sha2<256>,
         nil::crypto3::hashes::keccak_1600<512>,
-        nil::crypto3::hashes::poseidon<nil::crypto3::hashes::detail::mina_poseidon_policy<field_type>>
+        nil::crypto3::hashes::poseidon<nil::crypto3::hashes::detail::pasta_poseidon_policy<field_type>>
     >;
 
 

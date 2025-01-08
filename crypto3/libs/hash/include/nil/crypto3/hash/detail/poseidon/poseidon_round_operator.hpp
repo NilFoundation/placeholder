@@ -28,7 +28,7 @@ namespace nil {
                 /// Round for the original version, ARC-SBOX-MDS order.
                 template<typename poseidon_policy_type>
                 class poseidon_round_operator<poseidon_policy_type,
-                                              std::enable_if_t<!poseidon_policy_type::mina_version>> {
+                                              std::enable_if_t<!poseidon_policy_type::pasta_version>> {
                 public:
                     typedef poseidon_policy_type policy_type;
 
@@ -77,10 +77,10 @@ namespace nil {
                     }
                 };
 
-                /// Rounds for Mina version have SBOX-MDS-ARC order.
+                /// Rounds for Pasta version have SBOX-MDS-ARC order.
                 template<typename poseidon_policy_type>
                 class poseidon_round_operator<poseidon_policy_type,
-                                              std::enable_if_t<poseidon_policy_type::mina_version>> {
+                                              std::enable_if_t<poseidon_policy_type::pasta_version>> {
                 public:
                     typedef poseidon_policy_type policy_type;
                     typedef typename policy_type::field_type field_type;
@@ -102,7 +102,7 @@ namespace nil {
                     static void full_round(state_vector_type &A, std::size_t round_number) {
                         BOOST_ASSERT_MSG(round_number < half_full_rounds ||
                                              round_number >= half_full_rounds + part_rounds,
-                                         "Wrong usage of the Full round function of Mina Poseidon.");
+                                         "Wrong usage of the Full round function of Pasta Poseidon.");
                         for (std::size_t i = 0; i < state_words; i++) {
                             A[i] = A[i].pow(sbox_power);
                         }
@@ -115,7 +115,7 @@ namespace nil {
                     static void part_round(state_vector_type &A, std::size_t round_number) {
                         BOOST_ASSERT_MSG(round_number >= half_full_rounds &&
                                              round_number < half_full_rounds + part_rounds,
-                                         "Wrong usage of the part round function of Mina Poseidon.");
+                                         "Wrong usage of the part round function of Pasta Poseidon.");
                         A[0] = A[0].pow(sbox_power);
                         get_constants().product_with_mds_matrix(A);
                         for (std::size_t i = 0; i < state_words; i++) {

@@ -301,8 +301,8 @@ BOOST_FIXTURE_TEST_CASE(lpc_basic_test, test_fixture) {
     typedef algebra::curves::pallas curve_type;
     typedef typename curve_type::base_field_type FieldType;
     typedef typename FieldType::value_type value_type;
-    typedef hashes::poseidon<nil::crypto3::hashes::detail::mina_poseidon_policy<FieldType>> merkle_hash_type;
-    typedef hashes::poseidon<nil::crypto3::hashes::detail::mina_poseidon_policy<FieldType>> transcript_hash_type;
+    typedef hashes::poseidon<nil::crypto3::hashes::detail::pasta_poseidon_policy<FieldType>> merkle_hash_type;
+    typedef hashes::poseidon<nil::crypto3::hashes::detail::pasta_poseidon_policy<FieldType>> transcript_hash_type;
     typedef typename containers::merkle_tree<merkle_hash_type, 2> merkle_tree_type;
 
     constexpr static const std::size_t lambda = 10;
@@ -421,8 +421,8 @@ BOOST_FIXTURE_TEST_CASE(lpc_basic_test, test_fixture) {
     //     typedef algebra::curves::pallas curve_type;
     //     typedef typename curve_type::base_field_type FieldType;
     //     typedef typename FieldType::value_type value_type;
-    //     typedef hashes::poseidon<nil::crypto3::hashes::detail::mina_poseidon_policy<FieldType>> merkle_hash_type;
-    //     typedef hashes::poseidon<nil::crypto3::hashes::detail::mina_poseidon_policy<FieldType>> transcript_hash_type;
+    //     typedef hashes::poseidon<nil::crypto3::hashes::detail::pasta_poseidon_policy<FieldType>> merkle_hash_type;
+    //     typedef hashes::poseidon<nil::crypto3::hashes::detail::pasta_poseidon_policy<FieldType>> transcript_hash_type;
 
     //     typedef typename containers::merkle_tree<merkle_hash_type, 2> merkle_tree_type;
 
@@ -528,8 +528,8 @@ BOOST_FIXTURE_TEST_CASE(lpc_basic_test, test_fixture) {
     //     typedef algebra::curves::pallas curve_type;
     //     typedef typename curve_type::base_field_type FieldType;
     //     typedef typename FieldType::value_type value_type;
-    //     typedef hashes::poseidon<nil::crypto3::hashes::detail::mina_poseidon_policy<FieldType>> merkle_hash_type;
-    //     typedef hashes::poseidon<nil::crypto3::hashes::detail::mina_poseidon_policy<FieldType>> transcript_hash_type;
+    //     typedef hashes::poseidon<nil::crypto3::hashes::detail::pasta_poseidon_policy<FieldType>> merkle_hash_type;
+    //     typedef hashes::poseidon<nil::crypto3::hashes::detail::pasta_poseidon_policy<FieldType>> transcript_hash_type;
 
     //     typedef typename containers::merkle_tree<merkle_hash_type, 2> merkle_tree_type;
 

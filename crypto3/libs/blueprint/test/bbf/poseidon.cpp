@@ -124,14 +124,14 @@ BOOST_AUTO_TEST_SUITE(blueprint_plonk_poseidon_test_suite)
 
 BOOST_AUTO_TEST_CASE(blueprint_plonk_poseidon_test_vesta) {
     using field_type = typename crypto3::algebra::curves::vesta::base_field_type;
-    using poseidon_policy = nil::crypto3::hashes::detail::mina_poseidon_policy<field_type>;
+    using poseidon_policy = nil::crypto3::hashes::detail::pasta_poseidon_policy<field_type>;
     test_poseidon_specfic_data<field_type, poseidon_policy>();
     test_poseidon_random_data<field_type, poseidon_policy, random_data_tests_amount>();
 }
 
 BOOST_AUTO_TEST_CASE(blueprint_plonk_poseidon_test_pallas) {
     using field_type = typename crypto3::algebra::curves::pallas::base_field_type;
-    using poseidon_policy = nil::crypto3::hashes::detail::mina_poseidon_policy<field_type>;
+    using poseidon_policy = nil::crypto3::hashes::detail::pasta_poseidon_policy<field_type>;
     test_poseidon_specfic_data<field_type, poseidon_policy>();
     test_poseidon_random_data<field_type, poseidon_policy, random_data_tests_amount>();
 }

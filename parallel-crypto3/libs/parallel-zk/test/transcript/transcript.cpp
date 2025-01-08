@@ -79,7 +79,7 @@ BOOST_AUTO_TEST_SUITE(zk_poseidon_transcript_test_suite)
 BOOST_AUTO_TEST_CASE(zk_poseidon_transcript_init_test) {
     using curve_type = algebra::curves::pallas;
     using field_type = typename curve_type::base_field_type;
-    using poseidon_type = hashes::poseidon<nil::crypto3::hashes::detail::mina_poseidon_policy<field_type>>;
+    using poseidon_type = hashes::poseidon<nil::crypto3::hashes::detail::pasta_poseidon_policy<field_type>>;
 
     std::vector<std::uint8_t> init_blob {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
     transcript::fiat_shamir_heuristic_sequential<poseidon_type> tr{
@@ -107,7 +107,7 @@ BOOST_AUTO_TEST_CASE(zk_poseidon_transcript_init_test) {
 BOOST_AUTO_TEST_CASE(zk_poseidon_transcript_no_init_test) {
     using curve_type = algebra::curves::pallas;
     using field_type = typename curve_type::base_field_type;
-    using poseidon_type = hashes::poseidon<nil::crypto3::hashes::detail::mina_poseidon_policy<field_type>>;
+    using poseidon_type = hashes::poseidon<nil::crypto3::hashes::detail::pasta_poseidon_policy<field_type>>;
 
     transcript::fiat_shamir_heuristic_sequential<poseidon_type> tr;
     auto ch1 = tr.challenge<field_type>();
@@ -160,7 +160,7 @@ BOOST_AUTO_TEST_CASE(bls12_keccak) {
 BOOST_AUTO_TEST_CASE(pallas_poseidon) {
     using curve_type = algebra::curves::pallas;
     using field_type = typename curve_type::base_field_type;
-    using hash_type = hashes::poseidon<nil::crypto3::hashes::detail::mina_poseidon_policy<field_type>>;
+    using hash_type = hashes::poseidon<nil::crypto3::hashes::detail::pasta_poseidon_policy<field_type>>;
 
     test_transcript<curve_type, hash_type>
         (0xb4a4cca5ad2d998a81ce64953c1fe0b16e27e4d298808165644421eebd2bc3a_big_uint256);

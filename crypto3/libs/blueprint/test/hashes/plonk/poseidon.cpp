@@ -99,7 +99,7 @@ void test_poseidon(std::vector<typename BlueprintFieldType::value_type> public_i
 
 template<typename FieldType>
 std::vector<typename FieldType::value_type> calculate_expected_poseidon(const typename std::vector<typename FieldType::value_type> &a) {
-    using poseidon_policy = nil::crypto3::hashes::detail::mina_poseidon_policy<FieldType>;
+    using poseidon_policy = nil::crypto3::hashes::detail::pasta_poseidon_policy<FieldType>;
     using permutation_type = nil::crypto3::hashes::detail::poseidon_permutation<poseidon_policy>;
     using state_type = typename permutation_type::state_type;
 

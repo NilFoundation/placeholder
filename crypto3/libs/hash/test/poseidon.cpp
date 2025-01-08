@@ -70,9 +70,9 @@ namespace boost {
 }    // namespace boost
 
 template<typename field_type>
-void test_mina_poseidon(std::vector<typename field_type::value_type> input,
+void test_pasta_poseidon(std::vector<typename field_type::value_type> input,
                         typename field_type::value_type expected_result) {
-    using policy = mina_poseidon_policy<field_type>;
+    using policy = pasta_poseidon_policy<field_type>;
     using hash_t = hashes::original_poseidon<policy>;
 
     typename policy::digest_type d = hash<hash_t>(input);
@@ -104,19 +104,19 @@ BOOST_AUTO_TEST_SUITE(poseidon_tests)
 // For some reason bytes in their test data are in Big Endian, while we need in Small Endian, I.E. you need to reverse the order of bytes to create our test data.
 // We have NO TESTS for Vesta Field so far, since Mina code doesn't have tests and test vectors for it.
     BOOST_AUTO_TEST_CASE(poseidon_kimchi_test_0) {
-        test_mina_poseidon<fields::pallas_base_field>(
+        test_pasta_poseidon<fields::pallas_base_field>(
                 {}, 0x2FADBE2852044D028597455BC2ABBD1BC873AF205DFABB8A304600F3E09EEBA8_big_uint254);
     }
 
     BOOST_AUTO_TEST_CASE(poseidon_kimchi_test_1) {
-        test_mina_poseidon<fields::pallas_base_field>(
+        test_pasta_poseidon<fields::pallas_base_field>(
                 {0x36FB00AD544E073B92B4E700D9C49DE6FC93536CAE0C612C18FBE5F6D8E8EEF2_big_uint254},
                 0x3D4F050775295C04619E72176746AD1290D391D73FF4955933F9075CF69259FB_big_uint254
         );
     }
 // works up to this
     BOOST_AUTO_TEST_CASE(poseidon_kimchi_test_2) {
-        test_mina_poseidon<fields::pallas_base_field>(
+        test_pasta_poseidon<fields::pallas_base_field>(
                 {0x3793E30AC691700012BAF26BB813D6D70BD379BEED8050A1DEEE3C188F1C3FBD_big_uint254,
                  0x2FC4C98E50E0B1AAE6ECB468E28C0B7D80A7E0EEC7136DB0BA0677B84AF0E465_big_uint254},
                 0x336C73D08AD408CEB7D1264867096F0817A1D0558B313312A1207602F23624FE_big_uint254
@@ -124,7 +124,7 @@ BOOST_AUTO_TEST_SUITE(poseidon_tests)
     }
 
     BOOST_AUTO_TEST_CASE(poseidon_kimchi_test_3) {
-        test_mina_poseidon<fields::pallas_base_field>(
+        test_pasta_poseidon<fields::pallas_base_field>(
                 {0x0024FB5773CAC987CF3A17DDD6134BA12D3E1CA4F6C43D3695347747CE61EAF5_big_uint254,
                  0x18E0ED2B46ED1EC258DF721A1D3145B0AA6ABDD02EE851A14B8B659CF47385F2_big_uint254,
                  0x1A842A688E600F012637FE181292F70C4347B5AE0D9EA9CE7CF18592C345CF73_big_uint254},
@@ -133,7 +133,7 @@ BOOST_AUTO_TEST_SUITE(poseidon_tests)
 
 
     BOOST_AUTO_TEST_CASE(poseidon_kimchi_test_4) {
-        test_mina_poseidon<fields::pallas_base_field>(
+        test_pasta_poseidon<fields::pallas_base_field>(
                 {0x2059462D60621F70620EA697FA1382EC5553A3DADB3CF9072201E09871B8284C_big_uint254,
                  0x2747337D1C4F9894747074C771E8EC7F570640E5D0CAF30FDDC446C00FA48707_big_uint254,
                  0x2DD5047C3EEEF37930E8FA4AD9691B27CF86D3ED39D4DEC4FC6D4E8EE4FF0415_big_uint254,
@@ -142,7 +142,7 @@ BOOST_AUTO_TEST_SUITE(poseidon_tests)
     }
 
     BOOST_AUTO_TEST_CASE(poseidon_kimchi_test_5) {
-        test_mina_poseidon<fields::pallas_base_field>(
+        test_pasta_poseidon<fields::pallas_base_field>(
                 {0x3CF70C3A89749A45DB5236B8DE167A37762526C45270138A9FCDF2352B1899DA_big_uint254,
                  0x1BDF55BC84C1A0E0F7F6834949FCF90279B9D21C17DBC9928202C49039570598_big_uint254,
                  0x09441E95A82199EFC390152C5039C0D0566A90B7F6D1AA5813B2DAB90110FF90_big_uint254,

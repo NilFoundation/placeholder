@@ -47,7 +47,7 @@ BOOST_AUTO_TEST_SUITE(proof_of_knowledge_test_suite)
         using curve_type = curves::pallas;
         using field_type = curve_type::base_field_type;
         using integral_type = typename field_type::integral_type;
-        using policy = nil::crypto3::hashes::detail::mina_poseidon_policy<field_type>;
+        using policy = nil::crypto3::hashes::detail::pasta_poseidon_policy<field_type>;
         using poseidon = nil::crypto3::hashes::poseidon<policy>;
         using pow_type = nil::crypto3::zk::commitments::field_proof_of_work<poseidon, field_type>;
 

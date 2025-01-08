@@ -38,7 +38,7 @@ namespace nil {
         using HashTypes = std::tuple<
             nil::crypto3::hashes::keccak_1600<256>,
             nil::crypto3::hashes::sha2<256>,
-            nil::crypto3::hashes::poseidon<nil::crypto3::hashes::detail::mina_poseidon_policy<
+            nil::crypto3::hashes::poseidon<nil::crypto3::hashes::detail::pasta_poseidon_policy<
                 nil::crypto3::algebra::curves::pallas::base_field_type>>
             // Add more hashes as needed.
             >;

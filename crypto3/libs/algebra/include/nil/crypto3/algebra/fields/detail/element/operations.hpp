@@ -94,4 +94,4 @@ namespace nil {
     }                // namespace crypto3
 }    // namespace nil
 
-#endif    // MINA_OPERATIONS_HPP
+#endif    // CRYPTO3_ALGEBRA_FIELDS_ELEMENT_OPERATIONS_HPP
