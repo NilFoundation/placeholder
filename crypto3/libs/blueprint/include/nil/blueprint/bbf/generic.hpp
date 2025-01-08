@@ -228,19 +228,23 @@ namespace nil {
                 }
 
                 void copy_constrain(TYPE &A, TYPE &B) {
+#ifdef BLUEPRINT_BBF_VALIDATE_CONSTRAINTS
                     if (A != B) {
                         // NB: This might be an error, but we don't stop execution,
                         // because we want to be able to run tests-to-fail.
                         BOOST_LOG_TRIVIAL(warning) << "Assignment violates copy constraint (" << A << " != " << B << ")";
                     }
+#endif
                 }
                 void constrain(TYPE C, std::string constraint_name) {
+#ifdef BLUEPRINT_BBF_VALIDATE_CONSTRAINTS
                     if (C != 0) {
                         // NB: This might be an error, but we don't stop execution,
                         // because we want to be able to run tests-to-fail.
                         BOOST_LOG_TRIVIAL(warning) << "Assignment violates polynomial constraint "
                                                    << constraint_name << " (" << C << " != 0)";
                     }
+#endif
                 }
                 void lookup(std::vector<TYPE> &C, std::string table_name) {
                     // TODO: actually check membership of C in table?
