@@ -82,7 +82,7 @@ namespace nil {
                     exponentiation_lo(max_exponentiations)
                 {
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                        BOOST_ASSERT(input.size() <= max_exponentiations);
+                        BOOST_ASSERT(input.size() < max_exponentiations);
 
                         std::size_t i = 0;
                         std::cout << "Exp table:" << std::endl;
@@ -91,6 +91,8 @@ namespace nil {
                             zkevm_word_type base = input[i].first;
                             zkevm_word_type exponent = input[i].second;
                             zkevm_word_type exponentiation = exp_by_squaring(base, exponent);
+                            // We don't prove zero and one exponent by lookup table
+                            if( exponent == 0 || exponent == 1 ) continue;
                             std::cout <<"\t" << base << " ^ " << exponent << " = " << exponentiation << std::endl;
 
                             selector[i] = 1;
@@ -98,15 +100,6 @@ namespace nil {
                             exponent_hi[i] = w_hi<FieldType>(exponent); exponent_lo[i] = w_lo<FieldType>(exponent);
                             exponentiation_hi[i] = w_hi<FieldType>(exponentiation); exponentiation_lo[i] = w_lo<FieldType>(exponentiation);
                         }
-
-                        // if there are unused rows, fill in with valid exp triplets (0^1 = 0)
-                        // while (i < max_exponentiations) {
-                        //     selector[i] = 0;
-                        //     base_hi[i] = 0; base_lo[i] = 0;
-                        //     exponent_hi[i] = 0; exponent_lo[i] = 0;
-                        //     exponentiation_hi[i] = 0; exponentiation_lo[i] = 0;
-                        //     i++;
-                        // }
                     }
 
                     for (std::size_t i = 0; i < max_exponentiations; i++) {

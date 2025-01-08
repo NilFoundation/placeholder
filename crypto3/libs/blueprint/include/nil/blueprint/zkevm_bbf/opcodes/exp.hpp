@@ -56,6 +56,7 @@ namespace nil {
                     std::vector<TYPE> d_log(8);
                     std::vector<TYPE> d_inv(8);
                     TYPE d_sum;
+                    TYPE r_sum;
                     TYPE d_sum_inv;
                     TYPE d_sum_inv_1;
                     TYPE s;
@@ -86,6 +87,7 @@ namespace nil {
                         allocate(A[i], i, 0);
                         allocate(D[i], i + 16, 0);
                         allocate(R[i], i, 1);
+                        r_sum += R[i];
                     }
                     allocate(d_sum, 32, 0);
                     allocate(d_sum_inv, 33, 0);
@@ -102,6 +104,15 @@ namespace nil {
                     constrain(d_sum * (d_sum_inv * d_sum - 1));
                     constrain(d_sum_inv * (d_sum_inv * d_sum - 1));
                     constrain(d_sum_inv_1 * (d_sum_inv_1 * (d_sum - 1) - 1));
+                    constrain((s - 1) * (d_sum - 1) * d_sum); // s == 0 => (d == 0 & d == 1)
+                    //  s == 0 && d == 1 => R == A
+                    for( std::size_t i = 0; i < 16; i++){
+                        constrain( (s - 1) * d_sum * (R[i] - A[i]));
+                    }
+
+                    //  (s == 0 && d == 0) => R == 1
+                    constrain((s - 1) * (d_sum - 1) * (R[15] - 1));
+                    constrain((s - 1) * (d_sum - 1) * (r_sum - R[15]));
 
                     auto A_128 = chunks16_to_chunks128<TYPE>(A);
                     auto D_128 = chunks16_to_chunks128<TYPE>(D);
@@ -109,6 +120,7 @@ namespace nil {
                     constrain( (1 - (d_sum - 1) * d_sum_inv_1) * (A_128.first - R_128.first) );
                     constrain( (1 - (d_sum - 1) * d_sum_inv_1) * (A_128.second - R_128.second) );
                     constrain( (1 - (d_sum - 1) * d_sum_inv_1) * s );
+
 
                     if constexpr( stage == GenerationStage::CONSTRAINTS ){
                         constrain(current_state.pc_next() - current_state.pc(1) - 1);                   // PC transition

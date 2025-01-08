@@ -56,7 +56,7 @@
 using namespace nil::crypto3;
 using namespace nil::blueprint::bbf;
 
-BOOST_FIXTURE_TEST_SUITE(zkevm_opcode_test_suite, zkEVMOpcodeTestFixture)
+BOOST_FIXTURE_TEST_SUITE(zkevm_opcode_bbf_test_suite, zkEVMOpcodeTestFixture)
 BOOST_AUTO_TEST_CASE(pushx_strings) {
     using field_type = typename algebra::curves::pallas::base_field_type;
     zkevm_opcode_tester opcode_tester;
@@ -104,6 +104,8 @@ BOOST_AUTO_TEST_CASE(pushx_strings) {
     max_sizes.max_rw = 500;
     max_sizes.max_copy = 500;
     max_sizes.max_zkevm_rows = 100;
+    max_sizes.max_exponentiations = 50;
+    max_sizes.max_exp_rows = 100;
 
     complex_opcode_test<field_type>(opcode_tester, max_sizes);
 }
@@ -176,6 +178,8 @@ BOOST_AUTO_TEST_CASE(pushx) {
     max_sizes.max_rw = 500;
     max_sizes.max_copy = 500;
     max_sizes.max_zkevm_rows = 100;
+    max_sizes.max_exponentiations = 50;
+    max_sizes.max_exp_rows = 100;
 
     complex_opcode_test<field_type>(opcode_tester, max_sizes);
 }

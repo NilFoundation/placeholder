@@ -46,11 +46,7 @@
 #include <nil/crypto3/zk/snark/systems/plonk/placeholder/verifier.hpp>
 #include <nil/crypto3/zk/snark/systems/plonk/placeholder/params.hpp>
 #include <nil/crypto3/zk/snark/systems/plonk/placeholder/preprocessor.hpp>
-#include <nil/blueprint/zkevm_bbf/zkevm.hpp>
-#include <nil/blueprint/zkevm_bbf/rw.hpp>
-#include <nil/blueprint/zkevm_bbf/copy.hpp>
-#include <nil/blueprint/zkevm_bbf/bytecode.hpp>
-#include <nil/blueprint/zkevm_bbf/keccak.hpp>
+#include <nil/blueprint/bbf/l1_wrapper.hpp>
 
 #include "../test_plonk_component.hpp"
 
@@ -66,6 +62,7 @@ struct l1_size_restrictions{
     std::size_t max_rw;
     std::size_t max_copy;
     std::size_t max_zkevm_rows;
+    std::size_t max_exp_rows;
 };
 
 std::vector<std::uint8_t> hex_string_to_bytes(std::string const &hex_string) {

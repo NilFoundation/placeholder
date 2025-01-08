@@ -103,10 +103,10 @@ namespace nil {
                     if constexpr( stage == GenerationStage::ASSIGNMENT ){
                         auto a = w_to_16(current_state.stack_top());
                         auto b = w_to_16(current_state.stack_top(1));
-                        auto r = w_to_16(current_state.stack_top() * current_state.stack_top(1));
+                        auto r = w_to_16(wrapping_mul(current_state.stack_top(), current_state.stack_top(1)));
                         std::cout << "\ta = " << std::hex << current_state.stack_top() << std::dec << std::endl;
                         std::cout << "\tb = " << std::hex << current_state.stack_top(1) << std::dec << std::endl;
-                        std::cout << "\tr = " << std::hex << current_state.stack_top() * current_state.stack_top(1) << std::dec << std::endl;
+                        std::cout << "\tr = " << std::hex << wrapping_mul(current_state.stack_top(), current_state.stack_top(1)) << std::dec << std::endl;
                         for( std::size_t i = 0; i < 16; i++){
                             A[i] = a[i];
                             B[i] = b[i];
