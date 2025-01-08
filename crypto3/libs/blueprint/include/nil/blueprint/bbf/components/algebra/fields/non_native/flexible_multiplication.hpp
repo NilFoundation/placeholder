@@ -63,7 +63,7 @@ namespace nil {
                     TYPE zero;
                 };
 
-                template<typename FieldType, GenerationStage stage, typename NonNativeFieldType>
+                template<typename FieldType, GenerationStage stage, typename NonNativeFieldType, int modulus_index>
                 class flexible_multiplication : public generic_component<FieldType, stage> {
                     using generic_component<FieldType, stage>::allocate;
                     using generic_component<FieldType, stage>::copy_constrain;
@@ -329,7 +329,7 @@ namespace nil {
 
                 template<typename FieldType, GenerationStage stage>
                 class pallas_flexible_multiplication : public flexible_multiplication<FieldType, stage, 
-                                                                                        crypto3::algebra::curves::pallas::base_field_type> {
+                                                                                        crypto3::algebra::curves::pallas::base_field_type,0> {
                     
                     using Base = flexible_multiplication<FieldType, stage, crypto3::algebra::curves::pallas::base_field_type>;
                     public:
