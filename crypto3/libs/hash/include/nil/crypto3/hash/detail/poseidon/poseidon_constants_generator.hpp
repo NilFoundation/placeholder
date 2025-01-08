@@ -27,8 +27,8 @@ namespace nil {
                 public:
 
                     BOOST_STATIC_ASSERT_MSG(
-                        !PolicyType::mina_version,
-                        "Constants generation can only be used with the original version, not Mina version.");
+                        !PolicyType::pasta_version,
+                        "Constants generation can only be used with the original version, not Pasta version.");
 
                     typedef PolicyType policy_type;
                     typedef typename policy_type::field_type field_type;
@@ -90,7 +90,7 @@ namespace nil {
                                         secure_MDS_found = false;
                                         break;
                                     }
-                                    // We use minus in the next line, as is done in Mina implementation.
+                                    // We use minus in the next line, as is done in Pasta implementation.
                                     // Original implementation uses + instead, but it doesn't matter,
                                     // since X and Y are random elements.
                                     new_mds_matrix[i][j] = (x[i] - y[j]).inversed();

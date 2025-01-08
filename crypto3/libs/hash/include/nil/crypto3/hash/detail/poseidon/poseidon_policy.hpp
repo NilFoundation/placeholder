@@ -27,7 +27,10 @@ namespace nil {
                  * @tparam Security mode of Poseidon permutation
                  */
                 // base_poseidon_policy<FieldType, 128, 4, 1, 5, 8, 60, false> {};
-                template<typename FieldType, std::size_t Security, std::size_t Rate, std::size_t Capacity, std::size_t SBoxPower, std::size_t FullRounds, std::size_t PartRounds, bool MinaVersion>
+                template<typename FieldType,
+                    std::size_t Security, std::size_t Rate, std::size_t Capacity,
+                    std::size_t SBoxPower, std::size_t FullRounds, std::size_t PartRounds,
+                    bool PastaVersion>
                 struct base_poseidon_policy {
                     using field_type = FieldType;
 
@@ -51,7 +54,7 @@ namespace nil {
                     constexpr static const std::size_t capacity = Capacity;
                     constexpr static const std::size_t sbox_power = SBoxPower;
 
-                    constexpr static const bool mina_version = MinaVersion;
+                    constexpr static const bool pasta_version = PastaVersion;
 
                     struct iv_generator {
                         // TODO: maybe it would be done in constexpr way
@@ -104,15 +107,15 @@ namespace nil {
                     base_poseidon_policy<FieldType, 256, Rate, 1, 5, 8, 120, false> {};
 
                 /*!
-                 * @brief Policy class for Mina implementation.
-                 * Mina uses X^7 S-boxes,
+                 * @brief Policy class for special Poseidon implementation over Pasta curves
+                 * This implementation uses X^7 S-boxes,
                  *      changes the order of arc, s-box and mds operations and
                  *      they don't use partial rounds.
                  * Only 1 options is supported, with Rate=2, Capacity=1, 55 full rounds and security of 128 bits.
                  * @tparam FieldType Type of the field.
                  */
                 template<typename FieldType>
-                struct mina_poseidon_policy : base_poseidon_policy<FieldType, 128, 2, 1, 7, 55, 0, true> {};
+                struct pasta_poseidon_policy : base_poseidon_policy<FieldType, 128, 2, 1, 7, 55, 0, true> {};
 
             }    // namespace detail
         }        // namespace hashes

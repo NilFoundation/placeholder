@@ -51,7 +51,7 @@ namespace nil {
                         constexpr static const std::size_t total_rounds_amount =
                             full_rounds_amount + partial_rounds_amount;
                         constexpr static const std::size_t sbox_alpha = 7;
-                        constexpr static bool mina_version = true;
+                        constexpr static bool pasta_version = true;
 
                         constexpr static const std::array<
                             std::array<typename FieldType::value_type, state_size>, state_size>
@@ -245,7 +245,7 @@ namespace nil {
                         constexpr static const std::size_t total_rounds_amount =
                             full_rounds_amount + partial_rounds_amount;
                         constexpr static const std::size_t sbox_alpha = 7;
-                        constexpr static bool mina_version = true;
+                        constexpr static bool pasta_version = true;
 
                         constexpr static const std::array<
                             std::array<typename FieldType::value_type, state_size>, state_size>
@@ -560,7 +560,7 @@ namespace nil {
                         constexpr static const std::size_t total_rounds_amount =
                             full_rounds_amount + partial_rounds_amount;
                         constexpr static const std::size_t sbox_alpha = 5;
-                        constexpr static bool mina_version = false;
+                        constexpr static bool pasta_version = false;
 
                         constexpr static const std::array<
                             std::array<typename FieldType::value_type, state_size>, state_size>

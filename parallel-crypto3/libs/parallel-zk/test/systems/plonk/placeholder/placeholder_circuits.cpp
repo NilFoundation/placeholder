@@ -47,7 +47,7 @@ BOOST_AUTO_TEST_SUITE(placeholder_circuits)
 
     using curve_type = algebra::curves::pallas;
     using field_type = typename curve_type::base_field_type;
-    using hash_type = hashes::poseidon<nil::crypto3::hashes::detail::mina_poseidon_policy<field_type>>;
+    using hash_type = hashes::poseidon<nil::crypto3::hashes::detail::pasta_poseidon_policy<field_type>>;
     using test_runner_type = placeholder_test_runner<field_type, hash_type, hash_type>;
 
     BOOST_AUTO_TEST_CASE(circuit1)

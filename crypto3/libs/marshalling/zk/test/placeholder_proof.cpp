@@ -345,7 +345,7 @@ using pallas_base_field = typename curves::pallas::base_field_type;
 using keccak_256 = hashes::keccak_1600<256>;
 using keccak_512 = hashes::keccak_1600<512>;
 using sha2_256 = hashes::sha2<256>;
-using poseidon_over_pallas = hashes::poseidon<nil::crypto3::hashes::detail::mina_poseidon_policy<pallas_base_field>>;
+using poseidon_over_pallas = hashes::poseidon<nil::crypto3::hashes::detail::pasta_poseidon_policy<pallas_base_field>>;
 
 using TestRunners = boost::mpl::list<
     /* Test pallas with different hashes */

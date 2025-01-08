@@ -256,8 +256,8 @@ BOOST_AUTO_TEST_SUITE(containers_merkltree_test)
 
 using curve_type = algebra::curves::pallas;
 using field_type = typename curve_type::base_field_type;
-using poseidon_type = hashes::poseidon<nil::crypto3::hashes::detail::mina_poseidon_policy<field_type>>;
-using original_poseidon_type = hashes::original_poseidon<nil::crypto3::hashes::detail::mina_poseidon_policy<field_type>>;
+using poseidon_type = hashes::poseidon<nil::crypto3::hashes::detail::pasta_poseidon_policy<field_type>>;
+using original_poseidon_type = hashes::original_poseidon<nil::crypto3::hashes::detail::pasta_poseidon_policy<field_type>>;
 
 BOOST_AUTO_TEST_CASE(merkletree_construct_test_1) {
     std::vector<std::array<char, 1>> v = {{'0'}, {'1'}, {'2'}, {'3'}, {'4'}, {'5'}, {'6'}, {'7'}};

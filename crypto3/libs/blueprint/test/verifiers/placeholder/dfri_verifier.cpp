@@ -293,8 +293,8 @@ template<typename FieldType>
 std::pair<test_setup_struct<FieldType>, nil::blueprint::components::detail::dfri_proof_wrapper<FieldType>>
 prepare_small_test(bool print_enable = false){
     using field_type = FieldType;
-    using merkle_hash_type = hashes::poseidon<nil::crypto3::hashes::detail::mina_poseidon_policy<FieldType>>;
-    using transcript_hash_type =  hashes::poseidon<nil::crypto3::hashes::detail::mina_poseidon_policy<FieldType>>;
+    using merkle_hash_type = hashes::poseidon<nil::crypto3::hashes::detail::pasta_poseidon_policy<FieldType>>;
+    using transcript_hash_type =  hashes::poseidon<nil::crypto3::hashes::detail::pasta_poseidon_policy<FieldType>>;
 
     using val = typename field_type::value_type;
     using integral_type = typename field_type::integral_type;
@@ -458,7 +458,7 @@ void test_dfri_verifier(
 
     table_description_type desc(WitnessAmount, 1, 1, 35); //Witness, public inputs, constants, selectors
 
-    using poseidon_policy = nil::crypto3::hashes::detail::mina_poseidon_policy<field_type>;
+    using poseidon_policy = nil::crypto3::hashes::detail::pasta_poseidon_policy<field_type>;
     using hash_type = nil::crypto3::hashes::poseidon<poseidon_policy>;
     nil::crypto3::test_component<component_type, field_type, hash_type, 9> (
         component_instance, desc, test_input.vector(), result_check,
