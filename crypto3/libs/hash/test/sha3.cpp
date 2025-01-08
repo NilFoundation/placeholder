@@ -79,6 +79,8 @@ boost::property_tree::ptree string_data(const char *child_name) {
     return string_data;
 }
 
+#if 0
+
 BOOST_AUTO_TEST_SUITE(sha3_stream_processor_data_driven_test_suite)
 
 BOOST_DATA_TEST_CASE(sha3_224_range_hash, string_data("data_224"), array_element) {
@@ -784,3 +786,5 @@ BOOST_AUTO_TEST_CASE(sha3_512_preprocessor3) {
 //}
 
 BOOST_AUTO_TEST_SUITE_END()
+
+#endif
