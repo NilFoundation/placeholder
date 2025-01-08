@@ -223,7 +223,7 @@ namespace nil {
                             std::vector<lookup_constraint_type> merged_lookup_gate;
                             lookup_input_constraints_type merged_lookup_input;
                             for (const auto& [selector_id, lookup_inputs] : lookups) {
-                                merged_lookup_input += merged_lookup_input *
+                                merged_lookup_input += lookup_inputs *
                                     expression_type(var(selector_id, 0, false, var::column_type::selector));
                             }
                             merged_lookup_gate.push_back({table_index, merged_lookup_input});
