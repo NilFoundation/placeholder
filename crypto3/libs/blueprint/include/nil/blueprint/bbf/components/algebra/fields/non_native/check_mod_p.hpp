@@ -78,7 +78,7 @@ namespace nil {
 
                     static table_params get_minimal_requirements(std::size_t num_chunks,
                                                                  std::size_t bit_size_chunk,
-                                                                 bool expect_output) {
+                                                                 bool expect_output = false) {
                         static const std::size_t bit_size_rc = 16;
                         std::size_t num_rc_chunks = (bit_size_chunk / bit_size_rc) + (bit_size_chunk % bit_size_rc > 0);
 
@@ -95,7 +95,7 @@ namespace nil {
                                                                     raw_input_type raw_input,
                                                                     std::size_t num_chunks,
                                                                     std::size_t bit_size_chunk,
-                                                                    bool expect_output) {
+                                                                    bool expect_output = false) {
                         std::vector<TYPE> input_x(num_chunks);
                         std::vector<TYPE> input_pp(num_chunks);
                         TYPE input_zero;
@@ -116,7 +116,7 @@ namespace nil {
                     }
 
                     check_mod_p(context_type &context_object, std::vector<TYPE> input_x, std::vector<TYPE> input_pp, TYPE input_zero,
-                                      std::size_t num_chunks, std::size_t bit_size_chunk,bool expect_output,
+                                      std::size_t num_chunks, std::size_t bit_size_chunk,bool expect_output = false,
                                       bool make_links = true)
                         : generic_component<FieldType, stage>(context_object) {
                         using integral_type = typename FieldType::integral_type;

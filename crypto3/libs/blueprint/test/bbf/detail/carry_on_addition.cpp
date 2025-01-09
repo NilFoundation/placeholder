@@ -72,7 +72,7 @@ void test_carry_on_addition(const std::vector<typename BlueprintFieldType::value
     for(std::size_t i = 0; i < num_chunks; i++) {
         #ifdef BLUEPRINT_PLONK_PROFILING_ENABLED
         std::cout << "Expected res: " << std::dec << expected_res[i] << std::endl;
-        std::cout << "Real res:     " << std::dec << A.res[i].data  << std::endl;
+        std::cout << "Real res:     " << std::dec << A.res_z[i].data  << std::endl;
         #endif
         assert(A.res_z[i].data == expected_res[i].data);
     }

@@ -101,6 +101,8 @@ set(COMMON_TEST_FILES
     "bbf/no_assignment_checks"
     "bbf/detail/range_check_multi"
     "bbf/detail/carry_on_addition"
+    "bbf/detail/choice_function"
+    "bbf/algebra/fields/non_native/addition_mod_p"
     "bbf/algebra/fields/non_native/check_mod_p"
     "bbf/algebra/fields/non_native/flexible_multiplication"
     )
