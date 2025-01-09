@@ -63,7 +63,7 @@ namespace nil {
                     TYPE zero;
                 };
 
-                template<typename FieldType, GenerationStage stage, typename NonNativeFieldType, int modulus_index>
+                template<typename FieldType, GenerationStage stage, typename NonNativeFieldType>
                 class flexible_multiplication : public generic_component<FieldType, stage> {
                     using generic_component<FieldType, stage>::allocate;
                     using generic_component<FieldType, stage>::copy_constrain;
@@ -166,21 +166,21 @@ namespace nil {
                                 P[i] = input_p[i];
                                 PP[i] = input_pp[i];
                             }
-                            double_non_native_integral_type foreign_p = 0,
+                            extended_integral_type foreign_p = 0,
                                                 foreign_x = 0,
                                                 foreign_y = 0,
                                                 pow = 1;
                             
                             for (std::size_t i = 0; i < num_chunks; ++i) {
-                                foreign_x += double_non_native_integral_type(native_integral_type(X[i].data)) * pow;
-                                foreign_y += double_non_native_integral_type(native_integral_type(Y[i].data)) * pow;
-                                foreign_p += double_non_native_integral_type(native_integral_type(P[i].data)) * pow;
+                                foreign_x += extended_integral_type(integral_type(X[i].data)) * pow;
+                                foreign_y += extended_integral_type(integral_type(Y[i].data)) * pow;
+                                foreign_p += extended_integral_type(integral_type(P[i].data)) * pow;
                                 pow <<= bit_size_chunk;
                             }
 
-                            double_non_native_integral_type foreign_r = (foreign_x * foreign_y) % foreign_p, // r = x*y % p
+                            extended_integral_type foreign_r = (foreign_x * foreign_y) % foreign_p, // r = x*y % p
                                                             foreign_q = (foreign_x * foreign_y - foreign_r) / foreign_p; // q = (x*y - r)/p
-                            double_non_native_integral_type mask = (double_non_native_integral_type(1) << bit_size_chunk) - 1;
+                            extended_integral_type mask = (extended_integral_type(1) << bit_size_chunk) - 1;
                             for (std::size_t j = 0; j < num_chunks; ++j) {
                                 Q[j] = TYPE(foreign_q & mask);
                                 R[j] = TYPE(foreign_r & mask);
@@ -199,7 +199,7 @@ namespace nil {
                             allocate(P[i]);
                         }
 
-                        native_integral_type pow = 1;
+                        integral_type pow = 1;
                         for (std::size_t j = 0; j < num_chunks; ++j) {
                             x_n += X[j] * pow;
                             y_n += Y[j] * pow;
@@ -235,20 +235,20 @@ namespace nil {
 
                         if constexpr (stage == GenerationStage::ASSIGNMENT) {
                             A[0] = Z[0] - R[0];
-                            native_integral_type a_integral = native_integral_type(A[0].data) >> bit_size_chunk;
+                            integral_type a_integral = integral_type(A[0].data) >> bit_size_chunk;
                             A[0] = TYPE(a_integral);
                             for (std::size_t i = 1; i < num_chunks; ++i) {
                                 A[i] = (Z[i] + A[i-1] - R[i]);
-                                a_integral = native_integral_type(A[i].data) >> bit_size_chunk;
+                                a_integral = integral_type(A[i].data) >> bit_size_chunk;
                                 A[i] = TYPE(a_integral);
                             }
                             for (std::size_t i = 0; i < num_chunks - 2; ++i) {
-                                B[2*i] = TYPE(native_integral_type(A[i].data) & ((native_integral_type(1) << bit_size_chunk) - 1));
-                                B[2*i + 1] =TYPE(native_integral_type(A[i].data) >> bit_size_chunk);
+                                B[2*i] = TYPE(integral_type(A[i].data) & ((integral_type(1) << bit_size_chunk) - 1));
+                                B[2*i + 1] =TYPE(integral_type(A[i].data) >> bit_size_chunk);
                             }
                         }
 
-                        native_integral_type b_shift = native_integral_type(1) << bit_size_chunk;
+                        integral_type b_shift = integral_type(1) << bit_size_chunk;
                         allocate(A[0]);
                         constrain(A[0]*b_shift - Z[0] + R[0]);
                         // constrain that the last t bits of z are equal to r:
@@ -329,7 +329,7 @@ namespace nil {
 
                 template<typename FieldType, GenerationStage stage>
                 class pallas_flexible_multiplication : public flexible_multiplication<FieldType, stage, 
-                                                                                        crypto3::algebra::curves::pallas::base_field_type,0> {
+                                                                                        crypto3::algebra::curves::pallas::base_field_type> {
                     
                     using Base = flexible_multiplication<FieldType, stage, crypto3::algebra::curves::pallas::base_field_type>;
                     public:
