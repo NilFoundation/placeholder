@@ -136,6 +136,9 @@ BOOST_AUTO_TEST_CASE(bitwize) {
     max_sizes.max_rw = 500;
     max_sizes.max_copy = 500;
     max_sizes.max_zkevm_rows = 300;
+    max_sizes.max_exp_rows = 500;
+    max_sizes.max_exponentiations = 50;
+
     complex_opcode_test<field_type>(opcode_tester, max_sizes);
 }
 BOOST_AUTO_TEST_SUITE_END()

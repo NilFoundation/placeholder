@@ -117,6 +117,8 @@ BOOST_AUTO_TEST_CASE(mod_ops) {
     opcode_tester.push_opcode(zkevm_opcode::MULMOD);
     opcode_tester.push_opcode(zkevm_opcode::STOP);
 
+    max_sizes.max_exp_rows = 500;
+    max_sizes.max_exponentiations = 50;
     max_sizes.max_keccak_blocks = 10;
     max_sizes.max_bytecode = 3000;
     max_sizes.max_mpt = 0;

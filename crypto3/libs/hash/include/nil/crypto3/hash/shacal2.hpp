@@ -91,9 +91,10 @@ namespace nil {
                         constexpr static const std::size_t value_bits = ValueBits;
 
                         // length_bits is the number of bits required to write the length of the block.
-                        // For some reason we want it to write in 'words', so we want this to be a multiple of 'word_bits'.
-                        // So take the bit length and round up to 'word_bits' bits.
-                        constexpr static const std::size_t length_bits = ((std::bit_width(block_bits) + word_bits - 1) / word_bits) * word_bits;
+                        // FIPS PUB 180-4 states it must be 64 bits for 256 bit version, and 128 bits for the 512 bit version.
+                        // Since for 256 bit version the standard requires to add another 64 bits of zeros for padding,
+                        // we use 2 * word_bits for both cases.
+                        constexpr static const std::size_t length_bits = 2 * word_bits;
                     };
 
                     typedef block_stream_processor<Mode, StateAccumulator, params_type> type;
