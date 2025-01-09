@@ -104,6 +104,7 @@ set(COMMON_TEST_FILES
     "bbf/detail/choice_function"
     "bbf/algebra/fields/non_native/addition_mod_p"
     "bbf/algebra/fields/non_native/check_mod_p"
+    "bbf/algebra/fields/non_native/negation_mod_p"
     "bbf/algebra/fields/non_native/flexible_multiplication"
     )
 
