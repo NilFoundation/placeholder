@@ -105,7 +105,7 @@ struct placeholder_common_data_test_runner {
 
         auto filled_common_data = nil::crypto3::marshalling::types::fill_placeholder_common_data<Endianness, common_data_type>(common_data);
         auto _common_data = nil::crypto3::marshalling::types::make_placeholder_common_data<Endianness, common_data_type>(filled_common_data);
-        BOOST_CHECK(common_data == _common_data);
+        BOOST_CHECK(common_data == *_common_data);
 
         std::vector<std::uint8_t> cv;
         cv.resize(filled_common_data.length(), 0x00);
@@ -120,7 +120,7 @@ struct placeholder_common_data_test_runner {
         auto constructed_val_read = nil::crypto3::marshalling::types::make_placeholder_common_data<Endianness, common_data_type>(
                 test_val_read
                 );
-        BOOST_CHECK(common_data == constructed_val_read);
+        BOOST_CHECK(common_data == *constructed_val_read);
     }
 
     bool run_test()
@@ -151,7 +151,7 @@ struct placeholder_common_data_test_runner {
                 lpc_scheme,
                 max_quotient_chunks);
 
-        test_placeholder_common_data(preprocessed_public_data.common_data);
+        test_placeholder_common_data(*preprocessed_public_data.common_data);
 
         return true;
     }

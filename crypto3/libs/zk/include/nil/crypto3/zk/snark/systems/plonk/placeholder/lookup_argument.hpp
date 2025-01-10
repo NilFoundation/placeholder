@@ -144,7 +144,7 @@ namespace nil {
                         , plonk_columns(plonk_columns)
                         , commitment_scheme(commitment_scheme)
                         , transcript(transcript)
-                        , basic_domain(preprocessed_data.common_data.basic_domain)
+                        , basic_domain(preprocessed_data.common_data->basic_domain)
                         , lookup_gates(constraint_system.lookup_gates())
                         , lookup_tables(constraint_system.lookup_tables())
                         , lookup_chunks(0)
@@ -163,7 +163,7 @@ namespace nil {
                             0, basic_domain->m, FieldType::value_type::zero());
                         polynomial_dfs_type mask_assignment =
                             one_polynomial -  preprocessed_data.q_last - preprocessed_data.q_blind;
-                        polynomial_dfs_type lagrange0 = preprocessed_data.common_data.lagrange_0;
+                        polynomial_dfs_type lagrange0 = preprocessed_data.common_data->lagrange_0;
 
                         std::unique_ptr<std::vector<polynomial_dfs_type>> lookup_value_ptr =
                             prepare_lookup_value(mask_assignment, lagrange0);
@@ -192,7 +192,7 @@ namespace nil {
 
                         //    Sort
                         auto sorted = sort_polynomials(reduced_input, reduced_value, basic_domain->m,
-                            preprocessed_data.common_data.desc.usable_rows_amount);
+                            preprocessed_data.common_data->desc.usable_rows_amount);
 
                         // 4. Commit sorted polys
                         for( std::size_t i = 0; i < sorted.size(); i++){
@@ -205,7 +205,7 @@ namespace nil {
                         typename FieldType::value_type beta  = transcript.template challenge<FieldType>();
                         typename FieldType::value_type gamma = transcript.template challenge<FieldType>();
 
-                        auto part_sizes = constraint_system.lookup_parts(preprocessed_data.common_data.max_quotient_chunks);
+                        auto part_sizes = constraint_system.lookup_parts(preprocessed_data.common_data->max_quotient_chunks);
                         std::vector<typename FieldType::value_type> lookup_alphas;
                         for(std::size_t i = 0; i < part_sizes.size() - 1; i++){
                             lookup_alphas.push_back(transcript.template challenge<FieldType>());
@@ -220,7 +220,9 @@ namespace nil {
 
                         commitment_scheme.append_to_batch(PERMUTATION_BATCH, V_L);
 
-                        BOOST_ASSERT(V_L[preprocessed_data.common_data.desc.usable_rows_amount] ==  FieldType::value_type::one());
+                        const auto& assignment_desc = preprocessed_data.common_data->desc;
+
+                        BOOST_ASSERT(V_L[assignment_desc.usable_rows_amount] ==  FieldType::value_type::one());
                         BOOST_ASSERT(std::accumulate(part_sizes.begin(), part_sizes.end(), 0) == sorted.size());
 
                         // Compute gs and hs products for each part
@@ -237,7 +239,7 @@ namespace nil {
 
                         std::array<polynomial_dfs_type, argument_size> F_dfs;
 
-                        F_dfs[0] = preprocessed_data.common_data.lagrange_0 * (one_polynomial - V_L);
+                        F_dfs[0] = preprocessed_data.common_data->lagrange_0 * (one_polynomial - V_L);
                         F_dfs[1] = preprocessed_data.q_last * ( V_L * V_L - V_L );
 
                         // Polynomial g is waaay too large, saving memory here, by making code very unreadable.
@@ -267,7 +269,7 @@ namespace nil {
                                 auto &h = hs[i];
                                 auto reduced_g = reduce_dfs_polynomial_domain(g, basic_domain->m);
                                 auto reduced_h = reduce_dfs_polynomial_domain(h, basic_domain->m);
-                                for( std::size_t j = 0; j < preprocessed_data.common_data.desc.usable_rows_amount; j++){
+                                for( std::size_t j = 0; j < assignment_desc.usable_rows_amount; j++){
                                     current_poly[j] = (previous_poly[j] * reduced_g[j]) * reduced_h[j].inversed();
                                 }
                                 commitment_scheme.append_to_batch(PERMUTATION_BATCH, current_poly);
@@ -292,10 +294,10 @@ namespace nil {
                         std::vector<polynomial_dfs_type> F_dfs_3_parts(std::next(sorted.begin(), 1), sorted.end());
                         for (std::size_t i = 0; i < F_dfs_3_parts.size(); i++) {
                             polynomial_dfs_type sorted_shifted = math::polynomial_shift(
-                                sorted[i], preprocessed_data.common_data.desc.usable_rows_amount,
+                                sorted[i], assignment_desc.usable_rows_amount,
                                 basic_domain->m);
                             F_dfs_3_parts[i] -= sorted_shifted;
-                            F_dfs_3_parts[i] *= alpha_challenges[i] * preprocessed_data.common_data.lagrange_0;
+                            F_dfs_3_parts[i] *= alpha_challenges[i] * preprocessed_data.common_data->lagrange_0;
                         }
 
                         F_dfs[3] = polynomial_sum<FieldType>(std::move(F_dfs_3_parts));
@@ -404,7 +406,7 @@ namespace nil {
                         V_L[0] = FieldType::value_type::one();
                         auto one = FieldType::value_type::one();
 
-                        for (std::size_t k = 1; k <= preprocessed_data.common_data.desc.usable_rows_amount; k++) {
+                        for (std::size_t k = 1; k <= preprocessed_data.common_data->desc.usable_rows_amount; k++) {
                             V_L[k] = V_L[k-1];
 
                             typename FieldType::value_type g_tmp = (one + beta).pow(reduced_input.size());
