@@ -3,8 +3,7 @@
 #include <optional>
 #include <string>
 
-#include <nil/blueprint/blueprint/plonk/circuit.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/assignment.hpp>
+#include <nil/proof-generator/types/type_system.hpp>
 #include <nil/blueprint/zkevm_bbf/copy.hpp>
 #include <nil/blueprint/bbf/l1_wrapper.hpp>
 #include <nil/proof-generator/preset/limits.hpp>
@@ -15,13 +14,15 @@ namespace nil {
 
         template<typename BlueprintFieldType>
         std::optional<std::string> initialize_copy_circuit(
-            std::optional<blueprint::circuit<crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>>>& copy_circuit,
-            std::optional<crypto3::zk::snark::plonk_assignment_table<BlueprintFieldType>>& copy_table) {
+            std::shared_ptr<typename PresetTypes<BlueprintFieldType>::ConstraintSystem>& copy_circuit,
+            std::shared_ptr<typename PresetTypes<BlueprintFieldType>::AssignmentTable>& copy_table) {
 
             namespace snark = crypto3::zk::snark;
             namespace bbf = nil::blueprint::bbf;
 
             using ComponentType = bbf::copy<BlueprintFieldType, bbf::GenerationStage::CONSTRAINTS>;
+            using ConstraintSystem = typename PresetTypes<BlueprintFieldType>::ConstraintSystem;
+            using AssignmentTable = typename PresetTypes<BlueprintFieldType>::AssignmentTable;
 
 
             // TODO move to common? BEGIN
@@ -30,8 +31,7 @@ namespace nil {
             const auto desc = ComponentType::get_table_description(
                 limits::max_copy, limits::max_rw_size, limits::max_keccak_blocks, limits::max_bytecode_size
             );
-            copy_table.emplace(desc.witness_columns, desc.public_input_columns, desc.constant_columns, desc.selector_columns);
-
+            copy_table = std::make_shared<AssignmentTable>(desc.witness_columns, desc.public_input_columns, desc.constant_columns, desc.selector_columns);
 
             BOOST_LOG_TRIVIAL(debug) << "copy table:\n"
                         << "witnesses = " << copy_table->witnesses_amount()
@@ -92,7 +92,7 @@ namespace nil {
                 << " rows_amount = " << copy_table->rows_amount()
                 << "\n";
 
-            copy_circuit.emplace(circuit);
+            copy_circuit = std::make_shared<ConstraintSystem>(std::move(circuit));
 
             return {};
         }

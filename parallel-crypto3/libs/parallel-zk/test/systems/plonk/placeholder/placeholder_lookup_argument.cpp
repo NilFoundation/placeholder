@@ -144,7 +144,7 @@ BOOST_AUTO_TEST_SUITE(placeholder_circuit3_lookup_test)
         placeholder_lookup_argument_prover<field_type, lpc_scheme_type, lpc_placeholder_params_type> lookup_prover(
                 constraint_system, preprocessed_public_data, polynomial_table, lpc_scheme, prover_transcript);
         auto prover_res = lookup_prover.prove_eval();
-        auto omega = preprocessed_public_data.common_data.basic_domain->get_domain_element(1);
+        auto omega = preprocessed_public_data.common_data->basic_domain->get_domain_element(1);
 
         // Challenge phase
         typename field_type::value_type y = algebra::random_element<field_type>();
@@ -153,7 +153,7 @@ BOOST_AUTO_TEST_SUITE(placeholder_circuit3_lookup_test)
 
             std::size_t i_global_index = i;
 
-            for (int rotation: preprocessed_public_data.common_data.columns_rotations[i_global_index]) {
+            for (int rotation: preprocessed_public_data.common_data->columns_rotations[i_global_index]) {
                 auto key = std::make_tuple(i, rotation,
                                            plonk_variable<typename field_type::value_type>::column_type::witness);
                 columns_at_y[key] = polynomial_table.witness(i).evaluate(y * omega.pow(rotation));
@@ -165,7 +165,7 @@ BOOST_AUTO_TEST_SUITE(placeholder_circuit3_lookup_test)
             std::size_t i_global_index = desc.witness_columns +
                                          desc.public_input_columns + i;
 
-            for (int rotation: preprocessed_public_data.common_data.columns_rotations[i_global_index]) {
+            for (int rotation: preprocessed_public_data.common_data->columns_rotations[i_global_index]) {
                 auto key = std::make_tuple(i, rotation,
                                            plonk_variable<typename field_type::value_type>::column_type::constant);
 
@@ -179,7 +179,7 @@ BOOST_AUTO_TEST_SUITE(placeholder_circuit3_lookup_test)
                                          desc.constant_columns +
                                          desc.public_input_columns + i;
 
-            for (int rotation: preprocessed_public_data.common_data.columns_rotations[i_global_index]) {
+            for (int rotation: preprocessed_public_data.common_data->columns_rotations[i_global_index]) {
                 auto key = std::make_tuple(i, rotation,
                                            plonk_variable<typename field_type::value_type>::column_type::selector);
 
@@ -193,15 +193,15 @@ BOOST_AUTO_TEST_SUITE(placeholder_circuit3_lookup_test)
 
         lpc_scheme.commit(PERMUTATION_BATCH);
         lpc_scheme.append_eval_point(PERMUTATION_BATCH, y);
-        lpc_scheme.append_eval_point(PERMUTATION_BATCH, preprocessed_public_data.common_data.permutation_parts,
+        lpc_scheme.append_eval_point(PERMUTATION_BATCH, preprocessed_public_data.common_data->permutation_parts,
                                      y * omega);
 
         transcript_type transcript;
-        lpc_scheme.setup(transcript, preprocessed_public_data.common_data.commitment_scheme_data);
+        lpc_scheme.setup(transcript, preprocessed_public_data.common_data->commitment_scheme_data);
         auto lpc_proof = lpc_scheme.proof_eval(transcript);
         // Prepare sorted and V_L values
         std::vector<typename field_type::value_type> special_selector_values(3);
-        special_selector_values[0] = preprocessed_public_data.common_data.lagrange_0.evaluate(y);
+        special_selector_values[0] = preprocessed_public_data.common_data->lagrange_0.evaluate(y);
         special_selector_values[1] = preprocessed_public_data.q_last.evaluate(y);
         special_selector_values[2] = preprocessed_public_data.q_blind.evaluate(y);
 
@@ -221,20 +221,20 @@ BOOST_AUTO_TEST_SUITE(placeholder_circuit3_lookup_test)
         // All rows selector
         {
             auto key = std::make_tuple( PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED, 0, plonk_variable<typename field_type::value_type>::column_type::selector);
-            columns_at_y[key] = 1 - preprocessed_public_data.q_last.evaluate(y) -preprocessed_public_data.q_blind.evaluate(y) - preprocessed_public_data.common_data.lagrange_0.evaluate(y);
+            columns_at_y[key] = 1 - preprocessed_public_data.q_last.evaluate(y) -preprocessed_public_data.q_blind.evaluate(y) - preprocessed_public_data.common_data->lagrange_0.evaluate(y);
         }
         {
             auto key = std::make_tuple( PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED, 1, plonk_variable<typename field_type::value_type>::column_type::selector);
-            columns_at_y[key] = 1 - preprocessed_public_data.q_last.evaluate(y * omega) -preprocessed_public_data.q_blind.evaluate(y * omega) - preprocessed_public_data.common_data.lagrange_0.evaluate(y * omega);
+            columns_at_y[key] = 1 - preprocessed_public_data.q_last.evaluate(y * omega) -preprocessed_public_data.q_blind.evaluate(y * omega) - preprocessed_public_data.common_data->lagrange_0.evaluate(y * omega);
         }
 
         placeholder_lookup_argument_verifier<field_type, lpc_type, lpc_placeholder_params_type> lookup_verifier;
         std::array<typename field_type::value_type, argument_size> verifier_res = lookup_verifier.verify_eval(
-                preprocessed_public_data.common_data,
+                *preprocessed_public_data.common_data,
                 special_selector_values, special_selector_values_shifted,
                 constraint_system,
                 y, columns_at_y, lpc_proof.z.get(LOOKUP_BATCH),
-                lpc_proof.z.get(PERMUTATION_BATCH, preprocessed_public_data.common_data.permutation_parts),
+                lpc_proof.z.get(PERMUTATION_BATCH, preprocessed_public_data.common_data->permutation_parts),
                 {},
                 prover_res.lookup_commitment,
                 verifier_transcript
@@ -251,13 +251,13 @@ BOOST_AUTO_TEST_SUITE(placeholder_circuit3_lookup_test)
             }
             for (std::size_t j = 0; j < desc.rows_amount; j++) {
                 if (prover_res.F_dfs[i].evaluate(
-                        preprocessed_public_data.common_data.basic_domain->get_domain_element(j)) !=
+                        preprocessed_public_data.common_data->basic_domain->get_domain_element(j)) !=
                     field_type::value_type::zero()) {
                     std::cout << "![" << i << "][" << j << "]" << std::endl;
 
                 }
                 BOOST_CHECK(prover_res.F_dfs[i].evaluate(
-                        preprocessed_public_data.common_data.basic_domain->get_domain_element(j)) ==
+                        preprocessed_public_data.common_data->basic_domain->get_domain_element(j)) ==
                             field_type::value_type::zero());
             }
         }
@@ -327,7 +327,7 @@ BOOST_AUTO_TEST_SUITE(placeholder_circuit4_lookup_test)
         typename placeholder_private_preprocessor<field_type, lpc_placeholder_params_type>::preprocessed_data_type
                 preprocessed_private_data = placeholder_private_preprocessor<field_type, lpc_placeholder_params_type>::process(
                 constraint_system, assignments.private_table(), desc);
-        lpc_scheme.setup(transcript, preprocessed_public_data.common_data.commitment_scheme_data);
+        lpc_scheme.setup(transcript, preprocessed_public_data.common_data->commitment_scheme_data);
 
         auto polynomial_table =
                 plonk_polynomial_dfs_table<field_type>(
@@ -343,14 +343,14 @@ BOOST_AUTO_TEST_SUITE(placeholder_circuit4_lookup_test)
         auto prover_res = prover.prove_eval();
 
         // Challenge phase
-        auto omega = preprocessed_public_data.common_data.basic_domain->get_domain_element(1);
+        auto omega = preprocessed_public_data.common_data->basic_domain->get_domain_element(1);
         typename field_type::value_type y = alg_random_engines.template get_alg_engine<field_type>()();
         typename policy_type::evaluation_map columns_at_y;
         for (std::size_t i = 0; i < desc.witness_columns; i++) {
 
             std::size_t i_global_index = i;
 
-            for (int rotation: preprocessed_public_data.common_data.columns_rotations[i_global_index]) {
+            for (int rotation: preprocessed_public_data.common_data->columns_rotations[i_global_index]) {
                 auto key = std::make_tuple(i, rotation,
                                            plonk_variable<typename field_type::value_type>::column_type::witness);
                 columns_at_y[key] = polynomial_table.witness(i).evaluate(y * omega.pow(rotation));
@@ -362,7 +362,7 @@ BOOST_AUTO_TEST_SUITE(placeholder_circuit4_lookup_test)
             std::size_t i_global_index = desc.witness_columns +
                                          desc.public_input_columns + i;
 
-            for (int rotation: preprocessed_public_data.common_data.columns_rotations[i_global_index]) {
+            for (int rotation: preprocessed_public_data.common_data->columns_rotations[i_global_index]) {
                 auto key = std::make_tuple(i, rotation,
                                            plonk_variable<typename field_type::value_type>::column_type::constant);
 
@@ -377,7 +377,7 @@ BOOST_AUTO_TEST_SUITE(placeholder_circuit4_lookup_test)
                                          desc.constant_columns +
                                          desc.public_input_columns + i;
 
-            for (int rotation: preprocessed_public_data.common_data.columns_rotations[i_global_index]) {
+            for (int rotation: preprocessed_public_data.common_data->columns_rotations[i_global_index]) {
                 auto key = std::make_tuple(i, rotation,
                                            plonk_variable<typename field_type::value_type>::column_type::selector);
 
@@ -401,7 +401,7 @@ BOOST_AUTO_TEST_SUITE(placeholder_circuit4_lookup_test)
         auto half = prover_res.F_dfs[2].evaluate(y) * special_selectors.inversed();
 
         std::vector<typename field_type::value_type> special_selector_values(3);
-        special_selector_values[0] = preprocessed_public_data.common_data.lagrange_0.evaluate(y);
+        special_selector_values[0] = preprocessed_public_data.common_data->lagrange_0.evaluate(y);
         special_selector_values[1] = preprocessed_public_data.q_last.evaluate(y);
         special_selector_values[2] = preprocessed_public_data.q_blind.evaluate(y);
 
@@ -421,16 +421,16 @@ BOOST_AUTO_TEST_SUITE(placeholder_circuit4_lookup_test)
         // All rows selector
         {
             auto key = std::make_tuple( PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED, 0, plonk_variable<typename field_type::value_type>::column_type::selector);
-            columns_at_y[key] = 1 - preprocessed_public_data.q_last.evaluate(y) -preprocessed_public_data.q_blind.evaluate(y) - preprocessed_public_data.common_data.lagrange_0.evaluate(y);
+            columns_at_y[key] = 1 - preprocessed_public_data.q_last.evaluate(y) -preprocessed_public_data.q_blind.evaluate(y) - preprocessed_public_data.common_data->lagrange_0.evaluate(y);
         }
         {
             auto key = std::make_tuple( PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED, 1, plonk_variable<typename field_type::value_type>::column_type::selector);
-            columns_at_y[key] = 1 - preprocessed_public_data.q_last.evaluate(y * omega) -preprocessed_public_data.q_blind.evaluate(y * omega) - preprocessed_public_data.common_data.lagrange_0.evaluate(y * omega);
+            columns_at_y[key] = 1 - preprocessed_public_data.q_last.evaluate(y * omega) -preprocessed_public_data.q_blind.evaluate(y * omega) - preprocessed_public_data.common_data->lagrange_0.evaluate(y * omega);
         }
 
         placeholder_lookup_argument_verifier<field_type, lpc_type, lpc_placeholder_params_type> verifier;
         std::array<typename field_type::value_type, argument_size> verifier_res = verifier.verify_eval(
-                preprocessed_public_data.common_data,
+                *preprocessed_public_data.common_data,
                 special_selector_values, special_selector_values_shifted,
                 constraint_system,
                 y, columns_at_y, lpc_proof.z.get(LOOKUP_BATCH),
@@ -448,13 +448,13 @@ BOOST_AUTO_TEST_SUITE(placeholder_circuit4_lookup_test)
             BOOST_CHECK(prover_res.F_dfs[i].evaluate(y) == verifier_res[i]);
             for (std::size_t j = 0; j < desc.rows_amount; j++) {
                 if (prover_res.F_dfs[i].evaluate(
-                        preprocessed_public_data.common_data.basic_domain->get_domain_element(j)) !=
+                        preprocessed_public_data.common_data->basic_domain->get_domain_element(j)) !=
                     field_type::value_type::zero()) {
                     std::cout << "![" << i << "][" << j << "]" << std::endl;
                 }
                 BOOST_CHECK(
                         prover_res.F_dfs[i].evaluate(
-                                preprocessed_public_data.common_data.basic_domain->get_domain_element(j)) ==
+                                preprocessed_public_data.common_data->basic_domain->get_domain_element(j)) ==
                         field_type::value_type::zero());
             }
         }

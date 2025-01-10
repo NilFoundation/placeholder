@@ -66,8 +66,11 @@ function(setup_proof_generator_target)
     target_link_libraries(${ARG_TARGET_NAME} PRIVATE
         ${INTERFACE_LIBS}
         Boost::program_options
+        proof_generatorTypes
+        proof_generatorPreset
         proof_generatorAssigner
-        proof_generatorOutputArtifacts)
+        proof_generatorOutputArtifacts
+    )
 
     set_target_properties(${ARG_TARGET_NAME} PROPERTIES
         LINKER_LANGUAGE CXX
@@ -100,3 +103,4 @@ install(TARGETS ${MULTI_THREADED_TARGET} RUNTIME DESTINATION bin)
 
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+    

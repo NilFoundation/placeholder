@@ -194,7 +194,7 @@ BOOST_FIXTURE_TEST_CASE(transpiler_test, test_initializer) {
         std::ofstream output_file;
         output_file.open(cpp_path);
         output_file << nil::blueprint::recursive_verifier_generator<lpc_placeholder_params_type, proof_type, common_data_type>(desc).generate_recursive_verifier(
-            constraint_system, preprocessed_public_data.common_data, {desc.usable_rows_amount + 1}
+            constraint_system, *preprocessed_public_data.common_data, {desc.usable_rows_amount + 1}
         );
         output_file.close();
     }
@@ -208,7 +208,7 @@ BOOST_FIXTURE_TEST_CASE(transpiler_test, test_initializer) {
     );
 
     bool verifier_res = placeholder_verifier<field_type, lpc_placeholder_params_type>::process(
-        preprocessed_public_data.common_data,
+        *preprocessed_public_data.common_data,
         proof,
         desc,
         constraint_system,
@@ -381,7 +381,7 @@ BOOST_FIXTURE_TEST_CASE(transpiler_test, test_initializer) {
         std::ofstream output_file;
         output_file.open(cpp_path);
         output_file << nil::blueprint::recursive_verifier_generator<lpc_placeholder_params_type, proof_type, common_data_type>(desc).generate_recursive_verifier(
-            constraint_system, preprocessed_public_data.common_data, {3}
+            constraint_system, *preprocessed_public_data.common_data, {3}
         );
         output_file.close();
     }
@@ -394,7 +394,7 @@ BOOST_FIXTURE_TEST_CASE(transpiler_test, test_initializer) {
         preprocessed_public_data, preprocessed_private_data, desc, constraint_system, lpc_scheme);
 
     bool verifier_res = placeholder_verifier<field_type, lpc_placeholder_params_type>::process(
-        preprocessed_public_data.common_data,
+        *preprocessed_public_data.common_data,
         proof,
         desc,
         constraint_system,
@@ -485,7 +485,7 @@ BOOST_FIXTURE_TEST_CASE(transpiler_test, test_initializer) {
     std::ofstream output_file;
     output_file.open(cpp_path);
     output_file << nil::blueprint::recursive_verifier_generator<lpc_placeholder_params_type, proof_type, common_data_type>(desc).generate_recursive_verifier(
-        constraint_system, preprocessed_public_data.common_data, std::vector<std::size_t>()
+        constraint_system, *preprocessed_public_data.common_data, std::vector<std::size_t>()
     );
     output_file.close();
 
@@ -497,7 +497,7 @@ BOOST_FIXTURE_TEST_CASE(transpiler_test, test_initializer) {
         preprocessed_public_data, preprocessed_private_data, desc, constraint_system, lpc_scheme);
 
     bool verifier_res = placeholder_verifier<field_type, lpc_placeholder_params_type>::process(
-        preprocessed_public_data.common_data,
+        *preprocessed_public_data.common_data,
         proof,
         desc,
         constraint_system,
@@ -588,7 +588,7 @@ BOOST_FIXTURE_TEST_CASE(transpiler_test, test_initializer) {
         std::ofstream output_file;
         output_file.open(cpp_path);
         output_file << nil::blueprint::recursive_verifier_generator<lpc_placeholder_params_type, proof_type, common_data_type>(desc).generate_recursive_verifier(
-            constraint_system, preprocessed_public_data.common_data, std::vector<std::size_t>()
+            constraint_system, *preprocessed_public_data.common_data, std::vector<std::size_t>()
         );
         output_file.close();
     }
@@ -601,7 +601,7 @@ BOOST_FIXTURE_TEST_CASE(transpiler_test, test_initializer) {
         preprocessed_public_data, preprocessed_private_data, desc, constraint_system, lpc_scheme);
 
     bool verifier_res = placeholder_verifier<field_type, lpc_placeholder_params_type>::process(
-        preprocessed_public_data.common_data,
+        *preprocessed_public_data.common_data,
         proof,
         desc,
         constraint_system,
@@ -692,7 +692,7 @@ BOOST_FIXTURE_TEST_CASE(transpiler_test, test_initializer) {
         std::ofstream output_file;
         output_file.open(cpp_path);
         output_file << nil::blueprint::recursive_verifier_generator<lpc_placeholder_params_type, proof_type, common_data_type>(desc).generate_recursive_verifier(
-            constraint_system, preprocessed_public_data.common_data, {135}
+            constraint_system, *preprocessed_public_data.common_data, {135}
         );
         output_file.close();
     }
@@ -705,7 +705,7 @@ BOOST_FIXTURE_TEST_CASE(transpiler_test, test_initializer) {
         preprocessed_public_data, preprocessed_private_data, desc, constraint_system, lpc_scheme);
 
     bool verifier_res = placeholder_verifier<field_type, lpc_placeholder_params_type>::process(
-        preprocessed_public_data.common_data,
+        *preprocessed_public_data.common_data,
         proof,
         desc,
         constraint_system,
@@ -796,7 +796,7 @@ BOOST_FIXTURE_TEST_CASE(transpiler_test, test_initializer) {
         std::ofstream output_file;
         output_file.open(cpp_path);
         output_file << nil::blueprint::recursive_verifier_generator<lpc_placeholder_params_type, proof_type, common_data_type>(desc).generate_recursive_verifier(
-            constraint_system, preprocessed_public_data.common_data, {135}
+            constraint_system, *preprocessed_public_data.common_data, {135}
         );
         output_file.close();
     }
@@ -809,7 +809,7 @@ BOOST_FIXTURE_TEST_CASE(transpiler_test, test_initializer) {
         preprocessed_public_data, preprocessed_private_data, desc, constraint_system, lpc_scheme);
 
     bool verifier_res = placeholder_verifier<field_type, lpc_placeholder_params_type>::process(
-        preprocessed_public_data.common_data,
+        *preprocessed_public_data.common_data,
         proof,
         desc,
         constraint_system,
@@ -901,7 +901,7 @@ BOOST_FIXTURE_TEST_CASE(transpiler_test, test_initializer) {
         std::ofstream output_file;
         output_file.open(cpp_path);
         output_file << nil::blueprint::recursive_verifier_generator<lpc_placeholder_params_type, proof_type, common_data_type>(desc).generate_recursive_verifier(
-            constraint_system, preprocessed_public_data.common_data, std::vector<std::size_t>()
+            constraint_system, *preprocessed_public_data.common_data, std::vector<std::size_t>()
         );
         output_file.close();
     }
@@ -914,7 +914,7 @@ BOOST_FIXTURE_TEST_CASE(transpiler_test, test_initializer) {
         preprocessed_public_data, preprocessed_private_data, desc, constraint_system, lpc_scheme);
 
     bool verifier_res = placeholder_verifier<field_type, lpc_placeholder_params_type>::process(
-        preprocessed_public_data.common_data,
+        *preprocessed_public_data.common_data,
         proof,
         desc,
         constraint_system,
@@ -1008,7 +1008,7 @@ BOOST_FIXTURE_TEST_CASE(transpiler_test, test_initializer) {
         std::ofstream output_file;
         output_file.open(cpp_path);
         output_file << nil::blueprint::recursive_verifier_generator<lpc_placeholder_params_type, proof_type, common_data_type>(desc).generate_recursive_verifier(
-            constraint_system, preprocessed_public_data.common_data, std::vector<std::size_t>()
+            constraint_system, *preprocessed_public_data.common_data, std::vector<std::size_t>()
         );
         output_file.close();
     }
@@ -1021,7 +1021,7 @@ BOOST_FIXTURE_TEST_CASE(transpiler_test, test_initializer) {
         preprocessed_public_data, preprocessed_private_data, desc, constraint_system, lpc_scheme);
 
     bool verifier_res = placeholder_verifier<field_type, lpc_placeholder_params_type>::process(
-        preprocessed_public_data.common_data,
+        *preprocessed_public_data.common_data,
         proof,
         desc,
         constraint_system,
@@ -1116,7 +1116,7 @@ BOOST_FIXTURE_TEST_CASE(transpiler_test, test_initializer) {
         std::ofstream output_file;
         output_file.open(cpp_path);
         output_file << nil::blueprint::recursive_verifier_generator<lpc_placeholder_params_type, proof_type, common_data_type>(desc).generate_recursive_verifier(
-            constraint_system, preprocessed_public_data.common_data, std::vector<std::size_t>()
+            constraint_system, *preprocessed_public_data.common_data, std::vector<std::size_t>()
         );
         output_file.close();
     }
@@ -1129,7 +1129,7 @@ BOOST_FIXTURE_TEST_CASE(transpiler_test, test_initializer) {
         preprocessed_public_data, preprocessed_private_data, desc, constraint_system, lpc_scheme);
 
     bool verifier_res = placeholder_verifier<field_type, lpc_placeholder_params_type>::process(
-        preprocessed_public_data.common_data,
+        *preprocessed_public_data.common_data,
         proof,
         desc,
         constraint_system,

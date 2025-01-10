@@ -49,6 +49,7 @@ endif()
 
 target_link_libraries(proof_generatorAssigner
                         PUBLIC
+                        proof_generatorTypes
                         proof_generatorPreset
                         crypto3::common
                         protobuf::libprotobuf

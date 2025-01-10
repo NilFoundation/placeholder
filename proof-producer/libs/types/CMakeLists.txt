@@ -1,0 +1,3 @@
+add_library(proof_generatorTypes INTERFACE)
+
+target_include_directories(proof_generatorTypes INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include)

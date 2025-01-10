@@ -1,0 +1,129 @@
+#ifndef PROOF_GENERATOR_ASSIGNER_ASSIGNMENT_COMMAND_HPP
+#define PROOF_GENERATOR_ASSIGNER_ASSIGNMENT_COMMAND_HPP
+
+#include <memory>
+#include <boost/log/trivial.hpp>
+#include <boost/filesystem.hpp>
+
+#include <nil/crypto3/bench/scoped_profiler.hpp>
+
+#include <nil/proof-generator/assigner/assigner.hpp>
+#include <nil/proof-generator/types/type_system.hpp>
+#include <nil/proof-generator/command_step.hpp>
+#include <nil/proof-generator/commands/detail/io/circuit_io.hpp>
+#include <nil/proof-generator/commands/detail/io/assignment_table_io.hpp>
+#include <nil/proof-generator/commands/preset_command.hpp>
+#include <nil/proof-generator/resources.hpp>
+#include <nil/proof-generator/output_artifacts/output_artifacts.hpp>
+
+namespace nil {
+    namespace proof_generator {
+
+        template<typename CurveType, typename HashType>
+        struct FillAssignmentStep {
+            using Types            = TypeSystem<CurveType, HashType>;
+            using ConstraintSystem = typename Types::ConstraintSystem;
+            using AssignmentTable  = typename Types::AssignmentTable;
+            using TableDescription = typename Types::TableDescription;
+
+            struct Executor: 
+                public command_step,
+                public resources::resources_provider<AssignmentTable, TableDescription>
+            {
+
+                Executor( 
+                    resources::resource_provider<AssignmentTable>& table_provider,
+                    resources::resource_provider<TableDescription>& desc_provider,
+                    const std::string& circuit_name, 
+                    boost::filesystem::path trace_base_path
+                ): 
+                    circuit_name_(circuit_name),
+                    trace_base_path_(trace_base_path)
+                {
+                    resources::subscribe_value<AssignmentTable>(table_provider, assignment_table_);
+                    resources::subscribe_value<TableDescription>(desc_provider, table_description_);
+                }
+
+                CommandResult execute() override {
+                    using resources::notify;
+
+                    if (!assignment_table_ || !table_description_) {
+                        return CommandResult::UnknownError("Assignment table is not initialized");
+                    }
+
+                    TIME_LOG_START("Fill assignment table")
+                    const auto err = fill_assignment_table_single_thread(*assignment_table_, *table_description_, circuit_name_, trace_base_path_);
+                    if (err) {
+                        return CommandResult::UnknownError("Can't fill assignment table from trace '{}', err: {}" , trace_base_path_.string(), err.value());
+                    }
+                    TIME_LOG_END("Fill assignment table")
+
+                    
+                    notify<AssignmentTable> (*this, assignment_table_);
+                    notify<TableDescription>(*this, table_description_);
+                    
+                    return CommandResult::Ok();
+                }
+
+            private:
+                const std::string circuit_name_;
+                const boost::filesystem::path trace_base_path_;
+
+                std::shared_ptr<AssignmentTable> assignment_table_;
+                std::shared_ptr<TableDescription> table_description_;
+            };
+        };
+
+
+        template <typename CurveType, typename HashType>
+        class FillAssignmentCommand: public command_chain {
+        public:
+            struct Args { // TODO fill from boost program options and print as help
+                std::string circuit_name;
+                boost::filesystem::path trace_file_path;
+                boost::filesystem::path circuit_file_path;
+                boost::filesystem::path assignment_table_file_path;
+                boost::filesystem::path assignment_description_file_path;
+                nil::proof_generator::OutputArtifacts output_artifacts;                
+            };
+
+            FillAssignmentCommand(const Args& args) {
+                using PresetStep                       = typename PresetStep<CurveType, HashType>::Executor;
+                using Assigner                         = typename FillAssignmentStep<CurveType, HashType>::Executor;
+                using CircuitWriteStep                 = typename CircuitIO<CurveType, HashType>::Writer;
+                using AssignmentTableBinaryWriter      = typename AssignmentTableIO<CurveType, HashType>::BinaryWriter;
+                using AssignmentTableDescriptionWriter = typename AssignmentTableIO<CurveType, HashType>::DescriptionWriter;
+                using AssignmentTableDebugPrinter      = typename AssignmentTableIO<CurveType, HashType>::DebugPrinter;
+
+                // init circuit for the given name
+                auto& circuit_maker = add_step<PresetStep>(args.circuit_name);                                              
+
+                // write circuit to file if needed
+                if (!args.circuit_file_path.empty()) {
+                    add_step<CircuitWriteStep>(circuit_maker, args.circuit_file_path); 
+                }
+    
+                // fill assignment table
+                auto& assigner = add_step<Assigner>(circuit_maker, circuit_maker, args.circuit_name, args.trace_file_path); 
+              
+                // write assignment table to file if needed
+                if (!args.assignment_table_file_path.empty()) {
+                    add_step<AssignmentTableBinaryWriter>(assigner, assigner, args.assignment_table_file_path);
+                }
+
+                // write assignment description to file if needed
+                if (!args.assignment_description_file_path.empty()) {
+                    add_step<AssignmentTableDescriptionWriter>(assigner, args.assignment_description_file_path);
+                }
+
+                // print debug assignment table if needed
+                if (!args.output_artifacts.empty()) {
+                    add_step<AssignmentTableDebugPrinter>(assigner, assigner, args.output_artifacts);
+                }                    
+            }
+        };
+
+    } // namespace proof_generator
+} // namespace nil
+
+#endif // PROOF_GENERATOR_ASSIGNER_ASSIGNMENT_COMMAND_HPP

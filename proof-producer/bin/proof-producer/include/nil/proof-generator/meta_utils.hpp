@@ -58,31 +58,6 @@ namespace nil {
             using type = std::tuple<Ts...>;
         };
 
-        // Find passed value among constexpr array, passes found index to function
-        // template param. Example:
-        //     constexpr std::array<char, 2> arr = {'a', 'b'}; // It could be some
-        //     complex struct with defined `==` operator auto func = []<std::size_t N>()
-        //     {
-        //         std::cout << arr[N];
-        //     };
-        //     char inp;
-        //     std::cin >> inp;
-        //     generate_templates_from_array_for_runtime_check<arr>(inp, func);
-        template<const auto& ConstexprArray, typename RuntimeT, typename Func, std::size_t Idx = 0>
-        constexpr void generate_templates_from_array_for_runtime_check(RuntimeT runtime_value, Func function) {
-            if constexpr (Idx < std::size(ConstexprArray)) {
-                if (ConstexprArray[Idx] == runtime_value) {
-                    function.template operator()<Idx>();
-                } else {
-                    generate_templates_from_array_for_runtime_check<ConstexprArray, RuntimeT, Func, Idx + 1>(
-                        runtime_value,
-                        function
-                    );
-                }
-            } else {
-                throw std::runtime_error("Runtime value not found among constexpr array elements.");
-            }
-        }
 
         // Takes variant value and forward its inner type to function template.
         // Example:
