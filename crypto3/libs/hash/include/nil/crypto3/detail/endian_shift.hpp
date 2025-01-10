@@ -111,6 +111,13 @@ namespace nil {
 
                 // Shift to most significant bits according to endianness
                 static word_type &to_msb(word_type &w, std::size_t shift) {
+                    if (shift == 0)
+                        return w;
+                    if (shift == word_bits) {
+                        w = 0;
+                        return w;
+                    }
+
                     std::size_t shift_rem = shift % UnitBits;
                     std::size_t shift_unit_bits = shift - shift_rem;
 
