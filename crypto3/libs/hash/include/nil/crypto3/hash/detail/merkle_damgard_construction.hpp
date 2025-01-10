@@ -155,6 +155,10 @@ namespace nil {
                     using namespace nil::crypto3::detail;
 
                     std::array<length_type, 1> length_array = {{length}};
+                    // We sould not use length_words on the next line. Length_words is number of words
+                    // we want to store the length in. But actually we may have a shorter length, and we must keep
+                    // the extra bits as zero. For example if the length is stored in 64 bits integer,
+                    // but length_bits = 128, we should keep the other 64 bits as zero.
                     std::array<word_type, length_type_bits / word_bits> length_words_array;
                     pack<endian_type, endian_type, length_type_bits, word_bits>(
                         length_array.begin(), length_array.end(),

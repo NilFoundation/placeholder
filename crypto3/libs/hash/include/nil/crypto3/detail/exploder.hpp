@@ -121,10 +121,6 @@ namespace nil {
                 template<typename InputValue, typename OutputIterator>
                 inline static void step(InputValue const &in, OutputIterator &out) {
                     typedef typename outvalue_helper<OutputIterator, OutputBits>::type OutValue;
-                    if (shift >= 64) {
-                        std::cout << "Shift = " << shift << " InputBits = " << InputBits
-                            << " OutputBits = " << OutputBits << std::endl;
-                    }
                     OutValue tmp = low_bits<InputBits>((shift == InputBits) ? 0u : in >> shift, OutputBits);
 
                     unit_reverser<InputEndianness, OutputEndianness, UnitBits>::reverse(tmp);
