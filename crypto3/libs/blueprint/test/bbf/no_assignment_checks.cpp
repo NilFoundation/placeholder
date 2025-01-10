@@ -45,7 +45,7 @@
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
 #include <nil/blueprint/bbf/l1_wrapper.hpp>
 #include <nil/blueprint/zkevm_bbf/bytecode.hpp>
-
+#include <nil/blueprint/bbf/bytecode_v2.hpp>
 
 #include "./zkevm_bbf/test_l1_wrapper.hpp"
 
@@ -75,6 +75,7 @@ public:
         bytecode_assignment_input.bytecodes = bytecodes;
         bytecode_assignment_input.keccak_buffers = keccak_buffers;
 
+        auto start{std::chrono::steady_clock::now()};
         bool result = test_bbf_component<field_type, nil::blueprint::bbf::bytecode>(
             "bytecode",
             {7},                        //  Public input
@@ -83,7 +84,32 @@ public:
             max_bytecode_size,          //  Sizes
             max_keccak_blocks           //  Keccak blocks amount
         );
+        auto end{std::chrono::steady_clock::now()};
+        std::chrono::duration<double> elapsed_seconds{end - start};
+        std::cout << elapsed_seconds << '\n';
+
         BOOST_CHECK((!check_satisfiability && !generate_proof) || result == expected_result); // Max_rw, Max_mpt
+
+
+        typename nil::blueprint::bbf::bytecode_v2<field_type,nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type bytecode_assignment_input_v2;
+        typename nil::blueprint::bbf::bytecode_v2<field_type,nil::blueprint::bbf::GenerationStage::CONSTRAINTS>::input_type bytecode_constraint_input_v2;
+
+        bytecode_assignment_input_v2.rlc_challenge = 7;
+        bytecode_assignment_input_v2.bytecodes = bytecodes;
+        bytecode_assignment_input_v2.keccak_buffers = keccak_buffers;
+        start = std::chrono::steady_clock::now();
+        bool result2 = test_bbf_component<field_type, nil::blueprint::bbf::bytecode_v2>(
+            "bytecode",
+            {7},                        //  Public input
+            bytecode_assignment_input_v2,  //  Assignment input
+            bytecode_constraint_input_v2,  //  Circuit input
+            max_bytecode_size,          //  Sizes
+            max_keccak_blocks           //  Keccak blocks amount
+        );
+        end = std::chrono::steady_clock::now();
+        elapsed_seconds = end - start;
+        std::cout << elapsed_seconds << '\n';
+        BOOST_CHECK((!check_satisfiability && !generate_proof) || result2 == expected_result); // Max_rw, Max_mpt
     }
 };
 
@@ -98,11 +124,8 @@ BOOST_AUTO_TEST_CASE(one_contract){
     keccak_input.new_buffer(hex_string_to_bytes("0xffaa"));
     keccak_input.new_buffer(hex_string_to_bytes("0x00ed"));
     keccak_input.new_buffer(hex_string_to_bytes("0xffaa12312384710283470321894798234702918470189347"));
-    const auto start{std::chrono::steady_clock::now()};
+    
     test_zkevm_bytecode<field_type>(input, keccak_input, 1000, 30);
-    const auto end{std::chrono::steady_clock::now()};
-    const std::chrono::duration<double> elapsed_seconds{end - start};
-    std::cout << elapsed_seconds << '\n';
 }
 
 BOOST_AUTO_TEST_SUITE_END()
