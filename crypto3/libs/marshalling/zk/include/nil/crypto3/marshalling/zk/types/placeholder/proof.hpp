@@ -249,8 +249,7 @@ namespace nil {
                 template<typename Endianness, typename AggregatedProof, typename Proof>
                 placeholder_aggregated_proof_type<nil::crypto3::marshalling::field_type<Endianness>, Proof>
                     fill_placeholder_aggregated_proof(
-                        const AggregatedProof &proof,
-                        const typename Proof::commitment_scheme_type::fri_type::params_type &fri_params
+                        const AggregatedProof &proof
                     ) {
 
                     using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
@@ -268,7 +267,7 @@ namespace nil {
                     return placeholder_aggregated_proof_type<TTypeBase, Proof>(std::make_tuple(
                         filled_partial_proofs,
                         fill_aggregated_proof<Endianness, typename Proof::commitment_scheme_type>(
-                            proof.aggregated_proof, fri_params)
+                            proof.aggregated_proof)
                     ));
                 }
 

@@ -396,7 +396,7 @@ BOOST_FIXTURE_TEST_CASE(transpiler_test, test_tools::random_test_initializer<fie
 
     auto printer = nil::blueprint::lpc_evm_verifier_printer<lpc_placeholder_params_type>(
         constraint_system,
-        lpc_preprocessed_public_data.common_data,
+        *lpc_preprocessed_public_data.common_data,
         output
     );
     printer.print();
@@ -432,7 +432,7 @@ BOOST_FIXTURE_TEST_CASE(transpiler_test, test_tools::random_test_initializer<fie
         );
 
         auto verifier_res = placeholder_verifier<field_type, lpc_placeholder_params_type>::process(
-            lpc_preprocessed_public_data.common_data,
+            *lpc_preprocessed_public_data.common_data,
             lpc_proof,
             desc,
             constraint_system,
@@ -512,7 +512,7 @@ BOOST_FIXTURE_TEST_CASE(transpiler_test, test_tools::random_test_initializer<fie
 
     auto printer = nil::blueprint::lpc_evm_verifier_printer<lpc_placeholder_params_type>(
         constraint_system,
-        lpc_preprocessed_public_data.common_data,
+        *lpc_preprocessed_public_data.common_data,
         output
     );
     printer.print();
@@ -548,7 +548,7 @@ BOOST_FIXTURE_TEST_CASE(transpiler_test, test_tools::random_test_initializer<fie
         );
 
         auto verifier_res = placeholder_verifier<field_type, lpc_placeholder_params_type>::process(
-            lpc_preprocessed_public_data.common_data,
+            *lpc_preprocessed_public_data.common_data,
             lpc_proof,
             desc,
             constraint_system,
@@ -632,7 +632,7 @@ BOOST_FIXTURE_TEST_CASE(transpiler_test, test_tools::random_test_initializer<fie
 
     auto printer = nil::blueprint::lpc_evm_verifier_printer<lpc_placeholder_params_type>(
         constraint_system,
-        lpc_preprocessed_public_data.common_data,
+        *lpc_preprocessed_public_data.common_data,
         output
     );
     printer.print();
@@ -668,7 +668,7 @@ BOOST_FIXTURE_TEST_CASE(transpiler_test, test_tools::random_test_initializer<fie
         );
 
         auto verifier_res = placeholder_verifier<field_type, lpc_placeholder_params_type>::process(
-            lpc_preprocessed_public_data.common_data,
+            *lpc_preprocessed_public_data.common_data,
             lpc_proof,
             desc,
             constraint_system,
@@ -751,7 +751,7 @@ BOOST_FIXTURE_TEST_CASE(transpiler_test, test_tools::random_test_initializer<fie
 
     auto printer = nil::blueprint::lpc_evm_verifier_printer<lpc_placeholder_params_type>(
         constraint_system,
-        lpc_preprocessed_public_data.common_data,
+        *lpc_preprocessed_public_data.common_data,
         output
     );
     printer.print();
@@ -787,7 +787,7 @@ BOOST_FIXTURE_TEST_CASE(transpiler_test, test_tools::random_test_initializer<fie
         );
 
         auto verifier_res = placeholder_verifier<field_type, lpc_placeholder_params_type>::process(
-            lpc_preprocessed_public_data.common_data,
+            *lpc_preprocessed_public_data.common_data,
             lpc_proof,
             desc,
             constraint_system,
@@ -870,7 +870,7 @@ BOOST_FIXTURE_TEST_CASE(transpiler_test, test_tools::random_test_initializer<fie
 
     auto printer = nil::blueprint::lpc_evm_verifier_printer<lpc_placeholder_params_type>(
         constraint_system,
-        lpc_preprocessed_public_data.common_data,
+        *lpc_preprocessed_public_data.common_data,
         output
     );
     printer.print();
@@ -906,7 +906,7 @@ BOOST_FIXTURE_TEST_CASE(transpiler_test, test_tools::random_test_initializer<fie
         );
 
         auto verifier_res = placeholder_verifier<field_type, lpc_placeholder_params_type>::process(
-            lpc_preprocessed_public_data.common_data,
+            *lpc_preprocessed_public_data.common_data,
             lpc_proof,
             desc,
             constraint_system,
@@ -952,7 +952,7 @@ BOOST_FIXTURE_TEST_CASE(transpiler_test100, test_tools::random_test_initializer<
 
     auto printer = nil::blueprint::lpc_evm_verifier_printer<lpc_placeholder_params_type>(
         constraint_system,
-        lpc_preprocessed_public_data.common_data,
+        *lpc_preprocessed_public_data.common_data,
         output
     );
     printer.print();
@@ -988,7 +988,7 @@ BOOST_FIXTURE_TEST_CASE(transpiler_test100, test_tools::random_test_initializer<
         );
 
         auto verifier_res = placeholder_verifier<field_type, lpc_placeholder_params_type>::process(
-            lpc_preprocessed_public_data.common_data,
+            *lpc_preprocessed_public_data.common_data,
             lpc_proof,
             desc,
             constraint_system,
@@ -1070,7 +1070,7 @@ BOOST_FIXTURE_TEST_CASE(transpiler_test, test_tools::random_test_initializer<fie
 
     auto printer = nil::blueprint::lpc_evm_verifier_printer<lpc_placeholder_params_type>(
         constraint_system,
-        lpc_preprocessed_public_data.common_data,
+        *lpc_preprocessed_public_data.common_data,
         output
     );
     printer.print();
@@ -1106,7 +1106,7 @@ BOOST_FIXTURE_TEST_CASE(transpiler_test, test_tools::random_test_initializer<fie
         );
 
         auto verifier_res = placeholder_verifier<field_type, lpc_placeholder_params_type>::process(
-            lpc_preprocessed_public_data.common_data,
+            *lpc_preprocessed_public_data.common_data,
             lpc_proof,
             desc,
             constraint_system,
@@ -1187,7 +1187,7 @@ BOOST_FIXTURE_TEST_CASE(transpiler_test, test_tools::random_test_initializer<fie
 
     auto printer = nil::blueprint::lpc_evm_verifier_printer<lpc_placeholder_params_type>(
         constraint_system,
-        lpc_preprocessed_public_data.common_data,
+        *lpc_preprocessed_public_data.common_data,
         output
     );
     printer.print();
@@ -1223,7 +1223,7 @@ BOOST_FIXTURE_TEST_CASE(transpiler_test, test_tools::random_test_initializer<fie
         );
 
         auto verifier_res = placeholder_verifier<field_type, lpc_placeholder_params_type>::process(
-            lpc_preprocessed_public_data.common_data,
+            *lpc_preprocessed_public_data.common_data,
             lpc_proof,
             desc,
             constraint_system,
@@ -1359,7 +1359,7 @@ BOOST_FIXTURE_TEST_CASE(transpiler_test, test_tools::random_test_initializer<fie
 
     auto printer = nil::blueprint::kzg_evm_verifier_printer<kzg_placeholder_params_type>(
         constraint_system,
-        kzg_preprocessed_public_data.common_data,
+        *kzg_preprocessed_public_data.common_data,
         output
     );
     printer.print();
@@ -1389,8 +1389,9 @@ BOOST_FIXTURE_TEST_CASE(transpiler_test, test_tools::random_test_initializer<fie
             output + "/" + public_input_filename
         );
 
+        kzg_scheme = kzg_scheme_type(kzg_params);
         bool verifier_res = placeholder_verifier<field_type, kzg_placeholder_params_type>::process(
-            kzg_preprocessed_public_data.common_data,
+            *kzg_preprocessed_public_data.common_data,
             kzg_proof,
             desc,
             constraint_system,

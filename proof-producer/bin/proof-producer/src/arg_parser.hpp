@@ -14,8 +14,7 @@
 // limitations under the License.
 //---------------------------------------------------------------------------//
 
-#ifndef PROOF_GENERATOR_ARG_PARSER_HPP
-#define PROOF_GENERATOR_ARG_PARSER_HPP
+#pragma once
 
 #include <optional>
 #include <string>
@@ -80,5 +79,3 @@ namespace nil {
 
     } // namespace proof_generator
 } // namespace nil
-
-#endif // PROOF_GENERATOR_ARG_PARSER_HPP
