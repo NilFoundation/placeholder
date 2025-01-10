@@ -99,14 +99,11 @@ void test_lpc_proof(typename LPC::proof_type &proof, typename LPC::fri_type::par
 }
 
 template<typename Endianness, typename LPC>
-void test_lpc_aggregated_proof(
-    typename LPC::aggregated_proof_type &proof,
-    typename LPC::fri_type::params_type fri_params
-) {
+void test_lpc_aggregated_proof(typename LPC::aggregated_proof_type &proof) {
     using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
 
     auto filled_proof =
-        nil::crypto3::marshalling::types::fill_aggregated_proof<Endianness, LPC>(proof, fri_params);
+        nil::crypto3::marshalling::types::fill_aggregated_proof<Endianness, LPC>(proof);
     auto _proof = nil::crypto3::marshalling::types::make_aggregated_proof<Endianness, LPC>(filled_proof);
     BOOST_CHECK(proof == _proof);
 
@@ -200,7 +197,7 @@ BOOST_FIXTURE_TEST_CASE(lpc_aggregated_proof_test, test_tools::random_test_initi
             alg_random_engines.template get_alg_engine<field_type>(),
             generic_random_engine
     );
-    test_lpc_aggregated_proof<Endianness, lpc_scheme_type>(proof, fri_params);
+    test_lpc_aggregated_proof<Endianness, lpc_scheme_type>(proof);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

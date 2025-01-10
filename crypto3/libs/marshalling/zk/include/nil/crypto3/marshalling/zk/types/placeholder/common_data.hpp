@@ -201,7 +201,7 @@ namespace nil {
                 }
 
                 template<typename Endianness, typename CommonDataType>
-                CommonDataType make_placeholder_common_data(const
+                std::shared_ptr<CommonDataType> make_placeholder_common_data(const
                     placeholder_common_data<nil::crypto3::marshalling::field_type<Endianness>, CommonDataType> &filled_common_data
                 ){
                     auto fixed_values = make_commitment<Endianness, typename CommonDataType::commitment_scheme_type>(std::get<0>(filled_common_data.value()));
@@ -263,7 +263,7 @@ namespace nil {
                         Endianness, typename CommonDataType::commitment_scheme_type
                     >(std::get<15>(filled_common_data.value()));
 
-                    return CommonDataType(
+                    return std::make_shared<CommonDataType>(
                         commitments,
                         columns_rotations,
                         desc,

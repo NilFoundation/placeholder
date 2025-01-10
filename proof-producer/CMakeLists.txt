@@ -84,6 +84,7 @@ endif()
 
 set(CPACK_PACKAGING_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
 
+add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/libs/types")
 add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/libs/output_artifacts")
 add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/libs/preset")
 add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/libs/assigner")

@@ -52,7 +52,7 @@ function(setup_proof_generator_target)
         Boost::filesystem
         Boost::log
         Boost::thread
-        proof_generatorPreset
+        proof_generator_preset
         ${PROOF_PRODUCER_INCLUDES}
     )
     # Make sure to add these dependencies before the others, since for multi-threaded version dependency on
@@ -66,8 +66,11 @@ function(setup_proof_generator_target)
     target_link_libraries(${ARG_TARGET_NAME} PRIVATE
         ${INTERFACE_LIBS}
         Boost::program_options
-        proof_generatorAssigner
-        proof_generatorOutputArtifacts)
+        proof_generator_types
+        proof_generator_preset
+        proof_generator_assigner
+        proof_generator_output_artifacts
+    )
 
     set_target_properties(${ARG_TARGET_NAME} PROPERTIES
         LINKER_LANGUAGE CXX
@@ -88,11 +91,11 @@ endfunction()
 
 set(SINGLE_THREADED_TARGET "${CURRENT_PROJECT_NAME}-single-threaded")
 setup_proof_generator_target(TARGET_NAME ${SINGLE_THREADED_TARGET} ADDITIONAL_DEPENDENCIES crypto3::all)
-target_precompile_headers(${SINGLE_THREADED_TARGET} REUSE_FROM proof_generatorOutputArtifacts)
+target_precompile_headers(${SINGLE_THREADED_TARGET} REUSE_FROM proof_generator_output_artifacts)
 
 set(MULTI_THREADED_TARGET "${CURRENT_PROJECT_NAME}-multi-threaded")
 setup_proof_generator_target(TARGET_NAME ${MULTI_THREADED_TARGET} ADDITIONAL_DEPENDENCIES parallel-crypto3::all crypto3::common)
-target_precompile_headers(${MULTI_THREADED_TARGET} REUSE_FROM proof_generatorOutputArtifacts)
+target_precompile_headers(${MULTI_THREADED_TARGET} REUSE_FROM proof_generator_output_artifacts)
 
 # Install
 install(TARGETS ${SINGLE_THREADED_TARGET} RUNTIME DESTINATION bin)
