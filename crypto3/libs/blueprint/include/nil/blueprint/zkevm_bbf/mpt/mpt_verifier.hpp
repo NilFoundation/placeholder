@@ -50,7 +50,7 @@ namespace nil {
 
             public:
                 static nil::crypto3::zk::snark::plonk_table_description<FieldType> get_table_description(std::size_t max_mpt_, std::size_t account_trie_length){
-                    std::size_t witness_amount = 30;
+                    std::size_t witness_amount = 40;
                     nil::crypto3::zk::snark::plonk_table_description<FieldType> desc(witness_amount, 1, 3, 5);
                     desc.usable_rows_amount = max_mpt_;
                     return desc;
@@ -100,15 +100,18 @@ namespace nil {
                     TYPE key[max_mpt], other_key[max_mpt], path_type[max_mpt];
 
                     TYPE old_nonce_chunks[max_mpt], new_nonce_chunks[max_mpt], code_size_chunks[max_mpt]; // fix num_chunks = 4
+                    TYPE old_Y[max_mpt], old_YI[max_mpt], old_C[max_mpt]; // fix num_chunks = 4
+                    TYPE new_Y[max_mpt], new_YI[max_mpt], new_C[max_mpt]; // fix num_chunks = 4
+                    TYPE code_Y[max_mpt], code_YI[max_mpt], code_C[max_mpt]; // fix num_chunks = 4
                     TYPE q_leaf0[max_mpt], q_leaf1[max_mpt], q_leaf2[max_mpt], q_leaf3[max_mpt], q_leaf123[max_mpt];
                     TYPE q_start[max_mpt], q_trie[max_mpt], q_last[max_mpt], is_padding[max_mpt];
 
+                    size_t bit_size_rc = 16;
+                    size_t bit_size_chunk = 16;
                     const integral_type B = integral_type(1) << 64;
-
-                    // TYPE proof[20], trace[20];
-                    // std::vector<TYPE> proof(70 + 7*account_trie_length);
-                    // std::vector<TYPE> trace(20);
-                    // std::vector<TYPE> sum(20);
+                    const integral_type mask = (1 << bit_size_rc) - 1;
+                    std::size_t num_rc_chunks = (bit_size_chunk / bit_size_rc) + (bit_size_chunk % bit_size_rc > 0);
+                    std::size_t first_chunk_size = bit_size_chunk % bit_size_rc;
 
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
                         std::cout << "MPT assign " << input.proof.size() << std::endl;
@@ -222,29 +225,145 @@ namespace nil {
                         }
 
                         // split old_nonce, new_nonce, code_size into 4 chunks each of 16-bits
-                        integral_type B = integral_type(1) << 16; // fix bit_size_chunk = 16
+                        integral_type A = integral_type(1) << 16; // fix bit_size_chunk = 16
                         integral_type old_nonce_integral = integral_type(nonce.first.data);
                         integral_type new_nonce_integral = integral_type(nonce.second.data);
                         integral_type code_size_integral = integral_type(old_account[5].data);
-                        // std::cout << "..old_nonce_integral = " << old_nonce_integral << std::endl;
-                        // std::cout << "..new_nonce_integral = " << new_nonce_integral << std::endl;
-                        // std::cout << "..code_size_integral = " << code_size_integral << std::endl;
+
+                        // for(std::size_t i = 0; i < 4; i++) { 
+                        //     old_nonce_chunks[i] = value_type(old_nonce_integral % A);
+                        //     new_nonce_chunks[i] = value_type(new_nonce_integral % A);
+                        //     code_size_chunks[i] = value_type(code_size_integral % A);
+                        //     old_nonce_integral /= A;
+                        //     new_nonce_integral /= A;
+                        //     code_size_integral /= A;
+                        //     std::cout << "..old_nonce_chunks[" << i << "] = " << old_nonce_chunks[i] << std::endl;
+                        //     std::cout << "..new_nonce_chunks[" << i << "] = " << new_nonce_chunks[i] << std::endl;
+                        //     std::cout << "..code_size_chunks[" << i << "] = " << code_size_chunks[i] << std::endl;
+                        // }
 
                         for(std::size_t i = 0; i < 4; i++) { 
-                            old_nonce_chunks[i] = value_type(old_nonce_integral % B);
-                            new_nonce_chunks[i] = value_type(new_nonce_integral % B);
-                            code_size_chunks[i] = value_type(code_size_integral % B);
-                            old_nonce_integral /= B;
-                            new_nonce_integral /= B;
-                            code_size_integral /= B;
+                            old_nonce_chunks[i] = value_type(old_nonce_integral & mask);
+                            new_nonce_chunks[i] = value_type(new_nonce_integral & mask);
+                            code_size_chunks[i] = value_type(code_size_integral & mask);
+                            old_nonce_integral >>= bit_size_rc;
+                            new_nonce_integral >>= bit_size_rc;
+                            code_size_integral >>= bit_size_rc;
                             // std::cout << "..old_nonce_chunks[" << i << "] = " << old_nonce_chunks[i] << std::endl;
                             // std::cout << "..new_nonce_chunks[" << i << "] = " << new_nonce_chunks[i] << std::endl;
                             // std::cout << "..code_size_chunks[" << i << "] = " << code_size_chunks[i] << std::endl;
                         }
+
+                        integral_type A2 = integral_type(1) << 32;
+                        integral_type A3 = integral_type(1) << 48;
+
+                        BOOST_ASSERT(nonce.first == value_type(integral_type(old_nonce_chunks[0].data) + integral_type(old_nonce_chunks[1].data)*A 
+                                                        + integral_type(old_nonce_chunks[2].data)*A2 + integral_type(old_nonce_chunks[3].data)*A3));
+                        BOOST_ASSERT(nonce.second == value_type(integral_type(new_nonce_chunks[0].data) + integral_type(new_nonce_chunks[1].data)*A 
+                                                        + integral_type(new_nonce_chunks[2].data)*A2 + integral_type(new_nonce_chunks[3].data)*A3));  
+                        BOOST_ASSERT(old_account[5] == value_type(integral_type(code_size_chunks[0].data) + integral_type(code_size_chunks[1].data)*A 
+                                                        + integral_type(code_size_chunks[2].data)*A2 + integral_type(code_size_chunks[3].data)*A3));                                                                
+
+                        integral_type x_integral;
+                        integral_type y_integral;
+
+                        // range_check for old_nonce
+                        for (std::size_t i = 0; i < 4; ++i) {
+                            x_integral = integral_type(old_nonce_chunks[i].data);
+                            for (std::size_t j = 0; j < num_rc_chunks; ++j) {
+                                y_integral = x_integral & mask;
+                                old_Y[i] = y_integral;
+                                x_integral >>= bit_size_rc;
+                            }
+                            if (first_chunk_size != 0) {
+                                old_YI[i] = integral_type(old_Y[i].data) * (integral_type(1) << (bit_size_rc - first_chunk_size));
+                            }
+                        }
+
+                        // range_check for new_nonce
+                        for (std::size_t i = 0; i < 4; ++i) {
+                            x_integral = integral_type(new_nonce_chunks[i].data);
+                            for (std::size_t j = 0; j < num_rc_chunks; ++j) {
+                                y_integral = x_integral & mask;
+                                new_Y[i] = y_integral;
+                                x_integral >>= bit_size_rc;
+                            }     
+                            if (first_chunk_size != 0) {
+                                new_YI[i] = integral_type(new_Y[i].data) * (integral_type(1) << (bit_size_rc - first_chunk_size));
+                            }
+                        }
+
+                        // range_check for new_nonce
+                        for (std::size_t i = 0; i < 4; ++i) {
+                            x_integral = integral_type(code_size_chunks[i].data);
+                            for (std::size_t j = 0; j < num_rc_chunks; ++j) {
+                                y_integral = x_integral & mask;
+                                code_Y[i] = y_integral;
+                                x_integral >>= bit_size_rc;
+                            }
+                            if (first_chunk_size != 0) {
+                                code_YI[i] = integral_type(code_Y[i].data) * (integral_type(1) << (bit_size_rc - first_chunk_size));
+                            }
+                        }
+
+                        // range_check for old_nonce
+                        for (std::size_t i = 0; i < 4; ++i) {
+                            integral_type power = 1;      
+                            old_C[i] = old_nonce_chunks[i];
+                            for (std::size_t j = 0; j < num_rc_chunks; ++j) {
+                                lookup(old_Y[i], "chunk_16_bits/full");
+                                old_C[i] -= old_Y[i] * power;
+                                power <<= bit_size_rc;
+                            }
+                            if (first_chunk_size != 0) {
+                                lookup(old_YI[i], "chunk_16_bits/full");
+                                constrain(old_YI[i] - old_Y[i] * (integral_type(1) << (bit_size_rc - first_chunk_size)));
+                            }
+                        }
+
+                        // range_check for new_nonce
+                        for (std::size_t i = 0; i < 4; ++i) {
+                            integral_type power = 1;      
+                            new_C[i] = new_nonce_chunks[i];
+                            for (std::size_t j = 0; j < num_rc_chunks; ++j) {
+                                lookup(new_Y[i], "chunk_16_bits/full");
+                                new_C[i] -= new_Y[i] * power;
+                                power <<= bit_size_rc;
+                            }
+                            if (first_chunk_size != 0) {
+                                lookup(new_YI[i], "chunk_16_bits/full");
+                                constrain(new_YI[i] - new_YI[i] * (integral_type(1) << (bit_size_rc - first_chunk_size)));
+                            }
+                        }
+
+                        // range_check for code_size
+                        for (std::size_t i = 0; i < 4; ++i) {
+                            integral_type power = 1;      
+                            code_C[i] = code_size_chunks[i];
+                            for (std::size_t j = 0; j < num_rc_chunks; ++j) {
+                                lookup(code_Y[i], "chunk_16_bits/full");
+                                code_C[i] -= code_Y[i] * power;
+                                power <<= bit_size_rc;
+                            }
+                            if (first_chunk_size != 0) {
+                                lookup(code_YI[i], "chunk_16_bits/full");
+                                constrain(code_YI[i] - code_YI[i] * (integral_type(1) << (bit_size_rc - first_chunk_size)));
+                            }
+                        }
+
                         for(std::size_t i = 4; i < max_mpt; i++) { 
                             old_nonce_chunks[i] = 0;
                             new_nonce_chunks[i] = 0;
                             code_size_chunks[i] = 0;
+                            old_Y[i] = 0;
+                            old_YI[i] = 0;
+                            old_C[i] = 0;
+                            new_Y[i] = 0;
+                            new_YI[i] = 0;
+                            new_C[i] = 0;
+                            code_Y[i] = 0;
+                            code_YI[i] = 0;
+                            code_C[i] = 0;
                         }
 
                         for(std::size_t i = 0; i < account_trie_length; i++) { 
@@ -358,17 +477,6 @@ namespace nil {
                             q_last[i] = 0;
                             is_padding[i] = 0;
                         }
-
-                        for(std::size_t i = 0; i < assignment_table_rows; i++) {
-                            // proof[i] = input.proof[i];
-                            // trace[i] = input.proof[i];
-                            // sum[i] = input.proof[i] + input.proof[i] ;
-                            // std::cout << "key[" << i << "] = " << key[i] << std::endl;
-                            // std::cout << "direction[" << i << "] = " << direction[i] << std::endl;
-                            // std::cout << "trace[" << i << "] = " << trace[i] << std::endl;
-                        }
-                        std::cout << "#proof = " << input.proof.size() << std::endl;
-                        std::cout << "public_input_index = " << public_input_index << std::endl;
                     } 
                     std::cout << "MPT assignment and circuit construction" << std::endl;
 
@@ -398,6 +506,15 @@ namespace nil {
                         allocate(q_leaf3[i], Q_LEAF3, i);
                         allocate(q_last[i], Q_LAST, i);
                         allocate(is_padding[i], IS_PADDING, i);
+                        allocate(old_Y[i], 26, i);
+                        allocate(old_YI[i], 27, i);
+                        allocate(old_C[i], 28, i);
+                        allocate(new_Y[i], 29, i);
+                        allocate(new_YI[i], 30, i);
+                        allocate(new_C[i], 31, i);
+                        allocate(code_Y[i], 32, i);
+                        allocate(code_YI[i], 33, i);
+                        allocate(code_C[i], 34, i);
                     }
 
                     if constexpr( stage == GenerationStage::CONSTRAINTS ){
@@ -439,11 +556,18 @@ namespace nil {
                         // - Range check components for old_nonce, new_nonce, code_size: range_check_multi components added in the generate_circuit function
                         // - verify that code_size in old_account and new_account are equal
                         every.push_back(context_object.relativize(q_last[0]*(1 - q_last[0]), 0));
-                        every.push_back(context_object.relativize(q_last[0]*(old_hash[0] - old_value[0] * B - new_hash[0] + new_value[0] * B), 0));
+                        // every.push_back(context_object.relativize(q_last[0]*(old_hash[0] - old_value[0] * B - new_hash[0] + new_value[0] * B), 0));
 
 
                         for( std::size_t i = 0; i < every.size(); i++ ){
                             context_object.relative_constrain(every[i], 0, max_mpt - 1);
+                        }
+
+                        // range check constraints
+                        for( std::size_t i = 0; i < 4; i++ ){
+                            constrain(old_C[i]);
+                            constrain(new_C[i]);
+                            constrain(code_C[i]);
                         }
 
                         // Alternative representation of constraints
@@ -454,7 +578,6 @@ namespace nil {
                             constrain(q_leaf1[i]*segment[i + 1]*(4 - segment[i + 1]));
                             constrain(q_leaf2[i]*(5 - segment[i + 1]));
                             constrain(segment[i]*(1 - segment[i])*(2 - segment[i])*(3 - segment[i])*(4 - segment[i])*segment[i + 1]);
-                            // constrain((2 - segment[i])*(3 - segment[i])*(4 - segment[i])*(5 - segment[i])*(depth[i + 1] - depth[i] - 1));
                         }
 
                         for(std::size_t i = 1; i < max_mpt; i++) {
@@ -473,6 +596,9 @@ namespace nil {
                         copy_constrain(address[i], address[i + 1]);
                         copy_constrain(proof_type[i], proof_type[i + 1]);
                     }
+                    // for(std::size_t i = 0; i < 4; i++) {
+                    //     copy_constrain(X[i], old_nonce_chunks[i]);
+                    // }
 
                     // for(std::size_t i = 0; i < 20; i++) {
                     //     constrain(proof[i] - trace[i]);
