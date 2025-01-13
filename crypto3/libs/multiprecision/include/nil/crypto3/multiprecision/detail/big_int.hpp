@@ -21,7 +21,7 @@
 #include <boost/functional/hash.hpp>
 
 #include "nil/crypto3/multiprecision/big_uint.hpp"
-#include "nil/crypto3/multiprecision/detail/config.hpp"
+#include "nil/crypto3/multiprecision/detail/force_inline.hpp"
 
 namespace nil::crypto3::multiprecision {
     /**

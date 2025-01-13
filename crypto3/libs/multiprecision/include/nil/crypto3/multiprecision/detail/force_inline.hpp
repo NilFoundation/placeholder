@@ -9,11 +9,23 @@
 
 #pragma once
 
-// Enable to use limb shift instead of byte shift with memmove in runtime
-// #define NIL_CO3_MP_USE_LIMB_SHIFT
+#if !defined(NIL_CO3_MP_FORCEINLINE)
 
-// Disable use of intrinsics
-// #define NIL_CO3_MP_DISABLE_INTRINSICS
+#if defined(NDEBUG) && !defined(_DEBUG)
 
-// Disable use of int128
-// #define NIL_CO3_MP_DISABLE_INT128
+#if defined(_MSC_VER)
+#define NIL_CO3_MP_FORCEINLINE __forceinline
+#elif defined(__GNUC__) && __GNUC__ > 3
+// Clang also defines __GNUC__ (as 4)
+#define NIL_CO3_MP_FORCEINLINE inline __attribute__((__always_inline__))
+#else
+#define NIL_CO3_MP_FORCEINLINE inline
+#endif
+
+#else
+
+#define NIL_CO3_MP_FORCEINLINE inline
+
+#endif
+
+#endif
