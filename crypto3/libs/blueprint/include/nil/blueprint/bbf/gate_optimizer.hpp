@@ -387,11 +387,11 @@ namespace nil {
                         gates, all_lookup_selectors, selector_id_to_index);
 
                     // For each table, create the list of used selectors.
-                    std::unordered_map<std::string, std::vector<size_t>> selectors_per_table;
+                    std::unordered_map<std::string, std::set<size_t>> selectors_per_table;
                     for(const auto& [selector_id, lookup_list] : gates.lookup_constraints) {
                         for(const auto& single_lookup_constraint : lookup_list) {
                             const auto& table_name = single_lookup_constraint.first;
-                            selectors_per_table[table_name].push_back(selector_id);
+                            selectors_per_table[table_name].insert(selector_id);
                         }
                     }
 
@@ -400,7 +400,9 @@ namespace nil {
                     // Maps table name to a [map of selector id -> # of the group it belongs to].
                     std::unordered_map<std::string, std::unordered_map<size_t, size_t>> selector_groups;
                     std::unordered_map<std::string, std::unordered_map<size_t, size_t>> group_sizes;
-                    for (const auto& [table_name, selectors] : selectors_per_table) {
+                    for (const auto& [table_name, selectors_set] : selectors_per_table) {
+                        std::vector<size_t> selectors(selectors_set.begin(), selectors_set.end());
+
                         // Maps group_id -> # of selectors in it.
                         selector_groups[table_name] = group_selectors(adj, all_lookup_selectors, selector_id_to_index, selectors);
 
