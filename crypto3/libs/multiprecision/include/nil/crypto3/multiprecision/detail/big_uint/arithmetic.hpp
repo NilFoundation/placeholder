@@ -15,6 +15,7 @@
 #include <climits>
 #include <cstddef>
 #include <cstring>
+#include <exception>
 #include <stdexcept>
 #include <type_traits>
 #include <utility>
@@ -37,41 +38,26 @@ namespace nil::crypto3::multiprecision {
 
         // Addition/subtraction
 
-        // Constexpr-friendly addition. Does not throw because it returns carry.
+        // Generic, C++ only version of addition.
+        // It's also used for all constexpr branches, hence the name.
         template<std::size_t Bits1, std::size_t Bits2, std::size_t Bits3>
         [[nodiscard]] constexpr bool add_unsigned_constexpr(
             big_uint<Bits1>& result, const big_uint<Bits2>& a,
             const big_uint<Bits3>& b) noexcept {
-            static_assert(Bits1 >= Bits2 && Bits2 >= Bits3, "invalid argument size");
-            //
-            // This is the generic, C++ only version of addition.
-            // It's also used for all constexpr branches, hence the name.
-            //
-            double_limb_type carry = 0;
+            static_assert(Bits1 >= Bits3 && Bits2 >= Bits3, "invalid argument size");
+
             constexpr std::size_t as = std::decay_t<decltype(a)>::static_limb_count;
             constexpr std::size_t bs = std::decay_t<decltype(b)>::static_limb_count;
+            constexpr std::size_t rs = std::decay_t<decltype(result)>::static_limb_count;
+            constexpr std::size_t m = std::min(as, rs);
             static_assert(as >= bs);
-
-            if constexpr (as <= 1) {
-                double_limb_type v = static_cast<double_limb_type>(*a.limbs()) +
-                                     static_cast<double_limb_type>(*b.limbs());
-                if (result.limb_count() == 1) {
-                    constexpr double_limb_type mask = big_uint<Bits1>::upper_limb_mask;
-                    if (v & ~mask) {
-                        v &= mask;
-                        carry = 1;
-                    }
-                }
-                result = v;
-                return carry;
-            }
-
-            result.zero_after(as);
+            static_assert(rs >= bs);
 
             const_limb_pointer pa = a.limbs();
             const_limb_pointer pb = b.limbs();
             limb_pointer pr = result.limbs();
             limb_pointer pr_end = pr + bs;
+            double_limb_type carry = 0;
 
             // First where a and b overlap:
             while (pr != pr_end) {
@@ -81,7 +67,7 @@ namespace nil::crypto3::multiprecision {
                 carry >>= limb_bits;
                 ++pr, ++pa, ++pb;
             }
-            pr_end += as - bs;
+            pr_end += m - bs;
 
             // Now where only a has digits:
             while (pr != pr_end) {
@@ -100,8 +86,221 @@ namespace nil::crypto3::multiprecision {
             BOOST_ASSERT(carry <= 1);
 
             if (carry) {
-                if (result.limb_count() > as) {
-                    result.limbs()[as] = static_cast<limb_type>(1u);
+                if (result.limb_count() > m) {
+                    result.limbs()[m] = static_cast<limb_type>(1u);
+                    carry = 0;
+                }
+            }
+
+            return carry;
+        }
+
+#ifdef NIL_CO3_MP_HAS_INTRINSICS
+        //
+        // Optimized addition.
+        //
+        // As of May, 2020 major compilers don't recognize carry chain though adc
+        // intrinsics are used to hint compilers to use ADC and still compilers don't
+        // unroll the loop efficiently (except LLVM) so manual unrolling is done.
+        //
+        // Also note that these intrinsics were only introduced by Intel as part of the
+        // ADX processor extensions, even though the addc instruction has been available
+        // for basically all x86 processors.  That means gcc-9, clang-9, msvc-14.2 and up
+        // are required to support these intrinsics.
+        //
+        template<std::size_t Bits1, std::size_t Bits2, std::size_t Bits3>
+        [[nodiscard]] constexpr bool add_unsigned_intrinsic(
+            big_uint<Bits1>& result, const big_uint<Bits2>& a,
+            const big_uint<Bits3>& b) noexcept {
+            static_assert(Bits1 >= Bits3 && Bits2 >= Bits3, "invalid argument size");
+
+            constexpr std::size_t as = std::decay_t<decltype(a)>::static_limb_count;
+            constexpr std::size_t bs = std::decay_t<decltype(b)>::static_limb_count;
+            constexpr std::size_t rs = std::decay_t<decltype(result)>::static_limb_count;
+            constexpr std::size_t m = std::min(as, rs);
+            static_assert(as >= bs);
+            static_assert(rs >= bs);
+
+            const_limb_pointer pa = a.limbs();
+            const_limb_pointer pb = b.limbs();
+            limb_pointer pr = result.limbs();
+            unsigned char carry = 0;
+
+            std::size_t i = 0;
+            for (; i + 4 <= bs; i += 4) {
+                carry = addcarry_limb(carry, pa[i + 0], pb[i + 0], pr + i);
+                carry = addcarry_limb(carry, pa[i + 1], pb[i + 1], pr + i + 1);
+                carry = addcarry_limb(carry, pa[i + 2], pb[i + 2], pr + i + 2);
+                carry = addcarry_limb(carry, pa[i + 3], pb[i + 3], pr + i + 3);
+            }
+            for (; i < bs; ++i) {
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic push
+                // Disable a false positive triggered by
+                // -Waggressive-loop-optimizations
+                //
+                // The warning message is "warning:
+                // iteration 2305843009213693951 invokes undefined behavior
+                // [-Waggressive-loop-optimizations]"
+                //
+                // Of course if i becomes 2^61
+                // uint64_t will overflow, this is expected
+#pragma GCC diagnostic ignored "-Waggressive-loop-optimizations"
+#endif
+
+                carry = addcarry_limb(carry, pa[i], pb[i], pr + i);
+
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
+            }
+            for (; i < m && carry; ++i) {
+                // We know carry is 1, so we just need to increment pa[i] (ie add
+                // a literal 1) and capture the carry:
+                carry = addcarry_limb(0, pa[i], 1, pr + i);
+            }
+
+            if (m == i && carry) {
+                if (result.limb_count() > m) {
+                    result.limbs()[m] = static_cast<limb_type>(1u);
+                    carry = 0;
+                }
+            } else if ((m != i) && (pa != pr)) {
+                // Copy remaining digits only if we need to:
+                std::copy(pa + i, pa + m, pr + i);
+            }
+
+            BOOST_ASSERT(carry <= 1);
+
+            return carry;
+        }
+#endif
+
+        template<operation_mode Mode>
+        constexpr void addition_overflow_when(bool overflow) noexcept(
+            Mode != operation_mode::checked) {
+            if constexpr (Mode == operation_mode::checked) {
+                if (overflow) {
+                    throw std::overflow_error("big_uint: addition overflow");
+                }
+            } else if constexpr (Mode == operation_mode::unchecked) {
+                BOOST_ASSERT_MSG(!overflow, "big_uint: addition overflow");
+            }
+        }
+
+        // Returns carry if it's not bigger than 1, otherwise throws.
+        template<operation_mode Mode, std::size_t Bits1, std::size_t Bits2,
+                 std::size_t Bits3>
+        [[nodiscard]] constexpr bool add_unsigned(big_uint<Bits1>& result,
+                                                  const big_uint<Bits2>& a,
+                                                  const big_uint<Bits3>& b) {
+            if constexpr (Bits2 < Bits3) {
+                return add_unsigned<Mode>(result, b, a);
+            } else {
+                static_assert(Bits1 >= Bits3 && Bits2 >= Bits3);
+
+                constexpr std::size_t as = std::decay_t<decltype(a)>::static_limb_count;
+                constexpr std::size_t rs =
+                    std::decay_t<decltype(result)>::static_limb_count;
+
+                if constexpr (as <= 1) {
+                    double_limb_type v = static_cast<double_limb_type>(*a.limbs()) +
+                                         static_cast<double_limb_type>(*b.limbs());
+                    bool carry = false;
+                    if constexpr (std::decay_t<decltype(result)>::static_limb_count ==
+                                  1) {
+                        constexpr double_limb_type mask =
+                            std::decay_t<decltype(result)>::upper_limb_mask;
+                        if (v & ~mask) {
+                            limb_type excess =
+                                (v & ~mask) >>
+                                std::decay_t<decltype(result)>::upper_limb_bits;
+                            addition_overflow_when<Mode>(excess > 1);
+                            carry = excess;
+                            v &= mask;
+                        }
+                    }
+                    result = v;
+                    return carry;
+                } else {
+                    result.zero_after(as);
+
+                    bool additional_carry = false;
+
+                    if constexpr (rs < as) {
+                        for (std::size_t i = rs; i < as; ++i) {
+                            addition_overflow_when<Mode>(a.limbs()[i] != 0);
+                        }
+                        if (Bits1 % limb_bits == 0) {
+                            addition_overflow_when<Mode>(a.limbs()[rs] > 1);
+                            additional_carry = a.limbs()[rs] == 1;
+                        }
+                    }
+                    if constexpr (rs == as && Bits1 < Bits2) {
+                        limb_type a_excess =
+                            (a.limbs()[as - 1] &
+                             ~std::decay_t<decltype(result)>::upper_limb_mask) >>
+                            std::decay_t<decltype(result)>::upper_limb_bits;
+                        addition_overflow_when<Mode>(a_excess > 1);
+                        additional_carry = a_excess;
+                    }
+
+                    bool carry = false;
+
+#ifdef NIL_CO3_MP_HAS_INTRINSICS
+                    if (std::is_constant_evaluated()) {
+                        carry = add_unsigned_constexpr(result, a, b);
+                    } else {
+                        carry = add_unsigned_intrinsic(result, a, b);
+                    }
+#else
+                    carry = add_unsigned_constexpr(result, a, b);
+#endif
+
+                    if constexpr (Bits1 % limb_bits != 0) {
+                        BOOST_ASSERT(!carry && !additional_carry);
+                        limb_type excess = result.normalize();
+                        addition_overflow_when<Mode>(excess > 1);
+                        return excess;
+                    }
+
+                    if constexpr (rs < as) {
+                        addition_overflow_when<Mode>(carry && additional_carry);
+                    }
+
+                    return carry || additional_carry;
+                }
+            }
+        }
+
+        // Add one limb
+        template<operation_mode Mode, std::size_t Bits1, std::size_t Bits2>
+        [[nodiscard]] constexpr bool add_unsigned(big_uint<Bits1>& result,
+                                                  const big_uint<Bits2>& a,
+                                                  const limb_type& b) {
+            static_assert(Bits1 >= Bits2, "invalid argument size");
+
+            const_limb_pointer pa = a.limbs();
+            limb_pointer pr = result.limbs();
+            double_limb_type carry = b;
+
+            std::size_t i = 0;
+            // Addition with carry until we either run out of digits or carry is zero:
+            for (; carry && i < result.limb_count(); ++i) {
+                carry += static_cast<double_limb_type>(pa[i]);
+                pr[i] = static_cast<limb_type>(carry);
+                carry >>= limb_bits;
+            }
+            // Just copy any remaining digits:
+            if (&a != &result) {
+                std::copy(pa + i, pa + a.limb_count(), pr + i);
+            }
+
+            BOOST_ASSERT(carry <= 1);
+
+            if (carry) {
+                if (result.limb_count() > a.limb_count()) {
+                    result.limbs()[a.limb_count()] = static_cast<limb_type>(1u);
                     carry = 0;
                 }
             }
@@ -109,79 +308,32 @@ namespace nil::crypto3::multiprecision {
             if constexpr (Bits1 % limb_bits != 0) {
                 // If we have set any bit above "Bits", then we have a carry.
                 carry = result.normalize();
-                BOOST_ASSERT(carry <= 1);
             }
+
+            addition_overflow_when<Mode>(carry > 1);
 
             return carry;
         }
 
-        template<operation_mode Mode>
-        constexpr void subtract_overflow() noexcept(Mode != operation_mode::checked) {
-            if constexpr (Mode == operation_mode::checked) {
-                throw std::overflow_error("big_uint: subtraction overflow");
-            } else if constexpr (Mode == operation_mode::unchecked) {
-                BOOST_ASSERT_MSG(false, "big_uint: multiplication overflow");
-            }
-        }
-
-        /// Constexpr-friendly subtraction.
-        template<operation_mode Mode, bool GuaranteedGreater = false, std::size_t Bits1,
-                 std::size_t Bits2, std::size_t Bits3>
+        // This is the generic, C++ only version of subtraction.
+        // It's also used for all constexpr branches, hence the name.
+        template<operation_mode Mode, std::size_t Bits1, std::size_t Bits2,
+                 std::size_t Bits3>
         constexpr void subtract_unsigned_constexpr(big_uint<Bits1>& result,
                                                    const big_uint<Bits2>& a,
                                                    const big_uint<Bits3>& b) {
             static_assert(Bits1 >= Bits2, "invalid argument size");
-            //
-            // This is the generic, C++ only version of subtraction.
-            // It's also used for all constexpr branches, hence the name.
-            //
-            double_limb_type borrow = 0;
+            BOOST_ASSERT(a >= b);
+
             constexpr std::size_t as = std::decay_t<decltype(a)>::static_limb_count;
             constexpr std::size_t bs = std::decay_t<decltype(b)>::static_limb_count;
             constexpr std::size_t m = std::min(as, bs);
             constexpr std::size_t x = std::max(as, bs);
-
-            //
-            // special cases for small limb counts:
-            //
-            if constexpr (x <= 1) {
-                bool s = false;
-                limb_type al = *a.limbs();
-                limb_type bl = *b.limbs();
-                if (al < bl) {
-                    subtract_overflow<Mode>();
-                    std::swap(al, bl);
-                    s = true;
-                }
-                result = al - bl;
-                if (s) {
-                    result.wrapping_neg_inplace();
-                }
-                return;
-            }
+            double_limb_type borrow = 0;
 
             const_limb_pointer pa = a.limbs();
             const_limb_pointer pb = b.limbs();
             limb_pointer pr = result.limbs();
-
-            if constexpr (GuaranteedGreater) {
-                BOOST_ASSERT(a > b);
-            } else {
-                int c = a.compare(b);
-                if (c < 0) {
-                    subtract_overflow<Mode>();
-                    subtract_unsigned_constexpr<Mode, /*GuaranteedGreater=*/true>(result,
-                                                                                  b, a);
-                    result.wrapping_neg_inplace();
-                    return;
-                }
-                if (c == 0) {
-                    result = static_cast<limb_type>(0u);
-                    return;
-                }
-            }
-
-            result.zero_after(as);
 
             std::size_t i = 0;
             // First where a and b overlap:
@@ -207,177 +359,27 @@ namespace nil::crypto3::multiprecision {
         }
 
 #ifdef NIL_CO3_MP_HAS_INTRINSICS
-        //
-        // This is the key addition routine:
-        //
-        // As of May, 2020 major compilers don't recognize carry chain though adc
-        // intrinsics are used to hint compilers to use ADC and still compilers don't
-        // unroll the loop efficiently (except LLVM) so manual unrolling is done.
-        //
-        // Also note that these intrinsics were only introduced by Intel as part of the
-        // ADX processor extensions, even though the addc instruction has been available
-        // for basically all x86 processors.  That means gcc-9, clang-9, msvc-14.2 and up
-        // are required to support these intrinsics.
-        //
-        // Returns carry so does not throw.
-        //
-        template<std::size_t Bits1, std::size_t Bits2, std::size_t Bits3>
-        [[nodiscard]] constexpr bool add_unsigned(big_uint<Bits1>& result,
-                                                  const big_uint<Bits2>& a,
-                                                  const big_uint<Bits3>& b) noexcept {
-            static_assert(Bits1 >= Bits2 && Bits1 >= Bits3, "invalid argument size");
-
-            if constexpr (Bits2 < Bits3) {
-                return add_unsigned(result, b, a);
-            } else {
-                if (std::is_constant_evaluated()) {
-                    return add_unsigned_constexpr(result, a, b);
-                }
-
-                static_assert(Bits2 >= Bits3);
-
-                constexpr std::size_t as = std::decay_t<decltype(a)>::static_limb_count;
-                constexpr std::size_t bs = std::decay_t<decltype(b)>::static_limb_count;
-                static_assert(as >= bs);
-
-                if constexpr (as <= 1) {
-                    double_limb_type v = static_cast<double_limb_type>(*a.limbs()) +
-                                         static_cast<double_limb_type>(*b.limbs());
-                    bool carry = false;
-                    if constexpr (std::decay_t<decltype(result)>::static_limb_count ==
-                                  1) {
-                        constexpr double_limb_type mask =
-                            big_uint<Bits1>::upper_limb_mask;
-                        if (v & ~mask) {
-                            v &= mask;
-                            carry = true;
-                        }
-                    }
-                    result = v;
-                    return carry;
-                }
-
-                result.zero_after(as);
-
-                const_limb_pointer pa = a.limbs();
-                const_limb_pointer pb = b.limbs();
-                limb_pointer pr = result.limbs();
-
-                std::size_t i = 0;
-                unsigned char carry = 0;
-                for (; i + 4 <= bs; i += 4) {
-                    carry = addcarry_limb(carry, pa[i + 0], pb[i + 0], pr + i);
-                    carry = addcarry_limb(carry, pa[i + 1], pb[i + 1], pr + i + 1);
-                    carry = addcarry_limb(carry, pa[i + 2], pb[i + 2], pr + i + 2);
-                    carry = addcarry_limb(carry, pa[i + 3], pb[i + 3], pr + i + 3);
-                }
-                for (; i < bs; ++i) {
-#if defined(__GNUC__) && !defined(__clang__)
-#pragma GCC diagnostic push
-                    // Disable a false positive triggered by
-                    // -Waggressive-loop-optimizations
-                    //
-                    // The warning message is "warning:
-                    // iteration 2305843009213693951 invokes undefined behavior
-                    // [-Waggressive-loop-optimizations]"
-                    //
-                    // Of course if i becomes 2^61
-                    // uint64_t will overflow, this is expected
-#pragma GCC diagnostic ignored "-Waggressive-loop-optimizations"
-#endif
-
-                    carry = addcarry_limb(carry, pa[i], pb[i], pr + i);
-
-#if defined(__GNUC__) && !defined(__clang__)
-#pragma GCC diagnostic pop
-#endif
-                }
-                for (; i < as && carry; ++i) {
-                    // We know carry is 1, so we just need to increment pa[i] (ie add a
-                    // literal 1) and capture the carry:
-                    carry = addcarry_limb(0, pa[i], 1, pr + i);
-                }
-                if (as == i && carry) {
-                    if (result.limb_count() > as) {
-                        result.limbs()[as] = static_cast<limb_type>(1u);
-                        carry = 0;
-                    }
-                } else if ((as != i) && (pa != pr)) {
-                    // Copy remaining digits only if we need to:
-                    std::copy(pa + i, pa + as, pr + i);
-                }
-
-                BOOST_ASSERT(carry <= 1);
-
-                if constexpr (Bits1 % limb_bits != 0) {
-                    // If we have set any bit above "Bits", then we have a carry.
-                    carry = result.normalize();
-                    BOOST_ASSERT(carry <= 1);
-                }
-
-                return carry;
-            }
-        }
-
-        template<operation_mode Mode, bool GuaranteedGreater = false, std::size_t Bits1,
-                 std::size_t Bits2, std::size_t Bits3>
-        constexpr void subtract_unsigned(big_uint<Bits1>& result,
-                                         const big_uint<Bits2>& a,
-                                         const big_uint<Bits3>& b) {
+        // This is the generic, C++ only version of subtraction.
+        // It's also used for all constexpr branches, hence the name.
+        template<operation_mode Mode, std::size_t Bits1, std::size_t Bits2,
+                 std::size_t Bits3>
+        constexpr void subtract_unsigned_intrinsic(big_uint<Bits1>& result,
+                                                   const big_uint<Bits2>& a,
+                                                   const big_uint<Bits3>& b) {
             static_assert(Bits1 >= Bits2, "invalid argument size");
-
-            if (std::is_constant_evaluated()) {
-                subtract_unsigned_constexpr<Mode>(result, a, b);
-                return;
-            }
+            BOOST_ASSERT(a >= b);
 
             constexpr std::size_t as = std::decay_t<decltype(a)>::static_limb_count;
             constexpr std::size_t bs = std::decay_t<decltype(b)>::static_limb_count;
             constexpr std::size_t m = std::min(as, bs);
             constexpr std::size_t x = std::max(as, bs);
-            //
-            // special cases for small limb counts:
-            //
-            if constexpr (x <= 1) {
-                bool s = false;
-                limb_type al = *a.limbs();
-                limb_type bl = *b.limbs();
-                if (al < bl) {
-                    subtract_overflow<Mode>();
-                    std::swap(al, bl);
-                    s = true;
-                }
-                result = al - bl;
-                if (s) {
-                    result.wrapping_neg_inplace();
-                }
-                return;
-            }
 
             const_limb_pointer pa = a.limbs();
             const_limb_pointer pb = b.limbs();
             limb_pointer pr = result.limbs();
-
-            if constexpr (GuaranteedGreater) {
-                BOOST_ASSERT(a > b);
-            } else {
-                int c = a.compare(b);
-                if (c < 0) {
-                    subtract_overflow<Mode>();
-                    subtract_unsigned<Mode, /*GuaranteedGreater=*/true>(result, b, a);
-                    result.wrapping_neg_inplace();
-                    return;
-                }
-                if (c == 0) {
-                    result = static_cast<limb_type>(0u);
-                    return;
-                }
-            }
-
-            result.zero_after(as);
+            unsigned char borrow = 0;
 
             std::size_t i = 0;
-            unsigned char borrow = 0;
             // First where a and b overlap:
             for (; i + 4 <= m; i += 4) {
                 borrow = subborrow_limb(borrow, pa[i], pb[i], pr + i);
@@ -399,70 +401,89 @@ namespace nil::crypto3::multiprecision {
             }
             BOOST_ASSERT(0 == borrow);
         }
+#endif
 
-#else
-        // Fallback to the constexpr-friendly versions when no intrinsics are available
-
-        template<std::size_t Bits1, std::size_t Bits2, std::size_t Bits3>
-        [[nodiscard]] constexpr bool add_unsigned(big_uint<Bits1>& result,
-                                                  const big_uint<Bits2>& a,
-                                                  const big_uint<Bits3>& b) noexcept {
-            if constexpr (Bits2 >= Bits3) {
-                return add_unsigned_constexpr(result, a, b);
-            } else {
-                return add_unsigned_constexpr(result, b, a);
+        template<operation_mode Mode>
+        constexpr void subtract_overflow() noexcept(Mode != operation_mode::checked) {
+            if constexpr (Mode == operation_mode::checked) {
+                throw std::overflow_error("big_uint: subtraction overflow");
+            } else if constexpr (Mode == operation_mode::unchecked) {
+                BOOST_ASSERT_MSG(false, "big_uint: subtraction overflow");
             }
         }
 
-        template<operation_mode Mode, std::size_t Bits1, std::size_t Bits2,
-                 std::size_t Bits3>
+        template<operation_mode Mode, bool GuaranteedGreater = false, std::size_t Bits1,
+                 std::size_t Bits2, std::size_t Bits3>
         constexpr void subtract_unsigned(big_uint<Bits1>& result,
                                          const big_uint<Bits2>& a,
                                          const big_uint<Bits3>& b) {
-            subtract_unsigned_constexpr<Mode>(result, a, b);
-        }
-
-#endif
-        // Add one limb
-        template<std::size_t Bits1, std::size_t Bits2>
-        [[nodiscard]] constexpr limb_type add_unsigned(big_uint<Bits1>& result,
-                                                       const big_uint<Bits2>& a,
-                                                       const limb_type& b) noexcept {
             static_assert(Bits1 >= Bits2, "invalid argument size");
 
-            double_limb_type carry = b;
-            limb_pointer pr = result.limbs();
-            const_limb_pointer pa = a.limbs();
+            constexpr std::size_t as = std::decay_t<decltype(a)>::static_limb_count;
+            constexpr std::size_t bs = std::decay_t<decltype(b)>::static_limb_count;
+            constexpr std::size_t x = std::max(as, bs);
 
-            std::size_t i = 0;
-            // Addition with carry until we either run out of digits or carry is zero:
-            for (; carry && (i < result.limb_count()); ++i) {
-                carry += static_cast<double_limb_type>(pa[i]);
-                pr[i] = static_cast<limb_type>(carry);
-                carry >>= limb_bits;
+            //
+            // special cases for small limb counts:
+            //
+            if constexpr (x <= 1) {
+                bool s = false;
+                limb_type al = *a.limbs();
+                limb_type bl = *b.limbs();
+                if (al < bl) {
+                    subtract_overflow<Mode>();
+                    std::swap(al, bl);
+                    s = true;
+                }
+                result = al - bl;
+                if (s) {
+                    result.wrapping_neg_inplace();
+                }
+                return;
             }
-            // Just copy any remaining digits:
-            if (&a != &result) {
-                std::copy(pa + i, pa + a.limb_count(), pr + i);
-            }
 
-            BOOST_ASSERT(carry <= 1);
-
-            if (carry) {
-                if (result.limb_count() > a.limb_count()) {
-                    result.limbs()[a.limb_count()] = static_cast<limb_type>(1u);
-                    carry = 0;
+            if constexpr (GuaranteedGreater) {
+                BOOST_ASSERT(a > b);
+            } else {
+                int c = a.compare(b);
+                if (c < 0) {
+                    subtract_overflow<Mode>();
+                    if constexpr (Mode == operation_mode::wrapping) {
+                        if constexpr (Bits3 > Bits1) {
+                            // Safe to truncate because we do wrapping anyway. We can't
+                            // guarantee ordering in this case because it could
+                            // change after truncation.
+                            subtract_unsigned<Mode>(result, b.template truncate<Bits1>(),
+                                                    a);
+                        } else {
+                            subtract_unsigned<Mode, /*GuaranteedGreater=*/true>(result, b,
+                                                                                a);
+                        }
+                    } else {
+                        // Unreachable because subtract_overflow above should have thrown
+                        // an exception or asserted
+                        std::terminate();
+                    }
+                    result.wrapping_neg_inplace();
+                    return;
+                }
+                if (c == 0) {
+                    result = static_cast<limb_type>(0u);
+                    return;
                 }
             }
 
-            if constexpr (Bits1 % limb_bits != 0) {
-                // If we have set any bit above "Bits", then we have a carry.
-                carry = result.normalize();
+            result.zero_after(as);
+
+#ifdef NIL_CO3_MP_HAS_INTRINSICS
+            if (std::is_constant_evaluated()) {
+                subtract_unsigned_constexpr<Mode>(result, a, b);
+            } else {
+                subtract_unsigned_intrinsic<Mode>(result, a, b);
             }
-
-            BOOST_ASSERT(carry <= max_limb_value);
-
-            return carry;
+#else
+            subtract_unsigned_constexpr<Mode>(result, a, b);
+#endif
         }
 
         // Subtract one limb
@@ -510,10 +531,10 @@ namespace nil::crypto3::multiprecision {
                                                            operation_mode::checked) {
             if constexpr (Mode == operation_mode::checked) {
                 if (carry) {
-                    throw std::overflow_error("fixed precision overflow");
+                    throw std::overflow_error("big_uint: addition overflow");
                 }
             } else if constexpr (Mode == operation_mode::unchecked) {
-                BOOST_ASSERT_MSG(!carry, "big_uint: multiplication overflow");
+                BOOST_ASSERT_MSG(!carry, "big_uint: addition overflow");
             }
         }
 
@@ -528,11 +549,11 @@ namespace nil::crypto3::multiprecision {
                     subtract_unsigned<Mode>(result, a, as_limb_type_or_big_uint(b_abs));
                 } else {
                     check_addition<Mode>(
-                        add_unsigned(result, a, as_limb_type_or_big_uint(b_abs)));
+                        add_unsigned<Mode>(result, a, as_limb_type_or_big_uint(b_abs)));
                 }
             } else {
                 check_addition<Mode>(
-                    add_unsigned(result, a, as_limb_type_or_big_uint(b)));
+                    add_unsigned<Mode>(result, a, as_limb_type_or_big_uint(b)));
             }
         }
 
@@ -545,7 +566,7 @@ namespace nil::crypto3::multiprecision {
                 auto b_abs = unsigned_abs(b);
                 if (b < 0) {
                     check_addition<Mode>(
-                        add_unsigned(result, a, as_limb_type_or_big_uint(b_abs)));
+                        add_unsigned<Mode>(result, a, as_limb_type_or_big_uint(b_abs)));
                 } else {
                     subtract_unsigned<Mode>(result, a, as_limb_type_or_big_uint(b_abs));
                 }
