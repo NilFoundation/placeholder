@@ -34,7 +34,7 @@ namespace nil::crypto3::multiprecision {
 
     namespace detail {
 
-        enum class operation_mode { checked, unchecked, wrapping };
+        enum class overflow_policy { throw_exception, wrap, debug_assert };
 
         // Addition/subtraction
 
@@ -176,26 +176,26 @@ namespace nil::crypto3::multiprecision {
         }
 #endif
 
-        template<operation_mode Mode>
+        template<overflow_policy OverflowPolicy>
         constexpr void addition_overflow_when(bool overflow) noexcept(
-            Mode != operation_mode::checked) {
-            if constexpr (Mode == operation_mode::checked) {
+            OverflowPolicy != overflow_policy::throw_exception) {
+            if constexpr (OverflowPolicy == overflow_policy::throw_exception) {
                 if (overflow) {
                     throw std::overflow_error("big_uint: addition overflow");
                 }
-            } else if constexpr (Mode == operation_mode::unchecked) {
+            } else if constexpr (OverflowPolicy == overflow_policy::debug_assert) {
                 BOOST_ASSERT_MSG(!overflow, "big_uint: addition overflow");
             }
         }
 
         // Returns carry if it's not bigger than 1, otherwise throws.
-        template<operation_mode Mode, std::size_t Bits1, std::size_t Bits2,
+        template<overflow_policy OverflowPolicy, std::size_t Bits1, std::size_t Bits2,
                  std::size_t Bits3>
         [[nodiscard]] constexpr bool add_unsigned(big_uint<Bits1>& result,
                                                   const big_uint<Bits2>& a,
                                                   const big_uint<Bits3>& b) {
             if constexpr (Bits2 < Bits3) {
-                return add_unsigned<Mode>(result, b, a);
+                return add_unsigned<OverflowPolicy>(result, b, a);
             } else {
                 static_assert(Bits1 >= Bits3 && Bits2 >= Bits3);
 
@@ -215,7 +215,7 @@ namespace nil::crypto3::multiprecision {
                             limb_type excess =
                                 (v & ~mask) >>
                                 std::decay_t<decltype(result)>::upper_limb_bits;
-                            addition_overflow_when<Mode>(excess > 1);
+                            addition_overflow_when<OverflowPolicy>(excess > 1);
                             carry = excess;
                             v &= mask;
                         }
@@ -229,10 +229,10 @@ namespace nil::crypto3::multiprecision {
 
                     if constexpr (rs < as) {
                         for (std::size_t i = rs; i < as; ++i) {
-                            addition_overflow_when<Mode>(a.limbs()[i] != 0);
+                            addition_overflow_when<OverflowPolicy>(a.limbs()[i] != 0);
                         }
                         if (Bits1 % limb_bits == 0) {
-                            addition_overflow_when<Mode>(a.limbs()[rs] > 1);
+                            addition_overflow_when<OverflowPolicy>(a.limbs()[rs] > 1);
                             additional_carry = a.limbs()[rs] == 1;
                         }
                     }
@@ -241,7 +241,7 @@ namespace nil::crypto3::multiprecision {
                             (a.limbs()[as - 1] &
                              ~std::decay_t<decltype(result)>::upper_limb_mask) >>
                             std::decay_t<decltype(result)>::upper_limb_bits;
-                        addition_overflow_when<Mode>(a_excess > 1);
+                        addition_overflow_when<OverflowPolicy>(a_excess > 1);
                         additional_carry = a_excess;
                     }
 
@@ -260,12 +260,12 @@ namespace nil::crypto3::multiprecision {
                     if constexpr (Bits1 % limb_bits != 0) {
                         BOOST_ASSERT(!carry && !additional_carry);
                         limb_type excess = result.normalize();
-                        addition_overflow_when<Mode>(excess > 1);
+                        addition_overflow_when<OverflowPolicy>(excess > 1);
                         return excess;
                     }
 
                     if constexpr (rs < as) {
-                        addition_overflow_when<Mode>(carry && additional_carry);
+                        addition_overflow_when<OverflowPolicy>(carry && additional_carry);
                     }
 
                     return carry || additional_carry;
@@ -274,7 +274,7 @@ namespace nil::crypto3::multiprecision {
         }
 
         // Add one limb
-        template<operation_mode Mode, std::size_t Bits1, std::size_t Bits2>
+        template<overflow_policy OverflowPolicy, std::size_t Bits1, std::size_t Bits2>
         [[nodiscard]] constexpr bool add_unsigned(big_uint<Bits1>& result,
                                                   const big_uint<Bits2>& a,
                                                   const limb_type& b) {
@@ -310,14 +310,14 @@ namespace nil::crypto3::multiprecision {
                 carry = result.normalize();
             }
 
-            addition_overflow_when<Mode>(carry > 1);
+            addition_overflow_when<OverflowPolicy>(carry > 1);
 
             return carry;
         }
 
         // This is the generic, C++ only version of subtraction.
         // It's also used for all constexpr branches, hence the name.
-        template<operation_mode Mode, std::size_t Bits1, std::size_t Bits2,
+        template<overflow_policy OverflowPolicy, std::size_t Bits1, std::size_t Bits2,
                  std::size_t Bits3>
         constexpr void subtract_unsigned_constexpr(big_uint<Bits1>& result,
                                                    const big_uint<Bits2>& a,
@@ -361,7 +361,7 @@ namespace nil::crypto3::multiprecision {
 #ifdef NIL_CO3_MP_HAS_INTRINSICS
         // This is the generic, C++ only version of subtraction.
         // It's also used for all constexpr branches, hence the name.
-        template<operation_mode Mode, std::size_t Bits1, std::size_t Bits2,
+        template<overflow_policy OverflowPolicy, std::size_t Bits1, std::size_t Bits2,
                  std::size_t Bits3>
         constexpr void subtract_unsigned_intrinsic(big_uint<Bits1>& result,
                                                    const big_uint<Bits2>& a,
@@ -403,17 +403,18 @@ namespace nil::crypto3::multiprecision {
         }
 #endif
 
-        template<operation_mode Mode>
-        constexpr void subtract_overflow() noexcept(Mode != operation_mode::checked) {
-            if constexpr (Mode == operation_mode::checked) {
+        template<overflow_policy OverflowPolicy>
+        constexpr void subtract_overflow() noexcept(OverflowPolicy !=
+                                                    overflow_policy::throw_exception) {
+            if constexpr (OverflowPolicy == overflow_policy::throw_exception) {
                 throw std::overflow_error("big_uint: subtraction overflow");
-            } else if constexpr (Mode == operation_mode::unchecked) {
+            } else if constexpr (OverflowPolicy == overflow_policy::debug_assert) {
                 BOOST_ASSERT_MSG(false, "big_uint: subtraction overflow");
             }
         }
 
-        template<operation_mode Mode, bool GuaranteedGreater = false, std::size_t Bits1,
-                 std::size_t Bits2, std::size_t Bits3>
+        template<overflow_policy OverflowPolicy, bool GuaranteedGreater = false,
+                 std::size_t Bits1, std::size_t Bits2, std::size_t Bits3>
         constexpr void subtract_unsigned(big_uint<Bits1>& result,
                                          const big_uint<Bits2>& a,
                                          const big_uint<Bits3>& b) {
@@ -431,7 +432,7 @@ namespace nil::crypto3::multiprecision {
                 limb_type al = *a.limbs();
                 limb_type bl = *b.limbs();
                 if (al < bl) {
-                    subtract_overflow<Mode>();
+                    subtract_overflow<OverflowPolicy>();
                     std::swap(al, bl);
                     s = true;
                 }
@@ -447,17 +448,17 @@ namespace nil::crypto3::multiprecision {
             } else {
                 int c = a.compare(b);
                 if (c < 0) {
-                    subtract_overflow<Mode>();
-                    if constexpr (Mode == operation_mode::wrapping) {
+                    subtract_overflow<OverflowPolicy>();
+                    if constexpr (OverflowPolicy == overflow_policy::wrap) {
                         if constexpr (Bits3 > Bits1) {
                             // Safe to truncate because we do wrapping anyway. We can't
                             // guarantee ordering in this case because it could
                             // change after truncation.
-                            subtract_unsigned<Mode>(result, b.template truncate<Bits1>(),
-                                                    a);
+                            subtract_unsigned<OverflowPolicy>(
+                                result, b.template truncate<Bits1>(), a);
                         } else {
-                            subtract_unsigned<Mode, /*GuaranteedGreater=*/true>(result, b,
-                                                                                a);
+                            subtract_unsigned<OverflowPolicy, /*GuaranteedGreater=*/true>(
+                                result, b, a);
                         }
                     } else {
                         // Unreachable because subtract_overflow above should have thrown
@@ -477,17 +478,17 @@ namespace nil::crypto3::multiprecision {
 
 #ifdef NIL_CO3_MP_HAS_INTRINSICS
             if (std::is_constant_evaluated()) {
-                subtract_unsigned_constexpr<Mode>(result, a, b);
+                subtract_unsigned_constexpr<OverflowPolicy>(result, a, b);
             } else {
-                subtract_unsigned_intrinsic<Mode>(result, a, b);
+                subtract_unsigned_intrinsic<OverflowPolicy>(result, a, b);
             }
 #else
-            subtract_unsigned_constexpr<Mode>(result, a, b);
+            subtract_unsigned_constexpr<OverflowPolicy>(result, a, b);
 #endif
         }
 
         // Subtract one limb
-        template<operation_mode Mode, std::size_t Bits1, std::size_t Bits2>
+        template<overflow_policy OverflowPolicy, std::size_t Bits1, std::size_t Bits2>
         constexpr void subtract_unsigned(big_uint<Bits1>& result,
                                          const big_uint<Bits2>& a, const limb_type& b) {
             static_assert(Bits1 >= Bits2, "invalid argument size");
@@ -507,7 +508,7 @@ namespace nil::crypto3::multiprecision {
                     std::copy(pa + 1, pa + as, pr + 1);
                 }
             } else if (as <= 1) {
-                subtract_overflow<Mode>();
+                subtract_overflow<OverflowPolicy>();
                 *pr = b - *pa;
                 result.wrapping_neg_inplace();
             } else {
@@ -526,52 +527,58 @@ namespace nil::crypto3::multiprecision {
         }
 
         // Check if the addition will overflow and throw if in checked mode
-        template<operation_mode Mode>
-        constexpr void check_addition(bool carry) noexcept(Mode !=
-                                                           operation_mode::checked) {
-            if constexpr (Mode == operation_mode::checked) {
+        template<overflow_policy OverflowPolicy>
+        constexpr void check_addition(bool carry) noexcept(
+            OverflowPolicy != overflow_policy::throw_exception) {
+            if constexpr (OverflowPolicy == overflow_policy::throw_exception) {
                 if (carry) {
                     throw std::overflow_error("big_uint: addition overflow");
                 }
-            } else if constexpr (Mode == operation_mode::unchecked) {
+            } else if constexpr (OverflowPolicy == overflow_policy::debug_assert) {
                 BOOST_ASSERT_MSG(!carry, "big_uint: addition overflow");
             }
         }
 
         // Addition which correctly handles signed and unsigned types
-        template<operation_mode Mode, std::size_t Bits1, std::size_t Bits2, typename T>
+        template<overflow_policy OverflowPolicy, std::size_t Bits1, std::size_t Bits2,
+                 typename T>
         constexpr void add(big_uint<Bits1>& result, const big_uint<Bits2>& a,
-                           const T& b) noexcept(Mode != operation_mode::checked) {
+                           const T& b) noexcept(OverflowPolicy !=
+                                                overflow_policy::throw_exception) {
             static_assert(is_integral_v<T>);
             if constexpr (std::is_signed_v<T>) {
                 auto b_abs = unsigned_abs(b);
                 if (b < 0) {
-                    subtract_unsigned<Mode>(result, a, as_limb_type_or_big_uint(b_abs));
+                    subtract_unsigned<OverflowPolicy>(result, a,
+                                                      as_limb_type_or_big_uint(b_abs));
                 } else {
-                    check_addition<Mode>(
-                        add_unsigned<Mode>(result, a, as_limb_type_or_big_uint(b_abs)));
+                    check_addition<OverflowPolicy>(add_unsigned<OverflowPolicy>(
+                        result, a, as_limb_type_or_big_uint(b_abs)));
                 }
             } else {
-                check_addition<Mode>(
-                    add_unsigned<Mode>(result, a, as_limb_type_or_big_uint(b)));
+                check_addition<OverflowPolicy>(
+                    add_unsigned<OverflowPolicy>(result, a, as_limb_type_or_big_uint(b)));
             }
         }
 
         // Subtraction which correctly handles signed and unsigned types
-        template<operation_mode Mode, std::size_t Bits1, std::size_t Bits2, typename T>
+        template<overflow_policy OverflowPolicy, std::size_t Bits1, std::size_t Bits2,
+                 typename T>
         constexpr void subtract(big_uint<Bits1>& result, const big_uint<Bits2>& a,
-                                const T& b) noexcept(Mode != operation_mode::checked) {
+                                const T& b) noexcept(OverflowPolicy !=
+                                                     overflow_policy::throw_exception) {
             static_assert(is_integral_v<T>);
             if constexpr (std::is_signed_v<T>) {
                 auto b_abs = unsigned_abs(b);
                 if (b < 0) {
-                    check_addition<Mode>(
-                        add_unsigned<Mode>(result, a, as_limb_type_or_big_uint(b_abs)));
+                    check_addition<OverflowPolicy>(add_unsigned<OverflowPolicy>(
+                        result, a, as_limb_type_or_big_uint(b_abs)));
                 } else {
-                    subtract_unsigned<Mode>(result, a, as_limb_type_or_big_uint(b_abs));
+                    subtract_unsigned<OverflowPolicy>(result, a,
+                                                      as_limb_type_or_big_uint(b_abs));
                 }
             } else {
-                subtract_unsigned<Mode>(result, a, as_limb_type_or_big_uint(b));
+                subtract_unsigned<OverflowPolicy>(result, a, as_limb_type_or_big_uint(b));
             }
         }
 
@@ -812,19 +819,20 @@ namespace nil::crypto3::multiprecision {
 
         // Multiplication
 
-        template<operation_mode Mode>
+        template<overflow_policy OverflowPolicy>
         constexpr void multiplication_overflow_when(bool overflow) noexcept(
-            Mode != operation_mode::checked) {
-            if constexpr (Mode == operation_mode::checked) {
+            OverflowPolicy != overflow_policy::throw_exception) {
+            if constexpr (OverflowPolicy == overflow_policy::throw_exception) {
                 if (overflow) {
                     throw std::overflow_error("big_uint: multiplication overflow");
                 }
-            } else if constexpr (Mode == operation_mode::unchecked) {
+            } else if constexpr (OverflowPolicy == overflow_policy::debug_assert) {
                 BOOST_ASSERT_MSG(!overflow, "big_uint: multiplication overflow");
             }
         }
 
-        template<operation_mode Mode, std::size_t Bits1, std::size_t Bits2, typename T>
+        template<overflow_policy OverflowPolicy, std::size_t Bits1, std::size_t Bits2,
+                 typename T>
         constexpr void multiply(big_uint<Bits1>& final_result, const big_uint<Bits2>& a,
                                 const T& b_orig) {
             static_assert(Bits1 >= Bits2);
@@ -842,7 +850,7 @@ namespace nil::crypto3::multiprecision {
             for (std::size_t i = 0; i < as; ++i) {
                 BOOST_ASSERT(i < result.limb_count());
                 std::size_t inner_limit = (std::min)(result.limb_count() - i, bs);
-                multiplication_overflow_when<Mode>(inner_limit < bs);
+                multiplication_overflow_when<OverflowPolicy>(inner_limit < bs);
                 std::size_t j = 0;
                 for (; j < inner_limit; ++j) {
                     BOOST_ASSERT(i + j < result.limb_count());
@@ -855,7 +863,8 @@ namespace nil::crypto3::multiprecision {
                     BOOST_ASSERT(carry <= max_limb_value);
                 }
                 if (carry) {
-                    multiplication_overflow_when<Mode>(i + j >= result.limb_count());
+                    multiplication_overflow_when<OverflowPolicy>(i + j >=
+                                                                 result.limb_count());
                     if (i + j < result.limb_count()) {
                         pr[i + j] = static_cast<limb_type>(carry);
                     }
@@ -863,7 +872,7 @@ namespace nil::crypto3::multiprecision {
                 }
             }
             bool truncated = result.normalize();
-            multiplication_overflow_when<Mode>(truncated);
+            multiplication_overflow_when<OverflowPolicy>(truncated);
             // TODO(ioxid): optimize this copy
             final_result = result;
         }
