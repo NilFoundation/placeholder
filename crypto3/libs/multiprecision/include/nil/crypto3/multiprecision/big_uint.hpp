@@ -27,6 +27,7 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <system_error>
 #include <type_traits>
 
 #include <boost/assert.hpp>
@@ -338,11 +339,12 @@ namespace nil::crypto3::multiprecision {
 
         // Cast to integral types
 
+      private:
         template<typename T,
                  std::enable_if_t<!std::is_same_v<T, bool> && std::is_integral_v<T> &&
                                       std::is_unsigned_v<T>,
                                   int> = 0>
-        explicit constexpr operator T() const {
+        constexpr T to_unsigned_unchecked() const {
             T result;
             if constexpr (sizeof(T) <= sizeof(limb_type)) {
                 result = static_cast<T>(this->limbs()[0]);
@@ -356,6 +358,16 @@ namespace nil::crypto3::multiprecision {
                     result |= limbs()[n - i - 1];
                 }
             }
+            return result;
+        }
+
+      public:
+        template<typename T,
+                 std::enable_if_t<!std::is_same_v<T, bool> && std::is_integral_v<T> &&
+                                      std::is_unsigned_v<T>,
+                                  int> = 0>
+        explicit constexpr operator T() const {
+            auto result = to_unsigned_unchecked<T>();
             if constexpr (sizeof(T) * CHAR_BIT < Bits) {
                 if (compare(result) != 0) {
                     throw std::overflow_error("big_uint: overflow");
@@ -367,7 +379,7 @@ namespace nil::crypto3::multiprecision {
         template<typename T,
                  std::enable_if_t<std::is_integral_v<T> && std::is_signed_v<T>, int> = 0>
         explicit constexpr operator T() const {
-            T result = static_cast<T>(static_cast<std::make_unsigned_t<T>>(*this));
+            T result = static_cast<T>(to_unsigned_unchecked<std::make_unsigned_t<T>>());
             if constexpr (sizeof(T) * CHAR_BIT <= Bits) {
                 if (compare(result) != 0) {
                     throw std::overflow_error("big_uint: overflow");
@@ -430,7 +442,7 @@ namespace nil::crypto3::multiprecision {
                 if (s > 2) {
                     return 1;
                 }
-                auto dbl = static_cast<double_limb_type>(*this);
+                auto dbl = to_unsigned_unchecked<double_limb_type>();
                 return dbl == b ? 0 : dbl > b ? 1 : -1;
             }
         }
@@ -572,8 +584,8 @@ namespace nil::crypto3::multiprecision {
 
         template<std::size_t Bits2>
         [[nodiscard]] friend constexpr bool overflowing_add_assign(
-            big_uint& a, const big_uint<Bits2>& b) noexcept {
-            return detail::add_unsigned(a, a, b);
+            big_uint& a, const big_uint<Bits2>& b) {
+            return detail::add_unsigned<detail::operation_mode::checked>(a, a, b);
         }
 
         template<typename T, std::enable_if_t<is_integral_v<T>, int> = 0>
@@ -1388,23 +1400,36 @@ namespace nil::crypto3::multiprecision {
         friend constexpr bool detail::add_unsigned_constexpr(
             big_uint<Bits1>& result, const big_uint<Bits2>& a,
             const big_uint<Bits3>& b) noexcept;
-        template<detail::operation_mode Mode, bool GuaranteedGreater, std::size_t Bits1,
-                 std::size_t Bits2, std::size_t Bits3>
-        friend constexpr void detail::subtract_unsigned_constexpr(
-            big_uint<Bits1>& result, const big_uint<Bits2>& a, const big_uint<Bits3>& b);
+#ifdef NIL_CO3_MP_HAS_INTRINSICS
         template<std::size_t Bits1, std::size_t Bits2, std::size_t Bits3>
+        friend constexpr bool detail::add_unsigned_intrinsic(
+            big_uint<Bits1>& result, const big_uint<Bits2>& a,
+            const big_uint<Bits3>& b) noexcept;
+#endif
+        template<detail::operation_mode Mode, std::size_t Bits1, std::size_t Bits2,
+                 std::size_t Bits3>
         friend constexpr bool detail::add_unsigned(big_uint<Bits1>& result,
                                                    const big_uint<Bits2>& a,
-                                                   const big_uint<Bits3>& b) noexcept;
+                                                   const big_uint<Bits3>& b);
+        template<detail::operation_mode Mode, std::size_t Bits1, std::size_t Bits2>
+        friend constexpr bool detail::add_unsigned(big_uint<Bits1>& result,
+                                                   const big_uint<Bits2>& a,
+                                                   const limb_type& o);
+        template<detail::operation_mode Mode, std::size_t Bits1, std::size_t Bits2,
+                 std::size_t Bits3>
+        friend constexpr void detail::subtract_unsigned_constexpr(
+            big_uint<Bits1>& result, const big_uint<Bits2>& a, const big_uint<Bits3>& b);
+#ifdef NIL_CO3_MP_HAS_INTRINSICS
+        template<detail::operation_mode Mode, std::size_t Bits1, std::size_t Bits2,
+                 std::size_t Bits3>
+        friend constexpr void detail::subtract_unsigned_intrinsic(
+            big_uint<Bits1>& result, const big_uint<Bits2>& a, const big_uint<Bits3>& b);
+#endif
         template<detail::operation_mode Mode, bool GuaranteedGreater, std::size_t Bits1,
                  std::size_t Bits2, std::size_t Bits3>
         friend constexpr void detail::subtract_unsigned(big_uint<Bits1>& result,
                                                         const big_uint<Bits2>& a,
                                                         const big_uint<Bits3>& b);
-        template<std::size_t Bits1, std::size_t Bits2>
-        friend constexpr limb_type detail::add_unsigned(big_uint<Bits1>& result,
-                                                        const big_uint<Bits2>& a,
-                                                        const limb_type& o) noexcept;
         template<detail::operation_mode Mode, std::size_t Bits1, std::size_t Bits2>
         friend constexpr void detail::subtract_unsigned(big_uint<Bits1>& result,
                                                         const big_uint<Bits2>& a,
