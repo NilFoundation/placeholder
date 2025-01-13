@@ -126,9 +126,9 @@ namespace nil {
                             is_jump * current_state.bytecode_hash_hi(0),
                             is_jump * current_state.bytecode_hash_lo(0)
                         };
-                        // TODO(oclaw): bytecode check is disabled since hash algorithm for circuits is not finalized yet
+                        // TODO(oclaw): bytecode check is to be adjusted between nil and placeholder
                         // https://github.com/NilFoundation/placeholder/issues/205
-                        // lookup(tmp, "zkevm_bytecode");
+                        lookup(tmp, "zkevm_bytecode");
                     }
                 }
             };
