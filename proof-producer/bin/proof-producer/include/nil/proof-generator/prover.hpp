@@ -375,8 +375,6 @@ namespace nil {
                     BOOST_LOG_TRIVIAL(error) << "Failed to write challenge to file.";
                 }
 
-                lpc_scheme_.emplace(prover.move_commitment_scheme());
-
                 lpc_scheme_->state_commited(crypto3::zk::snark::FIXED_VALUES_BATCH);
                 lpc_scheme_->state_commited(crypto3::zk::snark::VARIABLE_VALUES_BATCH);
                 lpc_scheme_->state_commited(crypto3::zk::snark::PERMUTATION_BATCH);
