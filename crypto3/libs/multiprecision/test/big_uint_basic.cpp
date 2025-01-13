@@ -8,6 +8,8 @@
 
 #define BOOST_TEST_MODULE big_uint_basic_test
 
+#include <boost/test/unit_test.hpp>
+
 #include <array>
 #include <cstdint>
 #include <ios>
@@ -17,12 +19,11 @@
 #include <utility>
 #include <vector>
 
-#include <boost/test/unit_test.hpp>
-
 #include "nil/crypto3/multiprecision/big_uint.hpp"
 #include "nil/crypto3/multiprecision/literals.hpp"
 #include "nil/crypto3/multiprecision/pow.hpp"
 
+NIL_CO3_MP_DEFINE_BIG_UINT_LITERAL(9)
 NIL_CO3_MP_DEFINE_BIG_UINT_LITERAL(32)
 NIL_CO3_MP_DEFINE_BIG_UINT_LITERAL(33)
 NIL_CO3_MP_DEFINE_BIG_UINT_LITERAL(36)
@@ -40,9 +41,13 @@ BOOST_AUTO_TEST_CASE(construct_constexpr) { constexpr big_uint<60> a = 0x123_big
 
 BOOST_AUTO_TEST_CASE(to_string_zero) { BOOST_CHECK_EQUAL((0x0_big_uint60).str(), "0x0"); }
 
-BOOST_AUTO_TEST_CASE(to_string_trivial) { BOOST_CHECK_EQUAL((0x1_big_uint60).str(), "0x1"); }
+BOOST_AUTO_TEST_CASE(to_string_trivial) {
+    BOOST_CHECK_EQUAL((0x1_big_uint60).str(), "0x1");
+}
 
-BOOST_AUTO_TEST_CASE(to_string_small) { BOOST_CHECK_EQUAL((0x20_big_uint60).str(), "0x20"); }
+BOOST_AUTO_TEST_CASE(to_string_small) {
+    BOOST_CHECK_EQUAL((0x20_big_uint60).str(), "0x20");
+}
 
 BOOST_AUTO_TEST_CASE(to_string_medium) {
     constexpr auto a = 0x123456789ABCDEF1234321_big_uint85;
@@ -50,8 +55,10 @@ BOOST_AUTO_TEST_CASE(to_string_medium) {
 }
 
 BOOST_AUTO_TEST_CASE(to_string_big) {
-    constexpr auto a = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000000000000000001_big_uint224;
-    BOOST_CHECK_EQUAL(a.str(), "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000000000000000001");
+    constexpr auto a =
+        0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000000000000000001_big_uint224;
+    BOOST_CHECK_EQUAL(a.str(),
+                      "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000000000000000001");
 }
 
 BOOST_AUTO_TEST_CASE(to_string_decimal_zero) {
@@ -72,9 +79,11 @@ BOOST_AUTO_TEST_CASE(to_string_decimal_medium) {
 }
 
 BOOST_AUTO_TEST_CASE(to_string_decimal_big) {
-    constexpr auto a = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000000000000000001_big_uint224;
-    BOOST_CHECK_EQUAL(a.str(std::ios_base::dec),
-                      "26959946667150639794667015087019630673557916260026308143510066298881");
+    constexpr auto a =
+        0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000000000000000001_big_uint224;
+    BOOST_CHECK_EQUAL(
+        a.str(std::ios_base::dec),
+        "26959946667150639794667015087019630673557916260026308143510066298881");
 }
 
 BOOST_AUTO_TEST_CASE(to_string_format_flags) {
@@ -145,7 +154,9 @@ BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE(addition)
 
-BOOST_AUTO_TEST_CASE(simple) { BOOST_CHECK_EQUAL(0x2_big_uint60 + 0x3_big_uint60, 0x5_big_uint60); }
+BOOST_AUTO_TEST_CASE(simple) {
+    BOOST_CHECK_EQUAL(0x2_big_uint60 + 0x3_big_uint60, 0x5_big_uint60);
+}
 
 BOOST_AUTO_TEST_CASE(overflow_throws) {
     BOOST_CHECK_THROW(0xFFFFFFFF_big_uint32 + 0x2_big_uint32, std::overflow_error);
@@ -167,7 +178,9 @@ BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE(multiplication)
 
-BOOST_AUTO_TEST_CASE(simple) { BOOST_CHECK_EQUAL(0x2_big_uint60 * 0x3_big_uint60, 0x6_big_uint60); }
+BOOST_AUTO_TEST_CASE(simple) {
+    BOOST_CHECK_EQUAL(0x2_big_uint60 * 0x3_big_uint60, 0x6_big_uint60);
+}
 
 BOOST_AUTO_TEST_CASE(multilimb) {
     BOOST_CHECK_EQUAL(0xAFFFFFFFF_big_uint37 * 0x2_big_uint37, 0x15FFFFFFFE_big_uint37);
@@ -185,27 +198,32 @@ BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE(division)
 
-BOOST_AUTO_TEST_CASE(simple) { BOOST_CHECK_EQUAL(0x7_big_uint60 / 0x2_big_uint60, 0x3_big_uint60); }
+BOOST_AUTO_TEST_CASE(simple) {
+    BOOST_CHECK_EQUAL(0x7_big_uint60 / 0x2_big_uint60, 0x3_big_uint60);
+}
 
 BOOST_AUTO_TEST_CASE(multilimb) {
     BOOST_CHECK_EQUAL(0xFFFFFFFF_big_uint36 / 0x2_big_uint36, 0x7FFFFFFF_big_uint36);
 }
 
 BOOST_AUTO_TEST_CASE(failing_small) {
-    BOOST_CHECK_EQUAL(0x442a8c9973ac96aec_big_uint / 0x1874dfece1887_big_uint, 0x2c988_big_uint);
+    BOOST_CHECK_EQUAL(0x442a8c9973ac96aec_big_uint / 0x1874dfece1887_big_uint,
+                      0x2c988_big_uint);
 }
 
 BOOST_AUTO_TEST_CASE(big) {
-    BOOST_CHECK_EQUAL(
-        0x1BDC9C98EE1BE3D7952E78252011D4D4D5_big_uint133 / 0x7DDD38BA708356E41324F_big_uint83,
-        0x38AB4C1B9E373_big_uint133);
+    BOOST_CHECK_EQUAL(0x1BDC9C98EE1BE3D7952E78252011D4D4D5_big_uint133 /
+                          0x7DDD38BA708356E41324F_big_uint83,
+                      0x38AB4C1B9E373_big_uint133);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE(modulus)
 
-BOOST_AUTO_TEST_CASE(simple) { BOOST_CHECK_EQUAL(0x7_big_uint60 % 0x4_big_uint60, 0x3_big_uint60); }
+BOOST_AUTO_TEST_CASE(simple) {
+    BOOST_CHECK_EQUAL(0x7_big_uint60 % 0x4_big_uint60, 0x3_big_uint60);
+}
 
 BOOST_AUTO_TEST_CASE(multilimb) {
     BOOST_CHECK_EQUAL(0xFFFFFFFF_big_uint36 % 0x7_big_uint36, 0x3_big_uint36);
@@ -213,7 +231,9 @@ BOOST_AUTO_TEST_CASE(multilimb) {
 
 BOOST_AUTO_TEST_CASE(failing) {
     BOOST_CHECK_EQUAL(
-        0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001_big_uint256 % 2u, 1u);
+        0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001_big_uint256 %
+            2u,
+        1u);
 }
 
 BOOST_AUTO_TEST_CASE(failing2) {
@@ -229,9 +249,9 @@ BOOST_AUTO_TEST_CASE(failing3) {
 }
 
 BOOST_AUTO_TEST_CASE(big) {
-    BOOST_CHECK_EQUAL(
-        0x1BDC9C98EE1BE3D7952E78252011D4D4D5_big_uint133 % 0x7DDD38BA708356E41324F_big_uint83,
-        0xE60EDD894AC4D0D82E58_big_uint133);
+    BOOST_CHECK_EQUAL(0x1BDC9C98EE1BE3D7952E78252011D4D4D5_big_uint133 %
+                          0x7DDD38BA708356E41324F_big_uint83,
+                      0xE60EDD894AC4D0D82E58_big_uint133);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
@@ -319,6 +339,15 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(addition_negative, T, signed_types) {
     BOOST_CHECK_EQUAL(static_cast<T>(-5) + 20_big_uint7, 15_big_uint7);
     BOOST_CHECK_THROW(5_big_uint7 + static_cast<T>(-20), std::overflow_error);
     BOOST_CHECK_THROW(static_cast<T>(-20) + 5_big_uint7, std::overflow_error);
+}
+
+BOOST_AUTO_TEST_CASE(addition_small_big_uint_overflow) {
+    BOOST_CHECK_THROW(2_big_uint7 + 127ull, std::overflow_error);
+    BOOST_CHECK_THROW(127ull + 2_big_uint7, std::overflow_error);
+    BOOST_CHECK_THROW(2_big_uint7 + 0x40000000000000ull, std::overflow_error);
+    BOOST_CHECK_THROW(0x40000000000000ull + 2_big_uint7, std::overflow_error);
+    big_uint<7> a = 2;
+    BOOST_CHECK_THROW(a += 127_big_uint7, std::overflow_error);
 }
 
 BOOST_AUTO_TEST_CASE(unary_plus) {
@@ -450,6 +479,8 @@ BOOST_AUTO_TEST_CASE(overflowing_add_assign_test) {
     auto n = 122_big_uint7;
     BOOST_CHECK_EQUAL(overflowing_add_assign(n, 4_big_uint7), false);
     BOOST_CHECK_EQUAL(overflowing_add_assign(n, 4_big_uint7), true);
+    BOOST_CHECK_THROW((void)overflowing_add_assign(n, 0x100_big_uint9),
+                      std::overflow_error);
 }
 
 BOOST_AUTO_TEST_SUITE(bit_operations)
