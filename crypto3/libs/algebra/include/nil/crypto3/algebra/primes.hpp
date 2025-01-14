@@ -51,7 +51,7 @@ namespace nil {
                 }
 
                 boost::random::independent_bits_engine<std::mt19937, 256, nil::crypto3::multiprecision::big_uint<Bits>> rng;
-                nil::crypto3::multiprecision::montgomery_big_mod_rt divisor(0u, n),
+                nil::crypto3::multiprecision::montgomery_big_mod_rt<Bits> divisor(0u, n),
                         c(rng(), n), x(rng(), n), nn(n, n), xx = x;
                 do {
                     x = x * x + c;
