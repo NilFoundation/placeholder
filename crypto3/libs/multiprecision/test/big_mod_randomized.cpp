@@ -41,7 +41,7 @@ std::vector<T> as_vector(const boost::property_tree::ptree &pt) {
 template<typename T>
 auto test_dataset(const std::string &test_name) {
     static std::string test_data =
-        std::string(TEST_DATA_DIR) + R"(big_mod_randomized.json)";
+        std::string(TEST_DATA_DIR) + "/big_mod_randomized_test_cases.json";
     boost::property_tree::ptree test_dataset;
     boost::property_tree::read_json(test_data, test_dataset);
 
