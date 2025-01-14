@@ -29,9 +29,6 @@ if(BLUEPRINT_DEBUG)
     add_definitions(-DBLUEPRINT_DEBUG_ENABLED)
 endif()
 
-# Comment the line below to disable contraint validation during assignment stage
-add_definitions(-DBLUEPRINT_BBF_VALIDATE_CONSTRAINTS)
-
 option(BLUEPRINT_PLACEHOLDER_PROOF_GEN "Build with placeholder proof generation running" FALSE)
 
 if(BLUEPRINT_PLACEHOLDER_PROOF_GEN)
