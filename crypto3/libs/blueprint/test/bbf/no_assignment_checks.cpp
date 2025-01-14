@@ -41,6 +41,10 @@
 
 #include <nil/crypto3/zk/snark/arithmetization/plonk/params.hpp>
 
+// Uncomment the line below to enable contraint validation during assignment stage
+// NB: it should placed above including generic.hpp or any file including generic.hpp 
+#define BLUEPRINT_BBF_VALIDATE_CONSTRAINTS
+
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
 #include <nil/blueprint/bbf/l1_wrapper.hpp>
