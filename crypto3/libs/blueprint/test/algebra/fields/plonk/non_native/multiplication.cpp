@@ -50,12 +50,12 @@
 
 using namespace nil;
 
-template<typename BlueprintFieldType, typename NonNativeFieldType, bool Stretched = false >
+template<typename BlueprintFieldType, typename NonNativeFieldType>
 void test_field_mul(const std::vector<typename BlueprintFieldType::value_type> &public_input,
                     const std::array<typename BlueprintFieldType::value_type, 4>
                         &expected_res) {
 
-    constexpr std::size_t WitnessColumns = 9 * (Stretched ? 2 : 1);
+    constexpr std::size_t WitnessColumns = 9;
     constexpr std::size_t PublicInputColumns = 1;
     constexpr std::size_t ConstantColumns = 0;
     constexpr std::size_t SelectorColumns = 2;
@@ -130,31 +130,13 @@ void test_field_mul(const std::vector<typename BlueprintFieldType::value_type> &
 
     component_type component_instance({0, 1, 2, 3, 4, 5, 6, 7, 8}, {}, {});
 
-    if constexpr (Stretched) {
-        using stretched_component_type = blueprint::components::component_stretcher<
-            BlueprintFieldType,
-            component_type>;
-
-        stretched_component_type stretched_instance(component_instance, WitnessColumns / 2, WitnessColumns);
-
-        crypto3::test_component<stretched_component_type, BlueprintFieldType, hash_type, Lambda>(
-            stretched_instance, desc, public_input, result_check, instance_input);
-    } else {
-        crypto3::test_component<component_type, BlueprintFieldType, hash_type, Lambda>(
-            component_instance, desc, public_input, result_check, instance_input);
-        crypto3::test_empty_component<component_type, BlueprintFieldType, hash_type, Lambda>(
-            component_instance, desc, public_input, result_check, instance_input);
-    }
+    crypto3::test_component<component_type, BlueprintFieldType, hash_type, Lambda>(
+        component_instance, desc, public_input, result_check, instance_input);
+    crypto3::test_empty_component<component_type, BlueprintFieldType, hash_type, Lambda>(
+        component_instance, desc, public_input, result_check, instance_input);
 }
 
 BOOST_AUTO_TEST_SUITE(blueprint_plonk_test_suite)
-
-template<typename FieldType, typename NonNativeFieldType>
-void test_field_mul_with_stretching(const std::vector<typename FieldType::value_type> &public_input,
-                                    const std::array<typename FieldType::value_type, 4> &expected_res) {
-    test_field_mul<FieldType, NonNativeFieldType, false>(public_input, expected_res);
-    test_field_mul<FieldType, NonNativeFieldType, true>(public_input, expected_res);
-}
 
 template<typename FieldType, typename NonNativeFieldType>
 void test_field_mul_useable(typename NonNativeFieldType::value_type a, typename NonNativeFieldType::value_type b) {
@@ -164,7 +146,7 @@ void test_field_mul_useable(typename NonNativeFieldType::value_type a, typename 
     chunked_non_native_type expected_result = chop_non_native<FieldType, NonNativeFieldType>(a * b);
     std::vector<typename FieldType::value_type> public_input =
         create_public_input<FieldType, NonNativeFieldType>(first, second);
-    test_field_mul_with_stretching<FieldType, NonNativeFieldType>(public_input, expected_result);
+    test_field_mul<FieldType, NonNativeFieldType>(public_input, expected_result);
 }
 
 template<typename FieldType, typename NonNativeFieldType>
