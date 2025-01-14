@@ -250,6 +250,7 @@ namespace nil {
                 BOOST_ASSERT(lpc_scheme_);
 
                 BOOST_LOG_TRIVIAL(info) << "Generating proof...";
+                auto start = std::chrono::high_resolution_clock::now();
                 nil::crypto3::zk::snark::placeholder_prover<BlueprintField, PlaceholderParams> prover(
                     *public_preprocessed_data_,
                     *private_preprocessed_data_,
@@ -258,8 +259,10 @@ namespace nil {
                     std::move(*lpc_scheme_)
                 );
                 auto proof = prover.process();
-                BOOST_LOG_TRIVIAL(info) << "Proof generated";
+                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start);
+                BOOST_LOG_TRIVIAL(info) << "Proof generated: " << duration.count() << "ms";
 
+                start = std::chrono::high_resolution_clock::now();
                 create_lpc_scheme(); // reset to default scheme to do the verification
                 bool verify_ok{};
                 if (skip_verification) {
@@ -269,6 +272,8 @@ namespace nil {
                     verify_ok = verify(proof);
                 }
                 lpc_scheme_.emplace(std::move(prover.move_commitment_scheme())); // get back the commitment scheme used in prover
+                duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start);
+                BOOST_LOG_TRIVIAL(info) << "Proof verified: " << duration.count() << "ms";
 
                 if (!verify_ok) {
                     BOOST_LOG_TRIVIAL(error) << "Proof verification failed";
@@ -333,8 +338,7 @@ namespace nil {
                         true);
                 Proof proof = prover.process();
                 auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start);
-                std::cout << "POOF GENERATE: " << duration.count() << "\n";
-                BOOST_LOG_TRIVIAL(info) << "Proof generated";
+                BOOST_LOG_TRIVIAL(info) << "Proof generated: " << duration.count() << "ms";
 
                 lpc_scheme_.emplace(prover.move_commitment_scheme()); // get back the commitment scheme used in prover
 
@@ -791,7 +795,7 @@ namespace nil {
                         )
                 );
                 auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start);
-                std::cout << "PREPROCESS: " << duration.count() << "\n";
+                BOOST_LOG_TRIVIAL(info) << "Preprocess: " << duration.count() << "ms";
                 return true;
             }
 
@@ -804,7 +808,7 @@ namespace nil {
                         process(*constraint_system_, assignment_table_->move_private_table(), *table_description_)
                 );
                 auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start);
-                std::cout << "PREPROCESS PRIVATE DATA: " << duration.count() << "\n";
+                BOOST_LOG_TRIVIAL(info) << "Preprocess private data: " << duration.count() << "ms";
 
                 // This is the last stage of preprocessor, and the assignment table is not used after this function call.
                 assignment_table_.reset();
@@ -888,6 +892,10 @@ namespace nil {
                 if (!challenge) {
                     return false;
                 }
+
+                BOOST_LOG_TRIVIAL(info) << "Generating combined Q from " << aggregated_challenge_file
+                    << " to " << output_combined_Q_file << " with satarting_power " << starting_power;
+
                 polynomial_type combined_Q = lpc_scheme_->prepare_combined_Q(
                     challenge.value(), starting_power);
                 return save_poly_to_file(combined_Q, output_combined_Q_file);
@@ -1125,7 +1133,7 @@ namespace nil {
                     return false;
                 }
                 auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start);
-                std::cout << "PRESET: " << duration.count() << "\n";
+                BOOST_LOG_TRIVIAL(info) << "Preset: " << duration.count() << "ms";
                 return true;
             }
 
