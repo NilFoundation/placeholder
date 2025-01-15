@@ -15,7 +15,6 @@
 #include <climits>
 #include <cstddef>
 #include <cstring>
-#include <exception>
 #include <stdexcept>
 #include <type_traits>
 #include <utility>
@@ -257,9 +256,15 @@ namespace nil::crypto3::multiprecision {
                     carry = add_unsigned_constexpr(result, a, b);
 #endif
 
+                    if constexpr (OverflowPolicy == overflow_policy::wrap) {
+                        result.normalize();
+                        return false;
+                    }
+
                     if constexpr (Bits1 % limb_bits != 0) {
-                        BOOST_ASSERT(!carry && !additional_carry);
-                        limb_type excess = result.normalize();
+                        limb_type excess = carry;
+                        excess <<= limb_bits - (Bits1 % limb_bits);
+                        excess |= result.normalize();
                         addition_overflow_when<OverflowPolicy>(excess > 1);
                         return excess;
                     }
@@ -305,9 +310,14 @@ namespace nil::crypto3::multiprecision {
                 }
             }
 
+            if constexpr (OverflowPolicy == overflow_policy::wrap) {
+                result.normalize();
+                return false;
+            }
+
             if constexpr (Bits1 % limb_bits != 0) {
-                // If we have set any bit above "Bits", then we have a carry.
-                carry = result.normalize();
+                carry <<= limb_bits - (Bits1 % limb_bits);
+                carry |= result.normalize();
             }
 
             addition_overflow_when<OverflowPolicy>(carry > 1);
@@ -418,73 +428,83 @@ namespace nil::crypto3::multiprecision {
         constexpr void subtract_unsigned(big_uint<Bits1>& result,
                                          const big_uint<Bits2>& a,
                                          const big_uint<Bits3>& b) {
-            static_assert(Bits1 >= Bits2, "invalid argument size");
-
             constexpr std::size_t as = std::decay_t<decltype(a)>::static_limb_count;
             constexpr std::size_t bs = std::decay_t<decltype(b)>::static_limb_count;
             constexpr std::size_t x = std::max(as, bs);
 
-            //
-            // special cases for small limb counts:
-            //
-            if constexpr (x <= 1) {
-                bool s = false;
-                limb_type al = *a.limbs();
-                limb_type bl = *b.limbs();
-                if (al < bl) {
+            if constexpr (Bits1 < Bits2) {
+                // This is only used when subtracting a big_uint from a
+                // big builtin type, so let it be a little unoptimized.
+                big_uint<Bits2> tmp;
+                subtract_unsigned<OverflowPolicy>(tmp, a, b);
+                result = tmp.template truncate<Bits1>();
+                if (tmp.compare(result) != 0) {
                     subtract_overflow<OverflowPolicy>();
-                    std::swap(al, bl);
-                    s = true;
-                }
-                result = al - bl;
-                if (s) {
-                    result.wrapping_neg_inplace();
                 }
                 return;
-            }
-
-            if constexpr (GuaranteedGreater) {
-                BOOST_ASSERT(a > b);
             } else {
-                int c = a.compare(b);
-                if (c < 0) {
-                    subtract_overflow<OverflowPolicy>();
-                    if constexpr (OverflowPolicy == overflow_policy::wrap) {
-                        if constexpr (Bits3 > Bits1) {
-                            // Safe to truncate because we do wrapping anyway. We can't
-                            // guarantee ordering in this case because it could
-                            // change after truncation.
-                            subtract_unsigned<OverflowPolicy>(
-                                result, b.template truncate<Bits1>(), a);
-                        } else {
-                            subtract_unsigned<OverflowPolicy, /*GuaranteedGreater=*/true>(
-                                result, b, a);
-                        }
-                    } else {
-                        // Unreachable because subtract_overflow above should have thrown
-                        // an exception or asserted
-                        std::terminate();
+                //
+                // special cases for small limb counts:
+                //
+                if constexpr (x <= 1) {
+                    bool s = false;
+                    limb_type al = *a.limbs();
+                    limb_type bl = *b.limbs();
+                    if (al < bl) {
+                        subtract_overflow<OverflowPolicy>();
+                        std::swap(al, bl);
+                        s = true;
                     }
-                    result.wrapping_neg_inplace();
+                    result = al - bl;
+                    if (s) {
+                        result.wrapping_neg_inplace();
+                    }
                     return;
                 }
-                if (c == 0) {
-                    result = static_cast<limb_type>(0u);
-                    return;
-                }
-            }
 
-            result.zero_after(as);
+                if constexpr (GuaranteedGreater) {
+                    BOOST_ASSERT(a > b);
+                } else {
+                    int c = a.compare(b);
+                    if (c < 0) {
+                        subtract_overflow<OverflowPolicy>();
+                        if constexpr (OverflowPolicy == overflow_policy::wrap) {
+                            if constexpr (Bits3 > Bits1) {
+                                // Safe to truncate because we do wrapping anyway. We
+                                // can't guarantee ordering in this case because it could
+                                // change after truncation.
+                                subtract_unsigned<OverflowPolicy>(
+                                    result, b.template truncate<Bits1>(), a);
+                            } else {
+                                subtract_unsigned<OverflowPolicy,
+                                                  /*GuaranteedGreater=*/true>(result, b,
+                                                                              a);
+                            }
+                        } else {
+                            // Unreachable because subtract_overflow above should have
+                            // thrown an exception or asserted
+                        }
+                        result.wrapping_neg_inplace();
+                        return;
+                    }
+                    if (c == 0) {
+                        result = static_cast<limb_type>(0u);
+                        return;
+                    }
+                }
+
+                result.zero_after(as);
 
 #ifdef NIL_CO3_MP_HAS_INTRINSICS
-            if (std::is_constant_evaluated()) {
-                subtract_unsigned_constexpr<OverflowPolicy>(result, a, b);
-            } else {
-                subtract_unsigned_intrinsic<OverflowPolicy>(result, a, b);
-            }
+                if (std::is_constant_evaluated()) {
+                    subtract_unsigned_constexpr<OverflowPolicy>(result, a, b);
+                } else {
+                    subtract_unsigned_intrinsic<OverflowPolicy>(result, a, b);
+                }
 #else
-            subtract_unsigned_constexpr<OverflowPolicy>(result, a, b);
+                subtract_unsigned_constexpr<OverflowPolicy>(result, a, b);
 #endif
+            }
         }
 
         // Subtract one limb
@@ -493,11 +513,11 @@ namespace nil::crypto3::multiprecision {
                                          const big_uint<Bits2>& a, const limb_type& b) {
             static_assert(Bits1 >= Bits2, "invalid argument size");
 
-            std::size_t as = a.used_limbs();
+            constexpr std::size_t as = std::decay_t<decltype(a)>::static_limb_count;
+            constexpr std::size_t rs = std::decay_t<decltype(result)>::static_limb_count;
+
             // TODO(ioxid): optimize: this is most probably unneeded
             result.zero_after(as);
-            constexpr double_limb_type borrow =
-                static_cast<double_limb_type>(max_limb_value) + 1;
 
             limb_pointer pr = result.limbs();
             const_limb_pointer pa = a.limbs();
@@ -512,17 +532,41 @@ namespace nil::crypto3::multiprecision {
                 *pr = b - *pa;
                 result.wrapping_neg_inplace();
             } else {
-                *pr = static_cast<limb_type>((borrow + *pa) - b);
+                *pr = *pa - b; // NB: wraps as intended
                 std::size_t i = 1;
-                while (!pa[i]) {
+                while (i < rs && (i >= as || !pa[i])) {
                     pr[i] = max_limb_value;
                     ++i;
+                }
+                if (i >= as) {
+                    subtract_overflow<OverflowPolicy>();
+                    result.normalize();
+                    return;
                 }
                 pr[i] = pa[i] - 1;
                 if (&result != &a) {
                     ++i;
                     std::copy(pa + i, pa + as, pr + i);
                 }
+            }
+        }
+
+        // Subtract from one limb
+        template<overflow_policy OverflowPolicy, std::size_t Bits1, std::size_t Bits2>
+        constexpr void subtract_unsigned(big_uint<Bits1>& result, const limb_type& a,
+                                         const big_uint<Bits2>& b) {
+            static_assert(OverflowPolicy == overflow_policy::throw_exception);
+            static_assert(Bits1 >= Bits2, "invalid argument size");
+
+            if (a >= b) {
+                *result.limbs() = a - *b.limbs();
+                result.zero_after(1);
+                limb_type excess = result.normalize();
+                if (excess) {
+                    subtract_overflow<OverflowPolicy>();
+                }
+            } else {
+                subtract_overflow<OverflowPolicy>();
             }
         }
 
