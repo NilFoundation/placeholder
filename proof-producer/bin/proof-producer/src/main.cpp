@@ -132,7 +132,6 @@ int run_prover(const nil::proof_generator::ProverOptions& prover_options) {
                         prover.fill_assignment_table(prover_options.trace_base_path) &&
                         prover.save_assignment_description(prover_options.assignment_description_file_path) &&
                         prover.preprocess_public_data() &&
-                        prover.save_preprocessed_common_data_to_file(prover_options.preprocessed_common_data_path) &&
                         prover.preprocess_private_data() &&
                         prover.generate_partial_proof_to_file(
                             prover_options.proof_file_path,
