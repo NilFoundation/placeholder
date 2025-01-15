@@ -507,7 +507,6 @@ namespace nil {
                         const plonk_table_description<FieldType>& table_description,
                         std::shared_ptr<math::evaluation_domain<FieldType>> domain
                     ) {
-                        // TODO: add std::vector<std::size_t> columns_with_copy_constraints;
                         cycle_representation permutation(constraint_system, table_description);
 
                         std::vector<polynomial_dfs_type> S_perm(global_indices.size());
