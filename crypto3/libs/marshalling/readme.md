@@ -77,7 +77,7 @@ For example:
 ```bash
 nix develop .#crypto3-debug-tests
 eval "$configurePhase" // automatically move to the build directory
-ninja algebra_curves_test
+ninja marshalling_algebra_curve_element_test
 ```
 
 ## Usage

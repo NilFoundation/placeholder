@@ -25,6 +25,8 @@
 #ifndef MARSHALLING_CONTAINER_TYPE_TRAITS_HPP
 #define MARSHALLING_CONTAINER_TYPE_TRAITS_HPP
 
+#include <cstddef>
+
 #include <nil/marshalling/container/static_vector.hpp>
 #include <nil/marshalling/container/static_string.hpp>
 
