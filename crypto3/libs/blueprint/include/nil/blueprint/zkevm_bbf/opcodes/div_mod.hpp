@@ -1,7 +1,7 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2024 Dmitrii Tabalin <d.tabalin@nil.foundation>
 // Copyright (c) 2024 Alexey Yashunsky <a.yashunsky@nil.foundation>
-// Copyright (c) 2024 Antoine Cyr <a.yashunsky@nil.foundation>
+// Copyright (c) 2024 Antoine Cyr <antoine.cyr@nil.foundation>
 //
 // MIT License
 //

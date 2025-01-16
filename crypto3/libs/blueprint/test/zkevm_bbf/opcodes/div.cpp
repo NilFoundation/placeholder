@@ -67,7 +67,6 @@ BOOST_AUTO_TEST_CASE(divs) {
 
     l1_size_restrictions max_sizes;
 
-    // incorrect test logic, but we have no memory operations so
     opcode_tester.push_opcode(
         zkevm_opcode::PUSH32,
         0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff_big_uint256);
@@ -96,6 +95,7 @@ BOOST_AUTO_TEST_CASE(divs) {
         zkevm_opcode::PUSH32,
         0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff_big_uint256);
     opcode_tester.push_opcode(zkevm_opcode::SMOD);
+
     opcode_tester.push_opcode(zkevm_opcode::PUSH32, 1234567890);
     opcode_tester.push_opcode(
         zkevm_opcode::PUSH32,
@@ -105,7 +105,7 @@ BOOST_AUTO_TEST_CASE(divs) {
     opcode_tester.push_opcode(
         zkevm_opcode::PUSH32,
         0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016_big_uint256);
-    opcode_tester.push_opcode(zkevm_opcode::DIV);
+    opcode_tester.push_opcode(zkevm_opcode::MOD);
     opcode_tester.push_opcode(zkevm_opcode::PUSH32, 1234567890);
     opcode_tester.push_opcode(
         zkevm_opcode::PUSH32,
@@ -129,7 +129,7 @@ BOOST_AUTO_TEST_CASE(divs) {
     opcode_tester.push_opcode(
         zkevm_opcode::PUSH32,
         0xFb70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016_big_uint256);
-    opcode_tester.push_opcode(zkevm_opcode::DIV);
+    opcode_tester.push_opcode(zkevm_opcode::MOD);
     opcode_tester.push_opcode(
         zkevm_opcode::PUSH32,
         0xFb70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016_big_uint256);
@@ -213,6 +213,8 @@ BOOST_AUTO_TEST_CASE(divs) {
     max_sizes.max_rw = 500;
     max_sizes.max_copy = 500;
     max_sizes.max_zkevm_rows = 600;
+    max_sizes.max_exponentiations = 10;
+    max_sizes.max_exp_rows = 100;
     complex_opcode_test<field_type>(opcode_tester, max_sizes);
 }
 BOOST_AUTO_TEST_SUITE_END()
