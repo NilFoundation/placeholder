@@ -213,7 +213,7 @@ set(ZKEVM_BBF_TESTS_FILES
     "zkevm_bbf/opcodes/add_sub"
     "zkevm_bbf/opcodes/byte_ops"
     "zkevm_bbf/opcodes/mul"
-    #"zkevm_bbf/opcodes/div"
+    "zkevm_bbf/opcodes/div"
     "zkevm_bbf/opcodes/jumps"
     "zkevm_bbf/opcodes/not"
     "zkevm_bbf/opcodes/exp"

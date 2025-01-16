@@ -1,6 +1,7 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2024 Dmitrii Tabalin <d.tabalin@nil.foundation>
 // Copyright (c) 2024 Alexey Yashunsky <a.yashunsky@nil.foundation>
+// Copyright (c) 2024 Antoine Cyr <antoine.cyr@nil.foundation>
 //
 // MIT License
 //
@@ -209,7 +210,7 @@ namespace nil {
 
                         zkevm_word_type q_out =
                             b != 0u ? q : 0u;  // according to EVM spec a % 0 = 0
-                        zkevm_word_type v = wrapping_sub(q, b);
+                        zkevm_word_type v = wrapping_sub(q_abs, b_abs);
                         zkevm_word_type result = is_div ? r : q_out;
 
                         a_chunks = zkevm_word_to_field_element<FieldType>(a);
@@ -518,11 +519,12 @@ namespace nil {
                     allocate(B1, 47, 0);
                     if (is_div){
                         allocate(Res0, 46, 2);
-                    allocate(Res1, 47, 2);
+                        allocate(Res1, 47, 2);
                     }
                     else{
-                    allocate(Res0, 46, 4);
-                    allocate(Res1, 47, 4);}
+                        allocate(Res0, 46, 4);
+                        allocate(Res1, 47, 4);
+                    }
 
                     if constexpr (stage == GenerationStage::CONSTRAINTS) {
                         constrain(current_state.pc_next() - current_state.pc(4) -
@@ -587,7 +589,7 @@ namespace nil {
                     const opcode_input_type<FieldType, GenerationStage::ASSIGNMENT>
                         &current_state) override {
                     zkevm_sdiv_smod_bbf<FieldType, GenerationStage::ASSIGNMENT> bbf_obj(
-                        context, current_state, is_div);
+                       context, current_state, is_div);
                 }
                 virtual void fill_context(
                     typename generic_component<FieldType,
