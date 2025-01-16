@@ -45,9 +45,9 @@
 
 #include <nil/crypto3/zk/transcript/fiat_shamir.hpp>
 
+#include <nil/crypto3/marshalling/algebra/processing/bls12.hpp>
 #include <nil/crypto3/marshalling/algebra/processing/mnt4.hpp>
 #include <nil/crypto3/marshalling/algebra/processing/mnt6.hpp>
-#include <nil/crypto3/marshalling/algebra/processing/bls12.hpp>
 
 using namespace nil::crypto3;
 using namespace nil::crypto3::zk;
@@ -89,9 +89,9 @@ BOOST_AUTO_TEST_CASE(zk_poseidon_transcript_init_test) {
     auto ch2 = tr.challenge<field_type>();
     int ch_int = tr.int_challenge<int>();
 
-    BOOST_CHECK_EQUAL(ch1.data, field_type::value_type(0x27B1BE8A820DE1A5E91A441F59F29D42D9DB9FC7778A0852819F331D5CD60B43_big_uint255).data);
-    BOOST_CHECK_EQUAL(ch2.data, field_type::value_type(0x12096E03B2ADEC9B317042D36F048C06AF123EED4A3FC040579E66DCE46C0AEE_big_uint255).data);
-    BOOST_CHECK_EQUAL(ch_int, 0x6296);
+    BOOST_CHECK_EQUAL(ch1.data, field_type::value_type(0x2c8488fd580563511086c59020975e49afd065fd26c451f6c1f9c5213798c928_big_uint255).data);
+    BOOST_CHECK_EQUAL(ch2.data, field_type::value_type(0x285f5407fb2f26a10fdcdc9357ecdc2b1415dc67b082f7c18964022bcb644ca7_big_uint255).data);
+    BOOST_CHECK_EQUAL(ch_int, 0x48f3);
 
     init_blob = {};
     tr = transcript::fiat_shamir_heuristic_sequential<poseidon_type>(init_blob);

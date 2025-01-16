@@ -34,6 +34,10 @@
 #include <nil/crypto3/algebra/fields/bls12/scalar_field.hpp>
 #include <type_traits>
 
+#include <nil/crypto3/hash/detail/poseidon/poseidon_policy.hpp>
+#include <nil/crypto3/hash/block_to_field_elements_wrapper.hpp>
+#include "nil/crypto3/algebra/fields/pallas/scalar_field.hpp"
+
 using namespace nil::crypto3::hashes;
 
 template<typename hash_type, typename enable = void>
@@ -64,8 +68,59 @@ struct hash_usage_example<hash_type, typename std::enable_if<is_poseidon<hash_ty
 
         typename policy::digest_type result = nil::crypto3::hash<hash_type>(field_input);
         std::cout << result << std::endl;
+
     }
 };
+
+template<typename hash_type>
+struct poseidon_bytes_vector_example
+{
+    static void run()
+    {
+        using policy = typename hash_type::policy_type;
+        using field_type = typename policy::field_type;
+        std::string input =
+            "Once upon a midnight dreary, while I pondered, weak and weary,\n"
+            "Over many a quaint and curious volume of forgotten lore—\n"
+            "While I nodded, nearly napping, suddenly there came a tapping,\n"
+            "As of some one gently rapping, rapping at my chamber door.\n"
+            "“’Tis some visitor,” I muttered, “tapping at my chamber door—\n"
+            "    Only this and nothing more.”\n";
+
+        std::vector<uint8_t> hash_input(input.begin(), input.end());
+
+        typename policy::digest_type result = nil::crypto3::hash<hash_type>(
+            nil::crypto3::hashes::conditional_block_to_field_elements_wrapper<
+                typename hash_type::word_type,
+                decltype(hash_input)>
+            (hash_input)
+        );
+        std::cout << result << std::endl;
+    }
+};
+
+template<typename hash_type>
+struct poseidon_int_vector_example
+{
+    static void run()
+    {
+        using policy = typename hash_type::policy_type;
+        using field_type = typename policy::field_type;
+
+        std::vector<uint32_t> hash_input {
+            0xDEAD, 0xC001CAFE
+        };
+
+        typename policy::digest_type result = nil::crypto3::hash<hash_type>(
+            nil::crypto3::hashes::conditional_block_to_field_elements_wrapper<
+                typename hash_type::word_type,
+                decltype(hash_input)>
+            (hash_input)
+        );
+        std::cout << result << std::endl;
+    }
+};
+
 
 
 int main() {
@@ -86,8 +141,9 @@ int main() {
     using policy = detail::poseidon_policy<field_type, security_bits, rate>;
     using hash_type = poseidon<policy>;
 
-
     hash_usage_example<hash_type>::run();
+    poseidon_bytes_vector_example<hash_type>::run();
+    poseidon_int_vector_example<hash_type>::run();
 
     return 0;
 }
