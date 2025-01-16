@@ -38,7 +38,7 @@ namespace nil {
             public:
                 zkevm_opcode_tester(){}
                 void push_opcode(const zkevm_opcode opcode, const std::vector<std::uint8_t> &additional_input = {}){
-                    std::cout << "PC opcode map[" << bytecode.size() << "] = " << opcodes.size() << " opcode = " << opcode_to_string(opcode) << std::endl;
+                    //std::cout << "PC opcode map[" << bytecode.size() << "] = " << opcodes.size() << " opcode = " << opcode_to_string(opcode) << std::endl;
                     std::uint8_t opcode_number = opcode_to_number(opcode);
                     bool is_push = (opcode_number >= 0x60) && (opcode_number <= 0x7f);
 
@@ -91,6 +91,7 @@ namespace nil {
                 }
 
                 const std::pair<zkevm_opcode, zkevm_word_type> &get_opcode_by_pc(std::size_t pc) const {
+                    BOOST_ASSERT(pc_opcode_map.find(pc) != pc_opcode_map.end());
                     return opcodes[pc_opcode_map.at(pc)];
                 }
 

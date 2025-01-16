@@ -83,6 +83,8 @@ BOOST_AUTO_TEST_CASE(jump) {
     max_sizes.max_rw = 500;
     max_sizes.max_copy = 500;
     max_sizes.max_zkevm_rows = 300;
+    max_sizes.max_exponentiations = 10;
+    max_sizes.max_exp_rows = 100;
     complex_opcode_test<field_type>(opcode_tester, max_sizes);
 }
 
@@ -106,7 +108,7 @@ BOOST_AUTO_TEST_CASE(jumpi) {
     opcode_tester.push_opcode(zkevm_opcode::PUSH1, 2);      // 2
     opcode_tester.push_opcode(zkevm_opcode::PUSH1, 3);      // 4
     opcode_tester.push_opcode(zkevm_opcode::PUSH1, 1);      // 14 // Condition
-    opcode_tester.push_opcode(zkevm_opcode::PUSH1, 26);     //16 // Address
+    opcode_tester.push_opcode(zkevm_opcode::PUSH1, 26);     // 16 // Address
     opcode_tester.push_opcode(zkevm_opcode::JUMPI);         // 18
     opcode_tester.push_opcode(zkevm_opcode::ADD);           // 19
     opcode_tester.push_opcode(zkevm_opcode::JUMPDEST);      // 20
@@ -122,6 +124,8 @@ BOOST_AUTO_TEST_CASE(jumpi) {
     max_sizes.max_rw = 500;
     max_sizes.max_copy = 500;
     max_sizes.max_zkevm_rows = 300;
+    max_sizes.max_exponentiations = 10;
+    max_sizes.max_exp_rows = 100;
     complex_opcode_test<field_type>(opcode_tester, max_sizes);
 }
 BOOST_AUTO_TEST_SUITE_END()

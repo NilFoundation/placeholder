@@ -306,16 +306,11 @@ namespace nil {
 
                     if constexpr (stage == GenerationStage::CONSTRAINTS) {
 
-                        constrain(current_state.pc_next() - current_state.pc(3) -
-                                  1);  // PC transition
-                        constrain(current_state.gas(3) - current_state.gas_next() -
-                                  5);  // GAS transition
-                        constrain(current_state.stack_size(3) - current_state.stack_size_next() -
-                                  1);  // stack_size transition
-                        constrain(current_state.memory_size(3) -
-                                  current_state.memory_size_next());  // memory_size transition
-                        constrain(current_state.rw_counter_next() - current_state.rw_counter(3) -
-                                  3);  // rw_counter transition
+                        constrain(current_state.pc_next() - current_state.pc(3) - 1);  // PC transition
+                        constrain(current_state.gas(3) - current_state.gas_next() - 5);  // GAS transition
+                        constrain(current_state.stack_size(3) - current_state.stack_size_next() - 1);  // stack_size transition
+                        constrain(current_state.memory_size(3) - current_state.memory_size_next());  // memory_size transition
+                        constrain(current_state.rw_counter_next() - current_state.rw_counter(3) - 3);  // rw_counter transition
                         std::vector<TYPE> tmp;
 
                         tmp = {TYPE(rw_op_to_num(rw_operation_type::stack)),
