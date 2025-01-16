@@ -153,13 +153,13 @@ namespace nil {
                                 std::cout << "Constraint result: " << constraint_result << std::endl;
                                 std::cout << "Constraint: " << gates[i].constraints[j] << std::endl;
                                 std::cout << "Offending gate:" << std::endl;
-                                std::cout<<  "Offended constraint result" << std::endl;
-                                for( std::size_t ind = 0; ind < selector_rows.size(); ind++){
-                                    if( selector[ind].is_zero() )
-                                        std::cout << "0 ";
-                                    else
-                                        std::cout << gates[i].constraints[j].evaluate(ind, assignments) << " ";
-                                }
+                                // std::cout<<  "Offended constraint result" << std::endl;
+                                // for( std::size_t ind = 0; ind < selector_rows.size(); ind++){
+                                //     if( selector[ind].is_zero() )
+                                //         std::cout << "0 ";
+                                //     else
+                                //         std::cout << gates[i].constraints[j].evaluate(ind, assignments) << " ";
+                                // }
 
                                 std::size_t k = 0;
                                 for (const auto &constraint : gates[i].constraints) {

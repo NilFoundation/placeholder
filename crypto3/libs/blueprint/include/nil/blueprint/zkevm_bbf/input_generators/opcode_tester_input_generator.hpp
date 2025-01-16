@@ -114,7 +114,7 @@ namespace nil {
                             _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, result));
                             stack.push_back(result);
                             pc++;
-                            gas -= 3;
+                            gas -= 5;
                         } else if (opcode == zkevm_opcode::SUB){
                             // 0x03
                             zkevm_word_type a = stack.back();
@@ -484,6 +484,27 @@ namespace nil {
                             stack.push_back(result);
                             pc++;
                             gas -= 3;
+                        } else if(opcode == zkevm_opcode::JUMP){
+                            // 0x56
+                            auto addr = std::size_t(stack.back());
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, addr));
+                            gas -= 8;
+                            pc = addr;
+                        } else if(opcode == zkevm_opcode::JUMPI){
+                            // 0x57
+                            auto addr = std::size_t(stack.back());
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, addr));
+                            auto condition = std::size_t(stack.back());
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, condition));
+                            gas -= 10;
+                            pc = condition? addr: pc+1;
+                        } else if(opcode == zkevm_opcode::JUMPDEST){
+                            // 0x5b
+                            gas -= 1;
+                            pc++;
                         } else if (opcode == zkevm_opcode::PUSH0){
                             // 0x5f
                             _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, additional_input));
