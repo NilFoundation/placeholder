@@ -84,13 +84,10 @@ namespace nil {
                 return exp2;
             }
 
-            std::size_t log256(zkevm_word_type d) {
-                std::size_t result = 0;
-                while(d > 0){
-                    d /= 256u;
-                    result++;
-                }
-                return result;
+            std::size_t count_significant_bytes(zkevm_word_type d) {
+                std::size_t count = 0;
+                while (d > 0) d /= 256u, ++count;
+                return count;
             }
         }
     }
