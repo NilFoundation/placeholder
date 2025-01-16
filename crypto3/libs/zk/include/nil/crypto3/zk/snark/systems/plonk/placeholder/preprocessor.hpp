@@ -558,7 +558,6 @@ namespace nil {
                         return result;
                     }
 
-                    // TODO: columns_with_copy_constraints -- It should be extracted from constraint_system
                     static inline preprocessed_data_type process(
                         const plonk_constraint_system<FieldType> &constraint_system,
                         std::shared_ptr<public_assignment_type> public_assignment,
