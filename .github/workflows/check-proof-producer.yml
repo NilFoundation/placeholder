@@ -151,7 +151,7 @@ jobs:
           ls -l -a ${{ steps.strings.outputs.artifact-dir }}
 
       - name: Download circuits and assignments artifact
-        uses: dawidd6/action-download-artifact@v6
+        uses: dawidd6/action-download-artifact@v7
         with:
           repo: NilFoundation/zkLLVM
           name: ${{ env.CAA_ARTIFACT_NAME }}
@@ -208,7 +208,7 @@ jobs:
           echo "merged=transpiler-output-merged-proofs" >> $GITHUB_OUTPUT
 
       - name: Upload merged artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4.6.0
         with:
           name: ${{ steps.artifact-name.outputs.merged }}
           path: |
@@ -233,8 +233,8 @@ jobs:
       always() && !cancelled() &&
       (needs.build-and-generate-proofs.result == 'success' || needs.build-and-generate-proofs.result == 'skipped') &&
       (needs.prepare-targets.result == 'success' || needs.prepare-targets.result == 'skipped')
-    uses: NilFoundation/evm-placeholder-verification/.github/workflows/reusable-verify-proofs.yml@a68465f641680eccc43ebdae02810eeab0537954
+    uses: NilFoundation/evm-placeholder-verification/.github/workflows/reusable-verify-proofs.yml@873bf83efc9ea50b2fb6d6c4e1f6048f78388d49
     with:
       artifact-name: ${{ needs.build-and-generate-proofs.outputs.artifact-name }}
-      evm-placeholder-verification-ref: a68465f641680eccc43ebdae02810eeab0537954
+      evm-placeholder-verification-ref: 873bf83efc9ea50b2fb6d6c4e1f6048f78388d49
       test-names: ${{ needs.prepare-targets.outputs.evm-targets }}

@@ -20,7 +20,7 @@ jobs:
         run: cd build && ./crypto3/libs/transpiler/test/transpiler_evm_test -- --save-proof-data
         shell: nix develop .#crypto3-tests --command bash -e {0}
       - name: Publish Proofs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.6.0
         with:
           name: proofs
           path: build/circuit*
@@ -31,7 +31,7 @@ jobs:
     needs:
       - produce-proofs
     if: needs.produce-proofs.result == 'success'
-    uses: NilFoundation/evm-placeholder-verification/.github/workflows/verify-proof.yml@a68465f641680eccc43ebdae02810eeab0537954
+    uses: NilFoundation/evm-placeholder-verification/.github/workflows/verify-proof.yml@873bf83efc9ea50b2fb6d6c4e1f6048f78388d49
     with:
-      evm-placeholder-verification-ref: a68465f641680eccc43ebdae02810eeab0537954
+      evm-placeholder-verification-ref: 873bf83efc9ea50b2fb6d6c4e1f6048f78388d49
 
