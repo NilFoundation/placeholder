@@ -261,7 +261,7 @@ namespace nil {
                             std::cout << "\tExponentiation: " << a << " ^ " << d << std::endl;
                             _exponentiations.push_back({a, d});
                             pc++;
-                            //gas -= (d == 0) ? 10 : (10 + 10 * (1 + log256(d)));
+                            gas -= 10 + 50 * count_significant_bytes(d);
                         } else if (opcode == zkevm_opcode::SIGNEXTEND){
                             // 0x0b
                             zkevm_word_type b = stack.back();

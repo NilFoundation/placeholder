@@ -71,6 +71,7 @@
 #include <nil/blueprint/zkevm_bbf/opcodes/pop.hpp>
 #include <nil/blueprint/zkevm_bbf/opcodes/eq.hpp>
 #include <nil/blueprint/zkevm_bbf/opcodes/calldatacopy.hpp>
+#include <nil/blueprint/zkevm_bbf/opcodes/codecopy.hpp>
 #include <nil/blueprint/zkevm_bbf/opcodes/stop.hpp>
 #include <nil/blueprint/zkevm_bbf/opcodes/exp.hpp>
 #include <nil/blueprint/zkevm_bbf/opcodes/keccak.hpp>
@@ -647,6 +648,7 @@ namespace nil {
                 opcodes[zkevm_opcode::CALLDATASIZE] = std::make_shared<zkevm_calldatasize_operation<BlueprintFieldType>>();
                 opcodes[zkevm_opcode::CALLDATALOAD] = std::make_shared<zkevm_calldataload_operation<BlueprintFieldType>>();
                 opcodes[zkevm_opcode::CALLDATACOPY] = std::make_shared<zkevm_calldatacopy_operation<BlueprintFieldType>>();
+                opcodes[zkevm_opcode::CODECOPY] = std::make_shared<zkevm_codecopy_operation<BlueprintFieldType>>();
 
                 // // PC operations
                 opcodes[zkevm_opcode::JUMPI] = std::make_shared<zkevm_jumpi_operation<BlueprintFieldType>>();

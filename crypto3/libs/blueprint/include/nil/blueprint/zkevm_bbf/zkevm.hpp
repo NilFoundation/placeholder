@@ -427,7 +427,7 @@ namespace nil {
                                 zkevm_opcode current_opcode = implemented_opcodes[opcode_num];
                                 //std::cout << "Build constraints for " << current_opcode << std::endl;
                                 if( opcode_impls.find(current_opcode) == opcode_impls.end() ){
-                                    std::cout << "\tImplementation for "<< current_opcode << " is not defined" << std::endl;
+                                    //std::cout << "\tImplementation for "<< current_opcode << " is not defined" << std::endl;
                                     continue;
                                 }
                                 std::size_t current_opcode_bare_rows_amount = opcode_impls[current_opcode]->rows_amount();
@@ -441,6 +441,7 @@ namespace nil {
 
                                 opcode_impls[current_opcode]->fill_context(fresh_ct, opcode_state_vars);
                                 auto opcode_constraints = fresh_ct.get_constraints();
+                                std::cout << "Opcode " << current_opcode << std::endl;
                                 for( const auto &constr_list: opcode_constraints){
                                     for( const auto &local_row: constr_list.first){
                                         for( auto constraint: constr_list.second){
@@ -472,12 +473,12 @@ namespace nil {
                             std::cout << "Accumulate constraints " << max_opcode_row_constraints << std::endl;
                             for( std::size_t i = 0; i < max_opcode_row_constraints; i++ ){
                                 TYPE acc_constraint;
-                                // std::cout << "\tConstraint " << i << std::endl;
+                                //std::cout << "\tConstraint " << i << std::endl;
                                 for( auto &[pair, constraints]: opcode_constraints_aggregator ){
                                     if( constraints.size() <= i) continue;
                                     acc_constraint += context_object.relativize(zkevm_opcode_row_selectors[pair], -1) * constraints[i];
                                     //std::cout << "\topcode " << pair.first << " row " << pair.second << " constraint " << context_object.relativize(zkevm_opcode_row_selectors[pair], -1) * constraints[i] << std::endl;
-                                    //relative_mc.push_back(context_object.relativize(zkevm_opcode_row_selectors[pair], -1) * constraints[i]);
+                                    relative_mc.push_back(context_object.relativize(zkevm_opcode_row_selectors[pair], -1) * constraints[i]);
                                 }
                                 relative_mc.push_back(acc_constraint);
                                 //std::cout << "\t" << acc_constraint << std::endl;
