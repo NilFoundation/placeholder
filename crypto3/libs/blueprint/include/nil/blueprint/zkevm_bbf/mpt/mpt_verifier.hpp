@@ -22,7 +22,7 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-// #include <nil/blueprint/zkevm_bbf/subcomponents/keccak_table.hpp>
+#include <nil/blueprint/zkevm_bbf/subcomponents/poseidon_table.hpp>
 
 namespace nil {
     namespace blueprint {
@@ -46,19 +46,26 @@ namespace nil {
                 };
 
                 std::size_t max_mpt;
+                std::size_t max_poseidon_size;
                 std::size_t account_trie_length;
 
             public:
-                static nil::crypto3::zk::snark::plonk_table_description<FieldType> get_table_description(std::size_t max_mpt_, std::size_t account_trie_length){
+                static nil::crypto3::zk::snark::plonk_table_description<FieldType> get_table_description(std::size_t max_mpt_, std::size_t max_poseidon_size_, std::size_t account_trie_length){
                     std::size_t witness_amount = 40;
                     nil::crypto3::zk::snark::plonk_table_description<FieldType> desc(witness_amount, 1, 3, 5);
-                    desc.usable_rows_amount = max_mpt_;
+                    desc.usable_rows_amount = max_mpt_ + max_poseidon_size_;
                     return desc;
                 }
-                mpt_verifier(context_type &context_object, const input_type &input, std::size_t max_mpt_, std::size_t account_trie_length_
+                mpt_verifier(context_type &context_object, const input_type &input, std::size_t max_mpt_, std::size_t max_poseidon_size_, std::size_t account_trie_length_
                     ) : max_mpt(max_mpt_),
+                        max_poseidon_size(max_poseidon_size_),
                         account_trie_length(account_trie_length_),
                         generic_component<FieldType,stage>(context_object) {
+
+                    using Poseidon_Table = poseidon_table<FieldType,stage>;
+
+                    std::vector<std::size_t> poseidon_lookup_area = {0,1,2};
+                    context_type poseidon_ct = context_object.subcontext(poseidon_lookup_area, max_mpt, max_mpt + max_poseidon_size);
 
                     static constexpr std::size_t OLD_HASH = 0;
                     static constexpr std::size_t NEW_HASH = 1;
@@ -86,6 +93,15 @@ namespace nil {
                     static constexpr std::size_t IS_TRIE = 23;
                     static constexpr std::size_t Q_LAST = 24;
                     static constexpr std::size_t IS_PADDING = 25;
+                    static constexpr std::size_t OLD_Y = 26;
+                    static constexpr std::size_t OLD_YI = 27;
+                    static constexpr std::size_t OLD_C = 28;
+                    static constexpr std::size_t NEW_Y = 29;
+                    static constexpr std::size_t NEW_YI = 30;
+                    static constexpr std::size_t NEW_C = 31;
+                    static constexpr std::size_t CODE_Y = 32;
+                    static constexpr std::size_t CODE_YI = 33;
+                    static constexpr std::size_t CODE_C = 34;
                     
                     using value_type = typename FieldType::value_type;
                     using integral_type = typename FieldType::integral_type; 
@@ -106,12 +122,26 @@ namespace nil {
                     TYPE q_leaf0[max_mpt], q_leaf1[max_mpt], q_leaf2[max_mpt], q_leaf3[max_mpt], q_leaf123[max_mpt];
                     TYPE q_start[max_mpt], q_trie[max_mpt], q_last[max_mpt], is_padding[max_mpt];
 
+                    std::pair<TYPE, TYPE> old_msg, new_msg;
+                    TYPE old_poseidon_hash, new_poseidon_hash; 
+                    std::vector<std::pair<std::pair<TYPE, TYPE>, TYPE>> poseidon_tab_input;
+
                     size_t bit_size_rc = 16;
                     size_t bit_size_chunk = 16;
                     const integral_type B = integral_type(1) << 64;
                     const integral_type mask = (1 << bit_size_rc) - 1;
                     std::size_t num_rc_chunks = (bit_size_chunk / bit_size_rc) + (bit_size_chunk % bit_size_rc > 0);
                     std::size_t first_chunk_size = bit_size_chunk % bit_size_rc;
+
+                    // // Create input for Poseidon table
+                    // for(std::size_t i = 0; i < account_trie_length - 1; i++) {
+                    //     old_msg = {input.proof[10 + 7*(i + 1)], input.proof[12 + 7*(i + 1)]};
+                    //     old_poseidon_hash = input.proof[10 + 7*i];
+                    //     poseidon_tab_input.push_back({old_msg, old_poseidon_hash});
+                    //     // new_msg = {address_hash_traces[i + 1][3], address_hash_traces[i + 1][4]};
+                    //     // new_poseidon_hash = address_hash_traces[i][3];
+                    //     // poseidon_tab_input.push_back({new_msg, new_poseidon_hash});
+                    // }                    
 
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
                         std::cout << "MPT assign " << input.proof.size() << std::endl;
@@ -175,7 +205,7 @@ namespace nil {
                             }
                         }
 
-                         // construct key and other_key based on the bits of account_key
+                        // construct key and other_key based on the bits of account_key
                         integral_type key_integral = integral_type(account_key.data);
                         key[0] = 0;
                         other_key[0] = 0;
@@ -351,20 +381,20 @@ namespace nil {
                             }
                         }
 
-                        for(std::size_t i = 4; i < max_mpt; i++) { 
-                            old_nonce_chunks[i] = 0;
-                            new_nonce_chunks[i] = 0;
-                            code_size_chunks[i] = 0;
-                            old_Y[i] = 0;
-                            old_YI[i] = 0;
-                            old_C[i] = 0;
-                            new_Y[i] = 0;
-                            new_YI[i] = 0;
-                            new_C[i] = 0;
-                            code_Y[i] = 0;
-                            code_YI[i] = 0;
-                            code_C[i] = 0;
-                        }
+                        // for(std::size_t i = 4; i < max_mpt; i++) { 
+                        //     old_nonce_chunks[i] = 0;
+                        //     new_nonce_chunks[i] = 0;
+                        //     code_size_chunks[i] = 0;
+                        //     old_Y[i] = 0;
+                        //     old_YI[i] = 0;
+                        //     old_C[i] = 0;
+                        //     new_Y[i] = 0;
+                        //     new_YI[i] = 0;
+                        //     new_C[i] = 0;
+                        //     code_Y[i] = 0;
+                        //     code_YI[i] = 0;
+                        //     code_C[i] = 0;
+                        // }
 
                         for(std::size_t i = 0; i < account_trie_length; i++) { 
                             if (i == 0){
@@ -450,33 +480,81 @@ namespace nil {
                             proof_type[i] = mpt_proof_type;
                         }
 
-                        for(std::size_t i = assignment_table_rows; i < max_mpt; i++) { 
-                            old_hash[i] = 0;
-                            new_hash[i] = 0;
-                            old_value[i] = 0;
-                            new_value[i] = 0;
-                            sibling[i] = 0;
-                            segment[i] = 0;
-                            depth[i] = 0;
-                            direction[i] = 0;
-                            address[i] = 0;
-                            proof_type[i] = 0;
-                            key[i] = 0;
-                            other_key[i] = 0;
-                            path_type[i] = 0;
+                        // for(std::size_t i = assignment_table_rows; i < max_mpt; i++) { 
+                        //     old_hash[i] = 0;
+                        //     new_hash[i] = 0;
+                        //     old_value[i] = 0;
+                        //     new_value[i] = 0;
+                        //     sibling[i] = 0;
+                        //     segment[i] = 0;
+                        //     depth[i] = 0;
+                        //     direction[i] = 0;
+                        //     address[i] = 0;
+                        //     proof_type[i] = 0;
+                        //     key[i] = 0;
+                        //     other_key[i] = 0;
+                        //     path_type[i] = 0;
+                        // }
+
+                        // for(std::size_t i = assignment_table_rows; i < max_mpt; i++) { 
+                        //     q_leaf0[i] = 0;
+                        //     q_leaf123[i] = 0;
+                        //     q_leaf1[i] = 0;
+                        //     q_leaf2[i] = 0;
+                        //     q_leaf3[i] = 0;
+                        //     q_start[i] = 0;
+                        //     q_trie[i] = 0; 
+                        //     q_last[i] = 0;
+                        //     is_padding[i] = 0;
+                        // }
+
+                        // Create input for Poseidon table
+                        for(std::size_t i = 0; i < account_trie_length - 1; i++) {
+                            old_msg = {address_hash_traces[i + 1][2], address_hash_traces[i + 1][4]};
+                            old_poseidon_hash = address_hash_traces[i][2];
+                            poseidon_tab_input.push_back({old_msg, old_poseidon_hash});
+                            new_msg = {address_hash_traces[i + 1][3], address_hash_traces[i + 1][4]};
+                            new_poseidon_hash = address_hash_traces[i][3];
+                            poseidon_tab_input.push_back({new_msg, new_poseidon_hash});
                         }
 
-                        for(std::size_t i = assignment_table_rows; i < max_mpt; i++) { 
-                            q_leaf0[i] = 0;
-                            q_leaf123[i] = 0;
-                            q_leaf1[i] = 0;
-                            q_leaf2[i] = 0;
-                            q_leaf3[i] = 0;
-                            q_start[i] = 0;
-                            q_trie[i] = 0; 
-                            q_last[i] = 0;
-                            is_padding[i] = 0;
-                        }
+                        old_msg = {old_account_hash_traces[6][1], old_account_hash_traces[6][0]};
+                        old_poseidon_hash = old_account_hash_traces[6][2];
+                        poseidon_tab_input.push_back({old_msg, old_poseidon_hash});
+                        new_msg = {new_account_hash_traces[6][1], new_account_hash_traces[6][0]};
+                        new_poseidon_hash = new_account_hash_traces[6][2];
+                        poseidon_tab_input.push_back({new_msg, new_poseidon_hash});
+
+                        old_msg = {old_account_hash_traces[5][0], old_account_hash_traces[5][1]};
+                        old_poseidon_hash = old_account_hash_traces[5][2];
+                        poseidon_tab_input.push_back({old_msg, old_poseidon_hash});
+                        new_msg = {new_account_hash_traces[5][0], new_account_hash_traces[5][1]};
+                        new_poseidon_hash = new_account_hash_traces[5][2];
+                        poseidon_tab_input.push_back({new_msg, new_poseidon_hash});
+
+                        old_msg = {old_account_hash_traces[3][0], old_account_hash_traces[3][1]};
+                        old_poseidon_hash = old_account_hash_traces[3][2];
+                        poseidon_tab_input.push_back({old_msg, old_poseidon_hash});
+                        new_msg = {new_account_hash_traces[3][0], new_account_hash_traces[3][1]};
+                        new_poseidon_hash = new_account_hash_traces[3][2];
+                        poseidon_tab_input.push_back({new_msg, new_poseidon_hash});
+
+                        old_msg = {old_account_hash_traces[2][0], old_account_hash_traces[2][1]};
+                        old_poseidon_hash = old_account_hash_traces[2][2];
+                        poseidon_tab_input.push_back({old_msg, old_poseidon_hash});
+                        new_msg = {new_account_hash_traces[2][0], new_account_hash_traces[2][1]};
+                        new_poseidon_hash = new_account_hash_traces[2][2];
+                        poseidon_tab_input.push_back({new_msg, new_poseidon_hash});
+
+                        Poseidon_Table p_t = Poseidon_Table(poseidon_ct, poseidon_tab_input, max_poseidon_size);
+
+                        const std::vector<TYPE> &hash_value = p_t.hash_value;
+                        const std::vector<TYPE> &left_msg = p_t.left_msg;
+                        const std::vector<TYPE> &right_msg = p_t.right_msg;
+
+                        // std::cout << "hash_value[0] = " << hash_value[0] << std::endl;
+                        // std::cout << "left_msg[0] = " << left_msg[0] << std::endl;
+                        // std::cout << "right_msg[0] = " << right_msg[0] << std::endl;
                     } 
                     std::cout << "MPT assignment and circuit construction" << std::endl;
 
@@ -506,15 +584,15 @@ namespace nil {
                         allocate(q_leaf3[i], Q_LEAF3, i);
                         allocate(q_last[i], Q_LAST, i);
                         allocate(is_padding[i], IS_PADDING, i);
-                        allocate(old_Y[i], 26, i);
-                        allocate(old_YI[i], 27, i);
-                        allocate(old_C[i], 28, i);
-                        allocate(new_Y[i], 29, i);
-                        allocate(new_YI[i], 30, i);
-                        allocate(new_C[i], 31, i);
-                        allocate(code_Y[i], 32, i);
-                        allocate(code_YI[i], 33, i);
-                        allocate(code_C[i], 34, i);
+                        allocate(old_Y[i], OLD_Y, i);
+                        allocate(old_YI[i], OLD_YI, i);
+                        allocate(old_C[i], OLD_C, i);
+                        allocate(new_Y[i], NEW_Y, i);
+                        allocate(new_YI[i], NEW_YI, i);
+                        allocate(new_C[i], NEW_C, i);
+                        allocate(code_Y[i], CODE_Y, i);
+                        allocate(code_YI[i], CODE_YI, i);
+                        allocate(code_C[i], CODE_C, i);
                     }
 
                     if constexpr( stage == GenerationStage::CONSTRAINTS ){
@@ -554,21 +632,23 @@ namespace nil {
 
                         // 3. Constraints for mpt_proof_type = nonce_changed = 1: 3.3. constraints for old_nonce, new_nonce, code_size
                         // - Range check components for old_nonce, new_nonce, code_size: range_check_multi components added in the generate_circuit function
+                        every.push_back(context_object.relativize(old_C[0], 0));
+                        every.push_back(context_object.relativize(new_C[0], 0));
+                        every.push_back(context_object.relativize(code_C[0], 0));
                         // - verify that code_size in old_account and new_account are equal
                         every.push_back(context_object.relativize(q_last[0]*(1 - q_last[0]), 0));
-                        // every.push_back(context_object.relativize(q_last[0]*(old_hash[0] - old_value[0] * B - new_hash[0] + new_value[0] * B), 0));
-
+                        every.push_back(context_object.relativize(q_last[0]*(old_hash[0] - old_value[0] * B - new_hash[0] + new_value[0] * B), 0));
 
                         for( std::size_t i = 0; i < every.size(); i++ ){
                             context_object.relative_constrain(every[i], 0, max_mpt - 1);
                         }
 
-                        // range check constraints
-                        for( std::size_t i = 0; i < 4; i++ ){
-                            constrain(old_C[i]);
-                            constrain(new_C[i]);
-                            constrain(code_C[i]);
-                        }
+                        // // range check constraints
+                        // for( std::size_t i = 0; i < 4; i++ ){
+                        //     constrain(old_C[i]);
+                        //     constrain(new_C[i]);
+                        //     constrain(code_C[i]);
+                        // }
 
                         // Alternative representation of constraints
                         for(std::size_t i = 0; i < max_mpt - 1; i++) {

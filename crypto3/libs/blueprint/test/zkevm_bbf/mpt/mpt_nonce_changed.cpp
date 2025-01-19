@@ -65,7 +65,7 @@ public:
     MPTTestFixture():BBFTestFixture(){}
 
     template <typename field_type>
-    void test_mpt_nonce_changed(std::vector<typename field_type::value_type> proof, std::size_t account_trie_length, std::size_t max_mpt){
+    void test_mpt_nonce_changed(std::vector<typename field_type::value_type> proof, std::size_t account_trie_length, std::size_t max_mpt, std::size_t max_poseidon_size){
         typename nil::blueprint::bbf::mpt_verifier<field_type, nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type mpt_nonce_changed_assignment_input;
         typename nil::blueprint::bbf::mpt_verifier<field_type, nil::blueprint::bbf::GenerationStage::CONSTRAINTS>::input_type mpt_nonce_changed_constraint_input;
 
@@ -77,9 +77,10 @@ public:
             mpt_nonce_changed_assignment_input,  //  Assignment input
             mpt_nonce_changed_constraint_input,  //  Circuit input
             max_mpt,                             //  Sizes
-            account_trie_length                  
+            max_poseidon_size,
+            account_trie_length           
         );
-        BOOST_CHECK(result); // Max_rw, Max_mpt
+        BOOST_CHECK(result); 
     }
 
     template <typename field_type, std::size_t account_trie_length, std::size_t RandomTestsAmount>
@@ -222,9 +223,9 @@ public:
                 typename policy::digest_type new_hash = hash<hash_t>({sibling, new_child});
                 old_h[i] = old_hash; new_h[i] = new_hash; s[i] = generate_random();
                 old_child = old_hash; new_child = new_hash; sibling = s[i];
-                // std::cout << "old_h[" << i << "] = " << old_h[i] << std::endl;
-                // std::cout << "new_h[" << i << "] = " << new_h[i] << std::endl;
-                // std::cout << "s[" << i << "] = " << s[i] << std::endl;
+                std::cout << "old_h[" << i << "] = " << old_h[i] << std::endl;
+                std::cout << "new_h[" << i << "] = " << new_h[i] << std::endl;
+                std::cout << "s[" << i << "] = " << s[i] << std::endl;
                 // std::cout << "-------" << std::endl;
             } 
 
@@ -573,7 +574,7 @@ public:
 
             std::cout << "#proof = " << proof.size() << std::endl;
 
-            test_mpt_nonce_changed<field_type>(proof, account_trie_length, 100);
+            test_mpt_nonce_changed<field_type>(proof, account_trie_length, 100, 200);
 
             std::cout << "\n" << std::endl;
         }
