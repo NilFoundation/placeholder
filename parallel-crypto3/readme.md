@@ -1,10 +1,10 @@
-# Paralle Cryptography Suite
+# Parallel Cryptography Suite
 Multi threaded implementation some modules from the cryptography suite.
  
 ## Contents
 1. [Structure](#structure)
 2. [Build & test](#build_&_test)
-3. [Usage](#uage)
+3. [Usage](#usage)
 
 ## Structure
 parallel-crypto3
@@ -27,5 +27,5 @@ For example:
 ```bash
 nix develop .#parallel-crypto3-debug-tests
 eval "$configurePhase" // automatically move to the build directory
-ninja actor_math_polinomial_test
+ninja actor_math_polynomial_test
 ```
