@@ -30,8 +30,6 @@
 #include <nil/crypto3/math/polynomial/basic_operations.hpp>
 #include <nil/crypto3/math/polynomial/xgcd.hpp>
 #include <nil/crypto3/algebra/fields/bls12/scalar_field.hpp>
-
-#include <nil/crypto3/math/polynomial/polynomial.hpp>
 #include <nil/crypto3/math/polynomial/polynomial_dfs.hpp>
 
 int main() {
