@@ -26,9 +26,13 @@
 #include <random>
 #include <sstream>
 #include <optional>
-#include <chrono>
 
 #include <boost/log/trivial.hpp>
+
+#ifndef TIME_LOG_ENABLED
+#define TIME_LOG_ENABLED
+#include <nil/crypto3/bench/scoped_profiler.hpp>
+#endif
 
 #include <nil/marshalling/endianness.hpp>
 #include <nil/marshalling/field_type.hpp>
@@ -250,6 +254,7 @@ namespace nil {
                 BOOST_ASSERT(lpc_scheme_);
 
                 BOOST_LOG_TRIVIAL(info) << "Generating proof...";
+                TIME_LOG_START("Generation Proof")
                 nil::crypto3::zk::snark::placeholder_prover<BlueprintField, PlaceholderParams> prover(
                     *public_preprocessed_data_,
                     *private_preprocessed_data_,
@@ -258,7 +263,9 @@ namespace nil {
                     std::move(*lpc_scheme_)
                 );
                 auto proof = prover.process();
+
                 BOOST_LOG_TRIVIAL(info) << "Proof generated";
+                TIME_LOG_END("Generation Proof")
 
                 create_lpc_scheme(); // reset to default scheme to do the verification
                 bool verify_ok{};
@@ -266,9 +273,11 @@ namespace nil {
                     BOOST_LOG_TRIVIAL(info) << "Skipping proof verification";
                     verify_ok = true;
                 } else {
+                    TIME_LOG_SCOPE("Verification Proof")
                     verify_ok = verify(proof);
                 }
                 lpc_scheme_.emplace(std::move(prover.move_commitment_scheme())); // get back the commitment scheme used in prover
+                BOOST_LOG_TRIVIAL(info) << "Proof verified";
 
                 if (!verify_ok) {
                     BOOST_LOG_TRIVIAL(error) << "Proof verification failed";
@@ -323,7 +332,7 @@ namespace nil {
                 BOOST_ASSERT(lpc_scheme_);
 
                 BOOST_LOG_TRIVIAL(info) << "Generating proof...";
-                auto start = std::chrono::high_resolution_clock::now();
+                TIME_LOG_START("Generation Proof")
                 auto prover = nil::crypto3::zk::snark::placeholder_prover<BlueprintField, PlaceholderParams>(
                         *public_preprocessed_data_,
                         *private_preprocessed_data_,
@@ -332,9 +341,9 @@ namespace nil {
                         std::move(*lpc_scheme_),
                         true);
                 Proof proof = prover.process();
-                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start);
-                std::cout << "POOF GENERATE: " << duration.count() << "\n";
+
                 BOOST_LOG_TRIVIAL(info) << "Proof generated";
+                TIME_LOG_END("Generation Proof")
 
                 lpc_scheme_.emplace(prover.move_commitment_scheme()); // get back the commitment scheme used in prover
 
@@ -779,7 +788,7 @@ namespace nil {
                 create_lpc_scheme();
 
                 BOOST_LOG_TRIVIAL(info) << "Preprocessing public data";
-                auto start = std::chrono::high_resolution_clock::now();
+                TIME_LOG_SCOPE("Preprocess Public Data")
                 public_preprocessed_data_.emplace(
                     nil::crypto3::zk::snark::placeholder_public_preprocessor<BlueprintField, PlaceholderParams>::
                         process(
@@ -790,21 +799,18 @@ namespace nil {
                             max_quotient_chunks_
                         )
                 );
-                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start);
-                std::cout << "PREPROCESS: " << duration.count() << "\n";
                 return true;
             }
 
             bool preprocess_private_data() {
 
                 BOOST_LOG_TRIVIAL(info) << "Preprocessing private data";
-                auto start = std::chrono::high_resolution_clock::now();
+                TIME_LOG_SCOPE("Preprocess Private Data")
                 private_preprocessed_data_.emplace(
                     nil::crypto3::zk::snark::placeholder_private_preprocessor<BlueprintField, PlaceholderParams>::
                         process(*constraint_system_, assignment_table_->move_private_table(), *table_description_)
                 );
-                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start);
-                std::cout << "PREPROCESS PRIVATE DATA: " << duration.count() << "\n";
+                BOOST_LOG_TRIVIAL(info) << "Preprocess private data";
 
                 // This is the last stage of preprocessor, and the assignment table is not used after this function call.
                 assignment_table_.reset();
@@ -888,6 +894,10 @@ namespace nil {
                 if (!challenge) {
                     return false;
                 }
+
+                BOOST_LOG_TRIVIAL(info) << "Generating combined Q from " << aggregated_challenge_file
+                    << " to " << output_combined_Q_file << " with starting_power " << starting_power;
+
                 polynomial_type combined_Q = lpc_scheme_->prepare_combined_Q(
                     challenge.value(), starting_power);
                 return save_poly_to_file(combined_Q, output_combined_Q_file);
@@ -1118,14 +1128,12 @@ namespace nil {
             }
 
             bool setup_prover() {
-                auto start = std::chrono::high_resolution_clock::now();
+                TIME_LOG_SCOPE("Preset")
                 const auto err = CircuitFactory<BlueprintField>::initialize_circuit(circuit_name_, constraint_system_, assignment_table_, table_description_);
                 if (err) {
                     BOOST_LOG_TRIVIAL(error) << "Can't initialize circuit " << circuit_name_ << ": " << err.value();
                     return false;
                 }
-                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start);
-                std::cout << "PRESET: " << duration.count() << "\n";
                 return true;
             }
 
@@ -1148,6 +1156,7 @@ namespace nil {
                     BOOST_LOG_TRIVIAL(error) << "Assignment table is not initialized";
                     return false;
                 }
+                TIME_LOG_SCOPE("Fill Assignment Table")
                 const auto err = fill_assignment_table_single_thread(*assignment_table_, *table_description_, circuit_name_, trace_base_path);
                 if (err) {
                     BOOST_LOG_TRIVIAL(error) << "Can't fill assignment table from trace " << trace_base_path << ": " << err.value();

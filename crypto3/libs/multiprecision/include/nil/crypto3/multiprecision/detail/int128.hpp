@@ -10,12 +10,13 @@
 
 #pragma once
 
-#if defined(__SIZEOF_INT128__)
+#include "nil/crypto3/multiprecision/detail/config.hpp"  // IWYU pragma: keep
+
+#if defined(__SIZEOF_INT128__) && !defined(NIL_CO3_MP_DISABLE_INT128)
 #define NIL_CO3_MP_HAS_INT128
 #endif
 
-// same again for __int128:
-#if defined(NIL_CO3_MP_HAS_INT128) && defined(__cplusplus)
+#if defined(NIL_CO3_MP_HAS_INT128)
 namespace nil::crypto3::multiprecision::detail {
 #ifdef __GNUC__
     __extension__ typedef __int128 int128_t;

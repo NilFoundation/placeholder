@@ -2,7 +2,6 @@
 #define PROOF_GENERATOR_LIBS_ASSIGNER_RW_HPP_
 
 #include <optional>
-#include <chrono>
 #include <boost/log/trivial.hpp>
 #include <boost/filesystem.hpp>
 #include <nil/crypto3/zk/snark/arithmetization/plonk/assignment.hpp>
@@ -32,10 +31,8 @@ namespace nil {
                 return "can't read rw from file: " + rw_trace_path.string();
             }
 
-            auto start = std::chrono::high_resolution_clock::now();
             ComponentType instance(context_object, input->value, limits::max_rw_size, limits::max_mpt_size);
-            auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start);
-            std::cout << "FILL ASSIGNMENT TABLE: " << duration.count() << "\n";
+
             return {};
         }
     } // proof_generator

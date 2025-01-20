@@ -19,10 +19,15 @@
 #include "nil/crypto3/multiprecision/detail/int128.hpp"
 #include "nil/crypto3/multiprecision/detail/intel_intrinsics.hpp"
 
+#if !(defined(NIL_CO3_MP_HAS_INTRINSICS) && defined(NIL_CO3_MP_HAS_INT128))
+#include "nil/crypto3/multiprecision/detail/big_mod/modular_ops/montgomery.hpp"
+#endif
+
 namespace nil::crypto3::multiprecision {
     inline constexpr std::uint64_t goldilocks_modulus = 0xffffffff00000001ULL;
 
     namespace detail {
+#if defined(NIL_CO3_MP_HAS_INTRINSICS) && defined(NIL_CO3_MP_HAS_INT128)
         class goldilocks_modular_ops : public common_modular_ops<std::uint64_t> {
           public:
             using base_type = std::uint64_t;
@@ -36,8 +41,8 @@ namespace nil::crypto3::multiprecision {
 
             static constexpr void add(base_type &result, const base_type &y) {
                 BOOST_ASSERT(result < goldilocks_modulus && y < goldilocks_modulus);
-                uint128_t sum =
-                    static_cast<uint128_t>(result) + static_cast<uint128_t>(y);
+                detail::uint128_t sum = static_cast<detail::uint128_t>(result) +
+                                        static_cast<detail::uint128_t>(y);
                 if (sum >= goldilocks_modulus) {
                     sum -= goldilocks_modulus;
                 }
@@ -45,7 +50,7 @@ namespace nil::crypto3::multiprecision {
                 BOOST_ASSERT(result < goldilocks_modulus);
             }
 
-            static constexpr base_type reduce128(const uint128_t &input) {
+            static constexpr base_type reduce128(const detail::uint128_t &input) {
                 /*
 
 let (x_lo, x_hi) = split(x); // This is a no-op
@@ -86,8 +91,8 @@ Goldilocks::new(t2)
 
             static constexpr void mul(base_type &result, const base_type &y) {
                 BOOST_ASSERT(result < goldilocks_modulus && y < goldilocks_modulus);
-                uint128_t prod =
-                    static_cast<uint128_t>(result) * static_cast<uint128_t>(y);
+                detail::uint128_t prod = static_cast<detail::uint128_t>(result) *
+                                         static_cast<detail::uint128_t>(y);
                 result = reduce128(prod);
                 BOOST_ASSERT(result < goldilocks_modulus);
             }
@@ -99,6 +104,13 @@ Goldilocks::new(t2)
                 result = static_cast<std::uint64_t>(input % goldilocks_modulus);
             }
         };
+#else
+        class goldilocks_modular_ops : public detail::montgomery_modular_ops<64> {
+          public:
+            constexpr goldilocks_modular_ops()
+                : detail::montgomery_modular_ops<64>(goldilocks_modulus) {}
+        };
+#endif
 
         // Compile-time storage for goldilocks arithmetic operations. Differs from
         // modular_ops_storage_ct in that goldilocks has no modulus parameter
@@ -119,5 +131,4 @@ Goldilocks::new(t2)
             static constexpr modular_ops_t m_modular_ops{};
         };
     }  // namespace detail
-
 }  // namespace nil::crypto3::multiprecision

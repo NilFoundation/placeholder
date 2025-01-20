@@ -11,12 +11,15 @@
 #pragma once
 
 #include "nil/crypto3/multiprecision/detail/big_uint/storage.hpp"
-#include "nil/crypto3/multiprecision/detail/config.hpp"
+#include "nil/crypto3/multiprecision/detail/config.hpp"  // IWYU pragma: keep
+#include "nil/crypto3/multiprecision/detail/force_inline.hpp"
 #include "nil/crypto3/multiprecision/detail/int128.hpp"
 
 // nix will sometimes have immintrin.h even on non-x86 platforms
 // so we additionally check for x86_64 or i386 (using the same checks as in immintrin.h)
-#if __has_include(<immintrin.h>) && (defined(__x86_64__) || defined(__i386__))
+#if __has_include(<immintrin.h>) \
+    && (defined(__x86_64__) || defined(__i386__)) \
+    && !defined(NIL_CO3_MP_DISABLE_INTRINSICS)
 
 #define NIL_CO3_MP_HAS_INTRINSICS
 
@@ -58,24 +61,9 @@ namespace nil::crypto3::multiprecision::detail {
 }  // namespace nil::crypto3::multiprecision::detail
 
 #else
-#warning "Missing immintrin.h, addcarry and subborrow optimizations disabled"
 
-namespace nil::crypto3::multiprecision::detail {
-
-    NIL_CO3_MP_FORCEINLINE unsigned char addcarry_limb(unsigned char carry, limb_type a,
-                                                       limb_type b, limb_type* p_result) {
-        limb_type r = a + b + carry;
-        *p_result = r;
-        return r < a || (r == a && carry);
-    }
-
-    NIL_CO3_MP_FORCEINLINE unsigned char subborrow_limb(unsigned char carry, limb_type a,
-                                                        limb_type b,
-                                                        limb_type* p_result) {
-        limb_type r = a - b - carry;
-        *p_result = r;
-        return r > a || (r == a && carry);
-    }
-}  // namespace nil::crypto3::multiprecision::detail
+#ifndef NIL_CO3_MP_DISABLE_INTRINSICS
+#warning "x86 intrinsics are not available, addcarry and subborrow optimizations disabled"
+#endif
 
 #endif
