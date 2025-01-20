@@ -81,6 +81,7 @@
 #include <nil/blueprint/zkevm_bbf/opcodes/call.hpp>
 #include <nil/blueprint/zkevm_bbf/opcodes/staticcall.hpp>
 #include <nil/blueprint/zkevm_bbf/opcodes/gas.hpp>
+#include "nil/blueprint/zkevm_bbf/opcodes/logx.hpp"
 
 namespace nil {
     namespace blueprint {
@@ -732,6 +733,13 @@ namespace nil {
                 opcodes[zkevm_opcode::SWAP14] = std::make_shared<zkevm_swapx_operation<BlueprintFieldType>>(14);
                 opcodes[zkevm_opcode::SWAP15] = std::make_shared<zkevm_swapx_operation<BlueprintFieldType>>(15);
                 opcodes[zkevm_opcode::SWAP16] = std::make_shared<zkevm_swapx_operation<BlueprintFieldType>>(16);
+
+                // // LOG
+                opcodes[zkevm_opcode::LOG0] = std::make_shared<zkevm_logx_operation<BlueprintFieldType>>();
+                opcodes[zkevm_opcode::LOG1] = std::make_shared<zkevm_logx_operation<BlueprintFieldType>>();
+                opcodes[zkevm_opcode::LOG2] = std::make_shared<zkevm_logx_operation<BlueprintFieldType>>();
+                opcodes[zkevm_opcode::LOG3] = std::make_shared<zkevm_logx_operation<BlueprintFieldType>>();
+                opcodes[zkevm_opcode::LOG4] = std::make_shared<zkevm_logx_operation<BlueprintFieldType>>();
 
                 // // fake opcodes for errors and padding
                 opcodes[zkevm_opcode::err0] = std::make_shared<zkevm_err0_operation<BlueprintFieldType>>();

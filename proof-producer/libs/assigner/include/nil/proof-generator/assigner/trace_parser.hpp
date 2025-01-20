@@ -387,7 +387,6 @@ namespace nil {
             std::vector<exp_input> exps;
             exps.reserve(pb_traces->exp_ops_size());
             for (const auto& pb_exp_op : pb_traces->exp_ops()) {
-                BOOST_LOG_TRIVIAL(trace) << "base: " << proto_uint256_to_zkevm_word(pb_exp_op.base()) << " , exponent: " << proto_uint256_to_zkevm_word(pb_exp_op.exponent()) << std::endl;
                 exps.emplace_back(
                     proto_uint256_to_zkevm_word(pb_exp_op.base()),
                     proto_uint256_to_zkevm_word(pb_exp_op.exponent())
