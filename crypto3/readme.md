@@ -15,7 +15,7 @@ Rationale, tutorials and references are available [here](https://crypto3.nil.fou
 ## Contents
 1. [Structure](#structure)
 2. [Build & test](#build_&_test)
-3. [Usage](#uage)
+3. [Usage](#usage)
 
 ## Structure
 This folder contains the whole suite. Single-purposed libraries (e.g. [block
