@@ -19,8 +19,8 @@ To actually include this library in a project it is required to:
 * [Algebra](https://github.com/NilFoundation/placeholder/tree/master/crypto3/libs/algebra)
 * [ZK](https://github.com/NilFoundation/placeholder/tree/master/crypto3/libs/zk)
 * [=nil;Marshalling](https://github.com/NilFoundation/placeholder/tree/master/crypto3/libs/marshalling)
-* [=nil;Crypto3 Multiprecision Marshalling](https://github.com/NilFoundation/placeholder/tree/master/crypto3/libs/marshaling/multiprecision)
-* [=nil;Crypto3 ALgebra Marshalling](https://github.com/NilFoundation/placeholder/tree/master/crypto3/libs/marshaling/algebra)
+* [=nil;Crypto3 Multiprecision Marshalling](https://github.com/NilFoundation/placeholder/tree/master/crypto3/libs/marshalling/multiprecision)
+* [=nil;Crypto3 ALgebra Marshalling](https://github.com/NilFoundation/placeholder/tree/master/crypto3/libs/marshalling/algebra)
 
 ### External
 
