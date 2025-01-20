@@ -92,7 +92,7 @@ We will show the process for some pairing-friendly curve `curve_type` and its sc
 
 Firstly, we need to create a `blueprint` and allocate the variables `left`, `right` and `output` at the blueprint. The
 allocation on the blueprint proceeds at the constructor of digest_variable. Then we initialize the
-gadget ` sha256_two_to_one_hash_component ` and add constraints at the `generate_r1cs_constraints()` function.
+gadget `sha256_two_to_one_hash_component` and add constraints at the `generate_r1cs_constraints()` function.
 
 ```c++
 blueprint<field_type> bp;
