@@ -106,6 +106,8 @@ struct ArithmeticSample {
 
 template<std::size_t Bits1, std::size_t Bits2>
 void base_operations_test(const ArithmeticSample<Bits1, Bits2> sample) {
+    boost::unit_test::unit_test_log.set_threshold_level(boost::unit_test::log_warnings);
+
     const auto &a = sample.a;
     const auto &b = sample.b;
     const auto &cmp_a_b = sample.cmp_a_b;
