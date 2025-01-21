@@ -63,6 +63,19 @@ namespace nil {
                     std::vector<TYPE> pp;
                 };
 
+                template<typename T>
+                struct NonNativeFieldTypeIndex;
+
+                template<>
+                struct NonNativeFieldTypeIndex<crypto3::algebra::curves::pallas::base_field_type> {
+                    static constexpr std::size_t value = 0;
+                };
+
+                template<>
+                struct NonNativeFieldTypeIndex<crypto3::algebra::curves::vesta::base_field_type> {
+                    static constexpr std::size_t value = 1;
+                };
+
                 template<typename FieldType, GenerationStage stage, typename NonNativeFieldType>
                 class flexible_multiplication : public generic_component<FieldType, stage> {
                     using generic_component<FieldType, stage>::allocate;
@@ -85,18 +98,6 @@ namespace nil {
                         nil::crypto3::multiprecision::big_uint<2* crypto3::algebra::curves::vesta::base_field_type::modulus_bits>
                     >;
 
-                    template<typename T>
-                    struct NonNativeFieldTypeIndex;
-
-                    template<>
-                    struct NonNativeFieldTypeIndex<crypto3::algebra::curves::pallas::base_field_type> {
-                        static constexpr std::size_t value = 0;
-                    };
-
-                    template<>
-                    struct NonNativeFieldTypeIndex<crypto3::algebra::curves::vesta::base_field_type> {
-                        static constexpr std::size_t value = 1;
-                    };
 
                   public:
                     std::vector<TYPE> inp_x;
@@ -107,11 +108,13 @@ namespace nil {
 
                     static table_params get_minimal_requirements(std::size_t num_chunks,std::size_t bit_size_chunk) {
                         //The 6 variables chunks fit in 2 rows, and there is a 3rd additionnal row available for the constraint values
+                        std::cout << "get_minimal_requirements 1"<< std::endl;
                         std::size_t witness =3*num_chunks;
                         constexpr std::size_t public_inputs = 1;
                         constexpr std::size_t constants = 0;
                         //rows = 4096-1 so that lookup table is not too hard to fit and padding doesn't inflate the table
                         constexpr std::size_t rows = 4095;
+                        std::cout << "get_minimal_requirements 2"<< std::endl;
                         return {witness, public_inputs, constants, rows};
                     }
 
@@ -119,6 +122,7 @@ namespace nil {
                                                                     raw_input_type raw_input,
                                                                     std::size_t num_chunks,
                                                                     std::size_t bit_size_chunk) {
+                        std::cout << "form_input 1"<< std::endl;
                         std::vector<TYPE> input_x(num_chunks);
                         std::vector<TYPE> input_y(num_chunks);
                         std::vector<TYPE> input_p(num_chunks);
@@ -139,6 +143,7 @@ namespace nil {
                             context_object.allocate(input_p[i], 0, i+2*num_chunks, column_type::public_input);
                             context_object.allocate(input_pp[i], 0, i+3*num_chunks, column_type::public_input);
                         }
+                        std::cout << "form_input 2"<< std::endl;
                         return std::make_tuple(input_x,input_y,input_p,input_pp);
                     }
 
@@ -147,10 +152,11 @@ namespace nil {
                                             std::size_t num_chunks, std::size_t bit_size_chunk,
                                             bool make_links = true)
                         : generic_component<FieldType, stage>(context_object) {
+                        std::cout << "flexible_multiplication 1"<< std::endl;
                             
                         using double_non_native_integral_type = typename std::variant_alternative_t<
                             NonNativeFieldTypeIndex<NonNativeFieldType>::value, NonNativeIntegralExtendedVariant>;
-
+                
                         using native_integral_type = typename FieldType::integral_type;
 
                         using Check_Mod_P = typename bbf::components::check_mod_p<FieldType,stage>;
@@ -176,6 +182,7 @@ namespace nil {
                         TYPE ZERO;
 
                         if constexpr (stage == GenerationStage::ASSIGNMENT) {
+                            std::cout << "flexible_multiplication 2"<< std::endl;
                                 ZERO = 0;
                             for (std::size_t i = 0; i < num_chunks; ++i) {
                                 X[i] = input_x[i];
@@ -194,6 +201,7 @@ namespace nil {
                                 foreign_p += double_non_native_integral_type(native_integral_type(P[i].data)) * pow;
                                 pow <<= bit_size_chunk;
                             }
+                            std::cout << "flexible_multiplication 3"<< std::endl;
 
                             double_non_native_integral_type foreign_r = (foreign_x * foreign_y) % foreign_p, // r = x*y % p
                                                             foreign_q = (foreign_x * foreign_y - foreign_r) / foreign_p; // q = (x*y - r)/p
@@ -207,6 +215,7 @@ namespace nil {
 
                         }
 
+                        std::cout << "flexible_multiplication 4"<< std::endl;
                         for (std::size_t i = 0; i < num_chunks; ++i){
                             allocate(X[i]);
                             allocate(Y[i]);
@@ -225,6 +234,7 @@ namespace nil {
                             p_n += P[j] * pow;
                             pow <<= bit_size_chunk;
                         }
+                        std::cout << "flexible_multiplication 5"<< std::endl;
 
                         allocate(x_n);
                         allocate(y_n);
@@ -249,6 +259,7 @@ namespace nil {
                             allocate(Z[i]);
                         }
 
+                        std::cout << "flexible_multiplication 6"<< std::endl;
 
                         if constexpr (stage == GenerationStage::ASSIGNMENT) {
                             A[0] = Z[0] - R[0];
@@ -264,6 +275,7 @@ namespace nil {
                                 B[2*i + 1] =TYPE(native_integral_type(A[i].data) >> bit_size_chunk);
                             }
                         }
+                        std::cout << "flexible_multiplication 7"<< std::endl;
 
                         native_integral_type b_shift = native_integral_type(1) << bit_size_chunk;
                         allocate(A[0]);
@@ -277,6 +289,7 @@ namespace nil {
                             allocate(A[i]);
                             constrain(A[i]*b_shift - Z[i] - A[i-1]+ R[i]);
                         }
+                        std::cout << "flexible_multiplication 8"<< std::endl;
 
                         // If there is a fault in the computation:
                         // a'_0 = a_0 + 2^{3b+1} 
@@ -302,6 +315,7 @@ namespace nil {
                                                 
                         Check_Mod_P c1 = Check_Mod_P(context_object, R,PP,ZERO,num_chunks,bit_size_chunk,false);
                         Check_Mod_P c2 = Check_Mod_P(context_object, Q,PP,ZERO,num_chunks,bit_size_chunk,false);
+                        std::cout << "flexible_multiplication 9"<< std::endl;
 
                         //Starting b\n
                         if(num_chunks>2){
@@ -320,7 +334,9 @@ namespace nil {
                                 allocate(B_X[i][num_chunks-1]);
                                 Range_Check(context_object, B_X[i],num_chunks,bit_size_chunk);
                             }    
-                        }                 
+                        }
+
+                        std::cout << "flexible_multiplication 10"<< std::endl;                 
 
                         if (make_links) {
                             for (std::size_t i = 0; i < num_chunks; ++i) {

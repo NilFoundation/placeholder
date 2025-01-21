@@ -217,15 +217,19 @@ namespace nil {
                     }
 
                     for (const auto& [table_name, grouped_lookups] : gates.grouped_lookups) {
+                        // Create table will only create it, if it does not already exist.
                         size_t table_index = create_table(table_name, lookup_table_names, gates);
-                        for (const auto& [ group_id, lookups] : grouped_lookups) {
-                            lookup_input_constraints_type lookup_gate;
+                        for (const auto& [group_id, lookups] : grouped_lookups) {
+                            std::vector<lookup_constraint_type> merged_lookup_gate;
+                            lookup_input_constraints_type merged_lookup_input;
                             for (const auto& [selector_id, lookup_inputs] : lookups) {
-                                lookup_gate += lookup_inputs * expression_type(var(selector_id, 0, false, var::column_type::selector));
+                                merged_lookup_input += lookup_inputs *
+                                    expression_type(var(selector_id, 0, false, var::column_type::selector));
                             }
-                            bp.add_lookup_gate(full_selector_id, (const std::vector<lookup_constraint_type>&)lookup_gate);
+                            merged_lookup_gate.push_back({table_index, merged_lookup_input});
+                            bp.add_lookup_gate(full_selector_id, merged_lookup_gate);
                         }
-                    }
+                    } 
 
                     // compatibility layer: dynamic lookup tables - continued
                     for(const auto& [name, area] : gates.dynamic_lookup_tables) {
@@ -263,11 +267,25 @@ namespace nil {
                     for(const auto &table_name : ordered_table_names) {
                         const auto &table = lookup_tables.at(table_name);
 
-                        if (table->get_rows_number() > usable_rows) {
-                            std::size_t options_number = table->get_rows_number() / usable_rows + 1;
+                        std::size_t table_rows_number = table->subtables.size() > 1 ? table->get_rows_number() :
+                            (table->subtables.begin()->second.end - table->subtables.begin()->second.begin + 1);
+                        std::size_t table_columns_number = table->subtables.size() > 1 ? table->get_columns_number() :
+                            table->subtables.begin()->second.column_indices.size();
+                        std::vector<std::size_t> column_map(table_columns_number);
+                        if (table->subtables.size() == 1) {
+                            column_map = table->subtables.begin()->second.column_indices;
+                        } else {
+                            for(std::size_t k = 0; k < table_columns_number; k++) {
+                                column_map[k] = k;
+                            }
+                        }
+                        std::size_t table_row_shift = table->subtables.size() > 1 ? 0 : table->subtables.begin()->second.begin;
+
+                        if (table_rows_number > usable_rows) {
+                            std::size_t options_number = table_rows_number / usable_rows + 1;
                             start_constant_column += prev_columns_number;
                             std::size_t cur_constant_column = start_constant_column;
-                            prev_columns_number = options_number * table->get_columns_number();
+                            prev_columns_number = options_number * table_columns_number;
 
                             if (presets.constants_amount() < start_constant_column + prev_columns_number) {
                                 presets.resize_constants(start_constant_column + prev_columns_number);
@@ -278,22 +296,24 @@ namespace nil {
 
                             
 
-                            if (table->get_rows_number() % usable_rows == 0) options_number--;
+                            if (table_rows_number % usable_rows == 0) options_number--;
                             std::size_t cur = 0;
                             for(std::size_t i = 0; i < options_number; i++) {
                                 for(std::size_t local_start_row = 1; local_start_row < usable_rows; local_start_row++, cur++) {
-                                    for(std::size_t k = 0; k < table->get_columns_number(); k++) {
-                                        if (cur < table->get_rows_number())
-                                            presets.constant(cur_constant_column + k,local_start_row) = table->get_table()[k][cur];
+                                    for(std::size_t k = 0; k < table_columns_number; k++) {
+                                        if (cur < table_rows_number)
+                                            presets.constant(cur_constant_column + k,local_start_row) =
+                                                table->get_table()[column_map[k]][table_row_shift + cur];
                                         else
                                             presets.constant(cur_constant_column + k,local_start_row) =
-                                                table->get_table()[k][table->get_rows_number()-1];
+                                                table->get_table()[column_map[k]][table_row_shift + table_rows_number-1];
                                     }
                                 }
-                                cur_constant_column += table->get_columns_number();
+                                cur_constant_column += table_columns_number;
                             }
                             for(const auto &[subtable_name, subtable] : table->subtables) {
-                                if (subtable.begin != 0 || subtable.end != table->get_rows_number() -1)
+                                if ((table->subtables.size() > 1) &&
+                                    (subtable.begin != 0 || subtable.end != table->get_rows_number() -1))
                                     BOOST_ASSERT_MSG(false, "Only full big tables are supported now");
                                 std::string full_table_name = table->table_name + "/" + subtable_name;
                                 bp_lookup_tables[lookup_table_ids.at(full_table_name) - 1] =
@@ -301,9 +321,12 @@ namespace nil {
 
                                 for(std::size_t i = 0; i < options_number; i++) {
                                     std::vector<nil::crypto3::zk::snark::plonk_variable<typename FieldType::value_type>> option;
-                                    for(const auto &column_index : subtable.column_indices) {
+                                    for(std::size_t k = 0; k < subtable.column_indices.size(); k++) {
+                                        // if current subtable is the only one in the table, its columns are exatly
+                                        // the columns present in the table
+                                        std::size_t column_index = (table->subtables.size() > 1) ? subtable.column_indices[k] : k;
                                         option.emplace_back(nil::crypto3::zk::snark::plonk_variable<typename FieldType::value_type>(
-                                            start_constant_column + i * table->get_columns_number() + column_index, 0, false,
+                                            start_constant_column + i * table_columns_number + column_index, 0, false,
                                             nil::crypto3::zk::snark::plonk_variable<typename FieldType::value_type>::column_type::constant));
                                     }
                                     bp_lookup_tables[lookup_table_ids.at(full_table_name) - 1].append_option(option);
@@ -316,27 +339,29 @@ namespace nil {
                         } else if (table->get_rows_number() < usable_rows) {
                             start_row = 1;
                             start_constant_column += prev_columns_number;
-                            prev_columns_number = table->get_columns_number();
+                            prev_columns_number = table_columns_number;
                         }
 
                         // Place table into constant_columns.
 
                         // add constant columns if necessary
-                        if (presets.constants_amount() < start_constant_column + table->get_table().size()) {
-                            presets.resize_constants(start_constant_column + table->get_table().size());
-                        }
+                        if (presets.constants_amount() < start_constant_column + table_columns_number) {
+                            presets.resize_constants(start_constant_column + table_columns_number);
+                            }
                         // assure all added columns have same amount of usable_rows and need no resizement later
-                        for(std::size_t i = start_constant_column; i < start_constant_column + table->get_table().size(); i++)
-                            presets.constant(i,usable_rows-1) = 0;
+                        for(std::size_t i = start_constant_column; i < start_constant_column + table_columns_number; i++)
+                            presets.constant(i,usable_rows - 1) = 0;
 
-                        for(std::size_t i = 0; i < table->get_table().size(); i++) {
-                            for(std::size_t j = 0; j < table->get_table()[i].size(); j++) {
-                                presets.constant(start_constant_column + i,start_row + j) = table->get_table()[i][j];
+                        for(std::size_t i = 0; i < table_columns_number; i++) {
+                            for(std::size_t j = table_row_shift; j < std::min(table_row_shift + table_rows_number,
+                                                                table->get_table()[column_map[i]].size()); j++) {
+                                presets.constant(start_constant_column + i,start_row + j - table_row_shift) =
+                                    table->get_table()[column_map[i]][j];
                             }
                         }
 
                         std::map<std::pair<std::size_t, std::size_t>, std::size_t> selector_ids;
-                        for(const auto &[subtable_name, subtable]:table->subtables) {
+                        for(const auto &[subtable_name, subtable] : table->subtables) {
                             if( selector_ids.find(std::make_pair(subtable.begin, subtable.end)) != selector_ids.end() ){
                                 // std::cout  << "selector for " << subtable_name << " from " << start_row + subtable.begin
                                 //            << " to " << start_row + subtable.end << std::endl;
@@ -345,9 +370,13 @@ namespace nil {
                                 bp_lookup_tables[lookup_table_ids.at(full_table_name) - 1] =
                                     plonk_lookup_table(subtable.column_indices.size(), selector_id);
                                 std::vector<nil::crypto3::zk::snark::plonk_variable<typename FieldType::value_type>> option;
-                                for( const auto &column_index : subtable.column_indices ){
+                                for(std::size_t k = 0; k < subtable.column_indices.size(); k++) {
+                                    // if current subtable is the only one in the table, its columns are exatly
+                                    // the columns present in the table
+                                    std::size_t column_index = (table->subtables.size() > 1) ? subtable.column_indices[k] : k;
                                     option.emplace_back( nil::crypto3::zk::snark::plonk_variable<typename FieldType::value_type>(
-                                        column_index, 0, false,
+                                    // TODO! The following line was missing start_constant_column term
+                                        start_constant_column + column_index, 0, false,
                                         nil::crypto3::zk::snark::plonk_variable<typename FieldType::value_type>::column_type::constant
                                     ) );
                                 }
@@ -370,6 +399,7 @@ namespace nil {
                             std::vector<nil::crypto3::zk::snark::plonk_variable<typename FieldType::value_type>> option;
                             for(const auto &column_index : subtable.column_indices) {
                                 option.emplace_back(nil::crypto3::zk::snark::plonk_variable<typename FieldType::value_type>(
+                                // TODO: check, why the following line did not have the start_constant_column term!
                                     start_constant_column + column_index, 0, false,
                                     nil::crypto3::zk::snark::plonk_variable<typename FieldType::value_type>::column_type::constant
                                 ) );
@@ -377,7 +407,7 @@ namespace nil {
                             bp_lookup_tables[lookup_table_ids.at(full_table_name) - 1].append_option(option);
                             selector_ids[std::make_pair(subtable.begin, subtable.end)] = cur_selector_id;
                         }
-                        start_row += table->get_rows_number();
+                        start_row += table_rows_number;
                     }
                     for(const auto&[k, table]:dynamic_tables) {
                         BOOST_ASSERT(table->is_defined());
