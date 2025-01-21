@@ -96,7 +96,7 @@ void test_mult(const std::vector<typename BlueprintFieldType::value_type> &publi
             extended_integral_type R = 0;
             pow = 1;
             for (std::size_t i = 0; i < num_chunks; i++) {
-                R += extended_integral_type(integral_type(A.res[i].data)) * pow;
+                R += extended_integral_type(integral_type(A.res_z[i].data)) * pow;
                 pow <<= bit_size_chunk;
             }
 #ifdef BLUEPRINT_PLONK_PROFILING_ENABLED

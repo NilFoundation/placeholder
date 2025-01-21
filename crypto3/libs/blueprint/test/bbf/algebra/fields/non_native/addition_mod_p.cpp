@@ -87,7 +87,7 @@ void test_addition_mod_p(const std::vector<typename BlueprintFieldType::value_ty
         extended_integral_type Z = 0;
         pow = 1;
         for (std::size_t i = 0; i < num_chunks; i++) {
-            Z += extended_integral_type(integral_type(A.res[i].data)) * pow;
+            Z += extended_integral_type(integral_type(A.res_z[i].data)) * pow;
             pow <<= bit_size_chunk;
         }
 #ifdef BLUEPRINT_PLONK_PROFILING_ENABLED

@@ -107,7 +107,7 @@ namespace nil {
                     std::vector<TYPE> inp_x;
                     std::vector<TYPE> inp_p;
                     std::vector<TYPE> inp_pp;
-                    std::vector<TYPE> res;
+                    std::vector<TYPE> res_z;
 
                     static table_params get_minimal_requirements(
                         std::size_t num_chunks, std::size_t bit_size_chunk) {
@@ -249,7 +249,7 @@ namespace nil {
                             inp_pp.push_back(input_pp[i]);
                         }
                         for (int i = 0; i < num_chunks; ++i) {
-                            res.push_back(Y[i]);
+                            res_z.push_back(Y[i]);
                         }
                     }
                 };

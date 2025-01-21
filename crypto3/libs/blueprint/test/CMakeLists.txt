@@ -106,6 +106,7 @@ set(COMMON_TEST_FILES
     "bbf/algebra/fields/non_native/check_mod_p"
     "bbf/algebra/fields/non_native/negation_mod_p"
     "bbf/algebra/fields/non_native/flexible_multiplication"
+    "bbf/algebra/curves/weierstrass/ec_double"
     )
 
 set(NON_NATIVE_TESTS_FILES

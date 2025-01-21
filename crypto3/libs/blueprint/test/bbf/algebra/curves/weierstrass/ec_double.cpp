@@ -1,5 +1,4 @@
 //---------------------------------------------------------------------------//
-// Copyright (c) 2024 Valeh Farzaliyev <estoniaa@nil.foundation>
 // Copyright (c) 2024 Antoine Cyr <antoine.cyr@nil.foundation>
 //
 // MIT License
@@ -26,7 +25,7 @@
 #define BOOST_TEST_MODULE bbf_check_mod_p_test
 
 #include <boost/test/unit_test.hpp>
-#include <nil/blueprint/bbf/components/algebra/fields/non_native/negation_mod_p.hpp>
+#include <nil/blueprint/bbf/components/algebra/curves/weierstrass/ec_double.hpp>
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
 
@@ -42,27 +41,39 @@ using namespace nil::blueprint;
 
 template<typename BlueprintFieldType, typename NonNativeFieldType, std::size_t num_chunks,
          std::size_t bit_size_chunk>
-void test_negation_mod_p(
+void test_ec_double(
     const std::vector<typename BlueprintFieldType::value_type> &public_input) {
     using FieldType = BlueprintFieldType;
     using TYPE = typename FieldType::value_type;
+    using NON_NATIVE_TYPE = typename NonNativeFieldType::value_type;
     using integral_type = typename BlueprintFieldType::integral_type;
     typedef nil::crypto3::multiprecision::big_uint<2 * NonNativeFieldType::modulus_bits>
         extended_integral_type;
 
-    extended_integral_type x = 0, p = 0, pow = 1;
-    // Populate x, p
+    extended_integral_type B = extended_integral_type(1)
+                                    << bit_size_chunk,
+                                    pow = 0;
+    NON_NATIVE_TYPE xQ = 0, yQ = 0;
+
     for (std::size_t i = 0; i < num_chunks; ++i) {
-        x += extended_integral_type(integral_type(public_input[i].data)) * pow;
-        p += extended_integral_type(integral_type(public_input[i + num_chunks].data)) *
-             pow;
+        xQ += extended_integral_type(integral_type(public_input[i].data)) * pow;
+        yQ += extended_integral_type(integral_type(public_input[i + num_chunks].data)) *
         pow <<= bit_size_chunk;
     }
 
-    extended_integral_type y = (x == 0) ? 0 : p - x;  // if x = 0, then y = 0
+
+    NON_NATIVE_TYPE lambda =
+                               (yQ == 0)
+                                   ? 0
+                                   : 3 * xQ * xQ *
+                                         ((2 * yQ).inversed()),  // if yQ = 0, lambda = 0
+        z = (yQ == 0) ? 0 : yQ.inversed(),                       // if yQ = 0, z = 0
+        expected_xR = lambda * lambda - 2 * xQ, expected_yR = lambda * (xQ - expected_xR) - yQ;
 
     auto assign_and_check = [&](auto &B, auto &raw_input) {
-        raw_input.x =
+        raw_input.xQ =
+            std::vector<TYPE>(public_input.begin(), public_input.begin() + num_chunks);
+        raw_input.yQ =
             std::vector<TYPE>(public_input.begin(), public_input.begin() + num_chunks);
         raw_input.p = std::vector<TYPE>(public_input.begin() + num_chunks,
                                         public_input.begin() + 2 * num_chunks);
@@ -74,38 +85,41 @@ void test_negation_mod_p(
         bool pass = B.is_satisfied(at);
         std::cout << "Is_satisfied = " << pass << std::endl;
 
-        assert(pass == true);
-        extended_integral_type Y = 0;
+                assert(pass == true);
+        extended_integral_type xR = 0;
+        extended_integral_type yR = 0;
         pow = 1;
         for (std::size_t i = 0; i < num_chunks; i++) {
-            Y += extended_integral_type(integral_type(A.res_z[i].data)) * pow;
+            xR += extended_integral_type(integral_type(A.res_xR[i].data)) * pow;
+            yR += extended_integral_type(integral_type(A.res_yR[i].data)) * pow;
             pow <<= bit_size_chunk;
         }
 #ifdef BLUEPRINT_PLONK_PROFILING_ENABLED
         std::cout << "negation_mod_p test" << std::endl;
-        std::cout << "Expected res: " << std::dec << z << std::endl;
-        std::cout << "Real res:     " << std::dec << Z << std::endl;
+        std::cout << "Expected xR - yR: " <<  std::dec << expected_xR.data << " - " << expected_yR.data << std::endl;
+        std::cout << "Real res xR - yR:  " << std::dec << xR << " - " << yR << std::endl;
 #endif
-        assert(y == Y);
+        assert(xR == expected_xR.data);
+        assert(yR == expected_yR.data);
     };
 
     if constexpr (std::is_same_v<NonNativeFieldType,
                                  crypto3::algebra::curves::pallas::base_field_type>) {
-        typename bbf::components::vesta_negation_mod_p<
+        typename bbf::components::vesta_ec_double<
             FieldType, bbf::GenerationStage::ASSIGNMENT>::raw_input_type raw_input;
 
         auto B =
-            bbf::circuit_builder<FieldType, bbf::components::vesta_negation_mod_p,
+            bbf::circuit_builder<FieldType, bbf::components::vesta_ec_double,
                                  std::size_t, std::size_t>(num_chunks, bit_size_chunk);
 
         assign_and_check(B, raw_input);
     } else if constexpr (std::is_same_v<
                              NonNativeFieldType,
                              crypto3::algebra::curves::vesta::base_field_type>) {
-        typename bbf::components::pallas_negation_mod_p<
+        typename bbf::components::pallas_ec_double<
             FieldType, bbf::GenerationStage::ASSIGNMENT>::raw_input_type raw_input;
         auto B =
-            bbf::circuit_builder<FieldType, bbf::components::pallas_negation_mod_p,
+            bbf::circuit_builder<FieldType, bbf::components::pallas_ec_double,
                                  std::size_t, std::size_t>(num_chunks, bit_size_chunk);
 
         assign_and_check(B, raw_input);
@@ -114,7 +128,7 @@ void test_negation_mod_p(
 
 template<typename BlueprintFieldType, typename NonNativeFieldType, std::size_t num_chunks,
          std::size_t bit_size_chunk, std::size_t RandomTestsAmount>
-void negation_mod_p_tests() {
+void ec_double_tests() {
     using value_type = typename BlueprintFieldType::value_type;
     using integral_type = typename BlueprintFieldType::integral_type;
     using foreign_value_type = typename NonNativeFieldType::value_type;
@@ -130,9 +144,10 @@ void negation_mod_p_tests() {
     for (std::size_t i = 0; i < RandomTestsAmount; i++) {
         std::vector<typename BlueprintFieldType::value_type> public_input;
 
-        foreign_value_type src_x = generate_random();
+        foreign_value_type src_x = generate_random(), src_y = generate_random();
 
-        extended_integral_type x = extended_integral_type(integral_type(src_x.data)),
+        extended_integral_type xQ = extended_integral_type(integral_type(src_x.data)),
+                               yQ = extended_integral_type(integral_type(src_y.data)),
                                extended_base = 1,
                                ext_pow = extended_base << (num_chunks * bit_size_chunk),
                                p = NonNativeFieldType::modulus;
@@ -140,8 +155,11 @@ void negation_mod_p_tests() {
 
         public_input.resize(3 * num_chunks + 1);
         for (std::size_t j = 0; j < num_chunks; j++) {
-            public_input[j] = value_type(x & mask);
-            x >>= bit_size_chunk;
+            public_input[j] = value_type(xQ & mask);
+            xQ >>= bit_size_chunk;
+
+            public_input[j] = value_type(yQ & mask);
+            yQ >>= bit_size_chunk;
 
             public_input[1 * num_chunks + j] = value_type(p & mask);
             p >>= bit_size_chunk;
@@ -151,7 +169,7 @@ void negation_mod_p_tests() {
         }
         public_input.push_back(value_type(0));  // the zero
 
-        test_negation_mod_p<BlueprintFieldType, NonNativeFieldType, num_chunks,
+        test_ec_double<BlueprintFieldType, NonNativeFieldType, num_chunks,
                             bit_size_chunk>(public_input);
     }
 }
@@ -160,26 +178,26 @@ constexpr static const std::size_t random_tests_amount = 10;
 
 BOOST_AUTO_TEST_SUITE(blueprint_plonk_test_suite)
 
-BOOST_AUTO_TEST_CASE(blueprint_plonk_bbf_negation_mod_p_test) {
+BOOST_AUTO_TEST_CASE(blueprint_plonk_bbf_ec_double_test) {
     using pallas_field_type = typename crypto3::algebra::curves::pallas::base_field_type;
     using vesta_field_type = typename crypto3::algebra::curves::vesta::base_field_type;
 
-    negation_mod_p_tests<pallas_field_type, vesta_field_type, 8, 32,
+    ec_double_tests<pallas_field_type, vesta_field_type, 8, 32,
                          random_tests_amount>();
 
-    negation_mod_p_tests<pallas_field_type, vesta_field_type, 4, 65,
+    ec_double_tests<pallas_field_type, vesta_field_type, 4, 65,
                          random_tests_amount>();
 
-    negation_mod_p_tests<pallas_field_type, pallas_field_type, 8, 34,
+    ec_double_tests<pallas_field_type, pallas_field_type, 8, 34,
                          random_tests_amount>();
 
-    negation_mod_p_tests<vesta_field_type, pallas_field_type, 2, 253,
+    ec_double_tests<vesta_field_type, pallas_field_type, 2, 253,
                          random_tests_amount>();
 
-    negation_mod_p_tests<vesta_field_type, pallas_field_type, 12, 22,
+    ec_double_tests<vesta_field_type, pallas_field_type, 12, 22,
                          random_tests_amount>();
 
-    negation_mod_p_tests<vesta_field_type, vesta_field_type, 8, 33,
+    ec_double_tests<vesta_field_type, vesta_field_type, 8, 33,
                          random_tests_amount>();
 }
 
