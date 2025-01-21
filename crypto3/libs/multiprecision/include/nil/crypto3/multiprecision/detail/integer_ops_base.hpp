@@ -12,6 +12,7 @@
 #include <cstddef>
 #include <stdexcept>
 #include <type_traits>
+#include <bit>
 
 namespace nil::crypto3::multiprecision {
 

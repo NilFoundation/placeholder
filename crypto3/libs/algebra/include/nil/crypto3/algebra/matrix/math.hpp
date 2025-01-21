@@ -27,15 +27,12 @@
 #ifndef CRYPTO3_ALGEBRA_MATRIX_MATH_HPP
 #define CRYPTO3_ALGEBRA_MATRIX_MATH_HPP
 
-#include <algorithm>
-
 #include <nil/crypto3/algebra/vector/vector.hpp>
 #include <nil/crypto3/algebra/vector/math.hpp>
 
 #include <nil/crypto3/algebra/matrix/matrix.hpp>
 #include <nil/crypto3/algebra/matrix/utility.hpp>
 
-#include <nil/crypto3/algebra/scalar/math.hpp>
 
 namespace nil {
     namespace crypto3 {
@@ -43,42 +40,6 @@ namespace nil {
             /** \addtogroup matrix
              *  @{
              */
-
-            /** @brief computes the elementwise complex conjugate
-             *  @param m an \f$ M \times N \f$ matrix of type T
-             *  @return an \f$ M \times N \f$ matrix \f$\overline{\textbf{m}}\f$ of type T such that
-             *  \f$ \left(\overline{\textbf{m}}\right)_{ij} = \overline{\textbf{m}_{ij}},\ \forall i,j \f$
-             *
-             *  Computes the elementwise complex conjugate of a matrix
-             */
-            template<typename T, std::size_t M, std::size_t N>
-            constexpr matrix<T, M, N> conj(const matrix<T, M, N> &m) {
-                return elementwise(algebra::conj<T>, m);
-            }
-
-            /** @brief computes the elementwise real
-             *  @param m an \f$ M \times N \f$ matrix of type T
-             *  @return an \f$ M \times N \f$ matrix \f$\textbf{m}\f$ of type T such that
-             *  \f$ \left(\textbf{m}}_{ij} = \mathbb{R}\{\textbf{m}_{ij}\},\ \forall i,j \f$
-             *
-             *  Computes the elementwise real of a matrix
-             */
-            template<typename T, std::size_t M, std::size_t N>
-            constexpr matrix<nil::crypto3::algebra::remove_complex_t<T>, M, N> real(const matrix<T, M, N> &m) {
-                return elementwise([](auto i) { return std::real(i); }, m);
-            }
-
-            /** @brief computes the elementwise imag
-             *  @param m an \f$ M \times N \f$ matrix of type T
-             *  @return an \f$ M \times N \f$ matrix \f$\textbf{m}\f$ of type T such that
-             *  \f$ \left(\textbf{m}}_{ij} = \mathbb{I}\{\textbf{m}_{ij}\},\ \forall i,j \f$
-             *
-             *  Computes the elementwise imag of a matrix
-             */
-            template<typename T, std::size_t M, std::size_t N>
-            constexpr matrix<nil::crypto3::algebra::remove_complex_t<T>, M, N> imag(const matrix<T, M, N> &m) {
-                return elementwise([](auto i) { return std::imag(i); }, m);
-            }
 
             /** @brief computes the transpose
              *  @param m an \f$ M \times N \f$ matrix of type T
@@ -90,18 +51,6 @@ namespace nil {
             template<typename T, std::size_t M, std::size_t N>
             constexpr matrix<T, N, M> transpose(const matrix<T, M, N> &m) {
                 return generate<N, M>([&m](auto i, auto j) { return m[j][i]; });
-            }
-
-            /** @brief computes the Hermitian transpose
-             *  @param m an \f$ M \times N \f$ matrix of type T
-             *  @return an \f$ N \times M \f$ matrix \f$ \textbf{m}^{*} \f$ of type T such that
-             *  \f$ \left(\textbf{m}^{*}\right)_{ij} = \overline{\textbf{m}_{ji}},\ \forall i,j \f$
-             *
-             *  Computes the Hermitian (conjugate) transpose.
-             */
-            template<typename T, std::size_t M, std::size_t N>
-            constexpr matrix<T, N, M> hermitian(const matrix<T, M, N> &m) {
-                return transpose(conj(m));
             }
 
             /** @brief computes the matrix product
@@ -154,40 +103,13 @@ namespace nil {
                 return generate<M * P, N * Q>([&a, &b](auto i, auto j) { return a[i / P][j / Q] * b[i % P][j % Q]; });
             }
 
-            /** @brief Computes the maximum absolute column sum norm
-             *  @param m an \f$M \times N\f$ matrix
-             *  @return a scalar \f$ {\left\lVert \textbf{m} \right\rVert}_1 \f$ of type T
-             * such that \f$ {\left\lVert \textbf{m} \right\rVert}_1 = \max\limits_j
-             * \sum\limits_{i=1}^M \left\lvert \textbf{m}_{ij} \right\rvert \f$
-             *
-             *  Computes the maximum absolute column sum norm of a matrix.
-             */
-            template<typename T, std::size_t M, std::size_t N>
-            constexpr T macs(const matrix<T, M, N> &m) {
-                return max(generate<N>([&m](std::size_t i) { return sum(abs(m.column(i))); }));
-            }
-
-            /** @brief Computes the maximum absolute row sum norm
-             *  @param m an \f$M \times N\f$ matrix
-             *  @return a scalar \f$ {\left\lVert \textbf{m} \right\rVert}_\infty \f$ of
-             * type T such that \f$ {\left\lVert \textbf{m} \right\rVert}_\infty = \max\limits_i
-             * \sum\limits_{j=1}^N \left\lvert \textbf{m}_{ij} \right\rvert \f$
-             *
-             *  Computes the maximum absolute row sum norm of a matrix.
-             */
-            template<typename T, std::size_t M, std::size_t N>
-            constexpr T mars(const matrix<T, M, N> &m) {
-                return max(generate<M>([&m](std::size_t i) { return sum(abs(m.row(i))); }));
-            }
-
             /// @private
             template<typename T, std::size_t M, std::size_t N>
-            constexpr std::tuple<matrix<T, M, N>, std::size_t, T> gauss_jordan_impl(matrix<T, M, N> m, T tolerance) {
+            constexpr std::tuple<matrix<T, M, N>, std::size_t, T> gauss_jordan_impl(matrix<T, M, N> m) {
                 // CRYPTO3_DETAIL_ASSERT_FLOATING_POINT(T)
                 // CRYPTO3_DETAIL_ASSERT_REAL(T)
 
-                // Define function for determining if an element is negligible
-                auto negligible = [&tolerance](const T &v) { return abs(v) < tolerance; };
+                auto negligible = [](const T &v) { return v == T::zero(); };
 
                 T det = 1;
                 std::size_t rank = 0;
@@ -195,7 +117,7 @@ namespace nil {
                 while (i < M && j < N) {
                     // Choose largest magnitude as pivot to avoid adding different magnitudes
                     for (std::size_t ip = i + 1; ip < M; ++ip) {
-                        if (abs(m[ip][j]) > abs(m[i][j])) {
+                        if (m[ip][j] > m[i][j]) {
                             for (std::size_t jp = 0; jp < N; ++jp) {
                                 auto tmp = m[ip][jp];
                                 m[ip][jp] = m[i][jp];
@@ -239,13 +161,6 @@ namespace nil {
                 return {m, rank, det};
             }
 
-            /// @private
-            template<typename T, std::size_t M, std::size_t N>
-            constexpr std::tuple<matrix<T, M, N>, std::size_t, T> gauss_jordan_impl(const matrix<T, M, N> &m) {
-                T tol = T(std::max(N, M)) * std::numeric_limits<T>::epsilon() * mars(m);
-                return gauss_jordan_impl(m, tol);
-            }
-
             /** @brief Compute the reduced row echelon form
              *  @param m an \f$ M \times N \f$ matrix of type T
              *  @return an \f$ M \times N \f$ matrix of type T, the reduced row echelon form
@@ -259,21 +174,6 @@ namespace nil {
             template<typename T, std::size_t M, std::size_t N>
             constexpr matrix<T, M, N> rref(const matrix<T, M, N> &m) {
                 return std::get<0>(gauss_jordan_impl(m));
-            }
-
-            /** @brief Compute the reduced row echelon form
-             *  @param m an \f$ M \times N \f$ matrix of type T
-             *  @param tolerance the tolerance used to determine when an element is
-             * negligible (near zero)
-             *  @return an \f$ M \times N \f$ matrix of type T, the reduced row echelon form
-             * of \f$ \textbf{m} \f$
-             *
-             *  Computes the reduced row echelon form of a matrix using Gauss-Jordan
-             * elimination.
-             */
-            template<typename T, std::size_t M, std::size_t N>
-            constexpr matrix<T, M, N> rref(const matrix<T, M, N> &m, T tolerance) {
-                return std::get<0>(gauss_jordan_impl(m), tolerance);
             }
 
             /** @brief Compute the rank

@@ -137,6 +137,7 @@ namespace nil {
                  * Throws: Nothing.
                  */
                 BOOST_RANDOM_DECL double entropy() const {
+                    return 0.;
                 }
                 /** Returns a random value in the range [min, max]. */
                 BOOST_RANDOM_DECL result_type operator()() {
