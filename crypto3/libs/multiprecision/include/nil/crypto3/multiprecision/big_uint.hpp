@@ -1426,15 +1426,9 @@ namespace nil::crypto3::multiprecision {
         friend class big_uint;
 
         template<std::size_t Bits1, std::size_t Bits2, std::size_t Bits3>
-        friend constexpr bool detail::add_unsigned_constexpr(
-            big_uint<Bits1>& result, const big_uint<Bits2>& a,
-            const big_uint<Bits3>& b) noexcept;
-#ifdef NIL_CO3_MP_HAS_INTRINSICS
-        template<std::size_t Bits1, std::size_t Bits2, std::size_t Bits3>
         friend constexpr bool detail::add_unsigned_intrinsic(
             big_uint<Bits1>& result, const big_uint<Bits2>& a,
             const big_uint<Bits3>& b) noexcept;
-#endif
         template<detail::overflow_policy OverflowPolicy, std::size_t Bits1,
                  std::size_t Bits2, std::size_t Bits3>
         friend constexpr bool detail::add_unsigned(big_uint<Bits1>& result,
@@ -1447,14 +1441,8 @@ namespace nil::crypto3::multiprecision {
                                                    const limb_type& o);
         template<detail::overflow_policy OverflowPolicy, std::size_t Bits1,
                  std::size_t Bits2, std::size_t Bits3>
-        friend constexpr void detail::subtract_unsigned_constexpr(
-            big_uint<Bits1>& result, const big_uint<Bits2>& a, const big_uint<Bits3>& b);
-#ifdef NIL_CO3_MP_HAS_INTRINSICS
-        template<detail::overflow_policy OverflowPolicy, std::size_t Bits1,
-                 std::size_t Bits2, std::size_t Bits3>
         friend constexpr void detail::subtract_unsigned_intrinsic(
             big_uint<Bits1>& result, const big_uint<Bits2>& a, const big_uint<Bits3>& b);
-#endif
         template<detail::overflow_policy OverflowPolicy, bool GuaranteedGreater,
                  std::size_t Bits1, std::size_t Bits2, std::size_t Bits3>
         friend constexpr void detail::subtract_unsigned(big_uint<Bits1>& result,

@@ -21,9 +21,9 @@
 
 #include <boost/assert.hpp>
 
+#include "nil/crypto3/multiprecision/detail/addcarry_subborrow.hpp"
 #include "nil/crypto3/multiprecision/detail/big_uint/internal_conversions.hpp"
 #include "nil/crypto3/multiprecision/detail/big_uint/storage.hpp"
-#include "nil/crypto3/multiprecision/detail/intel_intrinsics.hpp"
 #include "nil/crypto3/multiprecision/type_traits.hpp"
 #include "nil/crypto3/multiprecision/unsigned_utils.hpp"
 
@@ -37,64 +37,6 @@ namespace nil::crypto3::multiprecision {
 
         // Addition/subtraction
 
-        // Generic, C++ only version of addition.
-        // It's also used for all constexpr branches, hence the name.
-        template<std::size_t Bits1, std::size_t Bits2, std::size_t Bits3>
-        [[nodiscard]] constexpr bool add_unsigned_constexpr(
-            big_uint<Bits1>& result, const big_uint<Bits2>& a,
-            const big_uint<Bits3>& b) noexcept {
-            static_assert(Bits1 >= Bits3 && Bits2 >= Bits3, "invalid argument size");
-
-            constexpr std::size_t as = std::decay_t<decltype(a)>::static_limb_count;
-            constexpr std::size_t bs = std::decay_t<decltype(b)>::static_limb_count;
-            constexpr std::size_t rs = std::decay_t<decltype(result)>::static_limb_count;
-            constexpr std::size_t m = std::min(as, rs);
-            static_assert(as >= bs);
-            static_assert(rs >= bs);
-
-            const_limb_pointer pa = a.limbs();
-            const_limb_pointer pb = b.limbs();
-            limb_pointer pr = result.limbs();
-            limb_pointer pr_end = pr + bs;
-            double_limb_type carry = 0;
-
-            // First where a and b overlap:
-            while (pr != pr_end) {
-                carry += static_cast<double_limb_type>(*pa) +
-                         static_cast<double_limb_type>(*pb);
-                *pr = static_cast<limb_type>(carry);
-                carry >>= limb_bits;
-                ++pr, ++pa, ++pb;
-            }
-            pr_end += m - bs;
-
-            // Now where only a has digits:
-            while (pr != pr_end) {
-                if (!carry) {
-                    if (pa != pr) {
-                        std::copy(pa, pa + (pr_end - pr), pr);
-                    }
-                    break;
-                }
-                carry += static_cast<double_limb_type>(*pa);
-                *pr = static_cast<limb_type>(carry);
-                carry >>= limb_bits;
-                ++pr, ++pa;
-            }
-
-            BOOST_ASSERT(carry <= 1);
-
-            if (carry) {
-                if (result.limb_count() > m) {
-                    result.limbs()[m] = static_cast<limb_type>(1u);
-                    carry = 0;
-                }
-            }
-
-            return carry;
-        }
-
-#ifdef NIL_CO3_MP_HAS_INTRINSICS
         //
         // Optimized addition.
         //
@@ -127,10 +69,10 @@ namespace nil::crypto3::multiprecision {
 
             std::size_t i = 0;
             for (; i + 4 <= bs; i += 4) {
-                carry = addcarry_limb(carry, pa[i + 0], pb[i + 0], pr + i);
-                carry = addcarry_limb(carry, pa[i + 1], pb[i + 1], pr + i + 1);
-                carry = addcarry_limb(carry, pa[i + 2], pb[i + 2], pr + i + 2);
-                carry = addcarry_limb(carry, pa[i + 3], pb[i + 3], pr + i + 3);
+                carry = addcarry(carry, pa[i + 0], pb[i + 0], pr + i);
+                carry = addcarry(carry, pa[i + 1], pb[i + 1], pr + i + 1);
+                carry = addcarry(carry, pa[i + 2], pb[i + 2], pr + i + 2);
+                carry = addcarry(carry, pa[i + 3], pb[i + 3], pr + i + 3);
             }
             for (; i < bs; ++i) {
 #if defined(__GNUC__) && !defined(__clang__)
@@ -147,7 +89,7 @@ namespace nil::crypto3::multiprecision {
 #pragma GCC diagnostic ignored "-Waggressive-loop-optimizations"
 #endif
 
-                carry = addcarry_limb(carry, pa[i], pb[i], pr + i);
+                carry = addcarry(carry, pa[i], pb[i], pr + i);
 
 #if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC diagnostic pop
@@ -156,7 +98,7 @@ namespace nil::crypto3::multiprecision {
             for (; i < m && carry; ++i) {
                 // We know carry is 1, so we just need to increment pa[i] (ie add
                 // a literal 1) and capture the carry:
-                carry = addcarry_limb(0, pa[i], 1, pr + i);
+                carry = addcarry(0, pa[i], static_cast<limb_type>(1u), pr + i);
             }
 
             if (m == i && carry) {
@@ -173,7 +115,6 @@ namespace nil::crypto3::multiprecision {
 
             return carry;
         }
-#endif
 
         template<overflow_policy OverflowPolicy>
         constexpr void addition_overflow_when(bool overflow) noexcept(
@@ -244,17 +185,7 @@ namespace nil::crypto3::multiprecision {
                         additional_carry = a_excess;
                     }
 
-                    bool carry = false;
-
-#ifdef NIL_CO3_MP_HAS_INTRINSICS
-                    if (std::is_constant_evaluated()) {
-                        carry = add_unsigned_constexpr(result, a, b);
-                    } else {
-                        carry = add_unsigned_intrinsic(result, a, b);
-                    }
-#else
-                    carry = add_unsigned_constexpr(result, a, b);
-#endif
+                    bool carry = add_unsigned_intrinsic(result, a, b);
 
                     if constexpr (OverflowPolicy == overflow_policy::wrap) {
                         result.normalize();
@@ -329,50 +260,6 @@ namespace nil::crypto3::multiprecision {
         // It's also used for all constexpr branches, hence the name.
         template<overflow_policy OverflowPolicy, std::size_t Bits1, std::size_t Bits2,
                  std::size_t Bits3>
-        constexpr void subtract_unsigned_constexpr(big_uint<Bits1>& result,
-                                                   const big_uint<Bits2>& a,
-                                                   const big_uint<Bits3>& b) {
-            static_assert(Bits1 >= Bits2, "invalid argument size");
-            BOOST_ASSERT(a >= b);
-
-            constexpr std::size_t as = std::decay_t<decltype(a)>::static_limb_count;
-            constexpr std::size_t bs = std::decay_t<decltype(b)>::static_limb_count;
-            constexpr std::size_t m = std::min(as, bs);
-            constexpr std::size_t x = std::max(as, bs);
-            double_limb_type borrow = 0;
-
-            const_limb_pointer pa = a.limbs();
-            const_limb_pointer pb = b.limbs();
-            limb_pointer pr = result.limbs();
-
-            std::size_t i = 0;
-            // First where a and b overlap:
-            while (i < m) {
-                borrow = static_cast<double_limb_type>(pa[i]) -
-                         static_cast<double_limb_type>(pb[i]) - borrow;
-                pr[i] = static_cast<limb_type>(borrow);
-                borrow = (borrow >> limb_bits) & 1u;
-                ++i;
-            }
-            // Now where only a has digits, only as long as we've borrowed:
-            while (borrow && (i < as)) {
-                borrow = static_cast<double_limb_type>(pa[i]) - borrow;
-                pr[i] = static_cast<limb_type>(borrow);
-                borrow = (borrow >> limb_bits) & 1u;
-                ++i;
-            }
-            // Any remaining digits are the same as those in pa:
-            if ((as != i) && (pa != pr)) {
-                std::copy(pa + i, pa + as, pr + i);
-            }
-            BOOST_ASSERT(0 == borrow);
-        }
-
-#ifdef NIL_CO3_MP_HAS_INTRINSICS
-        // This is the generic, C++ only version of subtraction.
-        // It's also used for all constexpr branches, hence the name.
-        template<overflow_policy OverflowPolicy, std::size_t Bits1, std::size_t Bits2,
-                 std::size_t Bits3>
         constexpr void subtract_unsigned_intrinsic(big_uint<Bits1>& result,
                                                    const big_uint<Bits2>& a,
                                                    const big_uint<Bits3>& b) {
@@ -392,17 +279,17 @@ namespace nil::crypto3::multiprecision {
             std::size_t i = 0;
             // First where a and b overlap:
             for (; i + 4 <= m; i += 4) {
-                borrow = subborrow_limb(borrow, pa[i], pb[i], pr + i);
-                borrow = subborrow_limb(borrow, pa[i + 1], pb[i + 1], pr + i + 1);
-                borrow = subborrow_limb(borrow, pa[i + 2], pb[i + 2], pr + i + 2);
-                borrow = subborrow_limb(borrow, pa[i + 3], pb[i + 3], pr + i + 3);
+                borrow = subborrow(borrow, pa[i], pb[i], pr + i);
+                borrow = subborrow(borrow, pa[i + 1], pb[i + 1], pr + i + 1);
+                borrow = subborrow(borrow, pa[i + 2], pb[i + 2], pr + i + 2);
+                borrow = subborrow(borrow, pa[i + 3], pb[i + 3], pr + i + 3);
             }
             for (; i < m; ++i) {
-                borrow = subborrow_limb(borrow, pa[i], pb[i], pr + i);
+                borrow = subborrow(borrow, pa[i], pb[i], pr + i);
             }
             // Now where only a has digits, only as long as we've borrowed:
             while (borrow && (i < as)) {
-                borrow = subborrow_limb(borrow, pa[i], 0, pr + i);
+                borrow = subborrow(borrow, pa[i], static_cast<limb_type>(0u), pr + i);
                 ++i;
             }
             // Any remaining digits are the same as those in pa:
@@ -411,7 +298,6 @@ namespace nil::crypto3::multiprecision {
             }
             BOOST_ASSERT(0 == borrow);
         }
-#endif
 
         template<overflow_policy OverflowPolicy>
         constexpr void subtract_overflow() noexcept(OverflowPolicy !=
@@ -495,15 +381,7 @@ namespace nil::crypto3::multiprecision {
 
                 result.zero_after(as);
 
-#ifdef NIL_CO3_MP_HAS_INTRINSICS
-                if (std::is_constant_evaluated()) {
-                    subtract_unsigned_constexpr<OverflowPolicy>(result, a, b);
-                } else {
-                    subtract_unsigned_intrinsic<OverflowPolicy>(result, a, b);
-                }
-#else
-                subtract_unsigned_constexpr<OverflowPolicy>(result, a, b);
-#endif
+                subtract_unsigned_intrinsic<OverflowPolicy>(result, a, b);
             }
         }
 
@@ -532,7 +410,7 @@ namespace nil::crypto3::multiprecision {
                 *pr = b - *pa;
                 result.wrapping_neg_inplace();
             } else {
-                *pr = *pa - b; // NB: wraps as intended
+                *pr = *pa - b;  // NB: wraps as intended
                 std::size_t i = 1;
                 while (i < rs && (i >= as || !pa[i])) {
                     pr[i] = max_limb_value;
