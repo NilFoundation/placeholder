@@ -139,6 +139,8 @@ namespace nil {
                             constrain(C[i]);
 
                             if (first_chunk_size != 0) {
+                                //should be failing here, the first lookup value is greater than 65535
+                                std::cout<< "Y[i]: " << (Y[i][num_rc_chunks - 1] *(integral_type(1) << (bit_size_rc - first_chunk_size))) << std::endl;
                                 lookup(Y[i][num_rc_chunks - 1] *(integral_type(1) << (bit_size_rc - first_chunk_size)), "chunk_16_bits/full");
                             }
 
