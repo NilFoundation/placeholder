@@ -8,8 +8,6 @@
 #include <nil/blueprint/zkevm_bbf/zkevm.hpp>
 #include <nil/proof-generator/assigner/options.hpp>
 #include <nil/proof-generator/assigner/trace_parser.hpp>
-#include <nil/proof-generator/preset/limits.hpp>
-
 
 namespace nil {
     namespace proof_generator {
@@ -23,7 +21,7 @@ namespace nil {
 
             using ComponentType = nil::blueprint::bbf::zkevm<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT>;
 
-            typename nil::blueprint::bbf::context<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT> context_object(assignment_table, limits::max_rows);
+            typename nil::blueprint::bbf::context<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT> context_object(assignment_table, options.circuits_limits.max_rows);
 
             typename ComponentType::input_type input;
 
@@ -72,11 +70,11 @@ namespace nil {
             ComponentType instance(
                 context_object,
                 input,
-                limits::max_zkevm_rows,
-                limits::max_copy,
-                limits::max_rw_size,
-                limits::max_keccak_blocks,
-                limits::max_bytecode_size
+                options.circuits_limits.max_zkevm_rows,
+                options.circuits_limits.max_copy,
+                options.circuits_limits.max_rw_size,
+                options.circuits_limits.max_keccak_blocks,
+                options.circuits_limits.max_bytecode_size
             );
 
             return {};

@@ -73,7 +73,7 @@ namespace nil {
                                                                        crypto3::zk::snark::plonk_table_description<BlueprintFieldType>& desc,
                                                                        const std::string& circuit_name,
                                                                        const boost::filesystem::path& trace_base_path,
-                                                                       const AssignerOptions& options = {}) {
+                                                                       const AssignerOptions& options) {
             auto find_it = circuit_selector<BlueprintFieldType>.find(circuit_name);
             if (find_it == circuit_selector<BlueprintFieldType>.end()) {
                 return "Unknown circuit name " + circuit_name;

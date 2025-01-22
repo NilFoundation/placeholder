@@ -1127,9 +1127,9 @@ namespace nil {
                 return save_lpc_consistency_proof_to_file(proof, output_proof_file);
             }
 
-            bool setup_prover() {
+            bool setup_prover(const CircuitsLimits& circuits_limits) {
                 TIME_LOG_SCOPE("Preset")
-                const auto err = CircuitFactory<BlueprintField>::initialize_circuit(circuit_name_, constraint_system_, assignment_table_, table_description_);
+                const auto err = CircuitFactory<BlueprintField>::initialize_circuit(circuit_name_, constraint_system_, assignment_table_, table_description_, circuits_limits);
                 if (err) {
                     BOOST_LOG_TRIVIAL(error) << "Can't initialize circuit " << circuit_name_ << ": " << err.value();
                     return false;
@@ -1147,7 +1147,7 @@ namespace nil {
                 return assignment_table_.value();
             }
 
-            bool fill_assignment_table(const boost::filesystem::path& trace_base_path) {
+            bool fill_assignment_table(const boost::filesystem::path& trace_base_path, const AssignerOptions& options) {
                 if (!constraint_system_.has_value()) {
                     BOOST_LOG_TRIVIAL(error) << "Circuit is not initialized";
                     return false;
@@ -1157,7 +1157,7 @@ namespace nil {
                     return false;
                 }
                 TIME_LOG_SCOPE("Fill Assignment Table")
-                const auto err = fill_assignment_table_single_thread(*assignment_table_, *table_description_, circuit_name_, trace_base_path);
+                const auto err = fill_assignment_table_single_thread(*assignment_table_, *table_description_, circuit_name_, trace_base_path, options);
                 if (err) {
                     BOOST_LOG_TRIVIAL(error) << "Can't fill assignment table from trace " << trace_base_path << ": " << err.value();
                     return false;

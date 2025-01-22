@@ -19,7 +19,7 @@ message StackOp {
     int32 index = 2;  // Index in the stack
     Uint256 value = 3;
     uint64 pc = 4;
-    uint64 msg_id = 5;  // Number of message within a block
+    uint64 txn_id = 5;  // Number of transaction within a block
     uint64 rw_idx = 6;  // shared between all ops counter
 }
 
@@ -29,7 +29,7 @@ message MemoryOp {
     int32 index = 2;  // Index in memory
     bytes value = 3;  // Single byte value
     uint64 pc = 4;
-    uint64 msg_id = 5;  // Number of message within a block
+    uint64 txn_id = 5;  // Number of transaction within a block
     uint64 rw_idx = 6;  // shared between all ops counter
 }
 
@@ -41,7 +41,7 @@ message StorageOp {
     Uint256 value = 3;  // Single byte value
     Uint256 prev_value = 4;  // Value before storage operation
     uint64 pc = 5;
-    uint64 msg_id = 6;  // Number of message within a block
+    uint64 txn_id = 6;  // Number of transaction within a block
     uint64 rw_idx = 7;  // shared between all ops counter
     Address address = 8;  // Contract address
 }
@@ -52,7 +52,7 @@ message ExpOp {
     Uint256 exponent = 2;
     Uint256 result = 3;
     uint64 pc = 4;         // Program counter
-    uint64 msg_id = 5;     // Number of message within a block
+    uint64 txn_id = 5;     // Number of transaction within a block
 }
 
 // StorageTrieUpdateTrace represents a trace of storage slot change.
@@ -95,7 +95,7 @@ message SmartContract {
     string address = 1;
     bool initialized = 2;
     Uint256 balance = 3;
-    string currency_root = 4;
+    string token_root = 4;
     string storage_root = 5;
     string code_hash = 6;
     string async_context_root = 7;
