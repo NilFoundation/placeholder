@@ -120,6 +120,24 @@ namespace nil {
                         os << "--------------------------------------------------------------" << std::endl;
                     }
                 }
+
+                for (const auto& [table_name, grouped_lookups] : gates.grouped_lookups) {
+                    os << "================ Grouped lookups for table " << table_name << " ===================" << std::endl;
+                    for (const auto& [group_id, lookups] : grouped_lookups) {
+                        os << "    >>>>>>> Group #" << group_id << std::endl;
+                        for (const auto& [selector_id, lookup_inputs] : lookups) {
+                            os << "        selector #" << selector_id << " -> " << std::endl;
+                            os << "        --------------------------------------------------------------" << std::endl;
+                            for (const auto& li: lookup_inputs) {
+                                os << "        " << li << std::endl;
+                            }
+                            os << "        --------------------------------------------------------------" << std::endl;
+                        }
+                        os << "    <<<<<<< End of Group #" << group_id << std::endl;
+                    }
+                    os << "===============================================================" << std::endl;
+                }
+
                 return os;
             }
 
@@ -198,10 +216,11 @@ namespace nil {
                 optimized_gates<FieldType> optimize_gates() {
                     optimized_gates<FieldType> result = context_to_gates();
                     // optimized_gates<FieldType> result = gates_storage_;
-                    // std::cout << "Before: \n\n" << result << std::endl;
+                    std::cout << "Before: \n\n" << result << std::endl;
                     optimize_selectors_by_shifting(result);
-                    //optimize_lookups_by_grouping(result);
-                    // std::cout << "After: \n\n" << result << std::endl;
+                    // std::cout << "After optimizing selectors: \n\n" << result << std::endl;
+                    optimize_lookups_by_grouping(result);
+                    std::cout << "After: \n\n" << result << std::endl;
                     return result;
                 }
 
@@ -353,8 +372,23 @@ namespace nil {
                     std::vector<std::vector<size_t>> graph_subset = get_subgraph(
                         graph, all_lookup_selectors, selector_id_to_index, used_selectors);
 
+                    //std::cout << "Current graph subset" << std::endl;
+                    //for (size_t i = 0; i < graph_subset.size(); ++i) {
+                    //    std::cout << i << " -> [";
+                    //    for (size_t v2 : graph_subset[i]) {
+                    //         std::cout << v2 << " ";
+                    //    }
+                    //    std::cout << "]" << std::endl;
+                    //}
+
                     // coloring[i] is the group_id of used_selectors[i].
                     std::vector<size_t> coloring = colorGraph(graph_subset);
+
+                    //std::cout << "Coloring is [";
+                    //for (size_t i = 0; i < coloring.size(); ++i) {
+                    //    std::cout << used_selectors[i] << " -> " << coloring[i] << " , ";
+                    //}
+                    //std::cout << "]" << std::endl;
 
                     // Now run over the returned coloring and map it back.
                     std::unordered_map<size_t, size_t> result;
@@ -385,6 +419,14 @@ namespace nil {
                     // Create an adjacency list of the whole large graph, since taking intersections of selectors is not super fast.
                     std::vector<std::vector<size_t>> adj = create_selector_intersection_graph(
                         gates, all_lookup_selectors, selector_id_to_index);
+
+                    //for (size_t i = 0; i < adj.size(); ++i) {
+                    //    std::cout << i << " -> [";
+                    //    for (size_t v2 : adj[i]) {
+                    //         std::cout << v2 << " ";
+                    //    }
+                    //    std::cout << "]" << std::endl;
+                    //}
 
                     // For each table, create the list of used selectors.
                     std::unordered_map<std::string, std::set<size_t>> selectors_per_table;
@@ -420,6 +462,8 @@ namespace nil {
                         for (const auto& single_lookup_constraint : lookup_list) {
                             const std::string& table_name = single_lookup_constraint.first;
                             size_t group_id = selector_groups[table_name][selector_id];
+
+                            std::cout << "Group for selector #" << selector_id << " is " << group_id << std::endl;
 
                             // If the group size is 1, don't touch it.
                             if (group_sizes[table_name][group_id] == 1) {

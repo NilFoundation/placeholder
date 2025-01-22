@@ -191,8 +191,11 @@ namespace nil {
             template<typename BLOCK = unsigned int>
             std::ostream& operator<<(std::ostream& os, const row_selector<BLOCK>& rows) {
                 // NOTE: os << rows.used_rows_ prints in the reversed order, which is harder to read.
-                for (size_t i = 0; i < rows.used_rows_.size(); i++) {
+                for (size_t i = 0; i < std::min(size_t(16), rows.used_rows_.size()); i++) {
                     os << rows.used_rows_[i];
+                }
+                if (rows.used_rows_.size() > 16) {
+                    os << "...";
                 }
                 return os;
             }
