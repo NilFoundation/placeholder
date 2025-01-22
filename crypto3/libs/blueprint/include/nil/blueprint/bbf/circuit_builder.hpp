@@ -226,6 +226,10 @@ namespace nil {
                                 merged_lookup_input += lookup_inputs *
                                     expression_type(var(selector_id, 0, false, var::column_type::selector));
                             }
+                            std::cout << "Adding merged lookup input to table #" << table_index << " -> ";
+                            for (const auto& li: merged_lookup_input)
+                                std::cout << li << std::endl;
+
                             merged_lookup_gate.push_back({table_index, merged_lookup_input});
                             bp.add_lookup_gate(full_selector_id, merged_lookup_gate);
                         }
