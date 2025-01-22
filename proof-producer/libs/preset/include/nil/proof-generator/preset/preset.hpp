@@ -10,6 +10,7 @@
 #include "nil/proof-generator/preset/rw.hpp"
 #include "nil/proof-generator/preset/zkevm.hpp"
 #include "nil/proof-generator/preset/copy.hpp"
+#include "nil/proof-generator/preset/exp.hpp"
 
 #include <optional>
 #include <string>
@@ -24,6 +25,7 @@ namespace nil {
             const Name RW = "rw";
             const Name ZKEVM = "zkevm";
             const Name COPY = "copy";
+            const Name EXP = "exp";
 
         } // namespace circuits
 
@@ -60,7 +62,8 @@ namespace nil {
                 {circuits::BYTECODE, initialize_bytecode_circuit<BlueprintFieldType>},
                 {circuits::RW, initialize_rw_circuit<BlueprintFieldType>},
                 {circuits::ZKEVM, initialize_zkevm_circuit<BlueprintFieldType>},
-                {circuits::COPY, initialize_copy_circuit<BlueprintFieldType>}
+                {circuits::COPY, initialize_copy_circuit<BlueprintFieldType>},
+                {circuits::EXP, initialize_exp_circuit<BlueprintFieldType>},
         };
     } // proof_generator
 } // nil
