@@ -18,7 +18,7 @@ Algebra library consists of several modules listed below:
 2. Elliptic curves arithmetic
 3. Pairings on elliptic curves
 4. Multiexponentiation algorithm (will be part of some other module after a while)
-5. Matricies and vectors
+5. Matrices and vectors
 
 This separation defines the implementation architecture.
 
@@ -57,7 +57,7 @@ A field policy describes its essential parameters such as `modulus`, `arity` or 
 
 ### Field Extensions ### {#field_extensions}
 
-For the purposes of effictive field/elliptic curve operations and pairings evaluation fields are arranged as a field tower.
+For the purposes of effective field/elliptic curve operations and pairings evaluation fields are arranged as a field tower.
 
 For example, this is the tower used for `bn128` and `bls12_381` operations and pairings evaluation:
 
@@ -167,7 +167,7 @@ are based on the underlying field algorithms are also defined here.
 
 ### Basic Curve Policies ### {#basic_curve_policies}
 
-Main reason for existence of basic policyis is that we need some of it params using in group element and pairing arithmetic. 
+Main reason for existence of basic policy is is that we need some of it params using in group element and pairing arithmetic. 
 So it contains such parameters that are needed by group element arithmetic e.g. coeffs `a` and `b` or generator coordinates `x`, `y`. 
 It also contains all needed information about the underlying fields. 
 

@@ -61,7 +61,7 @@ processed. While `OutputIterator` provides a type-independent output place for t
 which particular range this `OutputIterator`
 represents.
 
-Since C++20 this algorithm got it analogous inside Ranges library as follows:
+Since C++20 this algorithm got it analogues inside Ranges library as follows:
 
 ```cpp
 template<typename InputRange, typename OutputRange, typename UnaryOperation>
