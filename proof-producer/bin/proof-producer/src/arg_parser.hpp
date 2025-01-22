@@ -25,6 +25,7 @@
 
 #include <nil/proof-generator/output_artifacts/output_artifacts.hpp>
 #include <nil/proof-generator/arithmetization_params.hpp>
+#include <nil/proof-generator/preset/limits.hpp>
 #include <nil/proof-generator/meta_utils.hpp>
 
 namespace nil {
@@ -71,6 +72,8 @@ namespace nil {
             std::size_t grind = 0;
             std::size_t expand_factor = 2;
             std::size_t max_quotient_chunks = 0;
+
+            CircuitsLimits circuits_limits;
         };
 
         std::optional<ProverOptions> parse_args(int argc, char* argv[]);

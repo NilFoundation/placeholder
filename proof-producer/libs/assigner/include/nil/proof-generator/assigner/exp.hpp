@@ -8,8 +8,6 @@
 #include <nil/blueprint/zkevm_bbf/exp.hpp>
 #include <nil/proof-generator/assigner/options.hpp>
 #include <nil/proof-generator/assigner/trace_parser.hpp>
-#include <nil/proof-generator/preset/limits.hpp>
-
 
 namespace nil {
     namespace proof_generator {
@@ -23,7 +21,7 @@ namespace nil {
 
             using ComponentType = nil::blueprint::bbf::exponentiation<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT>;
 
-            typename nil::blueprint::bbf::context<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT> context_object(assignment_table, limits::max_rows);
+            typename nil::blueprint::bbf::context<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT> context_object(assignment_table, options.circuits_limits.max_rows);
 
             typename ComponentType::input_type input;
 
@@ -38,8 +36,8 @@ namespace nil {
             ComponentType instance(
                 context_object,
                 input,
-                limits::max_rows,
-                limits::max_exp_rows
+                options.circuits_limits.max_rows,
+                options.circuits_limits.max_exp_rows
             );
 
             return {};

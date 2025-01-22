@@ -8,7 +8,6 @@
 #include <nil/blueprint/zkevm_bbf/bytecode.hpp>
 #include <nil/proof-generator/assigner/trace_parser.hpp>
 #include <nil/proof-generator/assigner/options.hpp>
-#include <nil/proof-generator/preset/limits.hpp>
 
 namespace nil {
     namespace proof_generator {
@@ -21,10 +20,10 @@ namespace nil {
 
             using ComponentType = nil::blueprint::bbf::bytecode<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT>;
 
-            typename nil::blueprint::bbf::context<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT> context_object(assignment_table, limits::max_rows);
+            typename nil::blueprint::bbf::context<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT> context_object(assignment_table, options.circuits_limits.max_rows);
 
             typename ComponentType::input_type input;
-            input.rlc_challenge = limits::RLC_CHALLENGE;
+            input.rlc_challenge = options.circuits_limits.RLC_CHALLENGE;
 
             const auto bytecode_trace_path = get_bytecode_trace_path(trace_base_path);
             BOOST_LOG_TRIVIAL(debug) << "fill bytecode table from " << bytecode_trace_path << "\n";
@@ -39,7 +38,7 @@ namespace nil {
                 input.keccak_buffers.new_buffer(raw_bytecode);
             }
 
-            ComponentType instance(context_object, input, limits::max_bytecode_size, limits::max_keccak_blocks);
+            ComponentType instance(context_object, input, options.circuits_limits.max_bytecode_size, options.circuits_limits.max_keccak_blocks);
             return {};
         }
     } // proof_generator

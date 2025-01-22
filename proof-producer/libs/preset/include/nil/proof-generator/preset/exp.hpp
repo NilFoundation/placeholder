@@ -19,12 +19,13 @@ namespace nil {
         template<typename BlueprintFieldType>
         std::optional<std::string> initialize_exp_circuit(
                 std::optional<blueprint::circuit<nil::crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>>>& exp_circuit,
-                std::optional<nil::crypto3::zk::snark::plonk_assignment_table<BlueprintFieldType>>& exp_table) {
+                std::optional<nil::crypto3::zk::snark::plonk_assignment_table<BlueprintFieldType>>& exp_table,
+                const CircuitsLimits& circuits_limits) {
 
             using ComponentType = nil::blueprint::bbf::exponentiation<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::CONSTRAINTS>;
 
             // initialize assignment table
-            const auto desc = ComponentType::get_table_description(limits::max_rows, limits::max_exp_rows);
+            const auto desc = ComponentType::get_table_description(circuits_limits.max_rows, circuits_limits.max_exp_rows);
             exp_table.emplace(desc.witness_columns, desc.public_input_columns, desc.constant_columns, desc.selector_columns);
             BOOST_LOG_TRIVIAL(debug) << "exp table:\n"
                                      << "witnesses = " << exp_table->witnesses_amount()
@@ -50,7 +51,7 @@ namespace nil {
 
             nil::blueprint::components::generate_circuit<BlueprintFieldType, nil::blueprint::bbf::exponentiation, std::size_t, std::size_t>(
                 wrapper, circuit, *exp_table, input, start_row,
-                limits::max_rows, limits::max_exp_rows);
+                circuits_limits.max_rows, circuits_limits.max_exp_rows);
 
             zk::snark::pack_lookup_tables_horizontal(
                 circuit.get_reserved_indices(),

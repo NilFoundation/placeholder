@@ -33,17 +33,19 @@ namespace nil {
         class CircuitFactory {
             static const std::map<const circuits::Name, std::function<std::optional<std::string>(
                     std::optional<blueprint::circuit<nil::crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>>>& circuit,
-                    std::optional<nil::crypto3::zk::snark::plonk_assignment_table<BlueprintFieldType>>& assignment_table)>> circuit_selector;
+                    std::optional<nil::crypto3::zk::snark::plonk_assignment_table<BlueprintFieldType>>& assignment_table,
+                    const CircuitsLimits& circuits_limits)>> circuit_selector;
         public:
             static std::optional<std::string> initialize_circuit(const std::string& circuit_name,
                 std::optional<blueprint::circuit<nil::crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>>>& circuit,
                 std::optional<nil::crypto3::zk::snark::plonk_assignment_table<BlueprintFieldType>>& assignment_table,
-                std::optional<nil::crypto3::zk::snark::plonk_table_description<BlueprintFieldType>>& desc) {
+                std::optional<nil::crypto3::zk::snark::plonk_table_description<BlueprintFieldType>>& desc,
+                const CircuitsLimits& circuits_limits) {
                 auto find_it = circuit_selector.find(circuit_name);
                 if (find_it == circuit_selector.end()) {
                     return "Unknown circuit name " + circuit_name;
                 }
-                const auto err = find_it->second(circuit, assignment_table);
+                const auto err = find_it->second(circuit, assignment_table, circuits_limits);
                 if (err) {
                     return err;
                 }
@@ -58,7 +60,8 @@ namespace nil {
         template<typename BlueprintFieldType>
         const std::map<const circuits::Name, std::function<std::optional<std::string>(
                     std::optional<blueprint::circuit<nil::crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>>>& circuit,
-                    std::optional<nil::crypto3::zk::snark::plonk_assignment_table<BlueprintFieldType>>& assignment_table)>> CircuitFactory<BlueprintFieldType>::circuit_selector = {
+                    std::optional<nil::crypto3::zk::snark::plonk_assignment_table<BlueprintFieldType>>& assignment_table,
+                    const CircuitsLimits& circuits_limits)>> CircuitFactory<BlueprintFieldType>::circuit_selector = {
                 {circuits::BYTECODE, initialize_bytecode_circuit<BlueprintFieldType>},
                 {circuits::RW, initialize_rw_circuit<BlueprintFieldType>},
                 {circuits::ZKEVM, initialize_zkevm_circuit<BlueprintFieldType>},

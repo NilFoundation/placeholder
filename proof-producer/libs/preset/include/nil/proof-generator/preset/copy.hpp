@@ -16,7 +16,7 @@ namespace nil {
         template<typename BlueprintFieldType>
         std::optional<std::string> initialize_copy_circuit(
             std::optional<blueprint::circuit<crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>>>& copy_circuit,
-            std::optional<crypto3::zk::snark::plonk_assignment_table<BlueprintFieldType>>& copy_table) {
+            std::optional<crypto3::zk::snark::plonk_assignment_table<BlueprintFieldType>>& copy_table, const CircuitsLimits& circuits_limits) {
 
             namespace snark = crypto3::zk::snark;
             namespace bbf = nil::blueprint::bbf;
@@ -28,7 +28,7 @@ namespace nil {
 
             // initialize assignment table
             const auto desc = ComponentType::get_table_description(
-                limits::max_copy, limits::max_rw_size, limits::max_keccak_blocks, limits::max_bytecode_size
+                circuits_limits.max_copy, circuits_limits.max_rw_size, circuits_limits.max_keccak_blocks, circuits_limits.max_bytecode_size
             );
             copy_table.emplace(desc.witness_columns, desc.public_input_columns, desc.constant_columns, desc.selector_columns);
 
@@ -61,7 +61,7 @@ namespace nil {
 
             nil::blueprint::circuit<crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>> circuit;
             typename ComponentType::input_type input;
-            input.rlc_challenge = limits::RLC_CHALLENGE;
+            input.rlc_challenge = circuits_limits.RLC_CHALLENGE;
 
             blueprint::components::generate_circuit(
                 wrapper, 
@@ -69,10 +69,10 @@ namespace nil {
                 *copy_table, 
                 input, 
                 start_row, 
-                limits::max_copy, 
-                limits::max_rw_size, 
-                limits::max_keccak_blocks, 
-                limits::max_bytecode_size
+                circuits_limits.max_copy, 
+                circuits_limits.max_rw_size, 
+                circuits_limits.max_keccak_blocks, 
+                circuits_limits.max_bytecode_size
             );
 
             snark::pack_lookup_tables_horizontal(

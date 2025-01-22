@@ -16,12 +16,13 @@ namespace nil {
         template<typename BlueprintFieldType>
         std::optional<std::string> initialize_rw_circuit(
                 std::optional<blueprint::circuit<nil::crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>>>& rw_circuit,
-                std::optional<nil::crypto3::zk::snark::plonk_assignment_table<BlueprintFieldType>>& rw_table) {
+                std::optional<nil::crypto3::zk::snark::plonk_assignment_table<BlueprintFieldType>>& rw_table,
+                const CircuitsLimits& circuits_limits) {
 
             using ComponentType = nil::blueprint::bbf::rw<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::CONSTRAINTS>;
 
             // initialize assignment table
-            const auto desc = ComponentType::get_table_description(limits::max_rw_size, limits::max_mpt_size);
+            const auto desc = ComponentType::get_table_description(circuits_limits.max_rw_size, circuits_limits.max_mpt_size);
             rw_table.emplace(desc.witness_columns, desc.public_input_columns, desc.constant_columns, desc.selector_columns);
             BOOST_LOG_TRIVIAL(debug) << "rw table:\n"
                                     << "witnesses = " << rw_table->witnesses_amount()
@@ -45,7 +46,7 @@ namespace nil {
             nil::blueprint::circuit<crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>> circuit;
 
             nil::blueprint::components::generate_circuit<BlueprintFieldType, nil::blueprint::bbf::rw, std::size_t, std::size_t>(
-                wrapper, circuit, *rw_table, input, start_row, limits::max_rw_size, limits::max_mpt_size);
+                wrapper, circuit, *rw_table, input, start_row, circuits_limits.max_rw_size, circuits_limits.max_mpt_size);
 
             zk::snark::pack_lookup_tables_horizontal(
                 circuit.get_reserved_indices(),

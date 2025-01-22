@@ -5,6 +5,7 @@
 #include <nil/blueprint/utils/satisfiability_check.hpp>
 #include <nil/proof-generator/prover.hpp>
 #include <nil/proof-generator/preset/preset.hpp>
+#include <nil/proof-generator/preset/limits.hpp>
 
 
 namespace {
@@ -44,9 +45,12 @@ TEST_P(ProverTests, FillAssignmentAndCheck) {
                         input.circuit_name
     );
 
-    ASSERT_TRUE(prover.setup_prover());
+    nil::proof_generator::CircuitsLimits circuits_limits;
 
-    ASSERT_TRUE(prover.fill_assignment_table(trace_base_path));
+    ASSERT_TRUE(prover.setup_prover(circuits_limits));
+
+    ASSERT_TRUE(prover.fill_assignment_table(trace_base_path,
+                                             nil::proof_generator::AssignerOptions(false, circuits_limits)));
 
     const auto& circuit = prover.get_constraint_system();
     const auto& assignment_table = prover.get_assignment_table();
@@ -65,7 +69,7 @@ using namespace nil::proof_generator::circuits;
 // contracts for these traces were compiled with --no-cbor-metadata flag
 
 // Single call of Counter contract increment function
-const std::string SimpleIncrement = "increment_simple";
+const std::string SimpleIncrement = "simple/increment_simple";
 INSTANTIATE_TEST_SUITE_P(SimpleRw, ProverTests, ::testing::Values(Input{SimpleIncrement,  RW}));
 INSTANTIATE_TEST_SUITE_P(SimpleBytecode, ProverTests, ::testing::Values(Input{SimpleIncrement,  BYTECODE}));
 INSTANTIATE_TEST_SUITE_P(SimpleCopy, ProverTests, ::testing::Values(Input{SimpleIncrement,  COPY}));
@@ -73,7 +77,7 @@ INSTANTIATE_TEST_SUITE_P(SimpleZkevm, ProverTests, ::testing::Values(Input{Simpl
 INSTANTIATE_TEST_SUITE_P(SimpleExp, ProverTests, ::testing::Values(Input{SimpleIncrement, EXP}));
 
 // // Multiple calls of Counter contract increment function (several transactions)
-const std::string MultiTxIncrement = "increment_multi_tx";
+const std::string MultiTxIncrement = "multi_tx/increment_multi_tx";
 INSTANTIATE_TEST_SUITE_P(MultiTxRw, ProverTests, ::testing::Values(Input{MultiTxIncrement,  RW}));
 INSTANTIATE_TEST_SUITE_P(MultiTxBytecode, ProverTests, :: testing::Values(Input{MultiTxIncrement,  BYTECODE}));
 INSTANTIATE_TEST_SUITE_P(MultiTxCopy, ProverTests, ::testing::Values(Input{MultiTxIncrement,  COPY}));
@@ -99,8 +103,11 @@ TEST(ProverTest, TraceIndexMismatch) {
                         ZKEVM
     );
 
-    ASSERT_TRUE(prover.setup_prover());
-    ASSERT_FALSE(prover.fill_assignment_table(trace_base_path));
+    nil::proof_generator::CircuitsLimits circuits_limits;
+
+    ASSERT_TRUE(prover.setup_prover(circuits_limits));
+    ASSERT_FALSE(prover.fill_assignment_table(trace_base_path,
+                                              nil::proof_generator::AssignerOptions(false, circuits_limits)));
 }
 
 // Trace files contain different proto hash
@@ -114,6 +121,9 @@ TEST(ProverTest, DifferentProtoHash) {
                         ZKEVM
     );
 
-    ASSERT_TRUE(prover.setup_prover());
-    ASSERT_FALSE(prover.fill_assignment_table(trace_base_path));
+    nil::proof_generator::CircuitsLimits circuits_limits;
+
+    ASSERT_TRUE(prover.setup_prover(circuits_limits));
+    ASSERT_FALSE(prover.fill_assignment_table(trace_base_path,
+                                              nil::proof_generator::AssignerOptions(false, circuits_limits)));
 }
