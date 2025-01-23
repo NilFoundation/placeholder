@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2024 Alexey Yashunsky <a.yashunsky@nil.foundation>
-// Copyright (c) 2024 Antoine Cyr <antoine.cyr@nil.foundation>
+// Copyright (c) 2024 Antoine Cyr <antoinecyr@nil.foundation>
 //
 // MIT License
 //
@@ -22,7 +22,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //---------------------------------------------------------------------------//
-// @file Declaration of interfaces for FRI verification array swapping component.
+// @file Declaration of interfaces for PLONK component wrapping the BBF-component interface
 //---------------------------------------------------------------------------//
 
 #ifndef CRYPTO3_BBF_COMPONENTS_CHECK_MOD_P_HPP
@@ -74,7 +74,6 @@ namespace nil {
                   public:
                     std::vector<TYPE> inp_x;
                     std::vector<TYPE> inp_pp;
-                    TYPE inp_zero;
                     TYPE output;
 
                     static table_params get_minimal_requirements(std::size_t num_chunks,
@@ -138,7 +137,6 @@ namespace nil {
                         for (std::size_t i = 0; i < num_chunks; i++) {
                             inp_x.push_back(input_x[i]);
                             inp_pp.push_back(input_pp[i]);
-                            inp_zero = input_zero;
                         }
 
                     }

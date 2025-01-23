@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2024 Polina Chernyshova <pockvokhbtra@nil.foundation>
-// Copyright (c) 2024 Antoine Cyr <antoine.cyr@nil.foundation>
+// Copyright (c) 2024 Antoine Cyr <antoinecyr@nil.foundation>
 //
 // MIT License
 //
@@ -22,7 +22,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //---------------------------------------------------------------------------//
-// @file Declaration of interfaces for FRI verification array swapping component.
+// @file Declaration of interfaces for PLONK component wrapping the BBF-component interface
 //---------------------------------------------------------------------------//
 
 #ifndef CRYPTO3_BBF_COMPONENTS_RANGE_CHECK_MULTI_HPP

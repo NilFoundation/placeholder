@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2024 Alexey Yashunsky <a.yashunsky@nil.foundation>
-// Copyright (c) 2024 Antoine Cyr <antoine.cyr@nil.foundation>
+// Copyright (c) 2024 Antoine Cyr <antoinecyr@nil.foundation>
 //
 // MIT License
 //
@@ -55,18 +55,15 @@ void test_mod_p_check(const std::vector<typename BlueprintFieldType::value_type>
     bool pass = B.is_satisfied(at);
     std::cout << "Is_satisfied = " << pass << std::endl;
 
-    if (to_pass) {
-        assert(pass == true);
-        if (expect_output){
+    assert(pass == to_pass);
+    
+    if (to_pass && expect_output) {
             #ifdef BLUEPRINT_PLONK_PROFILING_ENABLED
             std::cout << "Expected output: " << std::dec << overflow << std::endl;
             std::cout << "Real output:     " << std::dec << A.output.data  << std::endl;
             #endif
             assert(overflow == A.output.data);
         }
-    } else {
-        assert(pass == false);
-    }
 
 }
 
