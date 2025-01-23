@@ -197,7 +197,8 @@ namespace nil {
                 }
 
                 static std::tuple<input_type> form_input(context_type &context_object,
-                                                         raw_input_type raw_input) {
+                                                         raw_input_type raw_input,
+                                                         std::size_t max_blocks) {
                     input_type input;
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
                         input.input = raw_input.input;

@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2024 Polina Chernyshova <pockvokhbtra@nil.foundation>
-// Copyright (c) 2024 Antoine Cyr <antoine.cyr@nil.foundation>
+// Copyright (c) 2024 Antoine Cyr <antoinecyr@nil.foundation>
 //
 // MIT License
 //
@@ -53,11 +53,7 @@ void test_range_check(const std::vector<typename BlueprintFieldType::value_type>
     bool pass = B.is_satisfied(at);
     std::cout << "Is_satisfied = " << pass << std::endl;
 
-    if (to_pass) {
-        assert(pass == true);
-    } else {
-        assert(pass == false);
-    }
+    assert(pass == to_pass);
 }
 
 
@@ -93,7 +89,7 @@ void range_check_tests_to_fail() {
     for (std::size_t i = 0; i < RandomTestsAmount; i++) {
         integral_type most_significant_bit = integral_type(1) << (bit_size_chunk);
         std::vector<typename BlueprintFieldType::value_type> public_input;
-        //Adding a faulty bit at j = 0
+        //Adding a faulty bits     
         public_input.push_back(value_type(integral_type(generate_random().data) & mask | most_significant_bit));
         for (std::size_t j = 1; j < num_chunks; j++) {
             public_input.push_back(value_type(integral_type(generate_random().data) & mask));
@@ -110,6 +106,7 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_bbf_range_check_multi_test) {
     using pallas_field_type = typename crypto3::algebra::curves::pallas::base_field_type;
     using vesta_field_type = typename crypto3::algebra::curves::vesta::base_field_type;
 
+    
     range_check_tests<pallas_field_type, 8, 32, random_tests_amount>();
     range_check_tests<pallas_field_type, 8, 65, random_tests_amount>();
     range_check_tests<pallas_field_type, 4, 63, random_tests_amount>();

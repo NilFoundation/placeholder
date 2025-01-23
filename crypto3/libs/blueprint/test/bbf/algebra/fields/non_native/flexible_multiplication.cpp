@@ -1,7 +1,7 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2024 Polina Chernyshova <pockvokhbtra@nil.foundation>
 // Copyright (c) 2024 Alexey Yashunsky <a.yashunsky@nil.foundation>
-// Copyright (c) 2024 Antoine Cyr <antoine.cyr@nil.foundation>
+// Copyright (c) 2024 Antoine Cyr <antoinecyr@nil.foundation>
 //
 // MIT License
 //
@@ -52,7 +52,6 @@ using namespace nil::blueprint;
 template<typename BlueprintFieldType, typename NonNativeFieldType, std::size_t num_chunks,
          std::size_t bit_size_chunk, bool to_pass = true>
 void test_mult(const std::vector<typename BlueprintFieldType::value_type> &public_input) {
-    std::cout << "test_mult 1"<< std::endl;
     using FieldType = BlueprintFieldType;
     using TYPE = typename FieldType::value_type;
     using integral_type = typename BlueprintFieldType::integral_type;
@@ -62,7 +61,6 @@ void test_mult(const std::vector<typename BlueprintFieldType::value_type> &publi
     double_non_native_integral_type x = 0, y = 0, p = 0, pow = 1;
 
     // Populate x, y, p
-    std::cout << "test_mult 2"<< std::endl;
     for (std::size_t i = 0; i < num_chunks; ++i) {
         x += double_non_native_integral_type(integral_type(public_input[i].data)) * pow;
         y += double_non_native_integral_type(
@@ -73,7 +71,6 @@ void test_mult(const std::vector<typename BlueprintFieldType::value_type> &publi
              pow;
         pow <<= bit_size_chunk;
     }
-    std::cout << "test_mult 3"<< std::endl;
 
     double_non_native_integral_type r = x * y % p;
 
@@ -86,14 +83,15 @@ void test_mult(const std::vector<typename BlueprintFieldType::value_type> &publi
                                         public_input.begin() + 3 * num_chunks);
         raw_input.pp = std::vector<TYPE>(public_input.begin() + 3 * num_chunks,
                                          public_input.begin() + 4 * num_chunks);
+        raw_input.zero = public_input.back();
 
         auto [at, A, desc] = B.assign(raw_input);
         bool pass = B.is_satisfied(at);
         std::cout << "Is_satisfied = " << pass << std::endl;
-        std::cout << "to_pass: " << to_pass << std::endl;
+
+        assert(pass == to_pass);
 
         if (to_pass) {
-            assert(pass == true);
             double_non_native_integral_type R = 0;
             pow = 1;
             for (std::size_t i = 0; i < num_chunks; i++) {
@@ -106,8 +104,6 @@ void test_mult(const std::vector<typename BlueprintFieldType::value_type> &publi
             std::cout << "Real res:     " << std::dec << R << std::endl;
 #endif
             assert(r == R);
-        } else {
-            assert(pass == false);
         }
     };
 
@@ -140,7 +136,6 @@ void test_mult(const std::vector<typename BlueprintFieldType::value_type> &publi
 template<typename BlueprintFieldType, typename NonNativeFieldType, std::size_t num_chunks,
          std::size_t bit_size_chunk, std::size_t RandomTestsAmount>
 void mult_tests() {
-    std::cout<<"mult_tests 1" << std::endl;
     using value_type = typename BlueprintFieldType::value_type;
     using integral_type = typename BlueprintFieldType::integral_type;
     using foreign_value_type = typename NonNativeFieldType::value_type;
@@ -154,7 +149,6 @@ void mult_tests() {
     boost::random::uniform_int_distribution<> t_dist(0, 1);
     double_non_native_integral_type mask =
         (double_non_native_integral_type(1) << bit_size_chunk) - 1;
-    std::cout<<"mult_tests 2" << std::endl;
 
     for (std::size_t i = 0; i < RandomTestsAmount; i++) {
         std::vector<typename BlueprintFieldType::value_type> public_input;
@@ -170,11 +164,10 @@ void mult_tests() {
                                                   << (num_chunks * bit_size_chunk),
                                         p = NonNativeFieldType::modulus, pp = ext_pow - p;
 
-        public_input.resize(4 * num_chunks);  // public_input should contain x,y,p,pp
+        public_input.resize(4 * num_chunks + 1);  // public_input should contain x,y,p,pp,zero
         // std::cout << "PI x = " << x << std::endl;
         // std::cout << "PI y = " << y << std::endl;
         // std::cout << "PI p = " << p << std::endl;
-        std::cout<<"mult_tests 3" << std::endl;
         for (std::size_t j = 0; j < num_chunks; j++) {
             public_input[j] = value_type(x & mask);
             x >>= bit_size_chunk;
@@ -188,7 +181,7 @@ void mult_tests() {
             public_input[3 * num_chunks + j] = value_type(pp & mask);
             pp >>= bit_size_chunk;
         }
-        std::cout<<"mult_tests 4" << std::endl;
+        public_input[4*num_chunks] = value_type(0);
 
         test_mult<BlueprintFieldType, NonNativeFieldType, num_chunks, bit_size_chunk>(
             public_input);

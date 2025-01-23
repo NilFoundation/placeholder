@@ -153,7 +153,8 @@ namespace nil {
                 }
 
                 static std::tuple<input_type> form_input(context_type &context_object,
-                                                         raw_input_type raw_input) {
+                                                         raw_input_type raw_input,
+                                                         bool xor_with_mes = false) {
                     input_type input;
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
                         for (std::size_t i = 0; i < 25; i++) {

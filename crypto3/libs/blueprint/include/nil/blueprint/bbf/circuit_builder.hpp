@@ -182,7 +182,7 @@ namespace nil {
 
                     // TODO: replace with PLONK_SPECIAL_SELECTOR_ALL_USABLE_ROWS_SELECTED.
                     row_selector selector_column(usable_rows);
-                    for (std::size_t i = 1; i < usable_rows; i++)
+                    for (std::size_t i = 0; i < usable_rows; i++)
                         selector_column.set_row(i);
                     size_t full_selector_id = gates.add_selector(selector_column);
 
@@ -523,6 +523,7 @@ namespace nil {
                     const auto &gates = bp.gates();
                     const auto &copy_constraints = bp.copy_constraints();
                     const auto &lookup_gates = bp.lookup_gates();
+                    
 
                     std::map<std::string, std::set<std::vector<typename FieldType::value_type>>> used_dynamic_tables;
 
@@ -551,6 +552,7 @@ namespace nil {
                     for (const auto& i : used_lookup_gates) {
                         crypto3::zk::snark::plonk_column<FieldType> selector = assignments.selector(lookup_gates[i].tag_index);
                         for (const auto& selector_row : selector_rows) {
+                            //if (selector_row < selector.size()) {
                             if (selector_row < selector.size() && !selector[selector_row].is_zero()) {
                                 for (std::size_t j = 0; j < lookup_gates[i].constraints.size(); j++) {
                                     std::vector<typename FieldType::value_type> input_values;
