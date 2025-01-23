@@ -14,6 +14,7 @@
 #include <stdexcept>
 
 #include "nil/crypto3/multiprecision/big_uint.hpp"
+#include "nil/crypto3/multiprecision/detail/throw.hpp"
 
 namespace nil::crypto3::multiprecision {
 
@@ -23,7 +24,7 @@ namespace nil::crypto3::multiprecision {
 
         // TODO(ioxid): optimize
         if (n % 2u == 0 || n <= 1) {
-            throw std::invalid_argument("jacobi: second argument must be odd and > 1");
+            NIL_THROW(std::invalid_argument("jacobi: second argument must be odd and > 1"));
         }
 
         big_uint_t x = a, y = n;

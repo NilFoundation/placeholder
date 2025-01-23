@@ -36,7 +36,7 @@ add_library(proof_generatorAssigner
             ${PROTO_SRC}
             ${PROTO_HASH_HEADER}
 )
-set_target_properties(proof_generatorAssigner PROPERTIES CXX_STANDARD 20)
+set_target_properties(proof_generatorAssigner PROPERTIES CXX_STANDARD 23)
 
 target_include_directories(proof_generatorAssigner
                             PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include ${CMAKE_CURRENT_BINARY_DIR}

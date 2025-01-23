@@ -32,6 +32,8 @@
 
 #include <vector>
 
+#include <sycl/sycl.hpp>
+
 #include <nil/crypto3/math/polynomial/polynomial.hpp>
 
 namespace nil {
@@ -49,7 +51,7 @@ namespace nil {
 
             public:
                 typedef FieldType field_type;
-
+                typedef std::pair<std::vector<field_value_type>, std::vector<field_value_type>> fft_cache_type;
                 std::size_t m;
                 std::size_t log2_size;
 
@@ -68,6 +70,8 @@ namespace nil {
                  * Virtual destructor.
                  */
                 virtual ~evaluation_domain() {};
+
+                virtual std::shared_ptr<fft_cache_type> get_fft_cache() = 0;
 
                 /**
                  * Get the unity root.

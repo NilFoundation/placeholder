@@ -73,15 +73,16 @@ namespace nil {
                 struct placeholder_gates_argument<FieldType, ParamsType, 1> {
 
                     typedef typename ParamsType::transcript_hash_type transcript_hash_type;
+                    using value_type = typename FieldType::value_type;
                     using transcript_type = transcript::fiat_shamir_heuristic_sequential<transcript_hash_type>;
-                    using polynomial_dfs_type = math::polynomial_dfs<typename FieldType::value_type>;
-                    using variable_type = plonk_variable<typename FieldType::value_type>;
+                    using polynomial_dfs_type = math::polynomial_dfs<value_type>;
+                    using variable_type = plonk_variable<value_type>;
                     using polynomial_dfs_variable_type = plonk_variable<polynomial_dfs_type>;
 
                     typedef detail::placeholder_policy<FieldType, ParamsType> policy_type;
 
                     constexpr static const std::size_t argument_size = 1;
-
+#ifndef GPU_PROVER
                     static inline void build_variable_value_map(
                         const math::expression<variable_type>& expr,
                         const plonk_polynomial_dfs_table<FieldType>& assignments,
@@ -239,7 +240,188 @@ namespace nil {
                         };
                         return F;
                     }
+#else
+                    static inline std::unordered_map<variable_type, sycl::event> build_variable_value_map(
+                        const math::expression<variable_type>& expr,
+                        const plonk_polynomial_dfs_table<FieldType>& assignments,
+                        std::shared_ptr<math::evaluation_domain<FieldType>> domain,
+                        std::size_t extended_domain_size,
+                        std::unordered_map<variable_type, value_type*>& variable_values_out,
+                        const polynomial_dfs_type &mask_polynomial,
+                        const polynomial_dfs_type &lagrange_0,
 
+                        sycl::queue& queue
+                    ) {
+
+                        std::unordered_map<variable_type, sycl::event> variable_events_set;
+
+                        math::expression_for_each_variable_visitor<variable_type> visitor(
+                            [&variable_set, &variable_values_out](const variable_type& var) {
+                                // Create the structure of the map so we can change the values later.
+                                if (variable_events_set.find(var) == variable_events_set.end()) {
+                                    variable_events_set[var] = sycl::event();
+                                    variable_values_out[var] = sycl::malloc_device<value_type>(extended_domain_size, queue);
+                                }
+                        });
+
+                        visitor.visit(expr);
+
+                        std::shared_ptr<math::evaluation_domain<FieldType>> extended_domain =
+                            math::make_evaluation_domain<FieldType>(extended_domain_size);
+
+                        // TODO: move mask_polynomial/lagrange_0 conversions up the callstack
+                        value_type* mask_polynomial_buf = sycl::malloc_device<value_type>(extended_domain_size, queue);
+                        value_type* lagrange_0_buf = sycl::malloc_device<value_type>(extended_domain_size, queue);
+
+                        auto mask_polynomial_event = queue.copy<value_type>(
+                            mask_polynomial.data(), mask_polynomial_buf,
+                            mask_polynomial.size()
+                        );
+                        auto lagrange_0_event = queue.copy<value_type>(
+                            lagrange_0.data(), lagrange_0_buf,
+                            lagrange_0.size()
+                        );
+                        value_type* mask_lagrange_diff_buf = sycl::malloc_device<value_type>(extended_domain_size, queue);
+                        sycl::event mask_lagrange_diff_event = queue.submit([&](sycl::handler& cgh) {
+                            cgh.depends_on({mask_polynomial_event, lagrange_0_event});
+                            cgh.parallel_for(sycl::range<1>(extended_domain_size), [=](sycl::id<1> idx) {
+                                mask_lagrange_diff_buf[idx] = mask_polynomial_buf[idx] - lagrange_0_buf[idx];
+                            });
+                        });
+
+                        for (const auto& var : variable_set) {
+                            // Convert the variable to polynomial_dfs variable type.
+                            polynomial_dfs_variable_type var_dfs(var.index, var.rotation, var.relative,
+                                static_cast<typename polynomial_dfs_variable_type::column_type>(
+                                    static_cast<std::uint8_t>(var.type)));
+
+                            value_type* assignment = nullptr;
+                            if( var.index == PLONK_SPECIAL_SELECTOR_ALL_USABLE_ROWS_SELECTED && var.type == variable_type::column_type::selector){
+                                assignment = mask_polynomial_buf;
+                                variable_events_set[var] = mask_polynomial_event;
+                            } else if( var.index == PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED && var.type == variable_type::column_type::selector) {
+                                assignment = mask_lagrange_diff_buf;
+                                variable_events_set[var] = mask_lagrange_diff_event;
+                            } else {
+                                assignment = variable_values_out[var];
+                                variable_events_set[var] = handle_polynomial_resizing<FieldType>(
+                                    assignment, extended_domain_size, max_domain_size,
+                                    assignments.get_variable_value(var_dfs, domain).degree(),
+                                    queue,
+                                );
+                            }
+
+                        }
+
+                        sycl::free(mask_polynomial_buf, queue);
+                        sycl::free(lagrange_0_buf, queue);
+                        sycl::free(mask_lagrange_diff_buf, queue);
+                        return variable_set;
+                    }
+
+                    static inline std::array<polynomial_dfs_type, argument_size> prove_eval(
+                        const typename policy_type::constraint_system_type &constraint_system,
+                        const plonk_polynomial_dfs_table<FieldType> &column_polynomials,
+                        std::shared_ptr<math::evaluation_domain<FieldType>> original_domain,
+                        std::uint32_t max_gates_degree,
+                        const polynomial_dfs_type &mask_polynomial,
+                        const polynomial_dfs_type &lagrange_0,
+                        transcript_type& transcript
+                    ) {
+                        PROFILE_SCOPE("gate_argument_time");
+
+                        // max_gates_degree that comes from the outside does not take into account multiplication
+                        // by selector.
+                        ++max_gates_degree;
+                        typename FieldType::value_type theta = transcript.template challenge<FieldType>();
+
+                        auto value_type_to_polynomial_dfs = [](
+                            const typename variable_type::assignment_type& coeff) {
+                                return polynomial_dfs_type(0, 1, coeff);
+                            };
+
+                        std::vector<std::uint32_t> extended_domain_sizes;
+                        std::vector<std::uint32_t> degree_limits;
+                        std::uint32_t max_degree = std::pow(2, ceil(std::log2(max_gates_degree)));
+                        std::uint32_t max_domain_size = original_domain->m * max_degree;
+
+                        degree_limits.push_back(max_degree);
+                        extended_domain_sizes.push_back(max_domain_size);
+                        degree_limits.push_back(max_degree / 2);
+                        extended_domain_sizes.push_back(max_domain_size / 2);
+
+                        std::vector<math::expression<variable_type>> expressions(extended_domain_sizes.size());
+                        auto theta_acc = FieldType::value_type::one();
+
+                        // Every constraint has variable type 'variable_type', but we want it to use
+                        // 'polynomial_dfs_variable_type' instead. The only difference is the coefficient type
+                        // inside a term. We want the coefficients to be dfs polynomials here.
+                        math::expression_variable_type_converter<variable_type, polynomial_dfs_variable_type> converter(
+                            value_type_to_polynomial_dfs);
+
+                        math::expression_max_degree_visitor<variable_type> visitor;
+
+                        const auto& gates = constraint_system.gates();
+
+                        for (const auto& gate: gates) {
+                            std::vector<math::expression<variable_type>> gate_results(extended_domain_sizes.size());
+                            for (std::size_t constraint_idx = 0; constraint_idx < gate.constraints.size(); ++constraint_idx) {
+                                const auto& constraint = gate.constraints[constraint_idx];
+                                auto next_term = constraint * theta_acc;
+
+                                theta_acc *= theta;
+                                // +1 stands for the selector multiplication.
+                                size_t constraint_degree = visitor.compute_max_degree(constraint) + 1;
+                                for (int i = extended_domain_sizes.size() - 1; i >= 0; --i) {
+                                    // Whatever the degree of term is, add it to the maximal degree expression.
+                                    if (degree_limits[i] >= constraint_degree || i == 0) {
+                                        gate_results[i] += next_term;
+                                        break;
+                                    }
+                                }
+                            }
+                            variable_type selector(gate.selector_index, 0, false, variable_type::column_type::selector);
+                            for (size_t i = 0; i < extended_domain_sizes.size(); ++i) {
+                                gate_results[i] *= selector;
+                                expressions[i] += gate_results[i];
+                            }
+                        }
+
+                        std::array<polynomial_dfs_type, argument_size> F;
+
+                        F[0] = polynomial_dfs_type::zero();
+                        for (std::size_t i = 0; i < extended_domain_sizes.size(); ++i) {
+                            std::unordered_map<variable_type, polynomial_dfs_type> variable_values;
+
+                            build_variable_value_map(
+                                expressions[i], column_polynomials, original_domain,
+                                extended_domain_sizes[i], variable_values,
+                                mask_polynomial, lagrange_0
+                            );
+
+                            polynomial_dfs_type result(extended_domain_sizes[i] - 1, extended_domain_sizes[i]);
+                            wait_for_all(parallel_run_in_chunks<void>(
+                                extended_domain_sizes[i],
+                                [&variable_values, &extended_domain_sizes, &result, &expressions, i]
+                                (std::size_t begin, std::size_t end) {
+                                    for (std::size_t j = begin; j < end; ++j) {
+                                        // Don't use cache here. In practice it's slower to maintain the cache
+                                        // than to re-compute the subexpression value when value type is field element.
+                                        math::expression_evaluator<variable_type> evaluator(
+                                            expressions[i],
+                                            [&assignments=variable_values, j]
+                                                (const variable_type &var) -> const typename FieldType::value_type& {
+                                                    return assignments[var][j];
+                                            });
+                                        result[j] = evaluator.evaluate();
+                                    }
+                            }, ThreadPool::PoolLevel::HIGH));
+
+                            F[0] += result;
+                        };
+                        return F;
+                    }
+#endif
                     static inline std::array<typename FieldType::value_type, argument_size>
                         verify_eval(const std::vector<plonk_gate<FieldType, plonk_constraint<FieldType>>> &gates,
                                     typename policy_type::evaluation_map &evaluations,

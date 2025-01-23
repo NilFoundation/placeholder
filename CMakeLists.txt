@@ -2,6 +2,11 @@ cmake_minimum_required(VERSION 3.27)
 
 project(placeholder)
 
+option(GPU_PROVER "Enable GPU support" OFF)
+if (GPU_PROVER)
+  add_compile_options(-DGPU_PROVER)
+endif()
+
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
   add_compile_options (-fdiagnostics-color=always)
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
@@ -26,7 +31,7 @@ file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/generated-dummy.cpp)
 add_library(crypto3_precompiled_headers STATIC ${CMAKE_CURRENT_BINARY_DIR}/generated-dummy.cpp)
 set_target_properties(crypto3_precompiled_headers PROPERTIES
     LINKER_LANGUAGE CXX
-    CXX_STANDARD 20
+    CXX_STANDARD 23
     CXX_STANDARD_REQUIRED TRUE
 )
 
