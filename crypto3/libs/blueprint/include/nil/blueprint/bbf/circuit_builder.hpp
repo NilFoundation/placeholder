@@ -523,7 +523,6 @@ namespace nil {
                     const auto &gates = bp.gates();
                     const auto &copy_constraints = bp.copy_constraints();
                     const auto &lookup_gates = bp.lookup_gates();
-                    
 
                     std::map<std::string, std::set<std::vector<typename FieldType::value_type>>> used_dynamic_tables;
 
@@ -552,7 +551,6 @@ namespace nil {
                     for (const auto& i : used_lookup_gates) {
                         crypto3::zk::snark::plonk_column<FieldType> selector = assignments.selector(lookup_gates[i].tag_index);
                         for (const auto& selector_row : selector_rows) {
-                            //if (selector_row < selector.size()) {
                             if (selector_row < selector.size() && !selector[selector_row].is_zero()) {
                                 for (std::size_t j = 0; j < lookup_gates[i].constraints.size(); j++) {
                                     std::vector<typename FieldType::value_type> input_values;
