@@ -67,7 +67,7 @@ in stdenv.mkDerivation {
       (if crypto3_bechmarks then "-DBUILD_CRYPTO3_BENCH_TESTS=ON" else "-DBUILD_CRYPTO3_BENCH_TESTS=OFF")
       (if staticBuild then "-DPROOF_PRODUCER_STATIC_BINARIES=ON" else "-DPROOF_PRODUCER_STATIC_BINARIES=OFF")
       "-G Ninja"
-      (if enableGPU then "-DENABLE_GPU=ON" else "-DENABLE_GPU=OFF")
+      (if enableGPU then "-DGPU_PROVER=ON" else "-DGPU_PROVER=OFF")
     ];
 
   cmakeBuildType = if enableDebug then "Debug" else "Release";
