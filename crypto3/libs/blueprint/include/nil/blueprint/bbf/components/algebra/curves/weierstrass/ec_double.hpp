@@ -70,7 +70,7 @@ namespace nil {
                 };
 
                 template<typename FieldType, GenerationStage stage,
-                         typename NonNativeFieldType>
+                    typename NonNativeFieldType>
                 class ec_double : public generic_component<FieldType, stage> {
                     using generic_component<FieldType, stage>::allocate;
                     using generic_component<FieldType, stage>::copy_constrain;
@@ -78,16 +78,16 @@ namespace nil {
                     using generic_component<FieldType, stage>::lookup;
                     using component_type = generic_component<FieldType, stage>;
 
-                  public:
+                public:
                     using typename generic_component<FieldType, stage>::TYPE;
                     using typename generic_component<FieldType, stage>::context_type;
                     using typename generic_component<FieldType, stage>::table_params;
                     using raw_input_type =
                         typename std::conditional<stage == GenerationStage::ASSIGNMENT,
-                                                  ec_double_raw_input<FieldType>,
-                                                  std::tuple<>>::type;
+                        ec_double_raw_input<FieldType>,
+                        std::tuple<>>::type;
 
-                  public:
+                public:
                     std::vector<TYPE> inp_xQ;
                     std::vector<TYPE> inp_yQ;
                     std::vector<TYPE> inp_p;
@@ -103,13 +103,13 @@ namespace nil {
                         // rows = 4096-1 so that lookup table is not too hard to fit and
                         // padding doesn't inflate the table
                         constexpr std::size_t rows = 4095;
-                        return {witness, public_inputs, constants, rows};
+                        return { witness, public_inputs, constants, rows };
                     }
 
                     static std::tuple<std::vector<TYPE>, std::vector<TYPE>,
-                                      std::vector<TYPE>, std::vector<TYPE>, TYPE>
-                    form_input(context_type &context_object, raw_input_type raw_input,
-                               std::size_t num_chunks, std::size_t bit_size_chunk) {
+                        std::vector<TYPE>, std::vector<TYPE>, TYPE>
+                        form_input(context_type& context_object, raw_input_type raw_input,
+                            std::size_t num_chunks, std::size_t bit_size_chunk) {
                         std::vector<TYPE> input_xQ(num_chunks);
                         std::vector<TYPE> input_yQ(num_chunks);
                         std::vector<TYPE> input_p(num_chunks);
@@ -127,30 +127,29 @@ namespace nil {
                         }
                         for (std::size_t i = 0; i < num_chunks; i++) {
                             context_object.allocate(input_xQ[i], 0, i,
-                                                    column_type::public_input);
+                                column_type::public_input);
                             context_object.allocate(input_yQ[i], 0, i + num_chunks,
-                                                    column_type::public_input);
+                                column_type::public_input);
                             context_object.allocate(input_p[i], 0, i + 2 * num_chunks,
-                                                    column_type::public_input);
+                                column_type::public_input);
                             context_object.allocate(input_pp[i], 0, i + 3 * num_chunks,
-                                                    column_type::public_input);
+                                column_type::public_input);
                         }
                         context_object.allocate(input_zero, 0, 4 * num_chunks,
-                                                column_type::public_input);
+                            column_type::public_input);
                         return std::make_tuple(input_xQ, input_yQ, input_p, input_pp,
-                                               input_zero);
+                            input_zero);
                     }
 
-                    ec_double(context_type &context_object, std::vector<TYPE> input_xQ,
-                              std::vector<TYPE> input_yQ, std::vector<TYPE> input_p,
-                              std::vector<TYPE> input_pp, TYPE input_zero,
-                              std::size_t num_chunks, std::size_t bit_size_chunk,
-                              bool make_links = true)
+                    ec_double(context_type& context_object, std::vector<TYPE> input_xQ,
+                        std::vector<TYPE> input_yQ, std::vector<TYPE> input_p,
+                        std::vector<TYPE> input_pp, TYPE input_zero,
+                        std::size_t num_chunks, std::size_t bit_size_chunk,
+                        bool make_links = true)
                         : generic_component<FieldType, stage>(context_object) {
                         using integral_type = typename FieldType::integral_type;
                         using NON_NATIVE_TYPE = typename NonNativeFieldType::value_type;
-                        using non_native_integral_type =
-                            typename NonNativeFieldType::integral_type;
+                        using non_native_integral_type = typename NonNativeFieldType::integral_type;
 
                         using Choice_Function =
                             typename bbf::components::choice_function<FieldType, stage>;
@@ -159,12 +158,12 @@ namespace nil {
                         using Check_Mod_P =
                             typename bbf::components::check_mod_p<FieldType, stage>;
                         using Addition_Mod_P =
-                            typename bbf::components::addition_mod_p<FieldType, stage,NonNativeFieldType>;
+                            typename bbf::components::addition_mod_p<FieldType, stage, NonNativeFieldType>;
                         using Negation_Mod_P =
-                            typename bbf::components::negation_mod_p<FieldType, stage,NonNativeFieldType>;
+                            typename bbf::components::negation_mod_p<FieldType, stage, NonNativeFieldType>;
                         using Multiplication_Mod_P =
                             typename bbf::components::flexible_multiplication<FieldType,
-                                                                              stage,NonNativeFieldType>;
+                            stage, NonNativeFieldType>;
 
                         std::vector<TYPE> XQ(num_chunks);
                         std::vector<TYPE> YQ(num_chunks);
@@ -186,45 +185,44 @@ namespace nil {
                             }
                             ZERO = input_zero;
 
-                            non_native_integral_type B = non_native_integral_type(1)
-                                                         << bit_size_chunk,
-                                                         pow = 0;
+                            non_native_integral_type pow = 1;
                             NON_NATIVE_TYPE xQ = 0, yQ = 0;
 
                             for (std::size_t i = 0; i < num_chunks; ++i) {
                                 xQ += non_native_integral_type(
-                                          integral_type(input_xQ[i].data)) *
-                                      pow;
+                                    integral_type(input_xQ[i].data)) *
+                                    pow;
                                 yQ += non_native_integral_type(
-                                          integral_type(input_yQ[i].data)) *
-                                      pow;
+                                    integral_type(input_yQ[i].data)) *
+                                    pow;
                                 pow <<= bit_size_chunk;
                             }
 
                             NON_NATIVE_TYPE
-                            lambda =
+                                lambda =
                                 (yQ == 0)
-                                    ? 0
-                                    : 3 * xQ * xQ *
-                                          ((2 * yQ).inversed()),  // if yQ = 0, lambda = 0
+                                ? 0
+                                : 3 * xQ * xQ *
+                                ((2 * yQ).inversed()),  // if yQ = 0, lambda = 0
                                 z = (yQ == 0) ? 0 : yQ.inversed(),  // if yQ = 0, z = 0
                                 xR = lambda * lambda - 2 * xQ,
-                            yR = lambda * (xQ - xR) - yQ;
+                                yR = lambda * (xQ - xR) - yQ;
 
-                            auto base_B = [&B,num_chunks](NON_NATIVE_TYPE x) {
+                            auto base = [num_chunks, bit_size_chunk](NON_NATIVE_TYPE x) {
                                 std::vector<TYPE> res(num_chunks);
-                                non_native_integral_type t = non_native_integral_type(x.data);
+                                non_native_integral_type mask = (non_native_integral_type(1) << bit_size_chunk) - 1;
+                                non_native_integral_type x_value = non_native_integral_type(x.data);
                                 for (std::size_t i = 0; i < num_chunks; i++) {
-                                    res[i] = t % B;
-                                    t /= B;
+                                    res[i] = TYPE(x_value & mask);
+                                    x_value >>= bit_size_chunk;
                                 }
                                 return res;
-                            };
+                                };
 
-                            LAMBDA = base_B(lambda);
-                            Z = base_B(z);
-                            XR = base_B(xR);
-                            YR = base_B(yR);
+                            LAMBDA = base(lambda);
+                            Z = base(z);
+                            XR = base(xR);
+                            YR = base(yR);
                         }
 
                         for (std::size_t i = 0; i < num_chunks; ++i) {
@@ -241,24 +239,20 @@ namespace nil {
                         allocate(ZERO);
 
                         auto check_chunked =
-                            [&context_object,num_chunks,bit_size_chunk,PP,ZERO](std::vector<TYPE> x) {
-                                Range_Check rc = Range_Check(context_object, x,
-                                                             num_chunks, bit_size_chunk);
-                                Check_Mod_P cm = Check_Mod_P(context_object, x, PP, ZERO,
-                                                             num_chunks, bit_size_chunk);
+                            [&context_object, num_chunks, bit_size_chunk, PP, ZERO](std::vector<TYPE> x) {
+                            Range_Check rc = Range_Check(context_object, x,
+                                num_chunks, bit_size_chunk);
+                            Check_Mod_P cm = Check_Mod_P(context_object, x, PP, ZERO,
+                                num_chunks, bit_size_chunk);
                             };
 
                         // Copy constraint generation lambda expression
-                        auto CopyConstrain = [this,num_chunks](std::vector<TYPE> x, std::vector<TYPE> y) {
+                        auto CopyConstrain = [this, num_chunks](std::vector<TYPE> x, std::vector<TYPE> y) {
                             for (std::size_t i = 0; i < num_chunks; i++) {
-                                std::cout << "copy_constrain x[i]: " << x[i] << " , y[i]: " << y[i] << std::endl;
                                 copy_constrain(x[i], y[i]);
                             }
-                        };
-                        //YQ
-                        //LAMBDA
-                        //XQ 
-                        //2yQ * lambda = 3xQ^2
+                            };
+
 
                         // perform range checks and mod p checks on all stored variables
                         check_chunked(LAMBDA);
@@ -266,59 +260,68 @@ namespace nil {
                         check_chunked(XR);
                         check_chunked(YR);
 
-                        std::cout<< "t1" << std::endl;
                         Multiplication_Mod_P t1 = Multiplication_Mod_P(
-                            context_object, YQ, LAMBDA, P, PP,num_chunks,bit_size_chunk);  // t1 = yQ * lambda
-                        std::cout<< "t2" << std::endl;
+                            context_object, YQ, LAMBDA, P, PP, ZERO, num_chunks, bit_size_chunk);  // t1 = yQ * lambda
+
+
                         Addition_Mod_P t2 =
                             Addition_Mod_P(context_object, t1.res_z, t1.res_z, P,
-                                           PP,ZERO,num_chunks,bit_size_chunk);  // t2 = t1 + t1 = 2yQ * lambda
-                        std::cout<< "t3" << std::endl;
+                                PP, ZERO, num_chunks, bit_size_chunk);  // t2 = t1 + t1 = 2yQ * lambda
                         Addition_Mod_P t3 = Addition_Mod_P(context_object, XQ, XQ, P, PP,
-                                                           ZERO,num_chunks,bit_size_chunk);  // t3 = xQ + xQ = 2xQ
-                        std::cout<< "t4" << std::endl;
+                            ZERO, num_chunks, bit_size_chunk);  // t3 = xQ + xQ = 2xQ
+                        if constexpr (stage == GenerationStage::ASSIGNMENT) {
+                            non_native_integral_type a = 0, b = 0, pow = 1;
+                            for (std::size_t i = 0; i < num_chunks; ++i) {
+                                a += non_native_integral_type(integral_type(
+                                    t1.res_z[i].data)) *
+                                    pow;
+                                b += non_native_integral_type(integral_type(
+                                    t3.res_z[i].data)) *
+                                    pow;
+                                pow <<= bit_size_chunk;
+                            }
+                        }
                         Addition_Mod_P t4 =
                             Addition_Mod_P(context_object, XQ, t3.res_z, P, PP,
-                                           ZERO,num_chunks,bit_size_chunk);  // t4 = xQ + t3 = 3xQ
-                        std::cout<< "t5" << std::endl;
+                                ZERO, num_chunks, bit_size_chunk);  // t4 = xQ + t3 = 3xQ
                         Multiplication_Mod_P t5 = Multiplication_Mod_P(
-                            context_object, t4.res_z, XQ, P, PP,num_chunks,bit_size_chunk);  // t5 = t4 * xQ = 3xQ^2
-                        std::cout<< "copy 1" << std::endl;
+                            context_object, t4.res_z, XQ, P, PP, ZERO, num_chunks, bit_size_chunk);  // t5 = t4 * xQ = 3xQ^2
+                        if constexpr (stage == GenerationStage::ASSIGNMENT) {
+                            non_native_integral_type a = 0, b = 0, pow = 1;
+                            for (std::size_t i = 0; i < num_chunks; ++i) {
+                                a += non_native_integral_type(
+                                    integral_type(t2.res_z[i].data)) *
+                                    pow;
+                                b += non_native_integral_type(
+                                    integral_type(t5.res_z[i].data)) *
+                                    pow;
+                                pow <<= bit_size_chunk;
+                            }
+                        }
                         CopyConstrain(t2.res_z, t5.res_z);         // 2yQ * lambda = 3xQ^2
-                        std::cout<< "t6" << std::endl;
                         Addition_Mod_P t6 =
                             Addition_Mod_P(context_object, XR, t3.res_z, P, PP,
-                                           ZERO,num_chunks,bit_size_chunk);  // t6 = xR + t3 = xR + 2xQ
-                        std::cout<< "t7" << std::endl;
+                                ZERO, num_chunks, bit_size_chunk);  // t6 = xR + t3 = xR + 2xQ
                         Multiplication_Mod_P t7 =
                             Multiplication_Mod_P(context_object, LAMBDA, LAMBDA, P,
-                                                 PP,num_chunks,bit_size_chunk);       // t7 = lambda * lambda
-                        std::cout<< "copy 2" << std::endl;
+                                PP, ZERO, num_chunks, bit_size_chunk);       // t7 = lambda * lambda
                         CopyConstrain(t6.res_z, t7.res_z);  // xR + 2xQ = lambda^2
-                        std::cout<< "t8" << std::endl;
                         Addition_Mod_P t8 = Addition_Mod_P(context_object, YR, YQ, P, PP,
-                                                           ZERO,num_chunks,bit_size_chunk);  // t8 = yR + yQ
-                        std::cout<< "t9" << std::endl;
+                            ZERO, num_chunks, bit_size_chunk);  // t8 = yR + yQ
                         Negation_Mod_P t9 =
-                            Negation_Mod_P(context_object, XR, P, PP, ZERO,num_chunks,bit_size_chunk);  // t9 = -xR
-                        std::cout<< "t10" << std::endl;
+                            Negation_Mod_P(context_object, XR, P, PP, ZERO, num_chunks, bit_size_chunk);  // t9 = -xR
                         Addition_Mod_P t10 =
                             Addition_Mod_P(context_object, XQ, t9.res_z, P, PP,
-                                           ZERO,num_chunks,bit_size_chunk);  // t10 = xQ + t9 = xQ - xR
-                        std::cout<< "t11" << std::endl;
+                                ZERO, num_chunks, bit_size_chunk);  // t10 = xQ + t9 = xQ - xR
                         Multiplication_Mod_P t11 = Multiplication_Mod_P(
                             context_object, LAMBDA, t10.res_z, P,
-                            PP,num_chunks,bit_size_chunk);  // t11 = lambda * t10 =lambda(xQ-xR)
-                        std::cout<< "copy 3" << std::endl;
+                            PP, ZERO, num_chunks, bit_size_chunk);  // t11 = lambda * t10 =lambda(xQ-xR)
                         CopyConstrain(t8.res_z, t11.res_z);  // yR + yQ = lambda(xQ - xR)
-                        std::cout<< "t12" << std::endl;
                         Multiplication_Mod_P t12 =
-                            Multiplication_Mod_P(context_object, Z, t1.res_z, P, PP,
-                                                 num_chunks,bit_size_chunk);  // t12 = z * t1 = z * yQ * lambda
-                        std::cout<< "copy 4" << std::endl;
+                            Multiplication_Mod_P(context_object, Z, t1.res_z, P, PP, ZERO,
+                                num_chunks, bit_size_chunk);  // t12 = z * t1 = z * yQ * lambda
                         CopyConstrain(LAMBDA, t12.res_z);  // lambda = z yQ lambda
 
-                        std::cout<< "make links" << std::endl;
                         if (make_links) {
                             for (std::size_t i = 0; i < num_chunks; ++i) {
                                 copy_constrain(XQ[i], input_xQ[i]);
@@ -345,25 +348,25 @@ namespace nil {
                 template<typename FieldType, GenerationStage stage>
                 class pallas_ec_double
                     : public ec_double<
-                          FieldType, stage,
-                          crypto3::algebra::curves::pallas::base_field_type> {
+                    FieldType, stage,
+                    crypto3::algebra::curves::pallas::base_field_type> {
                     using Base =
                         ec_double<FieldType, stage,
-                                  crypto3::algebra::curves::pallas::base_field_type>;
+                        crypto3::algebra::curves::pallas::base_field_type>;
 
-                  public:
+                public:
                     using Base::Base;
                 };
 
                 template<typename FieldType, GenerationStage stage>
                 class vesta_ec_double
                     : public ec_double<FieldType, stage,
-                                       crypto3::algebra::curves::vesta::base_field_type> {
+                    crypto3::algebra::curves::vesta::base_field_type> {
                     using Base =
                         ec_double<FieldType, stage,
-                                  crypto3::algebra::curves::vesta::base_field_type>;
+                        crypto3::algebra::curves::vesta::base_field_type>;
 
-                  public:
+                public:
                     using Base::Base;
                 };
 

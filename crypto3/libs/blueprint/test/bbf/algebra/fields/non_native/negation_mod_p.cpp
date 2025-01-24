@@ -91,21 +91,21 @@ void test_negation_mod_p(
 
     if constexpr (std::is_same_v<NonNativeFieldType,
                                  crypto3::algebra::curves::pallas::base_field_type>) {
-        typename bbf::components::vesta_negation_mod_p<
+        typename bbf::components::pallas_negation_mod_p<
             FieldType, bbf::GenerationStage::ASSIGNMENT>::raw_input_type raw_input;
 
         auto B =
-            bbf::circuit_builder<FieldType, bbf::components::vesta_negation_mod_p,
+            bbf::circuit_builder<FieldType, bbf::components::pallas_negation_mod_p,
                                  std::size_t, std::size_t>(num_chunks, bit_size_chunk);
 
         assign_and_check(B, raw_input);
     } else if constexpr (std::is_same_v<
                              NonNativeFieldType,
                              crypto3::algebra::curves::vesta::base_field_type>) {
-        typename bbf::components::pallas_negation_mod_p<
+        typename bbf::components::vesta_negation_mod_p<
             FieldType, bbf::GenerationStage::ASSIGNMENT>::raw_input_type raw_input;
         auto B =
-            bbf::circuit_builder<FieldType, bbf::components::pallas_negation_mod_p,
+            bbf::circuit_builder<FieldType, bbf::components::vesta_negation_mod_p,
                                  std::size_t, std::size_t>(num_chunks, bit_size_chunk);
 
         assign_and_check(B, raw_input);

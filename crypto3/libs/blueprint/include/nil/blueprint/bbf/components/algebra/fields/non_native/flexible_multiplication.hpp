@@ -134,9 +134,9 @@ namespace nil {
                                             bool make_links = true)
                         : generic_component<FieldType, stage>(context_object) {
                             
-                        using double_non_native_integral_type = nil::crypto3::multiprecision::big_uint<2* NonNativeFieldType::modulus_bits>;
+                        using extended_integral_type = nil::crypto3::multiprecision::big_uint<2* NonNativeFieldType::modulus_bits>;
                 
-                        using native_integral_type = typename FieldType::integral_type;
+                        using integral_type = typename FieldType::integral_type;
 
                         using Check_Mod_P = typename bbf::components::check_mod_p<FieldType,stage>;
                         using Range_Check = typename bbf::components::range_check_multi<FieldType,stage>;

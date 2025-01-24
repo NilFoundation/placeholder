@@ -110,24 +110,24 @@ void test_mult(const std::vector<typename BlueprintFieldType::value_type> &publi
 
     if constexpr (std::is_same_v<NonNativeFieldType,
                                  crypto3::algebra::curves::pallas::base_field_type>) {
-        typename bbf::components::vesta_flexible_multiplication<
-            FieldType, bbf::GenerationStage::ASSIGNMENT>::raw_input_type raw_input;
-
-        auto B =
-            bbf::circuit_builder<FieldType,
-                                 bbf::components::vesta_flexible_multiplication,
-                                 std::size_t, std::size_t>(num_chunks, bit_size_chunk);
-
-        assign_and_check(B, raw_input);
-    } else if constexpr (std::is_same_v<
-                             NonNativeFieldType,
-                             crypto3::algebra::curves::vesta::base_field_type>) {
         typename bbf::components::pallas_flexible_multiplication<
             FieldType, bbf::GenerationStage::ASSIGNMENT>::raw_input_type raw_input;
 
         auto B =
             bbf::circuit_builder<FieldType,
                                  bbf::components::pallas_flexible_multiplication,
+                                 std::size_t, std::size_t>(num_chunks, bit_size_chunk);
+
+        assign_and_check(B, raw_input);
+    } else if constexpr (std::is_same_v<
+                             NonNativeFieldType,
+                             crypto3::algebra::curves::vesta::base_field_type>) {
+        typename bbf::components::vesta_flexible_multiplication<
+            FieldType, bbf::GenerationStage::ASSIGNMENT>::raw_input_type raw_input;
+
+        auto B =
+            bbf::circuit_builder<FieldType,
+                                 bbf::components::vesta_flexible_multiplication,
                                  std::size_t, std::size_t>(num_chunks, bit_size_chunk);
 
         assign_and_check(B, raw_input);
@@ -232,6 +232,7 @@ void mult_tests_to_fail() {
             public_input[3 * num_chunks + j] = value_type(pp & mask);
             pp >>= bit_size_chunk;
         }
+        public_input.push_back(value_type(0));  // the zero
 
         test_mult<BlueprintFieldType, NonNativeFieldType, num_chunks, bit_size_chunk,
                   false>(public_input);
