@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2024 Alexey Yashunsky <a.yashunsky@nil.foundation>
-// Copyright (c) 2024 Antoine Cyr <antoine.cyr@nil.foundation>
+// Copyright (c) 2024 Antoine Cyr <antoinecyr@nil.foundation>
 //
 // MIT License
 //
@@ -65,7 +65,7 @@ namespace nil {
 
                   public:
                     TYPE inp_q;
-                    std::vector<TYPE> inp_x, inp_y, res_z;
+                    std::vector<TYPE> inp_x, inp_y, res_r;
 
                     static table_params get_minimal_requirements(std::size_t num_chunks) {
                         std::size_t witness = num_chunks + 1;
@@ -133,7 +133,7 @@ namespace nil {
                         for (std::size_t i = 0; i < num_chunks; i++) {
                             inp_x.push_back(X[i]);
                             inp_y.push_back(Y[i]);
-                            res_z.push_back(Z[i]);
+                            res_r.push_back(Z[i]);
                         }
                     };
                 };

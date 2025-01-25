@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2024 Georgios Fotiadis <gfotiadis@nil.foundation>
-// Copyright (c) 2024 Antoine Cyr <gfotiadis@nil.foundation>
+// Copyright (c) 2024 Antoine Cyr <antoinecyr@nil.foundation>
 //
 // MIT License
 //
@@ -72,9 +72,9 @@ void test_carry_on_addition(const std::vector<typename BlueprintFieldType::value
     for(std::size_t i = 0; i < num_chunks; i++) {
         #ifdef BLUEPRINT_PLONK_PROFILING_ENABLED
         std::cout << "Expected res: " << std::dec << expected_res[i] << std::endl;
-        std::cout << "Real res:     " << std::dec << A.res_z[i].data  << std::endl;
+        std::cout << "Real res:     " << std::dec << A.res_r[i].data  << std::endl;
         #endif
-        assert(A.res_z[i].data == expected_res[i].data);
+        assert(A.res_r[i].data == expected_res[i].data);
     }
     assert(carry[num_chunks-1] == A.res_c.data);
 }

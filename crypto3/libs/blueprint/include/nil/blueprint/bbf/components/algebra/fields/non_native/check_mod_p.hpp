@@ -125,7 +125,7 @@ namespace nil {
                         using Range_Check = typename bbf::components::range_check_multi<FieldType,stage>;
 
                         Carry_On_Addition ca = Carry_On_Addition(context_object,input_x,input_pp,num_chunks,bit_size_chunk);
-                        Range_Check rc = Range_Check(context_object, ca.res_z,num_chunks,bit_size_chunk);
+                        Range_Check rc = Range_Check(context_object, ca.res_r,num_chunks,bit_size_chunk);
                         
                         if(expect_output){
                             output = ca.res_c;
