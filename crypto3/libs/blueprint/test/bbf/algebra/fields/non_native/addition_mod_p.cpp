@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2024 Valeh Farzaliyev <estoniaa@nil.foundation>
-// Copyright (c) 2024 Antoine Cyr <antoine.cyr@nil.foundation>
+// Copyright (c) 2024 Antoine Cyr <antoinecyr@nil.foundation>
 //
 // MIT License
 //
@@ -23,7 +23,7 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE bbf_check_mod_p_test
+#define BOOST_TEST_MODULE bbf_addition_mod_p_test
 
 #include <boost/test/unit_test.hpp>
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
@@ -63,9 +63,9 @@ void test_addition_mod_p(const std::vector<typename BlueprintFieldType::value_ty
         pow <<= bit_size_chunk;
     }
 
-    extended_integral_type z = x + y;
-    if (z >= p) {
-        z -= p;
+    extended_integral_type r = x + y;
+    if (r >= p) {
+        r -= p;
     }
     
     auto assign_and_check = [&](auto &B, auto &raw_input) {
@@ -84,18 +84,18 @@ void test_addition_mod_p(const std::vector<typename BlueprintFieldType::value_ty
         std::cout << "Is_satisfied = " << pass << std::endl;
 
         assert(pass == true);
-        extended_integral_type Z = 0;
+        extended_integral_type R = 0;
         pow = 1;
         for (std::size_t i = 0; i < num_chunks; i++) {
-            Z += extended_integral_type(integral_type(A.res_z[i].data)) * pow;
+            R += extended_integral_type(integral_type(A.res_r[i].data)) * pow;
             pow <<= bit_size_chunk;
         }
 #ifdef BLUEPRINT_PLONK_PROFILING_ENABLED
         std::cout << "addition_mod_p test" << std::endl;
-        std::cout << "Expected res: " << std::dec << z << std::endl;
-        std::cout << "Real res:     " << std::dec << Z << std::endl;
+        std::cout << "Expected res: " << std::dec << r << std::endl;
+        std::cout << "Real res:     " << std::dec << R << std::endl;
 #endif
-        assert(z == Z);
+        assert(r == R);
         
     };
 

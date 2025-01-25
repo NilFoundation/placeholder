@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2024 Valeh Farzaliyev <estoniaa@nil.foundation>
-// Copyright (c) 2024 Antoine Cyr <antoine.cyr@nil.foundation>
+// Copyright (c) 2024 Antoine Cyr <antoinecyr@nil.foundation>
 //
 // MIT License
 //
@@ -23,7 +23,7 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE bbf_check_mod_p_test
+#define BOOST_TEST_MODULE bbf_negation_mod_p_test
 
 #include <boost/test/unit_test.hpp>
 #include <nil/blueprint/bbf/components/algebra/fields/non_native/negation_mod_p.hpp>
@@ -59,7 +59,7 @@ void test_negation_mod_p(
         pow <<= bit_size_chunk;
     }
 
-    extended_integral_type y = (x == 0) ? 0 : p - x;  // if x = 0, then y = 0
+    extended_integral_type r = (x == 0) ? 0 : p - x;  // if x = 0, then r = 0
 
     auto assign_and_check = [&](auto &B, auto &raw_input) {
         raw_input.x =
@@ -75,18 +75,18 @@ void test_negation_mod_p(
         std::cout << "Is_satisfied = " << pass << std::endl;
 
         assert(pass == true);
-        extended_integral_type Y = 0;
+        extended_integral_type R = 0;
         pow = 1;
         for (std::size_t i = 0; i < num_chunks; i++) {
-            Y += extended_integral_type(integral_type(A.res_z[i].data)) * pow;
+            R += extended_integral_type(integral_type(A.res_r[i].data)) * pow;
             pow <<= bit_size_chunk;
         }
 #ifdef BLUEPRINT_PLONK_PROFILING_ENABLED
         std::cout << "negation_mod_p test" << std::endl;
-        std::cout << "Expected res: " << std::dec << z << std::endl;
-        std::cout << "Real res:     " << std::dec << Z << std::endl;
+        std::cout << "Expected res: " << std::dec << r << std::endl;
+        std::cout << "Real res:     " << std::dec << R << std::endl;
 #endif
-        assert(y == Y);
+        assert(r == R);
     };
 
     if constexpr (std::is_same_v<NonNativeFieldType,

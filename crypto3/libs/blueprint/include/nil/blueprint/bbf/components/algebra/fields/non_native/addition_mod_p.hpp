@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2024 Valeh Farzaliyev <estoninaa@nil.foundation>
-// Copyright (c) 2024 Antoine Cyr <antoine.cyr@nil.foundation>
+// Copyright (c) 2024 Antoine Cyr <antoinecyr@nil.foundation>
 //
 // MIT License
 //
@@ -22,7 +22,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //---------------------------------------------------------------------------//
-// @file Declaration of interfaces for FRI verification array swapping component.
+// @file Declaration of interfaces for addition function on mod p.
 //---------------------------------------------------------------------------//
 
 #ifndef CRYPTO3_BBF_COMPONENTS_ADDITION_MOD_P_HPP
@@ -52,8 +52,8 @@ namespace nil {
                 // operates on k-chunked x,y, p, p'
                 // Parameters: num_chunks = k, bit_size_chunk = b
                 // Input: x[0], ..., x[k-1], y[0], ..., y[k-1], p[0], ..., p[k-1], p'[0], ..., p'[k-1], 0 
-                // Intemmediate values: q, t[0], ..., t[k-1], carry[k-1], t'[0], ..., t'[k-1], t"[0], ..., t"[k-1], carry"[k-1] 
-                // Output: z[0] = x[0] + y[0] - qp[0], ..., z[k-1] = x[k-1] + y[k-1] -qp[k-1]
+                // Intermediate values: q, t[0], ..., t[k-1], carry[k-1], t'[0], ..., t'[k-1], t"[0], ..., t"[k-1], carry"[k-1] 
+                // Output: r[0] = x[0] + y[0] - qp[0], ..., r[k-1] = x[k-1] + y[k-1] -qp[k-1]
                 //
 
                 template<typename FieldType>
@@ -111,7 +111,7 @@ namespace nil {
                     std::vector<TYPE> inp_y;
                     std::vector<TYPE> inp_p;
                     std::vector<TYPE> inp_pp;
-                    std::vector<TYPE> res_z;
+                    std::vector<TYPE> res_r;
 
                     static table_params get_minimal_requirements(
                         std::size_t num_chunks, std::size_t bit_size_chunk) {
@@ -234,24 +234,24 @@ namespace nil {
 
                         Carry_On_Addition ca_1 = Carry_On_Addition(
                             context_object, X, Y, num_chunks, bit_size_chunk);
-                        Range_Check rc_1 = Range_Check(context_object, ca_1.res_z,
+                        Range_Check rc_1 = Range_Check(context_object, ca_1.res_r,
                                                        num_chunks, bit_size_chunk);
                         //(qp = 0 or p)
                         Choice_Function cf =
                             Choice_Function(context_object, Q, ZERO, P, num_chunks);
 
                         Carry_On_Addition ca_2 =
-                            Carry_On_Addition(context_object, cf.res_z, Z, num_chunks,
+                            Carry_On_Addition(context_object, cf.res_r, Z, num_chunks,
                                               bit_size_chunk);  // qp + z
 
                         // carry_on_addition results should be equal to each other  x + y = z + qp
 
                         for (std::size_t i = 0; i < num_chunks; i++) {
-                            copy_constrain(ca_1.res_z[i], ca_2.res_z[i]);
+                            copy_constrain(ca_1.res_r[i], ca_2.res_r[i]);
                         }
                         copy_constrain(ca_1.res_c, ca_2.res_c);
 
-                        Range_Check rc_2 = Range_Check(context_object, ca_2.res_z,
+                        Range_Check rc_2 = Range_Check(context_object, ca_2.res_r,
                                                        num_chunks, bit_size_chunk);
 
                         Range_Check rc_3 =
@@ -277,7 +277,7 @@ namespace nil {
                             inp_pp.push_back(input_pp[i]);
                         }
                         for (int i = 0; i < num_chunks; ++i) {
-                            res_z.push_back(Z[i]);
+                            res_r.push_back(Z[i]);
                         }
                     }
                 };

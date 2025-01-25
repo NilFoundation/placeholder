@@ -1,7 +1,7 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2024 Georgios Fotiadis <gfotiadis@nil.foundation>
 // Copyright (c) 2024 Alexey Yashunsky <a.yashunsky@nil.foundation>
-// Copyright (c) 2024 Antoine Cyr <antoine.cyr@nil.foundation>
+// Copyright (c) 2024 Antoine Cyr <antoinecyr@nil.foundation>
 //
 // MIT License
 //
@@ -23,7 +23,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //---------------------------------------------------------------------------//
-// @file Declaration of interfaces for FRI verification array swapping component.
+// @file Declaration of interfaces for negation function on mod p.
 //---------------------------------------------------------------------------//
 
 #ifndef CRYPTO3_BBF_COMPONENTS_NEGATION_MOD_P_HPP
@@ -50,9 +50,9 @@ namespace nil {
         namespace bbf {
             namespace components {
                 // Parameters: num_chunks = k, bit_size_chunk = b
-                // Finding the negative y of integer x, modulo p and checking that x + y = 0 mod p 
+                // Finding the negative r of integer x, modulo p and checking that x + r = 0 mod p 
                 // Input: x[0], ..., x[k-1], p[0], ..., p[k-1], pp[0], ..., pp[k-1], 0 (expects zero constant as input) 
-                // Output: y[0], ..., y[k-1]
+                // Output: r[0], ..., r[k-1]
 
                 template<typename FieldType>
                 struct negation_mod_p_raw_input {
@@ -107,7 +107,7 @@ namespace nil {
                     std::vector<TYPE> inp_x;
                     std::vector<TYPE> inp_p;
                     std::vector<TYPE> inp_pp;
-                    std::vector<TYPE> res_z;
+                    std::vector<TYPE> res_r;
 
                     static table_params get_minimal_requirements(
                         std::size_t num_chunks, std::size_t bit_size_chunk) {
@@ -224,7 +224,7 @@ namespace nil {
 
                         // x + y = 0 or p
                         for (std::size_t i = 0; i < num_chunks; i++) {
-                            copy_constrain(ca.res_z[i], cf.res_z[i]);
+                            copy_constrain(ca.res_r[i], cf.res_r[i]);
                         }
                         copy_constrain(ca.res_c, ZERO[0]);
 
@@ -249,7 +249,7 @@ namespace nil {
                             inp_pp.push_back(input_pp[i]);
                         }
                         for (int i = 0; i < num_chunks; ++i) {
-                            res_z.push_back(Y[i]);
+                            res_r.push_back(Y[i]);
                         }
                     }
                 };

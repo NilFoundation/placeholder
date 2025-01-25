@@ -66,7 +66,7 @@ namespace nil {
                   public:
                     std::vector<TYPE> inp_x;
                     std::vector<TYPE> inp_y;
-                    std::vector<TYPE> res_z;
+                    std::vector<TYPE> res_r;
                     TYPE res_c;
 
                     static table_params get_minimal_requirements(std::size_t num_chunks,std::size_t bit_size_chunk) {
@@ -137,7 +137,7 @@ namespace nil {
                         for (int i = 0; i < num_chunks; ++i) {
                             inp_x.push_back(input_x[i]);
                             inp_y.push_back(input_y[i]);
-                            res_z.push_back(Z[i]);
+                            res_r.push_back(Z[i]);
                         }
                         res_c = C[num_chunks-1];
                     }

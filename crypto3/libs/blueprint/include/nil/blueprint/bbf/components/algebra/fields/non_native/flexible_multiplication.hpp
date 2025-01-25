@@ -86,7 +86,7 @@ namespace nil {
                     std::vector<TYPE> inp_y;
                     std::vector<TYPE> inp_p;
                     std::vector<TYPE> inp_pp;
-                    std::vector<TYPE> res_z;
+                    std::vector<TYPE> res_r;
 
                     static table_params get_minimal_requirements(std::size_t num_chunks,std::size_t bit_size_chunk) {
                         //The 6 variables chunks fit in 2 rows, and there is a 3rd additionnal row available for the constraint values
@@ -321,7 +321,7 @@ namespace nil {
                             inp_pp.push_back(input_pp[i]);
                         }
                         for (int i = 0; i < num_chunks; ++i) {
-                            res_z.push_back(R[i]);
+                            res_r.push_back(R[i]);
                         }
                     }
 
