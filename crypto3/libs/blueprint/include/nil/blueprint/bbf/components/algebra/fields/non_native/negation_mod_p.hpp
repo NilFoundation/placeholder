@@ -43,7 +43,6 @@
 #include <nil/blueprint/bbf/components/detail/choice_function.hpp>
 #include <nil/blueprint/bbf/components/detail/range_check_multi.hpp>
 #include <stdexcept>
-#include <variant>
 
 namespace nil {
     namespace blueprint {
@@ -80,28 +79,7 @@ namespace nil {
                         typename std::conditional<stage == GenerationStage::ASSIGNMENT,
                                                   negation_mod_p_raw_input<FieldType>,
                                                   std::tuple<>>::type;
-                    using NonNativeIntegralExtendedVariant =
-                        std::variant<nil::crypto3::multiprecision::big_uint<
-                                         2 * crypto3::algebra::curves::pallas::
-                                                 base_field_type::modulus_bits>,
-                                     nil::crypto3::multiprecision::big_uint<
-                                         2 * crypto3::algebra::curves::vesta::
-                                                 base_field_type::modulus_bits>>;
 
-                    template<typename T>
-                    struct NonNativeFieldTypeIndex;
-
-                    template<>
-                    struct NonNativeFieldTypeIndex<
-                        crypto3::algebra::curves::pallas::base_field_type> {
-                        static constexpr std::size_t value = 0;
-                    };
-
-                    template<>
-                    struct NonNativeFieldTypeIndex<
-                        crypto3::algebra::curves::vesta::base_field_type> {
-                        static constexpr std::size_t value = 1;
-                    };
 
                   public:
                     std::vector<TYPE> inp_x;
@@ -157,10 +135,7 @@ namespace nil {
                                    bool make_links = true)
                         : generic_component<FieldType, stage>(context_object) {
                         using integral_type = typename FieldType::integral_type;
-                        using extended_integral_type =
-                            typename std::variant_alternative_t<
-                                NonNativeFieldTypeIndex<NonNativeFieldType>::value,
-                                NonNativeIntegralExtendedVariant>;
+                        using extended_integral_type = nil::crypto3::multiprecision::big_uint<2* NonNativeFieldType::modulus_bits>;
 
                         using Carry_On_Addition =
                             typename bbf::components::carry_on_addition<FieldType, stage>;

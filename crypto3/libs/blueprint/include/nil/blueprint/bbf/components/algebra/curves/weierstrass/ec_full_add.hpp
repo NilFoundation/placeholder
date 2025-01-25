@@ -191,7 +191,7 @@ namespace nil {
                         std::vector<TYPE> YQ(num_chunks);
                         std::vector<TYPE> P(num_chunks);
                         std::vector<TYPE> PP(num_chunks);
-                        TYPE ZERO;
+                        std::vector<TYPE> ZERO(num_chunks);
 
                         std::vector<TYPE> LAMBDA(num_chunks);
                         std::vector<TYPE> XR(num_chunks);
@@ -200,7 +200,7 @@ namespace nil {
                         std::vector<TYPE> ZQ(num_chunks);
                         std::vector<TYPE> ZPQ(num_chunks);
                         std::vector<TYPE> WPQ(num_chunks);
-                        std::vector<TYPE> ZEROv(num_chunks);
+                        
 
                         if constexpr (stage == GenerationStage::ASSIGNMENT) {
                             for (std::size_t i = 0; i < num_chunks; ++i) {
@@ -210,8 +210,8 @@ namespace nil {
                                 YQ[i] = input_yQ[i];
                                 P[i] = input_p[i];
                                 PP[i] = input_pp[i];
+                                ZERO[i] = input_zero;
                             }
-                            ZERO = input_zero;
 
                             non_native_integral_type pow = 1;
                             NON_NATIVE_TYPE xP = 0, yP = 0, xQ = 0, yQ = 0;
@@ -300,6 +300,7 @@ namespace nil {
                             allocate(YQ[i]);
                             allocate(P[i]);
                             allocate(PP[i]);
+                            allocate(ZERO[i]);
 
                             allocate(LAMBDA[i]);
                             allocate(XR[i]);
@@ -308,17 +309,13 @@ namespace nil {
                             allocate(ZQ[i]);
                             allocate(ZPQ[i]);
                             allocate(WPQ[i]);
-
-                            ZEROv[i] = ZERO;
-                            allocate(ZEROv[i]);
                         }
-                        allocate(ZERO);
 
                         auto check_chunked = [&context_object, num_chunks, bit_size_chunk,
                                               PP, ZERO](std::vector<TYPE> x) {
                             Range_Check rc = Range_Check(context_object, x, num_chunks,
                                                          bit_size_chunk);
-                            Check_Mod_P cm = Check_Mod_P(context_object, x, PP, ZERO,
+                            Check_Mod_P cm = Check_Mod_P(context_object, x, PP, ZERO[0],
                                                          num_chunks, bit_size_chunk);
                         };
 
@@ -332,7 +329,6 @@ namespace nil {
 
                         // perform range checks and mod p checks on all stored variables
                         check_chunked(LAMBDA);
-                        check_chunked(Z);
                         check_chunked(XR);
                         check_chunked(YR);
                         check_chunked(ZP);
@@ -344,7 +340,7 @@ namespace nil {
                                          bit_size_chunk](std::vector<TYPE> x,
                                                          std::vector<TYPE> y) {
                             Multiplication_Mod_P t =
-                                Multiplication_Mod_P(context_object, x, y, P, PP, ZERO,
+                                Multiplication_Mod_P(context_object, x, y, P, PP, ZERO[0],
                                                      num_chunks, bit_size_chunk);
                             return t.res_r;
                         };
@@ -352,14 +348,14 @@ namespace nil {
                                         bit_size_chunk](std::vector<TYPE> x,
                                                         std::vector<TYPE> y) {
                             Addition_Mod_P t =
-                                Addition_Mod_P(context_object, x, y, P, PP, ZERO,
+                                Addition_Mod_P(context_object, x, y, P, PP, ZERO[0],
                                                num_chunks, bit_size_chunk);
                             return t.res_r;
                         };
                         auto NegModP = [&context_object, P, PP, ZERO, num_chunks,
                                         bit_size_chunk](std::vector<TYPE> x) {
                             Negation_Mod_P t =
-                                Negation_Mod_P(context_object, x, P, PP, ZERO, num_chunks,
+                                Negation_Mod_P(context_object, x, P, PP, ZERO[0], num_chunks,
                                                bit_size_chunk);
                             return t.res_r;
                         };
@@ -413,16 +409,16 @@ namespace nil {
                         auto t35 = MultModP(t7, LAMBDA);        // t35 = (xR - xP) lambda
                         auto t36 = AddModP(t34, t35);           // t36 = yR + yP + (xR - xP)lambda
                         auto t37 = MultModP(t28, t33);          // t37 = yP  yQ (xP - xQ + (yP + yQ)(1 - ZPQ))(xR - lambda^2 + xP + xQ)
-                        CopyConstrain(t37, ZEROv);              // t37 = 0
+                        CopyConstrain(t37, ZERO);              // t37 = 0
                         auto t38 = MultModP(t28, t36);          // t38 = yP  yQ (xP - xQ + (yP + yQ)(1 -ZPQ))(yR + yP + (xR - xP)lambda)
-                        CopyConstrain(t38, ZEROv);              // t38 = 0
+                        CopyConstrain(t38, ZERO);              // t38 = 0
 
                         // part 4
                         auto t39 = MultModP(t9, LAMBDA);    // t39 = (xP - xQ) lambda
                         auto t40 = AddModP(t39, t4);        // t40 = (xP - xQ) lambda - yP
                         auto t41 = AddModP(t40, YQ);        // t41 = (xP - xQ) lambda - yP + yQ
                         auto t42 = MultModP(t9, t41);       // t42 = (xP - xQ)((xP - xQ) lambda - yP + yQ)
-                        CopyConstrain(t42, ZEROv);          // t42 = 0
+                        CopyConstrain(t42, ZERO);          // t42 = 0
                         auto t43 = MultModP(XP, t3);        // t43 = -xP^2
                         auto t44 = AddModP(t43, t43);       // t44 = -2xP^2
                         auto t45 = AddModP(t43, t44);       // t45 = -3xP^2
@@ -440,8 +436,8 @@ namespace nil {
                                 copy_constrain(YQ[i], input_yQ[i]);
                                 copy_constrain(P[i], input_p[i]);
                                 copy_constrain(PP[i], input_pp[i]);
+                                copy_constrain(ZERO[i], input_zero);
                             }
-                            copy_constrain(ZERO, input_zero);
                         }
 
                         for (int i = 0; i < num_chunks; ++i) {
