@@ -54,43 +54,72 @@ namespace nil {
                 using generic_component<FieldType, stage>::constrain;
                 using generic_component<FieldType, stage>::lookup;
                 using generic_component<FieldType, stage>::lookup_table;
+
             public:
                 using state = state_vars<FieldType, stage>;
+
+                using typename generic_component<FieldType, stage>::table_params;
                 using typename generic_component<FieldType,stage>::TYPE;
-                struct input_type{
-                    TYPE rlc_challenge;
-                    typename std::conditional<stage == GenerationStage::ASSIGNMENT, zkevm_keccak_buffers, std::nullptr_t>::type bytecodes;
-                    typename std::conditional<stage == GenerationStage::ASSIGNMENT, zkevm_keccak_buffers, std::nullptr_t>::type keccak_buffers;
-                    typename std::conditional<stage == GenerationStage::ASSIGNMENT, rw_operations_vector, std::nullptr_t>::type rw_operations;
-                    typename std::conditional<stage == GenerationStage::ASSIGNMENT, std::vector<copy_event>, std::nullptr_t>::type copy_events;
-                    typename std::conditional<stage == GenerationStage::ASSIGNMENT, std::vector<zkevm_state>, std::nullptr_t>::type zkevm_states;
-                    typename std::conditional<stage == GenerationStage::ASSIGNMENT, std::vector<std::pair<zkevm_word_type,zkevm_word_type>>, std::nullptr_t>::type exponentiations;
-                };
-            public:
+
                 using val = typename FieldType::value_type;
                 using BytecodeTable = bytecode_table<FieldType, stage>;
+                using KeccakTable = keccak_table<FieldType, stage>;
                 using RWTable = rw_table<FieldType, stage>;
                 using ExpTable = exp_table<FieldType, stage>;
                 using CopyTable = copy_table<FieldType, stage>;
 
-                static nil::crypto3::zk::snark::plonk_table_description<FieldType> get_table_description(
+                struct input_type {
+                    TYPE rlc_challenge;
+                    BytecodeTable::input_type bytecodes;
+                    KeccakTable::private_input_type keccak_buffers;
+                    RWTable::input_type rw_operations;
+                    CopyTable::input_type copy_events;
+                    std::conditional_t<
+                        stage == GenerationStage::ASSIGNMENT,
+                        std::vector<zkevm_state>, std::monostate
+                    > zkevm_states;
+                    ExpTable::input_type exponentiations;
+                };
+                using raw_input_type = input_type;
+
+                static table_params get_minimal_requirements(
                     std::size_t max_zkevm_rows,
                     std::size_t max_copy,
                     std::size_t max_rw,
                     std::size_t max_exponentations,
                     std::size_t max_bytecode
-                ){
+                ) {
                     std::size_t implemented_opcodes_amount = get_implemented_opcodes_list().size();
 
-                    std::size_t witness_amount = state::get_items_amout() + std::ceil(float(implemented_opcodes_amount)/4) + max_opcode_height/2 + opcode_columns_amount;
-                    witness_amount += BytecodeTable::get_witness_amount();
-                    witness_amount += RWTable::get_witness_amount();
-                    witness_amount += ExpTable::get_witness_amount();
-                    witness_amount += CopyTable::get_witness_amount();
-                    witness_amount += 10;
-                    nil::crypto3::zk::snark::plonk_table_description<FieldType> desc(witness_amount, 1, 5, 20);
-                    desc.usable_rows_amount = std::max(max_zkevm_rows, std::max(std::max(max_copy, max_rw), std::max(max_exponentations, max_bytecode)) + 1);
-                    return desc;
+                    return {
+                        .witnesses = state::get_items_amout()
+                                   + (implemented_opcodes_amount + 3) / 4
+                                   + max_opcode_height / 2
+                                   + opcode_columns_amount
+                                   + BytecodeTable::get_witness_amount()
+                                   + RWTable::get_witness_amount()
+                                   + ExpTable::get_witness_amount()
+                                   + CopyTable::get_witness_amount()
+                                   + 10,
+                        .public_inputs = 1,
+                        .constants = 5,
+                        .rows = std::max(
+                            max_zkevm_rows, std::max(
+                                std::max(max_copy, max_rw), std::max(max_exponentations, max_bytecode)
+                            ) + 1
+                        )
+                    };
+                }
+
+                static std::tuple<input_type> form_input(context_type &context_object,
+                                                         raw_input_type input,
+                                                         std::size_t max_zkevm_rows,
+                                                         std::size_t max_copy,
+                                                         std::size_t max_rw,
+                                                         std::size_t max_exponentations,
+                                                         std::size_t max_bytecode) {
+                    context_object.allocate(input.rlc_challenge, 0, 0, column_type::public_input);
+                    return {input};
                 }
 
                 zkevm(

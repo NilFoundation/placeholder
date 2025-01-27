@@ -41,7 +41,6 @@
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
 #include <nil/blueprint/bbf/circuit_builder.hpp>
-#include <nil/blueprint/bbf/l1_wrapper.hpp>
 #include <nil/blueprint/bbf/opcode_poc.hpp>
 
 using namespace nil::crypto3;

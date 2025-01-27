@@ -23,6 +23,8 @@
 //---------------------------------------------------------------------------//
 #pragma once
 
+#include <utility>
+
 #include <nil/blueprint/zkevm_bbf/types/hashed_buffers.hpp>
 
 namespace nil {
@@ -41,7 +43,9 @@ namespace nil {
 
                 public:
                 using typename generic_component<FieldType,stage>::TYPE;
-                using input_type = typename std::conditional<stage == GenerationStage::ASSIGNMENT, zkevm_keccak_buffers, std::nullptr_t>::type;
+                using input_type = std::conditional_t<
+                    stage == GenerationStage::ASSIGNMENT, zkevm_keccak_buffers, std::monostate
+                >;
 
                 std::size_t max_bytecode_size;
 

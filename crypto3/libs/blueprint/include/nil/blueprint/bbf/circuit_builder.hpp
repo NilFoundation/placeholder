@@ -182,7 +182,7 @@ namespace nil {
 
                     // TODO: replace with PLONK_SPECIAL_SELECTOR_ALL_USABLE_ROWS_SELECTED.
                     row_selector selector_column(usable_rows);
-                    for (std::size_t i = 0; i < usable_rows; i++)
+                    for (std::size_t i = 1; i < usable_rows; i++)
                         selector_column.set_row(i);
                     size_t full_selector_id = gates.add_selector(selector_column);
 
@@ -304,9 +304,9 @@ namespace nil {
                             for(std::size_t i = start_constant_column; i < start_constant_column + prev_columns_number; i++)
                                 presets.constant(i, usable_rows - 1) = 0;
 
-                            
-
+                            // TODO: shouldn't we do it before we calculate prev_columns_number?
                             if (table_rows_number % usable_rows == 0) options_number--;
+
                             std::size_t cur = 0;
                             for(std::size_t i = 0; i < options_number; i++) {
                                 for(std::size_t local_start_row = 1; local_start_row < usable_rows; local_start_row++, cur++) {
@@ -385,7 +385,6 @@ namespace nil {
                                     // the columns present in the table
                                     std::size_t column_index = (table->subtables.size() > 1) ? subtable.column_indices[k] : k;
                                     option.emplace_back( nil::crypto3::zk::snark::plonk_variable<typename FieldType::value_type>(
-                                    // TODO! The following line was missing start_constant_column term
                                         start_constant_column + column_index, 0, false,
                                         nil::crypto3::zk::snark::plonk_variable<typename FieldType::value_type>::column_type::constant
                                     ) );
@@ -409,7 +408,6 @@ namespace nil {
                             std::vector<nil::crypto3::zk::snark::plonk_variable<typename FieldType::value_type>> option;
                             for(const auto &column_index : subtable.column_indices) {
                                 option.emplace_back(nil::crypto3::zk::snark::plonk_variable<typename FieldType::value_type>(
-                                // TODO: check, why the following line did not have the start_constant_column term!
                                     start_constant_column + column_index, 0, false,
                                     nil::crypto3::zk::snark::plonk_variable<typename FieldType::value_type>::column_type::constant
                                 ) );
@@ -473,22 +471,9 @@ namespace nil {
                 >
                 assign(typename Component<FieldType, GenerationStage::ASSIGNMENT>::raw_input_type raw_input) {
                     using generator = Component<FieldType,GenerationStage::ASSIGNMENT>;
-                    using assignment_type = crypto3::zk::snark::plonk_assignment_table<FieldType>;
                     using context_type = typename nil::blueprint::bbf::context<FieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT>;
 
-                    // actually we should use presets to chose the right size and partly fill it
-                    assignment_type at = assignment_type(witnesses_amount, public_inputs_amount,
-                        presets.constants_amount(), presets.selectors_amount());
-
-                    // copy preset constants
-                    for(std::size_t i = 0; i < presets.constants_amount(); i++) {
-                        at.fill_constant(i, presets.constant(i));
-                    }
-                    // copy preset selectors
-                    for(std::size_t i = 0; i < presets.selectors_amount(); i++) {
-                        at.fill_selector(i, presets.selector(i));
-                    }
-
+                    auto at = get_presets();
                     context_type ct = context_type(at, rows_amount, 0); // use all rows, start from 0
 
                     auto a = std::apply(generator::form_input, std::tuple_cat(std::make_tuple(std::ref(ct)),std::make_tuple(raw_input),static_info_args_storage));
@@ -661,8 +646,22 @@ namespace nil {
                     return true;
                 }
 
-                circuit<crypto3::zk::snark::plonk_constraint_system<FieldType>>& get_circuit() {
+                const circuit<crypto3::zk::snark::plonk_constraint_system<FieldType>>& get_circuit() {
                     return bp;
+                }
+
+                crypto3::zk::snark::plonk_assignment_table<FieldType> get_presets() {
+                    // actually we should use presets to chose the right size and partly fill it
+                    crypto3::zk::snark::plonk_assignment_table<FieldType> at(
+                        witnesses_amount, public_inputs_amount,
+                        presets.constants_amount(), presets.selectors_amount());
+
+                    for (std::size_t i = 0; i < presets.constants_amount(); ++i)
+                        at.fill_constant(i, presets.constant(i));
+                    for (std::size_t i = 0; i < presets.selectors_amount(); ++i)
+                        at.fill_selector(i, presets.selector(i));
+
+                    return at;
                 }
 
                 private:
