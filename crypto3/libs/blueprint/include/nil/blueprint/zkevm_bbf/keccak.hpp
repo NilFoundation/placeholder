@@ -36,19 +36,35 @@ namespace nil {
                 using generic_component<FieldType, stage>::constrain;
                 using generic_component<FieldType, stage>::lookup;
                 using generic_component<FieldType, stage>::lookup_table;
+
             public:
+                using typename generic_component<FieldType, stage>::table_params;
                 using typename generic_component<FieldType,stage>::TYPE;
-                using private_input_type = typename std::conditional<stage == GenerationStage::ASSIGNMENT, std::size_t, std::nullptr_t>::type;
+
+                using private_input_type = std::conditional_t<
+                    stage == GenerationStage::ASSIGNMENT,
+                    std::size_t, std::monostate
+                >;
 
                 struct input_type{
                     TYPE rlc_challenge;
                     private_input_type private_input;
                 };
-            public:
-                static nil::crypto3::zk::snark::plonk_table_description<FieldType> get_table_description(){
-                    nil::crypto3::zk::snark::plonk_table_description<FieldType> desc(20, 1, 3, 5);
-                    desc.usable_rows_amount = 300;
-                    return desc;
+                using raw_input_type = input_type;
+
+                static table_params get_minimal_requirements() {
+                    return {
+                        .witnesses = 20,
+                        .public_inputs = 1,
+                        .constants = 3,
+                        .rows = 300
+                    };
+                }
+
+                static std::tuple<input_type> form_input(context_type &context,
+                                                         raw_input_type input) {
+                    context.allocate(input.rlc_challenge, 0, 0, column_type::public_input);
+                    return {input};
                 }
 
                 keccak(context_type &context_object, const input_type &input) :generic_component<FieldType,stage>(context_object) {

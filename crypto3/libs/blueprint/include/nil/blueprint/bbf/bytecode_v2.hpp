@@ -39,46 +39,57 @@ namespace nil {
                 using generic_component<FieldType, stage>::lookup;
                 using generic_component<FieldType, stage>::lookup_table;
 
+                using BytecodeTable = bytecode_table<FieldType,stage>;
+                using KeccakTable = keccak_table<FieldType,stage>;
+
             public:
+                using typename generic_component<FieldType, stage>::table_params;
                 using typename generic_component<FieldType,stage>::TYPE;
-                struct input_type{
+
+                struct input_type {
                     TYPE rlc_challenge;
-                    typename std::conditional<stage == GenerationStage::ASSIGNMENT, zkevm_keccak_buffers, std::nullptr_t>::type bytecodes;
-                    typename std::conditional<stage == GenerationStage::ASSIGNMENT, zkevm_keccak_buffers, std::nullptr_t>::type keccak_buffers;
+
+                    BytecodeTable::input_type bytecodes;
+                    KeccakTable::private_input_type keccak_buffers;
                 };
+                using raw_input_type = input_type;
 
                 std::size_t max_bytecode_size;
                 std::size_t max_keccak_blocks;
 
-                static nil::crypto3::zk::snark::plonk_table_description<FieldType>  get_table_description(
-                    std::size_t max_bytecode_size_,
-                    std::size_t max_keccak_blocks_,
-                    bool make_links = true
-                ){
-                    nil::crypto3::zk::snark::plonk_table_description<FieldType> desc(15, 1, 10, 10);
-                    desc.usable_rows_amount = max_bytecode_size_ + max_keccak_blocks_;
-                    return desc;
+                static table_params get_minimal_requirements(std::size_t max_bytecode_size,
+                                                             std::size_t max_keccak_blocks) {
+                    return {
+                        .witnesses = 15,
+                        .public_inputs = 1,
+                        .constants = 10,
+                        .rows = max_bytecode_size + max_keccak_blocks
+                    };
+                }
+
+                static std::tuple<input_type> form_input(context_type &context,
+                                                         raw_input_type input,
+                                                         std::size_t max_bytecode_size,
+                                                         std::size_t max_keccak_blocks) {
+                    context.allocate(input.rlc_challenge, 0, 0, column_type::public_input);
+                    return {input};
                 }
 
                 bytecode_v2(context_type &context_object,
                     input_type input,
                     std::size_t max_bytecode_size_,
-                    std::size_t max_keccak_blocks_,
-                    bool make_links = true
+                    std::size_t max_keccak_blocks_
                 ) : max_bytecode_size(max_bytecode_size_),
                     max_keccak_blocks(max_keccak_blocks_),
                     generic_component<FieldType,stage>(context_object)
                 {
-                    using Bytecode_Table = bytecode_table<FieldType,stage>;
-                    using Keccak_Table = keccak_table<FieldType,stage>;
-
                     std::vector<std::size_t> bytecode_lookup_area = {0,1,2,3,4,5};
                     std::vector<std::size_t> keccak_lookup_area = {0,1,2,3};
                     context_type bytecode_ct = context_object.subcontext(bytecode_lookup_area,0,max_bytecode_size);
                     context_type keccak_ct = context_object.subcontext( keccak_lookup_area, max_bytecode_size, max_bytecode_size + max_keccak_blocks);
 
-                    Bytecode_Table bc_t = Bytecode_Table(bytecode_ct, input.bytecodes, max_bytecode_size);
-                    Keccak_Table(keccak_ct, {input.rlc_challenge, input.keccak_buffers}, max_keccak_blocks);
+                    BytecodeTable bc_t = BytecodeTable(bytecode_ct, input.bytecodes, max_bytecode_size);
+                    KeccakTable(keccak_ct, {input.rlc_challenge, input.keccak_buffers}, max_keccak_blocks);
 
                     const std::vector<TYPE> &tag = bc_t.tag;
                     const std::vector<TYPE> &index = bc_t.index;
@@ -130,10 +141,6 @@ namespace nil {
                         allocate(length_left[i],8,i);
                         allocate(rlc_challenge[i],9,i);
                     }
-                    // constrain all bytecode values
-//                    if (make_links) {
-//                        copy_constrain(input.rlc_challenge, rlc_challenge[0]);
-//                    }
                     if constexpr (stage == GenerationStage::CONSTRAINTS) {
                         static const auto zerohash = zkevm_keccak_hash({});
                         for(std::size_t i = 0; i < max_bytecode_size; i++) {

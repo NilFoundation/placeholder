@@ -42,13 +42,13 @@
 
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
-#include <nil/blueprint/bbf/l1_wrapper.hpp>
 #include <nil/blueprint/zkevm_bbf/exp.hpp>
 
 #include "./test_l1_wrapper.hpp"
 
 using namespace nil::crypto3;
 using namespace nil::blueprint;
+using namespace nil::blueprint::bbf;
 
 class zkEVMExpTestFixture: public BBFTestFixture {
 public:
@@ -61,14 +61,10 @@ public:
         std::size_t max_exp_rows,
         bool expected_result = true
     ){
-        typename nil::blueprint::bbf::exponentiation<field_type,nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type exp_assignment_input = exps;
-        typename nil::blueprint::bbf::exponentiation<field_type,nil::blueprint::bbf::GenerationStage::CONSTRAINTS>::input_type exp_constraint_input;
-
-        bool result = test_bbf_component<field_type, nil::blueprint::bbf::exponentiation>(
+        bool result = test_bbf_component<field_type, exponentiation>(
             "exp",
             {} ,                   //  Public input
-            exp_assignment_input,  //  Assignment input
-            exp_constraint_input,  //  Circuit input
+            exps,                  //  Assignment input
             max_exp_rows,          //  Maximum size of exp circuit
             max_exponentiations    //  Maximum rows in exponentiation dynamic lookup table
         );

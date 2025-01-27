@@ -51,10 +51,13 @@ namespace nil {
                 using generic_component<FieldType, stage>::lookup_table;
 
               public:
-                using input_type = typename std::conditional<stage == GenerationStage::ASSIGNMENT, std::vector<std::pair<zkevm_word_type, zkevm_word_type>>, std::nullptr_t>::type;
                 using ExpTable = exp_table<FieldType, stage>;
 
+                using input_type = ExpTable::input_type;
+                using raw_input_type = input_type;
+
                 using typename generic_component<FieldType, stage>::TYPE;
+                using typename generic_component<FieldType, stage>::table_params;
                 using word_type = zkevm_word_type;
                 using field_integral_type = typename FieldType::integral_type;
 
@@ -116,13 +119,21 @@ namespace nil {
 
               public:
 
-                static nil::crypto3::zk::snark::plonk_table_description<FieldType> get_table_description(
-                    std::size_t max_rows_amount,
-                    std::size_t max_exponentiations_
-                ){
-                    nil::crypto3::zk::snark::plonk_table_description<FieldType> desc(48 + ExpTable::get_witness_amount(), 1, 2, 13);
-                    desc.usable_rows_amount = max_rows_amount;
-                    return desc;
+                static table_params get_minimal_requirements(std::size_t max_rows_amount,
+                                                             std::size_t max_exponentiations) {
+                    return {
+                        .witnesses = 48 + ExpTable::get_witness_amount(),
+                        .public_inputs = 1,
+                        .constants = 2,
+                        .rows = max_rows_amount
+                    };
+                }
+
+                static std::tuple<input_type> form_input(context_type &context,
+                                                         raw_input_type input,
+                                                         std::size_t max_rows_amount,
+                                                         std::size_t max_exponentiations) {
+                    return {input};
                 }
 
                 exponentiation(
