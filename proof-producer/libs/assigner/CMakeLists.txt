@@ -2,39 +2,31 @@ find_package(Protobuf CONFIG REQUIRED)
 
 file(GLOB PROTO_FILES "proto/*.proto")
 
-foreach(PROTO_FILE ${PROTO_FILES})
-    get_filename_component(PROTO_NAME_WE ${PROTO_FILE} NAME_WE)
-    get_filename_component(PROTO_DIR ${PROTO_FILE} DIRECTORY)
+add_library(proof_generator_proto OBJECT ${PROTO_FILES})
+target_link_libraries(proof_generator_proto PUBLIC protobuf::libprotobuf)
 
-    set(OUTPUT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include/nil/proof-generator/assigner")
-    set(PROTO_HDR "${OUTPUT_DIR}/${PROTO_NAME_WE}.pb.h")
-    set(PROTO_SRC "${OUTPUT_DIR}/${PROTO_NAME_WE}.pb.cc")
+set(PROTO_BINARY_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include/nil/proof-generator/assigner")
+target_include_directories(proof_generator_proto PUBLIC "$<BUILD_INTERFACE:${PROTO_BINARY_DIR}>")
 
-    add_custom_command(
-        OUTPUT ${PROTO_HDR} ${PROTO_SRC}
-        COMMAND protobuf::protoc
-        ARGS --cpp_out=${OUTPUT_DIR} --proto_path ${PROTO_DIR} ${PROTO_FILE}
-        DEPENDS ${PROTO_FILE}
-        COMMENT "Generating ${PROTO_SRC} and ${PROTO_HDR} from ${PROTO_FILE}"
-        VERBATIM
-    )
-
-    list(APPEND GENERATED_SOURCES ${PROTO_SRC})
-    list(APPEND GENERATED_HEADERS ${PROTO_HDR})
-endforeach()
+protobuf_generate(
+    TARGET proof_generator_proto
+    IMPORT_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/proto"
+    PROTOC_OUT_DIR "${PROTO_BINARY_DIR}"
+)
 
 # Write header file with version of trace proto spec
-set(TRACE_PROTO_FILE ${CMAKE_CURRENT_SOURCE_DIR}/proto/trace.proto)
 set(PROTO_HASH_HEADER "${CMAKE_CURRENT_BINARY_DIR}/proto_hash.h")
 add_custom_command(
                    OUTPUT ${PROTO_HASH_HEADER}
                    COMMAND bash -c "echo \"#pragma once\" > ${PROTO_HASH_HEADER}"
-                   COMMAND bash -c "echo \"#define PROTO_HASH \\\"`sha256sum ${TRACE_PROTO_FILE} | awk '{print $1}'`\\\"\" >> ${PROTO_HASH_HEADER}"
+                   COMMAND bash -c "echo \"#define PROTO_HASH \\\"`cat ${CMAKE_CURRENT_SOURCE_DIR}/proto/*.proto | sha256sum | awk '{print $1}'`\\\"\" >> ${PROTO_HASH_HEADER}"
                    VERBATIM)
 
-add_library(proof_generatorAssigner
-            ${PROTO_SRC}
-            ${PROTO_HASH_HEADER}
+add_library(proof_generatorAssigner)
+target_sources(proof_generatorAssigner
+    PRIVATE
+        $<TARGET_OBJECTS:proof_generator_proto>
+        ${PROTO_HASH_HEADER}
 )
 set_target_properties(proof_generatorAssigner PROPERTIES CXX_STANDARD 20)
 
