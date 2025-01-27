@@ -186,7 +186,7 @@ namespace nil {
                         selector_column.set_row(i);
                     size_t full_selector_id = gates.add_selector(selector_column);
 
-                    for(const auto& [selector_id, constraints] : gates.constraint_list) {
+                    for(const auto& [selector_id, data] : gates.constraint_list) {
                         /*
                         std::cout << "GATE:\n";
                         for(const auto& c : constraints) {
@@ -194,8 +194,15 @@ namespace nil {
                         }
                         std::cout << "Rows: ";
                         */
-                        bp.add_gate(selector_id, constraints);
+                        std::vector<constraint_type> constraints;
+                        std::vector<std::string> names;
+                        for(const auto &d : data){
+                            constraints.push_back(std::move(d.first));
 
+                            names.push_back(d.second);
+                        }
+                        bp.add_gate(selector_id, constraints);
+                        constraint_names.insert({selector_id, names});
                         //std::cout << "\n";
                     }
 
@@ -540,6 +547,7 @@ namespace nil {
                                         std::cout << "Constraint " << j << " from gate " << i << " on row " << selector_row
                                             << " is not satisfied." << std::endl;
                                         std::cout << "Constraint result: " << constraint_result << std::endl;
+                                        std::cout << "Offending constraint name: " << constraint_names.at(gates[i].selector_index).at(j) << std::endl;
                                         std::cout << "Offending contraint: " << gates[i].constraints[j] << std::endl;
                                         return false;
                                     }
@@ -668,6 +676,7 @@ namespace nil {
 
                     circuit<crypto3::zk::snark::plonk_constraint_system<FieldType>> bp;
                     crypto3::zk::snark::plonk_assignment_table<FieldType> presets;
+                    std::map<uint32_t, std::vector<std::string>> constraint_names;
             };
 
         }  // namespace bbf
