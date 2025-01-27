@@ -3,6 +3,8 @@ syntax = "proto3";
 package executionproofs;
 option go_package = "/proto";
 
+import "verbose_mpt.proto";
+
 // Uint256 represents a 256-bit unsigned integer as a sequence of uint64 parts
 message Uint256 {
     repeated uint64 word_parts = 1;  // 4 uint64 parts composing the 256-bit number
@@ -64,6 +66,8 @@ message StorageTrieUpdateTrace {
     Uint256 value_before = 4;
     Uint256 value_after = 5;
     bytes ssz_proof = 6;
+    HumanReadableProof proof_before = 7;
+    HumanReadableProof proof_after = 8;
 }
 
 // ContractTrieUpdateTrace represents a trace of contract trie change.
@@ -75,6 +79,8 @@ message ContractTrieUpdateTrace {
     SmartContract value_before = 4;
     SmartContract value_after = 5;
     bytes ssz_proof = 6;
+    HumanReadableProof proof_before = 7;
+    HumanReadableProof proof_after = 8;
 }
 
 message StorageTrieUpdatesTraces {
