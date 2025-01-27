@@ -59,13 +59,13 @@ void test_poseidon(std::vector<typename BlueprintFieldType::value_type> public_i
 
     auto B = bbf::circuit_builder<FieldType,bbf::components::flexible_poseidon>();
     auto [at, A, desc] = B.assign(raw_input);
-    std::cout << "Is_satisfied = " << B.is_satisfied(at) << std::endl;
+    BOOST_TEST(B.is_satisfied(at));
 
     for (std::uint32_t i = 0; i < public_input.size(); i++) {
-        std::cout << "input[" << i << "]   : " << public_input[i].data << "\n";
-        std::cout << "expected[" << i << "]: " << expected_res[i].data << "\n";
-        std::cout << "real[" << i << "]    : " << A.res[i] << "\n";
-        assert(expected_res[i] == A.res[i]);
+        BOOST_TEST_INFO("input:    " << public_input[i].data);
+        BOOST_TEST_INFO("expected: " << expected_res[i].data);
+        BOOST_TEST_INFO("real:     " << A.res[i]);
+        BOOST_TEST(A.res[i] == expected_res[i], "unexpected result for input " << i);
     }
 }
 
