@@ -46,7 +46,7 @@
 #include <nil/crypto3/zk/snark/systems/plonk/placeholder/verifier.hpp>
 #include <nil/crypto3/zk/snark/systems/plonk/placeholder/params.hpp>
 #include <nil/crypto3/zk/snark/systems/plonk/placeholder/preprocessor.hpp>
-#include <nil/blueprint/bbf/l1_wrapper.hpp>
+#include <nil/blueprint/bbf/circuit_builder.hpp>
 
 #include "../test_plonk_component.hpp"
 
@@ -96,9 +96,9 @@ std::pair<std::vector<std::vector<std::uint8_t>>, std::vector<boost::property_tr
 
 template <typename BlueprintFieldType>
 bool check_proof(
-    nil::blueprint::circuit<zk::snark::plonk_constraint_system<BlueprintFieldType>> bp,
-    assignment<zk::snark::plonk_constraint_system<BlueprintFieldType>> assignment,
-    zk::snark::plonk_table_description<BlueprintFieldType> desc
+    const nil::blueprint::circuit<zk::snark::plonk_constraint_system<BlueprintFieldType>> &bp,
+    const crypto3::zk::snark::plonk_assignment_table<BlueprintFieldType> &assignment,
+    const zk::snark::plonk_table_description<BlueprintFieldType> &desc
 ) {
     std::size_t Lambda = 9;
 
@@ -142,107 +142,6 @@ bool check_proof(
     return verifier_res;
 }
 
-template <
-    typename BlueprintFieldType,
-    template<typename, nil::blueprint::bbf::GenerationStage> typename BBFType,
-    typename... ComponentStaticInfoArgs
->
-std::tuple<
-    nil::blueprint::circuit<zk::snark::plonk_constraint_system<BlueprintFieldType>>,
-    assignment<zk::snark::plonk_constraint_system<BlueprintFieldType>>,
-    zk::snark::plonk_table_description<BlueprintFieldType>
->
-prepare_table_and_circuit(
-    std::vector<typename BlueprintFieldType::value_type> public_input,
-    typename BBFType<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type assignment_input,
-    typename BBFType<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::CONSTRAINTS>::input_type constraint_input,
-    ComponentStaticInfoArgs... component_static_info_args
-){
-    using ArithmetizationType = zk::snark::plonk_constraint_system<BlueprintFieldType>;
-    using AssignmentType = assignment<ArithmetizationType>;
-    using var = zk::snark::plonk_variable<typename BlueprintFieldType::value_type>;
-    using component_type = components::plonk_l1_wrapper<BlueprintFieldType, BBFType, ComponentStaticInfoArgs...>;
-
-    auto desc = component_type::get_table_description(component_static_info_args...);
-    AssignmentType assignment(desc);
-    nil::blueprint::circuit<ArithmetizationType> bp;
-
-    std::size_t start_row = 0;
-
-    std::vector<std::size_t> witnesses;
-    for( std::size_t i = 0; i < desc.witness_columns; i++) witnesses.push_back(i);
-    std::vector<std::size_t> public_inputs = {0};
-    for( std::size_t i = 0; i < desc.public_input_columns; i++) public_inputs.push_back(i);
-    std::vector<std::size_t> constants;
-    for( std::size_t i = 0; i < desc.constant_columns; i++) constants.push_back(i);
-
-    component_type component_instance(witnesses, public_inputs, constants);
-
-    nil::blueprint::components::generate_circuit<BlueprintFieldType, BBFType, ComponentStaticInfoArgs...>(
-        component_instance, bp, assignment, constraint_input, start_row, component_static_info_args...
-    );
-    zk::snark::pack_lookup_tables_horizontal(
-        bp.get_reserved_indices(),
-        bp.get_reserved_tables(),
-        bp.get_reserved_dynamic_tables(),
-        bp, assignment,
-        assignment.rows_amount(),
-        100000
-    );
-
-    nil::blueprint::components::generate_assignments<BlueprintFieldType, BBFType, ComponentStaticInfoArgs...>(
-        component_instance, assignment, assignment_input, start_row, component_static_info_args...
-    );
-
-    desc.usable_rows_amount = assignment.rows_amount();
-    nil::crypto3::zk::snark::basic_padding(assignment);
-    desc.rows_amount = assignment.rows_amount();
-    return {bp, assignment, desc};
-}
-
-template <
-    typename BlueprintFieldType,
-    template<typename, nil::blueprint::bbf::GenerationStage> typename BBFType,
-    typename... ComponentStaticInfoArgs
->
-bool test_l1_wrapper(
-    std::vector<typename BlueprintFieldType::value_type> public_input,
-    typename BBFType<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type assignment_input,
-    typename BBFType<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::CONSTRAINTS>::input_type constraint_input,
-    ComponentStaticInfoArgs... component_static_info_args
-) {
-    auto [bp, assignment, desc] = prepare_table_and_circuit<BlueprintFieldType, BBFType, ComponentStaticInfoArgs...>(
-        public_input, assignment_input, constraint_input, component_static_info_args...
-    );
-    return is_satisfied(bp, assignment) == true;
-}
-
-template <
-    typename BlueprintFieldType,
-    template<typename, nil::blueprint::bbf::GenerationStage> typename BBFType,
-    typename... ComponentStaticInfoArgs
->
-bool test_l1_wrapper_with_proof_verification(
-    std::vector<typename BlueprintFieldType::value_type> public_input,
-    typename BBFType<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type assignment_input,
-    typename BBFType<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::CONSTRAINTS>::input_type constraint_input,
-    ComponentStaticInfoArgs... component_static_info_args
-) {
-    auto [bp, assignment, desc] = prepare_table_and_circuit<BlueprintFieldType, BBFType, ComponentStaticInfoArgs...>(
-        public_input, assignment_input, constraint_input, component_static_info_args...
-    );
-    bool sat = is_satisfied(bp, assignment);
-    std::cout << "Desc.rows_amount = " << desc.rows_amount << std::endl;
-    std::cout << "Desc.usable_rows_amount = " << desc.usable_rows_amount << std::endl;
-
-    if (sat )
-        std::cout << "Circuit is satisfied" << std::endl;
-    else
-        std::cout << "Circuit is not satisfied" << std::endl;
-
-    return check_proof<BlueprintFieldType>(bp, assignment, desc);
-}
-
 class BBFTestFixture
 {
 public:
@@ -273,17 +172,15 @@ public:
     bool test_bbf_component(
         std::string circuit_name,
         std::vector<typename field_type::value_type> public_input,
-        typename BBFType<field_type, nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type assignment_input,
-        typename BBFType<field_type, nil::blueprint::bbf::GenerationStage::CONSTRAINTS>::input_type constraint_input,
+        typename BBFType<field_type, GenerationStage::ASSIGNMENT>::raw_input_type assignment_input,
         ComponentStaticInfoArgs... component_static_info_args
     ){
         // Max_copy, Max_rw, Max_keccak, Max_bytecode
-        auto [bp, assignment, desc] = prepare_table_and_circuit<field_type, BBFType, ComponentStaticInfoArgs...>(
-            public_input, assignment_input, constraint_input,
-            component_static_info_args...
-        );
+        circuit_builder<field_type, BBFType, ComponentStaticInfoArgs...> builder(component_static_info_args...);
+        auto &bp = builder.get_circuit();
+        auto [assignment, component, desc] = builder.assign(assignment_input);
         if( print_to_file ){
-            print_bp_circuit_and_table_to_file(output_file + "_" + circuit_name, bp, desc, assignment);
+            print_zk_circuit_and_table_to_file(output_file + "_" + circuit_name, bp, desc, assignment);
         }
         bool result = true;
         if( check_satisfiability ){

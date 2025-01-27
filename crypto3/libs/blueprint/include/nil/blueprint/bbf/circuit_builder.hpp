@@ -182,7 +182,7 @@ namespace nil {
 
                     // TODO: replace with PLONK_SPECIAL_SELECTOR_ALL_USABLE_ROWS_SELECTED.
                     row_selector selector_column(usable_rows);
-                    for (std::size_t i = 0; i < usable_rows; i++)
+                    for (std::size_t i = 1; i < usable_rows; i++)
                         selector_column.set_row(i);
                     size_t full_selector_id = gates.add_selector(selector_column);
 
@@ -304,9 +304,9 @@ namespace nil {
                             for(std::size_t i = start_constant_column; i < start_constant_column + prev_columns_number; i++)
                                 presets.constant(i, usable_rows - 1) = 0;
 
-                            
-
+                            // TODO: shouldn't we do it before we calculate prev_columns_number?
                             if (table_rows_number % usable_rows == 0) options_number--;
+
                             std::size_t cur = 0;
                             for(std::size_t i = 0; i < options_number; i++) {
                                 for(std::size_t local_start_row = 1; local_start_row < usable_rows; local_start_row++, cur++) {
@@ -661,8 +661,12 @@ namespace nil {
                     return true;
                 }
 
-                circuit<crypto3::zk::snark::plonk_constraint_system<FieldType>>& get_circuit() {
+                const circuit<crypto3::zk::snark::plonk_constraint_system<FieldType>>& get_circuit() {
                     return bp;
+                }
+
+                const crypto3::zk::snark::plonk_assignment_table<FieldType> & get_presets() {
+                    return presets;
                 }
 
                 private:

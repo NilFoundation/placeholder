@@ -35,11 +35,15 @@ namespace nil {
                 using generic_component<FieldType, stage>::copy_constrain;
                 using generic_component<FieldType, stage>::constrain;
                 using generic_component<FieldType, stage>::lookup_table;
+
             public:
                 using typename generic_component<FieldType,stage>::TYPE;
-                using input_type = typename std::conditional<stage==GenerationStage::ASSIGNMENT, std::vector<copy_event>, std::nullptr_t>::type;
+                using input_type = std::conditional_t<
+                    stage == GenerationStage::ASSIGNMENT,
+                    std::vector<copy_event>, std::monostate
+                >;
                 using integral_type =  nil::crypto3::multiprecision::big_uint<257>;
-            public:
+
                 // For connection with upper-level circuits
                 std::vector<TYPE> is_first;
                 std::vector<TYPE> id_hi;
