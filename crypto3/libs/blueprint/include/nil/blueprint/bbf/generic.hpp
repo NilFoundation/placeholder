@@ -285,7 +285,8 @@ namespace nil {
                 using var = crypto3::zk::snark::plonk_variable<value_type>;
                 using constraint_type = crypto3::zk::snark::plonk_constraint<FieldType>;
                 using plonk_copy_constraint = crypto3::zk::snark::plonk_copy_constraint<FieldType>;
-                using constraints_container_type = std::map<constraint_id_type, std::pair<constraint_type, row_selector<>>>;
+                using constraints_container_type = std::map<constraint_id_type, std::tuple<constraint_type, row_selector<>, std::string>>;
+                using constraint_names_container_type = std::unordered_map<constraint_type, std::string>;
                 using copy_constraints_container_type = std::vector<plonk_copy_constraint>; // TODO: maybe it's a set, not a vec?
                 using lookup_input_constraints_type = crypto3::zk::snark::lookup_input_constraints<FieldType>;
                 using lookup_constraints_container_type = std::map<std::pair<std::string,constraint_id_type>, // <table_name,expressions_id>
@@ -347,7 +348,7 @@ namespace nil {
                                   false, // false = use absolute cell address
                                   static_cast<typename var::column_type>(t));
                     if ((C != TYPE()) && (t == column_type::witness)) { // TODO: TYPE() - is this ok? NB: we only constrain witnesses!
-                        constrain(res - C,""); // TODO: maybe add a name for this constraint?
+                        constrain(res - C,"T"); // TODO: maybe add a name for this constraint?
                     }
 
                     C = res;
@@ -405,30 +406,33 @@ namespace nil {
                     }
                     std::size_t row = (min_row + max_row)/2;
 
+                    
+
                     std::optional<TYPE> C_rel = C.rotate(-row);
                     if (!C_rel) {
                         throw std::logic_error("Can't shift the constraint in the given direction.");
                     }
-                    add_constraint(*C_rel, row);
+
+                    add_constraint(*C_rel, row, constraint_name);
                 }
 
                 // accesible only at GenerationStage::CONSTRAINTS !
-                void relative_constrain(TYPE C_rel, std::size_t row) {
+                void relative_constrain(TYPE C_rel, std::size_t row, std::string constraint_name) {
                     if (!C_rel.is_relative()) {
                         std::stringstream ss;
                         ss << "Constraint " << C_rel << " has absolute variables, cannot constrain.";
                         throw std::logic_error(ss.str());
                     }
-                    add_constraint(C_rel, get_row(row));
+                    add_constraint(C_rel, get_row(row), constraint_name);
                 }
 
-                void relative_constrain(TYPE C_rel, std::size_t start_row,  std::size_t end_row) {
+                void relative_constrain(TYPE C_rel, std::size_t start_row,  std::size_t end_row, std::string constraint_name) {
                     if (!C_rel.is_relative()) {
                         std::stringstream ss;
                         ss << "Constraint " << C_rel << " has absolute variables, cannot constrain.";
                         throw std::logic_error(ss.str());
                     }
-                    add_constraint(C_rel, get_row(start_row),  get_row(end_row));
+                    add_constraint(C_rel, get_row(start_row),  get_row(end_row), constraint_name);
                 }
 
 
@@ -512,18 +516,18 @@ namespace nil {
                     lookup_tables->insert({name,{cols,rows}});
                 }
 
-                std::unordered_map<row_selector<>, std::vector<TYPE>> get_constraints() {
+                std::unordered_map<row_selector<>, std::vector<std::pair<TYPE, std::string>>> get_constraints() {
                     // joins constraints with identic selectors into a single gate
 
                     // drop the constraint_id from the stored id->(constraint,row_list) map and
                     // join constrains into single element if they have the same row list:
-                    std::unordered_map<row_selector<>, std::vector<TYPE>> res;
+                    std::unordered_map<row_selector<>, std::vector<std::pair<TYPE, std::string>>> res;
                     for(const auto& [id, data] : *constraints) {
-                        auto it = res.find(data.second);
+                        auto it = res.find(std::get<1>(data));
                         if (it == res.end()) {
-                            res[data.second] = {data.first};
+                            res[std::get<1>(data)] = {{std::get<0>(data), std::get<2>(data)}};
                         } else {
-                            it->second.push_back(data.first);
+                            it->second.push_back({std::get<0>(data), std::get<2>(data)});
                         }
                     }
                     return res;
@@ -580,6 +584,7 @@ namespace nil {
 
                 void reset_storage() {
                     constraints = std::make_shared<constraints_container_type>();
+                    // constraint_names = std::make_shared<constraint_names_container_type>();
                     copy_constraints = std::make_shared<copy_constraints_container_type>();
                     lookup_constraints = std::make_shared<lookup_constraints_container_type>();
                     lookup_tables = std::make_shared<dynamic_lookup_table_container_type>();
@@ -600,23 +605,37 @@ namespace nil {
                 }
 
             private:
-                void add_constraint(TYPE &C_rel, std::size_t row) {
+                void add_constraint(TYPE &C_rel, std::size_t row, std::string name) {
                     std::size_t stored_row = row - (is_fresh ? row_shift : 0);
                     constraint_id_type C_id = constraint_id_type(C_rel);
                     if (constraints->find(C_id) == constraints->end()) {
-                        constraints->insert({C_id, {C_rel, row_selector<>(desc.rows_amount)}});
+                        constraints->insert({C_id, {C_rel, row_selector<>(desc.rows_amount), name}});
                     }
-                    constraints->at(C_id).second.set_row(stored_row);
+                    std::get<1>(constraints->at(C_id)).set_row(stored_row);
+
+                    auto old_name =  std::get<2>(constraints->at(C_id));
+                    if(old_name.find(name) == std::string::npos){
+                        old_name += " or ";
+                        old_name += name;
+                        std::get<2>(constraints->at(C_id)) = old_name;
+                    }
                 }
 
-                void add_constraint(TYPE &C_rel, std::size_t start_row, std::size_t end_row) {
+                void add_constraint(TYPE &C_rel, std::size_t start_row, std::size_t end_row, std::string name) {
                     std::size_t stored_start_row = start_row - (is_fresh ? row_shift : 0);
                     std::size_t stored_end_row = end_row - (is_fresh ? row_shift : 0);
                     constraint_id_type C_id = constraint_id_type(C_rel);
                     if (constraints->find(C_id) == constraints->end()) {
-                        constraints->insert({C_id, {C_rel, row_selector<>(desc.rows_amount)}});
+                        constraints->insert({C_id, {C_rel, row_selector<>(desc.rows_amount), name}});
                     }
-                    constraints->at(C_id).second.set_interval(stored_start_row, stored_end_row);
+                    std::get<1>(constraints->at(C_id)).set_interval(stored_start_row, stored_end_row);
+
+                    auto old_name =  std::get<2>(constraints->at(C_id));
+                    if(old_name.find(name) == std::string::npos){
+                        old_name += " or ";
+                        old_name += name;
+                        std::get<2>(constraints->at(C_id)) = old_name;
+                    }
                 }
 
                 void add_lookup_constraint(
@@ -653,6 +672,8 @@ namespace nil {
 
                 // constraints (with unique id), and the rows they are applied to
                 std::shared_ptr<constraints_container_type> constraints;
+                // constraint names
+                // std::shared_ptr<constraint_names_container_type> constraint_names;
                 // copy constraints as in BP
                 std::shared_ptr<copy_constraints_container_type> copy_constraints;
                 // lookup constraints with table name, unique id and row list

@@ -54,7 +54,7 @@ namespace nil {
                 using lookup_constraint_type = std::pair<std::string, lookup_input_constraints_type>;
 
                 // Here size_t is the index of the selector from 'selectors_'.
-                std::unordered_map<size_t, std::vector<constraint_type>> constraint_list;
+                std::unordered_map<size_t, std::vector<std::pair<constraint_type,std::string>>> constraint_list;
                 std::vector<plonk_copy_constraint> copy_constraints;
                 std::map<std::string, std::pair<std::vector<std::size_t>, size_t>> dynamic_lookup_tables;
 
@@ -79,7 +79,7 @@ namespace nil {
                     return iter->second;
                 }
 
-                void add_constraints(size_t selector_id, const std::vector<constraint_type>& constraints) {
+                void add_constraints(size_t selector_id, const std::vector<std::pair<constraint_type, std::string>>& constraints) {
                     auto iter = constraint_list.find(selector_id);
                     if (iter != constraint_list.end()) {
                         iter->second.insert(
@@ -115,7 +115,7 @@ namespace nil {
                     os << "Constraints: " << std::endl;
                     if (iter != gates.constraint_list.end()) {
                         for (const auto &constraint : iter->second) {
-                            os << constraint << std::endl;
+                            os << constraint.second << "( " << constraint.first << " )" << std::endl;
                         }
                         os << "--------------------------------------------------------------" << std::endl;
                     }
@@ -155,8 +155,20 @@ namespace nil {
                     : context_(std::make_unique<context_type>(std::move(c))) {
                 }
 
+                std::optional<std::vector<std::pair<constraint_type, std::string>>> shift_constraints(
+                        const std::vector<std::pair<constraint_type, std::string>> constraints, int shift) {
+                    std::vector<std::pair<constraint_type, std::string>> shifted_constraints;
+                    for (const auto& c: constraints) {
+                        std::optional<constraint_type> shifted = c.first.rotate(shift);
+                        if (!shifted)
+                            return std::nullopt;
+                        shifted_constraints.push_back({*shifted, c.second});
+                    }
+                    return shifted_constraints;
+                }
+
                 std::optional<std::vector<constraint_type>> shift_constraints(
-                        const std::vector<constraint_type>& constraints, int shift) {
+                        const std::vector<constraint_type> constraints, int shift) {
                     std::vector<constraint_type> shifted_constraints;
                     for (const auto& c: constraints) {
                         std::optional<constraint_type> shifted = c.rotate(shift);
@@ -188,7 +200,7 @@ namespace nil {
                     optimized_gates<FieldType> result;
 
                     // Take everything out of context, and erase the context to free its memory.
-                    std::unordered_map<row_selector<>, std::vector<constraint_type>> constraint_list = context_->get_constraints();
+                    std::unordered_map<row_selector<>, std::vector<std::pair<constraint_type, std::string>>> constraint_list = context_->get_constraints();
                     std::map<std::string, std::pair<std::vector<std::size_t>, row_selector<>>>
                         dynamic_lookup_tables = context_->get_dynamic_lookup_tables();
                     result.copy_constraints = context_->get_copy_constraints();
@@ -526,11 +538,11 @@ namespace nil {
                             // Move all from constraints_list.
                             auto iter = gates.constraint_list.find(id);
                             if (iter != gates.constraint_list.end()) {
-                                std::vector<constraint_type> constraints = std::move(iter->second);
+                                std::vector<std::pair<constraint_type, std::string>> constraints = std::move(iter->second);
                                 gates.constraint_list.erase(id);
                                 // We need the minus on the next line, we need to shift the constraints in the
                                 // opposite direction of the selector shift.
-                                std::optional<std::vector<constraint_type>> shifted_constraints =
+                                std::optional<std::vector<std::pair<constraint_type, std::string>>> shifted_constraints =
                                     shift_constraints(std::move(constraints), -shift);
 
                                 //std::cout << "Shifting " << -shift << " :" << std::endl;
@@ -721,8 +733,8 @@ namespace nil {
                     // Check if there is a constraint that can't be shifted.
                     auto iter = gates.constraint_list.find(selector_id);
                     if (iter != gates.constraint_list.end()) {
-                        const std::vector<constraint_type>& constraints = iter->second;
-                        std::optional<std::vector<constraint_type>> shifted_constraints =
+                        const std::vector<std::pair<constraint_type, std::string>>& constraints = iter->second;
+                        std::optional<std::vector<std::pair<constraint_type, std::string>>> shifted_constraints =
                             shift_constraints(constraints, shift);
                         if (!shifted_constraints) {
                             return false;
