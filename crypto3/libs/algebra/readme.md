@@ -61,9 +61,10 @@ Different curves implement different approaches.
 For MNT families the implementation is aligned with
 [arkworks-rs](https://github.com/arkworks-rs/algebra/tree/master/ec).
 
-For BN254 (alt_bn128) and BLS12 curves the implementation follows this [paper](https://eprint.iacr.org/2016/130)
-(On the Computation of the Optimal Ate Pairing at the 192-bit Security Level
-by Loubna Ghammam and Emmanuel Fouotsa). The implementation closely resembles
+For BN254 (alt_bn128) and BLS12 curves the implementation follows these papers: 
+[Optimal Ate Pairing](https://eprint.iacr.org/2016/130) and
+[The Realm of the Pairings](https://eprint.iacr.org/2013/722.pdf)
+The implementation closely resembles
 [scipr-lab/libff](https://github.com/scipr-lab/libff/tree/develop/libff/algebra/curves/bls12_381) approach.
 
 ### Multiexp

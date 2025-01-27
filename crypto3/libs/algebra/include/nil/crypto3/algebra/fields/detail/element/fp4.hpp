@@ -165,21 +165,21 @@ namespace nil {
                             return element_fp4(c0, c1);
                         }
 
+                        /** @brief Frobenius map is exponentiation to p^pwr. */
                         template<typename PowerType>
                         constexpr element_fp4 Frobenius_map(const PowerType &pwr) const {
                             return element_fp4(
                                 data[0].Frobenius_map(pwr),
                                 typename policy_type::non_residue_type(policy_type::Frobenius_coeffs_c1[pwr % 4]) *
                                     data[1].Frobenius_map(pwr));
-                            // return element_fp4(data[0].Frobenius_map(pwr),
-                            //                    policy_type::Frobenius_coeffs_c1[pwr % 4] *
-                            //                    data[1].Frobenius_map(pwr)});
                         }
 
+                        /** @brief For normalized numbers the inverse is conjugation */
                         element_fp4 unitary_inversed() const {
                             return element_fp4(data[0], -data[1]);
                         }
 
+                        /** @brief Elements from cyclotomic subgroup allow fast squaring */
                         element_fp4 cyclotomic_squared() const {
                             const underlying_type A = data[1].squared();
                             const underlying_type B = data[0] + data[1];
@@ -192,6 +192,7 @@ namespace nil {
                             return element_fp4(F, G);
                         }
 
+                        /** @brief Square-and-multiply exponentiation using cyclotomic squaring */
                         template<typename PowerType>
                         element_fp4 cyclotomic_exp(const PowerType &exponent) const {
                             element_fp4 res = this->one();
@@ -225,6 +226,7 @@ namespace nil {
                             return underlying_type(non_residue * A.data[1], A.data[0]);
                         }
 
+                        /** @brief multiply by [ [c0, 0], [c2, c3] ] */
                         element_fp4 mul_by_023(const element_fp4 &other) const {
                             /* Devegili OhEig Scott Dahab --- Multiplication and Squaring on Pairing-Friendly
                              * Fields.pdf; Section 3 (Karatsuba) */
