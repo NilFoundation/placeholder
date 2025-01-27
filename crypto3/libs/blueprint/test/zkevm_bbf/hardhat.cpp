@@ -59,6 +59,7 @@
 
 using namespace nil::crypto3;
 using namespace nil::blueprint;
+using namespace nil::blueprint::bbf;
 
 class zkEVMHardhatTestFixture: public BBFTestFixture {
 public:
@@ -73,7 +74,7 @@ public:
         const auto &pt = traces[0];
         const auto &bytecode0 = bytecodes[0];
 
-        nil::blueprint::bbf::zkevm_hardhat_input_generator circuit_inputs(bytecodes, traces);
+        zkevm_hardhat_input_generator circuit_inputs(bytecodes, traces);
 
         using integral_type = typename field_type::integral_type;
         using value_type = typename field_type::value_type;
@@ -89,16 +90,14 @@ public:
         std::size_t max_exponentiations = max_sizes.max_exponentiations;
         std::size_t max_exp_rows = max_sizes.max_exp_rows;
 
-        typename nil::blueprint::bbf::copy<field_type,nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type copy_assignment_input;
-        typename nil::blueprint::bbf::copy<field_type,nil::blueprint::bbf::GenerationStage::CONSTRAINTS>::input_type copy_constraint_input;
+        typename copy<field_type, GenerationStage::ASSIGNMENT>::raw_input_type copy_assignment_input;
         copy_assignment_input.rlc_challenge = 7;
         copy_assignment_input.bytecodes = circuit_inputs.bytecodes();
         copy_assignment_input.keccak_buffers = circuit_inputs.keccaks();
         copy_assignment_input.rw_operations = circuit_inputs.rw_operations();
         copy_assignment_input.copy_events = circuit_inputs.copy_events();
 
-        typename nil::blueprint::bbf::zkevm<field_type,nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type zkevm_assignment_input;
-        typename nil::blueprint::bbf::zkevm<field_type,nil::blueprint::bbf::GenerationStage::CONSTRAINTS>::input_type zkevm_constraint_input;
+        typename zkevm<field_type, GenerationStage::ASSIGNMENT>::raw_input_type zkevm_assignment_input;
         zkevm_assignment_input.rlc_challenge = 7;
         zkevm_assignment_input.bytecodes = circuit_inputs.bytecodes();
         zkevm_assignment_input.keccak_buffers = circuit_inputs.keccaks();
@@ -107,28 +106,22 @@ public:
         zkevm_assignment_input.zkevm_states = circuit_inputs.zkevm_states();
         zkevm_assignment_input.exponentiations = circuit_inputs.exponentiations();
 
-        typename nil::blueprint::bbf::rw<field_type,nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type rw_assignment_input = circuit_inputs.rw_operations();
-        typename nil::blueprint::bbf::rw<field_type,nil::blueprint::bbf::GenerationStage::CONSTRAINTS>::input_type rw_constraint_input;
+        auto rw_assignment_input = circuit_inputs.rw_operations();
 
-        typename nil::blueprint::bbf::keccak<field_type,nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type keccak_assignment_input;
-        typename nil::blueprint::bbf::keccak<field_type,nil::blueprint::bbf::GenerationStage::CONSTRAINTS>::input_type keccak_constraint_input;
+        typename keccak<field_type, GenerationStage::ASSIGNMENT>::raw_input_type keccak_assignment_input;
         keccak_assignment_input.private_input = 12345;
 
-        typename nil::blueprint::bbf::bytecode<field_type,nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type bytecode_assignment_input;
-        typename nil::blueprint::bbf::bytecode<field_type,nil::blueprint::bbf::GenerationStage::CONSTRAINTS>::input_type bytecode_constraint_input;
+        typename bytecode<field_type, GenerationStage::ASSIGNMENT>::raw_input_type bytecode_assignment_input;
         bytecode_assignment_input.rlc_challenge = 7;
         bytecode_assignment_input.bytecodes = circuit_inputs.bytecodes();
         bytecode_assignment_input.keccak_buffers = circuit_inputs.keccaks();
-        bool result;
 
-        typename nil::blueprint::bbf::exponentiation<field_type,nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type exp_assignment_input;
-        typename nil::blueprint::bbf::exponentiation<field_type,nil::blueprint::bbf::GenerationStage::CONSTRAINTS>::input_type exp_constraint_input;
-        exp_assignment_input = circuit_inputs.exponentiations();
+        auto exp_assignment_input = circuit_inputs.exponentiations();
 
         // Max_rows, max_bytecode, max_rw
-        result = test_bbf_component<field_type, nil::blueprint::bbf::zkevm>(
+        bool result = test_bbf_component<field_type, zkevm>(
             "zkevm",
-            {}, zkevm_assignment_input, zkevm_constraint_input,
+            {}, zkevm_assignment_input,
             max_zkevm_rows,
             max_copy,
             max_rw,
@@ -141,7 +134,7 @@ public:
         // Max_copy, Max_rw, Max_keccak, Max_bytecode
         result =test_bbf_component<field_type, nil::blueprint::bbf::exponentiation>(
             "exp",
-            {}, exp_assignment_input, exp_constraint_input,
+            {}, exp_assignment_input,
             max_exp_rows,
             max_exponentiations
         );
@@ -151,7 +144,7 @@ public:
         // Max_copy, Max_rw, Max_keccak, Max_bytecode
         result =test_bbf_component<field_type, nil::blueprint::bbf::copy>(
             "copy",
-            {7}, copy_assignment_input, copy_constraint_input,
+            {7}, copy_assignment_input,
             max_copy, max_rw, max_keccak_blocks, max_bytecode
         );
         BOOST_ASSERT(result);
@@ -160,7 +153,7 @@ public:
         // Max_keccak
         result = test_bbf_component<field_type, nil::blueprint::bbf::keccak>(
             "keccak",
-            {}, keccak_assignment_input , keccak_constraint_input
+            {}, keccak_assignment_input
         );
         BOOST_ASSERT(result);
         std::cout << std::endl;
@@ -169,7 +162,7 @@ public:
         std::cout << "Bytecode circuit" << std::endl;
         result = test_bbf_component<field_type, nil::blueprint::bbf::bytecode>(
             "bytecode",
-            {7}, bytecode_assignment_input, bytecode_constraint_input, max_bytecode, max_keccak_blocks
+            {7}, bytecode_assignment_input, max_bytecode, max_keccak_blocks
         );
         BOOST_ASSERT(result);
         std::cout << std::endl;
@@ -178,7 +171,7 @@ public:
         std::cout << "RW circuit" << std::endl;
         result = test_bbf_component<field_type, nil::blueprint::bbf::rw>(
             "rw",
-            {}, rw_assignment_input, rw_constraint_input, max_rw, max_mpt
+            {}, rw_assignment_input, max_rw, max_mpt
         );
         BOOST_ASSERT(result);
         std::cout << std::endl;

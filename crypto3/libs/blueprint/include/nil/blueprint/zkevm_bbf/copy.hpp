@@ -39,44 +39,58 @@ namespace nil {
                 using generic_component<FieldType, stage>::constrain;
                 using generic_component<FieldType, stage>::lookup;
                 using generic_component<FieldType, stage>::lookup_table;
-            public:
-                using typename generic_component<FieldType,stage>::TYPE;
-                using integral_type =  nil::crypto3::multiprecision::big_uint<257>;
 
-                struct input_type{
-                    TYPE rlc_challenge;
-
-                    template<typename T>
-                    using enable_for_assignment_t = typename std::conditional_t<stage == GenerationStage::ASSIGNMENT, T, std::nullptr_t>;
-
-                    enable_for_assignment_t<zkevm_keccak_buffers> bytecodes;
-                    enable_for_assignment_t<zkevm_keccak_buffers> keccak_buffers;
-                    enable_for_assignment_t<rw_operations_vector> rw_operations;
-                    enable_for_assignment_t<std::vector<copy_event>> copy_events;
-                };
             public:
                 using BytecodeTable = bytecode_table<FieldType, stage>;
                 using RWTable = rw_table<FieldType, stage>;
                 using KeccakTable = keccak_table<FieldType, stage>;
                 using CopyTable = copy_table<FieldType, stage>;
 
+                using typename generic_component<FieldType, stage>::table_params;
+                using typename generic_component<FieldType,stage>::TYPE;
+                using integral_type =  nil::crypto3::multiprecision::big_uint<257>;
+
+                struct input_type {
+                    TYPE rlc_challenge;
+
+                    BytecodeTable::input_type bytecodes;
+                    KeccakTable::private_input_type keccak_buffers;
+                    RWTable::input_type rw_operations;
+                    CopyTable::input_type copy_events;
+                };
+                using raw_input_type = input_type;
+
                 static constexpr std::size_t copy_advice_amount = 11;
 
-                static nil::crypto3::zk::snark::plonk_table_description<FieldType> get_table_description(
-                    std::size_t max_copy,
-                    std::size_t max_rw,
-                    std::size_t max_keccak_blocks,
-                    std::size_t max_bytecode
-                ){
-                    std::size_t witness_amount = copy_advice_amount;
-                    witness_amount += BytecodeTable::get_witness_amount();
-                    witness_amount += RWTable::get_witness_amount();
-                    witness_amount += KeccakTable::get_witness_amount();
-                    witness_amount += CopyTable::get_witness_amount();
-                    nil::crypto3::zk::snark::plonk_table_description<FieldType> desc(witness_amount, 1, 3, 10);
-                    desc.usable_rows_amount = std::max(std::max(max_copy, max_rw + 1), std::max(max_keccak_blocks + 1, max_bytecode + 1));
-                    return desc;
+                static table_params get_minimal_requirements(std::size_t max_copy,
+                                                             std::size_t max_rw,
+                                                             std::size_t max_keccak_blocks,
+                                                             std::size_t max_bytecode) {
+                    return {
+                        .witnesses = copy_advice_amount
+                                   + BytecodeTable::get_witness_amount()
+                                   + RWTable::get_witness_amount()
+                                   + KeccakTable::get_witness_amount()
+                                   + CopyTable::get_witness_amount(),
+                        .public_inputs = 1,
+                        .constants = 3,
+                        .rows = std::max(
+                            std::max(max_copy, max_rw + 1),
+                            std::max(max_keccak_blocks + 1, max_bytecode + 1)
+                        )
+                    };
                 }
+
+                static std::tuple<input_type> form_input(context_type &context,
+                                                         raw_input_type input,
+                                                         std::size_t max_copy,
+                                                         std::size_t max_rw,
+                                                         std::size_t max_keccak_blocks,
+                                                         std::size_t max_bytecode) {
+                    context.allocate(input.rlc_challenge, 0, 0, column_type::public_input);
+                    return {input};
+                }
+
                 copy(context_type &context_object,
                     const input_type &input,
                     std::size_t max_copy,

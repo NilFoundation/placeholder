@@ -27,6 +27,8 @@
 #pragma once
 
 #include <functional>
+#include <utility>
+
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
 #include <nil/blueprint/component.hpp>
@@ -51,7 +53,12 @@ namespace nil {
               public:
                 using typename generic_component<FieldType, stage>::TYPE;
                 using word_type = zkevm_word_type;
-                using input_type = typename std::conditional<stage == GenerationStage::ASSIGNMENT, std::vector<std::pair<zkevm_word_type,zkevm_word_type>>, std::nullptr_t>::type;
+
+                using input_type = std::conditional_t<
+                    stage == GenerationStage::ASSIGNMENT,
+                    std::vector<std::pair<zkevm_word_type, zkevm_word_type>>,
+                    std::monostate
+                >;
 
                 std::size_t max_exponentiations;
                 std::vector<TYPE> selector;
