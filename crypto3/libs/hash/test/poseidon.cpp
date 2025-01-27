@@ -114,6 +114,12 @@ BOOST_AUTO_TEST_CASE(poseidon_with_padding_test) {
         0x01, 0x02
     };
 
+    /* Default behavior: input bytes converted into field elements and padded
+     * with lowest bit in the next higher block:
+     * 0x0000000000000000000000000000000000000000000000000000000001000102
+     * and
+     * 0x0000000000000000000000000000000000000000000000000000000000010102
+     */
     typename policy::digest_type result1 = nil::crypto3::hash<hash_type>(
         nil::crypto3::hashes::conditional_block_to_field_elements_wrapper<
             typename hash_type::word_type,
@@ -128,6 +134,7 @@ BOOST_AUTO_TEST_CASE(poseidon_with_padding_test) {
         (hash_input2)
     );
 
+    /* Results should not be equal */
     BOOST_CHECK_NE(result1, result2);
 }
 
@@ -143,20 +150,25 @@ BOOST_AUTO_TEST_CASE(poseidon_without_padding_test) {
         0x01, 0x02
     };
 
+    /* Explicit non-padding behavior: input bytes converted into field elements
+     * without padding, both inputs produce same element:
+     * 0x0000000000000000000000000000000000000000000000000000000000000102
+     */
     typename policy::digest_type result1 = nil::crypto3::hash<hash_type>(
         nil::crypto3::hashes::conditional_block_to_field_elements_wrapper<
             typename hash_type::word_type,
-            decltype(hash_input1), true, false>
+            decltype(hash_input1), true, false /* padding */>
         (hash_input1)
     );
 
     typename policy::digest_type result2 = nil::crypto3::hash<hash_type>(
         nil::crypto3::hashes::conditional_block_to_field_elements_wrapper<
             typename hash_type::word_type,
-            decltype(hash_input2), true, false>
+            decltype(hash_input2), true, false /* padding */>
         (hash_input2)
     );
 
+    /* Results should be equal */
     BOOST_CHECK_EQUAL(result1, result2);
 }
 
