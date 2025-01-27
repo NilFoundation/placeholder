@@ -6,6 +6,9 @@
 // See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt
 //---------------------------------------------------------------------------//
+// Functions for building w-ary Non-Adjacent Form of a multiprecision value
+// for a given window size.
+// https://en.wikipedia.org/wiki/Elliptic_curve_point_multiplication#w-ary_non-adjacent_form_(wNAF)_method
 
 #pragma once
 

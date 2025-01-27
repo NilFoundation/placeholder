@@ -138,11 +138,9 @@ namespace nil {
                             return *this;
                         }
 
+                        /* Devegili OhEig Scott Dahab --- Multiplication and Squaring on Pairing-Friendly
+                         * Fields.pdf; Section 3 (Complex) */
                         constexpr element_fp6_2over3 squared() const {
-                            // return (*this) * (*this);    // maybe can be done more effective
-
-                            /* Devegili OhEig Scott Dahab --- Multiplication and Squaring on Pairing-Friendly
-                             * Fields.pdf; Section 3 (Complex) */
                             const underlying_type &B = data[1], &A = data[0];
                             const underlying_type AB = A * B;
 
@@ -155,10 +153,9 @@ namespace nil {
                             return element_fp6_2over3(power(*this, pwr));
                         }
 
+                        /* From "High-Speed Software Implementation of the Optimal Ate Pairing over Barreto-Naehrig
+                         * Curves"; Algorithm 8 */
                         constexpr element_fp6_2over3 inversed() const {
-
-                            /* From "High-Speed Software Implementation of the Optimal Ate Pairing over Barreto-Naehrig
-                             * Curves"; Algorithm 8 */
 
                             const underlying_type &A0 = data[0], &A1 = data[1];
 
@@ -174,9 +171,6 @@ namespace nil {
 
                         template<typename PowerType>
                         constexpr element_fp6_2over3 Frobenius_map(const PowerType &pwr) const {
-                            // return element_fp6_2over3(data[0].Frobenius_map(pwr),
-                            //                           policy_type::Frobenius_coeffs_c1[pwr % 6] *
-                            //                           data[1].Frobenius_map(pwr)});
                             return element_fp6_2over3(
                                 data[0].Frobenius_map(pwr),
                                 typename policy_type::non_residue_type(policy_type::Frobenius_coeffs_c1[pwr % 6]) *
@@ -187,6 +181,7 @@ namespace nil {
                             return element_fp6_2over3(data[0], -data[1]);
                         }
 
+                        /** @brief Elements from cyclotomic subgroup allow fast squaring */
                         element_fp6_2over3 cyclotomic_squared() const {
                             using e_fp = typename underlying_type::underlying_type;
                             using e_fp2 = std::array<e_fp, 2>;
@@ -239,11 +234,9 @@ namespace nil {
                             return element_fp6_2over3(underlying_type(A_a, C_a, B_b), underlying_type(B_a, A_b, C_b));
                         }
 
+                        /** @brief Square-and-multiply exponentiation using cyclotomic squaring */
                         template<typename PowerType>
                         element_fp6_2over3 cyclotomic_exp(const PowerType &exponent) const {
-                            // naive implementation
-                            // return this->squared();
-
                             element_fp6_2over3 res = one();
                             element_fp6_2over3 this_inverse = this->unitary_inversed();
 
@@ -273,6 +266,7 @@ namespace nil {
                             return underlying_type(non_residue * A.data[2], A.data[0], A.data[1]);
                         }
 
+                        /** @brief multiply by [ [0, 0, c2], [c3, c4, c5] ] */
                         element_fp6_2over3 mul_by_2345(const element_fp6_2over3 &other) const {
                             /* Devegili OhEig Scott Dahab --- Multiplication and Squaring on Pairing-Friendly
                              * Fields.pdf; Section 3 (Karatsuba) */
