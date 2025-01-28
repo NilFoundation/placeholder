@@ -285,7 +285,7 @@ namespace nil {
                 using var = crypto3::zk::snark::plonk_variable<value_type>;
                 using constraint_type = crypto3::zk::snark::plonk_constraint<FieldType>;
                 using plonk_copy_constraint = crypto3::zk::snark::plonk_copy_constraint<FieldType>;
-                using constraints_container_type = std::map<constraint_id_type, std::tuple<constraint_type, row_selector<>, std::string>>;
+                using constraints_container_type = std::map<constraint_id_type, std::tuple<constraint_type, row_selector<>, std::set<std::string>>>;
                 using constraint_names_container_type = std::unordered_map<constraint_type, std::string>;
                 using copy_constraints_container_type = std::vector<plonk_copy_constraint>; // TODO: maybe it's a set, not a vec?
                 using lookup_input_constraints_type = crypto3::zk::snark::lookup_input_constraints<FieldType>;
@@ -348,7 +348,7 @@ namespace nil {
                                   false, // false = use absolute cell address
                                   static_cast<typename var::column_type>(t));
                     if ((C != TYPE()) && (t == column_type::witness)) { // TODO: TYPE() - is this ok? NB: we only constrain witnesses!
-                        constrain(res - C,"T"); // TODO: maybe add a name for this constraint?
+                        constrain(res - C,""); // TODO: maybe add a name for this constraint?
                     }
 
                     C = res;
@@ -524,10 +524,16 @@ namespace nil {
                     std::unordered_map<row_selector<>, std::vector<std::pair<TYPE, std::string>>> res;
                     for(const auto& [id, data] : *constraints) {
                         auto it = res.find(std::get<1>(data));
+                        std::string name;
+                        bool first = true;
+                        for(auto const &s : std::get<2>(data)){
+                            if(first) name = s;
+                            else name = name + "," + s;
+                        }
                         if (it == res.end()) {
-                            res[std::get<1>(data)] = {{std::get<0>(data), std::get<2>(data)}};
+                            res[std::get<1>(data)] = {{std::get<0>(data), name}};
                         } else {
-                            it->second.push_back({std::get<0>(data), std::get<2>(data)});
+                            it->second.push_back({std::get<0>(data), name});
                         }
                     }
                     return res;
@@ -584,7 +590,6 @@ namespace nil {
 
                 void reset_storage() {
                     constraints = std::make_shared<constraints_container_type>();
-                    // constraint_names = std::make_shared<constraint_names_container_type>();
                     copy_constraints = std::make_shared<copy_constraints_container_type>();
                     lookup_constraints = std::make_shared<lookup_constraints_container_type>();
                     lookup_tables = std::make_shared<dynamic_lookup_table_container_type>();
@@ -609,16 +614,10 @@ namespace nil {
                     std::size_t stored_row = row - (is_fresh ? row_shift : 0);
                     constraint_id_type C_id = constraint_id_type(C_rel);
                     if (constraints->find(C_id) == constraints->end()) {
-                        constraints->insert({C_id, {C_rel, row_selector<>(desc.rows_amount), name}});
+                        constraints->insert({C_id, {C_rel, row_selector<>(desc.rows_amount), {name}}});
                     }
                     std::get<1>(constraints->at(C_id)).set_row(stored_row);
-
-                    auto old_name =  std::get<2>(constraints->at(C_id));
-                    if(old_name.find(name) == std::string::npos){
-                        old_name += " or ";
-                        old_name += name;
-                        std::get<2>(constraints->at(C_id)) = old_name;
-                    }
+                    std::get<2>(constraints->at(C_id)).insert(name);
                 }
 
                 void add_constraint(TYPE &C_rel, std::size_t start_row, std::size_t end_row, std::string name) {
@@ -629,13 +628,7 @@ namespace nil {
                         constraints->insert({C_id, {C_rel, row_selector<>(desc.rows_amount), name}});
                     }
                     std::get<1>(constraints->at(C_id)).set_interval(stored_start_row, stored_end_row);
-
-                    auto old_name =  std::get<2>(constraints->at(C_id));
-                    if(old_name.find(name) == std::string::npos){
-                        old_name += " or ";
-                        old_name += name;
-                        std::get<2>(constraints->at(C_id)) = old_name;
-                    }
+                    std::get<2>(constraints->at(C_id)).insert(name);
                 }
 
                 void add_lookup_constraint(
