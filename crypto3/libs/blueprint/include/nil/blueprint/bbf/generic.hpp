@@ -286,7 +286,6 @@ namespace nil {
                 using constraint_type = crypto3::zk::snark::plonk_constraint<FieldType>;
                 using plonk_copy_constraint = crypto3::zk::snark::plonk_copy_constraint<FieldType>;
                 using constraints_container_type = std::map<constraint_id_type, std::tuple<constraint_type, row_selector<>, std::set<std::string>>>;
-                using constraint_names_container_type = std::unordered_map<constraint_type, std::string>;
                 using copy_constraints_container_type = std::vector<plonk_copy_constraint>; // TODO: maybe it's a set, not a vec?
                 using lookup_input_constraints_type = crypto3::zk::snark::lookup_input_constraints<FieldType>;
                 using lookup_constraints_container_type = std::map<std::pair<std::string,constraint_id_type>, // <table_name,expressions_id>
@@ -417,7 +416,7 @@ namespace nil {
                 }
 
                 // accesible only at GenerationStage::CONSTRAINTS !
-                void relative_constrain(TYPE C_rel, std::size_t row, std::string constraint_name) {
+                void relative_constrain(TYPE C_rel, std::size_t row, std::string constraint_name = "") {
                     if (!C_rel.is_relative()) {
                         std::stringstream ss;
                         ss << "Constraint " << C_rel << " has absolute variables, cannot constrain.";
@@ -426,7 +425,7 @@ namespace nil {
                     add_constraint(C_rel, get_row(row), constraint_name);
                 }
 
-                void relative_constrain(TYPE C_rel, std::size_t start_row,  std::size_t end_row, std::string constraint_name) {
+                void relative_constrain(TYPE C_rel, std::size_t start_row,  std::size_t end_row, std::string constraint_name = "") {
                     if (!C_rel.is_relative()) {
                         std::stringstream ss;
                         ss << "Constraint " << C_rel << " has absolute variables, cannot constrain.";
@@ -665,8 +664,6 @@ namespace nil {
 
                 // constraints (with unique id), and the rows they are applied to
                 std::shared_ptr<constraints_container_type> constraints;
-                // constraint names
-                // std::shared_ptr<constraint_names_container_type> constraint_names;
                 // copy constraints as in BP
                 std::shared_ptr<copy_constraints_container_type> copy_constraints;
                 // lookup constraints with table name, unique id and row list
