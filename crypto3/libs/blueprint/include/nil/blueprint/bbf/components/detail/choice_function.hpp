@@ -28,12 +28,8 @@
 #ifndef CRYPTO3_BLUEPRINT_PLONK_BBF_CHOICE_FUNCTION_COMPONENT_HPP
 #define CRYPTO3_BLUEPRINT_PLONK_BBF_CHOICE_FUNCTION_COMPONENT_HPP
 
-#include <functional>
 #include <nil/blueprint/bbf/generic.hpp>
-#include <nil/blueprint/blueprint/plonk/assignment.hpp>
-#include <nil/blueprint/blueprint/plonk/circuit.hpp>
-#include <nil/blueprint/component.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/constraint_system.hpp>
+
 
 namespace nil {
     namespace blueprint {

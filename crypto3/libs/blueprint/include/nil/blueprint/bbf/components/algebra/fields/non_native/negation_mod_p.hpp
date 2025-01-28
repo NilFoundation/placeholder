@@ -29,30 +29,22 @@
 #ifndef CRYPTO3_BBF_COMPONENTS_NEGATION_MOD_P_HPP
 #define CRYPTO3_BBF_COMPONENTS_NEGATION_MOD_P_HPP
 
-#include <functional>
-#include <nil/blueprint/bbf/generic.hpp>
-#include <nil/blueprint/blueprint/plonk/assignment.hpp>
-#include <nil/blueprint/blueprint/plonk/circuit.hpp>
-#include <nil/blueprint/component.hpp>
-#include <nil/crypto3/algebra/curves/pallas.hpp>
-#include <nil/crypto3/algebra/curves/vesta.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/constraint_system.hpp>
-
 #include <nil/blueprint/bbf/components/algebra/fields/non_native/check_mod_p.hpp>
 #include <nil/blueprint/bbf/components/detail/carry_on_addition.hpp>
 #include <nil/blueprint/bbf/components/detail/choice_function.hpp>
 #include <nil/blueprint/bbf/components/detail/range_check_multi.hpp>
-#include <stdexcept>
+#include <nil/blueprint/bbf/generic.hpp>
+#include <nil/crypto3/algebra/curves/pallas.hpp>
+#include <nil/crypto3/algebra/curves/vesta.hpp>
 
 namespace nil {
     namespace blueprint {
         namespace bbf {
             namespace components {
                 // Parameters: num_chunks = k, bit_size_chunk = b
-                // Finding the negative r of integer x, modulo p and checking that x + r = 0 mod p 
-                // Input: x[0], ..., x[k-1], p[0], ..., p[k-1], pp[0], ..., pp[k-1], 0[0], ..., 0[k-1] 
-                // (expects zero vector constant as input) 
-                // Output: r[0], ..., r[k-1]
+                // Finding the negative r of integer x, modulo p and checking that x + r =
+                // 0 mod p Input: x[0], ..., x[k-1], p[0], ..., p[k-1], pp[0], ...,
+                // pp[k-1], 0 (expects zero constant as input) Output: r[0], ..., r[k-1]
 
                 template<typename FieldType>
                 struct negation_mod_p_raw_input {
@@ -60,7 +52,7 @@ namespace nil {
                     std::vector<TYPE> x;
                     std::vector<TYPE> p;
                     std::vector<TYPE> pp;
-                    std::vector<TYPE> zero;
+                    TYPE zero;
                 };
 
                 template<typename FieldType, GenerationStage stage,
@@ -69,8 +61,6 @@ namespace nil {
                     using generic_component<FieldType, stage>::allocate;
                     using generic_component<FieldType, stage>::copy_constrain;
                     using generic_component<FieldType, stage>::constrain;
-                    using generic_component<FieldType, stage>::lookup;
-                    using component_type = generic_component<FieldType, stage>;
 
                   public:
                     using typename generic_component<FieldType, stage>::TYPE;
@@ -96,21 +86,21 @@ namespace nil {
                     }
 
                     static std::tuple<std::vector<TYPE>, std::vector<TYPE>,
-                                      std::vector<TYPE>, std::vector<TYPE>>
+                                      std::vector<TYPE>, TYPE>
                     form_input(context_type &context_object, raw_input_type raw_input,
                                std::size_t num_chunks, std::size_t bit_size_chunk) {
                         std::vector<TYPE> input_x(num_chunks);
                         std::vector<TYPE> input_p(num_chunks);
                         std::vector<TYPE> input_pp(num_chunks);
-                        std::vector<TYPE> input_zero(num_chunks);
+                        TYPE input_zero;
 
                         if constexpr (stage == GenerationStage::ASSIGNMENT) {
                             for (std::size_t i = 0; i < num_chunks; i++) {
                                 input_x[i] = raw_input.x[i];
                                 input_p[i] = raw_input.p[i];
                                 input_pp[i] = raw_input.pp[i];
-                                input_zero[i] = raw_input.zero[i];
                             }
+                            input_zero = raw_input.zero;
                         }
 
                         for (std::size_t i = 0; i < num_chunks; i++) {
@@ -120,18 +110,18 @@ namespace nil {
                                                     column_type::public_input);
                             context_object.allocate(input_pp[i], 0, i + 2 * num_chunks,
                                                     column_type::public_input);
-                            context_object.allocate(input_zero[i], 0, i + 3 * num_chunks,
-                                                    column_type::public_input);
                         }
+                        context_object.allocate(input_zero, 0, 3 * num_chunks,
+                                                column_type::public_input);
 
                         return std::make_tuple(input_x, input_p, input_pp, input_zero);
                     }
 
                     negation_mod_p(context_type &context_object,
                                    std::vector<TYPE> input_x, std::vector<TYPE> input_p,
-                                   std::vector<TYPE> input_pp,
-                                   std::vector<TYPE> input_zero, std::size_t num_chunks,
-                                   std::size_t bit_size_chunk, bool make_links = true)
+                                   std::vector<TYPE> input_pp, TYPE input_zero,
+                                   std::size_t num_chunks, std::size_t bit_size_chunk,
+                                   bool make_links = true)
                         : generic_component<FieldType, stage>(context_object) {
                         using integral_type = typename FieldType::integral_type;
                         using extended_integral_type =
@@ -178,8 +168,9 @@ namespace nil {
                             allocate(R[i]);
                         }
 
+                        std::vector<TYPE> input_zero_vector(num_chunks, input_zero);
                         Choice_Function cf = Choice_Function(
-                            context_object, Q, input_zero, input_p, num_chunks);
+                            context_object, Q, input_zero_vector, input_p, num_chunks);
 
                         Carry_On_Addition ca = Carry_On_Addition(
                             context_object, input_x, R, num_chunks, bit_size_chunk);
@@ -188,13 +179,13 @@ namespace nil {
                         for (std::size_t i = 0; i < num_chunks; i++) {
                             copy_constrain(ca.r[i], cf.r[i]);
                         }
-                        copy_constrain(ca.c, input_zero[0]);
+                        copy_constrain(ca.c, input_zero);
 
                         Range_Check rc =
                             Range_Check(context_object, R, num_chunks, bit_size_chunk);
 
                         Check_Mod_P cm =
-                            Check_Mod_P(context_object, R, input_pp, input_zero[0],
+                            Check_Mod_P(context_object, R, input_pp, input_zero,
                                         num_chunks, bit_size_chunk);
 
                         for (int i = 0; i < num_chunks; ++i) {

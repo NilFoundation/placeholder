@@ -22,11 +22,11 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE bbf_ec_double_test
+#define BOOST_TEST_MODULE bbf_ec_two_t_plus_q_test
 
 #include <boost/test/unit_test.hpp>
 #include <nil/blueprint/bbf/circuit_builder.hpp>
-#include <nil/blueprint/bbf/components/algebra/curves/weierstrass/ec_double.hpp>
+#include <nil/blueprint/bbf/components/algebra/curves/weierstrass/ec_two_t_plus_q.hpp>
 #include <nil/crypto3/algebra/curves/pallas.hpp>
 #include <nil/crypto3/algebra/curves/vesta.hpp>
 #include <nil/crypto3/random/algebraic_engine.hpp>
@@ -36,7 +36,7 @@ using namespace nil::blueprint;
 
 template<typename BlueprintFieldType, typename NonNativeFieldType, std::size_t num_chunks,
          std::size_t bit_size_chunk>
-void test_ec_double(
+void test_ec_two_t_plus_q(
     const std::vector<typename BlueprintFieldType::value_type>& public_input) {
     using FieldType = BlueprintFieldType;
     using TYPE = typename FieldType::value_type;
@@ -45,32 +45,42 @@ void test_ec_double(
     using non_native_integral_type = typename BlueprintFieldType::integral_type;
 
     non_native_integral_type pow = 1;
-    NON_NATIVE_TYPE xQ = 0, yQ = 0;
+
+    NON_NATIVE_TYPE xT = 0, yT = 0, xQ = 0, yQ = 0;
 
     for (std::size_t i = 0; i < num_chunks; ++i) {
-        xQ += non_native_integral_type(integral_type(public_input[i].data)) * pow;
-        yQ += non_native_integral_type(integral_type(public_input[i + num_chunks].data)) *
+        xT += non_native_integral_type(integral_type(public_input[i].data)) * pow;
+        yT += non_native_integral_type(integral_type(public_input[i + num_chunks].data)) *
+              pow;
+        xQ += non_native_integral_type(
+                  integral_type(public_input[i + 2 * num_chunks].data)) *
+              pow;
+        yQ += non_native_integral_type(
+                  integral_type(public_input[i + 3 * num_chunks].data)) *
               pow;
         pow <<= bit_size_chunk;
     }
 
-    NON_NATIVE_TYPE lambda = (yQ == 0)
-                                 ? 0
-                                 : 3 * xQ * xQ *
-                                       ((2 * yQ).inversed()),  // if yQ = 0, lambda = 0
-        z = (yQ == 0) ? 0 : yQ.inversed(),                     // if yQ = 0, z = 0
-        expected_xR = lambda * lambda - 2 * xQ,
-                    expected_yR = lambda * (xQ - expected_xR) - yQ;
+    NON_NATIVE_TYPE diff1 = xQ - xT,
+                    lambda = (diff1 == 0) ? 0 : (yQ - yT) * diff1.inversed(),
+                    xS = lambda * lambda - xT - xQ, diff2 = xS - xT,
+                    mu = (diff2 == 0) ? -lambda : -lambda - (2 * yT) * diff2.inversed(),
+                    expected_xR = mu * mu - xT - xS,
+                    expected_yR = mu * (xT - expected_xR) - yT;
 
     auto assign_and_check = [&](auto& B, auto& raw_input) {
-        raw_input.xQ =
+        raw_input.xT =
             std::vector<TYPE>(public_input.begin(), public_input.begin() + num_chunks);
-        raw_input.yQ = std::vector<TYPE>(public_input.begin() + num_chunks,
+        raw_input.yT = std::vector<TYPE>(public_input.begin() + num_chunks,
                                          public_input.begin() + 2 * num_chunks);
-        raw_input.p = std::vector<TYPE>(public_input.begin() + 2 * num_chunks,
-                                        public_input.begin() + 3 * num_chunks);
-        raw_input.pp = std::vector<TYPE>(public_input.begin() + 3 * num_chunks,
+        raw_input.xQ = std::vector<TYPE>(public_input.begin() + 2 * num_chunks,
+                                         public_input.begin() + 3 * num_chunks);
+        raw_input.yQ = std::vector<TYPE>(public_input.begin() + 3 * num_chunks,
                                          public_input.begin() + 4 * num_chunks);
+        raw_input.p = std::vector<TYPE>(public_input.begin() + 4 * num_chunks,
+                                        public_input.begin() + 5 * num_chunks);
+        raw_input.pp = std::vector<TYPE>(public_input.begin() + 5 * num_chunks,
+                                         public_input.begin() + 6 * num_chunks);                   
         raw_input.zero = public_input.back();
 
         auto [at, A, desc] = B.assign(raw_input);
@@ -86,33 +96,33 @@ void test_ec_double(
             yR += non_native_integral_type(integral_type(A.yR[i].data)) * pow;
             pow <<= bit_size_chunk;
         }
-#ifdef BLUEPRINT_PLONK_PROFILING_ENABLED
+        // #ifdef BLUEPRINT_PLONK_PROFILING_ENABLED
         std::cout << "Expected xR - yR: " << std::dec << expected_xR.data << " - "
                   << expected_yR.data << std::endl;
         std::cout << "Real res xR - yR:  " << std::dec << xR << " - " << yR << std::endl;
-#endif
+        // #endif
         assert(xR == expected_xR.data);
         assert(yR == expected_yR.data);
     };
 
     if constexpr (std::is_same_v<NonNativeFieldType,
                                  crypto3::algebra::curves::pallas::base_field_type>) {
-        typename bbf::components::pallas_ec_double<
+        typename bbf::components::pallas_ec_two_t_plus_q<
             FieldType, bbf::GenerationStage::ASSIGNMENT>::raw_input_type raw_input;
 
         auto B =
-            bbf::circuit_builder<FieldType, bbf::components::pallas_ec_double,
+            bbf::circuit_builder<FieldType, bbf::components::pallas_ec_two_t_plus_q,
                                  std::size_t, std::size_t>(num_chunks, bit_size_chunk);
 
         assign_and_check(B, raw_input);
     } else if constexpr (std::is_same_v<
                              NonNativeFieldType,
                              crypto3::algebra::curves::vesta::base_field_type>) {
-        typename bbf::components::vesta_ec_double<
+        typename bbf::components::vesta_ec_two_t_plus_q<
             FieldType, bbf::GenerationStage::ASSIGNMENT>::raw_input_type raw_input;
         auto B =
-            bbf::circuit_builder<FieldType, bbf::components::vesta_ec_double, std::size_t,
-                                 std::size_t>(num_chunks, bit_size_chunk);
+            bbf::circuit_builder<FieldType, bbf::components::vesta_ec_two_t_plus_q,
+                                 std::size_t, std::size_t>(num_chunks, bit_size_chunk);
 
         assign_and_check(B, raw_input);
     }
@@ -120,7 +130,7 @@ void test_ec_double(
 
 template<typename BlueprintFieldType, typename Curve, std::size_t num_chunks,
          std::size_t bit_size_chunk, std::size_t RandomTestsAmount>
-void ec_double_tests() {
+void ec_two_t_plus_q_tests() {
     using NonNativeFieldType = typename Curve::base_field_type;
     using value_type = typename BlueprintFieldType::value_type;
     using integral_type = typename BlueprintFieldType::integral_type;
@@ -146,29 +156,39 @@ void ec_double_tests() {
                                p = NonNativeFieldType::modulus, pp = ext_pow - p;
 
         value_type d = generate_random();
-        ec_point_value_type Q = ec_point_value_type::one();
+        ec_point_value_type T = ec_point_value_type::one(),
+                            Q = ec_point_value_type::one();
+        T = T * d;
         Q = Q * d;
 
-        public_input.resize(5 * num_chunks);
+        public_input.resize(7 * num_chunks);
+        integral_type xT = integral_type(T.X.data);
+        integral_type yT = integral_type(T.Y.data);
         integral_type xQ = integral_type(Q.X.data);
         integral_type yQ = integral_type(Q.Y.data);
         for (std::size_t j = 0; j < num_chunks; j++) {
-            public_input[j] = value_type(xQ & mask);
+            public_input[j] = value_type(xT & mask);
+            xT >>= bit_size_chunk;
+
+            public_input[1 * num_chunks + j] = value_type(yT & mask);
+            yT >>= bit_size_chunk;
+
+            public_input[2 * num_chunks + j] = value_type(xQ & mask);
             xQ >>= bit_size_chunk;
 
-            public_input[1 * num_chunks + j] = value_type(yQ & mask);
+            public_input[3 * num_chunks + j] = value_type(yQ & mask);
             yQ >>= bit_size_chunk;
 
-            public_input[2 * num_chunks + j] = value_type(p & mask);
+            public_input[4 * num_chunks + j] = value_type(p & mask);
             p >>= bit_size_chunk;
 
-            public_input[3 * num_chunks + j] = value_type(pp & mask);
+            public_input[5 * num_chunks + j] = value_type(pp & mask);
             pp >>= bit_size_chunk;
         }
-        public_input[4 * num_chunks] = value_type(0);
+        public_input[6 * num_chunks] = value_type(0);
 
-        test_ec_double<BlueprintFieldType, NonNativeFieldType, num_chunks,
-                       bit_size_chunk>(public_input);
+        test_ec_two_t_plus_q<BlueprintFieldType, NonNativeFieldType, num_chunks,
+                             bit_size_chunk>(public_input);
     }
 }
 
@@ -176,18 +196,18 @@ constexpr static const std::size_t random_tests_amount = 10;
 
 BOOST_AUTO_TEST_SUITE(blueprint_plonk_test_suite)
 
-BOOST_AUTO_TEST_CASE(blueprint_plonk_bbf_ec_double_test) {
+BOOST_AUTO_TEST_CASE(blueprint_plonk_bbf_ec_two_t_plus_q_test) {
     // The curve is passed in as an argument to access additionnal properties
     using pallas = typename crypto3::algebra::curves::pallas;
     using vesta = typename crypto3::algebra::curves::vesta;
 
-    ec_double_tests<pallas::base_field_type, vesta, 8, 32, random_tests_amount>();
+    ec_two_t_plus_q_tests<pallas::base_field_type, vesta, 8, 32, random_tests_amount>();
 
-    ec_double_tests<pallas::base_field_type, vesta, 4, 65, random_tests_amount>();
+    ec_two_t_plus_q_tests<pallas::base_field_type, vesta, 4, 65, random_tests_amount>();
 
-    ec_double_tests<vesta::base_field_type, pallas, 4, 65, random_tests_amount>();
+    ec_two_t_plus_q_tests<vesta::base_field_type, pallas, 4, 65, random_tests_amount>();
 
-    ec_double_tests<vesta::base_field_type, pallas, 12, 22, random_tests_amount>();
+    ec_two_t_plus_q_tests<vesta::base_field_type, pallas, 12, 22, random_tests_amount>();
 }
 
 BOOST_AUTO_TEST_SUITE_END()
