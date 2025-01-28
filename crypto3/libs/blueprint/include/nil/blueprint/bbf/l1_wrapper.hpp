@@ -210,10 +210,10 @@ namespace nil {
 //                ct.optimize_gates();
 
                 // compatibility layer: constraint list => gates & selectors
-                std::unordered_map<row_selector<>, std::vector<TYPE>> constraint_list =
+                std::unordered_map<row_selector<>, std::vector<std::pair<TYPE, std::string>>> constraint_list =
                     ct.get_constraints();
 
-                for(const auto& [row_list, constraints] : constraint_list) {
+                for(const auto& [row_list, data] : constraint_list) {
                     /*
                     std::cout << "GATE:\n";
                     for(const auto& c : constraints) {
@@ -221,6 +221,10 @@ namespace nil {
                     }
                     std::cout << "Rows: ";
                     */
+                    std::vector<TYPE> constraints;
+                    for(auto const& d : data){
+                        constraints.push_back(d.first);
+                    }
                     std::size_t selector_index = bp.add_gate(constraints);
                     for(const std::size_t& row_index : row_list) {
                         // std::cout << row_index << " ";
