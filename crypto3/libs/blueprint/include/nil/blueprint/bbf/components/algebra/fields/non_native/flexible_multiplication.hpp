@@ -30,18 +30,11 @@
 #ifndef CRYPTO3_BBF_COMPONENTS_FLEXIBLE_MULTIPLICATION_HPP
 #define CRYPTO3_BBF_COMPONENTS_FLEXIBLE_MULTIPLICATION_HPP
 
-#include <functional>
-#include <nil/blueprint/bbf/generic.hpp>
-#include <nil/blueprint/blueprint/plonk/assignment.hpp>
-#include <nil/blueprint/blueprint/plonk/circuit.hpp>
-#include <nil/blueprint/component.hpp>
-#include <nil/crypto3/algebra/curves/pallas.hpp>
-#include <nil/crypto3/algebra/curves/vesta.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/constraint_system.hpp>
-
 #include <nil/blueprint/bbf/components/algebra/fields/non_native/check_mod_p.hpp>
 #include <nil/blueprint/bbf/components/detail/range_check_multi.hpp>
-#include <stdexcept>
+#include <nil/blueprint/bbf/generic.hpp>
+#include <nil/crypto3/algebra/curves/pallas.hpp>
+#include <nil/crypto3/algebra/curves/vesta.hpp>
 
 namespace nil {
     namespace blueprint {
@@ -72,8 +65,6 @@ namespace nil {
                     using generic_component<FieldType, stage>::allocate;
                     using generic_component<FieldType, stage>::copy_constrain;
                     using generic_component<FieldType, stage>::constrain;
-                    using generic_component<FieldType, stage>::lookup;
-                    using component_type = generic_component<FieldType, stage>;
 
                   public:
                     using typename generic_component<FieldType, stage>::TYPE;
@@ -241,10 +232,11 @@ namespace nil {
                         // + [q_0, q_1, q_2, q_3] ⋅ [pp_0, pp_1, pp_2, pp_3]
                         //    z_0 = x_0 ⋅ y_0 + q_0 ⋅ pp_0
                         //    z_1 = x_0 ⋅ y_1 + x_1 ⋅ y_0 + q_0 ⋅ pp_1 + q_1 ⋅ pp_0
-                        //    z_2 = x_0 ⋅ y_2 + x_1 ⋅ y_1 + x_2 ⋅ y_0 + q_0 ⋅ pp_2 + q_1 ⋅
-                        //    pp_1 + q_2 ⋅ pp_0 z_3 = x_0 ⋅ y_3 + x_1 ⋅ y_2 + x_2 ⋅ y_1 +
-                        //    x_3 ⋅ y_0 + q_0 ⋅ pp_3 + q_1 ⋅ pp_2 + q_2 ⋅ pp_1 + q_3 ⋅
-                        //    pp_0
+                        //    z_2 = x_0 ⋅ y_2 + x_1 ⋅ y_1 + x_2 ⋅ y_0 + q_0 ⋅ pp_2 + 
+                        //          q_1 ⋅ pp_1 + q_2 ⋅ pp_0 
+                        //    z_3 = x_0 ⋅ y_3 + x_1 ⋅ y_2 + x_2 ⋅ y_1 +
+                        //      x_3 ⋅ y_0 + q_0 ⋅ pp_3 + q_1 ⋅ pp_2 + q_2 ⋅ pp_1 + 
+                        //      q_3 ⋅ pp_0
                         //   Result = z_0 ⋅ 2^{0b} + z_1 ⋅ 2^{1b} + z_2 ⋅ 2^{2b} + z_3 ⋅
                         //   2^{3b}
                         for (std::size_t i = 0; i < num_chunks; ++i) {
@@ -310,7 +302,7 @@ namespace nil {
                         Range_Check rc2 =
                             Range_Check(context_object, Q, num_chunks, bit_size_chunk);
                         Range_Check rc3 =
-                            Range_Check(context_object, B, num_chunks, bit_size_chunk);
+                            Range_Check(context_object, B, 2 * (num_chunks - 2), bit_size_chunk);
 
                         Check_Mod_P c1 = Check_Mod_P(context_object, R, PP, input_zero,
                                                      num_chunks, bit_size_chunk, false);

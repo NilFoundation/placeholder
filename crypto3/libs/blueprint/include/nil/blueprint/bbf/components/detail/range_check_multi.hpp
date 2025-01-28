@@ -29,12 +29,7 @@
 #ifndef CRYPTO3_BBF_COMPONENTS_RANGE_CHECK_MULTI_HPP
 #define CRYPTO3_BBF_COMPONENTS_RANGE_CHECK_MULTI_HPP
 
-#include <functional>
 #include <nil/blueprint/bbf/generic.hpp>
-#include <nil/blueprint/blueprint/plonk/assignment.hpp>
-#include <nil/blueprint/blueprint/plonk/circuit.hpp>
-#include <nil/blueprint/component.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/constraint_system.hpp>
 
 namespace nil {
     namespace blueprint {
@@ -57,7 +52,6 @@ namespace nil {
                     using generic_component<FieldType, stage>::copy_constrain;
                     using generic_component<FieldType, stage>::constrain;
                     using generic_component<FieldType, stage>::lookup;
-                    using component_type = generic_component<FieldType, stage>;
 
                   public:
                     using typename generic_component<FieldType, stage>::TYPE;

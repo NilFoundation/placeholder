@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------//
-// Copyright (c) 2024 Antoine Cyr <antoinecyr@nil.foundation>
+// Copyright (c) 2025 Antoine Cyr <antoinecyr@nil.foundation>
 //
 // MIT License
 //
@@ -25,15 +25,10 @@
 #define BOOST_TEST_MODULE bbf_ec_incomplete_add_test
 
 #include <boost/test/unit_test.hpp>
-#include <nil/blueprint/bbf/components/algebra/curves/weierstrass/ec_incomplete_add.hpp>
-#include <nil/blueprint/blueprint/plonk/assignment.hpp>
-#include <nil/blueprint/blueprint/plonk/circuit.hpp>
-
 #include <nil/blueprint/bbf/circuit_builder.hpp>
-
+#include <nil/blueprint/bbf/components/algebra/curves/weierstrass/ec_incomplete_add.hpp>
 #include <nil/crypto3/algebra/curves/pallas.hpp>
 #include <nil/crypto3/algebra/curves/vesta.hpp>
-#include <nil/crypto3/hash/keccak.hpp>
 #include <nil/crypto3/random/algebraic_engine.hpp>
 
 using namespace nil;
@@ -83,8 +78,7 @@ void test_ec_incomplete_add(
                                         public_input.begin() + 5 * num_chunks);
         raw_input.pp = std::vector<TYPE>(public_input.begin() + 5 * num_chunks,
                                          public_input.begin() + 6 * num_chunks);
-        raw_input.zero = std::vector<TYPE>(public_input.begin() + 6 * num_chunks,
-                                         public_input.begin() + 7 * num_chunks);
+        raw_input.zero = public_input.back();
 
         auto [at, A, desc] = B.assign(raw_input);
         bool pass = B.is_satisfied(at);
@@ -187,9 +181,8 @@ void ec_incomplete_add_tests() {
 
             public_input[5 * num_chunks + j] = value_type(pp & mask);
             pp >>= bit_size_chunk;
-
-            public_input[6 * num_chunks + j] = value_type(0);
         }
+        public_input[6 * num_chunks] = value_type(0);
 
         test_ec_incomplete_add<BlueprintFieldType, NonNativeFieldType, num_chunks,
                                bit_size_chunk>(public_input);
@@ -201,7 +194,7 @@ constexpr static const std::size_t random_tests_amount = 10;
 BOOST_AUTO_TEST_SUITE(blueprint_plonk_test_suite)
 
 BOOST_AUTO_TEST_CASE(blueprint_plonk_bbf_ec_incomplete_add_test) {
-    // The curve is passed in as an argument to access additionnal properties 
+    // The curve is passed in as an argument to access additionnal properties
     using pallas = typename crypto3::algebra::curves::pallas;
     using vesta = typename crypto3::algebra::curves::vesta;
 

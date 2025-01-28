@@ -1,6 +1,5 @@
 //---------------------------------------------------------------------------//
-// Copyright (c) 2024 Valeh Farzaliyev <estoniaa@nil.foundation>
-// Copyright (c) 2024 Antoine Cyr <antoinecyr@nil.foundation>
+// Copyright (c) 2025 Antoine Cyr <antoinecyr@nil.foundation>
 //
 // MIT License
 //
@@ -23,13 +22,11 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE bbf_addition_mod_p_test
+#define BOOST_TEST_MODULE bbf_add_sub_mod_p_test
 
 #include <boost/test/unit_test.hpp>
 #include <nil/blueprint/bbf/circuit_builder.hpp>
-#include <nil/blueprint/bbf/components/algebra/fields/non_native/addition_mod_p.hpp>
-#include <nil/blueprint/blueprint/plonk/assignment.hpp>
-#include <nil/blueprint/blueprint/plonk/circuit.hpp>
+#include <nil/blueprint/bbf/components/algebra/fields/non_native/add_sub_mod_p.hpp>
 #include <nil/crypto3/algebra/curves/pallas.hpp>
 #include <nil/crypto3/algebra/curves/vesta.hpp>
 #include <nil/crypto3/random/algebraic_engine.hpp>
@@ -39,7 +36,7 @@ using namespace nil::blueprint;
 
 template<typename BlueprintFieldType, typename NonNativeFieldType, std::size_t num_chunks,
          std::size_t bit_size_chunk>
-void test_addition_mod_p(
+void test_add_sub_mod_p(
     const std::vector<typename BlueprintFieldType::value_type> &public_input) {
     using FieldType = BlueprintFieldType;
     using TYPE = typename FieldType::value_type;
@@ -59,12 +56,7 @@ void test_addition_mod_p(
         pow <<= bit_size_chunk;
     }
 
-    extended_integral_type r = x + y;
-    if (r >= p) {
-        r -= p;
-    }
-
-    auto assign_and_check = [&](auto &B, auto &raw_input) {
+    auto assign_and_check = [&](auto &B, auto &raw_input, bool is_add) {
         raw_input.x =
             std::vector<TYPE>(public_input.begin(), public_input.begin() + num_chunks);
         raw_input.y = std::vector<TYPE>(public_input.begin() + num_chunks,
@@ -73,14 +65,20 @@ void test_addition_mod_p(
                                         public_input.begin() + 3 * num_chunks);
         raw_input.pp = std::vector<TYPE>(public_input.begin() + 3 * num_chunks,
                                          public_input.begin() + 4 * num_chunks);
-        raw_input.zero = std::vector<TYPE>(public_input.begin() + 4 * num_chunks,
-                                           public_input.begin() + 5 * num_chunks);
+        raw_input.zero = public_input[4 * num_chunks];
 
         auto [at, A, desc] = B.assign(raw_input);
         bool pass = B.is_satisfied(at);
         std::cout << "Is_satisfied = " << pass << std::endl;
 
         assert(pass == true);
+        if (!is_add) {
+            y = y != 0 ? p - y : y;
+        }
+        extended_integral_type r = x + y;
+        if (r >= p) {
+            r -= p;
+        }
         extended_integral_type R = 0;
         pow = 1;
         for (std::size_t i = 0; i < num_chunks; i++) {
@@ -88,7 +86,7 @@ void test_addition_mod_p(
             pow <<= bit_size_chunk;
         }
 #ifdef BLUEPRINT_PLONK_PROFILING_ENABLED
-        std::cout << "addition_mod_p test" << std::endl;
+        std::cout << "add_sub_mod_p test" << std::endl;
         std::cout << "Expected res: " << std::dec << r << std::endl;
         std::cout << "Real res:     " << std::dec << R << std::endl;
 #endif
@@ -104,7 +102,16 @@ void test_addition_mod_p(
             bbf::circuit_builder<FieldType, bbf::components::pallas_addition_mod_p,
                                  std::size_t, std::size_t>(num_chunks, bit_size_chunk);
 
-        assign_and_check(B, raw_input);
+        assign_and_check(B, raw_input, true);
+
+        typename bbf::components::pallas_substraction_mod_p<
+            FieldType, bbf::GenerationStage::ASSIGNMENT>::raw_input_type raw_input2;
+
+        auto B2 =
+            bbf::circuit_builder<FieldType, bbf::components::pallas_substraction_mod_p,
+                                 std::size_t, std::size_t>(num_chunks, bit_size_chunk);
+
+        assign_and_check(B2, raw_input2, false);
     } else if constexpr (std::is_same_v<
                              NonNativeFieldType,
                              crypto3::algebra::curves::vesta::base_field_type>) {
@@ -114,13 +121,22 @@ void test_addition_mod_p(
             bbf::circuit_builder<FieldType, bbf::components::vesta_addition_mod_p,
                                  std::size_t, std::size_t>(num_chunks, bit_size_chunk);
 
-        assign_and_check(B, raw_input);
+        assign_and_check(B, raw_input, true);
+
+        typename bbf::components::vesta_substraction_mod_p<
+            FieldType, bbf::GenerationStage::ASSIGNMENT>::raw_input_type raw_input2;
+
+        auto B2 =
+            bbf::circuit_builder<FieldType, bbf::components::vesta_substraction_mod_p,
+                                 std::size_t, std::size_t>(num_chunks, bit_size_chunk);
+
+        assign_and_check(B2, raw_input2, false);
     }
 }
 
 template<typename BlueprintFieldType, typename NonNativeFieldType, std::size_t num_chunks,
          std::size_t bit_size_chunk, std::size_t RandomTestsAmount>
-void addition_mod_p_tests() {
+void add_sub_mod_p_tests() {
     using value_type = typename BlueprintFieldType::value_type;
     using integral_type = typename BlueprintFieldType::integral_type;
     using foreign_value_type = typename NonNativeFieldType::value_type;
@@ -158,12 +174,12 @@ void addition_mod_p_tests() {
 
             public_input[3 * num_chunks + j] = value_type(pp & mask);
             pp >>= bit_size_chunk;
-
-            public_input[4 * num_chunks + j] = value_type(0);
         }
 
-        test_addition_mod_p<BlueprintFieldType, NonNativeFieldType, num_chunks,
-                            bit_size_chunk>(public_input);
+        public_input[4 * num_chunks] = value_type(0);
+
+        test_add_sub_mod_p<BlueprintFieldType, NonNativeFieldType, num_chunks,
+                           bit_size_chunk>(public_input);
     }
 }
 
@@ -171,27 +187,26 @@ constexpr static const std::size_t random_tests_amount = 10;
 
 BOOST_AUTO_TEST_SUITE(blueprint_plonk_test_suite)
 
-BOOST_AUTO_TEST_CASE(blueprint_plonk_bbf_addition_mod_p_test) {
+BOOST_AUTO_TEST_CASE(blueprint_plonk_bbf_add_sub_mod_p_test) {
     using pallas_field_type = typename crypto3::algebra::curves::pallas::base_field_type;
     using vesta_field_type = typename crypto3::algebra::curves::vesta::base_field_type;
 
-    addition_mod_p_tests<pallas_field_type, vesta_field_type, 8, 32,
-                         random_tests_amount>();
+    add_sub_mod_p_tests<pallas_field_type, vesta_field_type, 3, 96,
+                        random_tests_amount>();
 
-    addition_mod_p_tests<pallas_field_type, vesta_field_type, 4, 65,
-                         random_tests_amount>();
+    add_sub_mod_p_tests<pallas_field_type, vesta_field_type, 4, 65,
+                        random_tests_amount>();
 
-    addition_mod_p_tests<pallas_field_type, pallas_field_type, 8, 34,
-                         random_tests_amount>();
+    add_sub_mod_p_tests<pallas_field_type, pallas_field_type, 8, 34,
+                        random_tests_amount>();
 
-    addition_mod_p_tests<vesta_field_type, pallas_field_type, 2, 253,
-                         random_tests_amount>();
+    add_sub_mod_p_tests<vesta_field_type, pallas_field_type, 2, 253,
+                        random_tests_amount>();
 
-    addition_mod_p_tests<vesta_field_type, pallas_field_type, 12, 22,
-                         random_tests_amount>();
+    add_sub_mod_p_tests<vesta_field_type, pallas_field_type, 12, 22,
+                        random_tests_amount>();
 
-    addition_mod_p_tests<vesta_field_type, vesta_field_type, 8, 33,
-                         random_tests_amount>();
+    add_sub_mod_p_tests<vesta_field_type, vesta_field_type, 8, 33, random_tests_amount>();
 }
 
 BOOST_AUTO_TEST_SUITE_END()
