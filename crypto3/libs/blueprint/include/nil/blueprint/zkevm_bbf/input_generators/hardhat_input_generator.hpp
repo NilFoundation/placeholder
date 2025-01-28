@@ -336,14 +336,22 @@ namespace nil {
 
                             } else if(opcode == "CODECOPY") {
                                 // 0x39
-                                std::cout << "CODECOPY not implemented" << std::endl;
-                                exit(2);
+                                std::cout << "CODECOPY" << std::endl;
                                 _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-1, rw_counter++, false, stack[stack.size()-1]));
                                 _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-2, rw_counter++, false, stack[stack.size()-2]));
                                 _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-3, rw_counter++, false, stack[stack.size()-3]));
-
-                                // TODO: add length write operations to memory
-                                // Consistency with bytecode table will be checked by bytecode circuit
+                                auto destination_offset = stack[stack.size()-1];
+                                auto code_offset = stack[stack.size()-2];
+                                auto length = stack[stack.size() - 3];
+                                std::cout
+                                    << "\tDestination offset" <<  stack[stack.size()-1] << std::endl
+                                    << "\tCurrent code offset" <<  stack[stack.size()-2]<< std::endl
+                                    << "\tLength" <<  stack[stack.size()-3] << std::endl;
+                                memory_size_before = memory_next.size();
+                                for(std::size_t i = 0; i < length; i++){
+                                    _rw_operations.push_back(memory_rw_operation(call_id, destination_offset+i, rw_counter++, true, _bytecodes.get_data()[call_id].first[std::size_t(code_offset) + i]));
+                                }
+                                // Consistency with bytecode table will be checked by copy circuit
                             } else if(opcode == "GASPRICE") {
                                 // 0x3a
                                 // std::cout << "Test me, please!" << std::endl;
@@ -899,9 +907,13 @@ namespace nil {
 
                             } else if(opcode == "RETURN") {
                                 // 0xf3
-                                std::cout << "\tAdd copy event for RETURN" << std::endl;
+                                std::cout << "RETURN " << "\tAdd copy event for RETURN" << std::endl;
                                 _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-1, rw_counter++, false, stack[stack.size()-1]));
                                 _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-2, rw_counter++, false, stack[stack.size()-2]));
+                                std::cout
+                                    << "\tOffset " << stack[stack.size()-1]
+                                    << "\tLength " << stack[stack.size()-2]
+                                    << std::endl;
                                 std::size_t offset = std::size_t(stack[stack.size()-1]);
                                 std::size_t length = std::size_t(stack[stack.size()-2]);
 

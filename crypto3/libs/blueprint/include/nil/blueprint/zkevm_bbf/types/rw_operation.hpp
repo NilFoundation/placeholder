@@ -36,9 +36,18 @@ namespace nil {
     namespace blueprint {
         namespace bbf {
             enum class rw_operation_type {
-                start, stack, memory,storage, transient_storage, call_context,
-                account, tx_refund_op, tx_access_list_account,
-                tx_access_list_account_storage, tx_log, tx_receipt,
+                start,
+                stack,
+                memory,
+                storage,
+                transient_storage,
+                call_context,
+                account,
+                tx_refund_op,
+                tx_access_list_account,         // Not used, cluster messages don't support access list
+                tx_access_list_account_storage, // Not used, cluster messages don't support access list
+                tx_log,
+                tx_receipt,
                 padding
             };
             static constexpr std::size_t rw_operation_types_amount = 13;

@@ -131,9 +131,10 @@ namespace nil {
                         allocate(rlc_challenge[i],9,i);
                     }
                     // constrain all bytecode values
-//                    if (make_links) {
-//                        copy_constrain(input.rlc_challenge, rlc_challenge[0]);
-//                    }
+                    // if (make_links) {
+                    //     copy_constrain(input.rlc_challenge, rlc_challenge[0]);
+                    // }
+
                     static const auto zerohash = zkevm_keccak_hash({});
                     for(std::size_t i = 0; i < max_bytecode_size; i++) {
                         constrain(tag[i] * (tag[i] - 1));    // 0. TAG is zeroes or ones -- maybe there will be third value for non-used rows
