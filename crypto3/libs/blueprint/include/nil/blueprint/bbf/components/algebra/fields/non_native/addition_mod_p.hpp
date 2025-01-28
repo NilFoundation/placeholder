@@ -90,7 +90,7 @@ namespace nil {
 
                     static table_params get_minimal_requirements(
                         std::size_t num_chunks, std::size_t bit_size_chunk) {
-                        std::size_t witness = 4 * num_chunks + 1;
+                        std::size_t witness = 4 * num_chunks + 1;                        
                         constexpr std::size_t public_inputs = 1;
                         constexpr std::size_t constants = 0;
                         // rows = 4096-1 so that lookup table is not too hard to fit and

@@ -51,9 +51,9 @@ namespace nil {
         namespace bbf {
             namespace components {
                 // Parameters: num_chunks = k, bit_size_chunk = b
-                // For points P = (x_P,y_P), Q = (x_Q,y_Q), x_P != x_Q, P,Q != O
+                // For points input_p = (x_P,y_P), Q = (x_Q,y_Q), x_P != x_Q, input_p,Q != O
                 // from an elliptic curve over F[p]
-                // computes R = (x_R, y_R) = P + Q
+                // computes R = (x_R, y_R) = input_p + Q
                 // Expects input as k-chunked values with b bits per chunk
                 // p' = 2^(kb) - p
                 // Input: xP[0],...,xP[k-1],yP[0],...,yP[k-1],xQ[0],...,xQ[k-1],
