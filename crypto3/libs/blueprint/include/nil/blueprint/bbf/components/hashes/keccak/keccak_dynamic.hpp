@@ -729,7 +729,7 @@ namespace nil {
 
                     // gates:
                     for (std::size_t i = 0; i < 6247 * max_blocks; i++) {
-                        constrain(selector[i] * (1 - selector[i]), "DYNAMIC_SELECTOR");
+                        constrain(selector[i] * (1 - selector[i]), "KECCAK_DYNAMIC_SELECTOR");
                     }
                     for (std::size_t block_counter = 0; block_counter < max_blocks;
                          block_counter++) {
