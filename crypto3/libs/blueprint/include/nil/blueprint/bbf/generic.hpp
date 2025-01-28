@@ -526,7 +526,7 @@ namespace nil {
                         std::string name;
                         bool first = true;
                         for(auto const &s : std::get<2>(data)){
-                            if(first) name = s;
+                            if(first) { name = s; first = false;}
                             else name = name + "," + s;
                         }
                         if (it == res.end()) {
@@ -624,7 +624,7 @@ namespace nil {
                     std::size_t stored_end_row = end_row - (is_fresh ? row_shift : 0);
                     constraint_id_type C_id = constraint_id_type(C_rel);
                     if (constraints->find(C_id) == constraints->end()) {
-                        constraints->insert({C_id, {C_rel, row_selector<>(desc.rows_amount), name}});
+                        constraints->insert({C_id, {C_rel, row_selector<>(desc.rows_amount), {name}}});
                     }
                     std::get<1>(constraints->at(C_id)).set_interval(stored_start_row, stored_end_row);
                     std::get<2>(constraints->at(C_id)).insert(name);
