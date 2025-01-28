@@ -72,12 +72,10 @@ namespace nil {
                     if (m <= 1)
                         throw std::invalid_argument("extended_radix2(): expected m > 1");
 
-                    if (!std::is_same<field_value_type, std::complex<double>>::value) {
-                        const std::size_t logm = static_cast<std::size_t>(std::ceil(std::log2(m)));
-                        if (logm != (fields::arithmetic_params<FieldType>::s + 1))
-                            throw std::invalid_argument(
+                    const std::size_t logm = static_cast<std::size_t>(std::ceil(std::log2(m)));
+                    if (logm != (fields::arithmetic_params<FieldType>::s + 1))
+                        throw std::invalid_argument(
                                 "extended_radix2(): expected logm == fields::arithmetic_params<FieldType>::s + 1");
-                    }
                 }
 
                 void fft(std::vector<value_type> &a) override {
