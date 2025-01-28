@@ -197,8 +197,7 @@ namespace nil {
                         std::vector<constraint_type> constraints;
                         std::vector<std::string> names;
                         for(const auto &d : data){
-                            constraints.push_back(std::move(d.first));
-
+                            constraints.push_back(d.first);
                             names.push_back(d.second);
                         }
                         bp.add_gate(selector_id, constraints);

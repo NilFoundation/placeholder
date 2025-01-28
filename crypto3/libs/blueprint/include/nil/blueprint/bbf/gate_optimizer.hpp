@@ -115,7 +115,7 @@ namespace nil {
                     os << "Constraints: " << std::endl;
                     if (iter != gates.constraint_list.end()) {
                         for (const auto &constraint : iter->second) {
-                            os << constraint.second << "( " << constraint.first << " )" << std::endl;
+                            os << constraint.second << constraint.first << std::endl;
                         }
                         os << "--------------------------------------------------------------" << std::endl;
                     }
