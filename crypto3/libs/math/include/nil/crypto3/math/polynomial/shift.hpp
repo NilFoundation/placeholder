@@ -32,6 +32,8 @@
 namespace nil {
     namespace crypto3 {
         namespace math {
+
+            /** @brief For a given polynomial f(y) returns a polynomial of f(y*x) */
             template<typename FieldValueType>
             static inline polynomial<FieldValueType>
             polynomial_shift(const polynomial<FieldValueType> &f,
@@ -46,6 +48,8 @@ namespace nil {
                 return f_shifted;
             }
 
+            /** @brief For a given polynomial in DFS form return a polynomial
+             * with coefficients shifted by `shift` */
             template<typename FieldValueType>
             static inline polynomial_dfs<FieldValueType>
             polynomial_shift(const polynomial_dfs<FieldValueType> &f,
