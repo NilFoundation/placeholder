@@ -26,14 +26,13 @@
 
 #define BOOST_TEST_MODULE bbf_flexible_multiplication_test
 
+#include <nil/crypto3/random/algebraic_engine.hpp>
 #include <boost/test/unit_test.hpp>
 #include <nil/blueprint/bbf/circuit_builder.hpp>
 #include <nil/blueprint/bbf/components/algebra/fields/non_native/flexible_multiplication.hpp>
-#include <nil/blueprint/blueprint/plonk/assignment.hpp>
-#include <nil/blueprint/blueprint/plonk/circuit.hpp>
+#include <nil/blueprint/bbf/circuit_builder.hpp>
 #include <nil/crypto3/algebra/curves/pallas.hpp>
 #include <nil/crypto3/algebra/curves/vesta.hpp>
-#include <nil/crypto3/random/algebraic_engine.hpp>
 
 using namespace nil;
 using namespace nil::blueprint;

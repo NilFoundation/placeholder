@@ -29,12 +29,7 @@
 #ifndef CRYPTO3_BBF_COMPONENTS_CARRY_ON_ADDITION_HPP
 #define CRYPTO3_BBF_COMPONENTS_CARRY_ON_ADDITION_HPP
 
-#include <functional>
 #include <nil/blueprint/bbf/generic.hpp>
-#include <nil/blueprint/blueprint/plonk/assignment.hpp>
-#include <nil/blueprint/blueprint/plonk/circuit.hpp>
-#include <nil/blueprint/component.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/constraint_system.hpp>
 
 namespace nil {
     namespace blueprint {
@@ -53,7 +48,6 @@ namespace nil {
                     using generic_component<FieldType, stage>::allocate;
                     using generic_component<FieldType, stage>::copy_constrain;
                     using generic_component<FieldType, stage>::constrain;
-                    using generic_component<FieldType, stage>::lookup;
 
                   public:
                     using typename generic_component<FieldType, stage>::TYPE;

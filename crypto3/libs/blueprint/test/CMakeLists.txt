@@ -109,6 +109,8 @@ set(COMMON_TEST_FILES
     "bbf/algebra/curves/weierstrass/ec_double"
     "bbf/algebra/curves/weierstrass/ec_full_add"
     "bbf/algebra/curves/weierstrass/ec_incomplete_add"
+    "bbf/algebra/curves/weierstrass/ec_two_t_plus_q"
+    "bbf/algebra/curves/weierstrass/ec_scalar_mult"
     )
 
 set(NON_NATIVE_TESTS_FILES
