@@ -26,25 +26,14 @@
 
 #define BOOST_TEST_MODULE bbf_flexible_multiplication_test
 
-#include <nil/crypto3/algebra/curves/pallas.hpp>
-#include <nil/crypto3/algebra/curves/secp_k1.hpp>
-#include <nil/crypto3/algebra/curves/vesta.hpp>
-#include <nil/crypto3/algebra/fields/arithmetic_params/bls12.hpp>
-#include <nil/crypto3/algebra/fields/arithmetic_params/pallas.hpp>
-#include <nil/crypto3/algebra/fields/arithmetic_params/vesta.hpp>
-#include <nil/crypto3/algebra/fields/bls12/base_field.hpp>
-#include <nil/crypto3/algebra/fields/bls12/scalar_field.hpp>
-#include <nil/crypto3/algebra/fields/goldilocks64/base_field.hpp>
-
-#include <nil/crypto3/hash/keccak.hpp>
-#include <nil/crypto3/random/algebraic_engine.hpp>
-
 #include <boost/test/unit_test.hpp>
+#include <nil/blueprint/bbf/circuit_builder.hpp>
 #include <nil/blueprint/bbf/components/algebra/fields/non_native/flexible_multiplication.hpp>
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
-
-#include <nil/blueprint/bbf/circuit_builder.hpp>
+#include <nil/crypto3/algebra/curves/pallas.hpp>
+#include <nil/crypto3/algebra/curves/vesta.hpp>
+#include <nil/crypto3/random/algebraic_engine.hpp>
 
 using namespace nil;
 using namespace nil::blueprint;
@@ -63,12 +52,11 @@ void test_mult(const std::vector<typename BlueprintFieldType::value_type> &publi
     // Populate x, y, p
     for (std::size_t i = 0; i < num_chunks; ++i) {
         x += extended_integral_type(integral_type(public_input[i].data)) * pow;
-        y += extended_integral_type(
-                 integral_type(public_input[i + num_chunks].data)) *
+        y += extended_integral_type(integral_type(public_input[i + num_chunks].data)) *
              pow;
-        p += extended_integral_type(
-                 integral_type(public_input[i + 2 * num_chunks].data)) *
-             pow;
+        p +=
+            extended_integral_type(integral_type(public_input[i + 2 * num_chunks].data)) *
+            pow;
         pow <<= bit_size_chunk;
     }
 
@@ -83,7 +71,7 @@ void test_mult(const std::vector<typename BlueprintFieldType::value_type> &publi
                                         public_input.begin() + 3 * num_chunks);
         raw_input.pp = std::vector<TYPE>(public_input.begin() + 3 * num_chunks,
                                          public_input.begin() + 4 * num_chunks);
-        raw_input.zero = public_input.back();
+        raw_input.zero = public_input[4 * num_chunks];
 
         auto [at, A, desc] = B.assign(raw_input);
         bool pass = B.is_satisfied(at);
@@ -96,7 +84,7 @@ void test_mult(const std::vector<typename BlueprintFieldType::value_type> &publi
             extended_integral_type R = 0;
             pow = 1;
             for (std::size_t i = 0; i < num_chunks; i++) {
-                R += extended_integral_type(integral_type(A.res_r[i].data)) * pow;
+                R += extended_integral_type(integral_type(A.r[i].data)) * pow;
                 pow <<= bit_size_chunk;
             }
 #ifdef BLUEPRINT_PLONK_PROFILING_ENABLED
@@ -147,27 +135,21 @@ void mult_tests() {
     static nil::crypto3::random::algebraic_engine<NonNativeFieldType> generate_random(
         seed_seq);
     boost::random::uniform_int_distribution<> t_dist(0, 1);
-    extended_integral_type mask =
-        (extended_integral_type(1) << bit_size_chunk) - 1;
+    extended_integral_type mask = (extended_integral_type(1) << bit_size_chunk) - 1;
 
     for (std::size_t i = 0; i < RandomTestsAmount; i++) {
         std::vector<typename BlueprintFieldType::value_type> public_input;
 
         foreign_value_type src_x = generate_random(), src_y = generate_random();
 
-        extended_integral_type x = extended_integral_type(
-                                            integral_type(src_x.data)),
-                                        y = extended_integral_type(
-                                            integral_type(src_y.data)),
-                                        extended_base = 1,
-                                        ext_pow = extended_base
-                                                  << (num_chunks * bit_size_chunk),
-                                        p = NonNativeFieldType::modulus, pp = ext_pow - p;
+        extended_integral_type x = extended_integral_type(integral_type(src_x.data)),
+                               y = extended_integral_type(integral_type(src_y.data)),
+                               extended_base = 1,
+                               ext_pow = extended_base << (num_chunks * bit_size_chunk),
+                               p = NonNativeFieldType::modulus, pp = ext_pow - p;
 
-        public_input.resize(4 * num_chunks + 1);  // public_input should contain x,y,p,pp,zero
-        // std::cout << "PI x = " << x << std::endl;
-        // std::cout << "PI y = " << y << std::endl;
-        // std::cout << "PI p = " << p << std::endl;
+        public_input.resize(5 * num_chunks);
+        // public_input should contain x,y,p,pp,zero
         for (std::size_t j = 0; j < num_chunks; j++) {
             public_input[j] = value_type(x & mask);
             x >>= bit_size_chunk;
@@ -180,8 +162,9 @@ void mult_tests() {
 
             public_input[3 * num_chunks + j] = value_type(pp & mask);
             pp >>= bit_size_chunk;
+
+            public_input[4 * num_chunks + j] = value_type(0);
         }
-        public_input[4*num_chunks] = value_type(0);
 
         test_mult<BlueprintFieldType, NonNativeFieldType, num_chunks, bit_size_chunk>(
             public_input);
@@ -202,23 +185,22 @@ void mult_tests_to_fail() {
     static nil::crypto3::random::algebraic_engine<NonNativeFieldType> generate_random(
         seed_seq);
     boost::random::uniform_int_distribution<> t_dist(0, 1);
-    extended_integral_type mask =
-        (extended_integral_type(1) << bit_size_chunk) - 1;
+    extended_integral_type mask = (extended_integral_type(1) << bit_size_chunk) - 1;
 
     for (std::size_t i = 0; i < RandomTestsAmount; i++) {
         std::vector<typename BlueprintFieldType::value_type> public_input;
 
         foreign_value_type src_x = generate_random(), src_y = generate_random();
 
-        extended_integral_type
-            x = extended_integral_type(integral_type(src_x.data)),
-            y = extended_integral_type(integral_type(src_y.data)),
-            extended_base = 1, ext_pow = extended_base << (num_chunks * bit_size_chunk),
-            p = NonNativeFieldType::modulus,
-            // Forcing the test to fail by substracting pp by 1
+        extended_integral_type x = extended_integral_type(integral_type(src_x.data)),
+                               y = extended_integral_type(integral_type(src_y.data)),
+                               extended_base = 1,
+                               ext_pow = extended_base << (num_chunks * bit_size_chunk),
+                               p = NonNativeFieldType::modulus,
+                               // Forcing the test to fail by substracting pp by 1
             pp = ext_pow - p - 1;
 
-        public_input.resize(4 * num_chunks);
+        public_input.resize(4 * num_chunks + 1);
         for (std::size_t j = 0; j < num_chunks; j++) {
             public_input[j] = value_type(x & mask);
             x >>= (bit_size_chunk);

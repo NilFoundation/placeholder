@@ -22,7 +22,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //---------------------------------------------------------------------------//
-// @file Declaration of interfaces for PLONK component wrapping the BBF-component interface
+// @file Declaration of interfaces for PLONK component wrapping the BBF-component
+// interface
 //---------------------------------------------------------------------------//
 
 #ifndef CRYPTO3_BBF_COMPONENTS_CARRY_ON_ADDITION_HPP
@@ -64,23 +65,21 @@ namespace nil {
                                                   std::tuple<>>::type;
 
                   public:
-                    std::vector<TYPE> inp_x;
-                    std::vector<TYPE> inp_y;
-                    std::vector<TYPE> res_r;
-                    TYPE res_c;
+                    std::vector<TYPE> r;
+                    TYPE c;
 
-                    static table_params get_minimal_requirements(std::size_t num_chunks,std::size_t bit_size_chunk) {
+                    static table_params get_minimal_requirements(
+                        std::size_t num_chunks, std::size_t bit_size_chunk) {
                         std::size_t witness = 2;
                         constexpr std::size_t public_inputs = 1;
                         constexpr std::size_t constants = 0;
-                        std::size_t rows = 3*num_chunks + 1;
+                        std::size_t rows = 3 * num_chunks + 1;
                         return {witness, public_inputs, constants, rows};
                     }
 
-                    static std::tuple<std::vector<TYPE>,std::vector<TYPE>> form_input(context_type &context_object,
-                                                                    raw_input_type raw_input,
-                                                                    std::size_t num_chunks,
-                                                                    std::size_t bit_size_chunk) {
+                    static std::tuple<std::vector<TYPE>, std::vector<TYPE>> form_input(
+                        context_type &context_object, raw_input_type raw_input,
+                        std::size_t num_chunks, std::size_t bit_size_chunk) {
                         std::vector<TYPE> input_x(num_chunks);
                         std::vector<TYPE> input_y(num_chunks);
                         if constexpr (stage == GenerationStage::ASSIGNMENT) {
@@ -89,57 +88,57 @@ namespace nil {
                                 input_y[i] = raw_input.y[i];
                             }
                         }
-                        for (std::size_t i = 0; i < num_chunks; ++i)
-                        {
-                            context_object.allocate(input_x[i], 0, i, column_type::public_input);
-                            context_object.allocate(input_y[i], 0, i+num_chunks, column_type::public_input);
+                        for (std::size_t i = 0; i < num_chunks; ++i) {
+                            context_object.allocate(input_x[i], 0, i,
+                                                    column_type::public_input);
+                            context_object.allocate(input_y[i], 0, i + num_chunks,
+                                                    column_type::public_input);
                         }
-                        return std::make_tuple(input_x,input_y);
+                        return std::make_tuple(input_x, input_y);
                     }
 
-                    carry_on_addition(context_type &context_object, std::vector<TYPE> input_x,std::vector<TYPE> input_y,
-                                      std::size_t num_chunks, std::size_t bit_size_chunk,
-                                      bool make_links = true)
+                    carry_on_addition(context_type &context_object,
+                                      std::vector<TYPE> input_x,
+                                      std::vector<TYPE> input_y, std::size_t num_chunks,
+                                      std::size_t bit_size_chunk, bool make_links = true)
                         : generic_component<FieldType, stage>(context_object) {
                         using integral_type = typename FieldType::integral_type;
 
-                        TYPE X[num_chunks], Y[num_chunks], C[num_chunks], Z[num_chunks];
+                        TYPE X[num_chunks], Y[num_chunks], C[num_chunks], R[num_chunks];
                         integral_type BASE = integral_type(1) << bit_size_chunk;
 
                         if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                            for(std::size_t i = 0; i < num_chunks; i++) {
+                            for (std::size_t i = 0; i < num_chunks; i++) {
                                 X[i] = input_x[i];
                                 Y[i] = input_y[i];
                             }
                         }
 
-                        for(std::size_t i = 0; i < num_chunks; i++) {
+                        for (std::size_t i = 0; i < num_chunks; i++) {
                             allocate(X[i]);
                             allocate(Y[i]);
-                            if (make_links){
-                                copy_constrain(X[i],input_x[i]);
-                                copy_constrain(Y[i],input_y[i]);
+                            if (make_links) {
+                                copy_constrain(X[i], input_x[i]);
+                                copy_constrain(Y[i], input_y[i]);
                             }
-                            Z[i] = X[i] + Y[i];
+                            R[i] = X[i] + Y[i];
                             if (i > 0) {
-                                Z[i] += C[i-1];
+                                R[i] += C[i - 1];
                             }
                             if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                                C[i] = (Z[i] >= BASE);
+                                C[i] = (R[i] >= BASE);
                             }
                             allocate(C[i]);
-                            constrain(C[i]*(1-C[i]));
+                            constrain(C[i] * (1 - C[i]));
 
-                            Z[i] -= TYPE(BASE)*C[i];
-                            allocate(Z[i]);
+                            R[i] -= TYPE(BASE) * C[i];
+                            allocate(R[i]);
                         }
 
                         for (int i = 0; i < num_chunks; ++i) {
-                            inp_x.push_back(input_x[i]);
-                            inp_y.push_back(input_y[i]);
-                            res_r.push_back(Z[i]);
+                            r.push_back(R[i]);
                         }
-                        res_c = C[num_chunks-1];
+                        c = C[num_chunks - 1];
                     }
                 };
 

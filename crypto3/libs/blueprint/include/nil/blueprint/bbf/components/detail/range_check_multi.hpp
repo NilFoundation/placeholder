@@ -22,7 +22,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //---------------------------------------------------------------------------//
-// @file Declaration of interfaces for PLONK component wrapping the BBF-component interface
+// @file Declaration of interfaces for PLONK component wrapping the BBF-component
+// interface
 //---------------------------------------------------------------------------//
 
 #ifndef CRYPTO3_BBF_COMPONENTS_RANGE_CHECK_MULTI_HPP
@@ -39,10 +40,10 @@ namespace nil {
     namespace blueprint {
         namespace bbf {
             namespace components {
-            // Constraints value to be of a certain bit size at most
-            // Parameters: num_chunks, bit_size_chunk
-            // Input: x
-            // Output: none
+                // Constraints value to be of a certain bit size at most
+                // Parameters: num_chunks, bit_size_chunk
+                // Input: x
+                // Output: none
 
                 template<typename FieldType>
                 struct range_check_multi_raw_input {
@@ -69,41 +70,40 @@ namespace nil {
                     static const std::size_t bit_size_rc = 16;
 
                   public:
-                    std::vector<TYPE> input;
-
-                    static table_params get_minimal_requirements(std::size_t num_chunks,
-                                                                 std::size_t bit_size_chunk) {
-                        std::size_t num_rc_chunks = (bit_size_chunk / bit_size_rc) + (bit_size_chunk % bit_size_rc > 0);
-                        std::size_t witness = (num_rc_chunks+1)/2 +1;
+                    static table_params get_minimal_requirements(
+                        std::size_t num_chunks, std::size_t bit_size_chunk) {
+                        std::size_t num_rc_chunks = (bit_size_chunk / bit_size_rc) +
+                                                    (bit_size_chunk % bit_size_rc > 0);
+                        std::size_t witness = (num_rc_chunks + 1) / 2 + 1;
                         constexpr std::size_t public_inputs = 1;
                         constexpr std::size_t constants = 0;
-                        // rows = 4096-1 so that lookup table is not too hard to fit and padding
-                        // doesn't inflate the table
+                        // rows = 4096-1 so that lookup table is not too hard to fit and
+                        // padding doesn't inflate the table
                         constexpr std::size_t rows = 4095;
                         return {witness, public_inputs, constants, rows};
                     }
 
-                    static std::tuple<std::vector<TYPE>> form_input(context_type &context_object,
-                                                                    raw_input_type raw_input,
-                                                                    std::size_t num_chunks,
-                                                                    std::size_t bit_size_chunk) {
+                    static std::tuple<std::vector<TYPE>> form_input(
+                        context_type &context_object, raw_input_type raw_input,
+                        std::size_t num_chunks, std::size_t bit_size_chunk) {
                         std::vector<TYPE> X(num_chunks);
                         for (std::size_t i = 0; i < num_chunks; i++) {
                             if constexpr (stage == GenerationStage::ASSIGNMENT) {
                                 X[i] = raw_input.state[i];
                             }
-                            context_object.allocate(X[i], 0, i, column_type::public_input);
+                            context_object.allocate(X[i], 0, i,
+                                                    column_type::public_input);
                         }
                         return std::make_tuple(X);
                     }
 
-                    range_check_multi(context_type &context_object, std::vector<TYPE> input_x,
-                                      std::size_t num_chunks, std::size_t bit_size_chunk,
-                                      bool make_links = true)
+                    range_check_multi(context_type &context_object,
+                                      std::vector<TYPE> input_x, std::size_t num_chunks,
+                                      std::size_t bit_size_chunk, bool make_links = true)
                         : generic_component<FieldType, stage>(context_object) {
                         using integral_type = typename FieldType::integral_type;
-                        std::size_t num_rc_chunks =
-                            (bit_size_chunk / bit_size_rc) + (bit_size_chunk % bit_size_rc > 0);
+                        std::size_t num_rc_chunks = (bit_size_chunk / bit_size_rc) +
+                                                    (bit_size_chunk % bit_size_rc > 0);
                         std::size_t first_chunk_size = bit_size_chunk % bit_size_rc;
                         integral_type mask = (1 << bit_size_rc) - 1;
 
@@ -125,9 +125,9 @@ namespace nil {
                                 }
                             }
                         }
-                        
+
                         for (std::size_t i = 0; i < num_chunks; ++i) {
-                            integral_type power = 1;      
+                            integral_type power = 1;
                             allocate(X[i]);
                             C[i] = X[i];
                             for (std::size_t j = 0; j < num_rc_chunks; ++j) {
@@ -139,14 +139,16 @@ namespace nil {
                             constrain(C[i]);
 
                             if (first_chunk_size != 0) {
-                                lookup(Y[i][num_rc_chunks - 1] *(integral_type(1) << (bit_size_rc - first_chunk_size)), "chunk_16_bits/full");
+                                lookup(Y[i][num_rc_chunks - 1] *
+                                           (integral_type(1)
+                                            << (bit_size_rc - first_chunk_size)),
+                                       "chunk_16_bits/full");
                             }
 
                             if (make_links) {
                                 copy_constrain(X[i], input_x[i]);
                             }
-                            input.push_back(X[i]);
-                        }                        
+                        }
                     }
                 };
 

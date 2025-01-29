@@ -58,7 +58,7 @@ namespace nil {
                 // p' = 2^(kb) - p
                 // Input: xP[0],...,xP[k-1],yP[0],...,yP[k-1],xQ[0],...,xQ[k-1],
                 //      yQ[0],...,yQ[k-1], p[0], ..., p[k-1], pp[0], ..., pp[k-1], 0
-                // (expects zero constant as input) 
+                // (expects zero constant as input)
                 // Output: xR[0],...,xR[k-1],
                 // yR[0],...,yR[k-1]
                 //
@@ -93,14 +93,8 @@ namespace nil {
                                                   std::tuple<>>::type;
 
                   public:
-                    std::vector<TYPE> inp_xP;
-                    std::vector<TYPE> inp_yP;
-                    std::vector<TYPE> inp_xQ;
-                    std::vector<TYPE> inp_yQ;
-                    std::vector<TYPE> inp_p;
-                    std::vector<TYPE> inp_pp;
-                    std::vector<TYPE> res_xR;
-                    std::vector<TYPE> res_yR;
+                    std::vector<TYPE> xR;
+                    std::vector<TYPE> yR;
 
                     static table_params get_minimal_requirements(
                         std::size_t num_chunks, std::size_t bit_size_chunk) {
@@ -185,14 +179,6 @@ namespace nil {
                             typename bbf::components::flexible_multiplication<
                                 FieldType, stage, NonNativeFieldType>;
 
-                        std::vector<TYPE> XP(num_chunks);
-                        std::vector<TYPE> YP(num_chunks);
-                        std::vector<TYPE> XQ(num_chunks);
-                        std::vector<TYPE> YQ(num_chunks);
-                        std::vector<TYPE> P(num_chunks);
-                        std::vector<TYPE> PP(num_chunks);
-                        std::vector<TYPE> ZERO(num_chunks);
-
                         std::vector<TYPE> LAMBDA(num_chunks);
                         std::vector<TYPE> XR(num_chunks);
                         std::vector<TYPE> YR(num_chunks);
@@ -200,19 +186,8 @@ namespace nil {
                         std::vector<TYPE> ZQ(num_chunks);
                         std::vector<TYPE> ZPQ(num_chunks);
                         std::vector<TYPE> WPQ(num_chunks);
-                        
 
                         if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                            for (std::size_t i = 0; i < num_chunks; ++i) {
-                                XP[i] = input_xP[i];
-                                YP[i] = input_yP[i];
-                                XQ[i] = input_xQ[i];
-                                YQ[i] = input_yQ[i];
-                                P[i] = input_p[i];
-                                PP[i] = input_pp[i];
-                                ZERO[i] = input_zero;
-                            }
-
                             non_native_integral_type pow = 1;
                             NON_NATIVE_TYPE xP = 0, yP = 0, xQ = 0, yQ = 0;
 
@@ -294,14 +269,6 @@ namespace nil {
                         }
 
                         for (std::size_t i = 0; i < num_chunks; ++i) {
-                            allocate(XP[i]);
-                            allocate(YP[i]);
-                            allocate(XQ[i]);
-                            allocate(YQ[i]);
-                            allocate(P[i]);
-                            allocate(PP[i]);
-                            allocate(ZERO[i]);
-
                             allocate(LAMBDA[i]);
                             allocate(XR[i]);
                             allocate(YR[i]);
@@ -312,11 +279,12 @@ namespace nil {
                         }
 
                         auto check_chunked = [&context_object, num_chunks, bit_size_chunk,
-                                              PP, ZERO](std::vector<TYPE> x) {
+                                              input_pp, input_zero](std::vector<TYPE> x) {
                             Range_Check rc = Range_Check(context_object, x, num_chunks,
                                                          bit_size_chunk);
-                            Check_Mod_P cm = Check_Mod_P(context_object, x, PP, ZERO[0],
-                                                         num_chunks, bit_size_chunk);
+                            Check_Mod_P cm =
+                                Check_Mod_P(context_object, x, input_pp, input_zero,
+                                            num_chunks, bit_size_chunk);
                         };
 
                         // Copy constraint generation lambda expression
@@ -327,6 +295,13 @@ namespace nil {
                             }
                         };
 
+                        auto CopyConstrainZero =
+                            [this, num_chunks, input_zero](std::vector<TYPE> x) mutable {
+                                for (std::size_t i = 0; i < num_chunks; i++) {
+                                    copy_constrain(x[i], input_zero);
+                                }
+                            };
+
                         // perform range checks and mod p checks on all stored variables
                         check_chunked(LAMBDA);
                         check_chunked(XR);
@@ -336,121 +311,101 @@ namespace nil {
                         check_chunked(ZPQ);
                         check_chunked(WPQ);
 
-                        auto MultModP = [&context_object, P, PP, ZERO, num_chunks,
-                                         bit_size_chunk](std::vector<TYPE> x,
-                                                         std::vector<TYPE> y) {
-                            Multiplication_Mod_P t =
-                                Multiplication_Mod_P(context_object, x, y, P, PP, ZERO[0],
-                                                     num_chunks, bit_size_chunk);
-                            return t.res_r;
+                        auto MultModP = [&context_object, input_p, input_pp, input_zero,
+                                         num_chunks, bit_size_chunk](
+                                            std::vector<TYPE> x, std::vector<TYPE> y) {
+                            Multiplication_Mod_P t = Multiplication_Mod_P(
+                                context_object, x, y, input_p, input_pp, input_zero,
+                                num_chunks, bit_size_chunk);
+                            return t.r;
                         };
-                        auto AddModP = [&context_object, P, PP, ZERO, num_chunks,
-                                        bit_size_chunk](std::vector<TYPE> x,
-                                                        std::vector<TYPE> y) {
+                        auto AddModP = [&context_object, input_p, input_pp, input_zero,
+                                        num_chunks, bit_size_chunk](std::vector<TYPE> x,
+                                                                    std::vector<TYPE> y) {
                             Addition_Mod_P t =
-                                Addition_Mod_P(context_object, x, y, P, PP, ZERO[0],
-                                               num_chunks, bit_size_chunk);
-                            return t.res_r;
+                                Addition_Mod_P(context_object, x, y, input_p, input_pp,
+                                               input_zero, num_chunks, bit_size_chunk);
+                            return t.r;
                         };
-                        auto NegModP = [&context_object, P, PP, ZERO, num_chunks,
-                                        bit_size_chunk](std::vector<TYPE> x) {
+                        auto NegModP = [&context_object, input_p, input_pp, input_zero,
+                                        num_chunks, bit_size_chunk](std::vector<TYPE> x) {
                             Negation_Mod_P t =
-                                Negation_Mod_P(context_object, x, P, PP, ZERO[0], num_chunks,
-                                               bit_size_chunk);
-                            return t.res_r;
+                                Negation_Mod_P(context_object, x, input_p, input_pp,
+                                               input_zero, num_chunks, bit_size_chunk);
+                            return t.r;
                         };
 
                         // part 1
-                        auto t1 = NegModP(XQ);         // t1 = -xQ
-                        auto t2 = NegModP(YQ);         // t2 = -yQ
-                        auto t3 = NegModP(XP);         // t3 = -xP
-                        auto t4 = NegModP(YP);         // t4 = -yP
-                        auto t5 = AddModP(XR, t1);     // t5 = xR - xQ
-                        auto t6 = AddModP(YR, t2);     // t6 = yR - yQ
-                        auto t7 = AddModP(XR, t3);     // t5 = xR - xP
-                        auto t8 = AddModP(YR, t4);     // t6 = yR - yP
-                        auto t9 = AddModP(XP, t1);     // t9 = xP - xQ
-                        auto t10 = MultModP(YP, ZP);   // t10 = yP * zP
-                        auto t11 = MultModP(YQ, ZQ);   // t11 = yQ * zQ
-                        auto t12 = MultModP(t9, ZPQ);  // t12 = (xP - xQ) zPQ = ZPQ
-                        auto t13 = MultModP(t5, t10);  // t13 = (xR - xQ) yP zP
-                        CopyConstrain(t5, t13);        // t5 = t13
-                        auto t14 = MultModP(t6, t10);  // t14 = (yR - yQ) yP zP
-                        CopyConstrain(t6, t14);        // t6 = t14
-                        auto t15 = MultModP(t7, t11);  // t15 = (xR - xP) yQ zQ
-                        CopyConstrain(t7, t15);        // t7 = t15
-                        auto t16 = MultModP(t8, t11);  // t16 = (yR - yP) yQ zQ
-                        CopyConstrain(t8, t16);        // t8 = t16
-                        auto t17 = MultModP(t9, t12);  // t17 = (xP - xQ) ZPQ
-                        CopyConstrain(t9, t17);        // t9 = t17
+                        auto t1 = NegModP(input_xQ);         // t1 = -xQ
+                        auto t2 = NegModP(input_yQ);         // t2 = -yQ
+                        auto t3 = NegModP(input_xP);         // t3 = -xP
+                        auto t4 = NegModP(input_yP);         // t4 = -yP
+                        auto t5 = AddModP(XR, t1);           // t5 = xR - xQ
+                        auto t6 = AddModP(YR, t2);           // t6 = yR - yQ
+                        auto t7 = AddModP(XR, t3);           // t5 = xR - xP
+                        auto t8 = AddModP(YR, t4);           // t6 = yR - yP
+                        auto t9 = AddModP(input_xP, t1);     // t9 = xP - xQ
+                        auto t10 = MultModP(input_yP, ZP);   // t10 = yP * zP
+                        auto t11 = MultModP(input_yQ, ZQ);   // t11 = yQ * zQ
+                        auto t12 = MultModP(t9, ZPQ);        // t12 = (xP - xQ) zPQ = ZPQ
+                        auto t13 = MultModP(t5, t10);        // t13 = (xR - xQ) yP zP
+                        CopyConstrain(t5, t13);  // t5 = t13
+                        auto t14 = MultModP(t6, t10);        // t14 = (yR - yQ) yP zP
+                        CopyConstrain(t6, t14);  // t6 = t14
+                        auto t15 = MultModP(t7, t11);        // t15 = (xR - xP) yQ zQ
+                        CopyConstrain(t7, t15);  // t7 = t15
+                        auto t16 = MultModP(t8, t11);        // t16 = (yR - yP) yQ zQ
+                        CopyConstrain(t8, t16);  // t8 = t16
+                        auto t17 = MultModP(t9, t12);        // t17 = (xP - xQ) ZPQ
+                        CopyConstrain(t9, t17);  // t9 = t17
 
                         // part 2
-                        auto t18 = AddModP(YP, YQ);     // t18 = yP + yQ
-                        auto t19 = MultModP(t18, WPQ);  // t19 = (yP + yQ) wPQ = WPQ
-                        auto t20 = AddModP(t12, t19);   // t20 = ZPQ + WPQ
-                        auto t21 = MultModP(XR, t20);   // t21 = xR(ZPQ + WPQ)
-                        CopyConstrain(XR, t21);         // xR = t21
-                        auto t22 = MultModP(YR, t20);   // t22 = yR(ZPQ + WPQ)
-                        CopyConstrain(YR, t22);         // yR = t22
+                        auto t18 = AddModP(input_yP, input_yQ);     // t18 = yP + yQ
+                        auto t19 = MultModP(t18, WPQ);              // t19 = (yP + yQ) wPQ = WPQ
+                        auto t20 = AddModP(t12, t19);               // t20 = ZPQ + WPQ
+                        auto t21 = MultModP(XR, t20);               // t21 = xR(ZPQ + WPQ)
+                        CopyConstrain(XR, t21);  // xR = t21
+                        auto t22 = MultModP(YR, t20);               // t22 = yR(ZPQ + WPQ)
+                        CopyConstrain(YR, t22);  // yR = t22
 
                         // part 3
-                        auto t23 = NegModP(t12);                // t23 = -ZPQ
-                        auto t24 = MultModP(t18, t23);          // t24 = -(yP + yQ) ZPQ
-                        auto t25 = AddModP(t18, t24);           // t25 = (yP + yQ)(1 - ZPQ)
-                        auto t26 = AddModP(t9, t25);            // t26 = (xP - xQ) + (yP + yQ)(1 - ZPQ)
-                        auto t27 = MultModP(YP, YQ);            // t27 = yP * yQ
-                        auto t28 = MultModP(t26, t27);          // t28 = yP  yQ (xP - xQ + (yP + yQ)(1 - ZPQ))
-                        auto t29 = MultModP(LAMBDA, LAMBDA);    // t29 = lambda * lambda
-                        auto t30 = NegModP(t29);                // t30 = -lambda^2
-                        auto t31 = AddModP(XR, t30);            // t31 = xR - lambda^2
-                        auto t32 = AddModP(t31, XP);            // t32 = xR - lambda^2 + xP
-                        auto t33 = AddModP(t32, XQ);            // t33 = xR - lambda^2 + xP + xQ
-                        auto t34 = AddModP(YR, YP);             // t34 = yR + yP
-                        auto t35 = MultModP(t7, LAMBDA);        // t35 = (xR - xP) lambda
-                        auto t36 = AddModP(t34, t35);           // t36 = yR + yP + (xR - xP)lambda
-                        auto t37 = MultModP(t28, t33);          // t37 = yP  yQ (xP - xQ + (yP + yQ)(1 - ZPQ))(xR - lambda^2 + xP + xQ)
-                        CopyConstrain(t37, ZERO);              // t37 = 0
-                        auto t38 = MultModP(t28, t36);          // t38 = yP  yQ (xP - xQ + (yP + yQ)(1 -ZPQ))(yR + yP + (xR - xP)lambda)
-                        CopyConstrain(t38, ZERO);              // t38 = 0
+                        auto t23 = NegModP(t12);                    // t23 = -ZPQ
+                        auto t24 = MultModP(t18, t23);              // t24 = -(yP + yQ) ZPQ
+                        auto t25 = AddModP(t18, t24);               // t25 = (yP + yQ)(1 - ZPQ)
+                        auto t26 = AddModP(t9, t25);                // t26 = (xP - xQ) + (yP + yQ)(1 - ZPQ)
+                        auto t27 = MultModP(input_yP, input_yQ);    // t27 = yP * yQ
+                        auto t28 = MultModP(t26, t27);              // t28 = yP  yQ (xP - xQ + (yP + yQ)(1 - ZPQ))
+                        auto t29 = MultModP(LAMBDA, LAMBDA);        // t29 = lambda * lambda
+                        auto t30 = NegModP(t29);                    // t30 = -lambda^2
+                        auto t31 = AddModP(XR, t30);                // t31 = xR - lambda^2
+                        auto t32 = AddModP(t31, input_xP);          // t32 = xR - lambda^2 + xP
+                        auto t33 = AddModP(t32, input_xQ);          // t33 = xR - lambda^2 + xP + xQ
+                        auto t34 = AddModP(YR, input_yP);           // t34 = yR + yP
+                        auto t35 = MultModP(t7, LAMBDA);            // t35 = (xR - xP) lambda
+                        auto t36 = AddModP(t34, t35);               // t36 = yR + yP + (xR - xP)lambda
+                        auto t37 = MultModP(t28, t33);              // t37 = yP  yQ (xP - xQ + (yP + yQ)(1 - ZPQ))(xR - lambda^2 + xP + xQ)
+                        CopyConstrainZero(t37);  // t37 = 0
+                        auto t38 = MultModP(t28, t36);              // t38 = yP  yQ (xP - xQ + (yP + yQ)(1 -ZPQ))(yR + yP + (xR - xP)lambda)
+                        CopyConstrainZero(t38);  // t38 = 0
 
                         // part 4
-                        auto t39 = MultModP(t9, LAMBDA);    // t39 = (xP - xQ) lambda
-                        auto t40 = AddModP(t39, t4);        // t40 = (xP - xQ) lambda - yP
-                        auto t41 = AddModP(t40, YQ);        // t41 = (xP - xQ) lambda - yP + yQ
-                        auto t42 = MultModP(t9, t41);       // t42 = (xP - xQ)((xP - xQ) lambda - yP + yQ)
-                        CopyConstrain(t42, ZERO);          // t42 = 0
-                        auto t43 = MultModP(XP, t3);        // t43 = -xP^2
-                        auto t44 = AddModP(t43, t43);       // t44 = -2xP^2
-                        auto t45 = AddModP(t43, t44);       // t45 = -3xP^2
-                        auto t46 = AddModP(YP, YP);         // t46 = 2yP
-                        auto t47 = MultModP(t46, LAMBDA);   // t47 = 2yP lambda
-                        auto t48 = AddModP(t47, t45);       // t48 = 2yP lambda - 3xP^2
-                        auto t49 = MultModP(t48, t12);      // t49 = (2yP lambda - 3xP^2) ZPQ
-                        CopyConstrain(t48, t49);            // t38 = 0t48 = t49
-
-                        if (make_links) {
-                            for (std::size_t i = 0; i < num_chunks; ++i) {
-                                copy_constrain(XP[i], input_xP[i]);
-                                copy_constrain(YP[i], input_yP[i]);
-                                copy_constrain(XQ[i], input_xQ[i]);
-                                copy_constrain(YQ[i], input_yQ[i]);
-                                copy_constrain(P[i], input_p[i]);
-                                copy_constrain(PP[i], input_pp[i]);
-                                copy_constrain(ZERO[i], input_zero);
-                            }
-                        }
+                        auto t39 = MultModP(t9, LAMBDA);        // t39 = (xP - xQ) lambda
+                        auto t40 = AddModP(t39, t4);            // t40 = (xP - xQ) lambda - yP
+                        auto t41 = AddModP(t40, input_yQ);      // t41 = (xP - xQ) lambda - yP + yQ
+                        auto t42 = MultModP(t9, t41);           // t42 = (xP - xQ)((xP - xQ) lambda - yP + yQ)
+                        CopyConstrainZero(t42);  // t42 = 0
+                        auto t43 = MultModP(input_xP, t3);      // t43 = -xP^2
+                        auto t44 = AddModP(t43, t43);           // t44 = -2xP^2
+                        auto t45 = AddModP(t43, t44);           // t45 = -3xP^2
+                        auto t46 = AddModP(input_yP, input_yP); // t46 = 2yP
+                        auto t47 = MultModP(t46, LAMBDA);       // t47 = 2yP lambda
+                        auto t48 = AddModP(t47, t45);           // t48 = 2yP lambda - 3xP^2
+                        auto t49 = MultModP(t48, t12);          // t49 = (2yP lambda - 3xP^2) ZPQ
+                        CopyConstrain(t48, t49); // t48 = t49
 
                         for (int i = 0; i < num_chunks; ++i) {
-                            inp_xP.push_back(input_xP[i]);
-                            inp_yP.push_back(input_yP[i]);
-                            inp_xQ.push_back(input_xQ[i]);
-                            inp_yQ.push_back(input_yQ[i]);
-                            inp_pp.push_back(input_p[i]);
-                            inp_pp.push_back(input_pp[i]);
-                        }
-                        for (int i = 0; i < num_chunks; ++i) {
-                            res_xR.push_back(XR[i]);
-                            res_yR.push_back(YR[i]);
+                            xR.push_back(XR[i]);
+                            yR.push_back(YR[i]);
                         }
                     }
                 };

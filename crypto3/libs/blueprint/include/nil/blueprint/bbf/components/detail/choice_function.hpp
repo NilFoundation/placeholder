@@ -64,8 +64,7 @@ namespace nil {
                                                   std::tuple<>>::type;
 
                   public:
-                    TYPE inp_q;
-                    std::vector<TYPE> inp_x, inp_y, res_r;
+                    std::vector<TYPE> r;
 
                     static table_params get_minimal_requirements(std::size_t num_chunks) {
                         std::size_t witness = num_chunks + 1;
@@ -102,7 +101,7 @@ namespace nil {
                                     std::vector<TYPE> input_x, std::vector<TYPE> input_y,
                                     std::size_t num_chunks, bool make_links = true)
                         : generic_component<FieldType, stage>(context_object) {
-                        TYPE Q, X[num_chunks], Y[num_chunks], Z[num_chunks];
+                        TYPE Q, X[num_chunks], Y[num_chunks], R[num_chunks];
 
                         if constexpr (stage == GenerationStage::ASSIGNMENT) {
                             Q = input_q;
@@ -117,8 +116,8 @@ namespace nil {
                         for (std::size_t i = 0; i < num_chunks; i++) {
                             allocate(X[i]);
                             allocate(Y[i]);
-                            Z[i] = (1 - Q) * X[i] + Q * Y[i];
-                            allocate(Z[i]);
+                            R[i] = (1 - Q) * X[i] + Q * Y[i];
+                            allocate(R[i]);
                         }
 
                         if (make_links) {
@@ -129,11 +128,8 @@ namespace nil {
                             }
                         }
 
-                        inp_q = input_q;
                         for (std::size_t i = 0; i < num_chunks; i++) {
-                            inp_x.push_back(X[i]);
-                            inp_y.push_back(Y[i]);
-                            res_r.push_back(Z[i]);
+                            r.push_back(R[i]);
                         }
                     };
                 };

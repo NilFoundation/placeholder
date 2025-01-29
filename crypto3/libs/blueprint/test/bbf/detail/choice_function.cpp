@@ -26,16 +26,13 @@
 #define BOOST_TEST_MODULE choice_function_test
 
 #include <boost/test/unit_test.hpp>
+#include <nil/blueprint/bbf/circuit_builder.hpp>
 #include <nil/blueprint/bbf/components/detail/choice_function.hpp>
 #include <nil/blueprint/bbf/generic.hpp>
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
-
-#include <nil/blueprint/bbf/circuit_builder.hpp>
-
 #include <nil/crypto3/algebra/curves/pallas.hpp>
 #include <nil/crypto3/algebra/curves/vesta.hpp>
-#include <nil/crypto3/hash/keccak.hpp>
 #include <nil/crypto3/random/algebraic_engine.hpp>
 
 using namespace nil;
@@ -74,9 +71,9 @@ void test_choice_function(
     for (std::size_t i = 0; i < num_chunks; i++) {
 #ifdef BLUEPRINT_PLONK_PROFILING_ENABLED
         std::cout << "Expected res: " << std::dec << expected_res[i] << std::endl;
-        std::cout << "Real res:     " << std::dec << A.res_r[i].data << std::endl;
+        std::cout << "Real res:     " << std::dec << A.r[i].data << std::endl;
 #endif
-        assert(A.res_r[i].data == expected_res[i].data);
+        assert(A.r[i].data == expected_res[i].data);
     }
 }
 

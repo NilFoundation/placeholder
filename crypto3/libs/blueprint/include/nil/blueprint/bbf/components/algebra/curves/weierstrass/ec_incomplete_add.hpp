@@ -92,14 +92,8 @@ namespace nil {
                                                   std::tuple<>>::type;
 
                   public:
-                    std::vector<TYPE> inp_xP;
-                    std::vector<TYPE> inp_yP;
-                    std::vector<TYPE> inp_xQ;
-                    std::vector<TYPE> inp_yQ;
-                    std::vector<TYPE> inp_p;
-                    std::vector<TYPE> inp_pp;
-                    std::vector<TYPE> res_xR;
-                    std::vector<TYPE> res_yR;
+                    std::vector<TYPE> xR;
+                    std::vector<TYPE> yR;
 
                     static table_params get_minimal_requirements(
                         std::size_t num_chunks, std::size_t bit_size_chunk) {
@@ -187,29 +181,11 @@ namespace nil {
                             typename bbf::components::flexible_multiplication<
                                 FieldType, stage, NonNativeFieldType>;
 
-                        std::vector<TYPE> XP(num_chunks);
-                        std::vector<TYPE> YP(num_chunks);
-                        std::vector<TYPE> XQ(num_chunks);
-                        std::vector<TYPE> YQ(num_chunks);
-                        std::vector<TYPE> P(num_chunks);
-                        std::vector<TYPE> PP(num_chunks);
-                        TYPE ZERO;
-
                         std::vector<TYPE> LAMBDA(num_chunks);
                         std::vector<TYPE> XR(num_chunks);
                         std::vector<TYPE> YR(num_chunks);
 
                         if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                            for (std::size_t i = 0; i < num_chunks; ++i) {
-                                XP[i] = input_xP[i];
-                                YP[i] = input_yP[i];
-                                XQ[i] = input_xQ[i];
-                                YQ[i] = input_yQ[i];
-                                P[i] = input_p[i];
-                                PP[i] = input_pp[i];
-                            }
-                            ZERO = input_zero;
-
                             non_native_integral_type pow = 1;
                             NON_NATIVE_TYPE xP = 0, yP = 0, xQ = 0, yQ = 0;
 
@@ -255,25 +231,18 @@ namespace nil {
                         }
 
                         for (std::size_t i = 0; i < num_chunks; ++i) {
-                            allocate(XP[i]);
-                            allocate(YP[i]);
-                            allocate(XQ[i]);
-                            allocate(YQ[i]);
-                            allocate(P[i]);
-                            allocate(PP[i]);
-
                             allocate(LAMBDA[i]);
                             allocate(XR[i]);
                             allocate(YR[i]);
                         }
-                        allocate(ZERO);
 
                         auto check_chunked = [&context_object, num_chunks, bit_size_chunk,
-                                              PP, ZERO](std::vector<TYPE> x) {
+                                              input_pp, input_zero](std::vector<TYPE> x) {
                             Range_Check rc = Range_Check(context_object, x, num_chunks,
                                                          bit_size_chunk);
-                            Check_Mod_P cm = Check_Mod_P(context_object, x, PP, ZERO,
-                                                         num_chunks, bit_size_chunk);
+                            Check_Mod_P cm =
+                                Check_Mod_P(context_object, x, input_pp, input_zero,
+                                            num_chunks, bit_size_chunk);
                         };
 
                         // Copy constraint generation lambda expression
@@ -289,68 +258,48 @@ namespace nil {
                         check_chunked(XR);
                         check_chunked(YR);
 
-                        auto MultModP = [&context_object, P, PP, ZERO, num_chunks,
-                                         bit_size_chunk](std::vector<TYPE> x,
-                                                         std::vector<TYPE> y) {
-                            Multiplication_Mod_P t =
-                                Multiplication_Mod_P(context_object, x, y, P, PP, ZERO,
-                                                     num_chunks, bit_size_chunk);
-                            return t.res_r;
+                        auto MultModP = [&context_object, input_p, input_pp, input_zero,
+                                         num_chunks, bit_size_chunk](
+                                            std::vector<TYPE> x, std::vector<TYPE> y) {
+                            Multiplication_Mod_P t = Multiplication_Mod_P(
+                                context_object, x, y, input_p, input_pp, input_zero,
+                                num_chunks, bit_size_chunk);
+                            return t.r;
                         };
-                        auto AddModP = [&context_object, P, PP, ZERO, num_chunks,
-                                        bit_size_chunk](std::vector<TYPE> x,
-                                                        std::vector<TYPE> y) {
+                        auto AddModP = [&context_object, input_p, input_pp, input_zero,
+                                        num_chunks, bit_size_chunk](std::vector<TYPE> x,
+                                                                    std::vector<TYPE> y) {
                             Addition_Mod_P t =
-                                Addition_Mod_P(context_object, x, y, P, PP, ZERO,
-                                               num_chunks, bit_size_chunk);
-                            return t.res_r;
+                                Addition_Mod_P(context_object, x, y, input_p, input_pp,
+                                               input_zero, num_chunks, bit_size_chunk);
+                            return t.r;
                         };
-                        auto NegModP = [&context_object, P, PP, ZERO, num_chunks,
-                                        bit_size_chunk](std::vector<TYPE> x) {
+                        auto NegModP = [&context_object, input_p, input_pp, input_zero,
+                                        num_chunks, bit_size_chunk](std::vector<TYPE> x) {
                             Negation_Mod_P t =
-                                Negation_Mod_P(context_object, x, P, PP, ZERO, num_chunks,
-                                               bit_size_chunk);
-                            return t.res_r;
+                                Negation_Mod_P(context_object, x, input_p, input_pp,
+                                               input_zero, num_chunks, bit_size_chunk);
+                            return t.r;
                         };
 
-                        auto t1 = NegModP(XP);              // t1 = -xP
-                        auto t2 = AddModP(XQ, t1);          // t2 = xQ + t1 = xQ - xP
+                        auto t1 = NegModP(input_xP);        // t1 = -xP
+                        auto t2 = AddModP(input_xQ, t1);    // t2 = xQ + t1 = xQ - xP
                         auto t3 = MultModP(t2, LAMBDA);     // t3 = t2 * lambda = (xQ-xP)lambda
-                        auto t4 = AddModP(t3, YP);          // t4 = t3 + yP = (xQ-xP)lambda + yP
-                        CopyConstrain(t4, YQ);              // (xQ - xP)lambda + yP = yQ
-                        auto t5 = AddModP(XR, XP);          // t5 = xR + xP
-                        auto t6 = AddModP(t5, XQ);          // t6 = t5 + xQ = xR + xP + xQ
+                        auto t4 = AddModP(t3, input_yP);    // t4 = t3 + yP = (xQ-xP)lambda + yP
+                        CopyConstrain(t4, input_yQ); // (xQ - xP)lambda + yP = yQ
+                        auto t5 = AddModP(XR, input_xP);    // t5 = xR + xP
+                        auto t6 = AddModP(t5, input_xQ);    // t6 = t5 + xQ = xR + xP + xQ
                         auto t7 = MultModP(LAMBDA, LAMBDA); // t7 = lambda * lambda
-                        CopyConstrain(t6, t7);              // xR + xP + xQ = lambda^2
-                        auto t8 = AddModP(YR, YP);          // t8 = yR + yP
+                        CopyConstrain(t6, t7);       // xR + xP + xQ = lambda^2
+                        auto t8 = AddModP(YR, input_yP);    // t8 = yR + yP
                         auto t9 = NegModP(XR);              // t9 = -xR
-                        auto t10 = AddModP(XP, t9);         // t10 = xP + t9 = xP - xR
+                        auto t10 = AddModP(input_xP, t9);   // t10 = xP + t9 = xP - xR
                         auto t11 = MultModP(LAMBDA,t10);    // t11 = lambda * t10 =lambda(xP-xR)
-                        CopyConstrain(t8, t11);             // yR + yP = lambda(xP - xR)
-
-                        if (make_links) {
-                            for (std::size_t i = 0; i < num_chunks; ++i) {
-                                copy_constrain(XP[i], input_xP[i]);
-                                copy_constrain(YP[i], input_yP[i]);
-                                copy_constrain(XQ[i], input_xQ[i]);
-                                copy_constrain(YQ[i], input_yQ[i]);
-                                copy_constrain(P[i], input_p[i]);
-                                copy_constrain(PP[i], input_pp[i]);
-                            }
-                            copy_constrain(ZERO, input_zero);
-                        }
+                        CopyConstrain(t8, t11);       // yR + yP = lambda(xP - xR)
 
                         for (int i = 0; i < num_chunks; ++i) {
-                            inp_xP.push_back(input_xP[i]);
-                            inp_yP.push_back(input_yP[i]);
-                            inp_xQ.push_back(input_xQ[i]);
-                            inp_yQ.push_back(input_yQ[i]);
-                            inp_pp.push_back(input_p[i]);
-                            inp_pp.push_back(input_pp[i]);
-                        }
-                        for (int i = 0; i < num_chunks; ++i) {
-                            res_xR.push_back(XR[i]);
-                            res_yR.push_back(YR[i]);
+                            xR.push_back(XR[i]);
+                            yR.push_back(YR[i]);
                         }
                     }
                 };

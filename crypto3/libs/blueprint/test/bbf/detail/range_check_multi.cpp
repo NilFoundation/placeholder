@@ -26,29 +26,27 @@
 #define BOOST_TEST_MODULE bbf_range_check_multi_test
 
 #include <boost/test/unit_test.hpp>
-#include <nil/blueprint/bbf/generic.hpp>
+#include <nil/blueprint/bbf/circuit_builder.hpp>
+#include <nil/blueprint/bbf/components/detail/range_check_multi.hpp>
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
-#include <nil/blueprint/bbf/components/detail/range_check_multi.hpp>
-
-#include <nil/blueprint/bbf/circuit_builder.hpp>
-
-#include <nil/crypto3/hash/keccak.hpp>
-#include <nil/crypto3/random/algebraic_engine.hpp>
-#include <nil/crypto3/algebra/curves/vesta.hpp>
 #include <nil/crypto3/algebra/curves/pallas.hpp>
+#include <nil/crypto3/algebra/curves/vesta.hpp>
+#include <nil/crypto3/random/algebraic_engine.hpp>
 
 using namespace nil;
 using namespace nil::blueprint;
 
-
-template <typename BlueprintFieldType, std::size_t num_chunks, std::size_t bit_size_chunk, bool to_pass = true>
-void test_range_check(const std::vector<typename BlueprintFieldType::value_type> &public_input){
-
+template<typename BlueprintFieldType, std::size_t num_chunks, std::size_t bit_size_chunk,
+         bool to_pass = true>
+void test_range_check(
+    const std::vector<typename BlueprintFieldType::value_type> &public_input) {
     using FieldType = BlueprintFieldType;
-    typename bbf::components::range_check_multi<FieldType,bbf::GenerationStage::ASSIGNMENT>::raw_input_type raw_input;
+    typename bbf::components::range_check_multi<
+        FieldType, bbf::GenerationStage::ASSIGNMENT>::raw_input_type raw_input;
     raw_input.state = public_input;
-    auto B = bbf::circuit_builder<FieldType,bbf::components::range_check_multi, std::size_t, std::size_t>(num_chunks,bit_size_chunk);
+    auto B = bbf::circuit_builder<FieldType, bbf::components::range_check_multi,
+                                  std::size_t, std::size_t>(num_chunks, bit_size_chunk);
     auto [at, A, desc] = B.assign(raw_input);
     bool pass = B.is_satisfied(at);
     std::cout << "Is_satisfied = " << pass << std::endl;
@@ -56,45 +54,52 @@ void test_range_check(const std::vector<typename BlueprintFieldType::value_type>
     assert(pass == to_pass);
 }
 
-
-template <typename BlueprintFieldType, std::size_t num_chunks, std::size_t bit_size_chunk, std::size_t RandomTestsAmount>
+template<typename BlueprintFieldType, std::size_t num_chunks, std::size_t bit_size_chunk,
+         std::size_t RandomTestsAmount>
 void range_check_tests() {
     using integral_type = typename BlueprintFieldType::integral_type;
     using value_type = typename BlueprintFieldType::value_type;
 
     static boost::random::mt19937 seed_seq;
-    static nil::crypto3::random::algebraic_engine<BlueprintFieldType> generate_random(seed_seq);
+    static nil::crypto3::random::algebraic_engine<BlueprintFieldType> generate_random(
+        seed_seq);
     boost::random::uniform_int_distribution<> t_dist(0, 1);
     integral_type mask = (integral_type(1) << bit_size_chunk) - 1;
 
     for (std::size_t i = 0; i < RandomTestsAmount; i++) {
         std::vector<typename BlueprintFieldType::value_type> public_input;
         for (std::size_t j = 0; j < num_chunks; j++) {
-            public_input.push_back(value_type(integral_type(generate_random().data) & mask));
+            public_input.push_back(
+                value_type(integral_type(generate_random().data) & mask));
         }
-        test_range_check<BlueprintFieldType,num_chunks,bit_size_chunk>(public_input);
+        test_range_check<BlueprintFieldType, num_chunks, bit_size_chunk>(public_input);
     }
 }
 
-template <typename BlueprintFieldType, std::size_t num_chunks, std::size_t bit_size_chunk,std::size_t RandomTestsAmount>
+template<typename BlueprintFieldType, std::size_t num_chunks, std::size_t bit_size_chunk,
+         std::size_t RandomTestsAmount>
 void range_check_tests_to_fail() {
     using integral_type = typename BlueprintFieldType::integral_type;
     using value_type = typename BlueprintFieldType::value_type;
 
     static boost::random::mt19937 seed_seq;
-    static nil::crypto3::random::algebraic_engine<BlueprintFieldType> generate_random(seed_seq);
+    static nil::crypto3::random::algebraic_engine<BlueprintFieldType> generate_random(
+        seed_seq);
     boost::random::uniform_int_distribution<> t_dist(0, 1);
     integral_type mask = (integral_type(1) << bit_size_chunk) - 1;
 
     for (std::size_t i = 0; i < RandomTestsAmount; i++) {
         integral_type most_significant_bit = integral_type(1) << (bit_size_chunk);
         std::vector<typename BlueprintFieldType::value_type> public_input;
-        //Adding a faulty bits     
-        public_input.push_back(value_type(integral_type(generate_random().data) & mask | most_significant_bit));
+        // Adding a faulty bits
+        public_input.push_back(value_type(integral_type(generate_random().data) & mask |
+                                          most_significant_bit));
         for (std::size_t j = 1; j < num_chunks; j++) {
-            public_input.push_back(value_type(integral_type(generate_random().data) & mask));
+            public_input.push_back(
+                value_type(integral_type(generate_random().data) & mask));
         }
-        test_range_check<BlueprintFieldType,num_chunks,bit_size_chunk,false>(public_input);
+        test_range_check<BlueprintFieldType, num_chunks, bit_size_chunk, false>(
+            public_input);
     }
 }
 
@@ -106,7 +111,6 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_bbf_range_check_multi_test) {
     using pallas_field_type = typename crypto3::algebra::curves::pallas::base_field_type;
     using vesta_field_type = typename crypto3::algebra::curves::vesta::base_field_type;
 
-    
     range_check_tests<pallas_field_type, 8, 32, random_tests_amount>();
     range_check_tests<pallas_field_type, 8, 65, random_tests_amount>();
     range_check_tests<pallas_field_type, 4, 63, random_tests_amount>();
