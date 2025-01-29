@@ -94,8 +94,8 @@ void test_ec_incomplete_add(
         non_native_integral_type yR = 0;
         pow = 1;
         for (std::size_t i = 0; i < num_chunks; i++) {
-            xR += non_native_integral_type(integral_type(A.res_xR[i].data)) * pow;
-            yR += non_native_integral_type(integral_type(A.res_yR[i].data)) * pow;
+            xR += non_native_integral_type(integral_type(A.xR[i].data)) * pow;
+            yR += non_native_integral_type(integral_type(A.yR[i].data)) * pow;
             pow <<= bit_size_chunk;
         }
         // #ifdef BLUEPRINT_PLONK_PROFILING_ENABLED
@@ -199,6 +199,7 @@ constexpr static const std::size_t random_tests_amount = 10;
 BOOST_AUTO_TEST_SUITE(blueprint_plonk_test_suite)
 
 BOOST_AUTO_TEST_CASE(blueprint_plonk_bbf_ec_incomplete_add_test) {
+    // The curve is passed in as an argument to access additionnal properties 
     using pallas = typename crypto3::algebra::curves::pallas;
     using vesta = typename crypto3::algebra::curves::vesta;
 

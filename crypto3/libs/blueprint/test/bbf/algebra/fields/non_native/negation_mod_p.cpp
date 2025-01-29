@@ -26,15 +26,12 @@
 #define BOOST_TEST_MODULE bbf_negation_mod_p_test
 
 #include <boost/test/unit_test.hpp>
+#include <nil/blueprint/bbf/circuit_builder.hpp>
 #include <nil/blueprint/bbf/components/algebra/fields/non_native/negation_mod_p.hpp>
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
-
-#include <nil/blueprint/bbf/circuit_builder.hpp>
-
 #include <nil/crypto3/algebra/curves/pallas.hpp>
 #include <nil/crypto3/algebra/curves/vesta.hpp>
-#include <nil/crypto3/hash/keccak.hpp>
 #include <nil/crypto3/random/algebraic_engine.hpp>
 
 using namespace nil;
@@ -68,7 +65,8 @@ void test_negation_mod_p(
                                         public_input.begin() + 2 * num_chunks);
         raw_input.pp = std::vector<TYPE>(public_input.begin() + 2 * num_chunks,
                                          public_input.begin() + 3 * num_chunks);
-        raw_input.zero = public_input[3 * num_chunks];
+        raw_input.zero = std::vector<TYPE>(public_input.begin() + 3 * num_chunks,
+                                           public_input.begin() + 4 * num_chunks);
 
         auto [at, A, desc] = B.assign(raw_input);
         bool pass = B.is_satisfied(at);
@@ -78,7 +76,7 @@ void test_negation_mod_p(
         extended_integral_type R = 0;
         pow = 1;
         for (std::size_t i = 0; i < num_chunks; i++) {
-            R += extended_integral_type(integral_type(A.res_r[i].data)) * pow;
+            R += extended_integral_type(integral_type(A.r[i].data)) * pow;
             pow <<= bit_size_chunk;
         }
 #ifdef BLUEPRINT_PLONK_PROFILING_ENABLED
@@ -138,7 +136,7 @@ void negation_mod_p_tests() {
                                p = NonNativeFieldType::modulus;
         extended_integral_type pp = ext_pow - p;
 
-        public_input.resize(3 * num_chunks + 1);
+        public_input.resize(4 * num_chunks);
         for (std::size_t j = 0; j < num_chunks; j++) {
             public_input[j] = value_type(x & mask);
             x >>= bit_size_chunk;
@@ -148,8 +146,9 @@ void negation_mod_p_tests() {
 
             public_input[2 * num_chunks + j] = value_type(pp & mask);
             pp >>= bit_size_chunk;
+
+            public_input[3 * num_chunks + j] = value_type(0);  // the zeros
         }
-        public_input.push_back(value_type(0));  // the zero
 
         test_negation_mod_p<BlueprintFieldType, NonNativeFieldType, num_chunks,
                             bit_size_chunk>(public_input);
