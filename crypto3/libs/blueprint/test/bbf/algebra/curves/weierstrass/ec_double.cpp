@@ -76,7 +76,8 @@ void test_ec_double(
                                         public_input.begin() + 3 * num_chunks);
         raw_input.pp = std::vector<TYPE>(public_input.begin() + 3 * num_chunks,
                                          public_input.begin() + 4 * num_chunks);
-        raw_input.zero = public_input[4 * num_chunks];
+        raw_input.zero = std::vector<TYPE>(public_input.begin() + 4 * num_chunks,
+                                         public_input.begin() + 5 * num_chunks);
 
         auto [at, A, desc] = B.assign(raw_input);
         bool pass = B.is_satisfied(at);
@@ -154,7 +155,7 @@ void ec_double_tests() {
         ec_point_value_type Q = ec_point_value_type::one();
         Q = Q * d;
 
-        public_input.resize(4 * num_chunks + 1);
+        public_input.resize(5 * num_chunks);
         integral_type xQ = integral_type(Q.X.data);
         integral_type yQ = integral_type(Q.Y.data);
         for (std::size_t j = 0; j < num_chunks; j++) {
@@ -169,8 +170,9 @@ void ec_double_tests() {
 
             public_input[3 * num_chunks + j] = value_type(pp & mask);
             pp >>= bit_size_chunk;
+
+            public_input[4 * num_chunks + j] = value_type(0);
         }
-        public_input.push_back(value_type(0));  // the zero
 
         test_ec_double<BlueprintFieldType, NonNativeFieldType, num_chunks,
                        bit_size_chunk>(public_input);

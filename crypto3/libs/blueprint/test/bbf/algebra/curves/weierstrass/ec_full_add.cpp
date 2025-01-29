@@ -112,7 +112,8 @@ void test_ec_full_add(
                                         public_input.begin() + 5 * num_chunks);
         raw_input.pp = std::vector<TYPE>(public_input.begin() + 5 * num_chunks,
                                          public_input.begin() + 6 * num_chunks);
-        raw_input.zero = public_input[6 * num_chunks];
+        raw_input.zero = std::vector<TYPE>(public_input.begin() + 6 * num_chunks,
+                                         public_input.begin() + 7 * num_chunks);
 
         auto [at, A, desc] = B.assign(raw_input);
         bool pass = B.is_satisfied(at);
@@ -192,7 +193,7 @@ void ec_full_add_tests() {
         P = P * d;
         Q = Q * d;
 
-        public_input.resize(6 * num_chunks + 1);
+        public_input.resize(7 * num_chunks);
         integral_type xP = integral_type(P.X.data);
         integral_type yP = integral_type(P.Y.data);
         integral_type xQ = integral_type(Q.X.data);
@@ -215,8 +216,9 @@ void ec_full_add_tests() {
 
             public_input[5 * num_chunks + j] = value_type(pp & mask);
             pp >>= bit_size_chunk;
+
+            public_input[6 * num_chunks + j] = value_type(0);
         }
-        public_input.push_back(value_type(0));  // the zero
 
         test_ec_full_add<BlueprintFieldType, NonNativeFieldType, num_chunks,
                          bit_size_chunk>(public_input);
