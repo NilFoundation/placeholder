@@ -1,4 +1,4 @@
-# Circuits Traspiler Library for =nil; Foundation's zkLLVM circuit compiler
+# Circuits Transpiler Library for =nil; Foundation's zkLLVM circuit compiler
 
 ## Usage
 
@@ -23,7 +23,7 @@ Follow build instruction for [proof-producer](https://github.com/NilFoundation/p
 ```bash
 nix build .#proof-producer -L
 ```
-2. Generate circuit and assignemnt table
+2. Generate circuit and assignment table
 ```bash
 ./result/bin/proof-producer-single-threaded \
     --stage "preset" \
