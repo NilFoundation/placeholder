@@ -12,6 +12,7 @@
   cmake_modules,
   enableDebugging,
   gtest,
+  python3,
   enableDebug ? false,
   staticBuild ? true,
   runTests ? false,
@@ -37,7 +38,7 @@ in stdenv.mkDerivation {
   # enableDebugging will keep debug symbols in boost
   propagatedBuildInputs = [ (if enableDebug then (enableDebugging boost) else boost) ];
 
-  buildInputs = [cmake_modules gtest protobuf] ++
+  buildInputs = [cmake_modules gtest protobuf python3] ++
                   ( lib.optional (staticBuild) glibc.static );
 
   cmakeFlags =

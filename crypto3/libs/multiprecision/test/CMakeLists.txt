@@ -15,6 +15,27 @@ cm_test_link_libraries(
     Boost::unit_test_framework
 )
 
+set(GENERATED_TEST_DATA_DIR ${CMAKE_CURRENT_BINARY_DIR}/generated)
+
+set(GENERATED_FILES
+    "include/generated_test_data/big_uint_randomized_test_instances.hpp"
+    "big_uint_randomized_test_cases.json"
+    "big_mod_randomized_test_cases.json"
+)
+
+list(TRANSFORM GENERATED_FILES PREPEND ${GENERATED_TEST_DATA_DIR}/)
+
+find_package(Python COMPONENTS Interpreter)
+
+add_custom_command(
+    OUTPUT ${GENERATED_FILES}
+    COMMAND ${Python_EXECUTABLE} ${CMAKE_CURRENT_LIST_DIR}/generate_test_data.py ${GENERATED_TEST_DATA_DIR}
+    DEPENDS generate_test_data.py
+    VERBATIM
+)
+
+add_custom_target(generated_test_data DEPENDS ${GENERATED_FILES})
+
 macro(define_multiprecision_test_variant name disable_intrinsics disable_int128)
     set(test_name "${CURRENT_PROJECT_NAME}-")
 
@@ -52,7 +73,9 @@ macro(define_multiprecision_test_variant name disable_intrinsics disable_int128)
         target_compile_options(${test_name} PRIVATE "-fconstexpr-ops-limit=4294967295")
     endif()
 
-    target_compile_definitions(${test_name} PRIVATE TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data/")
+    add_dependencies(${test_name} generated_test_data)
+    target_include_directories(${test_name} PRIVATE ${GENERATED_TEST_DATA_DIR}/include)
+    target_compile_definitions(${test_name} PRIVATE TEST_DATA_DIR="${GENERATED_TEST_DATA_DIR}")
 
     if (${disable_intrinsics})
         target_compile_definitions(${test_name} PRIVATE NIL_CO3_MP_DISABLE_INTRINSICS)
