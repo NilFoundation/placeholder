@@ -56,8 +56,6 @@ namespace nil {
                         constrain(current_state.stack_size_next() - current_state.stack_size(0));   // stack_size transition
                         constrain(current_state.memory_size(0) - current_state.memory_size_next());     // memory_size transition
                         constrain(current_state.rw_counter_next() - current_state.rw_counter(0) - 2);   // rw_counter transition
-                    } else {
-                        std::cout << "\tSTATE transition implemented" << std::endl;
                     }
                 }
             };

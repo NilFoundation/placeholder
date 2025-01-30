@@ -288,12 +288,13 @@ public:
         bool result = true;
         if( check_satisfiability ){
             result = result & is_satisfied(bp, assignment);
+            std::cout << std::endl;
         }
         // It's debug mode. Prover from non-satisfied circuit will throw asserts
         if( result && generate_proof ){
             result = result & check_proof(bp, assignment, desc);
+            std::cout << std::endl;
         }
-        std::cout << std::endl;
         return result;
     }
 

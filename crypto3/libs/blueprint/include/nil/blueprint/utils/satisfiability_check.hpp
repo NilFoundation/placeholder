@@ -116,6 +116,24 @@ namespace nil {
 
             std::map<std::string, std::set<std::vector<typename BlueprintFieldType::value_type>>> used_dynamic_tables;
 
+            std::size_t lookup_constraints_amount = 0;
+            std::map<std::string, std::size_t> table_lookup_map;
+            for (const auto& i : used_lookup_gates) {
+                lookup_constraints_amount += lookup_gates[i].constraints.size();
+                for( const auto &constraint : lookup_gates[i].constraints ){
+                    std::string table_name = bp.get_reserved_indices_right().at(constraint.table_id);
+                    if( table_lookup_map.find(table_name) == table_lookup_map.end()){
+                        table_lookup_map[table_name] = 1;
+                    } else {
+                        table_lookup_map[table_name]++;
+                    }
+                }
+            }
+            std::cout << "Lookup constraints amount = " << lookup_constraints_amount << std::endl;
+            for( const auto[k,v]: table_lookup_map){
+                std::cout << "\t" << k << " lookup constraints amount = " << v << std::endl;
+            }
+
             std::cout << "Satisfiability check. Check" << std::endl;
             for (const auto& i : used_gates) {
                 std::cout << "\tCheck gate " << i << std::endl;

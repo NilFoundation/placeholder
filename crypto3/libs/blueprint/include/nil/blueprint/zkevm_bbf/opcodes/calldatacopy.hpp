@@ -107,8 +107,6 @@ namespace nil {
                         //     length
                         // };
                         // lookup(tmp, "zkevm_rw");
-                    } else {
-                        std::cout << "\tSTATE transition implemented" << std::endl;
                     }
                 }
             };

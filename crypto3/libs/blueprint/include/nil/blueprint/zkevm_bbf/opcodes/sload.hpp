@@ -65,8 +65,6 @@ namespace nil {
                         allocate(V[i], i,0);
                     allocate(K_hi, 32, 0);
                     allocate(K_lo, 33, 0);
-                    std::cout << "\tK_hi = " << K_hi << std::endl;
-                    std::cout << "\tK_lo = " << K_lo << std::endl;
                     auto V_128 = chunks16_to_chunks128<TYPE>(V);
                     if constexpr( stage == GenerationStage::CONSTRAINTS ){
                         constrain(current_state.pc_next() - current_state.pc(0) - 1);                   // PC transition

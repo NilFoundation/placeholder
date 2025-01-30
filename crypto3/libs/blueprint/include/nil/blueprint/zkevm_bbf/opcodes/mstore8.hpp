@@ -68,7 +68,6 @@ namespace nil {
                     // TYPE memory_quad_r;
                     std::vector<TYPE> value(32);
                     if constexpr( stage == GenerationStage::ASSIGNMENT ){
-                        std::cout << "\tASSIGNMENT implemented" << std::endl;
                         auto address = w_to_16(current_state.stack_top())[15];
                         addr = address;
                         addr1 = address;
@@ -186,8 +185,6 @@ namespace nil {
                             value[31]                                               // addr is smaller than maximum contract size
                         };
                         lookup(tmp, "zkevm_rw");
-                    } else {
-                        std::cout << "\tASSIGNMENT implemented" << std::endl;
                     }
                 }
             };

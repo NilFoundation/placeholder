@@ -383,8 +383,7 @@ namespace nil {
                             } else if(opcode == "RETURNDATASIZE") {
                                 // 0x3d
                                 // std::cout << "Test me, please!" << std::endl;
-                                std::cout << "RETURNDATASIZE not implemented" << std::endl;
-                                exit(2);
+                                // std::cout << "RETURNDATASIZE not implemented" << std::endl;
                                 _rw_operations.push_back(stack_rw_operation(call_id,  stack_next.size()-1, rw_counter++, true, stack_next[stack_next.size()-1]));
 
                             } else if(opcode == "RETURNDATACOPY") {
@@ -893,7 +892,8 @@ namespace nil {
                                 _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-3, rw_counter++, false, stack[stack.size()-5]));
                                 _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-2, rw_counter++, false, stack[stack.size()-6]));
                                 _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-1, rw_counter++, false, stack[stack.size()-7]));
-                                _rw_operations.push_back(stack_rw_operation(call_id,  stack_next.size()-1, rw_counter++, true, stack_next[stack_next.size()-1]));
+                                //_rw_operations.push_back(stack_rw_operation(call_id,  stack_next.size()-1, rw_counter++, true, stack_next[stack_next.size()-1]));
+                                //exit(2);
                             } else if(opcode == "CALLCODE") {
                                 // 0xf2
                                 _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-7, rw_counter++, false, stack[stack.size()-1]));

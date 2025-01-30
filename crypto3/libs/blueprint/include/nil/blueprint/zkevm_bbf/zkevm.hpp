@@ -189,13 +189,13 @@ namespace nil {
                             );
                             std::size_t opcode_id = (std::find(implemented_opcodes.begin(), implemented_opcodes.end(), current_opcode) - implemented_opcodes.begin());
                             std::cout << current_opcode
-                                << " with id = " << opcode_id
-                                << " will be assigned as " << std::hex << current_state.opcode << std::dec
+                                << " id = " << opcode_id
+                                //<< " assigned as " << std::hex << current_state.opcode << std::dec
                                 << " on row " << current_row
-                                << " rows_amount = " << current_opcode_rows_amount
-                                << " stack_size = " << current_state.stack_size
-                                << " memory_size = " << current_state.memory_size
-                                << " rw_counter = 0x" << std::hex<< current_state.rw_counter << std::dec
+                                << " uses " << current_opcode_rows_amount << " rows"
+                                << " STS = " << current_state.stack_size
+                                << " MS = " << current_state.memory_size
+                                << " RWC = 0x" << std::hex<< current_state.rw_counter << std::dec
                                 << " gas = " << current_state.gas
                                 // << " bytecode_hash = " << current_state.bytecode_hash
                                 << std::endl;
@@ -352,9 +352,9 @@ namespace nil {
                         TYPE evm_opcode_constraint;
                         for( std::size_t opcode_num = 0; opcode_num < implemented_opcodes_amount; opcode_num++){
                             zkevm_opcode current_opcode = implemented_opcodes[opcode_num];
-                            if( opcode_impls.find(current_opcode) == opcode_impls.end() ) {
-                                std::cout << "Opcode " << current_opcode <<" implementation not found" << std::endl;
-                            }
+                            // if( opcode_impls.find(current_opcode) == opcode_impls.end() ) {
+                            //     std::cout << "Opcode " << current_opcode <<" implementation not found" << std::endl;
+                            // }
                             std::size_t current_opcode_bare_rows_amount =
                                 opcode_impls.find(current_opcode) == opcode_impls.end()?
                                 0:
@@ -441,7 +441,6 @@ namespace nil {
 
                                 opcode_impls[current_opcode]->fill_context(fresh_ct, opcode_state_vars);
                                 auto opcode_constraints = fresh_ct.get_constraints();
-                                std::cout << "Opcode " << current_opcode << std::endl;
                                 for( const auto &constr_list: opcode_constraints){
                                     for( const auto &local_row: constr_list.first){
                                         for( auto constraint: constr_list.second){

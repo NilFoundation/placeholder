@@ -623,8 +623,6 @@ namespace nil {
                                Res0,
                                Res1};
                         lookup(tmp, "zkevm_rw");
-                    } else {
-                        std::cout << "\tASSIGNMENT implemented" << std::endl;
                     }
                 }
             };

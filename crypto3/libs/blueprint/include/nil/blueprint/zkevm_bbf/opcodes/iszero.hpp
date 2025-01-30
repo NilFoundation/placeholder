@@ -56,7 +56,6 @@ namespace nil {
                     TYPE chunks_sum_inv;
                     TYPE result;
                     if constexpr( stage == GenerationStage::ASSIGNMENT ){
-                        std::cout << "\tASSIGNMENT implemented" << std::endl;
                         zkevm_word_type A = current_state.stack_top();
                         auto a = w_to_16(A);
                         for( std::size_t i = 0; i < a_chunks.size(); i++ ){

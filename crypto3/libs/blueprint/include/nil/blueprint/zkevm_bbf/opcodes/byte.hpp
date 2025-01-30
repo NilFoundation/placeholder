@@ -172,8 +172,6 @@ namespace nil {
                             result
                         };
                         lookup(tmp, "zkevm_rw");
-                    } else {
-                        std::cout << "\tAssignment implemented" << std::endl;
                     }
                 }
             };

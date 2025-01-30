@@ -139,8 +139,6 @@ namespace nil {
                             is_add? S_128.second: A_128.second
                         };
                         lookup(tmp, "zkevm_rw");
-                    } else {
-                        std::cout << "\tAssignment implemented" << std::endl;
                     }
                 }
             };

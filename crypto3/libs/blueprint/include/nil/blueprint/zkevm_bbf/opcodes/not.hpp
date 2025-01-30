@@ -104,8 +104,6 @@ namespace nil {
                             R_128.second
                         };
                         lookup(tmp, "zkevm_rw");
-                    } else {
-                        std::cout << "Assignment implemented" << std::endl;
                     }
                 }
             };

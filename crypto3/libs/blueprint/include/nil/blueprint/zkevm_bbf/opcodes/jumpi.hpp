@@ -57,7 +57,6 @@ namespace nil {
                     TYPE is_jump;
                     TYPE new_pc;
                     if constexpr( stage == GenerationStage::ASSIGNMENT ){
-                        std::cout << "\tASSIGNMENT implemented" << std::endl;
                         addr = nil::blueprint::w_to_16(current_state.stack_top())[15];
                         auto c_chunks = nil::blueprint::w_to_16(current_state.stack_top(1));
                         for( std::size_t i = 0; i < 16; i++ ){

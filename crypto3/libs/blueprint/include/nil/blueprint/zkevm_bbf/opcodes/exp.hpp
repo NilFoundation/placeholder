@@ -218,8 +218,6 @@ namespace nil {
                             s * R_128.second
                         };
                         lookup(tmp, "zkevm_exp");
-                    } else {
-                        std::cout << "\tAssignment implemented" << std::endl;
                     }
                 }
             };

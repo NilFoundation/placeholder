@@ -143,8 +143,6 @@ namespace nil {
                             r                                                      // addr is smaller than maximum contract size
                         };
                         lookup(tmp, "zkevm_rw");
-                    } else {
-                        std::cout << "\tASSIGNMENT implemented" << std::endl;
                     }
                 }
             };
