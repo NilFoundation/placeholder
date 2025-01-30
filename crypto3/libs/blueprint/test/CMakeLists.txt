@@ -232,6 +232,9 @@ set(ZKEVM_BBF_TESTS_FILES
     "zkevm_bbf/opcodes/exp"
     "zkevm_bbf/opcodes/calldata"
     "zkevm_bbf/opcodes/logx"
+    "zkevm_bbf/opcodes/gas"
+    "zkevm_bbf/opcodes/pc"
+    "zkevm_bbf/opcodes/msize"
 )
 
 
