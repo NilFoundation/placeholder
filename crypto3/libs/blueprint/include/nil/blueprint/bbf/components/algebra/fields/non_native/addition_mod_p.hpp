@@ -28,14 +28,13 @@
 #ifndef CRYPTO3_BBF_COMPONENTS_ADDITION_MOD_P_HPP
 #define CRYPTO3_BBF_COMPONENTS_ADDITION_MOD_P_HPP
 
-#include <nil/blueprint/bbf/generic.hpp>
-#include <nil/crypto3/algebra/curves/pallas.hpp>
-#include <nil/crypto3/algebra/curves/vesta.hpp>
-
 #include <nil/blueprint/bbf/components/algebra/fields/non_native/check_mod_p.hpp>
 #include <nil/blueprint/bbf/components/detail/carry_on_addition.hpp>
 #include <nil/blueprint/bbf/components/detail/choice_function.hpp>
 #include <nil/blueprint/bbf/components/detail/range_check_multi.hpp>
+#include <nil/blueprint/bbf/generic.hpp>
+#include <nil/crypto3/algebra/curves/pallas.hpp>
+#include <nil/crypto3/algebra/curves/vesta.hpp>
 
 namespace nil {
     namespace blueprint {
@@ -83,7 +82,7 @@ namespace nil {
 
                     static table_params get_minimal_requirements(
                         std::size_t num_chunks, std::size_t bit_size_chunk) {
-                        std::size_t witness = 4 * num_chunks + 1;                        
+                        std::size_t witness = 4 * num_chunks + 1;
                         constexpr std::size_t public_inputs = 1;
                         constexpr std::size_t constants = 0;
                         // rows = 4096-1 so that lookup table is not too hard to fit and

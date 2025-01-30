@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2024 Alexey Yashunsky <a.yashunsky@nil.foundation>
-// Copyright (c) 2024 Antoine Cyr <antoinecyr@nil.foundation>
+// Copyright (c) 2025 Antoine Cyr <antoinecyr@nil.foundation>
 //
 // MIT License
 //
@@ -28,16 +28,14 @@
 #ifndef CRYPTO3_BBF_COMPONENTS_EC_INCOMPLETE_ADD_ECDSA_HPP
 #define CRYPTO3_BBF_COMPONENTS_EC_INCOMPLETE_ADD_ECDSA_HPP
 
-#include <nil/blueprint/bbf/generic.hpp>
-#include <nil/crypto3/algebra/curves/pallas.hpp>
-#include <nil/crypto3/algebra/curves/vesta.hpp>
-
 #include <nil/blueprint/bbf/components/algebra/fields/non_native/addition_mod_p.hpp>
 #include <nil/blueprint/bbf/components/algebra/fields/non_native/check_mod_p.hpp>
 #include <nil/blueprint/bbf/components/algebra/fields/non_native/flexible_multiplication.hpp>
 #include <nil/blueprint/bbf/components/algebra/fields/non_native/negation_mod_p.hpp>
-#include <nil/blueprint/bbf/components/detail/choice_function.hpp>
 #include <nil/blueprint/bbf/components/detail/range_check_multi.hpp>
+#include <nil/blueprint/bbf/generic.hpp>
+#include <nil/crypto3/algebra/curves/pallas.hpp>
+#include <nil/crypto3/algebra/curves/vesta.hpp>
 
 namespace nil {
     namespace blueprint {
@@ -158,8 +156,6 @@ namespace nil {
                         using non_native_integral_type =
                             typename NonNativeFieldType::integral_type;
 
-                        using Choice_Function =
-                            typename bbf::components::choice_function<FieldType, stage>;
                         using Range_Check =
                             typename bbf::components::range_check_multi<FieldType, stage>;
                         using Check_Mod_P =

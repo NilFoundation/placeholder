@@ -111,7 +111,7 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_bbf_range_check_multi_test) {
     using pallas_field_type = typename crypto3::algebra::curves::pallas::base_field_type;
     using vesta_field_type = typename crypto3::algebra::curves::vesta::base_field_type;
 
-    range_check_tests<pallas_field_type, 8, 32, random_tests_amount>();
+    range_check_tests<pallas_field_type, 3, 96, random_tests_amount>();
     range_check_tests<pallas_field_type, 8, 65, random_tests_amount>();
     range_check_tests<pallas_field_type, 4, 63, random_tests_amount>();
 

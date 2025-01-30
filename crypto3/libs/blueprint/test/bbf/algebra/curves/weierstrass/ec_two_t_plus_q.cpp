@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------//
-// Copyright (c) 2024 Antoine Cyr <antoinecyr@nil.foundation>
+// Copyright (c) 2025 Antoine Cyr <antoinecyr@nil.foundation>
 //
 // MIT License
 //
@@ -25,11 +25,11 @@
 #define BOOST_TEST_MODULE bbf_ec_two_t_plus_q_test
 
 #include <boost/test/unit_test.hpp>
-#include <nil/blueprint/bbf/components/algebra/curves/weierstrass/ec_two_t_plus_q.hpp>
 #include <nil/blueprint/bbf/circuit_builder.hpp>
-#include <nil/crypto3/random/algebraic_engine.hpp>
+#include <nil/blueprint/bbf/components/algebra/curves/weierstrass/ec_two_t_plus_q.hpp>
 #include <nil/crypto3/algebra/curves/pallas.hpp>
 #include <nil/crypto3/algebra/curves/vesta.hpp>
+#include <nil/crypto3/random/algebraic_engine.hpp>
 
 using namespace nil;
 using namespace nil::blueprint;
@@ -80,8 +80,9 @@ void test_ec_two_t_plus_q(
         raw_input.p = std::vector<TYPE>(public_input.begin() + 4 * num_chunks,
                                         public_input.begin() + 5 * num_chunks);
         raw_input.pp = std::vector<TYPE>(public_input.begin() + 5 * num_chunks,
-                                         public_input.begin() + 6 * num_chunks);
-        raw_input.zero = public_input[6 * num_chunks];
+                                         public_input.begin() + 6 * num_chunks);                   
+        raw_input.zero = std::vector<TYPE>(public_input.begin() + 6 * num_chunks,
+                                         public_input.begin() + 7 * num_chunks);
 
         auto [at, A, desc] = B.assign(raw_input);
         bool pass = B.is_satisfied(at);
@@ -92,8 +93,8 @@ void test_ec_two_t_plus_q(
         non_native_integral_type yR = 0;
         pow = 1;
         for (std::size_t i = 0; i < num_chunks; i++) {
-            xR += non_native_integral_type(integral_type(A.res_xR[i].data)) * pow;
-            yR += non_native_integral_type(integral_type(A.res_yR[i].data)) * pow;
+            xR += non_native_integral_type(integral_type(A.xR[i].data)) * pow;
+            yR += non_native_integral_type(integral_type(A.yR[i].data)) * pow;
             pow <<= bit_size_chunk;
         }
         // #ifdef BLUEPRINT_PLONK_PROFILING_ENABLED
@@ -161,7 +162,7 @@ void ec_two_t_plus_q_tests() {
         T = T * d;
         Q = Q * d;
 
-        public_input.resize(6 * num_chunks + 1);
+        public_input.resize(7 * num_chunks);
         integral_type xT = integral_type(T.X.data);
         integral_type yT = integral_type(T.Y.data);
         integral_type xQ = integral_type(Q.X.data);
@@ -184,8 +185,9 @@ void ec_two_t_plus_q_tests() {
 
             public_input[5 * num_chunks + j] = value_type(pp & mask);
             pp >>= bit_size_chunk;
+
+            public_input[6 * num_chunks + j] = value_type(0);
         }
-        public_input.push_back(value_type(0));  // the zero
 
         test_ec_two_t_plus_q<BlueprintFieldType, NonNativeFieldType, num_chunks,
                              bit_size_chunk>(public_input);
@@ -197,6 +199,7 @@ constexpr static const std::size_t random_tests_amount = 10;
 BOOST_AUTO_TEST_SUITE(blueprint_plonk_test_suite)
 
 BOOST_AUTO_TEST_CASE(blueprint_plonk_bbf_ec_two_t_plus_q_test) {
+    // The curve is passed in as an argument to access additionnal properties
     using pallas = typename crypto3::algebra::curves::pallas;
     using vesta = typename crypto3::algebra::curves::vesta;
 

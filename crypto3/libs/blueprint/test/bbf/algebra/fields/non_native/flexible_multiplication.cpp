@@ -26,13 +26,12 @@
 
 #define BOOST_TEST_MODULE bbf_flexible_multiplication_test
 
-#include <nil/crypto3/random/algebraic_engine.hpp>
 #include <boost/test/unit_test.hpp>
 #include <nil/blueprint/bbf/circuit_builder.hpp>
 #include <nil/blueprint/bbf/components/algebra/fields/non_native/flexible_multiplication.hpp>
-#include <nil/blueprint/bbf/circuit_builder.hpp>
 #include <nil/crypto3/algebra/curves/pallas.hpp>
 #include <nil/crypto3/algebra/curves/vesta.hpp>
+#include <nil/crypto3/random/algebraic_engine.hpp>
 
 using namespace nil;
 using namespace nil::blueprint;
@@ -228,7 +227,7 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_bbf_flexible_multiplication_test) {
     using vesta_field_type = typename crypto3::algebra::curves::vesta::base_field_type;
 
     std::cout << "Scenario 1\n";
-    mult_tests<pallas_field_type, vesta_field_type, 4, 64, random_tests_amount>();
+    mult_tests<pallas_field_type, vesta_field_type, 3, 96, random_tests_amount>();
 
     std::cout << "Scenario 2\n";
     mult_tests<pallas_field_type, vesta_field_type, 5, 64, random_tests_amount>();
