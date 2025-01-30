@@ -222,6 +222,9 @@ set(ZKEVM_BBF_TESTS_FILES
     "zkevm_bbf/opcodes/jumps"
     "zkevm_bbf/opcodes/not"
     "zkevm_bbf/opcodes/exp"
+    "zkevm_bbf/opcodes/gas"
+    "zkevm_bbf/opcodes/pc"
+    "zkevm_bbf/opcodes/msize"
 )
 
 

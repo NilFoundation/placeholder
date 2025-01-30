@@ -13,7 +13,7 @@ namespace nil {
             class opcode_abstract;
 
             template<typename FieldType, GenerationStage stage>
-            class zkevm_gas_bbf : generic_component<FieldType, stage> {
+            class zkevm_msize_bbf : generic_component<FieldType, stage> {
                 using typename generic_component<FieldType, stage>::context_type;
                 using generic_component<FieldType, stage>::allocate;
                 using generic_component<FieldType, stage>::copy_constrain;
@@ -23,7 +23,7 @@ namespace nil {
             public:
                 using typename generic_component<FieldType,stage>::TYPE;
 
-                zkevm_gas_bbf(context_type &context_object, const opcode_input_type<FieldType, stage> &current_state):
+                zkevm_msize_bbf(context_type &context_object, const opcode_input_type<FieldType, stage> &current_state):
                     generic_component<FieldType,stage>(context_object, false)
                 {
                     
@@ -43,7 +43,7 @@ namespace nil {
                             current_state.rw_counter(0),
                             TYPE(1),// is_write
                             0,
-                            current_state.gas_next()
+                            current_state.memory_size(0)
                         });
                         lookup(tmp, "zkevm_rw");
                     }
@@ -51,21 +51,21 @@ namespace nil {
             };
 
             template<typename FieldType>
-            class zkevm_gas_operation : public opcode_abstract<FieldType> {
+            class zkevm_msize_operation : public opcode_abstract<FieldType> {
             public:
                 virtual void fill_context(
                     typename generic_component<FieldType, GenerationStage::ASSIGNMENT>::context_type &context,
                     const opcode_input_type<FieldType, GenerationStage::ASSIGNMENT> &current_state
                 ) override {
-                    // std::cout << "\tAssign GAS input = " << current_state.stack_top() << std::endl;
-                    zkevm_gas_bbf<FieldType, GenerationStage::ASSIGNMENT> bbf_obj(context, current_state);
+                    // std::cout << "\tAssign MSIZE input = " << current_state.stack_top() << std::endl;
+                    zkevm_msize_bbf<FieldType, GenerationStage::ASSIGNMENT> bbf_obj(context, current_state);
                 }
                 virtual void fill_context(
                     typename generic_component<FieldType, GenerationStage::CONSTRAINTS>::context_type &context,
                     const opcode_input_type<FieldType, GenerationStage::CONSTRAINTS> &current_state
                 ) override  {
-                    // std::cout << "\tBuild GAS constraints" << std::endl;
-                    zkevm_gas_bbf<FieldType, GenerationStage::CONSTRAINTS> bbf_obj(context, current_state);
+                    // std::cout << "\tBuild MSIZE constraints" << std::endl;
+                    zkevm_msize_bbf<FieldType, GenerationStage::CONSTRAINTS> bbf_obj(context, current_state);
                 }
                 virtual std::size_t rows_amount() override {
                     return 1;
