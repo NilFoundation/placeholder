@@ -534,6 +534,19 @@ namespace nil {
                             _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, condition));
                             gas -= 10;
                             pc = condition? addr: pc+1;
+                        } else if(opcode == zkevm_opcode::PC){
+                            // 0x58
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, pc));
+                            stack.push_back(pc);
+                            gas -= 2;
+                            pc++;
+                        } else if(opcode == zkevm_opcode::GAS){
+                            // 0x5a
+                            gas -= 2;
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, gas));
+                            stack.push_back(gas);
+                            
+                            pc++;
                         } else if(opcode == zkevm_opcode::JUMPDEST){
                             // 0x5b
                             gas -= 1;

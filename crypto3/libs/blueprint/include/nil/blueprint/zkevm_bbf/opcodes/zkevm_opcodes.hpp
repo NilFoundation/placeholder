@@ -82,6 +82,7 @@
 #include <nil/blueprint/zkevm_bbf/opcodes/call.hpp>
 #include <nil/blueprint/zkevm_bbf/opcodes/staticcall.hpp>
 #include <nil/blueprint/zkevm_bbf/opcodes/gas.hpp>
+#include <nil/blueprint/zkevm_bbf/opcodes/pc.hpp>
 #include "nil/blueprint/zkevm_bbf/opcodes/logx.hpp"
 
 namespace nil {
@@ -653,6 +654,7 @@ namespace nil {
                 // // PC operations
                 opcodes[zkevm_opcode::JUMPI] = std::make_shared<zkevm_jumpi_operation<BlueprintFieldType>>();
                 opcodes[zkevm_opcode::JUMP] = std::make_shared<zkevm_jump_operation<BlueprintFieldType>>();
+                opcodes[zkevm_opcode::PC] = std::make_shared<zkevm_pc_operation<BlueprintFieldType>>();
                 opcodes[zkevm_opcode::JUMPDEST] = std::make_shared<zkevm_jumpdest_operation<BlueprintFieldType>>();
 
                 opcodes[zkevm_opcode::PUSH0] = std::make_shared<zkevm_pushx_operation<BlueprintFieldType>>(0);
