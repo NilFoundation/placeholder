@@ -81,7 +81,7 @@ special case of Newton evaluation and interpolation on an arithmetic progression
 ### Geometric sequence
 
 The geometric sequence domain is of size _m_ and is applied for more general cases. The domain applies a basis
-conversion algorithm between the monomial and the Newton bases. The domain takes advantage of further simplications to
+conversion algorithm between the monomial and the Newton bases. The domain takes advantage of further simplifications to
 Newton evaluation and interpolation by choosing sample points that form a geometric progression, _a\_n = r^(n-1)_, see
 \[BS05\].
 
