@@ -44,7 +44,8 @@ namespace nil {
                 // Parameters: num_chunks = k, bit_size_chunk = b
                 // Checking that x is in the interval [0;p-1]
                 // operates on k-chunked x and p' = 2^(kb) - p
-                // Input: x[0], ..., x[k-1], pp[0], ..., pp[k-1]
+                // Input: x[0], ..., x[k-1], pp[0], ..., pp[k-1], 0
+                // (expects zero constant as input) 
                 // Output: none
 
                 template<typename FieldType>
@@ -72,13 +73,11 @@ namespace nil {
                                                   check_mod_p_raw_input<FieldType>,
                                                   std::tuple<>>::type;
                   public:
-                    std::vector<TYPE> inp_x;
-                    std::vector<TYPE> inp_pp;
                     TYPE output;
 
                     static table_params get_minimal_requirements(std::size_t num_chunks,
                                                                  std::size_t bit_size_chunk,
-                                                                 bool expect_output) {
+                                                                 bool expect_output = false) {
                         static const std::size_t bit_size_rc = 16;
                         std::size_t num_rc_chunks = (bit_size_chunk / bit_size_rc) + (bit_size_chunk % bit_size_rc > 0);
 
@@ -95,7 +94,7 @@ namespace nil {
                                                                     raw_input_type raw_input,
                                                                     std::size_t num_chunks,
                                                                     std::size_t bit_size_chunk,
-                                                                    bool expect_output) {
+                                                                    bool expect_output = false) {
                         std::vector<TYPE> input_x(num_chunks);
                         std::vector<TYPE> input_pp(num_chunks);
                         TYPE input_zero;
@@ -116,7 +115,7 @@ namespace nil {
                     }
 
                     check_mod_p(context_type &context_object, std::vector<TYPE> input_x, std::vector<TYPE> input_pp, TYPE input_zero,
-                                      std::size_t num_chunks, std::size_t bit_size_chunk,bool expect_output,
+                                      std::size_t num_chunks, std::size_t bit_size_chunk,bool expect_output = false,
                                       bool make_links = true)
                         : generic_component<FieldType, stage>(context_object) {
                         using integral_type = typename FieldType::integral_type;
@@ -125,18 +124,13 @@ namespace nil {
                         using Range_Check = typename bbf::components::range_check_multi<FieldType,stage>;
 
                         Carry_On_Addition ca = Carry_On_Addition(context_object,input_x,input_pp,num_chunks,bit_size_chunk);
-                        Range_Check rc = Range_Check(context_object, ca.res_z,num_chunks,bit_size_chunk);
+                        Range_Check rc = Range_Check(context_object, ca.r,num_chunks,bit_size_chunk);
                         
                         if(expect_output){
-                            output = ca.res_c;
+                            output = ca.c;
                         }
                         else{
-                            copy_constrain(ca.res_c,input_zero);
-                        }
-
-                        for (std::size_t i = 0; i < num_chunks; i++) {
-                            inp_x.push_back(input_x[i]);
-                            inp_pp.push_back(input_pp[i]);
+                            copy_constrain(ca.c,input_zero);
                         }
 
                     }
