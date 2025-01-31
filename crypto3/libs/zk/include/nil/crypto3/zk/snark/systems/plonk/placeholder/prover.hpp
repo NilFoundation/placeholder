@@ -97,12 +97,12 @@ namespace nil {
                         typename private_preprocessor_type::preprocessed_data_type preprocessed_private_data,
                         const plonk_table_description<FieldType> &table_description,
                         const plonk_constraint_system<FieldType> &constraint_system,
-                        commitment_scheme_type commitment_scheme,
+                        commitment_scheme_type& commitment_scheme,
                         bool skip_commitment_scheme_eval_proofs = false
                     ) {
                         auto prover = placeholder_prover<FieldType, ParamsType>(
                             preprocessed_public_data, std::move(preprocessed_private_data), table_description,
-                            constraint_system, std::move(commitment_scheme), skip_commitment_scheme_eval_proofs);
+                            constraint_system, commitment_scheme, skip_commitment_scheme_eval_proofs);
                         return prover.process();
                     }
 
@@ -111,7 +111,7 @@ namespace nil {
                         const typename private_preprocessor_type::preprocessed_data_type &preprocessed_private_data,
                         const plonk_table_description<FieldType> &table_description,
                         const plonk_constraint_system<FieldType> &constraint_system,
-                        commitment_scheme_type commitment_scheme,
+                        commitment_scheme_type& commitment_scheme,
                         bool skip_commitment_scheme_eval_proofs = false
                     )
                             : preprocessed_public_data(preprocessed_public_data)
@@ -123,15 +123,15 @@ namespace nil {
                             ))
                             , transcript(std::vector<std::uint8_t>({}))
                             , _is_lookup_enabled(constraint_system.lookup_gates().size() > 0)
-                            , _commitment_scheme(std::move(commitment_scheme))
+                            , _commitment_scheme(commitment_scheme)
                             , _skip_commitment_scheme_eval_proofs(skip_commitment_scheme_eval_proofs)
                     {
                         // Initialize transcript.
-                        transcript(preprocessed_public_data.common_data.vk.constraint_system_with_params_hash);
-                        transcript(preprocessed_public_data.common_data.vk.fixed_values_commitment);
+                        transcript(preprocessed_public_data.common_data->vk.constraint_system_with_params_hash);
+                        transcript(preprocessed_public_data.common_data->vk.fixed_values_commitment);
 
                         // Setup commitment scheme. LPC adds an additional point here.
-                        _commitment_scheme.setup(transcript, preprocessed_public_data.common_data.commitment_scheme_data);
+                        _commitment_scheme.setup(transcript, preprocessed_public_data.common_data->commitment_scheme_data);
                     }
 
                     placeholder_proof<FieldType, ParamsType> process() {
@@ -178,17 +178,17 @@ namespace nil {
                         // 6. circuit-satisfability
 
                         polynomial_dfs_type mask_polynomial(
-                            0, preprocessed_public_data.common_data.basic_domain->m,
+                            0, preprocessed_public_data.common_data->basic_domain->m,
                             typename FieldType::value_type(1u)
                         );
                         mask_polynomial -= preprocessed_public_data.q_last;
                         mask_polynomial -= preprocessed_public_data.q_blind;
                         _F_dfs[7] = placeholder_gates_argument<FieldType, ParamsType>::prove_eval(
                             constraint_system, *_polynomial_table,
-                            preprocessed_public_data.common_data.basic_domain,
-                            preprocessed_public_data.common_data.max_gates_degree,
+                            preprocessed_public_data.common_data->basic_domain,
+                            preprocessed_public_data.common_data->max_gates_degree,
                             mask_polynomial,
-                            preprocessed_public_data.common_data.lagrange_0,
+                            preprocessed_public_data.common_data->lagrange_0,
                             transcript
                         )[0];
 
@@ -229,13 +229,12 @@ namespace nil {
                         return _commitment_scheme;
                     }
 
-                    commitment_scheme_type move_commitment_scheme() {
-                        return std::move(_commitment_scheme);
-                    }
 
                 private:
                     std::vector<polynomial_dfs_type> quotient_polynomial_split_dfs() {
                         PROFILE_SCOPE("quotient_polynomial_split_dfs");
+
+                        const auto& assignment_desc = preprocessed_public_data.common_data->desc;
 
                         // TODO: pass max_degree parameter placeholder
                         std::vector<polynomial_type> T_splitted = detail::split_polynomial<FieldType>(
@@ -243,20 +242,20 @@ namespace nil {
                         );
 
                         std::size_t split_polynomial_size = std::max(
-                            (preprocessed_public_data.identity_polynomials.size() + 2) * (preprocessed_public_data.common_data.desc.rows_amount -1 ),
-                            (constraint_system.lookup_poly_degree_bound() + 1) * (preprocessed_public_data.common_data.desc.rows_amount -1 )//,
+                            (preprocessed_public_data.identity_polynomials.size() + 2) * (assignment_desc.rows_amount -1 ),
+                            (constraint_system.lookup_poly_degree_bound() + 1) * (assignment_desc.rows_amount -1 )//,
                         );
                         split_polynomial_size = std::max(
                             split_polynomial_size,
-                            (preprocessed_public_data.common_data.max_gates_degree + 1) * (preprocessed_public_data.common_data.desc.rows_amount -1)
+                            (preprocessed_public_data.common_data->max_gates_degree + 1) * (assignment_desc.rows_amount -1)
                         );
-                        split_polynomial_size = (split_polynomial_size % preprocessed_public_data.common_data.desc.rows_amount != 0)?
-                            (split_polynomial_size / preprocessed_public_data.common_data.desc.rows_amount + 1):
-                            (split_polynomial_size / preprocessed_public_data.common_data.desc.rows_amount);
+                        split_polynomial_size = (split_polynomial_size % assignment_desc.rows_amount != 0)?
+                            (split_polynomial_size / assignment_desc.rows_amount + 1) :
+                            (split_polynomial_size / assignment_desc.rows_amount);
 
-                        if (preprocessed_public_data.common_data.max_quotient_chunks != 0 &&
-                            split_polynomial_size > preprocessed_public_data.common_data.max_quotient_chunks) {
-                            split_polynomial_size = preprocessed_public_data.common_data.max_quotient_chunks;
+                        if (preprocessed_public_data.common_data->max_quotient_chunks != 0 &&
+                            split_polynomial_size > preprocessed_public_data.common_data->max_quotient_chunks) {
+                            split_polynomial_size = preprocessed_public_data.common_data->max_quotient_chunks;
                         }
 
                         // We need split_polynomial_size computation because proof size shouldn't depend on public input size.
@@ -295,7 +294,7 @@ namespace nil {
                         polynomial_type F_consolidated_normal(F_consolidated_dfs.coefficients());
 
                         polynomial_type T_consolidated =
-                            F_consolidated_normal / preprocessed_public_data.common_data.Z;
+                            F_consolidated_normal / preprocessed_public_data.common_data->Z;
 
                         return T_consolidated;
                     }
@@ -363,7 +362,9 @@ namespace nil {
 
                     void generate_evaluation_points() {
                         PROFILE_SCOPE("evaluation_points_generated_time");
-                        _omega = preprocessed_public_data.common_data.basic_domain->get_domain_element(1);
+                        _omega = preprocessed_public_data.common_data->basic_domain->get_domain_element(1);
+
+                        const auto& assignment_desc = preprocessed_public_data.common_data->desc;
 
                         const std::size_t witness_columns = table_description.witness_columns;
                         const std::size_t public_input_columns = table_description.public_input_columns;
@@ -375,7 +376,7 @@ namespace nil {
                              variable_values_index++
                         ) {
                             const std::set<int>& variable_values_rotation =
-                                preprocessed_public_data.common_data.columns_rotations[variable_values_index];
+                                preprocessed_public_data.common_data->columns_rotations[variable_values_index];
 
                             for (int rotation: variable_values_rotation) {
                                 _commitment_scheme.append_eval_point(
@@ -394,12 +395,12 @@ namespace nil {
                             _commitment_scheme.append_eval_point(PERMUTATION_BATCH, 0, _proof.eval_proof.challenge * _omega);
 
                         if (_is_lookup_enabled) {
-                            _commitment_scheme.append_eval_point(PERMUTATION_BATCH, preprocessed_public_data.common_data.permutation_parts,
+                            _commitment_scheme.append_eval_point(PERMUTATION_BATCH, preprocessed_public_data.common_data->permutation_parts,
                                 _proof.eval_proof.challenge * _omega);
                             _commitment_scheme.append_eval_point(LOOKUP_BATCH, _proof.eval_proof.challenge);
                             _commitment_scheme.append_eval_point(LOOKUP_BATCH, _proof.eval_proof.challenge * _omega);
                             _commitment_scheme.append_eval_point(LOOKUP_BATCH, _proof.eval_proof.challenge *
-                                _omega.pow(preprocessed_public_data.common_data.desc.usable_rows_amount));
+                                _omega.pow(assignment_desc.usable_rows_amount));
                         }
 
                         _commitment_scheme.append_eval_point(QUOTIENT_BATCH, _proof.eval_proof.challenge);
@@ -422,7 +423,7 @@ namespace nil {
                             ind++, i++
                         ) {
                             const std::set<int>& fixed_values_rotation =
-                                preprocessed_public_data.common_data.columns_rotations[witness_columns + public_input_columns + ind];
+                                preprocessed_public_data.common_data->columns_rotations[witness_columns + public_input_columns + ind];
 
                             for (int rotation: fixed_values_rotation) {
                                 _commitment_scheme.append_eval_point(
@@ -448,7 +449,7 @@ namespace nil {
                                 k < constant_columns; k++, rotation_index++) {
 
                             const std::set<int>& rotations =
-                                preprocessed_public_data.common_data.columns_rotations[rotation_index];
+                                preprocessed_public_data.common_data->columns_rotations[rotation_index];
                             std::vector<typename FieldType::value_type> point;
                             point.reserve(rotations.size());
 
@@ -465,7 +466,7 @@ namespace nil {
                                 k++, rotation_index++) {
 
                             const std::set<int>& rotations =
-                                preprocessed_public_data.common_data.columns_rotations[rotation_index];
+                                preprocessed_public_data.common_data->columns_rotations[rotation_index];
                             std::vector<typename FieldType::value_type> point;
                             point.reserve(rotations.size());
 
@@ -494,7 +495,7 @@ namespace nil {
                     bool _is_lookup_enabled;
                     typename FieldType::value_type _omega;
                     std::vector<typename FieldType::value_type> _challenge_point;
-                    commitment_scheme_type _commitment_scheme;
+                    commitment_scheme_type& _commitment_scheme;
                     bool _skip_commitment_scheme_eval_proofs;
                 };
             }    // namespace snark

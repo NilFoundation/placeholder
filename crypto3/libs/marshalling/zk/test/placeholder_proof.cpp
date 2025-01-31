@@ -180,7 +180,7 @@ struct placeholder_lpc_proof_test_runner {
         test_placeholder_partial_proof(lpc_proof, fri_params);
 
         auto verifier_res = placeholder_verifier<field_type, lpc_placeholder_params_type>::process(
-                lpc_preprocessed_public_data.common_data, lpc_proof, desc, constraint_system, lpc_scheme
+                *lpc_preprocessed_public_data.common_data, lpc_proof, desc, constraint_system, lpc_scheme
                 );
 
         /*
@@ -195,6 +195,7 @@ struct placeholder_lpc_proof_test_runner {
     }
 
     using PlaceholderParams = lpc_placeholder_params_type;
+
     using ProofType = placeholder_proof<typename PlaceholderParams::field_type, PlaceholderParams>;
     using CommitmentParamsType = typename lpc_type::fri_type::params_type;
 
@@ -263,8 +264,7 @@ struct placeholder_lpc_proof_test_runner {
         using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
         using proof_marshalling_type = nil::crypto3::marshalling::types::placeholder_aggregated_proof_type<TTypeBase, ProofType>;
 
-        auto filled_placeholder_proof = types::fill_placeholder_aggregated_proof<Endianness, AggregatedProofType,  ProofType>(
-                proof, params);
+        auto filled_placeholder_proof = types::fill_placeholder_aggregated_proof<Endianness, AggregatedProofType,  ProofType>(proof);
         AggregatedProofType _proof = types::make_placeholder_aggregated_proof<
             Endianness, AggregatedProofType, ProofType>(filled_placeholder_proof);
         BOOST_CHECK(_proof == proof);
@@ -593,8 +593,10 @@ struct placeholder_kzg_v2_proof_test_runner : public test_tools::random_test_ini
         using Endianness = nil::crypto3::marshalling::option::big_endian;
 
         test_placeholder_proof(kzg_proof, kzg_params);
+
+        kzg_scheme = kzg_scheme_type(kzg_params);
         bool verifier_res = placeholder_verifier<field_type, kzg_placeholder_params_type>::process(
-                kzg_preprocessed_public_data.common_data, kzg_proof, desc, constraint_system, kzg_scheme);
+                *kzg_preprocessed_public_data.common_data, kzg_proof, desc, constraint_system, kzg_scheme);
         BOOST_CHECK(verifier_res);
         return true;
     }

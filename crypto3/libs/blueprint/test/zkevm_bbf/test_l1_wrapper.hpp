@@ -138,7 +138,7 @@ bool check_proof(
 
     std::cout << "Verifier" << std::endl;
     bool verifier_res = nil::crypto3::zk::snark::placeholder_verifier<BlueprintFieldType, lpc_placeholder_params_type>::process(
-            lpc_preprocessed_public_data.common_data, lpc_proof, desc, bp, verifier_lpc_scheme);
+            *lpc_preprocessed_public_data.common_data, lpc_proof, desc, bp, verifier_lpc_scheme);
     return verifier_res;
 }
 

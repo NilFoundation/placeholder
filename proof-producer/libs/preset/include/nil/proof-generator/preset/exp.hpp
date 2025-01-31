@@ -18,15 +18,19 @@ namespace nil {
     namespace proof_generator {
         template<typename BlueprintFieldType>
         std::optional<std::string> initialize_exp_circuit(
-                std::optional<blueprint::circuit<nil::crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>>>& exp_circuit,
-                std::optional<nil::crypto3::zk::snark::plonk_assignment_table<BlueprintFieldType>>& exp_table,
+                std::shared_ptr<typename PresetTypes<BlueprintFieldType>::ConstraintSystem>& exp_circuit,
+                std::shared_ptr<typename PresetTypes<BlueprintFieldType>::AssignmentTable>&  exp_table,
                 const CircuitsLimits& circuits_limits) {
 
             using ComponentType = nil::blueprint::bbf::exponentiation<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::CONSTRAINTS>;
+            using ConstraintSystem = typename PresetTypes<BlueprintFieldType>::ConstraintSystem;
+            using AssignmentTable = typename PresetTypes<BlueprintFieldType>::AssignmentTable;
+
 
             // initialize assignment table
             const auto desc = ComponentType::get_table_description(circuits_limits.max_rows, circuits_limits.max_exp_rows);
-            exp_table.emplace(desc.witness_columns, desc.public_input_columns, desc.constant_columns, desc.selector_columns);
+            exp_table = std::make_shared<AssignmentTable>(desc.witness_columns, desc.public_input_columns, desc.constant_columns, desc.selector_columns);
+
             BOOST_LOG_TRIVIAL(debug) << "exp table:\n"
                                      << "witnesses = " << exp_table->witnesses_amount()
                                      << " public inputs = " << exp_table->public_inputs_amount()
@@ -62,7 +66,7 @@ namespace nil {
                 100000
             );
 
-            exp_circuit.emplace(circuit);
+            exp_circuit = std::make_shared<ConstraintSystem>(std::move(circuit));
 
             return {};
         }

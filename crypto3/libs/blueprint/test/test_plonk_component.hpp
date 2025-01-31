@@ -252,7 +252,7 @@ namespace nil {
             );
 
             bool verifier_res = nil::crypto3::zk::snark::placeholder_verifier<BlueprintFieldType, placeholder_params_type>::process(
-                preprocessed_public_data.common_data, proof, desc, bp, lpc_scheme
+                *preprocessed_public_data.common_data, proof, desc, bp, lpc_scheme
             );
 
             return verifier_res;

@@ -14,13 +14,11 @@
 // limitations under the License.
 //---------------------------------------------------------------------------//
 
-#ifndef PROOF_GENERATOR_FILE_OPERATIONS_HPP
-#define PROOF_GENERATOR_FILE_OPERATIONS_HPP
+#pragma once
 
 #include <fstream>
 #include <iomanip>
 #include <iostream>
-#include <limits>
 #include <optional>
 #include <vector>
 
@@ -189,5 +187,3 @@ namespace nil {
 
     } // namespace proof_generator
 } // namespace nil
-
-#endif // PROOF_GENERATOR_FILE_OPERATIONS_HPP

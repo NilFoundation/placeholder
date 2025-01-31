@@ -92,7 +92,7 @@ namespace nil {
                         const std::vector<math::polynomial_dfs<typename FieldType::value_type>> &S_id =
                             preprocessed_data.identity_polynomials;
                         std::shared_ptr<math::evaluation_domain<FieldType>> basic_domain =
-                            preprocessed_data.common_data.basic_domain;
+                            preprocessed_data.common_data->basic_domain;
 
                         auto permuted_columns = constraint_system.permuted_columns();
                         std::vector<std::size_t> global_indices;
@@ -161,7 +161,7 @@ namespace nil {
                         for(std::size_t i = 0; i < g_v.size(); i++){
                             g_factors.push_back(g_v[i]);
                             h_factors.push_back(h_v[i]);
-                            if( preprocessed_data.common_data.max_quotient_chunks != 0 && g_factors.size() == (preprocessed_data.common_data.max_quotient_chunks - 1)) {
+                            if( preprocessed_data.common_data->max_quotient_chunks != 0 && g_factors.size() == (preprocessed_data.common_data->max_quotient_chunks - 1)) {
                                 gs.push_back(math::polynomial_product<FieldType>(g_factors));
                                 hs.push_back(math::polynomial_product<FieldType>(h_factors));
                                 g_factors.clear();
@@ -174,7 +174,7 @@ namespace nil {
                             g_factors.clear();
                             h_factors.clear();
                         }
-                        BOOST_ASSERT(gs.size() == preprocessed_data.common_data.permutation_parts);
+                        BOOST_ASSERT(gs.size() == preprocessed_data.common_data->permutation_parts);
                         BOOST_ASSERT(gs.size() == hs.size());
 
                         math::polynomial_dfs<typename FieldType::value_type> one_polynomial(
@@ -187,14 +187,14 @@ namespace nil {
 
                         F_dfs[0] = one_polynomial;
                         F_dfs[0] -= V_P;
-                        F_dfs[0] *= preprocessed_data.common_data.lagrange_0;
+                        F_dfs[0] *= preprocessed_data.common_data->lagrange_0;
                         std::vector<typename FieldType::value_type> permutation_alphas;
-                        for( std::size_t i = 0; i < preprocessed_data.common_data.permutation_parts - 1; i++ ){
+                        for( std::size_t i = 0; i < preprocessed_data.common_data->permutation_parts - 1; i++ ){
                             permutation_alphas.push_back(transcript.template challenge<FieldType>());
                         }
 
                         /* F_dfs[1] = (one_polynomial - (preprocessed_data.q_last + preprocessed_data.q_blind)) * (V_P_shifted * h - V_P * g); */
-                        if ( preprocessed_data.common_data.permutation_parts == 1 ){
+                        if ( preprocessed_data.common_data->permutation_parts == 1 ){
                             auto &g = gs[0];
                             auto &h = hs[0];
                             math::polynomial_dfs<typename FieldType::value_type> t1 = V_P;
@@ -208,19 +208,20 @@ namespace nil {
                             F_dfs[1] *= V_P_shifted;
                         } else {
                             PROFILE_SCOPE("PERMUTATION ARGUMENT else block");
+                            const auto& assignment_desc = preprocessed_data.common_data->desc;
                             math::polynomial_dfs<typename FieldType::value_type> previous_poly = V_P;
                             math::polynomial_dfs<typename FieldType::value_type> current_poly = V_P;
                             // We need to store all the values of current_poly. Suddenly this increases the RAM usage, but 
                             // there's no other way to parallelize this loop.
                             std::vector<math::polynomial_dfs<typename FieldType::value_type>> all_polys(1, V_P);
 
-                            for( std::size_t i = 0; i < preprocessed_data.common_data.permutation_parts-1; i++ ){
+                            for( std::size_t i = 0; i < preprocessed_data.common_data->permutation_parts-1; i++ ){
                                 const auto& g = gs[i];
                                 const auto& h = hs[i];
                                 auto reduced_g = reduce_dfs_polynomial_domain(g, basic_domain->m);
                                 auto reduced_h = reduce_dfs_polynomial_domain(h, basic_domain->m);
 
-                                parallel_for(0, preprocessed_data.common_data.desc.usable_rows_amount,
+                                parallel_for(0, assignment_desc.usable_rows_amount,
                                     [&reduced_g, &reduced_h, &current_poly, &previous_poly](std::size_t j) {
                                         current_poly[j] = (previous_poly[j] * reduced_g[j]) * reduced_h[j].inversed();
                                     },
@@ -231,8 +232,8 @@ namespace nil {
                                 previous_poly = current_poly;
                             }
                             std::vector<math::polynomial_dfs<typename FieldType::value_type>> F_dfs_1_parts(
-                                preprocessed_data.common_data.permutation_parts);
-                            parallel_for(0, preprocessed_data.common_data.permutation_parts - 1,
+                                preprocessed_data.common_data->permutation_parts);
+                            parallel_for(0, preprocessed_data.common_data->permutation_parts - 1,
                                 [&gs, &hs, &permutation_alphas, &all_polys, &F_dfs_1_parts](std::size_t i) {
                                     auto &g = gs[i];
                                     auto &h = hs[i];

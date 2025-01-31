@@ -108,7 +108,7 @@ struct placeholder_test_runner {
         lpc_scheme_type verifier_lpc_scheme(fri_params);
 
         bool verifier_res = placeholder_verifier<field_type, lpc_placeholder_params_type>::process(
-                lpc_preprocessed_public_data.common_data, lpc_proof, desc, constraint_system, verifier_lpc_scheme);
+                *lpc_preprocessed_public_data.common_data, lpc_proof, desc, constraint_system, verifier_lpc_scheme);
         return verifier_res;
     }
 
@@ -178,7 +178,7 @@ struct placeholder_kzg_test_runner {
                 kzg_scheme);
 
         verifier_res = placeholder_verifier<field_type, kzg_placeholder_params_type>::process(
-                kzg_preprocessed_public_data.common_data, kzg_proof, desc, constraint_system, kzg_scheme);
+                *kzg_preprocessed_public_data.common_data, kzg_proof, desc, constraint_system, kzg_scheme);
         return verifier_res;
     }
 
@@ -243,7 +243,7 @@ struct placeholder_kzg_test_runner_v2 {
                 kzg_scheme);
 
         verifier_res = placeholder_verifier<field_type, kzg_placeholder_params_type>::process(
-                kzg_preprocessed_public_data.common_data, kzg_proof, desc, constraint_system, kzg_scheme);
+                *kzg_preprocessed_public_data.common_data, kzg_proof, desc, constraint_system, kzg_scheme);
         return verifier_res;
     }
 

@@ -234,10 +234,10 @@ namespace nil {
                     boost::property_tree::ptree root;
                     root.put("test_name", circuit_name);
                     root.put("modulus", PlaceholderParams::field_type::modulus);
-                    root.put("rows_amount", preprocessed_data.common_data.desc.rows_amount);
-                    root.put("usable_rows_amount", preprocessed_data.common_data.desc.usable_rows_amount);
-                    root.put("omega", preprocessed_data.common_data.basic_domain->get_domain_element(1));
-                    root.put("verification_key", preprocessed_data.common_data.vk.to_string());
+                    root.put("rows_amount", preprocessed_data.common_data->desc.rows_amount);
+                    root.put("usable_rows_amount", preprocessed_data.common_data->desc.usable_rows_amount);
+                    root.put("omega", preprocessed_data.common_data->basic_domain->get_domain_element(1));
+                    root.put("verification_key", preprocessed_data.common_data->vk.to_string());
 
                     boost::property_tree::ptree ar_params_node;
                     boost::property_tree::ptree witness_node;
@@ -255,9 +255,9 @@ namespace nil {
                     root.add_child("ar_params", ar_params_node);
 
                     boost::property_tree::ptree c_rotations_node;
-                    for( std::size_t i = 0; i < preprocessed_data.common_data.columns_rotations.size(); i++ ){
+                    for( std::size_t i = 0; i < preprocessed_data.common_data->columns_rotations.size(); i++ ){
                         boost::property_tree::ptree column_node;
-                        for( int r: preprocessed_data.common_data.columns_rotations[i]){
+                        for( int r: preprocessed_data.common_data->columns_rotations[i]){
                             boost::property_tree::ptree rotation_node;
                             rotation_node.put("", r);
                             column_node.push_back(std::make_pair("", rotation_node));

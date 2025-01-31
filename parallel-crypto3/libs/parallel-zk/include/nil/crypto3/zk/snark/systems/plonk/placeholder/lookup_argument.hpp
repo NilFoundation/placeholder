@@ -150,7 +150,7 @@ namespace nil {
                         , plonk_columns(plonk_columns)
                         , commitment_scheme(commitment_scheme)
                         , transcript(transcript)
-                        , basic_domain(preprocessed_data.common_data.basic_domain)
+                        , basic_domain(preprocessed_data.common_data->basic_domain)
                         , lookup_gates(constraint_system.lookup_gates())
                         , lookup_tables(constraint_system.lookup_tables())
                         , lookup_chunks(0)
@@ -162,6 +162,8 @@ namespace nil {
                     prover_lookup_result prove_eval() {
                         PROFILE_SCOPE("Lookup argument prove eval time");
 
+                        const auto& assignment_desc = preprocessed_data.common_data->desc;
+
                         // Construct lookup gates
                         polynomial_dfs_type one_polynomial(
                             0, basic_domain->m, FieldType::value_type::one());
@@ -169,7 +171,7 @@ namespace nil {
                             0, basic_domain->m, FieldType::value_type::zero());
                         polynomial_dfs_type mask_assignment =
                             one_polynomial -  preprocessed_data.q_last - preprocessed_data.q_blind;
-                        polynomial_dfs_type lagrange0 = preprocessed_data.common_data.lagrange_0;
+                        polynomial_dfs_type lagrange0 = preprocessed_data.common_data->lagrange_0;
 
                         std::unique_ptr<std::vector<polynomial_dfs_type>> lookup_value_ptr =
                             prepare_lookup_value(mask_assignment, lagrange0);
@@ -198,7 +200,7 @@ namespace nil {
 
                         //    Sort
                         auto sorted = sort_polynomials(reduced_input, reduced_value, basic_domain->m,
-                            preprocessed_data.common_data.desc.usable_rows_amount);
+                            assignment_desc.usable_rows_amount);
 
                         // 4. Commit sorted polys
                         for( std::size_t i = 0; i < sorted.size(); i++){
@@ -211,7 +213,7 @@ namespace nil {
                         typename FieldType::value_type beta  = transcript.template challenge<FieldType>();
                         typename FieldType::value_type gamma = transcript.template challenge<FieldType>();
 
-                        auto part_sizes = constraint_system.lookup_parts(preprocessed_data.common_data.max_quotient_chunks);
+                        auto part_sizes = constraint_system.lookup_parts(preprocessed_data.common_data->max_quotient_chunks);
                         std::vector<typename FieldType::value_type> lookup_alphas;
                         for(std::size_t i = 0; i < part_sizes.size() - 1; i++){
                             lookup_alphas.push_back(transcript.template challenge<FieldType>());
@@ -226,7 +228,7 @@ namespace nil {
 
                         commitment_scheme.append_to_batch(PERMUTATION_BATCH, V_L);
 
-                        BOOST_ASSERT(V_L[preprocessed_data.common_data.desc.usable_rows_amount] ==  FieldType::value_type::one());
+                        BOOST_ASSERT(V_L[assignment_desc.usable_rows_amount] ==  FieldType::value_type::one());
                         BOOST_ASSERT(std::accumulate(part_sizes.begin(), part_sizes.end(), 0) == sorted.size());
 
                         // Compute gs and hs products for each part
@@ -243,7 +245,7 @@ namespace nil {
 
                         std::array<polynomial_dfs_type, argument_size> F_dfs;
 
-                        F_dfs[0] = preprocessed_data.common_data.lagrange_0 * (one_polynomial - V_L);
+                        F_dfs[0] = preprocessed_data.common_data->lagrange_0 * (one_polynomial - V_L);
                         F_dfs[1] = preprocessed_data.q_last * ( V_L * V_L - V_L );
 
                         // Polynomial g is waaay too large, saving memory here, by making code very unreadable.
@@ -274,8 +276,8 @@ namespace nil {
                             }, ThreadPool::PoolLevel::LOW);
 
                             // Inverse the values of reduced-hs in-place.
-                            parallel_for(0, lookup_alphas.size(), [&reduced_hs, this](std::size_t i) {
-                                parallel_for(0, this->preprocessed_data.common_data.desc.usable_rows_amount,
+                            parallel_for(0, lookup_alphas.size(), [&reduced_hs, &assignment_desc, this](std::size_t i) {
+                                parallel_for(0, assignment_desc.usable_rows_amount,
                                     [&reduced_hs, i](std::size_t j) {
                                         reduced_hs[i][j] = reduced_hs[i][j].inversed();
                                     },
@@ -291,10 +293,10 @@ namespace nil {
 
                             for (std::size_t i = 0; i < lookup_alphas.size(); ++i) {
 
-                                parallel_for(0, preprocessed_data.common_data.desc.usable_rows_amount,
+                                parallel_for(0, assignment_desc.usable_rows_amount,
                                     [&current_poly, &previous_poly, &reduced_gs, &reduced_hs, i](std::size_t j) {
                                         current_poly[j] = previous_poly[j] * reduced_gs[i][j] * reduced_hs[i][j];
-                                    },
+                                    },  
                                     ThreadPool::PoolLevel::LOW);
                                 commitment_scheme.append_to_batch(PERMUTATION_BATCH, current_poly);
                                 all_polys.push_back(current_poly);
@@ -330,12 +332,12 @@ namespace nil {
                         }
 
                         std::vector<polynomial_dfs_type> F_dfs_3_parts(std::next(sorted.begin(), 1), sorted.end());
-                        parallel_for(0, F_dfs_3_parts.size(), [this, &F_dfs_3_parts, &alpha_challenges, &sorted](std::size_t i) {
+                        parallel_for(0, F_dfs_3_parts.size(), [this, &F_dfs_3_parts, &alpha_challenges, &assignment_desc, &sorted](std::size_t i) {
                             polynomial_dfs_type sorted_shifted = math::polynomial_shift(
-                                sorted[i], preprocessed_data.common_data.desc.usable_rows_amount,
+                                sorted[i], assignment_desc.usable_rows_amount,
                                 basic_domain->m);
                             F_dfs_3_parts[i] -= sorted_shifted;
-                            F_dfs_3_parts[i] *= alpha_challenges[i] * preprocessed_data.common_data.lagrange_0;
+                            F_dfs_3_parts[i] *= alpha_challenges[i] * preprocessed_data.common_data->lagrange_0;
                         }, ThreadPool::PoolLevel::HIGH);
 
                         F_dfs[3] = polynomial_sum<FieldType>(std::move(F_dfs_3_parts));
@@ -438,12 +440,14 @@ namespace nil {
                         const typename FieldType::value_type& gamma) {
                         PROFILE_SCOPE("Lookup argument compute poly V_L");
 
+                        const auto& assignment_desc = preprocessed_data.common_data->desc;
+
                         polynomial_dfs_type V_L(
                             basic_domain->m - 1, basic_domain->m, FieldType::value_type::zero());
                         V_L[0] = FieldType::value_type::one();
                         auto one = FieldType::value_type::one();
 
-                        parallel_for(1, preprocessed_data.common_data.desc.usable_rows_amount + 1,
+                        parallel_for(1, assignment_desc.usable_rows_amount + 1,
                                 [&one, &beta, &V_L, &reduced_input, &reduced_value, &sorted, &gamma](std::size_t k) {
                             typename FieldType::value_type g_tmp = (one + beta).pow(reduced_input.size());
                             for (std::size_t i = 0; i < reduced_input.size(); i++) {
@@ -465,7 +469,7 @@ namespace nil {
                         }, ThreadPool::PoolLevel::HIGH);
 
                         // TODO(martun): we can parallize the lower loop as well, but it's fast enough to ignore for now.
-                        for (std::size_t k = 1; k <= preprocessed_data.common_data.desc.usable_rows_amount; k++) {
+                        for (std::size_t k = 1; k <= assignment_desc.usable_rows_amount; k++) {
                             V_L[k] *= V_L[k-1];
                         }
 
