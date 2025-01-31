@@ -36,3 +36,10 @@ jobs:
     if: |
       always() && !cancelled()
     secrets: inherit
+
+  test-linux-sanitizers:
+   name: Linux placeholder testing and sanitize with clang
+   uses: ./.github/workflows/clang-sanitizers-linux-nix-check.yml
+   if: |
+     always() && !cancelled()
+   secrets: inherit
