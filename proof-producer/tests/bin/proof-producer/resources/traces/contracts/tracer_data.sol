@@ -10,4 +10,12 @@ contract SimpleStorage {
         value += 1;
         emit ValueChanged(value);
     }
+
+    function exponentiate() public {
+        if (value < 2) {
+            value = 2;
+        }
+        value = value ** value;
+        emit ValueChanged(value);
+    }
 }
