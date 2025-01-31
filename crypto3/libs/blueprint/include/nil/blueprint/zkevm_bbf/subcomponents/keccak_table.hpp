@@ -46,10 +46,17 @@ namespace nil {
 
             public:
                 using typename generic_component<FieldType,stage>::TYPE;
-                struct input_type{
+
+                using private_input_type = std::conditional_t<
+                        stage == GenerationStage::ASSIGNMENT,
+                        zkevm_keccak_buffers, std::monostate
+                >;
+
+                struct input_type {
                     TYPE rlc_challenge;
-                    typename std::conditional<stage == GenerationStage::ASSIGNMENT, zkevm_keccak_buffers, std::nullptr_t>::type private_input;
+                    private_input_type private_input;
                 };
+
                 std::size_t max_blocks;
 
                 std::vector<TYPE> is_last = std::vector<TYPE>(max_blocks);

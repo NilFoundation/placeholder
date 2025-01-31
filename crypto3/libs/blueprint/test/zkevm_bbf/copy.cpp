@@ -40,18 +40,14 @@
 
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
-#include <nil/blueprint/bbf/l1_wrapper.hpp>
 #include <nil/blueprint/zkevm_bbf/copy.hpp>
-#include <nil/blueprint/zkevm_bbf/zkevm.hpp>
-#include <nil/blueprint/zkevm_bbf/bytecode.hpp>
-#include <nil/blueprint/zkevm_bbf/keccak.hpp>
-#include <nil/blueprint/zkevm_bbf/rw.hpp>
 #include <nil/blueprint/zkevm_bbf/input_generators/hardhat_input_generator.hpp>
 
 #include "./test_l1_wrapper.hpp"
 
 using namespace nil::crypto3;
 using namespace nil::blueprint;
+using namespace nil::blueprint::bbf;
 
 class zkEVMCopyTestFixture: public BBFTestFixture {
 public:
@@ -81,8 +77,7 @@ public:
         std::size_t max_copy = max_sizes.max_copy;
         std::size_t max_zkevm_rows = max_sizes.max_zkevm_rows;
 
-        typename nil::blueprint::bbf::copy<field_type,nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type copy_assignment_input;
-        typename nil::blueprint::bbf::copy<field_type,nil::blueprint::bbf::GenerationStage::CONSTRAINTS>::input_type copy_constraint_input;
+        typename copy<field_type, GenerationStage::ASSIGNMENT>::raw_input_type copy_assignment_input;
         copy_assignment_input.rlc_challenge = 7;
         copy_assignment_input.bytecodes = circuit_inputs.bytecodes();
         copy_assignment_input.keccak_buffers = circuit_inputs.keccaks();
@@ -90,7 +85,7 @@ public:
         copy_assignment_input.copy_events = circuit_inputs.copy_events();
 
         bool result = test_bbf_component<field_type, nil::blueprint::bbf::copy>(
-            "copy", {7}, copy_assignment_input, copy_constraint_input, max_copy, max_rw, max_keccak_blocks, max_bytecode
+            "copy", {7}, copy_assignment_input, max_copy, max_rw, max_keccak_blocks, max_bytecode
         );
         BOOST_ASSERT(result == expected_result);
     }
