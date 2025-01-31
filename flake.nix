@@ -21,6 +21,9 @@
         pkgs = import nixpkgs {
           inherit system;
           overlays = [ nix-3rdparty.overlays.${system}.default ];
+          config = {
+            allowUnfree = true;
+          };
         };
 
         # For proof-producer, our main target is statically linked binaries,
@@ -75,26 +78,33 @@
 
 
           parallel-crypto3 = (pkgs.callPackage ./parallel-crypto3.nix {
+            stdenv = pkgs.llvmPackages_19.stdenv;
             runTests = false;
             enableDebug = false;
+            enableGPU = false;
           });
           parallel-crypto3-tests = (pkgs.callPackage ./parallel-crypto3.nix {
+            stdenv = pkgs.llvmPackages_19.stdenv;
             runTests = true;
             enableDebug = false;
+            enableGPU = true;
           });
           parallel-crypto3-clang-bench = (pkgs.callPackage ./parallel-crypto3.nix {
             runTests = true;
             enableDebug = false;
             benchmarkTests = true;
+            enableGPU = false;
           });
           parallel-crypto3-debug-tests = (pkgs.callPackage ./parallel-crypto3.nix {
             enableDebug = true;
             runTests = true;
+            enableGPU = false;
           });
           parallel-crypto3-clang-debug = (pkgs.callPackage ./parallel-crypto3.nix {
             stdenv = pkgs.llvmPackages_19.stdenv;
             enableDebug = true;
             runTests = false;
+            enableGPU = false;
           });
 
           proof-producer = (staticPkgs.callPackage ./proof-producer.nix {
@@ -120,13 +130,14 @@
 
           develop = (pkgs.callPackage ./proof-producer.nix {
             staticBuild = false;
-            enableDebug = true;
+            enableDebug = false;
             runTests = true;
-            sanitize = true;
+            sanitize = false;
             crypto3_tests = true;
-            parallel_crypto3_tets = true;
+            parallel_crypto3_tests = true;
             crypto3_bechmarks = true;
             parallel_crypto3_bechmarks = true;
+            enableGPU = true;
           });
 
           develop-clang = (pkgs.callPackage ./proof-producer.nix {
@@ -136,7 +147,7 @@
             runTests = true;
             sanitize = true;
             crypto3_tests = true;
-            parallel_crypto3_tets = true;
+            parallel_crypto3_tests = true;
             crypto3_bechmarks = true;
             parallel_crypto3_bechmarks = true;
           });

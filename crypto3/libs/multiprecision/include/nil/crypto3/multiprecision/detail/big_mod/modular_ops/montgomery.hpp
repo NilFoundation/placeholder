@@ -23,6 +23,7 @@
 #include "nil/crypto3/multiprecision/detail/big_mod/modular_ops/barrett.hpp"
 #include "nil/crypto3/multiprecision/detail/big_uint/storage.hpp"
 #include "nil/crypto3/multiprecision/detail/integer_ops_base.hpp"
+#include "nil/crypto3/multiprecision/detail/throw.hpp"
 
 namespace nil::crypto3::multiprecision::detail {
     template<typename T>
@@ -46,7 +47,7 @@ namespace nil::crypto3::multiprecision::detail {
 
         constexpr montgomery_modular_ops(const big_uint_t &m) : barrett_modular_ops<Bits_>(m) {
             if (!modulus_supports_montgomery(m)) {
-                throw std::invalid_argument("module not usable with montgomery");
+                NIL_THROW(std::invalid_argument("module not usable with montgomery"));
             }
 
             m_montgomery_p_dash = monty_inverse(this->mod().limbs()[0]);
@@ -73,7 +74,7 @@ namespace nil::crypto3::multiprecision::detail {
          */
         static constexpr limb_type monty_inverse(const limb_type &a) {
             if (a % 2 == 0) {
-                throw std::invalid_argument("inverse does not exist");
+                NIL_THROW(std::invalid_argument("inverse does not exist"));
             }
             limb_type b = 1;
             limb_type r = 0;

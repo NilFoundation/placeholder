@@ -37,7 +37,7 @@ macro(define_containers_example example)
             crypto3::algebra
             crypto3::hash)
 
-    set_target_properties(${target_name} PROPERTIES CXX_STANDARD 20)
+    set_target_properties(${target_name} PROPERTIES CXX_STANDARD 23)
 endmacro()
 
 set(EXAMPLES_NAMES

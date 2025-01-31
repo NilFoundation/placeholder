@@ -42,6 +42,7 @@
 #include "nil/crypto3/multiprecision/detail/endian.hpp"
 #include "nil/crypto3/multiprecision/detail/force_inline.hpp"
 #include "nil/crypto3/multiprecision/unsigned_utils.hpp"
+#include "nil/crypto3/multiprecision/detail/throw.hpp"
 
 namespace nil::crypto3::multiprecision {
     /**
@@ -155,7 +156,7 @@ namespace nil::crypto3::multiprecision {
             do_assign_integral_unchecked(unsigned_or_throw(a));
             if constexpr (sizeof(T) * CHAR_BIT > Bits) {
                 if (compare(a) != 0) {
-                    throw std::range_error("big_uint: overflow");
+                    NIL_THROW(std::range_error("big_uint: overflow"));
                 }
             }
         }
@@ -177,7 +178,7 @@ namespace nil::crypto3::multiprecision {
             do_assign_unchecked(other);
             if constexpr (Bits2 > Bits) {
                 if (other.compare(*this) != 0) {
-                    throw std::range_error("big_uint: overflow");
+                    NIL_THROW(std::range_error("big_uint: overflow"));
                 }
             }
         }
@@ -253,7 +254,7 @@ namespace nil::crypto3::multiprecision {
                 }
             }
             if (bits > Bits) {
-                throw std::range_error("big_uint: not enough bits to store bytes");
+                NIL_THROW(std::range_error("big_uint: not enough bits to store bytes"));
             }
             return *this;
         }
@@ -315,7 +316,7 @@ namespace nil::crypto3::multiprecision {
                 return decimal_str();
             }
             if (!(flags & std::ios_base::hex)) {
-                throw std::invalid_argument("big_uint: unsupported format flags");
+                NIL_THROW(std::invalid_argument("big_uint: unsupported format flags"));
             }
             auto result = hex_str();
             if (flags & std::ios_base::uppercase) {
@@ -370,7 +371,7 @@ namespace nil::crypto3::multiprecision {
             auto result = to_unsigned_unchecked<T>();
             if constexpr (sizeof(T) * CHAR_BIT < Bits) {
                 if (compare(result) != 0) {
-                    throw std::overflow_error("big_uint: overflow");
+                    NIL_THROW(std::overflow_error("big_uint: overflow"));
                 }
             }
             return result;
@@ -382,7 +383,7 @@ namespace nil::crypto3::multiprecision {
             T result = static_cast<T>(to_unsigned_unchecked<std::make_unsigned_t<T>>());
             if constexpr (sizeof(T) * CHAR_BIT <= Bits) {
                 if (compare(result) != 0) {
-                    throw std::overflow_error("big_uint: overflow");
+                    NIL_THROW(std::overflow_error("big_uint: overflow"));
                 }
             }
             return result;
@@ -749,7 +750,7 @@ namespace nil::crypto3::multiprecision {
             try {
                 return static_cast<detail::largest_big_uint_t<T1, T2>>(result);
             } catch (const std::range_error&) {
-                throw std::overflow_error("big_uint: division overflow");
+                NIL_THROW(std::overflow_error("big_uint: division overflow"));
             }
         }
 
@@ -762,7 +763,7 @@ namespace nil::crypto3::multiprecision {
             try {
                 a = result;
             } catch (const std::range_error&) {
-                throw std::overflow_error("big_uint: division overflow");
+                NIL_THROW(std::overflow_error("big_uint: division overflow"));
             }
             return a;
         }
@@ -848,11 +849,11 @@ namespace nil::crypto3::multiprecision {
             if constexpr (Bits2 > Bits && !std::is_same_v<Op, std::bit_and<>>) {
                 for (; i < os; ++i) {
                     if (po[i] != 0) {
-                        throw std::overflow_error("big_uint: bitwise_op overflow");
+                        NIL_THROW(std::overflow_error("big_uint: bitwise_op overflow"));
                     }
                 }
                 if (normalize()) {
-                    throw std::overflow_error("big_uint: bitwise_op overflow");
+                    NIL_THROW(std::overflow_error("big_uint: bitwise_op overflow"));
                 }
             }
         }
@@ -886,7 +887,7 @@ namespace nil::crypto3::multiprecision {
             limbs()[0] |= l;
             if constexpr (static_limb_count == 1) {
                 if (normalize()) {
-                    throw std::overflow_error("big_uint: or overflow");
+                    NIL_THROW(std::overflow_error("big_uint: or overflow"));
                 }
             }
         }
@@ -895,7 +896,7 @@ namespace nil::crypto3::multiprecision {
             limbs()[0] ^= l;
             if constexpr (static_limb_count == 1) {
                 if (normalize()) {
-                    throw std::overflow_error("big_uint: xor overflow");
+                    NIL_THROW(std::overflow_error("big_uint: xor overflow"));
                 }
             }
         }
@@ -1168,7 +1169,7 @@ namespace nil::crypto3::multiprecision {
             }
 
             if (index == limb_count()) {
-                throw std::invalid_argument("zero has no lsb");
+                NIL_THROW(std::invalid_argument("zero has no lsb"));
             }
 
             //
@@ -1189,7 +1190,7 @@ namespace nil::crypto3::multiprecision {
                 }
             }
             if (limbs()[0] == 0) {
-                throw std::invalid_argument("zero has no msb");
+                NIL_THROW(std::invalid_argument("zero has no msb"));
             }
             return std::bit_width(limbs()[0]) - 1;
         }
@@ -1207,7 +1208,7 @@ namespace nil::crypto3::multiprecision {
 
         constexpr big_uint& bit_set(std::size_t index) {
             if (index >= Bits) {
-                throw std::invalid_argument("fixed precision overflow");
+                NIL_THROW(std::invalid_argument("fixed precision overflow"));
             }
             std::size_t offset = index / limb_bits;
             std::size_t shift = index % limb_bits;
@@ -1218,7 +1219,7 @@ namespace nil::crypto3::multiprecision {
 
         constexpr big_uint& bit_unset(std::size_t index) {
             if (index >= Bits) {
-                throw std::invalid_argument("fixed precision overflow");
+                NIL_THROW(std::invalid_argument("fixed precision overflow"));
             }
             std::size_t offset = index / limb_bits;
             std::size_t shift = index % limb_bits;
@@ -1229,7 +1230,7 @@ namespace nil::crypto3::multiprecision {
 
         constexpr big_uint& bit_flip(std::size_t index) {
             if (index >= Bits) {
-                throw std::invalid_argument("fixed precision overflow");
+                NIL_THROW(std::invalid_argument("fixed precision overflow"));
             }
             std::size_t offset = index / limb_bits;
             std::size_t shift = index % limb_bits;
@@ -1254,7 +1255,7 @@ namespace nil::crypto3::multiprecision {
             limb_type value = static_cast<limb_type>(bits & mask) << shift;
             if (value) {
                 if (limb >= limb_count()) {
-                    throw std::overflow_error("import_bits: overflow");
+                    NIL_THROW(std::overflow_error("import_bits: overflow"));
                 }
                 limbs()[limb] |= value;
             }
@@ -1317,7 +1318,7 @@ namespace nil::crypto3::multiprecision {
             }
 
             if (normalize()) {
-                throw std::overflow_error("import_bits: overflow");
+                NIL_THROW(std::overflow_error("import_bits: overflow"));
             }
         }
 
@@ -1329,7 +1330,7 @@ namespace nil::crypto3::multiprecision {
             if (std::any_of(reinterpret_cast<const unsigned char*>(i) + copy_len,
                             reinterpret_cast<const unsigned char*>(j),
                             [](char c) { return c != 0; })) {
-                throw std::overflow_error("import_bits: overflow");
+                NIL_THROW(std::overflow_error("import_bits: overflow"));
             }
 
             std::memcpy(reinterpret_cast<unsigned char*>(limbs()), i, copy_len);
@@ -1337,7 +1338,7 @@ namespace nil::crypto3::multiprecision {
                         limb_count() * sizeof(limb_type) - copy_len);
 
             if (normalize()) {
-                throw std::overflow_error("import_bits: overflow");
+                NIL_THROW(std::overflow_error("import_bits: overflow"));
             }
         }
 

@@ -34,7 +34,7 @@ macro(define_bench_test name)
 
                                ${Boost_INCLUDE_DIRS})
 
-    set_target_properties(${test_name} PROPERTIES CXX_STANDARD 20)
+    set_target_properties(${test_name} PROPERTIES CXX_STANDARD 23)
     target_precompile_headers(${test_name} REUSE_FROM crypto3_precompiled_headers)
 endmacro()
 
@@ -46,7 +46,7 @@ cm_test_link_libraries(
     Boost::unit_test_framework
     Boost::timer
 )
-set_target_properties(_cm_internal_tests--parallel-crypto3-benchmarks PROPERTIES CXX_STANDARD 20)
+set_target_properties(_cm_internal_tests--parallel-crypto3-benchmarks PROPERTIES CXX_STANDARD 23)
 target_precompile_headers(_cm_internal_tests--parallel-crypto3-benchmarks REUSE_FROM crypto3_precompiled_headers)
 
 set(TESTS_NAMES

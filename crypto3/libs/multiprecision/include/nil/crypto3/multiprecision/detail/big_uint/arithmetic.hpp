@@ -26,6 +26,7 @@
 #include "nil/crypto3/multiprecision/detail/big_uint/storage.hpp"
 #include "nil/crypto3/multiprecision/type_traits.hpp"
 #include "nil/crypto3/multiprecision/unsigned_utils.hpp"
+#include "nil/crypto3/multiprecision/detail/throw.hpp"
 
 namespace nil::crypto3::multiprecision {
     template<std::size_t Bits>
@@ -121,7 +122,7 @@ namespace nil::crypto3::multiprecision {
             OverflowPolicy != overflow_policy::throw_exception) {
             if constexpr (OverflowPolicy == overflow_policy::throw_exception) {
                 if (overflow) {
-                    throw std::overflow_error("big_uint: addition overflow");
+                    NIL_THROW(std::overflow_error("big_uint: addition overflow"));
                 }
             } else if constexpr (OverflowPolicy == overflow_policy::debug_assert) {
                 BOOST_ASSERT_MSG(!overflow, "big_uint: addition overflow");
@@ -303,7 +304,7 @@ namespace nil::crypto3::multiprecision {
         constexpr void subtract_overflow() noexcept(OverflowPolicy !=
                                                     overflow_policy::throw_exception) {
             if constexpr (OverflowPolicy == overflow_policy::throw_exception) {
-                throw std::overflow_error("big_uint: subtraction overflow");
+                NIL_THROW(std::overflow_error("big_uint: subtraction overflow"));
             } else if constexpr (OverflowPolicy == overflow_policy::debug_assert) {
                 BOOST_ASSERT_MSG(false, "big_uint: subtraction overflow");
             }
@@ -454,7 +455,7 @@ namespace nil::crypto3::multiprecision {
             OverflowPolicy != overflow_policy::throw_exception) {
             if constexpr (OverflowPolicy == overflow_policy::throw_exception) {
                 if (carry) {
-                    throw std::overflow_error("big_uint: addition overflow");
+                    NIL_THROW(std::overflow_error("big_uint: addition overflow"));
                 }
             } else if constexpr (OverflowPolicy == overflow_policy::debug_assert) {
                 BOOST_ASSERT_MSG(!carry, "big_uint: addition overflow");
@@ -532,7 +533,7 @@ namespace nil::crypto3::multiprecision {
             */
 
             if (y.is_zero()) {
-                throw std::overflow_error("integer division by zero");
+                NIL_THROW(std::overflow_error("integer division by zero"));
             }
 
             const_limb_pointer px = x.limbs();
@@ -746,7 +747,7 @@ namespace nil::crypto3::multiprecision {
             OverflowPolicy != overflow_policy::throw_exception) {
             if constexpr (OverflowPolicy == overflow_policy::throw_exception) {
                 if (overflow) {
-                    throw std::overflow_error("big_uint: multiplication overflow");
+                    NIL_THROW(std::overflow_error("big_uint: multiplication overflow"));
                 }
             } else if constexpr (OverflowPolicy == overflow_policy::debug_assert) {
                 BOOST_ASSERT_MSG(!overflow, "big_uint: multiplication overflow");
