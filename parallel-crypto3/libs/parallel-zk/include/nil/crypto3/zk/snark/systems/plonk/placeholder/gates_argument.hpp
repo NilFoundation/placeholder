@@ -205,7 +205,6 @@ namespace nil {
                                 expressions[i] += gate_results[i];
                             }
                         }
-
                         std::array<polynomial_dfs_type, argument_size> F;
 
                         F[0] = polynomial_dfs_type::zero();
@@ -244,79 +243,103 @@ namespace nil {
                     static inline std::unordered_map<variable_type, sycl::event> build_variable_value_map(
                         const math::expression<variable_type>& expr,
                         const plonk_polynomial_dfs_table<FieldType>& assignments,
+
                         std::shared_ptr<math::evaluation_domain<FieldType>> domain,
-                        std::size_t extended_domain_size,
-                        std::unordered_map<variable_type, value_type*>& variable_values_out,
-                        const polynomial_dfs_type &mask_polynomial,
-                        const polynomial_dfs_type &lagrange_0,
+                        std::shared_ptr<math::evaluation_domain<FieldType>> extended_domain,
 
-                        sycl::queue& queue
+                        value_type* original_domain_buf,
+                        value_type* extended_domain_buf,
+
+                        std::unordered_map<variable_type, std::shared_ptr<value_type>>& variable_values_out,
+                        std::shared_ptr<value_type> mask_polynomial_buf,
+                        std::shared_ptr<value_type> mask_lagrange_diff_buf,
+
+                        sycl::queue& queue,
+                        actor::core::sycl_garbage_collector<polynomial_dfs_type>& dfs_garbage_collector,
+                        sycl::event mask_polynomial_event,
+                        sycl::event mask_lagrange_diff_event,
+                        sycl::event original_domain_event,
+                        sycl::event extended_domain_event
                     ) {
+                        using value_type = typename FieldType::value_type;
 
-                        std::unordered_map<variable_type, sycl::event> variable_events_set;
+                        const std::size_t cur_domain_size = domain->m;
+                        const std::size_t extended_domain_size = extended_domain->m;
+
+                        std::unordered_map<variable_type, sycl::event> variable_copy_events;
+                        std::unordered_map<variable_type, sycl::event> variable_events_map;
 
                         math::expression_for_each_variable_visitor<variable_type> visitor(
-                            [&variable_set, &variable_values_out](const variable_type& var) {
+                            [&variable_values_out, &variable_copy_events, &queue, &extended_domain_size]
+                             (const variable_type& var) {
                                 // Create the structure of the map so we can change the values later.
-                                if (variable_events_set.find(var) == variable_events_set.end()) {
-                                    variable_events_set[var] = sycl::event();
-                                    variable_values_out[var] = sycl::malloc_device<value_type>(extended_domain_size, queue);
+                                if (variable_values_out.find(var) == variable_values_out.end()) {
+                                    if (var.index != PLONK_SPECIAL_SELECTOR_ALL_USABLE_ROWS_SELECTED &&
+                                        var.index != PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED ||
+                                        var.type != variable_type::column_type::selector
+                                    ) [[likely]] {
+                                        variable_values_out[var] = std::shared_ptr<value_type>(
+                                            sycl::malloc_device<value_type>(extended_domain_size, queue),
+                                            [queue](value_type* ptr) { sycl::free(ptr, queue); }
+                                        );
+                                    } else {
+                                        variable_values_out[var] = nullptr;
+                                    }
                                 }
                         });
 
                         visitor.visit(expr);
 
-                        std::shared_ptr<math::evaluation_domain<FieldType>> extended_domain =
-                            math::make_evaluation_domain<FieldType>(extended_domain_size);
-
-                        // TODO: move mask_polynomial/lagrange_0 conversions up the callstack
-                        value_type* mask_polynomial_buf = sycl::malloc_device<value_type>(extended_domain_size, queue);
-                        value_type* lagrange_0_buf = sycl::malloc_device<value_type>(extended_domain_size, queue);
-
-                        auto mask_polynomial_event = queue.copy<value_type>(
-                            mask_polynomial.data(), mask_polynomial_buf,
-                            mask_polynomial.size()
-                        );
-                        auto lagrange_0_event = queue.copy<value_type>(
-                            lagrange_0.data(), lagrange_0_buf,
-                            lagrange_0.size()
-                        );
-                        value_type* mask_lagrange_diff_buf = sycl::malloc_device<value_type>(extended_domain_size, queue);
-                        sycl::event mask_lagrange_diff_event = queue.submit([&](sycl::handler& cgh) {
-                            cgh.depends_on({mask_polynomial_event, lagrange_0_event});
-                            cgh.parallel_for(sycl::range<1>(extended_domain_size), [=](sycl::id<1> idx) {
-                                mask_lagrange_diff_buf[idx] = mask_polynomial_buf[idx] - lagrange_0_buf[idx];
-                            });
-                        });
-
-                        for (const auto& var : variable_set) {
+                        for (auto& [var, assignment] : variable_values_out) {
                             // Convert the variable to polynomial_dfs variable type.
                             polynomial_dfs_variable_type var_dfs(var.index, var.rotation, var.relative,
                                 static_cast<typename polynomial_dfs_variable_type::column_type>(
                                     static_cast<std::uint8_t>(var.type)));
-
-                            value_type* assignment = nullptr;
-                            if( var.index == PLONK_SPECIAL_SELECTOR_ALL_USABLE_ROWS_SELECTED && var.type == variable_type::column_type::selector){
-                                assignment = mask_polynomial_buf;
-                                variable_events_set[var] = mask_polynomial_event;
-                            } else if( var.index == PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED && var.type == variable_type::column_type::selector) {
-                                assignment = mask_lagrange_diff_buf;
-                                variable_events_set[var] = mask_lagrange_diff_event;
-                            } else {
-                                assignment = variable_values_out[var];
-                                variable_events_set[var] = handle_polynomial_resizing<FieldType>(
-                                    assignment, extended_domain_size, max_domain_size,
-                                    assignments.get_variable_value(var_dfs, domain).degree(),
-                                    queue,
-                                );
+                            if( var.index == PLONK_SPECIAL_SELECTOR_ALL_USABLE_ROWS_SELECTED && var.type == variable_type::column_type::selector ) {
+                                variable_values_out[var] = mask_polynomial_buf;
+                                variable_events_map[var] = mask_polynomial_event;
+                            } else if( var.index == PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED && var.type == variable_type::column_type::selector ) {
+                                variable_values_out[var] = mask_lagrange_diff_buf;
+                                variable_events_map[var] = mask_lagrange_diff_event;
+                            } else [[likely]] {
+                                // logic here confused me a lot, hence this comment
+                                // if rotation == 0 we can just copy the value
+                                // otherwise we need to shift the value, creating a new column in the process
+                                // the new column has to be loaded in memory to ensure that the pointer is valid
+                                if (var.rotation == 0) {
+                                    sycl::event variable_copy_event = queue.copy<value_type>(
+                                        assignments.get_variable_value_without_rotation(var_dfs).data(),
+                                        assignment.get(), cur_domain_size
+                                    );
+                                    variable_events_map[var] = handle_polynomial_resizing<FieldType>(
+                                        assignment.get(), cur_domain_size, extended_domain_size,
+                                        assignments.get_variable_value(var_dfs, domain).degree(),
+                                        original_domain_buf, extended_domain_buf,
+                                        queue, variable_copy_event, original_domain_event, extended_domain_event
+                                    );
+                                } else {
+                                    std::shared_ptr<polynomial_dfs_type> shifted_val =
+                                        std::make_shared<polynomial_dfs_type>(assignments.get_variable_value(var_dfs, domain));
+                                    auto shifted_val_buf = sycl::malloc_device<value_type>(extended_domain_size, queue);
+                                    sycl::event shifted_val_copy_event = queue.copy<value_type>(
+                                        shifted_val->data(), shifted_val_buf, cur_domain_size
+                                    );
+                                    sycl::event resize_event = handle_polynomial_resizing<FieldType>(
+                                        shifted_val_buf, cur_domain_size, extended_domain_size,
+                                        shifted_val->degree(),
+                                        original_domain_buf, extended_domain_buf,
+                                        queue, shifted_val_copy_event, original_domain_event, extended_domain_event
+                                    );
+                                    auto shared_shifted_val_buf = std::shared_ptr<value_type>(
+                                        shifted_val_buf, [queue](value_type* ptr) { sycl::free(ptr, queue); }
+                                    );
+                                    dfs_garbage_collector.track_memory(shifted_val, resize_event);
+                                    variable_values_out[var] = shared_shifted_val_buf;
+                                    variable_events_map[var] = resize_event;
+                                }
                             }
-
                         }
-
-                        sycl::free(mask_polynomial_buf, queue);
-                        sycl::free(lagrange_0_buf, queue);
-                        sycl::free(mask_lagrange_diff_buf, queue);
-                        return variable_set;
+                        return variable_events_map;
                     }
 
                     static inline std::array<polynomial_dfs_type, argument_size> prove_eval(
@@ -330,41 +353,43 @@ namespace nil {
                     ) {
                         PROFILE_SCOPE("gate_argument_time");
 
+                        sycl::queue queue;
+
+                        const std::size_t original_domain_size = original_domain->m;
+                        value_type* original_domain_buf = sycl::malloc_device<value_type>(original_domain_size, queue);
+                        auto original_domain_event = queue.copy<value_type>(
+                            original_domain->get_fft_cache()->second.data(), original_domain_buf, original_domain_size
+                        );
+
                         // max_gates_degree that comes from the outside does not take into account multiplication
                         // by selector.
                         ++max_gates_degree;
                         typename FieldType::value_type theta = transcript.template challenge<FieldType>();
 
-                        auto value_type_to_polynomial_dfs = [](
-                            const typename variable_type::assignment_type& coeff) {
-                                return polynomial_dfs_type(0, 1, coeff);
-                            };
-
                         std::vector<std::uint32_t> extended_domain_sizes;
                         std::vector<std::uint32_t> degree_limits;
                         std::uint32_t max_degree = std::pow(2, ceil(std::log2(max_gates_degree)));
-                        std::uint32_t max_domain_size = original_domain->m * max_degree;
+                        std::uint32_t max_domain_size = original_domain_size * max_degree;
 
                         degree_limits.push_back(max_degree);
                         extended_domain_sizes.push_back(max_domain_size);
                         degree_limits.push_back(max_degree / 2);
                         extended_domain_sizes.push_back(max_domain_size / 2);
 
-                        std::vector<math::expression<variable_type>> expressions(extended_domain_sizes.size());
+                        const std::size_t extended_domain_amount = extended_domain_sizes.size();
+
+                        std::vector<math::expression<variable_type>> expressions(extended_domain_amount);
                         auto theta_acc = FieldType::value_type::one();
-
-                        // Every constraint has variable type 'variable_type', but we want it to use
-                        // 'polynomial_dfs_variable_type' instead. The only difference is the coefficient type
-                        // inside a term. We want the coefficients to be dfs polynomials here.
-                        math::expression_variable_type_converter<variable_type, polynomial_dfs_variable_type> converter(
-                            value_type_to_polynomial_dfs);
-
-                        math::expression_max_degree_visitor<variable_type> visitor;
 
                         const auto& gates = constraint_system.gates();
 
+                        math::expression_max_degree_visitor<variable_type> visitor;
+
+                        actor::core::sycl_garbage_collector<value_type> garbage_collector(queue);
+                        actor::core::sycl_garbage_collector<polynomial_dfs_type> dfs_garbage_collector(queue);
+
                         for (const auto& gate: gates) {
-                            std::vector<math::expression<variable_type>> gate_results(extended_domain_sizes.size());
+                            std::vector<math::expression<variable_type>> gate_results(extended_domain_amount);
                             for (std::size_t constraint_idx = 0; constraint_idx < gate.constraints.size(); ++constraint_idx) {
                                 const auto& constraint = gate.constraints[constraint_idx];
                                 auto next_term = constraint * theta_acc;
@@ -372,7 +397,7 @@ namespace nil {
                                 theta_acc *= theta;
                                 // +1 stands for the selector multiplication.
                                 size_t constraint_degree = visitor.compute_max_degree(constraint) + 1;
-                                for (int i = extended_domain_sizes.size() - 1; i >= 0; --i) {
+                                for (int i = extended_domain_amount - 1; i >= 0; --i) {
                                     // Whatever the degree of term is, add it to the maximal degree expression.
                                     if (degree_limits[i] >= constraint_degree || i == 0) {
                                         gate_results[i] += next_term;
@@ -381,44 +406,170 @@ namespace nil {
                                 }
                             }
                             variable_type selector(gate.selector_index, 0, false, variable_type::column_type::selector);
-                            for (size_t i = 0; i < extended_domain_sizes.size(); ++i) {
+                            for (size_t i = 0; i < extended_domain_amount; ++i) {
                                 gate_results[i] *= selector;
                                 expressions[i] += gate_results[i];
                             }
                         }
 
-                        std::array<polynomial_dfs_type, argument_size> F;
+                        std::vector<std::unordered_map<variable_type, std::shared_ptr<value_type>>> variable_values(extended_domain_amount);
+                        std::vector<std::shared_ptr<value_type>> mask_polynomial_bufs(extended_domain_amount);
+                        std::vector<std::shared_ptr<value_type>> mask_lagrange_diff_bufs(extended_domain_amount);
+                        std::vector<std::shared_ptr<value_type>> lagrange_0_bufs(extended_domain_amount);
 
-                        F[0] = polynomial_dfs_type::zero();
-                        for (std::size_t i = 0; i < extended_domain_sizes.size(); ++i) {
-                            std::unordered_map<variable_type, polynomial_dfs_type> variable_values;
+                        std::vector<std::shared_ptr<value_type>> result_bufs(extended_domain_amount);
+                        std::vector<sycl::event> result_events(extended_domain_amount);
 
-                            build_variable_value_map(
-                                expressions[i], column_polynomials, original_domain,
-                                extended_domain_sizes[i], variable_values,
-                                mask_polynomial, lagrange_0
+                        std::vector<std::shared_ptr<value_type>> extended_domain_bufs(extended_domain_amount);
+                        std::vector<sycl::event> extended_domain_events(extended_domain_amount);
+                        std::vector<std::shared_ptr<math::evaluation_domain<FieldType>>> extended_domains(extended_domain_amount);
+                        for (std::size_t i = 0; i < extended_domain_amount; ++i) {
+                            extended_domain_bufs[i] = std::shared_ptr<value_type>(
+                                sycl::malloc_device<value_type>(extended_domain_sizes[i], queue),
+                                [queue](value_type* ptr) { sycl::free(ptr, queue); }
+                            );
+                            extended_domains[i] = math::make_evaluation_domain<FieldType>(extended_domain_sizes[i]);
+                            extended_domain_events[i] = queue.copy<value_type>(
+                                extended_domains[i]->get_fft_cache()->first.data(), extended_domain_bufs[i].get(), extended_domain_sizes[i]
+                            );
+                        }
+
+                        std::vector<gpu_expression_evaluator<variable_type>> evaluators;
+
+                        for (std::size_t i = 0; i < extended_domain_amount; ++i) {
+                            const std::size_t extended_domain_size = extended_domain_sizes[i];
+
+                            std::shared_ptr<value_type> mask_polynomial_buf = mask_polynomial_bufs[i] =
+                                std::shared_ptr<value_type>(sycl::malloc_device<value_type>(extended_domain_size, queue),
+                                [queue](value_type* ptr) { sycl::free(ptr, queue);
+                            });
+                            std::shared_ptr<value_type> lagrange_0_buf = lagrange_0_bufs[i] =
+                                std::shared_ptr<value_type>(sycl::malloc_device<value_type>(extended_domain_size, queue),
+                                [queue](value_type* ptr) { sycl::free(ptr, queue);
+                            });
+                            std::shared_ptr<value_type> mask_lagrange_diff_buf = mask_lagrange_diff_bufs[i] =
+                                std::shared_ptr<value_type>(sycl::malloc_device<value_type>(extended_domain_size, queue),
+                                [queue](value_type* ptr) { sycl::free(ptr, queue);
+                            });
+                            value_type* mask_polynomial_buf_ptr = mask_polynomial_buf.get();
+                            value_type* lagrange_0_buf_ptr = lagrange_0_buf.get();
+                            value_type* mask_lagrange_diff_buf_ptr = mask_lagrange_diff_buf.get();
+
+                            sycl::event mask_polynomial_copy_event = queue.copy<value_type>(
+                                mask_polynomial.data(), mask_polynomial_buf_ptr, mask_polynomial.size()
+                            );
+                            sycl::event mask_polynomial_resize_event = handle_polynomial_resizing<FieldType>(
+                                mask_polynomial_buf_ptr, original_domain_size, extended_domain_size, mask_polynomial.degree(),
+                                original_domain_buf, extended_domain_bufs[i].get(),
+                                queue, mask_polynomial_copy_event, original_domain_event, extended_domain_events[i]
                             );
 
-                            polynomial_dfs_type result(extended_domain_sizes[i] - 1, extended_domain_sizes[i]);
-                            wait_for_all(parallel_run_in_chunks<void>(
-                                extended_domain_sizes[i],
-                                [&variable_values, &extended_domain_sizes, &result, &expressions, i]
-                                (std::size_t begin, std::size_t end) {
-                                    for (std::size_t j = begin; j < end; ++j) {
-                                        // Don't use cache here. In practice it's slower to maintain the cache
-                                        // than to re-compute the subexpression value when value type is field element.
-                                        math::expression_evaluator<variable_type> evaluator(
-                                            expressions[i],
-                                            [&assignments=variable_values, j]
-                                                (const variable_type &var) -> const typename FieldType::value_type& {
-                                                    return assignments[var][j];
-                                            });
-                                        result[j] = evaluator.evaluate();
-                                    }
-                            }, ThreadPool::PoolLevel::HIGH));
+                            sycl::event lagrange_0_copy_event = queue.copy<value_type>(
+                                lagrange_0.data(), lagrange_0_buf.get(), lagrange_0.size()
+                            );
+                            sycl::event lagrange_0_resize_event = handle_polynomial_resizing<FieldType>(
+                                lagrange_0_buf.get(), original_domain_size, extended_domain_size, lagrange_0.degree(),
+                                original_domain_buf, extended_domain_bufs[i].get(),
+                                queue, lagrange_0_copy_event, original_domain_event, extended_domain_events[i]
+                            );
 
-                            F[0] += result;
+                            sycl::event mask_lagrange_diff_event = queue.submit(
+                                [mask_lagrange_diff_buf_ptr, mask_polynomial_buf_ptr, lagrange_0_buf_ptr, extended_domain_size,
+                                 mask_polynomial_resize_event, lagrange_0_resize_event](sycl::handler& cgh) {
+                                    cgh.depends_on({mask_polynomial_resize_event, lagrange_0_resize_event});
+                                    cgh.parallel_for(sycl::range<1>(extended_domain_size), [=](sycl::id<1> idx) {
+                                        mask_lagrange_diff_buf_ptr[idx] = mask_polynomial_buf_ptr[idx] - lagrange_0_buf_ptr[idx];
+                                    });
+                                });
+
+                            auto variable_events_map = build_variable_value_map(
+                                expressions[i], column_polynomials,
+                                original_domain, extended_domains[i],
+                                original_domain_buf, extended_domain_bufs[i].get(),
+                                variable_values[i], mask_polynomial_buf, mask_lagrange_diff_buf,
+                                queue, dfs_garbage_collector, mask_polynomial_resize_event, lagrange_0_resize_event,
+                                original_domain_event, extended_domain_events[i]
+                            );
+
+                            evaluators.push_back(gpu_expression_evaluator<variable_type>(
+                                queue, extended_domain_size, variable_values[i], variable_events_map, garbage_collector
+                            ));
+
+                            auto result_pair = evaluators[i](expressions[i]);
+                            result_events[i] = result_pair.first;
+                            result_bufs[i] = result_pair.second;
                         };
+                        // resize all result buffers to max_domain_size
+                        // note that for all but the max domain size we have to re-malloc the buffers
+                        // due to the way handle_polynomial_resizing is implemented
+                        std::vector<std::shared_ptr<value_type>> result_bufs_max(extended_domain_amount);
+                        std::vector<sycl::event> result_bufs_max_events(extended_domain_amount);
+                        result_bufs_max[0] = result_bufs[0];
+                        result_bufs_max_events[0] = result_events[0];
+                        // first domain is of max_domain_size, so we skip it
+                        for (std::size_t i = 1; i < extended_domain_amount; ++i) {
+                            result_bufs_max[i] = std::shared_ptr<value_type>(
+                                sycl::malloc_device<value_type>(max_domain_size, queue),
+                                [&queue](value_type* ptr) { sycl::free(ptr, queue); }
+                            );
+                            result_bufs_max_events[i] = queue.copy<value_type>(
+                                result_bufs[i].get(), result_bufs_max[i].get(), extended_domain_sizes[i], result_events[i]
+                            );
+                        }
+
+                        std::vector<sycl::event> result_resize_events(extended_domain_amount);
+                        result_resize_events[0] = result_bufs_max_events[0];
+                        for (std::size_t i = 1; i < extended_domain_amount; ++i) {
+                            result_resize_events[i] = handle_polynomial_resizing<FieldType>(
+                                result_bufs_max[i].get(), extended_domain_sizes[i], max_domain_size,
+                                extended_domain_sizes[i] - 1,
+                                extended_domain_bufs[i].get(), extended_domain_bufs[0].get(),
+                                queue, result_bufs_max_events[i], extended_domain_events[i], extended_domain_events[0]
+                            );
+                        }
+                        std::vector<sycl::event> result_sum_events(extended_domain_amount);
+                        result_sum_events[0] = result_resize_events[0];
+                        value_type* F_buf = result_bufs_max[0].get();
+                        for (std::size_t i = 1; i < extended_domain_amount; ++i) {
+                            sycl::event prev_sum_event = result_sum_events[i - 1];
+                            sycl::event resize_event = result_resize_events[i];
+                            value_type* cur_summand_buf = result_bufs_max[i].get();
+                            result_sum_events[i] =
+                                queue.submit([F_buf, cur_summand_buf, prev_sum_event, resize_event, max_domain_size](sycl::handler& cgh) {
+                                    cgh.depends_on({prev_sum_event, resize_event});
+                                    cgh.parallel_for(sycl::range<1>(max_domain_size), [=](sycl::id<1> idx) {
+                                        F_buf[idx] = F_buf[idx] + cur_summand_buf[idx];
+                                    });
+                                });
+                        }
+
+                        std::array<polynomial_dfs_type, argument_size> F;
+                        F[0] = polynomial_dfs_type(max_domain_size - 1, max_domain_size);
+                        sycl::event f_copy_event = queue.copy<value_type>(
+                            result_bufs_max[0].get(), F[0].data(), max_domain_size, result_sum_events.back()
+                        );
+                        f_copy_event.wait();
+
+                        // shared pointers have to be maqnually freed here
+                        // as queue is destroyed at the end of the function
+                        garbage_collector.finalize_all();
+                        garbage_collector.clear();
+                        dfs_garbage_collector.finalize_all();
+                        dfs_garbage_collector.clear();
+                        variable_values.clear();
+                        for (std::size_t i = 0; i < extended_domain_amount; ++i) {
+                            extended_domain_bufs[i] = nullptr;
+                            mask_polynomial_bufs[i] = nullptr;
+                            mask_lagrange_diff_bufs[i] = nullptr;
+                            lagrange_0_bufs[i] = nullptr;
+                        }
+                        for (auto& result_buf : result_bufs) {
+                            result_buf = nullptr;
+                        }
+                        for (auto& result_buf : result_bufs_max) {
+                            result_buf = nullptr;
+                        }
+                        sycl::free(original_domain_buf, queue);
                         return F;
                     }
 #endif

@@ -31,6 +31,10 @@
 #error "You're mixing parallel and non-parallel crypto3 versions"
 #endif
 
+#ifdef GPU_PROVER
+#include <sycl/sycl.hpp>
+#endif
+
 #include <algorithm>
 #include <limits>
 #include <memory>
@@ -954,15 +958,14 @@ namespace nil {
                 using value_type = typename FieldType::value_type;
 
                 if (cur_size >= new_size) {
-                    std::cout << "cur_size >= new_size" << std::endl;
                     return sycl::event();
                 }
 
                 if (degree == 0) {
-                    // add zeros to the end of the buffer
-                    auto fill_event = queue.fill(buffer + cur_size, value_type::zero(), new_size - cur_size);
+                    // copy the first value to remaining part of the buffer
+                    auto fill_event = queue.fill(buffer + cur_size, buffer[0], new_size - cur_size);
                     return fill_event;
-                } else {
+                } else [[likely]] {
                     auto ifft_event = gpu_inverse_fft<FieldType>(
                         buffer, cur_size, current_domain_buf,
                         queue, {buffer_event}, current_domain_event
@@ -1112,7 +1115,7 @@ namespace nil {
 #else
             template<typename FieldType>
             static inline polynomial_dfs<typename FieldType::value_type> polynomial_product(
-                std::vector<math::polynomial_dfs<typename FieldType::value_type>> &&multipliers
+                std::vector<math::polynomial_dfs<typename FieldType::value_type>> multipliers
             ) {
                 // Pre-create all the domains. We could do this on-the-go, but we want this function to be more
                 // parallelization-friendly. This single-threaded version may look a bit complicated,

@@ -130,9 +130,9 @@
 
           develop = (pkgs.callPackage ./proof-producer.nix {
             staticBuild = false;
-            enableDebug = true;
+            enableDebug = false;
             runTests = true;
-            sanitize = true;
+            sanitize = false;
             crypto3_tests = true;
             parallel_crypto3_tests = true;
             crypto3_bechmarks = true;

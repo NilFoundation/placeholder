@@ -32,8 +32,6 @@
 
 #include <vector>
 
-#include <sycl/sycl.hpp>
-
 #include <nil/crypto3/math/polynomial/polynomial.hpp>
 
 namespace nil {
