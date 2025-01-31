@@ -106,24 +106,24 @@ void test_ec_scalar_mult(
     }
 }
 
-template<typename BlueprintFieldType, typename Curve, std::size_t num_chunks,
+template<typename BlueprintFieldType, typename CurveType, std::size_t num_chunks,
          std::size_t bit_size_chunk, std::size_t RandomTestsAmount>
 void ec_scalar_mult_tests() {
     using value_type = typename BlueprintFieldType::value_type;
     using integral_type = typename BlueprintFieldType::integral_type;
 
-    using ec_point_value_type = typename Curve::template g1_type<
+    using ec_point_value_type = typename CurveType::template g1_type<
         nil::crypto3::algebra::curves::coordinates::affine>::value_type;
-    using scalar_value_type = typename Curve::scalar_field_type::value_type;
+    using scalar_value_type = typename CurveType::scalar_field_type::value_type;
 
     typedef nil::crypto3::multiprecision::big_uint<2 *
-                                                   Curve::base_field_type::modulus_bits>
+                                                   CurveType::base_field_type::modulus_bits>
         extended_integral_type;
     typedef nil::crypto3::multiprecision::big_uint<2 *
-                                                   Curve::scalar_field_type::modulus_bits>
+                                                   CurveType::scalar_field_type::modulus_bits>
         scalar_integral_type;
 
-    nil::crypto3::random::algebraic_engine<typename Curve::scalar_field_type>
+    nil::crypto3::random::algebraic_engine<typename CurveType::scalar_field_type>
         generate_random_scalar;
     boost::random::mt19937 seed_seq;
     generate_random_scalar.seed(seed_seq);
@@ -135,9 +135,9 @@ void ec_scalar_mult_tests() {
 
         extended_integral_type extended_base = 1,
                                ext_pow = extended_base << (num_chunks * bit_size_chunk),
-                               p = Curve::base_field_type::modulus, pp = ext_pow - p;
+                               p = CurveType::base_field_type::modulus, pp = ext_pow - p;
 
-        scalar_integral_type n = Curve::scalar_field_type::modulus,
+        scalar_integral_type n = CurveType::scalar_field_type::modulus,
                              s_ext_pow = scalar_integral_type(1)
                                          << (num_chunks * bit_size_chunk),
                              m = (n - 1) / 2 + 1, mp = s_ext_pow - m;
@@ -176,7 +176,7 @@ void ec_scalar_mult_tests() {
             public_input[7 * num_chunks + j] = value_type(0);
         }
 
-        test_ec_scalar_mult<BlueprintFieldType, typename Curve::base_field_type,
+        test_ec_scalar_mult<BlueprintFieldType, typename CurveType::base_field_type,
                             num_chunks, bit_size_chunk>(public_input, xR, yR);
     }
 }

@@ -94,8 +94,6 @@ namespace nil {
                         std::size_t witness = num_chunks * Q;
                         constexpr std::size_t public_inputs = 1;
                         constexpr std::size_t constants = 0;
-                        // rows = 4096-1 so that lookup table is not too hard to fit and
-                        // padding doesn't inflate the table
                         constexpr std::size_t rows = 65536 - 1;
                         return {witness, public_inputs, constants, rows};
                     }
