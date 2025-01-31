@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2024 Alexey Yashunsky <a.yashunsky@nil.foundation>
-// Copyright (c) 2024 Antoine Cyr <antoinecyr@nil.foundation>
+// Copyright (c) 2025 Antoine Cyr <antoinecyr@nil.foundation>
 //
 // MIT License
 //
@@ -28,32 +28,23 @@
 #ifndef CRYPTO3_BBF_COMPONENTS_EC_INCOMPLETE_ADD_ECDSA_HPP
 #define CRYPTO3_BBF_COMPONENTS_EC_INCOMPLETE_ADD_ECDSA_HPP
 
-#include <functional>
-#include <nil/blueprint/bbf/generic.hpp>
-#include <nil/blueprint/blueprint/plonk/assignment.hpp>
-#include <nil/blueprint/blueprint/plonk/circuit.hpp>
-#include <nil/blueprint/component.hpp>
-#include <nil/crypto3/algebra/curves/pallas.hpp>
-#include <nil/crypto3/algebra/curves/vesta.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/constraint_system.hpp>
-
 #include <nil/blueprint/bbf/components/algebra/fields/non_native/addition_mod_p.hpp>
 #include <nil/blueprint/bbf/components/algebra/fields/non_native/check_mod_p.hpp>
 #include <nil/blueprint/bbf/components/algebra/fields/non_native/flexible_multiplication.hpp>
 #include <nil/blueprint/bbf/components/algebra/fields/non_native/negation_mod_p.hpp>
-#include <nil/blueprint/bbf/components/detail/choice_function.hpp>
 #include <nil/blueprint/bbf/components/detail/range_check_multi.hpp>
-#include <stdexcept>
-#include <variant>
+#include <nil/blueprint/bbf/generic.hpp>
+#include <nil/crypto3/algebra/curves/pallas.hpp>
+#include <nil/crypto3/algebra/curves/vesta.hpp>
 
 namespace nil {
     namespace blueprint {
         namespace bbf {
             namespace components {
                 // Parameters: num_chunks = k, bit_size_chunk = b
-                // For points P = (x_P,y_P), Q = (x_Q,y_Q), x_P != x_Q, P,Q != O
+                // For points input_p = (x_P,y_P), Q = (x_Q,y_Q), x_P != x_Q, input_p,Q != O
                 // from an elliptic curve over F[p]
-                // computes R = (x_R, y_R) = P + Q
+                // computes R = (x_R, y_R) = input_p + Q
                 // Expects input as k-chunked values with b bits per chunk
                 // p' = 2^(kb) - p
                 // Input: xP[0],...,xP[k-1],yP[0],...,yP[k-1],xQ[0],...,xQ[k-1],
@@ -65,10 +56,10 @@ namespace nil {
                 template<typename FieldType>
                 struct ec_incomplete_add_raw_input {
                     using TYPE = typename FieldType::value_type;
-                    std::vector<TYPE> xQ;
-                    std::vector<TYPE> yQ;
                     std::vector<TYPE> xP;
                     std::vector<TYPE> yP;
+                    std::vector<TYPE> xQ;
+                    std::vector<TYPE> yQ;
                     std::vector<TYPE> p;
                     std::vector<TYPE> pp;
                     std::vector<TYPE> zero;
@@ -80,8 +71,6 @@ namespace nil {
                     using generic_component<FieldType, stage>::allocate;
                     using generic_component<FieldType, stage>::copy_constrain;
                     using generic_component<FieldType, stage>::constrain;
-                    using generic_component<FieldType, stage>::lookup;
-                    using component_type = generic_component<FieldType, stage>;
 
                   public:
                     using typename generic_component<FieldType, stage>::TYPE;
@@ -167,8 +156,6 @@ namespace nil {
                         using non_native_integral_type =
                             typename NonNativeFieldType::integral_type;
 
-                        using Choice_Function =
-                            typename bbf::components::choice_function<FieldType, stage>;
                         using Range_Check =
                             typename bbf::components::range_check_multi<FieldType, stage>;
                         using Check_Mod_P =

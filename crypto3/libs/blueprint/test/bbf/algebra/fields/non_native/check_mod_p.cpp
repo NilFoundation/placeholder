@@ -28,8 +28,6 @@
 #include <boost/test/unit_test.hpp>
 #include <nil/blueprint/bbf/circuit_builder.hpp>
 #include <nil/blueprint/bbf/components/algebra/fields/non_native/check_mod_p.hpp>
-#include <nil/blueprint/blueprint/plonk/assignment.hpp>
-#include <nil/blueprint/blueprint/plonk/circuit.hpp>
 #include <nil/crypto3/algebra/curves/pallas.hpp>
 #include <nil/crypto3/algebra/curves/vesta.hpp>
 #include <nil/crypto3/random/algebraic_engine.hpp>
@@ -115,7 +113,7 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_bbf_check_mod_p_test) {
     using pallas_field_type = typename crypto3::algebra::curves::pallas::base_field_type;
     using vesta_field_type = typename crypto3::algebra::curves::vesta::base_field_type;
 
-    mod_p_check_tests<pallas_field_type, 8, 32, random_tests_amount>();
+    mod_p_check_tests<pallas_field_type, 3, 96, random_tests_amount>();
     mod_p_check_tests<pallas_field_type, 4, 65, random_tests_amount>();
     mod_p_check_tests<pallas_field_type, 5, 63, random_tests_amount>();
 
