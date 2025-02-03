@@ -84,6 +84,9 @@
 #include <nil/blueprint/zkevm_bbf/opcodes/gas.hpp>
 #include "nil/blueprint/zkevm_bbf/opcodes/logx.hpp"
 
+#include <nil/blueprint/zkevm_bbf/opcodes/start_call.hpp>
+#include <nil/blueprint/zkevm_bbf/opcodes/end_call.hpp>
+
 namespace nil {
     namespace blueprint {
         namespace bbf {
@@ -239,7 +242,9 @@ namespace nil {
                 X(SELFDESTRUCT) \
                 X(err0) \
                 X(err1) \
-                X(padding)
+                X(padding) \
+                X(start_call) \
+                X(end_call)
 
             enum zkevm_opcode {
                 #define ENUM_DEF(name) name,
@@ -401,6 +406,8 @@ namespace nil {
                 if( str == "err0" ) return 0x100; // not enough static gas or incorrect stack size
                 if( str == "err1" ) return 0x101; // not enough static gas or incorrect stack size
                 if( str == "padding" ) return 0x102; // empty opcode for the fixed circuit size
+                if( str == "start_call" ) return 0x103; // start call
+                if( str == "end_call" ) return 0x104; // end call
                 BOOST_ASSERT(false);
                 return 0x102;
             }
@@ -556,9 +563,11 @@ namespace nil {
                 if( number ==  0xfe) return zkevm_opcode::INVALID;
                 if( number ==  0xff) return zkevm_opcode::SELFDESTRUCT;
                 // these are not real opcodes, they are for exception processing
-                if( number == 0x100 ) return zkevm_opcode::err0; // not enough static gas or incorrect stack size
-                if( number == 0x101 ) return zkevm_opcode::err1; // not enough static gas or incorrect stack size
+                if( number == 0x100 ) return zkevm_opcode::err0; // incorrect stack size
+                if( number == 0x101 ) return zkevm_opcode::err1; // not enough gas
                 if( number == 0x102 ) return zkevm_opcode::padding; // empty opcode for the fixed circuit size
+                if( number == 0x103 ) return zkevm_opcode::start_call; // opcode for start call
+                if( number == 0x104 ) return zkevm_opcode::end_call; // opcode for end call
                 std::cout << "Unknown opcode " << std::hex << number << std::dec << std::endl;
                 BOOST_ASSERT(false);
                 return zkevm_opcode::padding;
@@ -747,6 +756,8 @@ namespace nil {
                 opcodes[zkevm_opcode::err0] = std::make_shared<zkevm_err0_operation<BlueprintFieldType>>();
                 opcodes[zkevm_opcode::err1] = std::make_shared<zkevm_err1_operation<BlueprintFieldType>>();
                 opcodes[zkevm_opcode::padding] = std::make_shared<zkevm_padding_operation<BlueprintFieldType>>();
+                opcodes[zkevm_opcode::start_call] = std::make_shared<zkevm_start_call_operation<BlueprintFieldType>>();
+                opcodes[zkevm_opcode::end_call] = std::make_shared<zkevm_end_call_operation<BlueprintFieldType>>();
                 return opcodes;
             }
         } // namespace bbf

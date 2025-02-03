@@ -193,9 +193,10 @@ namespace nil {
                                 //<< " assigned as " << std::hex << current_state.opcode << std::dec
                                 << " on row " << current_row
                                 << " uses " << current_opcode_rows_amount << " rows"
-                                << " STS = " << current_state.stack_size
-                                << " MS = " << current_state.memory_size
-                                << " RWC = 0x" << std::hex<< current_state.rw_counter << std::dec
+                                << " pc = " << current_state.pc
+                                << " sp = " << current_state.stack_size
+                                << " mems = " << current_state.memory_size
+                                << " rw_c = 0x" << std::hex<< current_state.rw_counter << std::dec
                                 << " gas = " << current_state.gas
                                 // << " bytecode_hash = " << current_state.bytecode_hash
                                 << std::endl;
@@ -304,7 +305,6 @@ namespace nil {
                             context_object.relative_lookup(tmp, "chunk_16_bits/full", 0, max_zkevm_rows-1);
                         }
 
-                        // Remove it!
                         std::vector<TYPE> erc; // every row constraints
                         std::vector<TYPE> nfrc; // non-first row constraints
                         std::vector<TYPE> mc; // non-first and non-last row constraints

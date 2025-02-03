@@ -68,13 +68,13 @@ namespace nil {
                         std::size_t memory_size_before = 0;
                         for( auto it = ptrace.begin(); it!=ptrace.end(); it++){
                             std::string opcode = it->second.get_child("op").data();
-                            //std::cout << "\t" << opcode << std::endl;
+                            std::cout << "\t" << opcode << std::endl;
                             if(std::distance(it, ptrace.end()) != 1){
                                 stack_next = zkevm_word_vector_from_ptree(std::next(it)->second.get_child("stack"));
                                 memory_next = byte_vector_from_ptree(std::next(it)->second.get_child("memory"));
                                 storage_next = key_value_storage_from_ptree(it->second.get_child("storage"));
                             }
-                            zkevm_state state; // TODO:optimize
+                            zkevm_state state;
                             state.tx_hash = 0;  // TODO: change it
                             state.opcode = opcode_number_from_str(opcode);
                             state.call_id = call_id;
@@ -389,8 +389,6 @@ namespace nil {
                             } else if(opcode == "RETURNDATACOPY") {
                                 // 0x3e
                                 // std::cout << "Test me, please!" << std::endl;
-                                std::cout << "RETURNDATACOPY not implemented" << std::endl;
-                                exit(2);
                                 _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-1, rw_counter++, false, stack[stack.size()-1]));
                                 _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-2, rw_counter++, false, stack[stack.size()-2]));
                                 _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-3, rw_counter++, false, stack[stack.size()-3]));
