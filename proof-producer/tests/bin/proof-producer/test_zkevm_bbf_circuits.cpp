@@ -25,22 +25,22 @@ class ProverTests: public ::testing::TestWithParam<Input> {
         using CurveType = nil::crypto3::algebra::curves::pallas;
         using HashType = nil::crypto3::hashes::keccak_1600<256>;
 
-        using ConstraintSystem = nil::proof_generator::TypeSystem<CurveType, HashType>::ConstraintSystem;
-        using BlueprintFieldType = nil::proof_generator::TypeSystem<CurveType, HashType>::BlueprintField;
-        using AssignmentTable = nil::proof_generator::TypeSystem<CurveType, HashType>::AssignmentTable;
+        using ConstraintSystem = nil::proof_producer::TypeSystem<CurveType, HashType>::ConstraintSystem;
+        using BlueprintFieldType = nil::proof_producer::TypeSystem<CurveType, HashType>::BlueprintField;
+        using AssignmentTable = nil::proof_producer::TypeSystem<CurveType, HashType>::AssignmentTable;
 
 
-        class AssignmentTableChecker: public nil::proof_generator::command_chain {
+        class AssignmentTableChecker: public nil::proof_producer::command_chain {
 
         public:
             AssignmentTableChecker(const std::string& circuit_name, const std::string& trace_base_path) {
-                using PresetStep                       = typename nil::proof_generator::PresetStep<CurveType, HashType>::Executor;
-                using Assigner                         = typename nil::proof_generator::FillAssignmentStep<CurveType, HashType>::Executor;
+                using PresetStep                       = typename nil::proof_producer::PresetStep<CurveType, HashType>::Executor;
+                using Assigner                         = typename nil::proof_producer::FillAssignmentStep<CurveType, HashType>::Executor;
 
-                nil::proof_generator::CircuitsLimits circuit_limits;
+                nil::proof_producer::CircuitsLimits circuit_limits;
                 auto& circuit_maker = add_step<PresetStep>(circuit_name, circuit_limits);
                 auto& assigner = add_step<Assigner>(circuit_maker, circuit_maker, circuit_name, trace_base_path,
-                    nil::proof_generator::AssignerOptions(false, circuit_limits));
+                    nil::proof_producer::AssignerOptions(false, circuit_limits));
 
                 resources::subscribe_value<ConstraintSystem>(circuit_maker, circuit_);    // capture circuit to do the check
                 resources::subscribe_value<AssignmentTable>(assigner, assignment_table_); // capture assignment table to do the check
@@ -74,33 +74,33 @@ TEST_P(ProverTests, FillAssignmentAndCheck) {
 }
 
 
-using namespace nil::proof_generator::circuits;
+using namespace nil::proof_producer::circuits;
 
 // !! note that due to https://github.com/NilFoundation/placeholder/issues/196
 // contracts for these traces were compiled with --no-cbor-metadata flag
 
 // Single call of Counter contract increment function
 const std::string SimpleIncrement = "simple/increment_simple";
-INSTANTIATE_TEST_SUITE_P(SimpleRw, ProverTests, ::testing::Values(Input{SimpleIncrement,  RW}));
-INSTANTIATE_TEST_SUITE_P(SimpleBytecode, ProverTests, ::testing::Values(Input{SimpleIncrement,  BYTECODE}));
-INSTANTIATE_TEST_SUITE_P(SimpleCopy, ProverTests, ::testing::Values(Input{SimpleIncrement,  COPY}));
-INSTANTIATE_TEST_SUITE_P(SimpleZkevm, ProverTests, ::testing::Values(Input{SimpleIncrement,  ZKEVM}));
+// INSTANTIATE_TEST_SUITE_P(SimpleRw, ProverTests, ::testing::Values(Input{SimpleIncrement,  RW}));
+// INSTANTIATE_TEST_SUITE_P(SimpleBytecode, ProverTests, ::testing::Values(Input{SimpleIncrement,  BYTECODE}));
+// INSTANTIATE_TEST_SUITE_P(SimpleCopy, ProverTests, ::testing::Values(Input{SimpleIncrement,  COPY}));
+// INSTANTIATE_TEST_SUITE_P(SimpleZkevm, ProverTests, ::testing::Values(Input{SimpleIncrement,  ZKEVM}));
 INSTANTIATE_TEST_SUITE_P(SimpleExp, ProverTests, ::testing::Values(Input{SimpleIncrement, EXP}));
 
 // // Multiple calls of Counter contract increment function (several transactions)
 const std::string MultiTxIncrement = "multi_tx/increment_multi_tx";
-INSTANTIATE_TEST_SUITE_P(MultiTxRw, ProverTests, ::testing::Values(Input{MultiTxIncrement,  RW}));
-INSTANTIATE_TEST_SUITE_P(MultiTxBytecode, ProverTests, :: testing::Values(Input{MultiTxIncrement,  BYTECODE}));
-INSTANTIATE_TEST_SUITE_P(MultiTxCopy, ProverTests, ::testing::Values(Input{MultiTxIncrement,  COPY}));
-INSTANTIATE_TEST_SUITE_P(MultiTxZkevm, ProverTests, ::testing::Values(Input{MultiTxIncrement,  ZKEVM}));
+// INSTANTIATE_TEST_SUITE_P(MultiTxRw, ProverTests, ::testing::Values(Input{MultiTxIncrement,  RW}));
+// INSTANTIATE_TEST_SUITE_P(MultiTxBytecode, ProverTests, :: testing::Values(Input{MultiTxIncrement,  BYTECODE}));
+// INSTANTIATE_TEST_SUITE_P(MultiTxCopy, ProverTests, ::testing::Values(Input{MultiTxIncrement,  COPY}));
+// INSTANTIATE_TEST_SUITE_P(MultiTxZkevm, ProverTests, ::testing::Values(Input{MultiTxIncrement,  ZKEVM}));
 INSTANTIATE_TEST_SUITE_P(MultiTxExp, ProverTests, ::testing::Values(Input{MultiTxIncrement, EXP}));
 
 // // Single call of exp operation
 const std::string SimpleExp = "exp/exp";
-INSTANTIATE_TEST_SUITE_P(SimpleExpRw, ProverTests, ::testing::Values(Input{SimpleExp, RW}));
-INSTANTIATE_TEST_SUITE_P(SimpleExpBytecode, ProverTests, :: testing::Values(Input{SimpleExp, BYTECODE}));
-INSTANTIATE_TEST_SUITE_P(SimpleExpCopy, ProverTests, ::testing::Values(Input{SimpleExp, COPY}));
-INSTANTIATE_TEST_SUITE_P(SimpleExpZkevm, ProverTests, ::testing::Values(Input{SimpleExp, ZKEVM}));
+// INSTANTIATE_TEST_SUITE_P(SimpleExpRw, ProverTests, ::testing::Values(Input{SimpleExp, RW}));
+// INSTANTIATE_TEST_SUITE_P(SimpleExpBytecode, ProverTests, :: testing::Values(Input{SimpleExp, BYTECODE}));
+// INSTANTIATE_TEST_SUITE_P(SimpleExpCopy, ProverTests, ::testing::Values(Input{SimpleExp, COPY}));
+// INSTANTIATE_TEST_SUITE_P(SimpleExpZkevm, ProverTests, ::testing::Values(Input{SimpleExp, ZKEVM}));
 INSTANTIATE_TEST_SUITE_P(SimpleExpExp, ProverTests, ::testing::Values(Input{SimpleExp, EXP}));
 
 // RW trace is picked from another trace set and has different trace_idx

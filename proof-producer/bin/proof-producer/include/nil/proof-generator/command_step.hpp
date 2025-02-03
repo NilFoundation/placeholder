@@ -13,7 +13,7 @@
 
 namespace nil {
 
-    namespace proof_generator {
+    namespace proof_producer {
 
         enum class ResultCode: uint8_t {
             Success = 0,
@@ -47,7 +47,7 @@ namespace nil {
             std::optional<std::string> error_message_;
 
             constexpr explicit CommandResult() noexcept: result_(ResultCode::Success) {}
-            explicit CommandResult(ResultCode rc, std::string error_message): 
+            explicit CommandResult(ResultCode rc, std::string error_message):
                 result_(rc),
                 error_message_(std::move(error_message))
             {}
@@ -66,8 +66,8 @@ namespace nil {
                     return "";
                 }
 
-                return std::format("result_code={}({}): {}", 
-                    static_cast<uint8_t>(result_), 
+                return std::format("result_code={}({}): {}",
+                    static_cast<uint8_t>(result_),
                     result_code_to_string(result_),
                     error_message_.value_or("no description")
                 );
@@ -76,7 +76,7 @@ namespace nil {
             constexpr static CommandResult Ok() noexcept {
                 return CommandResult();
             }
-            
+
             template <typename... Args>
             static CommandResult Error(ResultCode rc, std::format_string<Args...> _fmt, Args&&... args) {
                 return CommandResult(rc, std::format(_fmt, std::forward<Args>(args)...));
@@ -112,7 +112,7 @@ namespace nil {
                 int total_stages = steps_.size();
                 while (!steps_.empty()) {
                     auto const res = steps_.front()->execute();
-                    if (!res.succeeded()) 
+                    if (!res.succeeded())
                     {
                         BOOST_LOG_TRIVIAL(error) << "command failed on stage " << stage << " of " << total_stages << ": " << res.error_message();
                         return res;
@@ -126,8 +126,8 @@ namespace nil {
         protected:
             // returns reference to the pushed step (non-owning, ownership is guaranteed by the step queue)
             template <typename Step, typename... Args>
-                requires (std::derived_from<Step, command_step> && std::constructible_from<Step, Args...>) 
-            Step& add_step(Args&&... args) { 
+                requires (std::derived_from<Step, command_step> && std::constructible_from<Step, Args...>)
+            Step& add_step(Args&&... args) {
                 BOOST_LOG_TRIVIAL(trace) << "adding " << steps_.size() + 1 << " step: " << __PRETTY_FUNCTION__;
                 std::unique_ptr<command_step>& pushed = steps_.emplace(std::make_unique<Step>(std::forward<Args>(args)...));
                 return dynamic_cast<Step&>(*pushed); // safe here because we know that we just pushed exactly this type
@@ -137,5 +137,5 @@ namespace nil {
             std::queue<std::unique_ptr<command_step>> steps_;
         };
 
-    } // namespace proof_generator
+    } // namespace proof_producer
 } // namespace nil

@@ -13,7 +13,7 @@
 
 
 namespace nil {
-    namespace proof_generator {
+    namespace proof_producer {
 
         template<typename BlueprintFieldType>
         using AssignmentTableFiller = std::function<std::optional<std::string>(
@@ -88,7 +88,7 @@ namespace nil {
             BOOST_LOG_TRIVIAL(debug) << "total rows amount = " << desc.rows_amount << " for " << circuit_name << "\n";
             return {};
         }
-    } // proof_generator
+    } // proof_producer
 } // nil
 
 #endif  // PROOF_GENERATOR_LIBS_ASSIGNER__ASSIGNER_HPP_

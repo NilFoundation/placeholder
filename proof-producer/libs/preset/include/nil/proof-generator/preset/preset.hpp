@@ -17,7 +17,7 @@
 #include <string>
 
 namespace nil {
-    namespace proof_generator {
+    namespace proof_producer {
         namespace circuits {
             using Name = std::string;
 
@@ -78,6 +78,6 @@ namespace nil {
                 {circuits::COPY, initialize_copy_circuit<BlueprintFieldType>},
                 {circuits::EXP, initialize_exp_circuit<BlueprintFieldType>},
         };
-    } // proof_generator
+    } // proof_producer
 } // nil
 #endif  // PROOF_GENERATOR_LIBS_PRESET_PRESET_HPP_

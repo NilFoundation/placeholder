@@ -3,7 +3,7 @@
 #include <cstdint>
 
 namespace nil {
-    namespace proof_generator {
+    namespace proof_producer {
         namespace limits {
 
             const std::size_t max_copy = 30000;
@@ -40,5 +40,5 @@ namespace nil {
                 max_exp_rows(limits::max_exp_rows),
                 RLC_CHALLENGE(limits::RLC_CHALLENGE) {}
         };
-    } // proof_generator
+    } // proof_producer
 } // nil

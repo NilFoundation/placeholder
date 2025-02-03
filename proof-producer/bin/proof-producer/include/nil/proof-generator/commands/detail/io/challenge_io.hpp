@@ -12,7 +12,7 @@
 
 
 namespace nil {
-    namespace proof_generator {
+    namespace proof_producer {
 
         template <typename CurveType, typename HashType>
         struct ChallengeIO {
@@ -42,10 +42,10 @@ namespace nil {
                 return marshalled_challenge->value();
             }
 
-            static bool save_challenge(const boost::filesystem::path& challenge_file, const Challenge& challenge) 
+            static bool save_challenge(const boost::filesystem::path& challenge_file, const Challenge& challenge)
             {
                 BOOST_LOG_TRIVIAL(info) << "Writing challenge to " << challenge_file << ".";
- 
+
                 challenge_marshalling_type marshalled_challenge(challenge);
 
                 auto res = detail::encode_marshalling_to_file<challenge_marshalling_type>(
@@ -75,7 +75,7 @@ namespace nil {
                     Challenge, Endianness>(marshalled_challenges.value());
             }
 
-            static bool save_challenge_vector_to_file(const std::vector<Challenge>& challenges, const boost::filesystem::path& output_file) 
+            static bool save_challenge_vector_to_file(const std::vector<Challenge>& challenges, const boost::filesystem::path& output_file)
             {
                 BOOST_LOG_TRIVIAL(info) << "Writing challenges to " << output_file;
 
@@ -86,5 +86,5 @@ namespace nil {
                 return detail::encode_marshalling_to_file<challenge_vector_marshalling_type>(output_file, marshalled_challenges);
             }
         };
-    } // namespace proof_generator
+    } // namespace proof_producer
 } // namespace nil

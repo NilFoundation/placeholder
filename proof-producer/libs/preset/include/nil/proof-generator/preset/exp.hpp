@@ -15,7 +15,7 @@
 
 
 namespace nil {
-    namespace proof_generator {
+    namespace proof_producer {
         template<typename BlueprintFieldType>
         std::optional<std::string> initialize_exp_circuit(
                 std::shared_ptr<typename PresetTypes<BlueprintFieldType>::ConstraintSystem>& exp_circuit,
@@ -70,6 +70,6 @@ namespace nil {
 
             return {};
         }
-    } // proof_generator
+    } // proof_producer
 } // nil
 #endif  // PROOF_GENERATOR_LIBS_PRESET_EXP_HPP_

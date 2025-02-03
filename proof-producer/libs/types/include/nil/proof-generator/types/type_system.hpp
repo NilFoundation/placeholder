@@ -48,7 +48,7 @@
 
 
 namespace nil {
-    namespace proof_generator {
+    namespace proof_producer {
 
         // TODO naming
         template <typename BlueprintField>

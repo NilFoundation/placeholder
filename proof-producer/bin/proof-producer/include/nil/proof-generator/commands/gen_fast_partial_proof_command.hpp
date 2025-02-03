@@ -19,7 +19,7 @@
 
 
 namespace nil {
-    namespace proof_generator {
+    namespace proof_producer {
 
         template<typename CurveType, typename HashType>
         class FastPartialProofCommand: public command_chain {
@@ -71,5 +71,5 @@ namespace nil {
                 add_step<AssignmentDescriptionWriter>(assigner, args.out_assignment_desc_file_path);
             }
         };
-    } // namespace proof_generator
+    } // namespace proof_producer
 } // namespace nil

@@ -24,7 +24,7 @@
 
 
 namespace nil {
-    namespace proof_generator {
+    namespace proof_producer {
 
         template<typename CurveType, typename HashType>
         struct VerifyStep {
@@ -121,5 +121,5 @@ namespace nil {
                 );
             }
         };
-    } // namespace proof_generator
+    } // namespace proof_producer
 } // namespace nil

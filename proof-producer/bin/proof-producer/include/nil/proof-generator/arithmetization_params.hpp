@@ -28,7 +28,7 @@
 #include <nil/proof-generator/non_type_arithmetization_params.hpp>
 
 namespace nil {
-    namespace proof_generator {
+    namespace proof_producer {
 
         using CurveTypes = std::tuple<nil::crypto3::algebra::curves::pallas
                                       // Add more curves as needed.
@@ -42,5 +42,5 @@ namespace nil {
             // Add more hashes as needed.
             >;
 
-    } // namespace proof_generator
+    } // namespace proof_producer
 } // namespace nil

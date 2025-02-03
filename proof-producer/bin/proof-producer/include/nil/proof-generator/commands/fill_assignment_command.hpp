@@ -17,7 +17,7 @@
 #include "nil/proof-generator/preset/limits.hpp"
 
 namespace nil {
-    namespace proof_generator {
+    namespace proof_producer {
 
         template<typename CurveType, typename HashType>
         struct FillAssignmentStep {
@@ -86,8 +86,8 @@ namespace nil {
                 boost::filesystem::path out_circuit_file_path;
                 boost::filesystem::path out_assignment_table_file_path;
                 boost::filesystem::path out_assignment_description_file_path;
-                nil::proof_generator::OutputArtifacts output_artifacts;
-                nil::proof_generator::CircuitsLimits circuit_limits;
+                nil::proof_producer::OutputArtifacts output_artifacts;
+                nil::proof_producer::CircuitsLimits circuit_limits;
             };
 
             FillAssignmentCommand(const Args& args) {
@@ -130,5 +130,5 @@ namespace nil {
             }
         };
 
-    } // namespace proof_generator
+    } // namespace proof_producer
 } // namespace nil

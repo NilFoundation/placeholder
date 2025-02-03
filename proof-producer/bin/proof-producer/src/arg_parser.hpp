@@ -28,7 +28,7 @@
 #include <nil/proof-generator/meta_utils.hpp>
 
 namespace nil {
-    namespace proof_generator {
+    namespace proof_producer {
 
         using CurvesVariant =
             typename tuple_to_variant<typename transform_tuple<CurveTypes, to_type_identity>::type>::type;
@@ -77,5 +77,5 @@ namespace nil {
 
         std::optional<ProverOptions> parse_args(int argc, char* argv[]);
 
-    } // namespace proof_generator
+    } // namespace proof_producer
 } // namespace nil

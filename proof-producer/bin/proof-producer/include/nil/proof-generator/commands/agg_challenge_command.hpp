@@ -15,7 +15,7 @@
 #include <nil/proof-generator/resources.hpp>
 
 namespace nil {
-    namespace proof_generator {
+    namespace proof_producer {
 
         template <typename CurveType, typename HashType>
         struct AggregatedChallengeCommand: public command_step {
@@ -78,5 +78,5 @@ namespace nil {
                 return CommandResult::Ok();
             }
         };
-    } // namespace proof_generator
+    } // namespace proof_producer
 } // namespace nil

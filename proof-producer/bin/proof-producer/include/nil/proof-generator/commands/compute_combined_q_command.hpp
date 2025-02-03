@@ -19,7 +19,7 @@
 
 
 namespace nil {
-    namespace proof_generator {
+    namespace proof_producer {
 
         template <typename CurveType, typename HashType>
         struct CombinedQGenerator: public command_step {
@@ -106,5 +106,5 @@ namespace nil {
             }
         };
 
-    } // namespace proof_generator
+    } // namespace proof_producer
 } // namespace nil

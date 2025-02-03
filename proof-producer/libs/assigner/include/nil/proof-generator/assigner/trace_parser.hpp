@@ -24,7 +24,7 @@
 #include "proto_hash.h"
 
 namespace nil {
-    namespace proof_generator {
+    namespace proof_producer {
 
         const char BYTECODE_EXTENSION[] = ".bc";
         const char RW_EXTENSION[] = ".rw";
@@ -398,6 +398,6 @@ namespace nil {
                 pb_traces->trace_idx()
             };
         }
-    } // namespace proof_generator
+    } // namespace proof_producer
 } // namespace nil
 #endif  // PROOF_GENERATOR_LIBS_ASSIGNER_TRACE_PARSER_HPP_

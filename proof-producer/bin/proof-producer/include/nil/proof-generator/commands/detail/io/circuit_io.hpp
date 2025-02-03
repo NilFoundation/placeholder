@@ -13,8 +13,8 @@
 
 
 namespace nil {
-    namespace proof_generator {
- 
+    namespace proof_producer {
+
         template <typename CurveType, typename HashType>
         struct CircuitIO {
             using Types = TypeSystem<CurveType, HashType>;
@@ -59,16 +59,16 @@ namespace nil {
                 const boost::filesystem::path circuit_file_path_;
             };
 
-            
+
             struct Writer: public command_step {
 
-                Writer(resources::resource_provider<ConstraintSystem>& provider, const boost::filesystem::path& circuit_file_path): 
-                    circuit_file_path_(circuit_file_path) 
+                Writer(resources::resource_provider<ConstraintSystem>& provider, const boost::filesystem::path& circuit_file_path):
+                    circuit_file_path_(circuit_file_path)
                 {
                     resources::subscribe_value(provider, constraint_system_);
                 }
 
-                CommandResult execute() override 
+                CommandResult execute() override
                 {
                     using writer = circuit_writer<Endianness, BlueprintField>;
 
@@ -92,5 +92,5 @@ namespace nil {
             };
         };
 
-    } // namespace proof_generator
+    } // namespace proof_producer
 } // namespace nil

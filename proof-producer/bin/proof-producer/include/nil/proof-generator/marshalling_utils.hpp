@@ -13,7 +13,7 @@
 
 
 namespace nil {
-    namespace proof_generator {
+    namespace proof_producer {
         namespace detail {
 
             template<typename MarshallingType>
@@ -56,5 +56,5 @@ namespace nil {
             }
 
         } // namespace details
-    } // namespace proof_generator
+    } // namespace proof_producer
 } // namespace nil

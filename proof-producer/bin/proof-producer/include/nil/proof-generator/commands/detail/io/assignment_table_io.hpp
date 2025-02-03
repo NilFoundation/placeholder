@@ -14,8 +14,8 @@
 
 
 namespace nil {
-    namespace proof_generator {
- 
+    namespace proof_producer {
+
         template <typename CurveType, typename HashType>
         struct AssignmentTableIO {
 
@@ -32,8 +32,8 @@ namespace nil {
                 BinaryWriter(
                     resources::resource_provider<AssignmentTable>& table_provider,
                     resources::resource_provider<TableDescription>& description_provider,
-                    const boost::filesystem::path& output_filename): 
-                output_filename_ (output_filename) 
+                    const boost::filesystem::path& output_filename):
+                output_filename_ (output_filename)
                 {
                     resources::subscribe_value<AssignmentTable>(table_provider, assignment_table_);
                     resources::subscribe_value<TableDescription>(description_provider, table_description_);
@@ -71,7 +71,7 @@ namespace nil {
                 DescriptionWriter(
                     resources::resource_provider<TableDescription>& description_provider,
                     const boost::filesystem::path& assignment_description_file_path
-                ): assignment_description_file_path_(assignment_description_file_path) 
+                ): assignment_description_file_path_(assignment_description_file_path)
                 {
                     resources::subscribe_value<TableDescription>(description_provider, table_description_);
                 }
@@ -90,7 +90,7 @@ namespace nil {
                     );
                     if (!res) {
                         return CommandResult::UnknownError("Failed to write assignment description");
-                    } 
+                    }
 
                     BOOST_LOG_TRIVIAL(info) << "Assignment description written.";
                     return CommandResult::Ok();
@@ -113,7 +113,7 @@ namespace nil {
                     resources::subscribe_value<TableDescription>(description_provider, table_description_);
                 }
 
-                CommandResult execute() override 
+                CommandResult execute() override
                 {
                     BOOST_ASSERT(!opts_.empty());
 
@@ -234,5 +234,5 @@ namespace nil {
             };
         };
 
-    } // namespace proof_generator
+    } // namespace proof_producer
 } // namespace nil

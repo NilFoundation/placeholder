@@ -26,7 +26,7 @@
 #include <boost/log/trivial.hpp>
 
 namespace nil {
-    namespace proof_generator {
+    namespace proof_producer {
         inline bool is_valid_path(const std::string& path) {
             if (path.length() >= PATH_MAX) {
                 BOOST_LOG_TRIVIAL(error) << path << ": file path is too long. Maximum allowed length is " << PATH_MAX
@@ -185,5 +185,5 @@ namespace nil {
             return true;
         }
 
-    } // namespace proof_generator
+    } // namespace proof_producer
 } // namespace nil

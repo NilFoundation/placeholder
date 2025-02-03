@@ -29,7 +29,7 @@
 #include <boost/program_options.hpp>
 
 namespace nil {
-    namespace proof_generator {
+    namespace proof_producer {
         namespace po = boost::program_options;
 
         void check_exclusive_options(const po::variables_map& vm, const std::vector<std::string>& opts) {
@@ -139,7 +139,7 @@ namespace nil {
             // clang-format on
             po::options_description cmdline_options("nil; Proof Producer");
             cmdline_options.add(generic).add(config);
-            
+
             po::variables_map vm;
             try {
                 po::store(parse_command_line(argc, argv, cmdline_options), vm);
@@ -255,5 +255,5 @@ namespace nil {
         GENERATE_READ_OPERATOR(HASH_TYPES, HashesVariant)
 #undef X
 
-    } // namespace proof_generator
+    } // namespace proof_producer
 } // namespace nil
