@@ -141,7 +141,7 @@ namespace nil {
 
                     placeholder_proof<FieldType, ParamsType> process() {
                         PROFILE_SCOPE("Placeholder prover, total time");
-                        BOOST_LOG_TRIVIAL(info) << "running mutithreaded mode";
+                        BOOST_LOG_TRIVIAL(info) << "Running prover in multi-threaded mode.";
 
                         // 2. Commit witness columns and public_input columns
                         _commitment_scheme.append_to_batch(VARIABLE_VALUES_BATCH, _polynomial_table->witnesses());
@@ -215,8 +215,8 @@ namespace nil {
                         transcript(_proof.commitments[QUOTIENT_BATCH]);
 
                         // 8. Run evaluation proofs
-                        _proof.eval_proof.challenge = transcript.template challenge<FieldType>();
-                        generate_evaluation_points();
+                        typename FieldType::value_type evaluation_challenge = transcript.template challenge<FieldType>();
+                        generate_evaluation_points(evaluation_challenge);
 
                         if (!_skip_commitment_scheme_eval_proofs) {
                             _proof.eval_proof.eval_proof = _commitment_scheme.proof_eval(transcript);
@@ -371,7 +371,7 @@ namespace nil {
                         }
                     }
 
-                    void generate_evaluation_points() {
+                    void generate_evaluation_points(const typename FieldType::value_type& evaluation_challenge) {
                         PROFILE_SCOPE("evaluation_points_generated_time");
                         const auto& assignment_desc = preprocessed_public_data.common_data->desc;
 
@@ -393,26 +393,26 @@ namespace nil {
                                 _commitment_scheme.append_eval_point(
                                     VARIABLE_VALUES_BATCH,
                                     variable_values_index,
-                                    _proof.eval_proof.challenge * _omega.pow(rotation)
+                                    evaluation_challenge * _omega.pow(rotation)
                                 );
                             }
                         }
 
                         if (_is_lookup_enabled || constraint_system.copy_constraints().size() > 0) {
-                            _commitment_scheme.append_eval_point(PERMUTATION_BATCH, _proof.eval_proof.challenge);
+                            _commitment_scheme.append_eval_point(PERMUTATION_BATCH, evaluation_challenge);
                         }
 
                         if (constraint_system.copy_constraints().size() > 0)
-                            _commitment_scheme.append_eval_point(PERMUTATION_BATCH, 0, _proof.eval_proof.challenge * _omega);
+                            _commitment_scheme.append_eval_point(PERMUTATION_BATCH, 0, evaluation_challenge * _omega);
 
                         if (_is_lookup_enabled) {
                             // For polynomail U, we need the shifted value as well.
                             _commitment_scheme.append_eval_point(PERMUTATION_BATCH, preprocessed_public_data.common_data->permutation_parts,
-                                _proof.eval_proof.challenge * _omega);
-                            _commitment_scheme.append_eval_point(LOOKUP_BATCH, _proof.eval_proof.challenge);
+                                evaluation_challenge * _omega);
+                            _commitment_scheme.append_eval_point(LOOKUP_BATCH, evaluation_challenge);
                         }
 
-                        _commitment_scheme.append_eval_point(QUOTIENT_BATCH, _proof.eval_proof.challenge);
+                        _commitment_scheme.append_eval_point(QUOTIENT_BATCH, evaluation_challenge);
 
                         // fixed values' rotations (table columns)
                         std::size_t i = 0;
@@ -420,12 +420,12 @@ namespace nil {
                             preprocessed_public_data.permutation_polynomials.size() + 2;
 
                         for (i = 0; i < start_index; i++) {
-                            _commitment_scheme.append_eval_point(FIXED_VALUES_BATCH, i, _proof.eval_proof.challenge);
+                            _commitment_scheme.append_eval_point(FIXED_VALUES_BATCH, i, evaluation_challenge);
                         }
 
                         // For special selectors
-                        _commitment_scheme.append_eval_point(FIXED_VALUES_BATCH, start_index - 2, _proof.eval_proof.challenge * _omega);
-                        _commitment_scheme.append_eval_point(FIXED_VALUES_BATCH, start_index - 1, _proof.eval_proof.challenge * _omega);
+                        _commitment_scheme.append_eval_point(FIXED_VALUES_BATCH, start_index - 2, evaluation_challenge * _omega);
+                        _commitment_scheme.append_eval_point(FIXED_VALUES_BATCH, start_index - 1, evaluation_challenge * _omega);
 
                         for (std::size_t ind = 0;
                             ind < constant_columns + preprocessed_public_data.public_polynomial_table->selectors().size();
@@ -438,57 +438,15 @@ namespace nil {
                                 _commitment_scheme.append_eval_point(
                                     FIXED_VALUES_BATCH,
                                     start_index + ind,
-                                    _proof.eval_proof.challenge * _omega.pow(rotation)
+                                    evaluation_challenge * _omega.pow(rotation)
                                 );
                             }
                         }
                     }
 
-                    std::vector<std::vector<typename FieldType::value_type>> compute_evaluation_points_public() {
-                        std::vector<std::vector<typename FieldType::value_type>> evaluation_points_public(
-                            preprocessed_public_data.identity_polynomials.size() +
-                            preprocessed_public_data.permutation_polynomials.size(),
-                            _challenge_point);
-
-                        const std::size_t witness_columns = table_description.witness_columns;
-                        const std::size_t public_input_columns = table_description.public_input_columns;
-                        const std::size_t constant_columns = table_description.constant_columns;
-
-                        for (std::size_t k = 0, rotation_index = witness_columns + public_input_columns;
-                                k < constant_columns; k++, rotation_index++) {
-
-                            const std::set<int>& rotations =
-                                preprocessed_public_data.common_data->columns_rotations[rotation_index];
-                            std::vector<typename FieldType::value_type> point;
-                            point.reserve(rotations.size());
-
-                            for (int rotation: rotations) {
-                                // TODO: Maybe precompute values of _omega.pow(rotation)??? Rotation can be -1, causing computation
-                                // of inverse element multiple times.
-                                point.push_back( _proof.eval_proof.challenge * _omega.pow(rotation));
-                            }
-                            evaluation_points_public.push_back(std::move(point));
-                        }
-
-                        for (std::size_t k = 0, rotation_index = witness_columns + public_input_columns + constant_columns;
-                                k < preprocessed_public_data.public_polynomial_table.selectors().size();
-                                k++, rotation_index++) {
-
-                            const std::set<int>& rotations =
-                                preprocessed_public_data.common_data->columns_rotations[rotation_index];
-                            std::vector<typename FieldType::value_type> point;
-                            point.reserve(rotations.size());
-
-                            for (int rotation: rotations) {
-                                point.push_back( _proof.eval_proof.challenge * _omega.pow(rotation));
-                            }
-                            evaluation_points_public.push_back(std::move(point));
-                        }
-
-                        evaluation_points_public.push_back(_challenge_point);
-
-                        return evaluation_points_public;
-                    }
+                public:
+                    // Transcript is used from the outside to generate an aggregated challenge for dFRI.
+                    transcript::fiat_shamir_heuristic_sequential<transcript_hash_type> transcript;
 
                 private:
                     // Structures passed from outside by reference.
@@ -500,7 +458,6 @@ namespace nil {
                     std::unique_ptr<plonk_polynomial_dfs_table<FieldType>> _polynomial_table;
                     placeholder_proof<FieldType, ParamsType> _proof;
                     std::array<polynomial_dfs_type, f_parts> _F_dfs;
-                    transcript::fiat_shamir_heuristic_sequential<transcript_hash_type> transcript;
                     bool _is_lookup_enabled;
                     typename FieldType::value_type _omega;
                     std::vector<typename FieldType::value_type> _challenge_point;

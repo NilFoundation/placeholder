@@ -35,6 +35,7 @@
 #include <unordered_map>
 #include <iostream>
 #include <memory>
+#include <queue>
 
 #include <nil/crypto3/math/polynomial/polynomial.hpp>
 #include <nil/crypto3/math/polynomial/shift.hpp>
@@ -255,6 +256,13 @@ namespace nil {
                         }
 
                         return F;
+                    }
+
+                    static inline void fill_challenge_queue(
+                        transcript_type &transcript,
+                        std::queue<typename FieldType::value_type>& queue) {
+                        // Theta
+                        queue.push(transcript.template challenge<FieldType>());
                     }
                 };
             }    // namespace snark
