@@ -1019,6 +1019,8 @@ namespace nil {
                     std::map<std::size_t, std::vector<math::polynomial<typename FRI::field_type::value_type>>> g_coeffs =
                         convert_polynomials_to_coefficients<FRI, PolynomialType>(fri_params, g);
 
+                    BOOST_ASSERT(challenges.size() == fri_params.lambda);
+
                     for (std::size_t query_id = 0; query_id < fri_params.lambda; query_id++) {
                         std::size_t domain_size = fri_params.D[0]->size();
                         typename FRI::field_type::value_type x = challenges[query_id];
