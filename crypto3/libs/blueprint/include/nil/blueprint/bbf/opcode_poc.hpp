@@ -92,7 +92,7 @@ namespace nil {
                      return {11,1,0,max_rows_amount};
                 }
 
-                static std::tuple<input_type> form_input(context_type &context_object, raw_input_type raw_input) {
+                static std::tuple<input_type> form_input(context_type &context_object, raw_input_type raw_input,std::size_t max_rows_amount) {
                      input_type res;
                      if constexpr (stage == GenerationStage::ASSIGNMENT) {
                          res = raw_input.B;
@@ -106,7 +106,7 @@ namespace nil {
                     std::vector<std::uint8_t> block_list;
                     std::vector<std::array<TYPE, 5>> block_selector(max_rows);
                     std::vector<std::array<TYPE, 5>> block_row_selector(max_rows);
-                    std::array<std::unordered_map<row_selector<>, std::vector<TYPE>>, 5> block_constraints;
+                    std::array<std::unordered_map<row_selector<>, std::vector<std::pair<TYPE, std::string>>>, 5> block_constraints;
 
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
                         std::cout << "Opcode POC assignment" << std::endl;
@@ -163,7 +163,7 @@ namespace nil {
                                         if( !constr_list.first.is_set(block_row) ) continue;
                                         for( auto &constr: constr_list.second ){
                                             //std::cout << pair_selector_relative * constr << std::endl;
-                                            context_object.relative_constrain(pair_selector_relative * constr, i);
+                                            context_object.relative_constrain(pair_selector_relative * constr.first, i, constr.second);
                                         }
                                     }
                                 }

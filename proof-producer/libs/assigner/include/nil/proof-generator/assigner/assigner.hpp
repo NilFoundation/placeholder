@@ -8,6 +8,7 @@
 #include <nil/proof-generator/assigner/rw.hpp>
 #include <nil/proof-generator/assigner/copy.hpp>
 #include <nil/proof-generator/assigner/zkevm.hpp>
+#include <nil/proof-generator/assigner/exp.hpp>
 #include <nil/proof-generator/assigner/trace_parser.hpp>
 
 
@@ -26,7 +27,8 @@ namespace nil {
                 {circuits::BYTECODE, fill_bytecode_assignment_table<BlueprintFieldType>},
                 {circuits::RW, fill_rw_assignment_table<BlueprintFieldType>},
                 {circuits::ZKEVM, fill_zkevm_assignment_table<BlueprintFieldType>},
-                {circuits::COPY, fill_copy_events_assignment_table<BlueprintFieldType>}
+                {circuits::COPY, fill_copy_events_assignment_table<BlueprintFieldType>},
+                {circuits::EXP, fill_exp_assignment_table<BlueprintFieldType>},
         };
 
         template<typename BlueprintFieldType>
@@ -71,7 +73,7 @@ namespace nil {
                                                                        crypto3::zk::snark::plonk_table_description<BlueprintFieldType>& desc,
                                                                        const std::string& circuit_name,
                                                                        const boost::filesystem::path& trace_base_path,
-                                                                       const AssignerOptions& options = {}) {
+                                                                       const AssignerOptions& options) {
             auto find_it = circuit_selector<BlueprintFieldType>.find(circuit_name);
             if (find_it == circuit_selector<BlueprintFieldType>.end()) {
                 return "Unknown circuit name " + circuit_name;

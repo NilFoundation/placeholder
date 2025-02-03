@@ -8,19 +8,19 @@ Crypto3 cryptography suite's purpose is:
 Libraries are designed to be state of the art, highly performant and providing a one-stop solution for
 all cryptographic operations. They are supported on Linux operating system and architectures (x86/ARM).
 
-Developed by [=nil; Crypto3](https://crypto3.nil.foundation) and supported by [=nil; Foundation](https://nil.foundation).
+Developed and supported by [=nil; Foundation](https://nil.foundation).
 
-Rationale, tutorials and references are available [here](https://crypto3.nil.foundation/projects/crypto3)
- 
 ## Contents
 1. [Structure](#structure)
 2. [Build & test](#build_&_test)
 3. [Usage](#uage)
 
 ## Structure
-This folder contains the whole suite. Single-purposed libraries (e.g. [block
-](https://github.com/NilFoundation/placeholder/tree/master/crypto3/libs/block) or [hash](https://github.com/NilFoundation/placeholder/tree/master/crypto3/libs/hash)) are not advised to be
+This folder contains the whole suite. Single-purposed libraries (e.g. [algebra
+](https://github.com/NilFoundation/placeholder/tree/master/crypto3/libs/algebra) or
+[hash](https://github.com/NilFoundation/placeholder/tree/master/crypto3/libs/hash)) are not advised to be
 used outside this suite or properly constructed CMake project and should be handled with great care.
+
 ```
 crypto3
 ├── benchmarks

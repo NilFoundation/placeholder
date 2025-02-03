@@ -170,7 +170,7 @@ namespace nil::crypto3::multiprecision {
 
       private:
         template<typename S, std::enable_if_t<is_integral_v<S>, int> = 0>
-        static base_type convert_to_raw_base(const S& s, const modular_ops_t& ops) {
+        static constexpr base_type convert_to_raw_base(const S& s, const modular_ops_t& ops) {
             if (nil::crypto3::multiprecision::is_zero(s)) {
                 return base_type{};
             }

@@ -7,6 +7,8 @@
 // http://www.boost.org/LICENSE_1_0.txt
 //---------------------------------------------------------------------------//
 
+#include "nil/crypto3/algebra/fields/pallas/scalar_field.hpp"
+#include "nil/crypto3/hash/detail/poseidon/poseidon_policy.hpp"
 #define BOOST_TEST_MODULE poseidon_test
 
 #include <iostream>
@@ -99,6 +101,77 @@ void test_poseidon_permutation(
 }
 
 BOOST_AUTO_TEST_SUITE(poseidon_tests)
+    
+BOOST_AUTO_TEST_CASE(poseidon_with_padding_test) {
+    using field_type = fields::pallas_scalar_field;
+    using policy = pasta_poseidon_policy<field_type>;
+    using hash_type = hashes::poseidon<policy>;
+
+    std::vector<uint8_t> hash_input1 {
+        0x00, 0x01, 0x02
+    };
+    std::vector<uint8_t> hash_input2 {
+        0x01, 0x02
+    };
+
+    /* Default behavior: input bytes converted into field elements and padded
+     * with lowest bit in the next higher block:
+     * 0x0000000000000000000000000000000000000000000000000000000001000102
+     * and
+     * 0x0000000000000000000000000000000000000000000000000000000000010102
+     */
+    typename policy::digest_type result1 = nil::crypto3::hash<hash_type>(
+        nil::crypto3::hashes::conditional_block_to_field_elements_wrapper<
+            typename hash_type::word_type,
+            decltype(hash_input1)>
+        (hash_input1)
+    );
+
+    typename policy::digest_type result2 = nil::crypto3::hash<hash_type>(
+        nil::crypto3::hashes::conditional_block_to_field_elements_wrapper<
+            typename hash_type::word_type,
+            decltype(hash_input2)>
+        (hash_input2)
+    );
+
+    /* Results should not be equal */
+    BOOST_CHECK_NE(result1, result2);
+}
+
+BOOST_AUTO_TEST_CASE(poseidon_without_padding_test) {
+    using field_type = fields::pallas_scalar_field;
+    using policy = pasta_poseidon_policy<field_type>;
+    using hash_type = hashes::poseidon<policy>;
+
+    std::vector<uint8_t> hash_input1 {
+        0x00, 0x01, 0x02
+    };
+    std::vector<uint8_t> hash_input2 {
+        0x01, 0x02
+    };
+
+    /* Explicit non-padding behavior: input bytes converted into field elements
+     * without padding, both inputs produce same element:
+     * 0x0000000000000000000000000000000000000000000000000000000000000102
+     */
+    typename policy::digest_type result1 = nil::crypto3::hash<hash_type>(
+        nil::crypto3::hashes::conditional_block_to_field_elements_wrapper<
+            typename hash_type::word_type,
+            decltype(hash_input1), true, false /* padding */>
+        (hash_input1)
+    );
+
+    typename policy::digest_type result2 = nil::crypto3::hash<hash_type>(
+        nil::crypto3::hashes::conditional_block_to_field_elements_wrapper<
+            typename hash_type::word_type,
+            decltype(hash_input2), true, false /* padding */>
+        (hash_input2)
+    );
+
+    /* Results should be equal */
+    BOOST_CHECK_EQUAL(result1, result2);
+}
+
 
 // Test data for Mina version was taken from https://github.com/o1-labs/proof-systems/blob/a36c088b3e81d17f5720abfff82a49cf9cb1ad5b/poseidon/src/tests/test_vectors/kimchi.json.
 // For some reason bytes in their test data are in Big Endian, while we need in Small Endian, I.E. you need to reverse the order of bytes to create our test data.
@@ -269,13 +342,13 @@ BOOST_AUTO_TEST_SUITE(poseidon_tests)
                 0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF,
                 0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD,
                 0xEF, // 256 bits up to this place, the last value should be moved to
-                // the next field element.
+                // the next field element and padded with one bit in the next byte.
 
         };
 
         std::vector<typename field_type::value_type> field_input = {
                 0x000123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCD_big_uint255,
-                0x00000000000000000000000000000000000000000000000000000000000000EF_big_uint255,
+                0x00000000000000000000000000000000000000000000000000000000000001EF_big_uint255,
         };
 
         typename policy::digest_type d_uint8 = hash<hash_t>(

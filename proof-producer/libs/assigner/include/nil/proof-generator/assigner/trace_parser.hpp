@@ -224,7 +224,7 @@ namespace nil {
             // Convert stack operations
             for (const auto& pb_sop : pb_traces->stack_ops()) {
                 rw_traces.push_back(blueprint::bbf::stack_rw_operation(
-                    static_cast<uint64_t>(pb_sop.msg_id()),
+                    static_cast<uint64_t>(pb_sop.txn_id()),
                     static_cast<int32_t>(pb_sop.index()),
                     static_cast<uint64_t>(pb_sop.rw_idx()),
                     !pb_sop.is_read(),
@@ -236,7 +236,7 @@ namespace nil {
             for (const auto& pb_mop : pb_traces->memory_ops()) {
                 auto value = string_to_bytes(pb_mop.value());
                 auto const op = blueprint::bbf::memory_rw_operation(
-                    static_cast<uint64_t>(pb_mop.msg_id()),
+                    static_cast<uint64_t>(pb_mop.txn_id()),
                     blueprint::zkevm_word_type(static_cast<int>(pb_mop.index())),
                     static_cast<uint64_t>(pb_mop.rw_idx()),
                     !pb_mop.is_read(),
@@ -248,7 +248,7 @@ namespace nil {
             // Convert storage operations
             for (const auto& pb_sop : pb_traces->storage_ops()) {
                 auto op = blueprint::bbf::storage_rw_operation(
-                    static_cast<uint64_t>(pb_sop.msg_id()),
+                    static_cast<uint64_t>(pb_sop.txn_id()),
                     blueprint::zkevm_word_from_string(static_cast<std::string>(pb_sop.key())),
                     static_cast<uint64_t>(pb_sop.rw_idx()),
                     !pb_sop.is_read(),

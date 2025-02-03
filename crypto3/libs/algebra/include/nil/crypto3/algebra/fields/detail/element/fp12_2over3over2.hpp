@@ -167,6 +167,8 @@ namespace nil {
                             return element_fp12_2over3over2(c0, c1);
                         }
 
+                        /** @brief Frobenius map: exponentiation by a degree of field characteristic
+                         * For $a\in F_{p^k}$ this returns $a^{p^pwr}$ */
                         template<typename PowerType>
                         element_fp12_2over3over2 Frobenius_map(const PowerType &pwr) const {
                             return element_fp12_2over3over2(data[0].Frobenius_map(pwr),
@@ -176,13 +178,13 @@ namespace nil {
                                                                 data[1].Frobenius_map(pwr));
                         }
 
+                        /** @brief For normalized values inverse is conjugation */
                         element_fp12_2over3over2 unitary_inversed() const {
                             return element_fp12_2over3over2(data[0], -data[1]);
                         }
 
+                        /** @brief Elements from cyclotomic subgroup allow fast squaring */
                         element_fp12_2over3over2 cyclotomic_squared() const {
-                            // naive implementation
-                            // return this->squared();
 
                             typename underlying_type::underlying_type z0 = data[0].data[0];
                             typename underlying_type::underlying_type z4 = data[0].data[1];
@@ -249,6 +251,7 @@ namespace nil {
                             return element_fp12_2over3over2(underlying_type(z0, z4, z3), underlying_type(z2, z1, z5));
                         }
 
+                        /** @brief Square-and-multiply exponentiation, with cyclotomic_square */
                         template<typename PowerType>
                         element_fp12_2over3over2 cyclotomic_exp(const PowerType &exponent) const {
                             element_fp12_2over3over2 res = one();
@@ -314,6 +317,7 @@ namespace nil {
                         }
 
 
+                        /** @brief multiply by [ [c0, 0, 0], [0, c4, c5] ] */
                         element_fp12_2over3over2
                             mul_by_045(const typename underlying_type::underlying_type &ell_0,
                                        const typename underlying_type::underlying_type &ell_VW,
@@ -346,6 +350,7 @@ namespace nil {
                             return element_fp12_2over3over2(underlying_type(t0, t1, t2), underlying_type(t3, t4, t5));
                         }
 
+                        /** @brief multiply by [ [c0, 0, c2], [0, c4, 0] ] */
                         element_fp12_2over3over2
                             mul_by_024(const typename underlying_type::underlying_type &ell_0,
                                        const typename underlying_type::underlying_type &ell_VW,

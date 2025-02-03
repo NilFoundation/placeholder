@@ -443,7 +443,7 @@ namespace nil {
                                 auto opcode_constraints = fresh_ct.get_constraints();
                                 for( const auto &constr_list: opcode_constraints){
                                     for( const auto &local_row: constr_list.first){
-                                        for( auto constraint: constr_list.second){
+                                        for( auto [constraint, name]: constr_list.second){
                                             std::size_t real_row = std::ceil(float(current_opcode_bare_rows_amount) / 2) * 2 - local_row - current_opcode_bare_rows_amount % 2;
                                             opcode_constraints_aggregator[{current_opcode, real_row}].push_back(constraint);
                                             if(opcode_constraints_aggregator[{current_opcode, real_row}].size() > max_opcode_row_constraints){

@@ -258,16 +258,6 @@ namespace nil {
             };
 
             template<typename T>
-            struct is_block_cipher {
-                static const bool value =
-                        has_word_type<T>::value && has_word_bits<T>::value &&
-                        has_block_type<T>::value && has_block_bits<T>::value &&
-                        has_key_type<T>::value && has_key_bits<T>::value &&
-                        has_rounds<T>::value && has_encrypt<T>::value && has_decrypt<T>::value;
-                typedef T type;
-            };
-
-            template<typename T>
             struct is_hash {
             private:
                 typedef char one;

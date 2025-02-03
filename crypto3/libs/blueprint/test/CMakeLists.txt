@@ -99,6 +99,16 @@ set(COMMON_TEST_FILES
     "bbf/keccak_round"
     "bbf/keccak_dynamic"
     "bbf/no_assignment_checks"
+    "bbf/detail/range_check_multi"
+    "bbf/detail/carry_on_addition"
+    "bbf/detail/choice_function"
+    "bbf/algebra/fields/non_native/addition_mod_p"
+    "bbf/algebra/fields/non_native/check_mod_p"
+    "bbf/algebra/fields/non_native/negation_mod_p"
+    "bbf/algebra/fields/non_native/flexible_multiplication"
+    "bbf/algebra/curves/weierstrass/ec_double"
+    "bbf/algebra/curves/weierstrass/ec_full_add"
+    "bbf/algebra/curves/weierstrass/ec_incomplete_add"
     )
 
 set(NON_NATIVE_TESTS_FILES

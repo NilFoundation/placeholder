@@ -49,6 +49,19 @@ namespace nil {
             return po::value(&variable)->default_value(variable);
         }
 
+        void register_circuits_limits_cli_args(CircuitsLimits& circuits_limits, po::options_description& cli_options) {
+                cli_options.add_options()
+                ("max-copy", make_defaulted_option(circuits_limits.max_copy), "Maximum copy events")
+                ("max-rw-size", make_defaulted_option(circuits_limits.max_rw_size), "Maximum rw operations")
+                ("max-keccak-blocks", make_defaulted_option(circuits_limits.max_keccak_blocks), "Maximum keccak blocks")
+                ("max-bytecode-size", make_defaulted_option(circuits_limits.max_bytecode_size), "Maximum size of bytecode")
+                ("max-rows", make_defaulted_option(circuits_limits.max_rows), "Maximum rows of assignemnt table")
+                ("max-mpt-size", make_defaulted_option(circuits_limits.max_mpt_size), "Maximum MPT operations")
+                ("max-zkevm-rows", make_defaulted_option(circuits_limits.max_zkevm_rows), "Maximum zkevm states")
+                ("max_exp_rows", make_defaulted_option(circuits_limits.max_exp_rows), "Maximum number of exponent operations")
+                ("RLC-CHALLENGE", make_defaulted_option(circuits_limits.RLC_CHALLENGE), "RLC_CHALLENGE (7 by default)");
+        }
+
         std::optional<ProverOptions> parse_args(int argc, char* argv[]) {
             po::options_description options("Nil; Proof Generator Options");
             // Declare a group of options that will be
@@ -86,7 +99,7 @@ namespace nil {
                 ("circuit-name", po::value(&prover_options.circuit_name), "Target circuit name")
                 ("assignment-table,t", po::value(&prover_options.assignment_table_file_path), "Assignment table input file")
                 ("assignment-description-file", po::value(&prover_options.assignment_description_file_path), "Assignment description file")
-                ("log-level,l", make_defaulted_option(prover_options.log_level), "Log level (trace, debug, info, warning, error, fatal)")
+                ("log-level,l", make_defaulted_option(prover_options.log_level), "Log level (trace, debug, info, warning, error, fatal)") // TODO is does not work
                 ("elliptic-curve-type,e", make_defaulted_option(prover_options.elliptic_curve_type), "Elliptic curve type (pallas)")
                 ("hash-type", make_defaulted_option(prover_options.hash_type), "Hash type (keccak, poseidon, sha256)")
                 ("lambda-param", make_defaulted_option(prover_options.lambda), "Lambda param (9)")
@@ -121,11 +134,12 @@ namespace nil {
                 ("proof-of-work-file", make_defaulted_option(prover_options.proof_of_work_output_file), "File with proof of work.");
 
             register_output_artifacts_cli_args(prover_options.output_artifacts, config);
+            register_circuits_limits_cli_args(prover_options.circuits_limits, config);
 
             // clang-format on
             po::options_description cmdline_options("nil; Proof Producer");
             cmdline_options.add(generic).add(config);
-
+            
             po::variables_map vm;
             try {
                 po::store(parse_command_line(argc, argv, cmdline_options), vm);

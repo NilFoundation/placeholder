@@ -37,10 +37,7 @@ macro(define_random_test test)
     target_precompile_headers(${full_test_name} REUSE_FROM crypto3_precompiled_headers)
 endmacro()
 
-# TODO(uncomment the failing tests once they pass)
 set(TESTS_NAMES
-  # "chacha"
-  # "hash"
   "algebraic_engine"
   )
 

@@ -26,9 +26,6 @@
 #ifndef CRYPTO3_MATH_FIELD_UTILS_HPP
 #define CRYPTO3_MATH_FIELD_UTILS_HPP
 
-#include <type_traits>
-#include <complex>
-
 #include <boost/math/constants/constants.hpp>
 
 #include <nil/crypto3/algebra/fields/params.hpp>
@@ -59,6 +56,7 @@ namespace nil {
                     return n && !(n & (n - 1));
                 }
 
+                /** @brief Find lowest power of 2 that is greater (or equal) than n */
                 constexpr std::size_t power_of_two(std::size_t n) {
                     n--;
                     n |= n >> 1;

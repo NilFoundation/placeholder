@@ -14,8 +14,7 @@
 // limitations under the License.
 //---------------------------------------------------------------------------//
 
-#ifndef ZKEMV_FRAMEWORK_ARITHMETIZATION_PARAMS_HPP
-#define ZKEMV_FRAMEWORK_ARITHMETIZATION_PARAMS_HPP
+#pragma once
 
 #include <array>
 #include <tuple>
@@ -45,5 +44,3 @@ namespace nil {
 
     } // namespace proof_generator
 } // namespace nil
-
-#endif // PROOF_GENERATOR_ARITHMETIZATION_PARAMS_HPP

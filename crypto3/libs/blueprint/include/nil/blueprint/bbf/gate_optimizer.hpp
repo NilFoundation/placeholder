@@ -54,7 +54,7 @@ namespace nil {
                 using lookup_constraint_type = std::pair<std::string, lookup_input_constraints_type>;
 
                 // Here size_t is the index of the selector from 'selectors_'.
-                std::unordered_map<size_t, std::vector<constraint_type>> constraint_list;
+                std::unordered_map<size_t, std::vector<std::pair<constraint_type,std::string>>> constraint_list;
                 std::vector<plonk_copy_constraint> copy_constraints;
                 std::map<std::string, std::pair<std::vector<std::size_t>, size_t>> dynamic_lookup_tables;
 
@@ -79,7 +79,7 @@ namespace nil {
                     return iter->second;
                 }
 
-                void add_constraints(size_t selector_id, const std::vector<constraint_type>& constraints) {
+                void add_constraints(size_t selector_id, const std::vector<std::pair<constraint_type, std::string>>& constraints) {
                     auto iter = constraint_list.find(selector_id);
                     if (iter != constraint_list.end()) {
                         iter->second.insert(
@@ -115,11 +115,29 @@ namespace nil {
                     os << "Constraints: " << std::endl;
                     if (iter != gates.constraint_list.end()) {
                         for (const auto &constraint : iter->second) {
-                            os << constraint << std::endl;
+                            os << constraint.second << constraint.first << std::endl;
                         }
                         os << "--------------------------------------------------------------" << std::endl;
                     }
                 }
+
+                for (const auto& [table_name, grouped_lookups] : gates.grouped_lookups) {
+                    os << "================ Grouped lookups for table " << table_name << " ===================" << std::endl;
+                    for (const auto& [group_id, lookups] : grouped_lookups) {
+                        os << "    >>>>>>> Group #" << group_id << std::endl;
+                        for (const auto& [selector_id, lookup_inputs] : lookups) {
+                            os << "        selector #" << selector_id << " -> " << std::endl;
+                            os << "        --------------------------------------------------------------" << std::endl;
+                            for (const auto& li: lookup_inputs) {
+                                os << "        " << li << std::endl;
+                            }
+                            os << "        --------------------------------------------------------------" << std::endl;
+                        }
+                        os << "    <<<<<<< End of Group #" << group_id << std::endl;
+                    }
+                    os << "===============================================================" << std::endl;
+                }
+
                 return os;
             }
 
@@ -137,8 +155,20 @@ namespace nil {
                     : context_(std::make_unique<context_type>(std::move(c))) {
                 }
 
+                std::optional<std::vector<std::pair<constraint_type, std::string>>> shift_constraints(
+                        const std::vector<std::pair<constraint_type, std::string>> constraints, int shift) {
+                    std::vector<std::pair<constraint_type, std::string>> shifted_constraints;
+                    for (const auto& c: constraints) {
+                        std::optional<constraint_type> shifted = c.first.rotate(shift);
+                        if (!shifted)
+                            return std::nullopt;
+                        shifted_constraints.push_back({*shifted, c.second});
+                    }
+                    return shifted_constraints;
+                }
+
                 std::optional<std::vector<constraint_type>> shift_constraints(
-                        const std::vector<constraint_type>& constraints, int shift) {
+                        const std::vector<constraint_type> constraints, int shift) {
                     std::vector<constraint_type> shifted_constraints;
                     for (const auto& c: constraints) {
                         std::optional<constraint_type> shifted = c.rotate(shift);
@@ -170,7 +200,7 @@ namespace nil {
                     optimized_gates<FieldType> result;
 
                     // Take everything out of context, and erase the context to free its memory.
-                    std::unordered_map<row_selector<>, std::vector<constraint_type>> constraint_list = context_->get_constraints();
+                    std::unordered_map<row_selector<>, std::vector<std::pair<constraint_type, std::string>>> constraint_list = context_->get_constraints();
                     std::map<std::string, std::pair<std::vector<std::size_t>, row_selector<>>>
                         dynamic_lookup_tables = context_->get_dynamic_lookup_tables();
                     result.copy_constraints = context_->get_copy_constraints();
@@ -198,10 +228,11 @@ namespace nil {
                 optimized_gates<FieldType> optimize_gates() {
                     optimized_gates<FieldType> result = context_to_gates();
                     // optimized_gates<FieldType> result = gates_storage_;
-                    // std::cout << "Before: \n\n" << result << std::endl;
+                    std::cout << "Before: \n\n" << result << std::endl;
                     optimize_selectors_by_shifting(result);
+                    // std::cout << "After optimizing selectors: \n\n" << result << std::endl;
                     optimize_lookups_by_grouping(result);
-                    // std::cout << "After: \n\n" << result << std::endl;
+                    std::cout << "After: \n\n" << result << std::endl;
                     return result;
                 }
 
@@ -353,8 +384,23 @@ namespace nil {
                     std::vector<std::vector<size_t>> graph_subset = get_subgraph(
                         graph, all_lookup_selectors, selector_id_to_index, used_selectors);
 
+                    //std::cout << "Current graph subset" << std::endl;
+                    //for (size_t i = 0; i < graph_subset.size(); ++i) {
+                    //    std::cout << i << " -> [";
+                    //    for (size_t v2 : graph_subset[i]) {
+                    //         std::cout << v2 << " ";
+                    //    }
+                    //    std::cout << "]" << std::endl;
+                    //}
+
                     // coloring[i] is the group_id of used_selectors[i].
                     std::vector<size_t> coloring = colorGraph(graph_subset);
+
+                    //std::cout << "Coloring is [";
+                    //for (size_t i = 0; i < coloring.size(); ++i) {
+                    //    std::cout << used_selectors[i] << " -> " << coloring[i] << " , ";
+                    //}
+                    //std::cout << "]" << std::endl;
 
                     // Now run over the returned coloring and map it back.
                     std::unordered_map<size_t, size_t> result;
@@ -385,6 +431,14 @@ namespace nil {
                     // Create an adjacency list of the whole large graph, since taking intersections of selectors is not super fast.
                     std::vector<std::vector<size_t>> adj = create_selector_intersection_graph(
                         gates, all_lookup_selectors, selector_id_to_index);
+
+                    //for (size_t i = 0; i < adj.size(); ++i) {
+                    //    std::cout << i << " -> [";
+                    //    for (size_t v2 : adj[i]) {
+                    //         std::cout << v2 << " ";
+                    //    }
+                    //    std::cout << "]" << std::endl;
+                    //}
 
                     // For each table, create the list of used selectors.
                     std::unordered_map<std::string, std::set<size_t>> selectors_per_table;
@@ -420,6 +474,8 @@ namespace nil {
                         for (const auto& single_lookup_constraint : lookup_list) {
                             const std::string& table_name = single_lookup_constraint.first;
                             size_t group_id = selector_groups[table_name][selector_id];
+
+                            std::cout << "Group for selector #" << selector_id << " is " << group_id << std::endl;
 
                             // If the group size is 1, don't touch it.
                             if (group_sizes[table_name][group_id] == 1) {
@@ -482,11 +538,11 @@ namespace nil {
                             // Move all from constraints_list.
                             auto iter = gates.constraint_list.find(id);
                             if (iter != gates.constraint_list.end()) {
-                                std::vector<constraint_type> constraints = std::move(iter->second);
+                                std::vector<std::pair<constraint_type, std::string>> constraints = std::move(iter->second);
                                 gates.constraint_list.erase(id);
                                 // We need the minus on the next line, we need to shift the constraints in the
                                 // opposite direction of the selector shift.
-                                std::optional<std::vector<constraint_type>> shifted_constraints =
+                                std::optional<std::vector<std::pair<constraint_type, std::string>>> shifted_constraints =
                                     shift_constraints(std::move(constraints), -shift);
 
                                 //std::cout << "Shifting " << -shift << " :" << std::endl;
@@ -677,8 +733,8 @@ namespace nil {
                     // Check if there is a constraint that can't be shifted.
                     auto iter = gates.constraint_list.find(selector_id);
                     if (iter != gates.constraint_list.end()) {
-                        const std::vector<constraint_type>& constraints = iter->second;
-                        std::optional<std::vector<constraint_type>> shifted_constraints =
+                        const std::vector<std::pair<constraint_type, std::string>>& constraints = iter->second;
+                        std::optional<std::vector<std::pair<constraint_type, std::string>>> shifted_constraints =
                             shift_constraints(constraints, shift);
                         if (!shifted_constraints) {
                             return false;
