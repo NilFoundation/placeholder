@@ -96,13 +96,10 @@ namespace nil {
                     using partial_proof_type = placeholder_partial_proof<FieldType, ParamsType>;
 
                     struct evaluation_proof {
-                        // TODO: remove it!
-                        typename FieldType::value_type challenge;
-
                         typename commitment_scheme_type::proof_type eval_proof;
 
                         bool operator==(const evaluation_proof &rhs) const {
-                            return challenge == rhs.challenge &&  eval_proof == rhs.eval_proof;
+                            return eval_proof == rhs.eval_proof;
                         }
                         bool operator!=(const evaluation_proof &rhs) const {
                             return !(rhs == *this);
