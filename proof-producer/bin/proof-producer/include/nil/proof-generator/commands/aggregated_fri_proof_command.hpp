@@ -80,7 +80,7 @@ namespace nil {
 
                     BOOST_LOG_TRIVIAL(info) << "Writing aggregated FRI proof to " << output_file;
 
-                    fri_proof_marshalling_type marshalled_proof = nil::crypto3::marshalling::types::fill_initial_fri_proof<Endianness, LpcScheme>(fri_proof);
+                    fri_proof_marshalling_type marshalled_proof = nil::crypto3::marshalling::types::fill_fri_round_proof<Endianness, LpcScheme>(fri_proof);
 
                     return detail::encode_marshalling_to_file<fri_proof_marshalling_type>(
                         output_file, marshalled_proof);
