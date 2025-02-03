@@ -29,6 +29,7 @@
 #define CRYPTO3_ZK_PLONK_PLACEHOLDER_VERIFIER_HPP
 
 #include <boost/log/trivial.hpp>
+#include <queue>
 
 #include <nil/crypto3/math/polynomial/polynomial.hpp>
 
@@ -54,9 +55,11 @@ namespace nil {
                     using policy_type = detail::placeholder_policy<FieldType, ParamsType>;
                     using public_preprocessor_type = placeholder_public_preprocessor<FieldType, ParamsType>;
 
+                    using proof_type = placeholder_proof<FieldType, ParamsType>;
                     using commitment_scheme_type = typename ParamsType::commitment_scheme_type;
                     using commitment_type = typename commitment_scheme_type::commitment_type;
                     using eval_storage_type = commitments::eval_storage<FieldType>;
+                    using transcript_type = typename commitment_scheme_type::transcript_type;
 
                     constexpr static const std::size_t gate_parts = 1;
                     constexpr static const std::size_t permutation_parts = 3;
@@ -71,7 +74,7 @@ namespace nil {
                         const typename public_preprocessor_type::preprocessed_data_type::common_data_type &common_data,
                         const plonk_constraint_system<FieldType> &constraint_system,
                         const plonk_table_description<FieldType> &table_description,
-                        typename FieldType::value_type challenge,
+                        const typename FieldType::value_type& challenge,
                         bool _is_lookup_enabled
                     ) {
                         PROFILE_SCOPE("evaluation_points_generated_time");
@@ -146,43 +149,35 @@ namespace nil {
 
                     static inline bool process(
                         const typename public_preprocessor_type::preprocessed_data_type::common_data_type &common_data,
-                        const placeholder_proof<FieldType, ParamsType> &proof,
+                        const proof_type &proof,
                         const plonk_table_description<FieldType> &table_description,
                         const plonk_constraint_system<FieldType> &constraint_system,
                         commitment_scheme_type& commitment_scheme,
                         const std::vector<std::vector<typename FieldType::value_type>> &public_input
-                    ){
-                        // TODO: process rotations for public input.
-                        auto omega = common_data.basic_domain->get_domain_element(1);
-                        auto challenge = proof.eval_proof.challenge;
-                        auto numerator = challenge.pow(table_description.rows_amount) - FieldType::value_type::one();
-                        numerator *= typename FieldType::value_type(table_description.rows_amount).inversed();
+                    ) {
+                        transcript::fiat_shamir_heuristic_sequential<transcript_hash_type> transcript(std::vector<std::uint8_t>({}));
+                        typename FieldType::value_type F_consolidated;
 
-                        // If public input sizes are set, all of them should be set.
-                        if (constraint_system.public_input_sizes_num() != 0 &&
-                            constraint_system.public_input_sizes_num() != table_description.public_input_columns) {
-                            BOOST_LOG_TRIVIAL(info) << "Verification failed because: If public input sizes are set, all of them should be set.";
+                        typename FieldType::value_type evaluation_challenge;
+                        std::queue<typename FieldType::value_type> queue;
+                        fill_challenge_queue(common_data, proof, constraint_system, commitment_scheme, transcript, queue, evaluation_challenge);
+
+                        if (!verify_partial_proof(
+                                common_data, proof, table_description, constraint_system, 
+                                commitment_scheme, public_input, transcript, F_consolidated, evaluation_challenge)) 
+                        {
+                            BOOST_LOG_TRIVIAL(info) << "Verification failed: partial proof failed.";
                             return false;
                         }
 
-                        for (std::size_t i = 0; i < public_input.size(); ++i) {
-                            typename FieldType::value_type value = FieldType::value_type::zero();
-                            std::size_t max_size = public_input[i].size();
-                            if (constraint_system.public_input_sizes_num() != 0)
-                                max_size = std::min(max_size, constraint_system.public_input_size(i));
-                            auto omega_pow = FieldType::value_type::one();
-                            for( std::size_t j = 0; j < max_size; ++j ){
-                                value += (public_input[i][j] * omega_pow) * (challenge - omega_pow).inversed();
-                                omega_pow = omega_pow * omega;
-                            }
-                            value *= numerator;
-                            if (value != proof.eval_proof.eval_proof.z.get(VARIABLE_VALUES_BATCH, table_description.witness_columns + i, 0) )
-                            {
-                                BOOST_LOG_TRIVIAL(info) << "Verification failed because: evaluation proof failed.";
-                                return false;
-                            }
+                        std::map<std::size_t, typename commitment_scheme_type::commitment_type> commitments = proof.commitments;
+                        commitments[FIXED_VALUES_BATCH] = common_data.commitments.fixed_values;
+
+                        if (!commitment_scheme.verify_eval(proof.eval_proof.eval_proof, commitments, transcript)) {
+                            BOOST_LOG_TRIVIAL(info) << "Verification failed: LPC proof failed.";
+                            return false;
                         }
-                        return process(common_data, proof, table_description, constraint_system, commitment_scheme);
+                        return true;
                     }
 
                     // Takes out values of different polynomials at challenge point 'Y' from the evaluation proofs.
@@ -234,10 +229,169 @@ namespace nil {
 
                     static inline bool process(
                         const typename public_preprocessor_type::preprocessed_data_type::common_data_type &common_data,
-                        const placeholder_proof<FieldType, ParamsType> &proof,
+                        const proof_type &proof,
                         const plonk_table_description<FieldType> &table_description,
                         const plonk_constraint_system<FieldType> &constraint_system,
                         commitment_scheme_type& commitment_scheme
+                    ) {
+                        auto& Z = proof.eval_proof.eval_proof.z;
+                        transcript::fiat_shamir_heuristic_sequential<transcript_hash_type> transcript(std::vector<std::uint8_t>({}));
+                        typename FieldType::value_type F_consolidated;
+
+                        auto transcript_copy = transcript;
+
+                        typename FieldType::value_type evaluation_challenge;
+                        std::queue<typename FieldType::value_type> queue;
+                        fill_challenge_queue(common_data, proof, constraint_system, commitment_scheme, transcript_copy, queue, evaluation_challenge);
+
+                        // TODO(martun): remove all usage of transcript from the verification code. We already have all the challenges in a queue.
+                        // Not doing it now to have a smaller PR.
+                        if (!verify_partial_proof(
+                                common_data, proof, table_description, constraint_system, 
+                                commitment_scheme, transcript, F_consolidated, evaluation_challenge)) 
+                        {
+                            BOOST_LOG_TRIVIAL(info) << "Verification failed: partial proof failed.";
+                            return false;
+                        }
+
+                        std::map<std::size_t, typename commitment_scheme_type::commitment_type> commitments = proof.commitments;
+                        commitments[FIXED_VALUES_BATCH] = common_data.commitments.fixed_values;
+
+                        if (!commitment_scheme.verify_eval(proof.eval_proof.eval_proof, commitments, transcript)) {
+                            BOOST_LOG_TRIVIAL(info) << "Verification failed: LPC proof failed.";
+                            return false;
+                        }
+                        return true;
+                    }
+
+                    static inline bool verify_partial_proof(
+                        const typename public_preprocessor_type::preprocessed_data_type::common_data_type &common_data,
+                        const proof_type &proof,
+                        const plonk_table_description<FieldType> &table_description,
+                        const plonk_constraint_system<FieldType> &constraint_system,
+                        commitment_scheme_type& commitment_scheme,
+                        const std::vector<std::vector<typename FieldType::value_type>> &public_input,
+                        transcript_type &transcript,
+                        typename FieldType::value_type& F_consolidated_out,
+                        const typename FieldType::value_type& evaluation_challenge
+                    ) {
+                        // TODO: process rotations for public input.
+                        
+                        // If public input sizes are set, all of them should be set.
+                        if (constraint_system.public_input_sizes_num() != 0 &&
+                            constraint_system.public_input_sizes_num() != table_description.public_input_columns) {
+                            BOOST_LOG_TRIVIAL(info) << "Verification failed: If public input sizes are set, all of them should be set.";
+                            return false;
+                        }
+
+                        if (!verify_partial_proof(
+                                common_data, proof, table_description, constraint_system,
+                                commitment_scheme, transcript, F_consolidated_out, evaluation_challenge))
+                            return false;
+
+                        auto omega = common_data.basic_domain->get_domain_element(1);
+                        auto numerator = evaluation_challenge.pow(table_description.rows_amount) - FieldType::value_type::one();
+                        numerator *= typename FieldType::value_type(table_description.rows_amount).inversed();
+
+                        for (size_t i = 0; i < public_input.size(); ++i) {
+                            typename FieldType::value_type value = FieldType::value_type::zero();
+                            std::size_t max_size = public_input[i].size();
+                            if (constraint_system.public_input_sizes_num() != 0)
+                                max_size = std::min(max_size, constraint_system.public_input_size(i));
+                            auto omega_pow = FieldType::value_type::one();
+                            for (size_t j = 0; j < max_size; ++j) {
+                                value += (public_input[i][j] * omega_pow) * (evaluation_challenge - omega_pow).inversed();
+                                omega_pow *= omega;
+                            }
+                            value *= numerator;
+                            if (value != proof.eval_proof.eval_proof.z.get(VARIABLE_VALUES_BATCH, table_description.witness_columns + i, 0))
+                            {
+                                BOOST_LOG_TRIVIAL(info) << "Verification failed: evaluation proof failed.";
+                                return false;
+                            }
+                        }
+                        return true;
+                    }
+
+                    /** Generates the queue containing all the challenges which will be required for evaluation. Separately returns evaluation
+                     *  point challenge for convenience.
+                     */
+                    static inline void fill_challenge_queue(
+                        const typename public_preprocessor_type::preprocessed_data_type::common_data_type &common_data,
+                        const proof_type &proof,
+                        const plonk_constraint_system<FieldType> &constraint_system,
+                        commitment_scheme_type& commitment_scheme,
+                        transcript_type &transcript,
+                        std::queue<typename FieldType::value_type>& queue,
+                        typename FieldType::value_type& evaluation_challenge_out
+                    ) {
+                        transcript(common_data.vk.constraint_system_with_params_hash);
+                        transcript(common_data.vk.fixed_values_commitment);
+
+                        std::map<std::size_t, typename commitment_scheme_type::commitment_type> commitments = proof.commitments;
+                        commitments[FIXED_VALUES_BATCH] = common_data.commitments.fixed_values;
+
+                        // Setup commitment scheme. LPC adds an additional point here.
+                        commitment_scheme.fill_challenge_queue_for_setup(transcript, queue);
+
+                        // 3. append witness commitments to transcript
+                        transcript(proof.commitments.at(VARIABLE_VALUES_BATCH));
+
+                        if (constraint_system.copy_constraints().size() > 0) {
+                            placeholder_permutation_argument<FieldType, ParamsType>::fill_challenge_queue(common_data, transcript, queue);
+                        }
+                        // 6. lookup argument
+                        bool is_lookup_enabled = (constraint_system.lookup_gates().size() > 0);
+                        if (is_lookup_enabled) {
+                            placeholder_lookup_argument_verifier<FieldType, commitment_scheme_type, ParamsType> lookup_argument_verifier;
+                            lookup_argument_verifier.fill_challenge_queue(
+                                common_data,
+                                constraint_system,
+                                proof.eval_proof.eval_proof.z.get(LOOKUP_BATCH),
+                                proof.commitments.at(LOOKUP_BATCH),
+                                transcript, queue);
+                        }
+                        if (constraint_system.copy_constraints().size() > 0 || constraint_system.lookup_gates().size() > 0) {
+                            transcript(proof.commitments.at(PERMUTATION_BATCH));
+                        }
+
+                        // 7. gate argument
+                        placeholder_gates_argument<FieldType, ParamsType>::fill_challenge_queue(
+                            transcript, queue
+                        );
+
+                        std::array<typename FieldType::value_type, f_parts> alphas =
+                            transcript.template challenges<FieldType, f_parts>();
+                        for (auto& a: alphas) {
+                            queue.push(a);
+                        }
+
+                        // 9. IOP checks
+                        transcript(proof.commitments.at(QUOTIENT_BATCH));
+
+                        evaluation_challenge_out = transcript.template challenge<FieldType>();
+                        queue.push(evaluation_challenge_out);
+
+                        // TODO(martun): consider filling the queue for commitment scheme as well here.
+                        // Currently we don't use the queue yet, just the evaluation challenge, so I'm skipping this.
+                    }
+
+                    /** Even though this function accepts the full proof, it does only partial verifications.
+                     *  FRI proof and evaluation proofs will be checked separately.
+                     *  \param[out] F_consolidated_out - F Consolidated polynomial output argument, will be used to check
+                     *                                   evaluation proofs in a given challenge point later.
+                     *  \param[in] evaluation_challenge - The last challenge used by partial proof, the evaluation point challenge.
+                     *  \returns true if partial proof passes, false otherwise.
+                     */
+                    static inline bool verify_partial_proof(
+                        const typename public_preprocessor_type::preprocessed_data_type::common_data_type &common_data,
+                        const proof_type &proof,
+                        const plonk_table_description<FieldType> &table_description,
+                        const plonk_constraint_system<FieldType> &constraint_system,
+                        commitment_scheme_type& commitment_scheme,
+                        transcript_type &transcript,
+                        typename FieldType::value_type& F_consolidated_out,
+                        const typename FieldType::value_type& evaluation_challenge
                     ) {
                         auto& Z = proof.eval_proof.eval_proof.z;
 
@@ -256,8 +410,6 @@ namespace nil {
                         const std::size_t constant_columns = table_description.constant_columns;
                         const std::size_t selector_columns = table_description.selector_columns;
 
-                        transcript::fiat_shamir_heuristic_sequential<transcript_hash_type> transcript(std::vector<std::uint8_t>({}));
-
                         transcript(common_data.vk.constraint_system_with_params_hash);
                         transcript(common_data.vk.fixed_values_commitment);
 
@@ -268,7 +420,7 @@ namespace nil {
                         transcript(proof.commitments.at(VARIABLE_VALUES_BATCH));
 
                         std::vector<typename FieldType::value_type> special_selector_values(3);
-                        special_selector_values[0] = common_data.lagrange_0.evaluate(proof.eval_proof.challenge);
+                        special_selector_values[0] = common_data.lagrange_0.evaluate(evaluation_challenge);
                         special_selector_values[1] = Z.get(
                             FIXED_VALUES_BATCH, 2*common_data.permuted_columns.size(), 0);
                         special_selector_values[2] = Z.get(
@@ -313,7 +465,7 @@ namespace nil {
                                 placeholder_permutation_argument<FieldType, ParamsType>::verify_eval(
                                     common_data,
                                     S_id, S_sigma, special_selector_values,
-                                    proof.eval_proof.challenge, f,
+                                    evaluation_challenge, f,
                                     Z.get(PERMUTATION_BATCH, 0, 0),
                                     Z.get(PERMUTATION_BATCH, 0, 1),
                                     perm_partitions,
@@ -406,14 +558,15 @@ namespace nil {
                                 PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED, 0,
                                 plonk_variable<typename FieldType::value_type>::column_type::selector
                             );
-                            columns_at_y[key] = mask_value - common_data.lagrange_0.evaluate(proof.eval_proof.challenge);
+                            columns_at_y[key] = mask_value - common_data.lagrange_0.evaluate(evaluation_challenge);
                         }
                         {
                             auto key = std::make_tuple(
                                 PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED, 1,
                                 plonk_variable<typename FieldType::value_type>::column_type::selector
                             );
-                            columns_at_y[key] = shifted_mask_value - common_data.lagrange_0.evaluate(proof.eval_proof.challenge * common_data.basic_domain->get_domain_element(1));
+                            columns_at_y[key] = shifted_mask_value - common_data.lagrange_0.evaluate(
+                                evaluation_challenge * common_data.basic_domain->get_domain_element(1));
                         }
 
                         // 6. lookup argument
@@ -434,7 +587,7 @@ namespace nil {
                                 common_data,
                                 special_selector_values,
                                 constraint_system,
-                                proof.eval_proof.challenge,
+                                evaluation_challenge,
                                 columns_at_y,
                                 counts,
                                 U_value,
@@ -452,7 +605,7 @@ namespace nil {
                         // 7. gate argument
                         std::array<typename FieldType::value_type, 1> gate_argument =
                         placeholder_gates_argument<FieldType, ParamsType>::verify_eval(
-                            constraint_system.gates(), columns_at_y, proof.eval_proof.challenge,
+                            constraint_system.gates(), columns_at_y, evaluation_challenge,
                             mask_value,
                             transcript
                         );
@@ -460,63 +613,83 @@ namespace nil {
                         std::array<typename FieldType::value_type, f_parts> alphas =
                             transcript.template challenges<FieldType, f_parts>();
 
-                        // 9. Evaluation proof check
+                        // 9. IOP checks
                         transcript(proof.commitments.at(QUOTIENT_BATCH));
 
-                        auto challenge = transcript.template challenge<FieldType>();
-                        BOOST_ASSERT(challenge == proof.eval_proof.challenge);
-
-                        commitment_scheme.set_batch_size(VARIABLE_VALUES_BATCH,
-                            Z.get_batch_size(VARIABLE_VALUES_BATCH));
-                        commitment_scheme.set_batch_size(FIXED_VALUES_BATCH,
-                            Z.get_batch_size(FIXED_VALUES_BATCH));
-
-                        if (is_lookup_enabled || constraint_system.copy_constraints().size())
-                            commitment_scheme.set_batch_size(PERMUTATION_BATCH,
-                                Z.get_batch_size(PERMUTATION_BATCH));
-
-                        commitment_scheme.set_batch_size(QUOTIENT_BATCH,
-                            Z.get_batch_size(QUOTIENT_BATCH));
-
-                        if (is_lookup_enabled)
-                            commitment_scheme.set_batch_size(LOOKUP_BATCH,
-                                Z.get_batch_size(LOOKUP_BATCH));
-
-                        generate_evaluation_points(commitment_scheme, common_data, constraint_system,
-                                                   table_description, challenge, is_lookup_enabled);
-
-                        std::map<std::size_t, typename commitment_scheme_type::commitment_type> commitments = proof.commitments;
-                        commitments[FIXED_VALUES_BATCH] = common_data.commitments.fixed_values;
-                        if (!commitment_scheme.verify_eval( proof.eval_proof.eval_proof, commitments, transcript )) {
-                            BOOST_LOG_TRIVIAL(info) << "Verification failed because: commitment scheme verification failed.";
+                        if (evaluation_challenge != transcript.template challenge<FieldType>())
                             return false;
-                        }
 
-                        // 10. final check
                         F[3] = lookup_argument[0];
                         F[4] = lookup_argument[1];
                         F[5] = lookup_argument[2];
                         F[6] = lookup_argument[3];
                         F[7] = gate_argument[0];
 
-                        typename FieldType::value_type F_consolidated = FieldType::value_type::zero();
+                        F_consolidated_out = FieldType::value_type::zero();
                         for (std::size_t i = 0; i < f_parts; i++) {
-                            F_consolidated += alphas[i] * F[i];
+                            F_consolidated_out += alphas[i] * F[i];
                         }
 
+                        prepare_polynomials(proof.eval_proof, common_data, table_description, constraint_system, commitment_scheme, evaluation_challenge);
+
+                        if (!verify_consolidated_polynomial(common_data, proof, F_consolidated_out, evaluation_challenge))
+                            return false;
+
+                        return true;
+                    }
+
+                    static inline bool verify_consolidated_polynomial(
+                        const typename public_preprocessor_type::preprocessed_data_type::common_data_type &common_data,
+                        const proof_type &proof,
+                        const typename FieldType::value_type& F_consolidated,
+                        const typename FieldType::value_type& challenge)
+                    {
+
                         typename FieldType::value_type T_consolidated = FieldType::value_type::zero();
-                        for (std::size_t i = 0; i < Z.get_batch_size(QUOTIENT_BATCH); i++) {
-                            T_consolidated += Z.get(QUOTIENT_BATCH, i, 0) *
+                        for (std::size_t i = 0; i < proof.eval_proof.eval_proof.z.get_batch_size(QUOTIENT_BATCH); i++) {
+                            T_consolidated += proof.eval_proof.eval_proof.z.get(QUOTIENT_BATCH, i, 0) *
                                 challenge.pow((common_data.desc.rows_amount) * i);
                         }
 
                         // Z is polynomial -1, 0 ...., 0, 1
                         typename FieldType::value_type Z_at_challenge = common_data.Z.evaluate(challenge);
                         if (F_consolidated != Z_at_challenge * T_consolidated) {
-                            BOOST_LOG_TRIVIAL(info) << "Verification failed because: F consolidated polynomial does not match.";
+                            BOOST_LOG_TRIVIAL(info) << "Verification failed: F consolidated polynomial mismatch.";
                             return false;
                         }
+
                         return true;
+                    }
+
+                    // maybe rename this to something like prepare_batches_and_eval_points?
+                    static inline void prepare_polynomials(
+                            const typename proof_type::evaluation_proof &eval_proof,
+                            const typename public_preprocessor_type::preprocessed_data_type::common_data_type &common_data,
+                            const plonk_table_description<FieldType> &table_description,
+                            const plonk_constraint_system<FieldType> &constraint_system,
+                            commitment_scheme_type &commitment_scheme,
+                            const typename FieldType::value_type& evaluation_challenge) {
+
+                        commitment_scheme.set_batch_size(VARIABLE_VALUES_BATCH,
+                            eval_proof.eval_proof.z.get_batch_size(VARIABLE_VALUES_BATCH));
+                        commitment_scheme.set_batch_size(FIXED_VALUES_BATCH,
+                            eval_proof.eval_proof.z.get_batch_size(FIXED_VALUES_BATCH));
+                        bool is_lookup_enabled = (constraint_system.lookup_gates().size() > 0);
+
+                        if (is_lookup_enabled || constraint_system.copy_constraints().size())
+                            commitment_scheme.set_batch_size(PERMUTATION_BATCH,
+                                eval_proof.eval_proof.z.get_batch_size(PERMUTATION_BATCH));
+
+                        commitment_scheme.set_batch_size(QUOTIENT_BATCH,
+                            eval_proof.eval_proof.z.get_batch_size(QUOTIENT_BATCH));
+
+                        if (is_lookup_enabled)
+                            commitment_scheme.set_batch_size(LOOKUP_BATCH,
+                                eval_proof.eval_proof.z.get_batch_size(LOOKUP_BATCH));
+
+                        generate_evaluation_points(commitment_scheme, common_data, constraint_system,
+                                                   table_description, evaluation_challenge, is_lookup_enabled);
+
                     }
                 };
             }    // namespace snark

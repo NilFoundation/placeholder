@@ -707,7 +707,7 @@ namespace nil {
                         if (found_it != std::cend(input_s_indices)) {
                             correct_order_idx[i].first = std::distance(std::cbegin(input_s_indices), found_it);
                         } else {
-                            BOOST_ASSERT(false);
+                            throw std::logic_error("Unable to establish the correct order in FRI.");
                         }
                     }
 
@@ -1019,6 +1019,8 @@ namespace nil {
                     std::map<std::size_t, std::vector<math::polynomial<typename FRI::field_type::value_type>>> g_coeffs =
                         convert_polynomials_to_coefficients<FRI, PolynomialType>(fri_params, g);
 
+                    BOOST_ASSERT(challenges.size() == fri_params.lambda);
+
                     for (std::size_t query_id = 0; query_id < fri_params.lambda; query_id++) {
                         std::size_t domain_size = fri_params.D[0]->size();
                         typename FRI::field_type::value_type x = challenges[query_id];
@@ -1030,10 +1032,10 @@ namespace nil {
                             ++x_index;
                         }
 
-                        std::map<std::size_t, typename FRI::initial_proof_type>
-                            initial_proof = build_initial_proof<FRI, PolynomialType>(
-                                    precommitments,
-                                    fri_params, g, g_coeffs, x_index);
+                        std::map<std::size_t, typename FRI::initial_proof_type> initial_proof =
+                            build_initial_proof<FRI, PolynomialType>(
+                                precommitments,
+                                fri_params, g, g_coeffs, x_index);
 
                         proof.initial_proofs.emplace_back(std::move(initial_proof));
                     }
@@ -1161,232 +1163,384 @@ namespace nil {
                 }
 
                 template<typename FRI>
-                static bool verify_eval(
-                    const typename FRI::proof_type                                                      &proof,
-                    const typename FRI::params_type                                                     &fri_params,
-                    const std::map<std::size_t, typename FRI::commitment_type>                          &commitments,
-                    const typename FRI::field_type::value_type                                          theta,
-                    const std::vector<std::vector<std::tuple<std::size_t, std::size_t>>>                &poly_ids,
-                    const std::vector<typename FRI::field_type::value_type>                             &combined_U,
-                    const std::vector<math::polynomial<typename FRI::field_type::value_type>>           &denominators,
+                static std::vector<typename FRI::field_type::value_type> generate_alphas(
+                    const std::vector<typename FRI::commitment_type>& fri_roots,
+                    const typename FRI::params_type &fri_params,
                     typename FRI::transcript_type &transcript
                 ) {
-                    BOOST_ASSERT(check_step_list<FRI>(fri_params));
-                    BOOST_ASSERT(combined_U.size() == denominators.size());
-                    BOOST_ASSERT(combined_U.size() == poly_ids.size());
-
-                    // TODO: Add size correcness checks.
-
-                    if (proof.final_polynomial.degree() >
-                        std::pow(2, std::log2(fri_params.max_degree + 1) - fri_params.r + 1) - 1) {
-                        return false;
-                    }
-
                     std::vector<typename FRI::field_type::value_type> alphas;
                     std::size_t t = 0;
                     for (std::size_t i = 0; i < fri_params.step_list.size(); i++) {
-                        transcript(proof.fri_roots[i]);
+                        transcript(fri_roots[i]);
                         for (std::size_t step_i = 0; step_i < fri_params.step_list[i]; step_i++, t++) {
                             auto alpha = transcript.template challenge<typename FRI::field_type>();
                             alphas.push_back(alpha);
                         }
                     }
+                    return alphas;
+                }
 
-                    if (fri_params.use_grinding && !FRI::grinding_type::verify(
-                            transcript, proof.proof_of_work, fri_params.grinding_parameter)){
+                template<typename FRI>
+                static bool verify_initial_proof(
+                    const std::map<std::size_t, typename FRI::initial_proof_type>& initial_proof,
+                    const std::map<std::size_t, typename FRI::commitment_type>& commitments,
+                    const std::vector<std::pair<std::size_t, std::size_t>>& correct_order_idx,
+                    std::size_t coset_size
+                    ) {
+                    for (auto const &it: initial_proof) {
+                        auto k = it.first;
+                        if (initial_proof.at(k).p.root() != commitments.at(k)) {
+                            BOOST_LOG_TRIVIAL(info) << "FRI verification failed: Wrong initial proof, commitment does not match.";
+                            return false;
+                        }
+
+                        detail::fri_field_element_consumer<FRI> leaf_data(
+                            coset_size * initial_proof.at(k).values.size());
+
+                        for (std::size_t i = 0; i < initial_proof.at(k).values.size(); i++) {
+                            for (auto [idx, pair_idx] : correct_order_idx) {
+                                leaf_data.consume(initial_proof.at(k).values[i][idx][0]);
+                                leaf_data.consume(initial_proof.at(k).values[i][idx][1]);
+                            }
+                        }
+                        if (!initial_proof.at(k).p.validate(leaf_data)) {
+                            BOOST_LOG_TRIVIAL(info) << "FRI verification failed: Wrong initial proof.";
+                            return false;
+                        }
+                    }
+                    return true;
+                }
+
+                template<typename FRI>
+                static typename FRI::polynomial_values_type calculate_combined_Q_values(
+                    const std::vector<typename FRI::field_type::value_type>& combined_U,
+                    const std::map<std::size_t, typename FRI::initial_proof_type>& initial_proof,
+                    const std::vector<std::vector<std::tuple<std::size_t, std::size_t>>>& poly_ids,
+                    const std::vector<std::array<std::size_t, FRI::m>>& s_indices,
+                    const std::vector<math::polynomial<typename FRI::field_type::value_type>>& denominators,
+                    const std::vector<std::array<typename FRI::field_type::value_type, FRI::m>>& s,
+                    const typename FRI::field_type::value_type& theta,
+                    std::size_t coset_size,
+                    size_t starting_index
+                ) {
+                    typename FRI::field_type::value_type theta_acc = theta.pow(starting_index);
+                    typename FRI::polynomial_values_type y;
+                    y.resize(coset_size / FRI::m);
+
+                    for (size_t j = 0; j < coset_size / FRI::m; j++) {
+                        y[j][0] = FRI::field_type::value_type::zero();
+                        y[j][1] = FRI::field_type::value_type::zero();
+                    }
+                    for (std::size_t p = 0; p < poly_ids.size(); p++) {
+                        typename FRI::polynomial_values_type Q;
+                        Q.resize(coset_size / FRI::m);
+                        for (auto const &poly_id: poly_ids[p]) {
+                            for (size_t j = 0; j < coset_size / FRI::m; j++) {
+                                Q[j][0] += initial_proof.at(std::get<0>(poly_id)).values[std::get<1>(poly_id)][j][0] * theta_acc;
+                                Q[j][1] += initial_proof.at(std::get<0>(poly_id)).values[std::get<1>(poly_id)][j][1] * theta_acc;
+                            }
+                            theta_acc *= theta;
+                        }
+                        for (size_t j = 0; j < coset_size / FRI::m; j++) {
+                            std::size_t id0 = s_indices[j][0] < s_indices[j][1] ? 0 : 1;
+                            std::size_t id1 = s_indices[j][0] < s_indices[j][1] ? 1 : 0;
+                            Q[j][0] -= combined_U[p];
+                            Q[j][1] -= combined_U[p];
+                            Q[j][0] *= denominators[p].evaluate(s[j][id0]).inversed();
+                            Q[j][1] *= denominators[p].evaluate(s[j][id1]).inversed();
+                            y[j][0] += Q[j][0];
+                            y[j][1] += Q[j][1];
+                        }
+                    }
+                    return y;
+                }
+
+                template<typename FRI>
+                static bool check_argument_sizes(
+                    const typename FRI::proof_type& proof,
+                    const typename FRI::params_type &fri_params,
+                    const std::vector<typename FRI::field_type::value_type>& combined_U,
+                    const std::vector<std::vector<std::tuple<std::size_t, std::size_t>>>& poly_ids,
+                    const std::vector<math::polynomial<typename FRI::field_type::value_type>>& denominators
+                ) {
+                    BOOST_ASSERT(check_step_list<FRI>(fri_params));
+                    BOOST_ASSERT(combined_U.size() == denominators.size());
+                    BOOST_ASSERT(combined_U.size() == poly_ids.size());
+
+                    // TODO: Add size correctness checks.
+
+                    if (proof.final_polynomial.degree() >
+                        std::pow(2, std::log2(fri_params.max_degree + 1) - fri_params.r + 1) - 1) {
+                        BOOST_LOG_TRIVIAL(info) << "FRI verification failed: Wrong argument sizes.";
                         return false;
                     }
-                    for (std::size_t query_id = 0; query_id < fri_params.lambda; query_id++) {
-                        const typename FRI::query_proof_type &query_proof = proof.query_proofs[query_id];
+                    return true;
+                }
 
-                        std::size_t domain_size = fri_params.D[0]->size();
-                        std::size_t coset_size = 1 << fri_params.step_list[0];
-                        typename FRI::field_type::value_type x_challenge = transcript.template challenge<typename FRI::field_type>();
-                        typename FRI::field_type::value_type x = x_challenge.pow((FRI::field_type::modulus - 1)/domain_size);
-                        std::uint64_t x_index = 0;
-                        for( x_index = 0; x_index < domain_size; x_index++ ){
-                            if( fri_params.D[0]->get_domain_element(x_index) == x ){
-                                break;
-                            }
-                        }
+                /**
+                 * param[in/out] y - The value of 'y' is modified by this function. Initally it contains the evaluation values of polynomial combined Q.
+                 */
+                template<typename FRI>
+                static bool verify_round_proof(
+                    const typename FRI::round_proof_type& round_proof,
+                    typename FRI::polynomial_values_type& y,
+                    const typename FRI::params_type& fri_params,
+                    const std::vector<typename FRI::field_type::value_type>& alphas,
+                    const typename FRI::commitment_type& fri_root,
+                    size_t i,
+                    std::uint64_t& x_index,
+                    std::size_t& domain_size,
+                    std::size_t& t
+                ) {
+                    size_t coset_size = 1 << fri_params.step_list[i];
+                    if (round_proof.p.root() != fri_root) {
+                        BOOST_LOG_TRIVIAL(info) << "FRI verification failed: wrong FRI root on round proof " << i << ".";
+                        return false;
+                    }
 
-                        std::vector<std::array<typename FRI::field_type::value_type, FRI::m>> s;
-                        std::vector<std::array<std::size_t, FRI::m>> s_indices;
-                        std::tie(s, s_indices) = calculate_s<FRI>(x_index, fri_params.step_list[0], fri_params.D[0]);
-                        auto correct_order_idx = get_correct_order<FRI>(x_index, domain_size, fri_params.step_list[0],
-                                                                        s_indices);
+                    std::vector<std::array<typename FRI::field_type::value_type, FRI::m>> s;
+                    std::vector<std::array<std::size_t, FRI::m>> s_indices;
+                    std::tie(s, s_indices) = calculate_s<FRI>(x_index, fri_params.step_list[i],
+                                                              fri_params.D[t]);
 
-                        // Check initial proof.
-                        for( auto const &it: query_proof.initial_proof ){
-                            auto k = it.first;
-                            if (query_proof.initial_proof.at(k).p.root() != commitments.at(k) ) {
-                                return false;
-                            }
+                    detail::fri_field_element_consumer<FRI> leaf_data(coset_size);
+                    auto correct_order_idx = get_correct_order<FRI>(x_index, domain_size, fri_params.step_list[i], s_indices);
+                    for (auto [idx, pair_idx]: correct_order_idx) {
+                        leaf_data.consume(y[idx][0]);
+                        leaf_data.consume(y[idx][1]);
+                    }
+                    if (!round_proof.p.validate(leaf_data)) {
+                        BOOST_LOG_TRIVIAL(info) << "Wrong round merkle proof on " << i << "-th round";
+                        return false;
+                    }
 
-                            detail::fri_field_element_consumer<FRI> leaf_data(
-                                coset_size * query_proof.initial_proof.at(k).values.size());
+                    typename FRI::polynomial_values_type y_next;
 
-                            for (std::size_t i = 0; i < query_proof.initial_proof.at(k).values.size(); i++) {
-                                for (auto [idx, pair_idx] : correct_order_idx) {
-                                    leaf_data.consume(query_proof.initial_proof.at(k).values[i][idx][0]);
-                                    leaf_data.consume(query_proof.initial_proof.at(k).values[i][idx][1]);
-                                }
-                            }
-                            if (!query_proof.initial_proof.at(k).p.validate(leaf_data)) {
-                                BOOST_LOG_TRIVIAL(info) << "Wrong initial proof";
-                                return false;
-                            }
-                        }
+                    // colinear check
+                    for (std::size_t step_i = 0; step_i < fri_params.step_list[i] - 1; step_i++, t++) {
+                        y_next.resize(y.size() / FRI::m);
 
-                        // Calculate combinedQ values
-                        typename FRI::field_type::value_type theta_acc = FRI::field_type::value_type::one();
-                        typename FRI::polynomial_values_type y;
-                        typename FRI::polynomial_values_type combined_eval_values;
-                        y.resize(coset_size / FRI::m);
-                        combined_eval_values.resize(coset_size / FRI::m);
-                        for (size_t j = 0; j < coset_size / FRI::m; j++) {
-                            y[j][0] = FRI::field_type::value_type::zero();
-                            y[j][1] = FRI::field_type::value_type::zero();
-                        }
-                        for( std::size_t p = 0; p < poly_ids.size(); p++){
-                            typename FRI::polynomial_values_type Q;
-                            Q.resize(coset_size / FRI::m);
-                            for( auto const &poly_id: poly_ids[p] ){
-                                for (size_t j = 0; j < coset_size / FRI::m; j++) {
-                                    Q[j][0] += query_proof.initial_proof.at(std::get<0>(poly_id)).values[std::get<1>(poly_id)][j][0] * theta_acc;
-                                    Q[j][1] += query_proof.initial_proof.at(std::get<0>(poly_id)).values[std::get<1>(poly_id)][j][1] * theta_acc;
-                                }
-                                theta_acc *= theta;
-                            }
-                            for (size_t j = 0; j < coset_size / FRI::m; j++) {
-                                std::size_t id0 = s_indices[j][0] < s_indices[j][1] ? 0 : 1;
-                                std::size_t id1 = s_indices[j][0] < s_indices[j][1] ? 1 : 0;
-                                Q[j][0] -= combined_U[p];
-                                Q[j][1] -= combined_U[p];
-                                Q[j][0] *= denominators[p].evaluate(s[j][id0]).inversed();
-                                Q[j][1] *= denominators[p].evaluate(s[j][id1]).inversed();
-                                y[j][0] += Q[j][0];
-                                y[j][1] += Q[j][1];
-                            }
-                        }
-                        // Check round proofs
-                        std::size_t t = 0;
-                        typename FRI::polynomial_values_type y_next;
-                        for (std::size_t i = 0; i < fri_params.step_list.size(); i++) {
-                            coset_size = 1 << fri_params.step_list[i];
-                            if (query_proof.round_proofs[i].p.root() != proof.fri_roots[i])
-                                return false;
+                        domain_size = fri_params.D[t]->size();
+                        x_index %= domain_size;
+                        typename FRI::field_type::value_type x = fri_params.D[t]->get_domain_element(x_index);
 
-                            std::tie(s, s_indices) = calculate_s<FRI>(x_index, fri_params.step_list[i],
-                                                                      fri_params.D[t]);
-                            detail::fri_field_element_consumer<FRI> leaf_data(coset_size);
-                            auto correct_order_idx =
-                                    get_correct_order<FRI>(x_index, domain_size, fri_params.step_list[i], s_indices);
-                            for (auto [idx, pair_idx]: correct_order_idx) {
-                                leaf_data.consume(y[idx][0]);
-                                leaf_data.consume(y[idx][1]);
-                            }
-                            if (!query_proof.round_proofs[i].p.validate(leaf_data)) {
-                                BOOST_LOG_TRIVIAL(info) << "Wrong round merkle proof on " << i << "-th round";
-                                return false;
-                            }
+                        auto [s_next, s_indices_next] = calculate_s<FRI>(
+                            x_index % fri_params.D[t+1]->size(),
+                            fri_params.step_list[i], fri_params.D[t+1]
+                        );
 
-                            // colinear check
-                            for (std::size_t step_i = 0; step_i < fri_params.step_list[i] - 1; step_i++, t++) {
-                                y_next.resize(y.size() / FRI::m);
+                        std::tie(s, s_indices) = calculate_s<FRI>(
+                            x_index, fri_params.step_list[i], fri_params.D[t]);
 
-                                domain_size = fri_params.D[t]->size();
-                                x_index %= domain_size;
-                                x = fri_params.D[t]->get_domain_element(x_index);
+                        std::size_t new_domain_size = domain_size;
+                        for (std::size_t y_ind = 0; y_ind < y_next.size(); y_ind++) {
+                            std::size_t ind0 = s_indices[2 * y_ind][0] < s_indices[2 * y_ind][1] ? 0 : 1;
+                            auto s_ch = s[2*y_ind][ind0];
 
-                                auto [s_next, s_indices_next] = calculate_s<FRI>(
-                                    x_index % fri_params.D[t+1]->size(),
-                                    fri_params.step_list[i], fri_params.D[t+1]
-                                );
-
-                                std::tie(s, s_indices) = calculate_s<FRI>(
-                                    x_index, fri_params.step_list[i], fri_params.D[t]);
-
-                                std::size_t new_domain_size = domain_size;
-                                for (std::size_t y_ind = 0; y_ind < y_next.size(); y_ind++) {
-                                    std::size_t ind0 = s_indices[2 * y_ind][0] < s_indices[2 * y_ind][1] ? 0 : 1;
-                                    auto s_ch = s[2*y_ind][ind0];
-
-                                    std::vector<std::pair<typename FRI::field_type::value_type, typename FRI::field_type::value_type>> interpolation_points_l{
-                                        std::make_pair(s_ch, y[2 * y_ind][0]),
-                                        std::make_pair(-s_ch, y[2 * y_ind][1]),
-                                    };
-                                    math::polynomial<typename FRI::field_type::value_type> interpolant_l =
-                                            math::lagrange_interpolation(interpolation_points_l);
-
-                                    ind0 = s_indices[2 * y_ind + 1][0] < s_indices[2 * y_ind + 1][1] ? 0 : 1;
-                                    s_ch = s[2*y_ind + 1][ind0];
-                                    std::vector<std::pair<typename FRI::field_type::value_type, typename FRI::field_type::value_type>> interpolation_points_r{
-                                        std::make_pair(s_ch, y[2 * y_ind + 1][0]),
-                                        std::make_pair(-s_ch, y[2 * y_ind + 1][1]),
-                                    };
-                                    math::polynomial<typename FRI::field_type::value_type> interpolant_r =
-                                            math::lagrange_interpolation(interpolation_points_r);
-
-                                    new_domain_size /= FRI::m;
-
-                                    std::size_t interpolant_index_l = s_indices_next[y_ind][0];
-                                    std::size_t interpolant_index_r = s_indices_next[y_ind][1];
-
-                                    if( interpolant_index_l < interpolant_index_r){
-                                        y_next[y_ind][0] = interpolant_l.evaluate(alphas[t]);
-                                        y_next[y_ind][1] = interpolant_r.evaluate(alphas[t]);
-                                    } else {
-                                        y_next[y_ind][0] = interpolant_r.evaluate(alphas[t]);
-                                        y_next[y_ind][1] = interpolant_l.evaluate(alphas[t]);
-                                    }
-                                }
-                                x = x * x;
-                                y = y_next;
-                            }
-                            domain_size = fri_params.D[t]->size();
-                            x_index %= domain_size;
-                            x = fri_params.D[t]->get_domain_element(x_index);
-                            std::tie(s, s_indices) = calculate_s<FRI>(
-                                x_index, fri_params.step_list[i],
-                                fri_params.D[t]);
-
-                            std::size_t ind0 = s_indices[0][0] < s_indices[0][1] ? 0 : 1;
-                            auto s_ch = s[0][ind0];
-                            std::vector<std::pair<typename FRI::field_type::value_type, typename FRI::field_type::value_type>> interpolation_points{
-                                std::make_pair(s_ch, y[0][0]),
-                                std::make_pair(-s_ch, y[0][1]),
+                            std::vector<std::pair<typename FRI::field_type::value_type, typename FRI::field_type::value_type>> interpolation_points_l{
+                                std::make_pair(s_ch, y[2 * y_ind][0]),
+                                std::make_pair(-s_ch, y[2 * y_ind][1]),
                             };
-                            math::polynomial<typename FRI::field_type::value_type> interpolant_poly =
-                                    math::lagrange_interpolation(interpolation_points);
-                            auto interpolant = interpolant_poly.evaluate(alphas[t]);
+                            math::polynomial<typename FRI::field_type::value_type> interpolant_l =
+                                    math::lagrange_interpolation(interpolation_points_l);
 
-                            std::size_t ind = s_indices[0][ind0] % (fri_params.D[t]->size()/2) < fri_params.D[t]->size() / 4 ? 0 : 1;
-                            if (interpolant != query_proof.round_proofs[i].y[0][ind]) {
-                                return false;
-                            }
+                            ind0 = s_indices[2 * y_ind + 1][0] < s_indices[2 * y_ind + 1][1] ? 0 : 1;
+                            s_ch = s[2*y_ind + 1][ind0];
+                            std::vector<std::pair<typename FRI::field_type::value_type, typename FRI::field_type::value_type>> interpolation_points_r{
+                                std::make_pair(s_ch, y[2 * y_ind + 1][0]),
+                                std::make_pair(-s_ch, y[2 * y_ind + 1][1]),
+                            };
+                            math::polynomial<typename FRI::field_type::value_type> interpolant_r =
+                                    math::lagrange_interpolation(interpolation_points_r);
 
-                            // For the last round we check final polynomial nor colinear_check
-                            y = query_proof.round_proofs[i].y;
-                            if (i < fri_params.step_list.size() - 1) {
-                                t++;
-                                domain_size = fri_params.D[t]->size();
-                                x_index %= domain_size;
-                                x = fri_params.D[t]->get_domain_element(x_index);
+                            new_domain_size /= FRI::m;
+
+                            std::size_t interpolant_index_l = s_indices_next[y_ind][0];
+                            std::size_t interpolant_index_r = s_indices_next[y_ind][1];
+
+                            if( interpolant_index_l < interpolant_index_r){
+                                y_next[y_ind][0] = interpolant_l.evaluate(alphas[t]);
+                                y_next[y_ind][1] = interpolant_r.evaluate(alphas[t]);
+                            } else {
+                                y_next[y_ind][0] = interpolant_r.evaluate(alphas[t]);
+                                y_next[y_ind][1] = interpolant_l.evaluate(alphas[t]);
                             }
                         }
-
-                        // Final polynomial check
-                        x_index %= fri_params.D[t]->size();
-                        x = fri_params.D[t]->get_domain_element(x_index);
                         x = x * x;
-                        std::size_t ind = x_index % (fri_params.D[t]->size() / 2) < fri_params.D[t]->size() / 4 ? 0 : 1;
-                        if (y[0][ind] != proof.final_polynomial.evaluate(x)) {
-                            return false;
+                        y = y_next;
+                    }
+                    domain_size = fri_params.D[t]->size();
+                    x_index %= domain_size;
+                    typename FRI::field_type::value_type x = fri_params.D[t]->get_domain_element(x_index);
+                    std::tie(s, s_indices) = calculate_s<FRI>(
+                        x_index, fri_params.step_list[i],
+                        fri_params.D[t]);
+
+                    std::size_t ind0 = s_indices[0][0] < s_indices[0][1] ? 0 : 1;
+                    auto s_ch = s[0][ind0];
+                    std::vector<std::pair<typename FRI::field_type::value_type, typename FRI::field_type::value_type>> interpolation_points{
+                        std::make_pair(s_ch, y[0][0]),
+                        std::make_pair(-s_ch, y[0][1]),
+                    };
+                    math::polynomial<typename FRI::field_type::value_type> interpolant_poly =
+                            math::lagrange_interpolation(interpolation_points);
+                    auto interpolant = interpolant_poly.evaluate(alphas[t]);
+
+                    std::size_t ind = s_indices[0][ind0] % (fri_params.D[t]->size()/2) < fri_params.D[t]->size() / 4 ? 0 : 1;
+                    if (interpolant != round_proof.y[0][ind]) {
+                        BOOST_LOG_TRIVIAL(info) << "FRI verification failed: interpolant does not match for round proof " << i << ".";
+                        return false;
+                    }
+
+                    // For the last round we check final polynomial not colinear_check
+                    y = round_proof.y;
+                    if (i < fri_params.step_list.size() - 1) {
+                        t++;
+                        domain_size = fri_params.D[t]->size();
+                        x_index %= domain_size;
+                        x = fri_params.D[t]->get_domain_element(x_index);
+                    }
+                    return true;
+                }
+
+                template<typename FRI>
+                static bool verify_initial_proof_and_return_combined_Q_values(
+                    const std::map<std::size_t, typename FRI::initial_proof_type>& initial_proof,
+                    const std::vector<typename FRI::field_type::value_type>& combined_U,
+                    const std::vector<std::vector<std::tuple<std::size_t, std::size_t>>>& poly_ids,
+                    const std::vector<math::polynomial<typename FRI::field_type::value_type>>& denominators,
+                    const typename FRI::params_type& fri_params,
+                    const std::map<std::size_t, typename FRI::commitment_type>& commitments,
+                    const typename FRI::field_type::value_type& theta,
+                    const std::size_t coset_size,
+                    std::size_t domain_size,
+                    size_t starting_index,
+                    typename FRI::transcript_type &transcript,
+                    typename FRI::polynomial_values_type& combined_Q_y_out,
+                    typename FRI::field_type::value_type& x_out,
+                    std::uint64_t& x_index_out
+                ) {
+                    typename FRI::field_type::value_type x_challenge = transcript.template challenge<typename FRI::field_type>();
+                    x_out = x_challenge.pow((FRI::field_type::modulus - 1) / domain_size);
+
+                    x_index_out = 0;
+                    for (x_index_out = 0; x_index_out < domain_size; x_index_out++) {
+                        if (fri_params.D[0]->get_domain_element(x_index_out) == x_out) {
+                            break;
                         }
-                        if (y[0][1-ind] != proof.final_polynomial.evaluate(-x)) {
+                    }
+
+                    std::vector<std::array<typename FRI::field_type::value_type, FRI::m>> s;
+                    std::vector<std::array<std::size_t, FRI::m>> s_indices;
+                    std::tie(s, s_indices) = calculate_s<FRI>(x_index_out, fri_params.step_list[0], fri_params.D[0]);
+                    auto correct_order_idx = get_correct_order<FRI>(x_index_out, domain_size, fri_params.step_list[0], s_indices);
+
+                    // Check initial proof.
+                    if (!verify_initial_proof<FRI>(initial_proof, commitments, correct_order_idx, coset_size)) {
+                        BOOST_LOG_TRIVIAL(info) << "Initial FRI proof/consistency check verification failed.";
+                        return false;
+                    }
+
+                    // Calculate combinedQ values
+                    combined_Q_y_out = calculate_combined_Q_values<FRI>(
+                        combined_U, initial_proof, poly_ids, s_indices, denominators, s, theta, coset_size, starting_index);
+                     
+                    return true;
+                }
+
+                template<typename FRI>
+                static bool check_final_polynomial(
+                    const math::polynomial<typename FRI::field_type::value_type>& final_polynomial,
+                    typename FRI::polynomial_values_type& y,
+                    const typename FRI::params_type& fri_params,
+                    uint64_t x_index,
+                    size_t t
+               ) {
+                    x_index %= fri_params.D[t]->size();
+                    typename FRI::field_type::value_type x = fri_params.D[t]->get_domain_element(x_index);
+                    x = x * x;
+                    std::size_t ind = x_index % (fri_params.D[t]->size() / 2) < fri_params.D[t]->size() / 4 ? 0 : 1;
+                    if (y[0][ind] != final_polynomial.evaluate(x)) {
+                        BOOST_LOG_TRIVIAL(info) << "FRI verification failed: final polynomial check failed.";
+                        return false;
+                    }
+                    if (y[0][1-ind] != final_polynomial.evaluate(-x)) {
+                        BOOST_LOG_TRIVIAL(info) << "FRI verification failed: final polynomial check failed.";
+                        return false;
+                    }
+                    return true;
+                }
+
+                template<typename FRI>
+                static bool verify_query_proof(
+                    const typename FRI::query_proof_type &query_proof,
+                    const std::vector<typename FRI::field_type::value_type>& combined_U,
+                    const std::vector<std::vector<std::tuple<std::size_t, std::size_t>>>& poly_ids,
+                    const std::vector<math::polynomial<typename FRI::field_type::value_type>>& denominators,
+                    const typename FRI::params_type& fri_params,
+                    const std::map<std::size_t, typename FRI::commitment_type>& commitments,
+                    const typename FRI::field_type::value_type& theta,
+                    const std::vector<typename FRI::field_type::value_type>& alphas,
+                    const std::vector<typename FRI::commitment_type>& fri_roots,
+                    const math::polynomial<typename FRI::field_type::value_type>& final_polynomial,
+                    const std::size_t coset_size,
+                    std::size_t domain_size,
+                    typename FRI::transcript_type &transcript
+                ) {
+                    typename FRI::field_type::value_type x;
+                    std::uint64_t x_index;
+                    // Combined Q values
+                    typename FRI::polynomial_values_type y;
+ 
+                    size_t starting_index = 0;
+                    if (!verify_initial_proof_and_return_combined_Q_values<FRI>(
+                            query_proof.initial_proof, combined_U, poly_ids, denominators, fri_params, commitments, theta, coset_size, domain_size,
+                            starting_index, transcript, y, x, x_index)) {
+                        return false;
+                    }
+
+                    // Check round proofs
+                    std::size_t t = 0;
+                    for (std::size_t i = 0; i < fri_params.step_list.size(); i++) {
+                        if (!verify_round_proof<FRI>(query_proof.round_proofs[i], y, fri_params,
+                                                     alphas, fri_roots[i], i, x_index, domain_size, t))
                             return false;
-                        }
+                    }
+
+                    // Final polynomial check
+                    if (!check_final_polynomial<FRI>(final_polynomial, y, fri_params, x_index, t))
+                        return false;
+                    return true;
+                }
+
+                template<typename FRI>
+                static bool verify_eval(
+                    const typename FRI::proof_type& proof,
+                    const typename FRI::params_type& fri_params,
+                    const std::map<std::size_t, typename FRI::commitment_type>& commitments,
+                    const typename FRI::field_type::value_type& theta,
+                    const std::vector<std::vector<std::tuple<std::size_t, std::size_t>>>& poly_ids,
+                    const std::vector<typename FRI::field_type::value_type>& combined_U,
+                    const std::vector<math::polynomial<typename FRI::field_type::value_type>>& denominators,
+                    typename FRI::transcript_type &transcript
+                ) {
+                    if (!check_argument_sizes<FRI>(proof, fri_params, combined_U, poly_ids, denominators))
+                        return false;
+
+                    std::vector<typename FRI::field_type::value_type> alphas = generate_alphas<FRI>(proof.fri_roots, fri_params, transcript);
+
+                    if (fri_params.use_grinding && !FRI::grinding_type::verify(
+                            transcript, proof.proof_of_work, fri_params.grinding_parameter)) {
+                        return false;
+                    }
+
+                    std::size_t domain_size = fri_params.D[0]->size();
+                    std::size_t coset_size = 1 << fri_params.step_list[0];
+ 
+                    for (std::size_t query_id = 0; query_id < fri_params.lambda; query_id++) {
+                        if (!verify_query_proof<FRI>(proof.query_proofs[query_id], combined_U, poly_ids, denominators, fri_params, commitments, 
+                                                     theta, alphas, proof.fri_roots, proof.final_polynomial, coset_size, domain_size, transcript))
+                            return false;
                     }
 
                     return true;

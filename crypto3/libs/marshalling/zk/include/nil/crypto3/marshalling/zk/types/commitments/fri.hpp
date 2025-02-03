@@ -503,7 +503,6 @@ namespace nil {
                         proof.final_polynomial
                     );
 
-                    // proof_of_work
                     return typename fri_proof<nil::crypto3::marshalling::field_type<Endianness>, FRI>::type(
                         std::tuple(
                             filled_fri_roots, filled_step_list, filled_initial_val, filled_round_val,
