@@ -259,6 +259,14 @@ int run_prover(const nil::proof_producer::ProverOptions& prover_options) {
                     prover_result = cmd.execute();
                     break;
                 }
+                case nil::proof_producer::detail::ProverStage::VERIFY_AGGREGATED_FRI_PROOF:
+                {
+                    using Command = AggregatedFRIVerifyCommand<CurveType, HashType>;
+                    using Args = typename Command::Args;
+                    // TODO
+                    prover_result = cmd.execute();
+                    break;
+                }
                 case nil::proof_producer::detail::ProverStage::GENERATE_CONSISTENCY_CHECKS_PROOF:
                 {
                     using Command = GenerateConsistencyCheckCommand<CurveType, HashType>;
