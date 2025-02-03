@@ -118,9 +118,6 @@ namespace nil {
                 using placeholder_evaluation_proof = nil::crypto3::marshalling::types::bundle<
                     TTypeBase,
                     std::tuple<
-                        // typename FieldType::value_type challenge
-                        field_element<TTypeBase, typename Proof::field_type::value_type>,
-
                         //typename Proof::commitment_scheme_type::eval_proof;
                         typename eval_proof<TTypeBase, typename Proof::commitment_scheme_type>::type
                     >
@@ -135,15 +132,11 @@ namespace nil {
 
                     using field_marshalling_type = field_element<TTypeBase, typename Proof::field_type::value_type>;
 
-                    // typename FieldType::value_type challenge
-                    field_marshalling_type filled_challenge = field_marshalling_type(proof.challenge);
-
                     // typename commitment_scheme_type::proof_type eval_proof;
                     auto filled_eval_proof =
                         fill_eval_proof<Endianness, typename Proof::commitment_scheme_type>(proof.eval_proof, commitment_params);
 
                     return placeholder_evaluation_proof<TTypeBase, Proof>(std::make_tuple(
-                        filled_challenge,
                         filled_eval_proof
                     ));
                 }
@@ -154,12 +147,9 @@ namespace nil {
                 {
                     typename Proof::evaluation_proof proof;
 
-                    // typename FieldType::value_type challenge
-                    proof.challenge = std::get<0>(filled_proof.value()).value();
-
                     // typename commitment_scheme_type::proof_type combined_value
                     proof.eval_proof = make_eval_proof<Endianness, typename Proof::commitment_scheme_type>(
-                        std::get<1>(filled_proof.value()));
+                        std::get<0>(filled_proof.value()));
 
                     return proof;
                 }

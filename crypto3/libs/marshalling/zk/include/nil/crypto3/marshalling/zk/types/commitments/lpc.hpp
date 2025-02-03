@@ -397,7 +397,7 @@ namespace nil {
 
                 template <typename Endianness, typename LPCScheme>
                 initial_fri_proof_type<nil::crypto3::marshalling::field_type<Endianness>, LPCScheme>
-                fill_initial_fri_proof(const typename LPCScheme::fri_proof_type &proof) {
+                fill_fri_round_proof(const typename LPCScheme::fri_proof_type &proof) {
                     using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
 
                     nil::crypto3::marshalling::types::round_proofs_batch_type<
@@ -507,7 +507,7 @@ namespace nil {
                     using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
 
                     initial_fri_proof_type<TTypeBase, LPCScheme> filled_fri_proof =
-                        fill_initial_fri_proof<Endianness, LPCScheme>(
+                        fill_fri_round_proof<Endianness, LPCScheme>(
                             proof.fri_proof
                         );
 

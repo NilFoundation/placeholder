@@ -27,11 +27,14 @@ namespace nil {
             using LpcScheme              = typename Types::LpcScheme;
             using TTypeBase              = typename Types::TTypeBase;
             using Proof                  = typename Types::Proof;
+            using FriType                = typename Types::FriType;
+            using ProofOfWork            = typename FriType::grinding_type::output_type;
 
             struct Args {
                 std::vector<boost::filesystem::path> in_partial_proof_files;
                 std::vector<boost::filesystem::path> in_initial_proof_files;
                 boost::filesystem::path in_aggregated_FRI_proof_file;
+                boost::filesystem::path in_proof_of_work_file;
                 boost::filesystem::path out_merged_proof_file;
 
                 Args(boost::program_options::options_description &desc) {
@@ -41,6 +44,7 @@ namespace nil {
                         ("partial-proof", po::value<std::vector<boost::filesystem::path>>(&in_partial_proof_files)->multitoken()->required())
                         ("initial-proof", po::value<std::vector<boost::filesystem::path>>(&in_initial_proof_files)->multitoken()->required())
                         ("aggregated-FRI-proof", po::value<boost::filesystem::path>(&in_aggregated_FRI_proof_file)->required())
+                        ("proof-of-work", po::value<boost::filesystem::path>(&in_proof_of_work_file)->required())
                         ("proof", po::value<boost::filesystem::path>(&out_merged_proof_file)->required());
                 }
             };
@@ -52,6 +56,7 @@ namespace nil {
                     args_.in_partial_proof_files,
                     args_.in_initial_proof_files,
                     args_.in_aggregated_FRI_proof_file,
+                    args_.in_proof_of_work_file,
                     args_.out_merged_proof_file
                 );
             }
@@ -64,6 +69,7 @@ namespace nil {
                 const std::vector<boost::filesystem::path> &partial_proof_files,
                 const std::vector<boost::filesystem::path> &initial_proof_files,
                 const boost::filesystem::path &aggregated_FRI_file,
+                const boost::filesystem::path &proof_of_work_file,
                 const boost::filesystem::path &merged_proof_file)
             {
                 /* ZK types */
@@ -83,6 +89,9 @@ namespace nil {
 
                 using fri_proof_marshalling_type = nil::crypto3::marshalling::types::
                     initial_fri_proof_type<TTypeBase, LpcScheme>;
+
+                using POW_marshalling_type = nil::crypto3::marshalling::types::
+                    integral<TTypeBase, ProofOfWork>;
 
                 using merged_proof_marshalling_type = nil::crypto3::marshalling::types::
                     placeholder_aggregated_proof_type<TTypeBase, placeholder_aggregated_proof_type>;
@@ -131,6 +140,16 @@ namespace nil {
                 }
                 merged_proof.aggregated_proof.fri_proof =
                     nil::crypto3::marshalling::types::make_initial_fri_proof<Endianness, LpcScheme>(*marshalled_fri_proof);
+                
+                BOOST_LOG_TRIVIAL(info) << "Reading proof of work from file \"" << proof_of_work_file << "\"";
+
+                auto marshalled_proof_of_work = detail::decode_marshalling_from_file<POW_marshalling_type>(proof_of_work_file);
+
+                if (!marshalled_proof_of_work) {
+                    return CommandResult::Error(ResultCode::IOError, "Error reading proof of work from from {}", proof_of_work_file.string());
+                }
+
+                merged_proof.aggregated_proof.proof_of_work = marshalled_proof_of_work.value().value();
 
                 BOOST_LOG_TRIVIAL(info) << "Writing merged proof to \"" << merged_proof_file << "\"";
 
