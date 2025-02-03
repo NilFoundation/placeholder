@@ -17,7 +17,7 @@
 #include <nil/proof-generator/output_artifacts/output_artifacts.hpp>
 
 namespace nil {
-    namespace proof_generator {
+    namespace proof_producer {
 
         // TODO move to files
         template<typename CurveType, typename HashType>
@@ -77,5 +77,5 @@ namespace nil {
                 }
             }
         };
-    } // namespace proof_generator
+    } // namespace proof_producer
 } // namespace nil

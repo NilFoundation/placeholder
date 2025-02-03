@@ -14,7 +14,7 @@
 #include <string>
 
 namespace nil {
-    namespace proof_generator {
+    namespace proof_producer {
         template<typename BlueprintFieldType>
         std::optional<std::string> initialize_bytecode_circuit(
                 std::shared_ptr<typename PresetTypes<BlueprintFieldType>::ConstraintSystem>& bytecode_circuit,
@@ -66,6 +66,6 @@ namespace nil {
 
             return {};
         }
-    } // proof_generator
+    } // proof_producer
 } // nil
 #endif  // PROOF_GENERATOR_LIBS_PRESET_BYTECODE_HPP_

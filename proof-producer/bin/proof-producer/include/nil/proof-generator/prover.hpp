@@ -24,7 +24,7 @@
 #include <unordered_map>
 
 namespace nil {
-    namespace proof_generator {
+    namespace proof_producer {
         namespace detail {
 
             enum class ProverStage {
@@ -67,5 +67,5 @@ namespace nil {
             }
 
         } // namespace detail
-    } // namespace proof_generator
+    } // namespace proof_producer
 } // namespace nil

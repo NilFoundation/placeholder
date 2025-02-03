@@ -5,7 +5,7 @@ add_custom_target(tests_output_artifacts_multi_thread)
 function(set_properties target)
     target_link_libraries(${target} PRIVATE
         GTest::gtest GTest::gtest_main
-        proof_generator_output_artifacts
+        proof_producer_output_artifacts
     )
 
     set_target_properties(${target} PROPERTIES
@@ -40,8 +40,8 @@ function(add_output_artifacts_test target)
         target_link_options(${target}_multi_thread PRIVATE -static -static-libgcc -static-libstdc++)
     endif()
 
-    target_precompile_headers(${target}_single_thread REUSE_FROM proof_generator_output_artifacts)
-    target_precompile_headers(${target}_multi_thread  REUSE_FROM proof_generator_output_artifacts)
+    target_precompile_headers(${target}_single_thread REUSE_FROM proof_producer_output_artifacts)
+    target_precompile_headers(${target}_multi_thread  REUSE_FROM proof_producer_output_artifacts)
 
     add_dependencies(tests_output_artifacts_single_thread ${target}_single_thread)
     add_dependencies(tests_output_artifacts_multi_thread ${target}_multi_thread)

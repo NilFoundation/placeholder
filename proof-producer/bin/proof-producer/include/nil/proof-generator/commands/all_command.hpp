@@ -15,7 +15,7 @@
 #include <nil/proof-generator/output_artifacts/output_artifacts.hpp>
 
 namespace nil {
-    namespace proof_generator {
+    namespace proof_producer {
 
         template<typename CurveType, typename HashType>
         class AllCommand: public command_chain {
@@ -106,5 +106,5 @@ namespace nil {
                 }
             }
         };
-    } // namespace proof_generator
+    } // namespace proof_producer
 } // namespace nil

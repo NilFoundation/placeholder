@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include <nil/proof-generator/output_artifacts/output_artifacts.hpp>
 
-using nil::proof_generator::Range;
+using nil::proof_producer::Range;
 
 TEST(OutputArtifactsTests, RangeParse) {
     ASSERT_TRUE(Range::parse("1").has_value());

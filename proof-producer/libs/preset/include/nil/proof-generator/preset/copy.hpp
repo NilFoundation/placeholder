@@ -10,7 +10,7 @@
 
 
 namespace nil {
-    namespace proof_generator {
+    namespace proof_producer {
 
         template<typename BlueprintFieldType>
         std::optional<std::string> initialize_copy_circuit(
@@ -98,5 +98,5 @@ namespace nil {
             return {};
         }
 
-    } // namespace proof_generator
+    } // namespace proof_producer
 } // namespace nil

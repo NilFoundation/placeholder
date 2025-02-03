@@ -7,7 +7,7 @@
 #include <nil/proof-generator/resources.hpp>
 
 namespace nil {
-    namespace proof_generator {
+    namespace proof_producer {
 
         template<typename CurveType, typename HashType>
         struct ProveStep {
@@ -26,7 +26,7 @@ namespace nil {
             using PlaceholderParams       = typename Types::PlaceholderParams;
             using PrivatePreprocessedData = typename Types::PrivatePreprocessedData;
             using Proof                   = typename Types::Proof;
-        
+
         private:
             struct ProofGeneratorBase {
                 ProofGeneratorBase(
@@ -51,7 +51,7 @@ namespace nil {
                     subscribe_value<PrivatePreprocessedData>(private_data_provider, private_preprocessed_data_);
                 }
 
-                
+
                 std::optional<AssignmentPublicInput> public_inputs_;
                 std::shared_ptr<ConstraintSystem> constraint_system_;
                 std::shared_ptr<TableDescription> table_description_;
@@ -61,10 +61,10 @@ namespace nil {
             };
 
         public:
-        
-            struct ProofReader: 
-                public command_step, 
-                public resources::resource_provider<Proof> 
+
+            struct ProofReader:
+                public command_step,
+                public resources::resource_provider<Proof>
             {
                 ProofReader(const boost::filesystem::path& proof_file): proof_file_(proof_file) {}
 
@@ -90,13 +90,13 @@ namespace nil {
                 }
 
             private:
-                boost::filesystem::path proof_file_;    
+                boost::filesystem::path proof_file_;
             };
-            
-            struct ProofGenerator: 
+
+            struct ProofGenerator:
                 public ProofGeneratorBase,
                 public command_step,
-                public resources::resource_provider<Proof> 
+                public resources::resource_provider<Proof>
             {
 
                 ProofGenerator(
@@ -108,11 +108,11 @@ namespace nil {
                     resources::resource_provider<PrivatePreprocessedData>& private_data_provider,
                     const boost::filesystem::path& proof_file,
                     const boost::filesystem::path& json_file
-                ): ProofGeneratorBase(constraint_provider, table_provider, desc_provider, public_data_provider, lpc_scheme_provider, private_data_provider), 
-                   proof_file_(proof_file), 
+                ): ProofGeneratorBase(constraint_provider, table_provider, desc_provider, public_data_provider, lpc_scheme_provider, private_data_provider),
+                   proof_file_(proof_file),
                    json_file_(json_file)
                 {}
-                    
+
                 CommandResult execute() override {
 
                     using resources::notify;
@@ -123,7 +123,7 @@ namespace nil {
                     BOOST_ASSERT(this->table_description_);
                     BOOST_ASSERT(this->constraint_system_);
                     BOOST_ASSERT(this->lpc_scheme_);
-    
+
                     if (!can_write_to_file(proof_file_.string())) {
                         return CommandResult::UnknownError("Can't write to file {}", proof_file_.string());
                     }
@@ -154,12 +154,12 @@ namespace nil {
                     {
                         return CommandResult::UnknownError("Failed to open file {}", json_file_.string());
                     }
-                    
+
                     using nil::blueprint::recursive_verifier_generator;
                     (*output_file) << recursive_verifier_generator<PlaceholderParams, Proof, CommonData>(*this->table_description_).
                         generate_input(
-                            *this->public_inputs_, 
-                            proof, 
+                            *this->public_inputs_,
+                            proof,
                             this->constraint_system_->public_input_sizes()
                     );
                     output_file->close();
@@ -170,14 +170,14 @@ namespace nil {
                     return CommandResult::Ok();
                 }
 
-            private:            
+            private:
                 boost::filesystem::path proof_file_;
                 boost::filesystem::path json_file_;
-            }; 
+            };
 
-            struct PartialProofGenerator: 
+            struct PartialProofGenerator:
                 public ProofGeneratorBase,
-                public command_step 
+                public command_step
             {
                 PartialProofGenerator(
                     resources::resource_provider<ConstraintSystem>& constraint_provider,
@@ -188,14 +188,14 @@ namespace nil {
                     resources::resource_provider<PrivatePreprocessedData>& private_data_provider,
                     const boost::filesystem::path& proof_file,
                     const boost::filesystem::path& challenge_file_,
-                    const boost::filesystem::path& theta_power_file 
+                    const boost::filesystem::path& theta_power_file
                 ): ProofGeneratorBase(constraint_provider, table_provider, desc_provider, public_data_provider, lpc_scheme_provider, private_data_provider),
                    proof_file_(proof_file),
                    challenge_file_(challenge_file_),
                    theta_power_file_(theta_power_file)
                 {}
 
-                CommandResult execute() override 
+                CommandResult execute() override
                 {
                     BOOST_ASSERT(this->public_preprocessed_data_);
                     BOOST_ASSERT(this->private_preprocessed_data_);
@@ -208,18 +208,18 @@ namespace nil {
                     }
 
                     BOOST_LOG_TRIVIAL(info) << "Generating partial proof...";
-                    
+
                     TIME_LOG_START("Generating partial proof");
                     auto prover = nil::crypto3::zk::snark::placeholder_prover<BlueprintField, PlaceholderParams>(
                             *this->public_preprocessed_data_,
                             *this->private_preprocessed_data_,
                             *this->table_description_,
-                            *this->constraint_system_,               
+                            *this->constraint_system_,
                             *this->lpc_scheme_,
                             true);
                     Proof proof = prover.process();
                     TIME_LOG_END("Generating partial proof");
-    
+
                     BOOST_LOG_TRIVIAL(info) << "Proof generated";
 
                     auto res = write_proof_to_file(proof, this->lpc_scheme_->get_fri_params(), proof_file_);
@@ -263,7 +263,7 @@ namespace nil {
             private:
                 boost::filesystem::path proof_file_;
                 boost::filesystem::path challenge_file_;
-                boost::filesystem::path theta_power_file_; 
+                boost::filesystem::path theta_power_file_;
             };
 
         private:
@@ -284,5 +284,5 @@ namespace nil {
                 return res;
             }
         };
-    } // namespace proof_generator
+    } // namespace proof_producer
 } // namespace nil

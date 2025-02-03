@@ -17,7 +17,7 @@
 #include <nil/proof-generator/commands/detail/io/polynomial_io.hpp>
 
 namespace nil {
-    namespace proof_generator {
+    namespace proof_producer {
 
         template <typename CurveType, typename HashType>
         struct ConsistencyChecksGenerator: public command_step {
@@ -129,5 +129,5 @@ namespace nil {
             }
         };
 
-    } // namespace proof_generator
+    } // namespace proof_producer
 } // namespace nil

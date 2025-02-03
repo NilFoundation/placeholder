@@ -12,7 +12,7 @@
 
 
 namespace nil {
-    namespace proof_generator {
+    namespace proof_producer {
 
         template <typename CurveType, typename HashType>
         struct LpcSchemeIO {
@@ -58,14 +58,14 @@ namespace nil {
                 boost::filesystem::path commitment_scheme_state_file_;
             };
 
-            struct Reader: 
+            struct Reader:
                 public command_step,
                 public resources::resource_provider<LpcScheme>
             {
                 Reader(const boost::filesystem::path& commitment_scheme_state_file):
                     commitment_scheme_state_file_(commitment_scheme_state_file)
                 {}
-                
+
                 CommandResult execute() override {
                     BOOST_LOG_TRIVIAL(info) << "Read commitment scheme from " << commitment_scheme_state_file_;
 
@@ -86,7 +86,7 @@ namespace nil {
                         return CommandResult::UnknownError("Error decoding commitment scheme");
                     }
 
-                    auto lpc_scheme = std::make_shared<LpcScheme>(std::move(commitment_scheme.value())); 
+                    auto lpc_scheme = std::make_shared<LpcScheme>(std::move(commitment_scheme.value()));
                     notify<LpcScheme>(*this, lpc_scheme);
 
                     return CommandResult::Ok();
@@ -96,5 +96,5 @@ namespace nil {
                 boost::filesystem::path commitment_scheme_state_file_;
             };
         };
-    } // namespace proof_generator
+    } // namespace proof_producer
 } // namespace nil

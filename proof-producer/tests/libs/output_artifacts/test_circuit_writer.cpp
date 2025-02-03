@@ -18,7 +18,7 @@ using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
 
 using BlueprintField = typename nil::crypto3::algebra::curves::pallas::base_field_type;
 
-using Writer = nil::proof_generator::circuit_writer<Endianness, BlueprintField>;
+using Writer = nil::proof_producer::circuit_writer<Endianness, BlueprintField>;
 using Circuit = Writer::Circuit;
 
 class CircuitWriterTest: public ::testing::Test {

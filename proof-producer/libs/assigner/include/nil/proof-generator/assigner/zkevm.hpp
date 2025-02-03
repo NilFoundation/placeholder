@@ -10,7 +10,7 @@
 #include <nil/proof-generator/assigner/trace_parser.hpp>
 
 namespace nil {
-    namespace proof_generator {
+    namespace proof_producer {
 
         /// @brief Fill assignment table
         template<typename BlueprintFieldType>
@@ -79,7 +79,7 @@ namespace nil {
 
             return {};
         }
-    } // proof_generator
+    } // proof_producer
 } // nil
 
 #endif  // PROOF_GENERATOR_LIBS_ASSIGNER_ZKEVM_HPP_

@@ -12,7 +12,7 @@
 
 
 namespace nil {
-    namespace proof_generator {
+    namespace proof_producer {
 
         template <typename CurveType, typename HashType>
         struct PreprocessedPublicDataIO {
@@ -21,7 +21,7 @@ namespace nil {
             using TTypeBase = typename Types::TTypeBase;
             using PublicPreprocessedData = typename Types::PublicPreprocessedData;
             using CommonData = typename Types::CommonData;
-            
+
             struct Writer: public command_step
             {
                 Writer(
@@ -60,8 +60,8 @@ namespace nil {
                 std::shared_ptr<PublicPreprocessedData> public_preprocessed_data_;
                 boost::filesystem::path preprocessed_data_file_;
             };
-  
-            struct Reader: 
+
+            struct Reader:
                 public command_step,
                 public resources::resources_provider<PublicPreprocessedData, CommonData>
             {
@@ -127,7 +127,7 @@ namespace nil {
 
             private:
                 std::shared_ptr<CommonData> common_data_;
-                boost::filesystem::path preprocessed_common_data_file_;                     
+                boost::filesystem::path preprocessed_common_data_file_;
             };
 
             struct CommonDataReader:
@@ -157,9 +157,9 @@ namespace nil {
                     return CommandResult::Ok();
                 }
 
-            private: 
+            private:
                 boost::filesystem::path preprocessed_common_data_file_;
             };
         };
-    } // namespace proof_generator
+    } // namespace proof_producer
 } // namespace nil

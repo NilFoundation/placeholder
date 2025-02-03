@@ -10,7 +10,7 @@
 #include <nil/proof-generator/assigner/options.hpp>
 
 namespace nil {
-    namespace proof_generator {
+    namespace proof_producer {
 
         /// @brief Fill assignment table
         template<typename BlueprintFieldType>
@@ -41,7 +41,7 @@ namespace nil {
             ComponentType instance(context_object, input, options.circuits_limits.max_bytecode_size, options.circuits_limits.max_keccak_blocks);
             return {};
         }
-    } // proof_generator
+    } // proof_producer
 } // nil
 
 #endif  // PROOF_GENERATOR_LIBS_ASSIGNER_BYTECODE_HPP_

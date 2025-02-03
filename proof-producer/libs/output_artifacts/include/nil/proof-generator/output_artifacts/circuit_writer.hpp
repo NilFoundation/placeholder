@@ -25,10 +25,10 @@
 
 
 namespace nil {
-    namespace proof_generator {
+    namespace proof_producer {
 
 
-        template <typename Endianness, typename BlueprintField> 
+        template <typename Endianness, typename BlueprintField>
         class circuit_writer {
                 public:
                     using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
@@ -72,13 +72,10 @@ namespace nil {
                         assert(status == nil::crypto3::marshalling::status_type::success);
                         out.write(reinterpret_cast<char*>(cv.data()), cv.size());
                     }
-        };        
+        };
 
-    } // namespace proof_generator
+    } // namespace proof_producer
 } // namespace nil
 
 
 #endif // PROOF_GENERATOR_CIRCUIT_WRITER_HPP
-
-
-
