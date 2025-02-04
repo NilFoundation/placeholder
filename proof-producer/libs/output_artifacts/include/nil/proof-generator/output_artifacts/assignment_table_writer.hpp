@@ -20,7 +20,7 @@
 #include <boost/log/sources/record_ostream.hpp>
 #include <boost/log/trivial.hpp>
 #include <boost/assert.hpp>
-#include <ostream>  
+#include <ostream>
 
 #include <nil/crypto3/marshalling/algebra/types/field_element.hpp>
 #include <nil/crypto3/zk/snark/arithmetization/plonk/assignment.hpp>
@@ -31,7 +31,7 @@
 
 
 namespace nil {
-    namespace proof_generator {
+    namespace proof_producer {
 
         template <typename Endianness, typename BlueprintField>
         class assignment_table_writer {
@@ -39,14 +39,14 @@ namespace nil {
                 using Column = nil::crypto3::zk::snark::plonk_column<BlueprintField>;
                 using ArithmetizationType = nil::crypto3::zk::snark::plonk_constraint_system<BlueprintField>;
 
-                using AssignmentTable = nil::crypto3::zk::snark::plonk_table<BlueprintField, Column>; 
+                using AssignmentTable = nil::crypto3::zk::snark::plonk_table<BlueprintField, Column>;
                 using AssignmentTableDescription = nil::crypto3::zk::snark::plonk_table_description<BlueprintField>;
 
                 // marshalling traits
                 using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
                 using BlueprintFieldValueType = typename BlueprintField::value_type;
                 using MarshallingField = nil::crypto3::marshalling::types::field_element<
-                    TTypeBase, 
+                    TTypeBase,
                     BlueprintFieldValueType
                 >;
 
@@ -70,7 +70,7 @@ namespace nil {
                 */
                 static void write_zero_field(std::ostream& out) {
                     using empty_field = std::array<std::uint8_t, MarshallingField().length()>;
-                    
+
                     empty_field field{};
                     out.write(reinterpret_cast<char*>(field.data()), field.size());
                 }
@@ -121,7 +121,7 @@ namespace nil {
                     if (padded_rows_amount < 8) {
                         padded_rows_amount = 8;
                     }
-                    
+
                     write_size_t(out, witness_size);
                     write_size_t(out, public_input_size);
                     write_size_t(out, constant_size);
@@ -163,7 +163,7 @@ namespace nil {
                                 {0, max_value-1}
                             };
                         }
-                        
+
                         Ranges::ConcreteRanges ret{};
                         if (r.empty()) {
                             return ret;
@@ -202,19 +202,19 @@ namespace nil {
                         return false;
                     }
 
-                    nil::crypto3::zk::snark::export_table(table, desc, out, 
-                              witnesses.value(), 
-                              public_inputs.value(), 
+                    nil::crypto3::zk::snark::export_table(table, desc, out,
+                              witnesses.value(),
+                              public_inputs.value(),
                               constants.value(),
-                              selectors.value(), 
-                              rows.value(), 
+                              selectors.value(),
+                              rows.value(),
                               true
                     );
-                    return true; 
+                    return true;
             }
         };
 
-    } // namespace proof_generator
+    } // namespace proof_producer
 
 } // namespace nil
 

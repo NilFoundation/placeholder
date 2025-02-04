@@ -90,7 +90,14 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(to_string_small, big_mod_t, modular_types) {
 }
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(ops, big_mod_t, modular_types) {
-    big_mod_t a = 2u, b;
+    constexpr big_mod_t a = 2u;
+    big_mod_t b;
+
+    constexpr auto test_increment_decrement = [](big_mod_t a) constexpr {
+        ++a;
+        --a;
+        return a;
+    };
 
     auto c1{a};
     auto c2{std::move(a)};  // NOLINT
@@ -100,6 +107,9 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(ops, big_mod_t, modular_types) {
     b = std::move(a);  // NOLINT
     b = 2;
     b = 2u;
+    static_assert(a + 2u == 4u);
+    static_assert(a * 3u == 6u);
+    static_assert(test_increment_decrement(a) == 2u);
 
 #define TEST_BINARY_OP(op) \
     do {                   \

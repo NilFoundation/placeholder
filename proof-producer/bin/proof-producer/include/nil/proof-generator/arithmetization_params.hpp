@@ -14,8 +14,7 @@
 // limitations under the License.
 //---------------------------------------------------------------------------//
 
-#ifndef ZKEMV_FRAMEWORK_ARITHMETIZATION_PARAMS_HPP
-#define ZKEMV_FRAMEWORK_ARITHMETIZATION_PARAMS_HPP
+#pragma once
 
 #include <array>
 #include <tuple>
@@ -29,7 +28,7 @@
 #include <nil/proof-generator/non_type_arithmetization_params.hpp>
 
 namespace nil {
-    namespace proof_generator {
+    namespace proof_producer {
 
         using CurveTypes = std::tuple<nil::crypto3::algebra::curves::pallas
                                       // Add more curves as needed.
@@ -43,7 +42,5 @@ namespace nil {
             // Add more hashes as needed.
             >;
 
-    } // namespace proof_generator
+    } // namespace proof_producer
 } // namespace nil
-
-#endif // PROOF_GENERATOR_ARITHMETIZATION_PARAMS_HPP

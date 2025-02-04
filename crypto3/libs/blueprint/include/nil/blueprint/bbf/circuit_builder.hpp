@@ -159,8 +159,8 @@ namespace nil {
                         );
 
                     raw_input_type raw_input = {};
-                    auto v = std::tuple_cat(std::make_tuple(ct), generator::form_input(ct,raw_input),
-                        static_info_args_storage);
+                    auto a = std::apply(generator::form_input, std::tuple_cat(std::make_tuple(std::ref(ct)),std::make_tuple(raw_input),static_info_args_storage));
+                    auto v = std::tuple_cat(std::make_tuple(std::ref(ct)), a,static_info_args_storage);
                     std::make_from_tuple<generator>(v);
 
                     // constants
@@ -182,11 +182,11 @@ namespace nil {
 
                     // TODO: replace with PLONK_SPECIAL_SELECTOR_ALL_USABLE_ROWS_SELECTED.
                     row_selector selector_column(usable_rows);
-                    for (std::size_t i = 1; i < usable_rows; i++)
+                    for (std::size_t i = 0; i < usable_rows; i++)
                         selector_column.set_row(i);
                     size_t full_selector_id = gates.add_selector(selector_column);
 
-                    for(const auto& [selector_id, constraints] : gates.constraint_list) {
+                    for(const auto& [selector_id, data] : gates.constraint_list) {
                         /*
                         std::cout << "GATE:\n";
                         for(const auto& c : constraints) {
@@ -194,8 +194,14 @@ namespace nil {
                         }
                         std::cout << "Rows: ";
                         */
+                        std::vector<constraint_type> constraints;
+                        std::vector<std::string> names;
+                        for(const auto &d : data){
+                            constraints.push_back(d.first);
+                            names.push_back(d.second);
+                        }
                         bp.add_gate(selector_id, constraints);
-
+                        constraint_names.insert({selector_id, names});
                         //std::cout << "\n";
                     }
 
@@ -226,6 +232,10 @@ namespace nil {
                                 merged_lookup_input += lookup_inputs *
                                     expression_type(var(selector_id, 0, false, var::column_type::selector));
                             }
+                            std::cout << "Adding merged lookup input to table #" << table_index << " -> ";
+                            for (const auto& li: merged_lookup_input)
+                                std::cout << li << std::endl;
+
                             merged_lookup_gate.push_back({table_index, merged_lookup_input});
                             bp.add_lookup_gate(full_selector_id, merged_lookup_gate);
                         }
@@ -347,7 +357,7 @@ namespace nil {
                         // add constant columns if necessary
                         if (presets.constants_amount() < start_constant_column + table_columns_number) {
                             presets.resize_constants(start_constant_column + table_columns_number);
-                        }
+                            }
                         // assure all added columns have same amount of usable_rows and need no resizement later
                         for(std::size_t i = start_constant_column; i < start_constant_column + table_columns_number; i++)
                             presets.constant(i,usable_rows - 1) = 0;
@@ -375,7 +385,7 @@ namespace nil {
                                     // the columns present in the table
                                     std::size_t column_index = (table->subtables.size() > 1) ? subtable.column_indices[k] : k;
                                     option.emplace_back( nil::crypto3::zk::snark::plonk_variable<typename FieldType::value_type>(
-// TODO! The following line was missing start_constant_column term
+                                    // TODO! The following line was missing start_constant_column term
                                         start_constant_column + column_index, 0, false,
                                         nil::crypto3::zk::snark::plonk_variable<typename FieldType::value_type>::column_type::constant
                                     ) );
@@ -399,7 +409,7 @@ namespace nil {
                             std::vector<nil::crypto3::zk::snark::plonk_variable<typename FieldType::value_type>> option;
                             for(const auto &column_index : subtable.column_indices) {
                                 option.emplace_back(nil::crypto3::zk::snark::plonk_variable<typename FieldType::value_type>(
-// TODO: check, why the following line did not have the start_constant_column term!
+                                // TODO: check, why the following line did not have the start_constant_column term!
                                     start_constant_column + column_index, 0, false,
                                     nil::crypto3::zk::snark::plonk_variable<typename FieldType::value_type>::column_type::constant
                                 ) );
@@ -481,7 +491,8 @@ namespace nil {
 
                     context_type ct = context_type(at, rows_amount, 0); // use all rows, start from 0
 
-                    auto v = std::tuple_cat(std::make_tuple(ct), generator::form_input(ct,raw_input), static_info_args_storage);
+                    auto a = std::apply(generator::form_input, std::tuple_cat(std::make_tuple(std::ref(ct)),std::make_tuple(raw_input),static_info_args_storage));
+                    auto v = std::tuple_cat(std::make_tuple(std::ref(ct)), a,static_info_args_storage);
                     auto o = std::make_from_tuple<generator>(v);
 
                     crypto3::zk::snark::plonk_table_description<FieldType> desc = at.get_description();
@@ -535,6 +546,7 @@ namespace nil {
                                         std::cout << "Constraint " << j << " from gate " << i << " on row " << selector_row
                                             << " is not satisfied." << std::endl;
                                         std::cout << "Constraint result: " << constraint_result << std::endl;
+                                        std::cout << "Offending constraint name: " << constraint_names.at(gates[i].selector_index).at(j) << std::endl;
                                         std::cout << "Offending contraint: " << gates[i].constraints[j] << std::endl;
                                         return false;
                                     }
@@ -663,6 +675,7 @@ namespace nil {
 
                     circuit<crypto3::zk::snark::plonk_constraint_system<FieldType>> bp;
                     crypto3::zk::snark::plonk_assignment_table<FieldType> presets;
+                    std::map<uint32_t, std::vector<std::string>> constraint_names;
             };
 
         }  // namespace bbf

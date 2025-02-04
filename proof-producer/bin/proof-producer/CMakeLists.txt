@@ -36,7 +36,7 @@ target_include_directories(${PROOF_PRODUCER_INCLUDES} INTERFACE
 add_library(${CURRENT_PROJECT_NAME}::include ALIAS ${PROOF_PRODUCER_INCLUDES})
 
 # Function to setup common properties for a target
-function(setup_proof_generator_target)
+function(setup_proof_producer_target)
     set(options "")
     set(oneValueArgs TARGET_NAME)
     set(multiValueArgs ADDITIONAL_DEPENDENCIES)
@@ -52,7 +52,7 @@ function(setup_proof_generator_target)
         Boost::filesystem
         Boost::log
         Boost::thread
-        proof_generatorPreset
+        proof_producer_preset
         ${PROOF_PRODUCER_INCLUDES}
     )
     # Make sure to add these dependencies before the others, since for multi-threaded version dependency on
@@ -66,8 +66,11 @@ function(setup_proof_generator_target)
     target_link_libraries(${ARG_TARGET_NAME} PRIVATE
         ${INTERFACE_LIBS}
         Boost::program_options
-        proof_generatorAssigner
-        proof_generatorOutputArtifacts)
+        proof_producer_types
+        proof_producer_preset
+        proof_producer_assigner
+        proof_producer_output_artifacts
+    )
 
     set_target_properties(${ARG_TARGET_NAME} PROPERTIES
         LINKER_LANGUAGE CXX
@@ -87,12 +90,12 @@ function(setup_proof_generator_target)
 endfunction()
 
 set(SINGLE_THREADED_TARGET "${CURRENT_PROJECT_NAME}-single-threaded")
-setup_proof_generator_target(TARGET_NAME ${SINGLE_THREADED_TARGET} ADDITIONAL_DEPENDENCIES crypto3::all)
-target_precompile_headers(${SINGLE_THREADED_TARGET} REUSE_FROM proof_generatorOutputArtifacts)
+setup_proof_producer_target(TARGET_NAME ${SINGLE_THREADED_TARGET} ADDITIONAL_DEPENDENCIES crypto3::all)
+target_precompile_headers(${SINGLE_THREADED_TARGET} REUSE_FROM proof_producer_output_artifacts)
 
 set(MULTI_THREADED_TARGET "${CURRENT_PROJECT_NAME}-multi-threaded")
-setup_proof_generator_target(TARGET_NAME ${MULTI_THREADED_TARGET} ADDITIONAL_DEPENDENCIES parallel-crypto3::all crypto3::common)
-target_precompile_headers(${MULTI_THREADED_TARGET} REUSE_FROM proof_generatorOutputArtifacts)
+setup_proof_producer_target(TARGET_NAME ${MULTI_THREADED_TARGET} ADDITIONAL_DEPENDENCIES parallel-crypto3::all crypto3::common)
+target_precompile_headers(${MULTI_THREADED_TARGET} REUSE_FROM proof_producer_output_artifacts)
 
 # Install
 install(TARGETS ${SINGLE_THREADED_TARGET} RUNTIME DESTINATION bin)

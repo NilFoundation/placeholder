@@ -197,7 +197,8 @@ namespace nil {
                 }
 
                 static std::tuple<input_type> form_input(context_type &context_object,
-                                                         raw_input_type raw_input) {
+                                                         raw_input_type raw_input,
+                                                         std::size_t max_blocks) {
                     input_type input;
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
                         input.input = raw_input.input;
@@ -728,35 +729,35 @@ namespace nil {
 
                     // gates:
                     for (std::size_t i = 0; i < 6247 * max_blocks; i++) {
-                        constrain(selector[i] * (1 - selector[i]));
+                        constrain(selector[i] * (1 - selector[i]), "KECCAK_DYNAMIC_SELECTOR");
                     }
                     for (std::size_t block_counter = 0; block_counter < max_blocks;
                          block_counter++) {
                         // Is_first and is_last definition
                         constrain(m[block_counter].h.is_first *
-                                  (m[block_counter].h.is_first - 1));  // HF1
+                                  (m[block_counter].h.is_first - 1), "HF1");  // HF1
                         constrain(m[block_counter].h.is_last *
-                                  (m[block_counter].h.is_last - 1));  // HF2
+                                  (m[block_counter].h.is_last - 1), "HF2");  // HF2
                         constrain(m[block_counter].h.is_first *
-                                  (m[block_counter].h.L - m[block_counter].h.l));  // HF3
+                                  (m[block_counter].h.L - m[block_counter].h.l), "HF3");  // HF3
                         lookup(m[block_counter].h.is_last * m[block_counter].h.l,  // HF4
                                "keccak_pack_table/range_check_135");
 
                         // Hash computation correctness
                         constrain(m[block_counter].h.is_last *
                                   (m[block_counter].h.hash_hi -
-                                   m[block_counter].h.hash_cur_hi));  // HF5
+                                   m[block_counter].h.hash_cur_hi), "HF5");  // HF5
                         constrain(m[block_counter].h.is_last *
                                   (m[block_counter].h.hash_lo -
-                                   m[block_counter].h.hash_cur_lo));  // HF6
+                                   m[block_counter].h.hash_cur_lo), "HF6");  // HF6
 
                         // RLC computation correctness
                         constrain(m[block_counter].h.is_first *
                                   (m[block_counter].h.rlc_before -
-                                   m[block_counter].h.L));  // HF7
+                                   m[block_counter].h.L), "HF7");  // HF7
                         constrain(m[block_counter].h.is_last *
                                   (m[block_counter].h.rlc_after -
-                                   m[block_counter].h.RLC));  // HF8
+                                   m[block_counter].h.RLC), "HF8");  // HF8
 
                         // copy constraint r with public input
                         if (make_links) {
@@ -778,34 +779,34 @@ namespace nil {
                         copy_constrain(m[block_counter].h.RLC, m[block_counter].f.RLC);
                         copy_constrain(m[block_counter].h.r, m[block_counter].f.r);
 
-                        constrain((1 - m[0].h.is_first));  // BT1
+                        constrain((1 - m[0].h.is_first), "BT1");  // BT1
                         lookup(m[block_counter].h.L,
                                "keccak_pack_table/range_check_16bit");
                         lookup(m[block_counter].h.l,
                                "keccak_pack_table/range_check_16bit");
                         if (block_counter > 0) {
                             constrain((1 - m[block_counter - 1].f.is_last) *
-                                      m[block_counter].h.is_first);  // BT2
+                                      m[block_counter].h.is_first, "BT2");  // BT2
                             // Transition between blocks
                             constrain((1 - m[block_counter].h.is_first) *
                                       (m[block_counter].h.L -
-                                       m[block_counter - 1].f.L));  // BT4
+                                       m[block_counter - 1].f.L), "BT4");  // BT4
                             constrain((1 - m[block_counter].h.is_first) *
                                       (m[block_counter].h.RLC -
-                                       m[block_counter - 1].f.RLC));  // BT5
+                                       m[block_counter - 1].f.RLC), "BT5");  // BT5
                             constrain((1 - m[block_counter].h.is_first) *
                                       (m[block_counter].h.hash_hi -
-                                       m[block_counter - 1].f.hash_hi));  // BT6
+                                       m[block_counter - 1].f.hash_hi), "BT6");  // BT6
                             constrain((1 - m[block_counter].h.is_first) *
                                       (m[block_counter].h.hash_lo -
-                                       m[block_counter - 1].f.hash_lo));  // BT7
+                                       m[block_counter - 1].f.hash_lo), "BT7");  // BT7
                             constrain((1 - m[block_counter].h.is_first) *
                                       (m[block_counter].h.rlc_before -
-                                       m[block_counter - 1].f.rlc_before));  // BT8
+                                       m[block_counter - 1].f.rlc_before), "BT8");  // BT8
                             constrain((1 - m[block_counter].h.is_first) *
                                       (1 - m[block_counter].h.is_last) *
                                       (m[block_counter - 1].f.l - m[block_counter].h.l -
-                                       136));  // BT9
+                                       136), "BT9");  // BT9
                         }
 
                         copy_constrain(m[block_counter].s[3].S1,
@@ -834,22 +835,22 @@ namespace nil {
                         for (std::size_t i = 0; i < state_rows_amount; i++) {
                             constrain(m[block_counter].s[i].S0 -
                                       (1 - m[block_counter].s[i].is_first) *
-                                          m[block_counter].s[i].s0);  // ST3
+                                          m[block_counter].s[i].s0, "ST3");  // ST3
                             constrain(m[block_counter].s[i].S1 -
                                       (1 - m[block_counter].s[i].is_first) *
-                                          m[block_counter].s[i].s1);  // ST4
+                                          m[block_counter].s[i].s1, "ST4");  // ST4
                             constrain(m[block_counter].s[i].S2 -
                                       (1 - m[block_counter].s[i].is_first) *
-                                          m[block_counter].s[i].s2);  // ST5
+                                          m[block_counter].s[i].s2, "ST5");  // ST5
                             constrain(m[block_counter].s[i].S3 -
                                       (1 - m[block_counter].s[i].is_first) *
-                                          m[block_counter].s[i].s3);  // ST6
+                                          m[block_counter].s[i].s3, "ST6");  // ST6
                             constrain(m[block_counter].s[i].S4 -
                                       (1 - m[block_counter].s[i].is_first) *
-                                          m[block_counter].s[i].s4);  // ST7
+                                          m[block_counter].s[i].s4, "ST7");  // ST7
                             if (i > 0) {
                                 constrain(m[block_counter].s[i].is_first -
-                                          m[block_counter].s[i - 1].is_first);  // ST1
+                                          m[block_counter].s[i - 1].is_first, "ST1");  // ST1
                                 constrain(m[block_counter].s[i].out -
                                           m[block_counter].s[i - 1].XOR *
                                               (integral_type(1) << (48 * 3)) -
@@ -857,7 +858,7 @@ namespace nil {
                                               (integral_type(1) << (48 * 2)) -
                                           m[block_counter].s[i].XOR *
                                               (integral_type(1) << (48)) -
-                                          m[block_counter].s[i].ch);  // ST9
+                                          m[block_counter].s[i].ch, "ST9");  // ST9
                             }
                             // lookup constraint s.rng at keccak_pack_table/sparse_16bit
                             lookup(m[block_counter].s[i].rng,
@@ -867,19 +868,19 @@ namespace nil {
                         constrain((m[block_counter].s[1].rng - sparse_x80 -
                                    m[block_counter].s[0].rng) *
                                   (m[block_counter].s[0].rng - sparse_x7f +
-                                   m[block_counter].s[1].rng));  // XOR1
+                                   m[block_counter].s[1].rng), "XOR1");  // XOR1
                         constrain((m[block_counter].s[1].rng - sparse_x7f +
                                    m[block_counter].s[0].rng) *
                                   (m[block_counter].s[0].XOR + sparse_x80 -
-                                   m[block_counter].s[1].rng));  // XOR2
+                                   m[block_counter].s[1].rng), "XOR2");  // XOR2
                         constrain((m[block_counter].s[1].rng - sparse_x80 -
                                    m[block_counter].s[0].rng) *
                                   (m[block_counter].s[0].XOR - sparse_x80 -
-                                   m[block_counter].s[1].rng));  // XOR3
+                                   m[block_counter].s[1].rng), "XOR3");  // XOR3
                         constrain((m[block_counter].s[1].XOR -
                                    m[block_counter].s[0].ch * m[block_counter].s[0].XOR -
                                    (1 - m[block_counter].s[0].ch) *
-                                       m[block_counter].s[1].rng));  // XOR4
+                                       m[block_counter].s[1].rng), "XOR4");  // XOR4
 
                         // Chunk constraints
                         TYPE chunk_factor = TYPE(integral_type(1) << 48);
@@ -899,31 +900,31 @@ namespace nil {
                             auto diff =
                                 m[block_counter].c[i].l_before - m[block_counter].c[i].l;
                             constrain(diff * (diff - 1) * (diff - 2) * (diff - 3) *
-                                      (diff - 4));  // LC4
+                                      (diff - 4), "LC4");  // LC4
                             constrain(diff * (diff - 1) * (diff - 2) * (diff - 4) *
-                                      (m[block_counter].c[i].b3 - 1));  // PC1
+                                      (m[block_counter].c[i].b3 - 1), "PC1");  // PC1
                             constrain(diff * (diff - 1) * (diff - 3) * (diff - 4) *
-                                      (m[block_counter].c[i].b2 - 1));  // PC2
+                                      (m[block_counter].c[i].b2 - 1), "PC2");  // PC2
                             constrain(diff * (diff - 1) * (diff - 3) * (diff - 4) *
-                                      m[block_counter].c[i].b3);  // PC3
+                                      m[block_counter].c[i].b3, "PC3");  // PC3
                             constrain(diff * (diff - 2) * (diff - 3) * (diff - 4) *
-                                      (m[block_counter].c[i].b1 - 1));  // PC4
+                                      (m[block_counter].c[i].b1 - 1), "PC4");  // PC4
                             constrain(diff * (diff - 2) * (diff - 3) * (diff - 4) *
-                                      m[block_counter].c[i].b2);  // PC5
+                                      m[block_counter].c[i].b2, "PC5");  // PC5
                             constrain(diff * (diff - 2) * (diff - 3) * (diff - 4) *
-                                      m[block_counter].c[i].b3);  // PC6
+                                      m[block_counter].c[i].b3, "PC6");  // PC6
                             constrain(m[block_counter].c[i].first_in_block * (diff - 1) *
                                       (diff - 2) * (diff - 3) * (diff - 4) *
-                                      (m[block_counter].c[i].b0 - 1));  // PC11
+                                      (m[block_counter].c[i].b0 - 1), "PC11");  // PC11
                             constrain(m[block_counter].c[i].first_in_block * (diff - 1) *
                                       (diff - 2) * (diff - 3) * (diff - 4) *
-                                      m[block_counter].c[i].b1);  // PC12
+                                      m[block_counter].c[i].b1, "PC12");  // PC12
                             constrain(m[block_counter].c[i].first_in_block * (diff - 1) *
                                       (diff - 2) * (diff - 3) * (diff - 4) *
-                                      m[block_counter].c[i].b2);  // PC13
+                                      m[block_counter].c[i].b2, "PC13");  // PC13
                             constrain(m[block_counter].c[i].first_in_block * (diff - 1) *
                                       (diff - 2) * (diff - 3) * (diff - 4) *
-                                      m[block_counter].c[i].b3);  // PC14
+                                      m[block_counter].c[i].b3, "PC14");  // PC14
                             if (i > 0) {
                                 copy_constrain(m[block_counter].c[i].first_in_block,
                                                C[0]);  // LC1
@@ -934,39 +935,39 @@ namespace nil {
                                           m[block_counter].c[i].sp0 * chunk_factor *
                                               chunk_factor -
                                           m[block_counter].c[i - 1].sp1 * chunk_factor -
-                                          m[block_counter].c[i - 1].sp0);  // CH7
+                                          m[block_counter].c[i - 1].sp0, "CH7");  // CH7
 
                                 auto diff_prev = m[block_counter].c[i - 1].l_before -
                                                  m[block_counter].c[i - 1].l;
                                 constrain((1 - m[block_counter].c[i].first_in_block) *
                                           (m[block_counter].c[i].l_before -
-                                           m[block_counter].c[i - 1].l));  // LC3
+                                           m[block_counter].c[i - 1].l), "LC3");  // LC3
                                 constrain((1 - m[block_counter].c[i].first_in_block) *
-                                          diff * (diff_prev - 4));  // LC5
-                                constrain((1 - m[block_counter].c[i].first_in_block) *
-                                          (diff_prev - diff) * (diff_prev - diff - 1) *
-                                          (diff_prev - diff - 2) *
-                                          (diff_prev - diff - 3) *
-                                          (m[block_counter].c[i].b0 - 1));  // PC7
+                                          diff * (diff_prev - 4), "LC5");  // LC5
                                 constrain((1 - m[block_counter].c[i].first_in_block) *
                                           (diff_prev - diff) * (diff_prev - diff - 1) *
                                           (diff_prev - diff - 2) *
                                           (diff_prev - diff - 3) *
-                                          m[block_counter].c[i].b1);  // PC8
+                                          (m[block_counter].c[i].b0 - 1), "PC7");  // PC7
                                 constrain((1 - m[block_counter].c[i].first_in_block) *
                                           (diff_prev - diff) * (diff_prev - diff - 1) *
                                           (diff_prev - diff - 2) *
                                           (diff_prev - diff - 3) *
-                                          m[block_counter].c[i].b2);  // PC9
+                                          m[block_counter].c[i].b1, "PC8");  // PC8
                                 constrain((1 - m[block_counter].c[i].first_in_block) *
                                           (diff_prev - diff) * (diff_prev - diff - 1) *
                                           (diff_prev - diff - 2) *
                                           (diff_prev - diff - 3) *
-                                          m[block_counter].c[i].b3);  // PC10
+                                          m[block_counter].c[i].b2, "PC9");  // PC9
+                                constrain((1 - m[block_counter].c[i].first_in_block) *
+                                          (diff_prev - diff) * (diff_prev - diff - 1) *
+                                          (diff_prev - diff - 2) *
+                                          (diff_prev - diff - 3) *
+                                          m[block_counter].c[i].b3, "PC10");  // PC10
 
                                 constrain((1 - m[block_counter].c[i].first_in_block) *
                                           (m[block_counter].c[i].rlc_before -
-                                           m[block_counter].c[i - 1].rlc));  // RLC6
+                                           m[block_counter].c[i - 1].rlc), "RLC6");  // RLC6
                             } else {
                                 copy_constrain(m[block_counter].c[i].first_in_block,
                                                C[1]);  // LC1
@@ -991,10 +992,10 @@ namespace nil {
 
                             constrain(m[block_counter].c[i].r2 -
                                       m[block_counter].c[i].r *
-                                          m[block_counter].c[i].r);  // RLC4
+                                          m[block_counter].c[i].r, "RLC4");  // RLC4
                             constrain(m[block_counter].c[i].r4 -
                                       m[block_counter].c[i].r2 *
-                                          m[block_counter].c[i].r2);  // RLC5
+                                          m[block_counter].c[i].r2, "RLC5");  // RLC5
                             constrain(
                                 diff * (diff - 1) * (diff - 2) * (diff - 3) *
                                 (m[block_counter].c[i].rlc -
@@ -1004,7 +1005,7 @@ namespace nil {
                                      m[block_counter].c[i].b0 -
                                  m[block_counter].c[i].r2 * m[block_counter].c[i].b1 -
                                  m[block_counter].c[i].r * m[block_counter].c[i].b2 -
-                                 m[block_counter].c[i].b3));  // RLC7
+                                 m[block_counter].c[i].b3), "RLC7");  // RLC7
 
                             constrain(
                                 diff * (diff - 1) * (diff - 2) * (diff - 4) *
@@ -1013,7 +1014,7 @@ namespace nil {
                                      m[block_counter].c[i].rlc_before -
                                  m[block_counter].c[i].r2 * m[block_counter].c[i].b0 -
                                  m[block_counter].c[i].r * m[block_counter].c[i].b1 -
-                                 m[block_counter].c[i].b2));  // RLC8
+                                 m[block_counter].c[i].b2), "RLC8");  // RLC8
 
                             constrain(
                                 diff * (diff - 1) * (diff - 3) * (diff - 4) *
@@ -1021,17 +1022,17 @@ namespace nil {
                                  m[block_counter].c[i].r2 *
                                      m[block_counter].c[i].rlc_before -
                                  m[block_counter].c[i].r * m[block_counter].c[i].b0 -
-                                 m[block_counter].c[i].b1));  // RLC9
+                                 m[block_counter].c[i].b1), "RLC9");  // RLC9
 
                             constrain(diff * (diff - 2) * (diff - 3) * (diff - 4) *
                                       (m[block_counter].c[i].rlc -
                                        m[block_counter].c[i].r *
                                            m[block_counter].c[i].rlc_before -
-                                       m[block_counter].c[i].b0));  // RLC10
+                                       m[block_counter].c[i].b0), "RLC10");  // RLC10
 
                             constrain((diff - 1) * (diff - 2) * (diff - 3) * (diff - 4) *
                                       (m[block_counter].c[i].rlc -
-                                       m[block_counter].c[i].rlc_before));  // RLC11
+                                       m[block_counter].c[i].rlc_before), "RLC11");  // RLC11
                         }
 
                         // Unparser constraints
@@ -1046,7 +1047,7 @@ namespace nil {
                                       m[block_counter].u[i].sp0 * (sparsed_factor << 96) -
                                       m[block_counter].u[i].sp1 * (sparsed_factor << 48) -
                                       m[block_counter].u[i].sp2 * sparsed_factor -
-                                      m[block_counter].u[i].sp3);  // UN2
+                                      m[block_counter].u[i].sp3, "UN2");  // UN2
                             if (i > 0) {
                                 constrain(m[block_counter].u[i].hash_chunk -
                                           m[block_counter].u[i - 1].ch3 *
@@ -1061,7 +1062,7 @@ namespace nil {
                                               (ufactor << (16 * 2)) -
                                           m[block_counter].u[i].ch2 * (ufactor << (16)) -
                                           m[block_counter].u[i].ch1 * ufactor -
-                                          m[block_counter].u[i].ch0);  // UN7
+                                          m[block_counter].u[i].ch0, "UN7");  // UN7
                             }
                             lookup({m[block_counter].u[i].ch0,
                                     m[block_counter].u[i].sp0},  // UN3

@@ -80,6 +80,9 @@ BOOST_AUTO_TEST_CASE(exp) {
     opcode_tester.push_opcode(zkevm_opcode::PUSH32, 1);
     opcode_tester.push_opcode(zkevm_opcode::PUSH32, 1);
     opcode_tester.push_opcode(zkevm_opcode::EXP);
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, 0x10000);
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, 3);
+    opcode_tester.push_opcode(zkevm_opcode::EXP);
     opcode_tester.push_opcode(zkevm_opcode::PUSH32, 2);
     opcode_tester.push_opcode(
         zkevm_opcode::PUSH32,

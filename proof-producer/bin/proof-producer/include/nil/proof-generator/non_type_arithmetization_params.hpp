@@ -14,13 +14,12 @@
 // limitations under the License.
 //---------------------------------------------------------------------------//
 
-#ifndef PROOF_GENERATOR_NON_TYPE_ARITHMETIZATION_PARAMS_HPP
-#define PROOF_GENERATOR_NON_TYPE_ARITHMETIZATION_PARAMS_HPP
+#pragma once
 
 #include <cstddef>
 
 namespace nil {
-    namespace proof_generator {
+    namespace proof_producer {
 
         // Need this class to be derived into actual params, so we could overload
         // read/write operators for parsing.
@@ -52,7 +51,5 @@ namespace nil {
             using SizeTParam::SizeTParam;
         };
 
-    } // namespace proof_generator
+    } // namespace proof_producer
 } // namespace nil
-
-#endif // PROOF_GENERATOR_NON_TYPE_ARITHMETIZATION_PARAMS_HPP

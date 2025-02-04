@@ -1,7 +1,7 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2020-2021 Mikhail Komarov <nemo@nil.foundation>
 // Copyright (c) 2020-2021 Nikita Kaskov <nbering@nil.foundation>
-// Copyright (c) 2024  Vasiliy Olekhov <vasiliy.olekhov@nil.foundation>
+// Copyright (c) 2024 Vasiliy Olekhov <vasiliy.olekhov@nil.foundation>
 //
 // MIT License
 //
@@ -131,6 +131,11 @@ namespace nil {
                         }
                     }
 
+                    /* Multiply curve point by field characteristic.
+                     * For G2 groups the base field is $F_{p^k}$ and field
+                     * characteristic is $p$. This multiplication can be done
+                     * more efficiently rather than direct multiplication by
+                     * scalar */
                     static typename g2_affine_type::value_type mul_by_char(
                             typename g2_affine_type::value_type const& Q) {
 

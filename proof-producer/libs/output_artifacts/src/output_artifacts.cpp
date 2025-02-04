@@ -25,7 +25,7 @@ namespace po = boost::program_options;
 
 
 namespace nil {
-    namespace proof_generator {
+    namespace proof_producer {
 
         Range Range::new_lower(std::size_t lower_) {
             Range r;
@@ -39,20 +39,20 @@ namespace nil {
             return r;
         }
 
-        std::expected<Range, std::string> Range::parse(const std::string& s) {          
+        std::expected<Range, std::string> Range::parse(const std::string& s) {
             boost::smatch match_results;
             if (boost::regex_match(s, match_results, boost::regex("^full$"))) {
                 return Range();
             }
             if (boost::regex_match(s, match_results, boost::regex("^\\d+$"))) {
                 return Range(std::stoi(match_results.str()));
-            } 
+            }
             if (boost::regex_match(s, match_results, boost::regex("^(\\d+)-$"))) {
                 return Range::new_lower(std::stoi(match_results[1].str()));
-            } 
+            }
             if (boost::regex_match(s, match_results, boost::regex("^-(\\d+)$"))) {
                 return Range::new_upper(std::stoi(match_results[1].str()));
-            } 
+            }
             if (boost::regex_match(s, match_results, boost::regex("^(\\d+)-(\\d+)$"))) {
                 std::size_t lower = std::stoi(match_results[1].str());
                 std::size_t upper = std::stoi(match_results[2].str());
@@ -128,31 +128,30 @@ namespace nil {
         }
 
         void register_output_artifacts_cli_args(OutputArtifacts& to_fill, po::options_description& cli_options) {
-            
+
                 cli_options.add_options()
                 ("assignment-table-debug-file", make_defaulted_option(to_fill.output_filename),
                  "Output filename for print assignment tables in human readable format. If omitted or set to '-', write to stdout")
-                 
+
                  ("assignment-table-debug-full", make_defaulted_option(to_fill.write_full),
                     "Print full assignment table in human readable format (all rows and columns of every type)")
 
                  ("assignment-table-debug-rows", make_defaulted_option(to_fill.rows)->multitoken(),
                     "Assignment table rows to print in human readable format. Format: `full` or `N`, `N-M`, `N-` or `-M` (each range space-separated from another)")
-                 
+
                  ("assignment-table-debug-witness-columns", make_defaulted_option(to_fill.witness_columns)->multitoken(),
                     "Assignment table witness columns to print in human readable format. Format: `full` or `N`, `N-M`, `N-` or `-M` (each range space-separated from another)")
-                 
+
                  ("assignment-table-debug-public-input-columns", make_defaulted_option(to_fill.public_input_columns)->multitoken(),
                     "Assignment table public input columns to print in human readable format. Format: `full` or `N`, `N-M`, `N-` or `-M` (each range space-separated from another)")
-                 
+
                  ("assignment-table-debug-constant-columns", make_defaulted_option(to_fill.constant_columns)->multitoken(),
-        "Assignment table constant columns to print in human readable format. Format: `full` or `N`, `N-M`, `N-` or `-M` (each range space-separated from another)") 
+        "Assignment table constant columns to print in human readable format. Format: `full` or `N`, `N-M`, `N-` or `-M` (each range space-separated from another)")
 
                  ("assignment-table-debug-selector-columns", make_defaulted_option(to_fill.selector_columns)->multitoken(),
         "Assignment table selector columns to print in human readable format. Format: `full` or `N`, `N-M`, `N-` or `-M` (each range space-separated from another)");
         }
 
-    } // namespace proof_generator
+    } // namespace proof_producer
 
 } // namespace nil
-

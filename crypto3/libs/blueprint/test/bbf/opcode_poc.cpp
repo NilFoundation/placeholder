@@ -58,7 +58,7 @@ void test_opcode_poc(
     std::cout << "input_size = " <<  blocks.size() << std::endl;
     auto B = circuit_builder<field_type,opcode_poc,std::size_t>(max_rows);
     auto [at, A, desc] = B.assign(raw_input);
-    std::cout << "Is_satisfied = " << B.is_satisfied(at) << std::endl;
+    BOOST_TEST(B.is_satisfied(at), "constraints are not satisfied");
 }
 
 

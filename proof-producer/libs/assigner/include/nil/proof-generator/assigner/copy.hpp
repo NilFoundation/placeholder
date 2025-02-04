@@ -10,11 +10,9 @@
 #include <nil/blueprint/zkevm_bbf/copy.hpp>
 #include <nil/proof-generator/assigner/options.hpp>
 #include <nil/proof-generator/assigner/trace_parser.hpp>
-#include <nil/proof-generator/preset/limits.hpp>
-
 
 namespace nil {
-    namespace proof_generator {
+    namespace proof_producer {
 
         /// @brief Fill assignment table
         template<typename BlueprintFieldType>
@@ -25,10 +23,10 @@ namespace nil {
 
             using ComponentType = nil::blueprint::bbf::copy<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT>;
 
-            typename nil::blueprint::bbf::context<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT> context_object(assignment_table, limits::max_rows);
+            typename nil::blueprint::bbf::context<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT> context_object(assignment_table, options.circuits_limits.max_rows);
 
             typename ComponentType::input_type input;
-            input.rlc_challenge = limits::RLC_CHALLENGE;
+            input.rlc_challenge = options.circuits_limits.RLC_CHALLENGE;
 
             const auto copy_trace_path = get_copy_trace_path(trace_base_path);
             auto copy_events = deserialize_copy_events_from_file(copy_trace_path, options);
@@ -58,15 +56,15 @@ namespace nil {
             ComponentType instance(
                 context_object,
                 input,
-                limits::max_copy,
-                limits::max_rw_size,
-                limits::max_keccak_blocks,
-                limits::max_bytecode_size
+                options.circuits_limits.max_copy,
+                options.circuits_limits.max_rw_size,
+                options.circuits_limits.max_keccak_blocks,
+                options.circuits_limits.max_bytecode_size
             );
 
             return {};
         }
-    } // proof_generator
+    } // proof_producer
 } // nil
 
 #endif  // PROOF_GENERATOR_LIBS_ASSIGNER_COPY_HPP_

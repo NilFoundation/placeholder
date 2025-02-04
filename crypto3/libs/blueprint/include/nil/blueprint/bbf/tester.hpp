@@ -38,8 +38,8 @@
 #include <nil/blueprint/bbf/generic.hpp>
 
 #include <nil/blueprint/bbf/is_zero.hpp>
-#include <nil/blueprint/bbf/choice_function.hpp>
-#include <nil/blueprint/bbf/carry_on_addition.hpp>
+// #include <nil/blueprint/bbf/choice_function.hpp>
+// #include <nil/blueprint/bbf/components/detail/carry_on_addition.hpp>
 #include <nil/blueprint/bbf/useless.hpp>
 
 
@@ -104,8 +104,8 @@ namespace nil {
                         generic_component<FieldType,stage>(context_object) {
 
                         using Is_Zero = is_zero<FieldType, stage>;
-                        using Choice_Function = choice_function<FieldType, stage, 3>;
-                        using Carry_On_Addition = carry_on_addition<FieldType, stage, 3, 16>;
+                        // using Choice_Function = choice_function<FieldType, stage, 3>;
+                        // using Carry_On_Addition = carry_on_addition<FieldType, stage, 3, 16>;
                         using Useless = useless<FieldType, stage>;
 
                         TYPE const_test = 5;
@@ -113,13 +113,13 @@ namespace nil {
 
                         Is_Zero(context_object, X, make_links); // make_links delegated to subcomponent
 
-                        std::vector<std::size_t> ct2_area = {2,3,4,5};
-                        context_type ct2 = context_object.subcontext(ct2_area,0,4);
-                        auto c2 = Choice_Function(ct2,Q,CX,CY, make_links); // make_links delegated to subcomponent
+                        // std::vector<std::size_t> ct2_area = {2,3,4,5};
+                        // context_type ct2 = context_object.subcontext(ct2_area,0,4);
+                        // auto c2 = Choice_Function(ct2,Q,CX,CY, make_links); // make_links delegated to subcomponent
 
-                        std::vector<std::size_t> ct3_area = {7,8,9,10,11};
-                        context_type ct3 = context_object.subcontext(ct3_area,0,4);
-                        auto c3 = Carry_On_Addition(ct3, CX, CY, make_links);
+                        // std::vector<std::size_t> ct3_area = {7,8,9,10,11};
+                        // context_type ct3 = context_object.subcontext(ct3_area,0,4);
+                        // auto c3 = Carry_On_Addition(ct3, CX, CY, make_links);
 
                         std::vector<std::size_t> ct4_area = {12};
                         context_type ct4 = context_object.subcontext(ct4_area,1,4);

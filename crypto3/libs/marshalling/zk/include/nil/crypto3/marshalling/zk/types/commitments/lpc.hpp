@@ -502,8 +502,7 @@ namespace nil {
                 template<typename Endianness, typename LPCScheme>
                 aggregated_proof<nil::crypto3::marshalling::field_type<Endianness>, LPCScheme>
                 fill_aggregated_proof(
-                    const typename LPCScheme::aggregated_proof_type &proof,
-                    const typename LPCScheme::fri_type::params_type &fri_params
+                    const typename LPCScheme::aggregated_proof_type &proof
                 ){
                     using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
 

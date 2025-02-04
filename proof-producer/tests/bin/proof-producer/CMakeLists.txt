@@ -6,9 +6,9 @@ function(set_properties target)
     target_link_libraries(${target} PRIVATE
         GTest::gtest GTest::gtest_main
         proof-producer::include
-        proof_generatorAssigner
-        proof_generatorPreset
-        proof_generatorOutputArtifacts
+        proof_producer_assigner
+        proof_producer_preset
+        proof_producer_output_artifacts
     )
 
     set_target_properties(${target} PROPERTIES

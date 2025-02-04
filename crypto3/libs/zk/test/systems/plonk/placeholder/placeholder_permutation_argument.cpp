@@ -143,7 +143,7 @@ BOOST_AUTO_TEST_SUITE(permutation_argument)
                         lpc_preprocessed_private_data.private_polynomial_table,
                         lpc_preprocessed_public_data.public_polynomial_table);
 
-        std::shared_ptr<math::evaluation_domain<field_type>> domain = lpc_preprocessed_public_data.common_data.basic_domain;
+        std::shared_ptr<math::evaluation_domain<field_type>> domain = lpc_preprocessed_public_data.common_data->basic_domain;
         typename field_type::value_type id_res = field_type::value_type::one();
         typename field_type::value_type sigma_res = field_type::value_type::one();
         for (std::size_t i = 0; i < desc.rows_amount; i++) {
@@ -162,7 +162,7 @@ BOOST_AUTO_TEST_SUITE(permutation_argument)
 
         id_res = field_type::value_type::one();
         sigma_res = field_type::value_type::one();
-        const auto &permuted_columns = lpc_preprocessed_public_data.common_data.permuted_columns;
+        const auto &permuted_columns = lpc_preprocessed_public_data.common_data->permuted_columns;
 
         for (std::size_t i = 0; i < desc.rows_amount; i++) {
             for (std::size_t j = 0; j < lpc_preprocessed_public_data.identity_polynomials.size(); j++) {
@@ -262,7 +262,7 @@ BOOST_AUTO_TEST_SUITE(permutation_argument)
                         prover_transcript);
 
         // Challenge phase
-        const auto &permuted_columns = preprocessed_public_data.common_data.permuted_columns;
+        const auto &permuted_columns = preprocessed_public_data.common_data->permuted_columns;
 
         typename field_type::value_type y = algebra::random_element<field_type>();
         std::vector<typename field_type::value_type> f_at_y(permuted_columns.size());
@@ -274,13 +274,13 @@ BOOST_AUTO_TEST_SUITE(permutation_argument)
             S_sigma[i] = preprocessed_public_data.permutation_polynomials[i].evaluate(y);
         }
 
-        auto omega = preprocessed_public_data.common_data.basic_domain->get_domain_element(1);
+        auto omega = preprocessed_public_data.common_data->basic_domain->get_domain_element(1);
 
         typename field_type::value_type v_p_at_y = prover_res.permutation_polynomial_dfs.evaluate(y);
         typename field_type::value_type v_p_at_y_shifted = prover_res.permutation_polynomial_dfs.evaluate(omega * y);
 
         std::vector<typename field_type::value_type> special_selector_values(3);
-        special_selector_values[0] = preprocessed_public_data.common_data.lagrange_0.evaluate(y);
+        special_selector_values[0] = preprocessed_public_data.common_data->lagrange_0.evaluate(y);
         special_selector_values[1] = preprocessed_public_data.q_last.evaluate(y);
         special_selector_values[2] = preprocessed_public_data.q_blind.evaluate(y);
 
@@ -288,7 +288,7 @@ BOOST_AUTO_TEST_SUITE(permutation_argument)
         auto permutation_commitment = lpc_scheme.commit(PERMUTATION_BATCH);
         std::array<typename field_type::value_type, argument_size> verifier_res =
                 placeholder_permutation_argument<field_type, lpc_placeholder_params_type>::verify_eval(
-                        preprocessed_public_data.common_data,
+                        *preprocessed_public_data.common_data,
                         S_id, S_sigma,
                         special_selector_values,
                         y, f_at_y, v_p_at_y, v_p_at_y_shifted, {}, verifier_transcript
@@ -303,7 +303,7 @@ BOOST_AUTO_TEST_SUITE(permutation_argument)
             for (std::size_t j = 0; j < desc.rows_amount; j++) {
                 BOOST_CHECK(
                         prover_res.F_dfs[i].evaluate(
-                                preprocessed_public_data.common_data.basic_domain->get_domain_element(j)) ==
+                                preprocessed_public_data.common_data->basic_domain->get_domain_element(j)) ==
                         field_type::value_type::zero()
                 );
             }

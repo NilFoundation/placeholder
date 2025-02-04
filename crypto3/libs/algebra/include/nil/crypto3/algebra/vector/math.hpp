@@ -27,9 +27,10 @@
 #ifndef CRYPTO3_ALGEBRA_VECTOR_MATH_HPP
 #define CRYPTO3_ALGEBRA_VECTOR_MATH_HPP
 
+#include <functional>
+
 #include <nil/crypto3/algebra/vector/utility.hpp>
 #include <nil/crypto3/algebra/vector/vector.hpp>
-#include <nil/crypto3/algebra/scalar/math.hpp>
 
 namespace nil {
     namespace crypto3 {
@@ -39,17 +40,6 @@ namespace nil {
              *  @{
              */
 
-            /** @brief computes the elementwise complex conjugate
-             *  @param v an N-vector of type T
-             *  @return an N-vector \f$ \overline{\textbf{v}} \f$ of type T such that
-             *  \f$ \left(\overline{\textbf{v}}\right)_i = \overline{v_i} \f$
-             *
-             *  Computes the elementwise complex conjugate of a vector.
-             */
-            template<typename T, std::size_t N>
-            constexpr vector<T, N> conj(const vector<T, N> &v) {
-                return elementwise(algebra::conj<T>, v);
-            }
 
             /** @brief computes the elementwise square root
              *  @param v an N-vector of type T
@@ -60,42 +50,6 @@ namespace nil {
             template<typename T, std::size_t N>
             constexpr vector<T, N> sqrt(const vector<T, N> &v) {
                 return elementwise(static_cast<T (*)(T)>(sqrt), v);
-            }
-
-            /** @brief computes the elementwise real
-             * @param v an N-vector of type T
-             * @return an N-vector \f$ \textbf{u} \f$ of type T such that
-             * \f$ \textbf{u}_i = \mathbb{R}\{\textbf{v}_i\} \f$
-             *
-             * Computes the elementwise real of a vector.
-             */
-            template<typename T, std::size_t N>
-            constexpr vector<nil::crypto3::algebra::remove_complex_t<T>, N> real(const vector<T, N> &v) {
-                return elementwise([](auto i) { return std::real(i); }, v);
-            }
-
-            /** @brief computes the elementwise imag
-             * @param v an N-vector of type T
-             * @return an N-vector \f$ \textbf{u} \f$ of type T such that
-             * \f$ \textbf{u}_i = \mathbb{I}\{\textbf{v}_i\} \f$
-             *
-             * Computes the elementwise imag of a vector.
-             */
-            template<typename T, std::size_t N>
-            constexpr vector<nil::crypto3::algebra::remove_complex_t<T>, N> imag(const vector<T, N> &v) {
-                return elementwise([](auto i) { return std::imag(i); }, v);
-            }
-
-            /** @brief computes the elementwise absolute value
-             *  @param v an N-vector of type T
-             *  @return an N-vector \f$ \begin{bmatrix} \lvert v_1 \rvert & \ldots & \lvert v_N \rvert \end{bmatrix} \f$
-             * of type T
-             *
-             *  Computes the elementwise absolute value of a vector.
-             */
-            template<typename T, std::size_t N>
-            constexpr vector<nil::crypto3::algebra::remove_complex_t<T>, N> abs(const vector<T, N> &v) {
-                return elementwise(abs<T>, v);
             }
 
             /** @brief computes the dot product

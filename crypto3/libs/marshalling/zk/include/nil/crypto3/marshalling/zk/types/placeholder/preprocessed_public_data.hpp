@@ -84,7 +84,7 @@ namespace nil {
                         fill_polynomial<Endianness, PolynomialDFSType>(preprocessed_public_data.q_last),
                         fill_polynomial<Endianness, PolynomialDFSType>(preprocessed_public_data.q_blind),
                         fill_placeholder_common_data<Endianness, typename PreprocessedPublicDataType::common_data_type>(
-                            preprocessed_public_data.common_data)
+                            *preprocessed_public_data.common_data)
                     ));
                 }
 

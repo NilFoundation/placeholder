@@ -270,7 +270,7 @@ namespace nil {
                                 identity_polynomials == rhs.identity_polynomials &&
                                 q_last == rhs.q_last &&
                                 q_blind == rhs.q_blind &&
-                                common_data == rhs.common_data;
+                                shared_ptr_equal(common_data, rhs.common_data);
                         }
 
                         bool operator!=(const preprocessed_data_type &rhs) const {
@@ -287,7 +287,7 @@ namespace nil {
                         polynomial_dfs_type q_last;
                         polynomial_dfs_type q_blind;
 
-                        common_data_type common_data;
+                        std::shared_ptr<common_data_type> common_data;
 
                     private:
                         template<typename T>
@@ -507,7 +507,6 @@ namespace nil {
                         const plonk_table_description<FieldType>& table_description,
                         std::shared_ptr<math::evaluation_domain<FieldType>> domain
                     ) {
-                        // TODO: add std::vector<std::size_t> columns_with_copy_constraints;
                         cycle_representation permutation(constraint_system, table_description);
 
                         std::vector<polynomial_dfs_type> S_perm(global_indices.size());
@@ -558,7 +557,6 @@ namespace nil {
                         return result;
                     }
 
-                    // TODO: columns_with_copy_constraints -- It should be extracted from constraint_system
                     static inline preprocessed_data_type process(
                         const plonk_constraint_system<FieldType> &constraint_system,
                         std::shared_ptr<public_assignment_type> public_assignment,
@@ -573,6 +571,10 @@ namespace nil {
                         const typename FieldType::value_type& delta=algebra::fields::arithmetic_params<FieldType>::multiplicative_generator
                     ) {
                         PROFILE_SCOPE("Placeholder public preprocessor");
+
+                        using common_data_type = typename preprocessed_data_type::common_data_type;
+                        using verification_key = typename preprocessed_data_type::verification_key;
+                        using public_commitments_type = typename preprocessed_data_type::public_commitments_type;
 
                         std::size_t N_rows = table_description.rows_amount;
                         std::size_t usable_rows = table_description.usable_rows_amount;
@@ -617,7 +619,7 @@ namespace nil {
                         std::size_t permutation_parts_num = permutation_partitions_num(permuted_columns.size(), max_quotient_poly_chunks);
                         std::size_t lookup_parts_num = constraint_system.lookup_parts(max_quotient_poly_chunks).size();
 
-                        typename preprocessed_data_type::public_commitments_type public_commitments = commitments(
+                        public_commitments_type public_commitments = commitments(
                             *public_polynomial_table, id_perm_polys,
                             sigma_perm_polys, q_last_q_blind, commitment_scheme
                         );
@@ -635,13 +637,14 @@ namespace nil {
                                 "Default application dependent transcript initialization string",
                                 delta);
 
-                        typename preprocessed_data_type::verification_key vk = {constraint_system_with_params_hash, public_commitments.fixed_values};
+                        verification_key vk = {constraint_system_with_params_hash, public_commitments.fixed_values};
 
                         transcript_type transcript(std::vector<std::uint8_t>({}));
                         transcript(vk.constraint_system_with_params_hash);
                         transcript(vk.fixed_values_commitment);
 
-                        typename preprocessed_data_type::common_data_type common_data (
+                        
+                        auto common_data = std::make_shared<common_data_type>(
                             std::move(public_commitments), std::move(c_rotations),
                             table_description,
                             max_gates_degree,

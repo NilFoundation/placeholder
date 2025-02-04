@@ -62,7 +62,7 @@ void test_bbf_tester(std::array<typename FieldType::value_type,8> public_input) 
 
     auto B = circuit_builder<FieldType,bbf_tester>();
     auto [at, A, desc] = B.assign(raw_input);
-    std::cout << "Is_satisfied = " << B.is_satisfied(at) << std::endl;
+    BOOST_TEST(B.is_satisfied(at), "constraints are not satisfied");
 }
 
 static const std::size_t random_tests_amount = 10;

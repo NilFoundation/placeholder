@@ -202,7 +202,7 @@ template<typename SrcParams>
 }
 
 template<typename PlaceholderParams>
-static typename nil::crypto3::zk::snark::placeholder_public_preprocessor<typename PlaceholderParams::field_type, PlaceholderParams>::preprocessed_data_type::common_data_type load_common_data(std::string filename){
+static std::shared_ptr<typename nil::crypto3::zk::snark::placeholder_public_preprocessor<typename PlaceholderParams::field_type, PlaceholderParams>::preprocessed_data_type::common_data_type> load_common_data(std::string filename){
     std::ifstream ifile;
     ifile.open(filename, std::ios_base::binary | std::ios_base::in);
     BOOST_ASSERT(ifile.is_open());
@@ -394,8 +394,8 @@ void test_multiple_arithmetizations(std::string folder_name){
 
     auto proof = load_proof<SrcParams>(folder_name + "/proof.bin");
     std::cout << "Loaded the proof" << std::endl;
-    auto table_description = common_data.desc;
-    auto fri_params = common_data.commitment_params;
+    auto table_description = common_data->desc;
+    auto fri_params = common_data->commitment_params;
 
     std::cout << "Usable rows = " << table_description.usable_rows_amount << std::endl;
     std::cout << "Rows amount = " << table_description.rows_amount << std::endl;
@@ -407,10 +407,10 @@ void test_multiple_arithmetizations(std::string folder_name){
 
 //    auto [common_data, fri_params, proof] = gen_test_proof<SrcParams>(constraint_system, table_description, assignment_table);
 
-    test_flexible_verifier<SrcParams, dst_params<15>>(constraint_system, common_data, proof, fri_params);
-    test_flexible_verifier<SrcParams, dst_params<42>>(constraint_system, common_data, proof, fri_params);
-    test_flexible_verifier<SrcParams, dst_params<84>>(constraint_system, common_data, proof, fri_params);
-    test_flexible_verifier<SrcParams, dst_params<168>>(constraint_system, common_data, proof, fri_params);
+    test_flexible_verifier<SrcParams, dst_params<15>>(constraint_system, *common_data, proof, fri_params);
+    test_flexible_verifier<SrcParams, dst_params<42>>(constraint_system, *common_data, proof, fri_params);
+    test_flexible_verifier<SrcParams, dst_params<84>>(constraint_system, *common_data, proof, fri_params);
+    test_flexible_verifier<SrcParams, dst_params<168>>(constraint_system, *common_data, proof, fri_params);
 }
 
 BOOST_AUTO_TEST_SUITE(blueprint_pallas_test_suite)

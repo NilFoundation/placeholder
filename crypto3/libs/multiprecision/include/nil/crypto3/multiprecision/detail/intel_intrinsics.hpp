@@ -10,10 +10,7 @@
 
 #pragma once
 
-#include "nil/crypto3/multiprecision/detail/big_uint/storage.hpp"
 #include "nil/crypto3/multiprecision/detail/config.hpp"  // IWYU pragma: keep
-#include "nil/crypto3/multiprecision/detail/force_inline.hpp"
-#include "nil/crypto3/multiprecision/detail/int128.hpp"
 
 // nix will sometimes have immintrin.h even on non-x86 platforms
 // so we additionally check for x86_64 or i386 (using the same checks as in immintrin.h)
@@ -24,46 +21,5 @@
 #define NIL_CO3_MP_HAS_INTRINSICS
 
 #include <immintrin.h>  // IWYU pragma: keep (this is a portable umbrella header for intrinsics)
-
-namespace nil::crypto3::multiprecision::detail {
-
-#if defined(NIL_CO3_MP_HAS_INT128)
-
-    NIL_CO3_MP_FORCEINLINE unsigned char addcarry_limb(unsigned char carry, limb_type a,
-                                                       limb_type b, limb_type* p_result) {
-        using cast_type = unsigned long long;
-        return _addcarry_u64(carry, a, b, reinterpret_cast<cast_type*>(p_result));
-    }
-
-    NIL_CO3_MP_FORCEINLINE unsigned char subborrow_limb(unsigned char carry, limb_type a,
-                                                        limb_type b,
-                                                        limb_type* p_result) {
-        using cast_type = unsigned long long;
-        return _subborrow_u64(carry, a, b, reinterpret_cast<cast_type*>(p_result));
-    }
-
-#else
-
-    NIL_CO3_MP_FORCEINLINE unsigned char addcarry_limb(unsigned char carry, limb_type a,
-                                                       limb_type b, limb_type* p_result) {
-        using cast_type = unsigned int;
-        return _addcarry_u32(carry, a, b, reinterpret_cast<cast_type*>(p_result));
-    }
-
-    NIL_CO3_MP_FORCEINLINE unsigned char subborrow_limb(unsigned char carry, limb_type a,
-                                                        limb_type b,
-                                                        limb_type* p_result) {
-        using cast_type = unsigned int;
-        return _subborrow_u32(carry, a, b, reinterpret_cast<cast_type*>(p_result));
-    }
-
-#endif
-}  // namespace nil::crypto3::multiprecision::detail
-
-#else
-
-#ifndef NIL_CO3_MP_DISABLE_INTRINSICS
-#warning "x86 intrinsics are not available, addcarry and subborrow optimizations disabled"
-#endif
 
 #endif
