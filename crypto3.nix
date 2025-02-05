@@ -7,6 +7,7 @@
   gdb,
   lldb,
   mold,
+  python3,
   cmake_modules,
   enableDebugging,
   enableDebug ? false,
@@ -29,7 +30,7 @@ in stdenv.mkDerivation {
   # enableDebugging will keep debug symbols in boost
   propagatedBuildInputs = [ (if enableDebug then (enableDebugging boost) else boost) ];
 
-  buildInputs = [cmake_modules];
+  buildInputs = [cmake_modules python3];
 
   cmakeFlags =
     [
