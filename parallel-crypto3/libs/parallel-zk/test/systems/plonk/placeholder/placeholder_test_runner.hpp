@@ -177,6 +177,8 @@ struct placeholder_kzg_test_runner {
                 kzg_preprocessed_public_data, std::move(kzg_preprocessed_private_data), desc, constraint_system,
                 kzg_scheme);
 
+        kzg_scheme = kzg_scheme_type(kzg_params);
+
         verifier_res = placeholder_verifier<field_type, kzg_placeholder_params_type>::process(
                 *kzg_preprocessed_public_data.common_data, kzg_proof, desc, constraint_system, kzg_scheme);
         return verifier_res;
@@ -241,6 +243,8 @@ struct placeholder_kzg_test_runner_v2 {
         auto kzg_proof = placeholder_prover<field_type, kzg_placeholder_params_type>::process(
                 kzg_preprocessed_public_data, std::move(kzg_preprocessed_private_data), desc, constraint_system,
                 kzg_scheme);
+
+        kzg_scheme = kzg_scheme_type(kzg_params);
 
         verifier_res = placeholder_verifier<field_type, kzg_placeholder_params_type>::process(
                 *kzg_preprocessed_public_data.common_data, kzg_proof, desc, constraint_system, kzg_scheme);
