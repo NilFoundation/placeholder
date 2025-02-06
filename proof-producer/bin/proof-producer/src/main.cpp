@@ -289,11 +289,22 @@ int run_prover(const nil::proof_producer::ProverOptions& prover_options) {
 template<typename CurveType>
 int hash_wrapper(const ProverOptions& prover_options) {
     int ret;
-    auto run_prover_wrapper_void = [&prover_options, &ret]<typename HashTypeIdentity>() {
-        using HashType = typename HashTypeIdentity::type;
-        ret = run_prover<CurveType, HashType>(prover_options);
-    };
-    pass_variant_type_to_template_func<HashesVariant>(prover_options.hash_type, run_prover_wrapper_void);
+    if (prover_options.hash_type_str == "keccak") {
+        ret = run_prover<CurveType, nil::crypto3::hashes::keccak_1600<256>>(prover_options);
+    } else if (prover_options.hash_type_str == "sha256") {
+        ret = run_prover<CurveType, nil::crypto3::hashes::sha2<256>>(prover_options);
+    } else if (prover_options.hash_type_str == "poseidon") {
+        if constexpr (std::is_same<CurveType,nil::crypto3::algebra::curves::pallas>::value) {
+            ret = run_prover<CurveType,
+                nil::crypto3::hashes::poseidon<nil::crypto3::hashes::detail::pasta_poseidon_policy<typename CurveType::scalar_field_type>>>(prover_options);
+        } else {
+            ret = run_prover<CurveType,
+                nil::crypto3::hashes::poseidon<nil::crypto3::hashes::detail::poseidon_policy<typename CurveType::scalar_field_type, 128, 2>>>(prover_options);
+        }
+    } else {
+        BOOST_LOG_TRIVIAL(error) << "Unknown hash type " << prover_options.hash_type_str;
+        return static_cast<int>(ResultCode::InvalidInput);
+    }
     return ret;
 }
 

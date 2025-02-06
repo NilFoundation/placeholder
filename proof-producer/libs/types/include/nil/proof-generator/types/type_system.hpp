@@ -22,6 +22,7 @@
 #include <nil/marshalling/status_type.hpp>
 
 #include <nil/crypto3/algebra/fields/arithmetic_params/pallas.hpp>
+#include <nil/crypto3/algebra/fields/arithmetic_params/alt_bn128.hpp>
 #include <nil/crypto3/marshalling/zk/types/commitments/eval_storage.hpp>
 #include <nil/crypto3/marshalling/zk/types/commitments/lpc.hpp>
 #include <nil/crypto3/marshalling/zk/types/placeholder/common_data.hpp>
@@ -61,7 +62,7 @@ namespace nil {
         // common type definitions needed for proof generation & verification steps
         template<typename CurveType, typename HashType>
         struct TypeSystem {
-            using BlueprintField = typename CurveType::base_field_type;
+            using BlueprintField = typename CurveType::scalar_field_type;
             using LpcParams = nil::crypto3::zk::commitments::list_polynomial_commitment_params<HashType, HashType, 2>;
             using Lpc = nil::crypto3::zk::commitments::list_polynomial_commitment<BlueprintField, LpcParams>;
             using LpcScheme = typename nil::crypto3::zk::commitments::lpc_commitment_scheme<Lpc>;
