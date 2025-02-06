@@ -54,7 +54,6 @@ namespace nil {
                 typedef typename FieldType::value_type field_value_type;
                 typedef ValueType value_type;
                 typedef std::pair<std::vector<field_value_type>, std::vector<field_value_type>> cache_type;
-                std::shared_ptr<cache_type> fft_cache;
 
                 void create_fft_cache() {
                     fft_cache = std::make_shared<cache_type>(std::vector<field_value_type>(),
@@ -67,6 +66,7 @@ namespace nil {
                 typedef FieldType field_type;
 
                 field_value_type omega;
+                std::shared_ptr<cache_type> fft_cache;
 
                 basic_radix2_domain(const std::size_t m)
                         : evaluation_domain<FieldType, ValueType>(m),
@@ -83,6 +83,10 @@ namespace nil {
 
                     // We need to always create fft cache, we cannot create it when needed in parallel environment.
                     create_fft_cache();
+                }
+
+                std::shared_ptr<cache_type> get_fft_cache() override {
+                    return fft_cache;
                 }
 
                 void fft(std::vector<value_type> &a) override {

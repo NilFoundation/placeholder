@@ -120,7 +120,7 @@ namespace nil {
                     return result;
                 }
 
-                if (detail::is_extended_radix2_domain<FieldType>(m)) {
+                /*if (detail::is_extended_radix2_domain<FieldType>(m)) {
                     result_type result;
                     result.reset(new extended_radix2_domain<FieldType, ValueType>(m));
                     return result;
@@ -130,7 +130,7 @@ namespace nil {
                     result_type result;
                     result.reset(new step_radix2_domain<FieldType, ValueType>(m));
                     return result;
-                }
+                }*/
 
                 if (detail::is_basic_radix2_domain<FieldType>(big + rounded_small)) {
                     result_type result;
@@ -138,7 +138,7 @@ namespace nil {
                     return result;
                 }
 
-                if (detail::is_extended_radix2_domain<FieldType>(big + rounded_small)) {
+                /*if (detail::is_extended_radix2_domain<FieldType>(big + rounded_small)) {
                     result_type result;
                     result.reset(new extended_radix2_domain<FieldType, ValueType>(big + rounded_small));
                     return result;
@@ -160,7 +160,7 @@ namespace nil {
                     result_type result;
                     result.reset(new arithmetic_sequence_domain<FieldType, ValueType>(m));
                     return result;
-                }
+                }*/
 
                 return result_type();
             }

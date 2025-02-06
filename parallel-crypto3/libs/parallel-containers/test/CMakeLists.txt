@@ -31,7 +31,7 @@ cm_test_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
                        Boost::random
                        Boost::unit_test_framework
 )
-set_target_properties(_cm_internal_tests-actor-containers-test PROPERTIES CXX_STANDARD 20)
+set_target_properties(_cm_internal_tests-actor-containers-test PROPERTIES CXX_STANDARD 23)
 target_precompile_headers(_cm_internal_tests-actor-containers-test REUSE_FROM crypto3_precompiled_headers)
 
 macro(define_storage_test test)
@@ -62,7 +62,7 @@ macro(define_storage_test test)
 
                                ${Boost_INCLUDE_DIRS})
 
-    set_target_properties(${target_name} PROPERTIES CXX_STANDARD 20)
+    set_target_properties(${target_name} PROPERTIES CXX_STANDARD 23)
 
     get_target_property(target_type Boost::unit_test_framework TYPE)
     if(target_type STREQUAL "SHARED_LIB")

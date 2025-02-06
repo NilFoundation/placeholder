@@ -14,13 +14,15 @@
 #include <type_traits>
 #include <bit>
 
+#include "nil/crypto3/multiprecision/detail/throw.hpp"
+
 namespace nil::crypto3::multiprecision {
 
     template<typename T,
              std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, int> = 0>
     constexpr std::size_t lsb(T a) {
         if (a == 0) {
-            throw std::invalid_argument("zero has no lsb");
+            NIL_THROW(std::invalid_argument("zero has no lsb"));
         }
         return std::countr_zero(a);
     }
@@ -29,7 +31,7 @@ namespace nil::crypto3::multiprecision {
              std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, int> = 0>
     constexpr std::size_t msb(T a) {
         if (a == 0) {
-            throw std::invalid_argument("zero has no msb");
+            NIL_THROW(std::invalid_argument("zero has no msb"));
         }
         return std::bit_width(a) - 1;
     }
@@ -49,7 +51,7 @@ namespace nil::crypto3::multiprecision {
              std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, int> = 0>
     constexpr T &bit_set(T &a, std::size_t index) {
         if (index >= sizeof(T) * CHAR_BIT) {
-            throw std::invalid_argument("fixed precision overflow");
+            NIL_THROW(std::invalid_argument("fixed precision overflow"));
         }
         auto mask = static_cast<T>(1u) << index;
         a |= mask;
@@ -60,7 +62,7 @@ namespace nil::crypto3::multiprecision {
              std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, int> = 0>
     constexpr T &bit_unset(T &a, std::size_t index) {
         if (index >= sizeof(T) * CHAR_BIT) {
-            throw std::invalid_argument("fixed precision overflow");
+            NIL_THROW(std::invalid_argument("fixed precision overflow"));
         }
         auto mask = static_cast<T>(1u) << index;
         a &= ~mask;
@@ -71,7 +73,7 @@ namespace nil::crypto3::multiprecision {
              std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, int> = 0>
     constexpr T &bit_flip(T &a, std::size_t index) {
         if (index >= sizeof(T) * CHAR_BIT) {
-            throw std::invalid_argument("fixed precision overflow");
+            NIL_THROW(std::invalid_argument("fixed precision overflow"));
         }
         auto mask = static_cast<T>(1u) << index;
         a ^= mask;

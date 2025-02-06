@@ -46,7 +46,7 @@ namespace nil::crypto3::multiprecision {
                 if (sum >= goldilocks_modulus) {
                     sum -= goldilocks_modulus;
                 }
-                result = sum;
+                result = static_cast<base_type>(sum);
                 BOOST_ASSERT(result < goldilocks_modulus);
             }
 
@@ -69,8 +69,8 @@ Goldilocks::new(t2)
 
                 */
 
-                std::uint64_t x_lo = input;
-                std::uint64_t x_hi = input >> 64;
+                std::uint64_t x_lo = static_cast<std::uint64_t>(input);
+                std::uint64_t x_hi = static_cast<std::uint64_t>(input >> 64);
                 std::uint64_t x_hi_hi = x_hi >> 32;
                 std::uint64_t x_hi_lo = x_hi & NEG_ORDER;
 
