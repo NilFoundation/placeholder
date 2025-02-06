@@ -32,6 +32,7 @@ namespace nil {
         const char COPY_EXTENSION[] = ".copy";
         const char MPT_EXTENSION[] = ".mpt";
         const char EXP_EXTENSION[] = ".exp";
+        const char KECCAK_EXTENSION[] = ".keccak";
 
         namespace {
             using exp_input = std::pair<blueprint::zkevm_word_type,blueprint::zkevm_word_type>; // base, exponent
@@ -143,6 +144,10 @@ namespace nil {
             return extend_base_path(trace_base_path, EXP_EXTENSION);
         }
 
+        boost::filesystem::path get_keccak_trace_path(const boost::filesystem::path& trace_base_path) {
+            return extend_base_path(trace_base_path, KECCAK_EXTENSION);
+        }
+
         std::vector<std::uint8_t> string_to_bytes(const std::string& str) {
             std::vector<std::uint8_t> res(str.size());
             for (std::size_t i = 0; i < str.size(); i++) {
@@ -178,6 +183,14 @@ namespace nil {
         using ZKEVMTraces = std::vector<blueprint::bbf::zkevm_state>;
         using CopyEvents = std::vector<blueprint::bbf::copy_event>;
         using ExpTraces = std::vector<exp_input>;
+
+        // TODO(oclaw): replace with struct from bbf when available
+        struct keccak_input {
+            std::vector<uint8_t> buffer;
+            blueprint::zkevm_word_type hash;
+        };
+
+        using KeccakTraces = std::vector<keccak_input>;
 
         [[nodiscard]] DeserializeResultOpt<BytecodeTraces> deserialize_bytecodes_from_file(
             const boost::filesystem::path& bytecode_trace_path,
@@ -396,6 +409,34 @@ namespace nil {
             return DeserializeResult<ExpTraces>{
                 std::move(exps),
                 pb_traces->trace_idx()
+            };
+        }
+
+        [[nodiscard]] DeserializeResultOpt<KeccakTraces> deserialize_keccak_traces_from_file(
+            const boost::filesystem::path& keccak_traces_path,
+            const AssignerOptions& opts,
+            TraceIndexOpt base_index = {}
+        ) {
+            const auto pb_traces = read_pb_traces_from_file<executionproofs::KeccakTraces>(keccak_traces_path);
+            if (!pb_traces) {
+                return std::nullopt;
+            }
+            if (!check_trace_index(opts, base_index, pb_traces->trace_idx())) {
+                return std::nullopt;
+            }
+
+            KeccakTraces result;
+            result.reserve(pb_traces->hashed_buffers_size());
+            for (const auto& pb_hashed_buffer: pb_traces->hashed_buffers()) {
+                result.push_back(keccak_input{
+                    .buffer = string_to_bytes(pb_hashed_buffer.buffer()),
+                    .hash =proto_uint256_to_zkevm_word(pb_hashed_buffer.keccak_hash())
+                });
+            }
+
+            return DeserializeResult<KeccakTraces>{
+                .value = std::move(result),
+                .index = pb_traces->trace_idx()
             };
         }
     } // namespace proof_producer
