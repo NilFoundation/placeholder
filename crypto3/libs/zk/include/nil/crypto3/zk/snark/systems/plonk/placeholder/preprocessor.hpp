@@ -162,6 +162,7 @@ namespace nil {
                             std::vector<std::size_t> permuted_columns;
                             std::uint32_t max_quotient_chunks;
                             std::uint32_t permutation_parts;
+                            // TODO: delete lookup parts, maybe also permutation parts as well.
                             std::uint32_t lookup_parts;
 
                             common_data_type(const common_data_type& other) = default;

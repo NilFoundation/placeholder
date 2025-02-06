@@ -39,14 +39,14 @@ namespace nil {
                 public:
                     using field_type = FieldType;
                     
-                    bool operator==(const eval_storage& other) const{
+                    bool operator==(const eval_storage& other) const {
                         return this->z == other.z;
                     }
                     eval_storage &operator=(const eval_storage& other){
                         this->z = other.z;
                         return *this;
                     }
-                    std::vector<std::size_t> get_batches() const{
+                    std::vector<std::size_t> get_batches() const {
                         std::vector<std::size_t> batches;
 
                         for(auto it = z.begin(); it != z.end(); ++it){
@@ -54,7 +54,7 @@ namespace nil {
                         }
                         return batches;
                     }
-                    std::map<std::size_t, std::size_t> get_batch_info() const{
+                    std::map<std::size_t, std::size_t> get_batch_info() const {
                         std::map<std::size_t, std::size_t> batch_info;
 
                         for(auto it = z.begin(); it != z.end(); ++it){
@@ -62,23 +62,23 @@ namespace nil {
                         }
                         return batch_info;
                     }
-                    std::size_t get_batches_num() const{
+                    std::size_t get_batches_num() const {
                         return z.size();
                     }
-                    std::size_t get_batch_size(std::size_t batch_id) const{
+                    std::size_t get_batch_size(std::size_t batch_id) const {
                         return z.at(batch_id).size();
                     }
-                    std::size_t get_poly_points_number(std::size_t batch_id, std::size_t poly_id) const{
-                        return z.at(batch_id)[poly_id].size();
+                    std::size_t get_poly_points_number(std::size_t batch_id, std::size_t poly_id) const {
+                        return z.at(batch_id).at(poly_id).size();
                     }
-                    const std::vector<std::vector<typename FieldType::value_type>> &get(std::size_t batch_id) const{
+                    const std::vector<std::vector<typename FieldType::value_type>> &get(std::size_t batch_id) const {
                         return z.at(batch_id);
                     }
-                    const std::vector<typename FieldType::value_type> &get(std::size_t batch_id, std::size_t poly_id) const{
-                        return z.at(batch_id)[poly_id];
+                    const std::vector<typename FieldType::value_type> &get(std::size_t batch_id, std::size_t poly_id) const {
+                        return z.at(batch_id).at(poly_id);
                     }
-                    const typename FieldType::value_type &get(std::size_t batch_id, std::size_t poly_id, size_t point_id) const{
-                        return z.at(batch_id)[poly_id][point_id];
+                    const typename FieldType::value_type &get(std::size_t batch_id, std::size_t poly_id, size_t point_id) const {
+                        return z.at(batch_id).at(poly_id).at(point_id);
                     }
 
                     void set_batch_size(std::size_t batch_id, std::size_t batch_size){
