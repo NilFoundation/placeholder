@@ -40,6 +40,8 @@
 #include <nil/blueprint/zkevm_bbf/types/zkevm_input_generator.hpp>
 #include <nil/blueprint/zkevm_bbf/opcodes/zkevm_opcodes.hpp>
 
+#include <nil/blueprint/zkevm_bbf/util.hpp>
+
 namespace nil {
     namespace blueprint {
         namespace bbf {
@@ -484,6 +486,27 @@ namespace nil {
                             stack.push_back(result);
                             pc++;
                             gas -= 3;
+                        } else if(opcode == zkevm_opcode::CALLDATACOPY){
+                            // 0x37
+                            
+                            auto destOffset = std::size_t(stack.back());
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, destOffset));
+
+                            auto offset = std::size_t(stack.back());
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, offset));
+
+                            auto length = std::size_t(stack.back());
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, length));
+
+                            std::size_t minimum_word_size = (length + 31) / 32;
+                            std::size_t memory_expansion = memory_expansion_cost(state.memory_size + length, state.memory_size);
+
+                            gas-=3; //static gas
+                            gas -= 3 * minimum_word_size + memory_expansion; //dynamic gas
+                            pc++;
                         } else if(opcode == zkevm_opcode::JUMP){
                             // 0x56
                             auto addr = std::size_t(stack.back());
