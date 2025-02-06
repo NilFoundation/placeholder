@@ -228,11 +228,11 @@ namespace nil {
                 optimized_gates<FieldType> optimize_gates() {
                     optimized_gates<FieldType> result = context_to_gates();
                     // optimized_gates<FieldType> result = gates_storage_;
-                    std::cout << "Before: \n\n" << result << std::endl;
+                    // std::cout << "Before: \n\n" << result << std::endl;
                     optimize_selectors_by_shifting(result);
                     // std::cout << "After optimizing selectors: \n\n" << result << std::endl;
                     optimize_lookups_by_grouping(result);
-                    std::cout << "After: \n\n" << result << std::endl;
+                    // std::cout << "After: \n\n" << result << std::endl;
                     return result;
                 }
 
@@ -475,7 +475,7 @@ namespace nil {
                             const std::string& table_name = single_lookup_constraint.first;
                             size_t group_id = selector_groups[table_name][selector_id];
 
-                            std::cout << "Group for selector #" << selector_id << " is " << group_id << std::endl;
+                            // std::cout << "Group for selector #" << selector_id << " is " << group_id << std::endl;
 
                             // If the group size is 1, don't touch it.
                             if (group_sizes[table_name][group_id] == 1) {
@@ -508,8 +508,8 @@ namespace nil {
                     //}
                     //std::cout << std::endl;
 
-                    // Maps the old selector ID to the new one, only for the selectors to be used.
-                    std::map<size_t, size_t> new_selector_mapping;
+                    // Maps the old selector ID to the new one
+                    std::map<size_t, size_t> new_selector_ids;
                     size_t next_selector_id = 0;
 
                     // We will move the gates to 'result', since we want to change the selector ids.
@@ -519,19 +519,20 @@ namespace nil {
                     // Run over the constraints and apply the chosen shifts.
                     for (size_t id = 0; id < chosen_selectors.size(); ++id) {
                         size_t replacement_id = chosen_selectors[id].first;
-                        if (new_selector_mapping.find(replacement_id) == new_selector_mapping.end())
-                            new_selector_mapping[replacement_id] = next_selector_id++;
+                        auto [iter, is_new] = new_selector_ids.emplace(replacement_id, next_selector_id);
+                        if (is_new) ++next_selector_id;
+                        new_selector_ids[id] = iter->second;
 
                         int shift = chosen_selectors[id].second;
 
                         if (shift == 0) {
                             auto iter = gates.constraint_list.find(id);
                             if (iter != gates.constraint_list.end())
-                                result.add_constraints(new_selector_mapping[id], std::move(iter->second));
+                                result.add_constraints(new_selector_ids[id], std::move(iter->second));
 
                             auto iter2 = gates.lookup_constraints.find(id);
                             if (iter2 != gates.lookup_constraints.end())
-                                result.add_lookup_constraints(new_selector_mapping[id], std::move(iter2->second));
+                                result.add_lookup_constraints(new_selector_ids[id], std::move(iter2->second));
                         } else {
                             // Selector #id is replaced by #replacement_id by shifting 'shift'.
 
@@ -556,7 +557,7 @@ namespace nil {
                                 //std::cout << "Corresponding selectors are :" << id << " shifting to " << replacement_id << std::endl;
                                 if (!shifted_constraints)
                                     throw std::logic_error("Unable to shift constraints after the shift decisions are made.");
-                                result.add_constraints(new_selector_mapping[replacement_id], *shifted_constraints);
+                                result.add_constraints(new_selector_ids[replacement_id], *shifted_constraints);
                             }
 
                             // Move all lookup_constraints.
@@ -571,19 +572,21 @@ namespace nil {
                                     shift_lookup_constraints(lookup_list, -shift);
                                 if (!shifted_lookup_list)
                                     throw std::logic_error("Unable to shift lookup constraints after the shift decisions are made.");
-                                result.add_lookup_constraints(new_selector_mapping[replacement_id], *shifted_lookup_list);
+                                result.add_lookup_constraints(new_selector_ids[replacement_id], *shifted_lookup_list);
                             }
                         }
                     }
-                    // Update the selector ids.
+
+                    // Update the selector ids
                     for (auto& [selector, id]: gates.selectors_) {
-                        if (new_selector_mapping.find(id) != new_selector_mapping.end())
-                            result.selectors_.insert({ std::move(selector), new_selector_mapping[id] });
+                        if (chosen_selectors[id].first == id) {
+                            result.selectors_.emplace(std::move(selector), new_selector_ids.at(id));
+                        }
                     }
 
                     // Update the selector ids in dynamic lookups.
                     for(auto& [name, area] : gates.dynamic_lookup_tables) {
-                        area.second = new_selector_mapping[area.second];
+                        area.second = new_selector_ids[area.second];
                     }
 
                     gates.constraint_list = std::move(result.constraint_list);
@@ -696,7 +699,15 @@ namespace nil {
                 void create_selector_shift_maps(const optimized_gates<FieldType>& gates,
                                                 std::vector<size_t>& left_shifts,
                                                 std::vector<size_t>& right_shifts) {
+                    // We can't just shift selectors that define dynamic lookup tables' data,
+                    // because we'd need to move the table itself too in the assignment table.
+                    std::unordered_set<size_t> lookup_table_selectors;
+                    for (auto &[name, area] : gates.dynamic_lookup_tables)
+                        lookup_table_selectors.insert(area.second);
+
                     for (const auto& [selector, id]: gates.selectors_) {
+                        if (lookup_table_selectors.contains(id)) continue;
+
                         if (!selector[0]) {
                             row_selector<> left_selector = selector;
                             left_selector >>= 1;
