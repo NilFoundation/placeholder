@@ -278,10 +278,9 @@ namespace nil {
                                         var.index != PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED ||
                                         var.type != variable_type::column_type::selector
                                     ) [[likely]] {
-                                        variable_values_out[var] = std::shared_ptr<value_type>(
-                                            nil::actor::core::device_malloc<value_type>(extended_domain_size, queue),
-                                            [&queue](value_type* ptr) { sycl::free(ptr, queue); }
-                                        );
+                                        variable_values_out[var] =
+                                            nil::actor::core::make_shared_device_memory<value_type>(
+                                                extended_domain_size, queue);
                                     } else {
                                         variable_values_out[var] = nullptr;
                                     }
@@ -416,21 +415,31 @@ namespace nil {
                         std::vector<std::shared_ptr<value_type>> result_bufs(extended_domain_amount);
                         std::vector<sycl::event> result_events(extended_domain_amount);
 
-                        std::vector<std::shared_ptr<value_type>> extended_domain_bufs(extended_domain_amount);
-                        std::vector<sycl::event> extended_domain_events(extended_domain_amount);
+                        std::vector<std::shared_ptr<value_type>> extended_domain_bufs_first(extended_domain_amount),
+                                                                 extended_domain_bufs_second(extended_domain_amount);
+                        std::vector<sycl::event> extended_domain_events_first(extended_domain_amount),
+                                                 extended_domain_events_second(extended_domain_amount);
                         std::vector<std::shared_ptr<math::evaluation_domain<FieldType>>>
                             extended_domains(extended_domain_amount);
                         for (std::size_t i = 0; i < extended_domain_amount; ++i) {
-                            extended_domain_bufs[i] =
+                            extended_domain_bufs_first[i] =
                                 nil::actor::core::make_shared_device_memory<value_type>(extended_domain_sizes[i], queue);
                             extended_domains[i] = math::make_evaluation_domain<FieldType>(extended_domain_sizes[i]);
-                            extended_domain_events[i] = queue.copy<value_type>(
-                                extended_domains[i]->get_fft_cache()->first.data(), extended_domain_bufs[i].get(), extended_domain_sizes[i]
+                            extended_domain_events_first[i] = queue.copy<value_type>(
+                                extended_domains[i]->get_fft_cache()->first.data(), extended_domain_bufs_first[i].get(), extended_domain_sizes[i]
                             );
+                            // note that we never actually have to resize from max domain, so we do not
+                            // move the buffer to the gpu
+                            if (i != 0) {
+                                extended_domain_bufs_second[i] =
+                                    nil::actor::core::make_shared_device_memory<value_type>(extended_domain_sizes[i], queue);
+                                extended_domain_events_second[i] = queue.copy<value_type>(
+                                    extended_domains[i]->get_fft_cache()->second.data(), extended_domain_bufs_second[i].get(), extended_domain_sizes[i]
+                                );
+                            }
                         }
 
                         std::vector<gpu_expression_evaluator<variable_type>> evaluators;
-
                         for (std::size_t i = 0; i < extended_domain_amount; ++i) {
                             const std::size_t extended_domain_size = extended_domain_sizes[i];
 
@@ -449,8 +458,8 @@ namespace nil {
                             );
                             sycl::event mask_polynomial_resize_event = handle_polynomial_resizing<FieldType>(
                                 mask_polynomial_buf_ptr, original_domain_size, extended_domain_size, mask_polynomial.degree(),
-                                original_domain_buf.get(), extended_domain_bufs[i].get(),
-                                queue, mask_polynomial_copy_event, original_domain_event, extended_domain_events[i]
+                                original_domain_buf.get(), extended_domain_bufs_first[i].get(),
+                                queue, mask_polynomial_copy_event, original_domain_event, extended_domain_events_first[i]
                             );
 
                             sycl::event lagrange_0_copy_event = queue.copy<value_type>(
@@ -458,8 +467,8 @@ namespace nil {
                             );
                             sycl::event lagrange_0_resize_event = handle_polynomial_resizing<FieldType>(
                                 lagrange_0_buf.get(), original_domain_size, extended_domain_size, lagrange_0.degree(),
-                                original_domain_buf.get(), extended_domain_bufs[i].get(),
-                                queue, lagrange_0_copy_event, original_domain_event, extended_domain_events[i]
+                                original_domain_buf.get(), extended_domain_bufs_first[i].get(),
+                                queue, lagrange_0_copy_event, original_domain_event, extended_domain_events_first[i]
                             );
 
                             sycl::event mask_lagrange_diff_event = queue.submit(
@@ -474,17 +483,17 @@ namespace nil {
                             auto variable_events_map = build_variable_value_map(
                                 expressions[i], column_polynomials,
                                 original_domain, extended_domains[i],
-                                original_domain_buf, extended_domain_bufs[i],
+                                original_domain_buf, extended_domain_bufs_first[i],
                                 variable_values[i], mask_polynomial_buf, mask_lagrange_diff_buf,
                                 queue, dfs_garbage_collector, mask_polynomial_resize_event, lagrange_0_resize_event,
-                                original_domain_event, extended_domain_events[i]
+                                original_domain_event, extended_domain_events_first[i]
                             );
+                            queue.wait();
 
                             evaluators.push_back(gpu_expression_evaluator<variable_type>(
                                 queue, extended_domain_size, variable_values[i], variable_events_map, garbage_collector
                             ));
 
-                            std::cout << "evaluating expression " << i << std::endl;
                             auto result_pair = evaluators[i](expressions[i]);
                             result_events[i] = result_pair.first;
                             result_bufs[i] = result_pair.second;
@@ -499,7 +508,6 @@ namespace nil {
                             variable_values[i].clear();
                             dfs_garbage_collector.clear();
                             garbage_collector.clear();
-                            std::cout << "done with expression " << i << std::endl;
                         };
                         // resize all result buffers to max_domain_size
                         // note that for all but the max domain size we have to re-malloc the buffers
@@ -523,10 +531,11 @@ namespace nil {
                             result_resize_events[i] = handle_polynomial_resizing<FieldType>(
                                 result_bufs_max[i].get(), extended_domain_sizes[i], max_domain_size,
                                 extended_domain_sizes[i] - 1,
-                                extended_domain_bufs[i].get(), extended_domain_bufs[0].get(),
-                                queue, result_bufs_max_events[i], extended_domain_events[i], extended_domain_events[0]
+                                extended_domain_bufs_second[i].get(), extended_domain_bufs_first[0].get(),
+                                queue, result_bufs_max_events[i], extended_domain_events_second[i], extended_domain_events_first[0]
                             );
                         }
+
                         std::vector<sycl::event> result_sum_events(extended_domain_amount);
                         result_sum_events[0] = result_resize_events[0];
                         value_type* F_buf = result_bufs_max[0].get();
@@ -538,7 +547,7 @@ namespace nil {
                                 queue.submit([F_buf, cur_summand_buf, prev_sum_event, resize_event, max_domain_size](sycl::handler& cgh) {
                                     cgh.depends_on({prev_sum_event, resize_event});
                                     cgh.parallel_for(sycl::range<1>(max_domain_size), [=](sycl::id<1> idx) {
-                                        F_buf[idx] = F_buf[idx] + cur_summand_buf[idx];
+                                        F_buf[idx] += cur_summand_buf[idx];
                                     });
                                 });
                         }
@@ -550,26 +559,6 @@ namespace nil {
                         );
                         f_copy_event.wait();
 
-                        // shared pointers have to be maqnually freed here
-                        // as queue is destroyed at the end of the function
-                        garbage_collector.finalize_all();
-                        //garbage_collector.clear();
-                        dfs_garbage_collector.finalize_all();
-                        //dfs_garbage_collector.clear();
-                        //variable_values.clear();
-                        /*for (std::size_t i = 0; i < extended_domain_amount; ++i) {
-                            extended_domain_bufs[i] = nullptr;
-                            mask_polynomial_bufs[i] = nullptr;
-                            mask_lagrange_diff_bufs[i] = nullptr;
-                            lagrange_0_bufs[i] = nullptr;
-                        }
-                        for (auto& result_buf : result_bufs) {
-                            result_buf = nullptr;
-                        }
-                        for (auto& result_buf : result_bufs_max) {
-                            result_buf = nullptr;
-                        }
-                        original_domain_buf = nullptr;*/
                         return F;
                     }
 #endif

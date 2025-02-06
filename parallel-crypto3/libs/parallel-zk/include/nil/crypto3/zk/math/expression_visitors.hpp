@@ -434,14 +434,14 @@ namespace nil {
                 using event_value_pair_type = std::pair<sycl::event, shared_ptr_type>;
                 std::size_t domain_size;
                 sycl::queue& queue;
-                std::unordered_map<VariableType, std::shared_ptr<value_type>> variable_map;
-                std::unordered_map<VariableType, sycl::event> variable_events;
+                std::unordered_map<VariableType, std::shared_ptr<value_type>>& variable_map;
+                std::unordered_map<VariableType, sycl::event>& variable_events;
                 actor::core::sycl_garbage_collector<value_type>& garbage_collector;
 
                 gpu_expression_evaluator(
                     sycl::queue& queue, std::size_t domain_size,
-                    std::unordered_map<VariableType, std::shared_ptr<value_type>> variable_map,
-                    std::unordered_map<VariableType, sycl::event> variable_events,
+                    std::unordered_map<VariableType, std::shared_ptr<value_type>>& variable_map,
+                    std::unordered_map<VariableType, sycl::event>& variable_events,
                     actor::core::sycl_garbage_collector<value_type>& garbage_collector
                 ) : queue(queue), domain_size(domain_size), variable_map(variable_map),
                     variable_events(variable_events), garbage_collector(garbage_collector)
@@ -452,15 +452,14 @@ namespace nil {
                     sycl::queue& queue = this->queue;
 
                     value_type coeff = term.get_coeff();
-                    value_type* result_buf = nil::actor::core::device_malloc<value_type>(domain_size, queue);
-                    std::shared_ptr<value_type> result_buf_ptr =
-                        std::shared_ptr<value_type>(result_buf, [&queue](value_type* ptr) { sycl::free(ptr, queue); }
-                    );
-                    sycl::event coeff_fill_event = queue.fill(result_buf, coeff, domain_size);
+                    std::shared_ptr<value_type> result_buf =
+                        nil::actor::core::make_shared_device_memory<value_type>(domain_size, queue);
+                    value_type* result_buf_ptr = result_buf.get();
+                    sycl::event coeff_fill_event = queue.fill(result_buf_ptr, coeff, domain_size);
                     const std::size_t term_size = term.get_vars().size();
                     if (term_size == 0) {
-                        garbage_collector.track_memory(result_buf_ptr, coeff_fill_event);
-                        return {coeff_fill_event, result_buf_ptr};
+                        garbage_collector.track_memory(result_buf, coeff_fill_event);
+                        return {coeff_fill_event, result_buf};
                     }
 
                     const std::vector<VariableType>& term_vars = term.get_vars();
@@ -474,16 +473,16 @@ namespace nil {
                         const std::size_t domain_size = this->domain_size;
                         value_type* var_buf = variable_map[var].get();
                         buffer_events[i + 1] =
-                            queue.submit([last_buffer_event, variable_event, result_buf,
+                            queue.submit([last_buffer_event, variable_event, result_buf_ptr,
                                           domain_size, var_buf](sycl::handler& cgh) {
                                 cgh.depends_on({last_buffer_event, variable_event});
                                 cgh.parallel_for(sycl::range<1>(domain_size), [=](sycl::id<1> idx) {
-                                    result_buf[idx] = result_buf[idx] * var_buf[idx];
+                                    result_buf_ptr[idx] = result_buf_ptr[idx] * var_buf[idx];
                                 });
                             });
                     }
-                    garbage_collector.track_memory(result_buf_ptr, buffer_events.back());
-                    return {buffer_events.back(), result_buf_ptr};
+                    garbage_collector.track_memory(result_buf, buffer_events.back());
+                    return {buffer_events.back(), result_buf};
                 }
 
                 event_value_pair_type operator()(const crypto3::math::pow_operation<VariableType>& pow) {
@@ -512,16 +511,16 @@ namespace nil {
                     // left buf is the result buf
                     value_type* left_raw_buf = left.second.get();
                     value_type* right_raw_buf = right.second.get();
-                    sycl::event result_event;
-                    sycl::event left_event = left.first;
-                    sycl::event right_event = right.first;
+                    sycl::event result_event,
+                                left_event = left.first,
+                                right_event = right.first;
                     const std::size_t domain_size = this->domain_size;
                     switch (op.get_op()) {
                         case ArithmeticOperator::ADD:
                             result_event = queue.submit([left_raw_buf, right_raw_buf, domain_size, left_event, right_event](sycl::handler& cgh) {
                                 cgh.depends_on({left_event, right_event});
                                 cgh.parallel_for(sycl::range<1>(domain_size), [=](sycl::id<1> idx) {
-                                    left_raw_buf[idx] = left_raw_buf[idx] + right_raw_buf[idx];
+                                    left_raw_buf[idx] += right_raw_buf[idx];
                                 });
                             });
                             break;
@@ -530,7 +529,7 @@ namespace nil {
                                 result_event = queue.submit([left_raw_buf, right_raw_buf, domain_size, left_event, right_event](sycl::handler& cgh) {
                                     cgh.depends_on({left_event, right_event});
                                     cgh.parallel_for(sycl::range<1>(domain_size), [=](sycl::id<1> idx) {
-                                        left_raw_buf[idx] = left_raw_buf[idx] - right_raw_buf[idx];
+                                        left_raw_buf[idx] -= right_raw_buf[idx];
                                     });
                                 });
                             } else {
@@ -546,7 +545,7 @@ namespace nil {
                             result_event = queue.submit([left_raw_buf, right_raw_buf, domain_size, left_event, right_event](sycl::handler& cgh) {
                                 cgh.depends_on({left_event, right_event});
                                 cgh.parallel_for(sycl::range<1>(domain_size), [=](sycl::id<1> idx) {
-                                    left_raw_buf[idx] = left_raw_buf[idx] * right_raw_buf[idx];
+                                    left_raw_buf[idx] *= right_raw_buf[idx];
                                 });
                             });
                             break;

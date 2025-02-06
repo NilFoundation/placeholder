@@ -146,7 +146,7 @@ namespace nil {
                         // 2. Commit witness columns and public_input columns
                         _commitment_scheme.append_to_batch(VARIABLE_VALUES_BATCH, _polynomial_table->witnesses());
                         _commitment_scheme.append_to_batch(VARIABLE_VALUES_BATCH, _polynomial_table->public_inputs());
-                        /*{
+                        {
                             PROFILE_SCOPE("variable_values_precommit_time");
                             _proof.commitments[VARIABLE_VALUES_BATCH] = _commitment_scheme.commit(VARIABLE_VALUES_BATCH);
                         }
@@ -179,7 +179,7 @@ namespace nil {
                         if( constraint_system.copy_constraints().size() > 0 || constraint_system.lookup_gates().size() > 0){
                             _proof.commitments[PERMUTATION_BATCH] = _commitment_scheme.commit(PERMUTATION_BATCH);
                             transcript(_proof.commitments[PERMUTATION_BATCH]);
-                        }*/
+                        }
 
                         // 6. circuit-satisfability
 
