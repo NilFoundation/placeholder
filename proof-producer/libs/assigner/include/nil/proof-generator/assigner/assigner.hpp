@@ -9,6 +9,7 @@
 #include <nil/proof-generator/assigner/copy.hpp>
 #include <nil/proof-generator/assigner/zkevm.hpp>
 #include <nil/proof-generator/assigner/exp.hpp>
+#include <nil/proof-generator/assigner/keccak.hpp>
 #include <nil/proof-generator/assigner/trace_parser.hpp>
 
 
@@ -29,6 +30,7 @@ namespace nil {
                 {circuits::ZKEVM, fill_zkevm_assignment_table<BlueprintFieldType>},
                 {circuits::COPY, fill_copy_events_assignment_table<BlueprintFieldType>},
                 {circuits::EXP, fill_exp_assignment_table<BlueprintFieldType>},
+                {circuits::KECCAK, fill_keccak_assignment_table<BlueprintFieldType>},
         };
 
         template<typename BlueprintFieldType>

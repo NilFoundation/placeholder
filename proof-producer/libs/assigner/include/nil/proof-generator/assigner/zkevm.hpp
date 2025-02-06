@@ -37,6 +37,17 @@ namespace nil {
                 input.keccak_buffers.new_buffer(raw_bytecode);
             }
 
+            // keccak hashes
+            const auto keccak_trace_path = get_keccak_trace_path(trace_base_path);
+            auto keccak_buffers = deserialize_keccak_traces_from_file(keccak_trace_path, options, contract_bytecodes->index);
+            if (!keccak_buffers) {
+                return "can't read keccak buffers trace from file: " + keccak_trace_path.string();
+            }
+            for (const auto& keccak_buffer : keccak_buffers->value) {
+                input.keccak_buffers.new_buffer(keccak_buffer.buffer);
+            }
+
+
             // rw
             const auto rw_trace_path = get_rw_trace_path(trace_base_path);
             auto rw_operations = deserialize_rw_traces_from_file(rw_trace_path, options, contract_bytecodes->index);

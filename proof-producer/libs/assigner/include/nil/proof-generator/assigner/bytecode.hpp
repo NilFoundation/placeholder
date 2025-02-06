@@ -38,6 +38,15 @@ namespace nil {
                 input.keccak_buffers.new_buffer(raw_bytecode);
             }
 
+            const auto keccak_trace_path = get_keccak_trace_path(trace_base_path);
+            const auto keccak_operations = deserialize_keccak_traces_from_file(keccak_trace_path, options);
+            if (!keccak_operations) {
+                return "can't read keccak operations from file: " + keccak_trace_path.string();
+            }
+            for (const auto& keccak_it : keccak_operations->value) {
+                input.keccak_buffers.new_buffer(keccak_it.buffer);
+            }
+
             ComponentType instance(context_object, input, options.circuits_limits.max_bytecode_size, options.circuits_limits.max_keccak_blocks);
             return {};
         }
