@@ -243,7 +243,12 @@ namespace nil {
                             _locked[index] = false;
 
                         BOOST_ASSERT(!_locked[index]); // We cannot modify batch after commitment
-                        _polys[index].insert(std::end(_polys[index]), std::begin(polys), std::end(polys));
+                        // We need this 'if' statement, otherwise we're segfaulting if the map entry does not exist.
+                        if (_polys.find(index) == _polys.end()) {
+                            _polys[index] = polys;
+                        } else {
+                            _polys[index].insert(std::end(_polys[index]), std::begin(polys), std::end(polys));
+                        }
                     }
 
                     void append_eval_point(std::size_t batch_id, typename field_type::value_type point) {
