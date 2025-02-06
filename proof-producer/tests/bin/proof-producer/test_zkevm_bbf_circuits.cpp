@@ -81,26 +81,26 @@ using namespace nil::proof_producer::circuits;
 
 // Single call of Counter contract increment function
 const std::string SimpleIncrement = "simple/increment_simple";
-// INSTANTIATE_TEST_SUITE_P(SimpleRw, ProverTests, ::testing::Values(Input{SimpleIncrement,  RW}));
-// INSTANTIATE_TEST_SUITE_P(SimpleBytecode, ProverTests, ::testing::Values(Input{SimpleIncrement,  BYTECODE}));
-// INSTANTIATE_TEST_SUITE_P(SimpleCopy, ProverTests, ::testing::Values(Input{SimpleIncrement,  COPY}));
-// INSTANTIATE_TEST_SUITE_P(SimpleZkevm, ProverTests, ::testing::Values(Input{SimpleIncrement,  ZKEVM}));
+INSTANTIATE_TEST_SUITE_P(SimpleRw, ProverTests, ::testing::Values(Input{SimpleIncrement,  RW}));
+INSTANTIATE_TEST_SUITE_P(SimpleBytecode, ProverTests, ::testing::Values(Input{SimpleIncrement,  BYTECODE}));
+INSTANTIATE_TEST_SUITE_P(SimpleCopy, ProverTests, ::testing::Values(Input{SimpleIncrement,  COPY}));
+INSTANTIATE_TEST_SUITE_P(SimpleZkevm, ProverTests, ::testing::Values(Input{SimpleIncrement,  ZKEVM}));
 INSTANTIATE_TEST_SUITE_P(SimpleExp, ProverTests, ::testing::Values(Input{SimpleIncrement, EXP}));
 
 // // Multiple calls of Counter contract increment function (several transactions)
 const std::string MultiTxIncrement = "multi_tx/increment_multi_tx";
-// INSTANTIATE_TEST_SUITE_P(MultiTxRw, ProverTests, ::testing::Values(Input{MultiTxIncrement,  RW}));
-// INSTANTIATE_TEST_SUITE_P(MultiTxBytecode, ProverTests, :: testing::Values(Input{MultiTxIncrement,  BYTECODE}));
-// INSTANTIATE_TEST_SUITE_P(MultiTxCopy, ProverTests, ::testing::Values(Input{MultiTxIncrement,  COPY}));
-// INSTANTIATE_TEST_SUITE_P(MultiTxZkevm, ProverTests, ::testing::Values(Input{MultiTxIncrement,  ZKEVM}));
+INSTANTIATE_TEST_SUITE_P(MultiTxRw, ProverTests, ::testing::Values(Input{MultiTxIncrement,  RW}));
+INSTANTIATE_TEST_SUITE_P(MultiTxBytecode, ProverTests, :: testing::Values(Input{MultiTxIncrement,  BYTECODE}));
+INSTANTIATE_TEST_SUITE_P(MultiTxCopy, ProverTests, ::testing::Values(Input{MultiTxIncrement,  COPY}));
+INSTANTIATE_TEST_SUITE_P(MultiTxZkevm, ProverTests, ::testing::Values(Input{MultiTxIncrement,  ZKEVM}));
 INSTANTIATE_TEST_SUITE_P(MultiTxExp, ProverTests, ::testing::Values(Input{MultiTxIncrement, EXP}));
 
 // // Single call of exp operation
 const std::string SimpleExp = "exp/exp";
-// INSTANTIATE_TEST_SUITE_P(SimpleExpRw, ProverTests, ::testing::Values(Input{SimpleExp, RW}));
-// INSTANTIATE_TEST_SUITE_P(SimpleExpBytecode, ProverTests, :: testing::Values(Input{SimpleExp, BYTECODE}));
-// INSTANTIATE_TEST_SUITE_P(SimpleExpCopy, ProverTests, ::testing::Values(Input{SimpleExp, COPY}));
-// INSTANTIATE_TEST_SUITE_P(SimpleExpZkevm, ProverTests, ::testing::Values(Input{SimpleExp, ZKEVM}));
+INSTANTIATE_TEST_SUITE_P(SimpleExpRw, ProverTests, ::testing::Values(Input{SimpleExp, RW}));
+INSTANTIATE_TEST_SUITE_P(SimpleExpBytecode, ProverTests, :: testing::Values(Input{SimpleExp, BYTECODE}));
+INSTANTIATE_TEST_SUITE_P(SimpleExpCopy, ProverTests, ::testing::Values(Input{SimpleExp, COPY}));
+INSTANTIATE_TEST_SUITE_P(SimpleExpZkevm, ProverTests, ::testing::Values(Input{SimpleExp, ZKEVM}));
 INSTANTIATE_TEST_SUITE_P(SimpleExpExp, ProverTests, ::testing::Values(Input{SimpleExp, EXP}));
 
 // RW trace is picked from another trace set and has different trace_idx
