@@ -27,12 +27,16 @@ nil_block_generator get-block
 ```bash
 prover trace <OUPUT PATH> 1 <BLOCK HASH>
 ```
+For collect traces by prover need to run `nild` in another terminal from the same working directory as `nil_block_generator`
+```bash
+/nild run --http-port 8529
+```
 
 ## Update test data
 
 ### simple increment
 ```bash
-solc -o . --bin --abi contracts/counter.sol --overwrite --no-cbor-metadata --metadata-hash none
+solc -o . --bin --abi contracts/tracer_data.sol --overwrite --no-cbor-metadata --metadata-hash none
 nil_block_generator init
 nil_block_generator add-contract --contract-name increment --contract-path SimpleStorage
 nil_block_generator call-contract --contract-name increment --args "" --method increment --count 1
@@ -42,7 +46,7 @@ prover trace simple/increment_simple 1 $block_hash
 
 ### multi transactions
 ```bash
-solc -o . --bin --abi contracts/counter.sol --overwrite --no-cbor-metadata --metadata-hash none
+solc -o . --bin --abi contracts/tracer_data.sol --overwrite --no-cbor-metadata --metadata-hash none
 nil_block_generator init
 nil_block_generator add-contract --contract-name increment --contract-path SimpleStorage
 nil_block_generator call-contract --contract-name increment --args "" --method increment --count 2
@@ -52,17 +56,17 @@ prover trace multi_tx/increment_multi_tx 1 $block_hash
 
 ### exponential
 ```bash
-solc -o . --bin --abi exp/counter_exp.sol --overwrite --no-cbor-metadata --metadata-hash none
+solc -o . --bin --abi contracts/tracer_data.sol --overwrite --no-cbor-metadata --metadata-hash none
 nil_block_generator init
-nil_block_generator add-contract --contract-name increment --contract-path SimpleStorage
-nil_block_generator call-contract --contract-name increment --args "" --method increment --count 1
+nil_block_generator add-contract --contract-name exp --contract-path SimpleStorage
+nil_block_generator call-contract --contract-name exp --args "" --method exponentiate --count 1
 nil_block_generator get-block
 prover trace exp/exp 1 $block_hash
 ```
 
 ### broken index
 ```bash
-solc -o . --bin --abi contracts/counter.sol --overwrite --no-cbor-metadata --metadata-hash none
+solc -o . --bin --abi contracts/tracer_data.sol --overwrite --no-cbor-metadata --metadata-hash none
 nil_block_generator init
 nil_block_generator add-contract --contract-name increment --contract-path SimpleStorage
 nil_block_generator call-contract --contract-name increment --args "" --method increment --count 1

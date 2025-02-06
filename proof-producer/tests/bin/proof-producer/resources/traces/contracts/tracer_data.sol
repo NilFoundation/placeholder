@@ -15,6 +15,9 @@ contract SimpleStorage {
         if (value < 2) {
             value = 2;
         }
+        if (value > 3) {
+            value = 3;
+        }
         value = value ** value;
         emit ValueChanged(value);
     }
