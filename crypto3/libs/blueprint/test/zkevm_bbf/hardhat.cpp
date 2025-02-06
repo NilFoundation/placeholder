@@ -139,7 +139,7 @@ public:
         // std::cout << std::endl;
 
         // Max_copy, Max_rw, Max_keccak, Max_bytecode
-        result =test_bbf_component<field_type, nil::blueprint::bbf::exponentiation>(
+        result = test_bbf_component<field_type, nil::blueprint::bbf::exponentiation>(
             "exp",
             {}, exp_assignment_input, exp_constraint_input,
             max_exp_rows,

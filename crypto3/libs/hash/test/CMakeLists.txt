@@ -12,7 +12,7 @@ cm_test_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
                        ${${CURRENT_PROJECT_NAME}_INTERFACE_LIBRARIES}
                        Boost::unit_test_framework)
 
-set_target_properties(_cm_internal_tests-crypto3-hash-test PROPERTIES CXX_STANDARD 20)
+set_target_properties(_cm_internal_tests-crypto3-hash-test PROPERTIES CXX_STANDARD 23)
 target_precompile_headers(_cm_internal_tests-crypto3-hash-test REUSE_FROM crypto3_precompiled_headers)
 
 macro(define_hash_test name)
@@ -27,7 +27,7 @@ macro(define_hash_test name)
                                ${Boost_INCLUDE_DIRS})
 
     set_target_properties(${test_name} PROPERTIES
-                          CXX_STANDARD 20
+                          CXX_STANDARD 23
                           CXX_STANDARD_REQUIRED TRUE)
 
     if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")

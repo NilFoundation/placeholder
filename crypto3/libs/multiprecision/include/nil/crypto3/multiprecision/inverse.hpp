@@ -20,6 +20,7 @@
 #include "nil/crypto3/multiprecision/detail/big_int.hpp"
 #include "nil/crypto3/multiprecision/detail/half_extended_euclidean_algorithm.hpp"
 #include "nil/crypto3/multiprecision/type_traits.hpp"
+#include "nil/crypto3/multiprecision/detail/throw.hpp"
 
 namespace nil::crypto3::multiprecision {
     template<std::size_t Bits>
@@ -28,7 +29,7 @@ namespace nil::crypto3::multiprecision {
         big_int<Bits> aa = a, mm = m, x, g;
         g = detail::half_extended_euclidean_algorithm(aa, mm, x);
         if (g != 1u) {
-            throw std::invalid_argument("no multiplicative inverse");
+            NIL_THROW(std::invalid_argument("no multiplicative inverse"));
         }
         x %= m;
         if (x.negative()) {

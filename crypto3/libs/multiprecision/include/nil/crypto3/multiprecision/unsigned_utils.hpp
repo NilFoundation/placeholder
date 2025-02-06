@@ -12,6 +12,7 @@
 #include <type_traits>
 
 #include "nil/crypto3/multiprecision/type_traits.hpp"
+#include "nil/crypto3/multiprecision/detail/throw.hpp"
 
 namespace nil::crypto3::multiprecision {
     // unsigned_abs returns the absolute value of a signed type as an unsigned type.
@@ -39,9 +40,13 @@ namespace nil::crypto3::multiprecision {
 
     template<typename T, std::enable_if_t<std::is_signed_v<T>, int> = 0>
     constexpr std::make_unsigned_t<T> unsigned_or_throw(const T& a) {
+        // we are unable to throw exceptions on GPU
+        // so we pray that the value is nonnegative
+        #ifndef GPU_PROVER
         if (a < 0) {
-            throw std::range_error("nonnegative value expected");
+            NIL_THROW(std::range_error("nonnegative value expected"));
         }
+        #endif
         return static_cast<std::make_unsigned_t<T>>(a);
     }
 

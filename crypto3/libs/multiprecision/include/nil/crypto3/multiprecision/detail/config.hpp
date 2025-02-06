@@ -17,3 +17,10 @@
 
 // Disable use of int128
 // #define NIL_CO3_MP_DISABLE_INT128
+
+#if defined(GPU_PROVER)
+  #define NIL_CO3_MP_DISABLE_INT128
+  #define NIL_CO3_MP_DISABLE_INTRINSICS
+  // black magick, i do not remember why i did this
+  struct float128_type {};
+#endif

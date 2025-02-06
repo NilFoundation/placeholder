@@ -1,4 +1,6 @@
 { lib,
+  pkgs,
+  llvmPackages_19,
   stdenv,
   ninja,
   pkg-config,
@@ -16,13 +18,18 @@
   staticBuild ? true,
   runTests ? false,
   sanitize? false,
-  crypto3_tests? false,
-  parallel_crypto3_tets? false,
-  crypto3_bechmarks? false,
-  parallel_crypto3_bechmarks? false,
+  crypto3_tests ? false,
+  parallel_crypto3_tests ? false,
+  crypto3_bechmarks ? false,
+  parallel_crypto3_bechmarks ? false,
+  enableGPU ? false,
   }:
 let
   inherit (lib) optional;
+  opensycl = pkgs.callPackage ./opensycl.nix {
+    inherit (pkgs);
+    cudaSupport = enableGPU;
+  };
 in stdenv.mkDerivation {
   name = "Proof-producer";
   pname = "proof-producer";
@@ -30,15 +37,22 @@ in stdenv.mkDerivation {
   src = lib.sourceByRegex ./. ["^proof-producer(/.*)?$" "^crypto3(/.*)?$" "^parallel-crypto3(/.*)?$" "CMakeLists.txt"];
   hardeningDisable = [ "fortify" ];
 
-  nativeBuildInputs = [ cmake ninja pkg-config ] ++
+  nativeBuildInputs = [ cmake ninja pkg-config opensycl llvmPackages_19.openmp ] ++
                        (lib.optional (!stdenv.isDarwin) gdb) ++
                        (lib.optional (stdenv.isDarwin) lldb);
 
   # enableDebugging will keep debug symbols in boost
   propagatedBuildInputs = [ (if enableDebug then (enableDebugging boost) else boost) ];
 
-  buildInputs = [cmake_modules gtest protobuf] ++
-                  ( lib.optional (staticBuild) glibc.static );
+  buildInputs =
+  [cmake_modules gtest protobuf]
+  ++ ( lib.optional (staticBuild) glibc.static )
+  ++ (if enableGPU then [
+    pkgs.cudaPackages.cudatoolkit
+    pkgs.cudaPackages.cuda_cudart
+    pkgs.cudaPackages.cuda_nvcc
+    pkgs.linuxPackages.nvidia_x11
+  ] else []);
 
   cmakeFlags =
     [
@@ -48,11 +62,12 @@ in stdenv.mkDerivation {
       (if sanitize then "-DSANITIZE=ON" else "-DSANITIZE=OFF")
       "-DPROOF_PRODUCER_ENABLE=TRUE"
       (if crypto3_tests then "-DBUILD_CRYPTO3_TESTS=TRUE" else "-DBUILD_CRYPTO3_TESTS=False")
-      (if parallel_crypto3_tets then "-DBUILD_PARALLEL_CRYPTO3_TESTS=TRUE" else "")
+      (if parallel_crypto3_tests then "-DBUILD_PARALLEL_CRYPTO3_TESTS=TRUE" else "")
       (if parallel_crypto3_bechmarks then "-DENABLE_BENCHMARKS=ON" else "-DENABLE_BENCHMARKS=OFF")
       (if crypto3_bechmarks then "-DBUILD_CRYPTO3_BENCH_TESTS=ON" else "-DBUILD_CRYPTO3_BENCH_TESTS=OFF")
       (if staticBuild then "-DPROOF_PRODUCER_STATIC_BINARIES=ON" else "-DPROOF_PRODUCER_STATIC_BINARIES=OFF")
       "-G Ninja"
+      (if enableGPU then "-DGPU_PROVER=ON" else "-DGPU_PROVER=OFF")
     ];
 
   cmakeBuildType = if enableDebug then "Debug" else "Release";
@@ -69,7 +84,14 @@ in stdenv.mkDerivation {
     find .. -type f -name '*_benchmark.xml' -exec cp {} ${placeholder "out"}/test-logs \;
   '';
 
-  shellHook = ''
+  shellHook =
+  (if enableGPU then ''
+    CXX=syclcc-clang; export CXX
+    ACPP_ADAPTIVITY_LEVEL=2; export ACPP_ADAPTIVITY_LEVEL
+  '' else "") +
+  ''
+    rm -rf build
+    eval $configurePhase
     PS1="\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ "
     echo "Welcome to Proof-producer development environment!"
   '';

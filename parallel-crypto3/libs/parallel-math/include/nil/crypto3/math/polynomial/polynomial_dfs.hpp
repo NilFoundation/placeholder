@@ -31,6 +31,11 @@
 #error "You're mixing parallel and non-parallel crypto3 versions"
 #endif
 
+#ifdef GPU_PROVER
+#include <sycl/sycl.hpp>
+#include <nil/actor/core/sycl_garbage_collector.hpp>
+#endif
+
 #include <algorithm>
 #include <limits>
 #include <memory>
@@ -228,6 +233,10 @@ namespace nil {
 
                 size_type degree() const BOOST_NOEXCEPT {
                     return _d;
+                }
+
+                void set_degree(size_type d) {
+                    _d = d;
                 }
 
                 size_type max_degree() const BOOST_NOEXCEPT {
@@ -862,10 +871,253 @@ namespace nil {
 
                 return dfs_result;
             }
+#ifdef GPU_PROVER
+            template<typename FieldType>
+            sycl::event gpu_fft(
+                typename FieldType::value_type* a,
+                std::size_t n,
+                typename FieldType::value_type* omega_cache,
+
+                sycl::queue& queue,
+                std::vector<sycl::event> a_events,
+                sycl::event cache_event
+            ) {
+                using value_type = typename FieldType::value_type;
+                const std::size_t logn = log2(n);
+
+                // swapping in place (from Storer's book)
+                // We can parallelize this look, since k and rk are pairs, they will never intersect.
+                a_events.push_back(cache_event);
+                auto swap_event = queue.submit([a_events, a, n, logn](sycl::handler &cgh) {
+                    cgh.depends_on(a_events);
+                    cgh.parallel_for(sycl::range<1>(n), [=](sycl::id<1> idx) {
+                        const std::size_t r_idx = crypto3::math::detail::bitreverse(idx, logn);
+                        if (idx < r_idx) {
+                            std::swap(a[idx], a[r_idx]);
+                        }
+                    });
+                });
+
+                // invariant: m = 2^{s-1}
+                sycl::event last_fft_event = swap_event;
+                for (std::size_t s = 1, m = 1, inc = n / 2; s <= logn; ++s, m <<= 1, inc >>= 1) {
+                    // w_m is 2^s-th root of unity now
+                    // Here we can parallelize on the both loops with 'k' and 'm', because for each value of k and m
+                    // the ranges of array 'a' used do not intersect. Think of these 2 loops as 1.
+                    const size_t count_k = n / (2 * m) + (n % (2 * m) ? 1 : 0);
+                    last_fft_event = queue.submit([count_k, m, inc, a, omega_cache, last_fft_event](sycl::handler &cgh) {
+                        cgh.depends_on(last_fft_event);
+                        cgh.parallel_for(sycl::range<1>(count_k * m), [=](sycl::id<1> index) {
+                            const std::size_t k = (index / m) * m * 2;
+                            const std::size_t j = index % m;
+                            const std::size_t idx = j * inc;
+                            const value_type t = a[k + j + m] * omega_cache[idx];
+                            a[k + j + m] = a[k + j] - t;
+                            a[k + j] += t;
+                        });
+                    });
+                }
+                return last_fft_event;
+            }
 
             template<typename FieldType>
+            sycl::event gpu_inverse_fft(
+                typename FieldType::value_type* a,
+                const std::size_t n,
+                typename FieldType::value_type* fft_cache,
+
+                sycl::queue& queue,
+                std::vector<sycl::event> a_events,
+                sycl::event cache_event
+            ) {
+                using value_type = typename FieldType::value_type;
+                auto fft_event = gpu_fft<FieldType>(a, n, fft_cache, queue, a_events, cache_event);
+
+                const value_type sconst = value_type(n).inversed();
+                return queue.submit([sconst, fft_event, a, n](sycl::handler &cgh) {
+                    cgh.depends_on(fft_event);
+                    cgh.parallel_for(sycl::range<1>(n), [=](sycl::id<1> idx) {
+                        a[idx] *= sconst;
+                    });
+                });
+            }
+
+            template<typename FieldType>
+            sycl::event handle_polynomial_resizing(
+                typename FieldType::value_type* buffer,
+                const std::size_t cur_size,
+                const std::size_t new_size,
+                const std::size_t degree,
+                typename FieldType::value_type* current_domain_buf,
+                typename FieldType::value_type* new_domain_buf,
+
+                sycl::queue& queue,
+                sycl::event buffer_event,
+                sycl::event current_domain_event,
+                sycl::event new_domain_event
+            ) {
+                using value_type = typename FieldType::value_type;
+
+                if (cur_size >= new_size) {
+                    return sycl::event();
+                }
+
+                if (degree == 0) {
+                    // copy the first value to remaining part of the buffer
+                    auto fill_event = queue.fill(buffer + cur_size, buffer[0], new_size - cur_size);
+                    return fill_event;
+                } else [[likely]] {
+                    auto ifft_event = gpu_inverse_fft<FieldType>(
+                        buffer, cur_size, current_domain_buf,
+                        queue, {buffer_event}, current_domain_event
+                    );
+                    auto fill_event = queue.fill(buffer + cur_size, value_type::zero(), new_size - cur_size);
+                    auto fft_event = gpu_fft<FieldType>(
+                        buffer, new_size, new_domain_buf,
+                        queue, {ifft_event, fill_event}, new_domain_event
+                    );
+                    return fft_event;
+                }
+            }
+
+            template<typename FieldType, typename ContainerType>
+            std::size_t create_domain_buffers(
+                const ContainerType& polynomials,
+                std::unordered_map<std::size_t, std::shared_ptr<evaluation_domain<FieldType>>>& domain_cache,
+
+                sycl::queue& queue,
+                std::unordered_map<std::size_t, typename FieldType::value_type*>& domain_buffers,
+                std::unordered_map<std::size_t, sycl::event>& domain_events,
+                typename FieldType::value_type*& max_domain_buf,
+                sycl::event& max_domain_buf_event
+            ) {
+                using value_type = typename FieldType::value_type;
+
+                std::size_t max_domain_size = 0;
+                std::size_t total_degree = 0;
+                std::set<std::size_t> needed_domain_sizes;
+                for (const auto& polynomial : polynomials) {
+                    max_domain_size = std::max(max_domain_size, polynomial.size());
+                    total_degree += polynomial.degree();
+                    needed_domain_sizes.insert(polynomial.size());
+                }
+                max_domain_size = std::max(max_domain_size, detail::power_of_two(total_degree + 1));
+                needed_domain_sizes.insert(max_domain_size);
+
+                for (const std::size_t domain_size : needed_domain_sizes) {
+                    domain_cache[domain_size] = nullptr;
+                }
+                // We cannot use LOW level thread pool here, make_evaluation_domain uses it.
+                parallel_foreach(needed_domain_sizes.begin(), needed_domain_sizes.end(),
+                    [&domain_cache](std::size_t domain_size) {
+                        domain_cache[domain_size] = make_evaluation_domain<FieldType>(domain_size);
+                    }, ThreadPool::PoolLevel::HIGH);
+
+                for (const std::size_t domain_size : needed_domain_sizes) {
+                    auto domain = domain_cache[domain_size];
+                    domain_buffers[domain_size] = nil::actor::core::device_malloc<value_type>(
+                        domain_size, queue
+                    );
+                    domain_events[domain_size] = queue.copy<value_type>(
+                        domain->get_fft_cache()->second.data(), domain_buffers[domain_size], domain_size
+                    );
+                }
+                max_domain_buf = nil::actor::core::device_malloc<value_type>(
+                    max_domain_size, queue
+                );
+                max_domain_buf_event = queue.copy<value_type>(
+                    domain_cache[max_domain_size]->get_fft_cache()->first.data(), max_domain_buf, max_domain_size
+                );
+
+                return max_domain_size;
+            }
+
+
+            template<typename FieldType>
+            polynomial_dfs<typename FieldType::value_type> polynomial_product(
+                const std::vector<math::polynomial_dfs<typename FieldType::value_type>> &multipliers
+            ) {
+                using value_type = typename FieldType::value_type;
+                using polynomial_type = polynomial_dfs<value_type>;
+
+                if (multipliers.size() == 0) {
+                    throw std::invalid_argument("polynomial_product multipliers.size() == 0");
+                }
+                if (multipliers.size() == 1) {
+                    return multipliers[0];
+                }
+
+                sycl::queue queue(sycl::gpu_selector{});
+
+                value_type* max_domain_buf = nullptr;
+                sycl::event max_domain_buf_event = sycl::event();
+                std::unordered_map<std::size_t, sycl::event> domain_events;
+                std::unordered_map<std::size_t, typename FieldType::value_type*> domain_buffers;
+                std::unordered_map<std::size_t, std::shared_ptr<evaluation_domain<FieldType>>> domain_cache;
+
+                std::size_t max_domain_size = create_domain_buffers<FieldType>(
+                    multipliers, domain_cache, queue,
+                    domain_buffers, domain_events, max_domain_buf, max_domain_buf_event
+                );
+
+                std::vector<value_type*> multipliers_buf(multipliers.size());
+                std::vector<sycl::event> multipliers_events(multipliers.size());
+
+                for (std::size_t i = 0; i < multipliers.size(); ++i) {
+                    multipliers_buf[i] = nil::actor::core::device_malloc<value_type>(max_domain_size, queue);
+                    multipliers_events[i] = queue.copy<value_type>(
+                        multipliers[i].data(), multipliers_buf[i], multipliers[i].size()
+                    );
+                }
+
+                // pre-resize the multipliers
+                std::vector<sycl::event> buffer_events(multipliers.size());
+                for (std::size_t i = 0; i < multipliers.size(); ++i) {
+                    buffer_events[i] = handle_polynomial_resizing<FieldType>(
+                        multipliers_buf[i], multipliers[i].size(), max_domain_size, multipliers[i].degree(),
+                        domain_buffers[multipliers[i].size()], max_domain_buf,
+                        queue, multipliers_events[i], domain_events[multipliers[i].size()], max_domain_buf_event
+                    );
+                }
+                for (std::size_t stride = 1; stride < multipliers.size(); stride <<= 1) {
+                    const std::size_t double_stride = stride << 1;
+                    std::size_t max_i = (multipliers.size() - stride) / double_stride;
+                    if ((multipliers.size() - stride) % double_stride != 0) {
+                        max_i++;
+                    }
+                    for (std::size_t i = 0; i < max_i; ++i) {
+                        const std::size_t index1 = i * double_stride;
+                        const std::size_t index2 = index1 + stride;
+                        std::vector<sycl::event> b_events = {buffer_events[index1], buffer_events[index2]};
+                        value_type* first_buf = multipliers_buf[index1];
+                        value_type* second_buf = multipliers_buf[index2];
+                        buffer_events[index1] = queue.submit([b_events, first_buf, second_buf, max_domain_size](sycl::handler &cgh) {
+                            cgh.depends_on(b_events);
+                            cgh.parallel_for(sycl::range<1>(max_domain_size), [=](sycl::id<1> idx) {
+                                first_buf[idx] *= second_buf[idx];
+                            });
+                        });
+                    }
+                }
+                polynomial_type result(max_domain_size - 1, max_domain_size);
+                auto copy_back_event = queue.copy<value_type>(
+                    multipliers_buf[0], result.data(), max_domain_size, buffer_events[0]
+                );
+                copy_back_event.wait();
+                for (std::size_t i = 0; i < multipliers.size(); ++i) {
+                    sycl::free(multipliers_buf[i], queue);
+                }
+                for (auto& domain_buffer : domain_buffers) {
+                    sycl::free(domain_buffer.second, queue);
+                }
+                sycl::free(max_domain_buf, queue);
+                return result;
+            }
+#else
+            template<typename FieldType>
             static inline polynomial_dfs<typename FieldType::value_type> polynomial_product(
-                    std::vector<math::polynomial_dfs<typename FieldType::value_type>> multipliers) {
+                std::vector<math::polynomial_dfs<typename FieldType::value_type>> multipliers
+            ) {
                 // Pre-create all the domains. We could do this on-the-go, but we want this function to be more
                 // parallelization-friendly. This single-threaded version may look a bit complicated,
                 // but it's now very similar to what we have in parallel code.
@@ -921,14 +1173,11 @@ namespace nil {
                                 domain_cache[current_domain_size],
                                 domain_cache[next_domain_size],
                                 domain_cache[new_domain_size]);
-
-                            // Free the memory we are not going to use anymore.
-                            multipliers[index2] = polynomial_dfs<typename FieldType::value_type>();
                     }, ThreadPool::PoolLevel::HIGH);
                 }
-                return multipliers[0];
+                return std::move(multipliers[0]);
             }
-
+#endif
         }    // namespace math
     }        // namespace crypto3
 }    // namespace nil

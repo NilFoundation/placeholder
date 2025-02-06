@@ -1,17 +1,20 @@
 cmake_minimum_required(VERSION 3.22 FATAL_ERROR)
 project(parallel-crypto3)
 
-option(BUILD_PARALLEL_CRYPTO3_TESTS "Enable tests" FALSE)
+option(BUILD_PARALLEL_CRYPTO3_TESTS "Enable tests" TRUE)
+set(CMAKE_CUDA_COMPILER nvc++)
 
 find_package(CM REQUIRED)
 include(CMConfig)
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # The file compile_commands.json is generated in build directory, so LSP could
 # pick it up and guess all include paths, defines and other stuff.
 # If Nix is used, LSP could not guess the locations of implicit include
 # directories, so we need to include them explicitly.
 if(CMAKE_EXPORT_COMPILE_COMMANDS)
-  set(CMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES 
+  set(CMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES
       ${CMAKE_CXX_IMPLICIT_INCLUDE_DIRECTORIES})
 endif()
 
@@ -41,7 +44,8 @@ target_link_libraries(${PROJECT_NAME}_all INTERFACE
     actor::containers
     actor::math
     actor::zk
-    actor::core)
+    actor::core
+    )
 
 # Configure package file to be able to import headers
 include(CMakePackageConfigHelpers)

@@ -21,6 +21,7 @@
 #include "nil/crypto3/multiprecision/big_uint.hpp"
 #include "nil/crypto3/multiprecision/jacobi.hpp"
 #include "nil/crypto3/multiprecision/pow.hpp"
+#include "nil/crypto3/multiprecision/detail/throw.hpp"
 
 namespace nil::crypto3::multiprecision {
     template<std::size_t Bits>
@@ -49,7 +50,7 @@ namespace nil::crypto3::multiprecision {
         BOOST_ASSERT(p % 2u != 0u);
 
         if (jacobi(a, p) != 1) {
-            throw std::invalid_argument("Not a quadratic residue");
+            NIL_THROW(std::invalid_argument("Not a quadratic residue"));
         }
 
         // We can use montgomery_big_mod because p is odd
@@ -89,7 +90,7 @@ namespace nil::crypto3::multiprecision {
         big_uint_t z = two;
         while (jacobi(z, p) == 1) {
             if (z.is_zero()) {
-                throw std::invalid_argument("No quadratic nonresidue");
+                NIL_THROW(std::invalid_argument("No quadratic nonresidue"));
             }
             ++z;
         }
@@ -113,7 +114,7 @@ namespace nil::crypto3::multiprecision {
                 if (i >= s) {
                     // TODO(ioxid): when can this happen? (jacobi said that this should
                     // not happen) Martun: the value now has a square root
-                    throw std::invalid_argument("Not a quadratic residue");
+                    NIL_THROW(std::invalid_argument("Not a quadratic residue"));
                 }
             }
 

@@ -22,7 +22,7 @@ cm_test_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
         ${CMAKE_WORKSPACE_NAME}::marshalling-algebra
         ${CMAKE_WORKSPACE_NAME}::marshalling-core)
 
-set_target_properties(_cm_internal_tests-crypto3-marshalling-zk-test PROPERTIES CXX_STANDARD 20)
+set_target_properties(_cm_internal_tests-crypto3-marshalling-zk-test PROPERTIES CXX_STANDARD 23)
 target_precompile_headers(_cm_internal_tests-crypto3-marshalling-zk-test REUSE_FROM crypto3_precompiled_headers)
 
 macro(define_marshalling_test test)
@@ -40,7 +40,7 @@ macro(define_marshalling_test test)
             ${Boost_INCLUDE_DIRS})
 
     set_target_properties(marshalling_zk_${name}_test PROPERTIES
-            CXX_STANDARD 20
+            CXX_STANDARD 23
             CXX_STANDARD_REQUIRED TRUE)
 
     if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
