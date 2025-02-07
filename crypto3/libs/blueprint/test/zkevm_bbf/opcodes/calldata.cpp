@@ -79,6 +79,10 @@ BOOST_AUTO_TEST_CASE(calldata) {
     opcode_tester.push_opcode(zkevm_opcode::PUSH1, 0);
     opcode_tester.push_opcode(zkevm_opcode::PUSH1, 0);
     opcode_tester.push_opcode(zkevm_opcode::CALLDATACOPY);
+    opcode_tester.push_opcode(zkevm_opcode::PUSH2, 800);
+    opcode_tester.push_opcode(zkevm_opcode::PUSH1, 0);
+    opcode_tester.push_opcode(zkevm_opcode::PUSH1, 0);
+    opcode_tester.push_opcode(zkevm_opcode::CALLDATACOPY);
     opcode_tester.push_opcode(zkevm_opcode::STOP);
 
     max_sizes.max_keccak_blocks = 10;

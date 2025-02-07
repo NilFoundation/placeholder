@@ -44,35 +44,26 @@ namespace nil {
               public:
                 TYPE size;
 
-                word_size(context_type &context_object, TYPE bite_size_input,
-                          std::vector<int> columns, std::vector<int> rows,
-                          bool make_links = true)
+                word_size(context_type &context_object, TYPE bite_size_input)
                     : generic_component<FieldType, stage>(context_object, false) {
-                    assert(columns.size() == 4);
-                    assert(rows.size() == 4);
-
                     using integral_type = typename FieldType::integral_type;
-                    TYPE bites, words, R, C;
+                    TYPE words, R, C;
 
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                        bites = bite_size_input;
-                        words = (integral_type(bites.data) + 31) / 32;
-                        R = (integral_type(bites.data) + 31) % 32;
+                        words = (integral_type(bite_size_input.data) + 31) / 32;
+                        R = (integral_type(bite_size_input.data) + 31) % 32;
                         R.is_zero() ? C = 0 : C = 1;
                     }
 
-                    allocate(bites, columns[0], rows[0]);
-                    allocate(words, columns[1], rows[1]);
-                    allocate(R, columns[2], rows[2]);
-                    allocate(C, columns[3], rows[3]);
+                    allocate(bite_size_input, 0, 0);
+                    allocate(words, 1, 0);
+                    allocate(R, 2, 0);
+                    allocate(C, 3, 0);
 
                     constrain(C * (1 - C));
                     constrain((1 - C) * R);
-                    constrain(words * 32 - bites - 31 + C * R);
+                    constrain(words * 32 - bite_size_input - 31 + C * R);
 
-                    if (make_links) {
-                        copy_constrain(bites, bite_size_input);
-                    }
                     size = words;
                 };
             };

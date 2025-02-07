@@ -47,20 +47,18 @@ namespace nil {
               public:
                 TYPE cost;
 
-                memory_cost(context_type &context_object, TYPE memory_input,
-                            std::vector<int> columns, std::vector<int> rows)
+                memory_cost(context_type &context_object, TYPE memory_input)
                     : generic_component<FieldType, stage>(context_object, false) {
-                    assert(columns.size() == 8);
-                    assert(rows.size() == 8);
-
                     using integral_type = typename FieldType::integral_type;
-                    TYPE mem_words, mem_cost, C, R;
                     using Word_Size = typename bbf::word_size<FieldType, stage>;
 
-                    Word_Size word =
-                        Word_Size(context_object, memory_input,
-                                  std::vector<int>(columns.begin(), columns.begin() + 4),
-                                  std::vector<int>(rows.begin(), rows.begin() + 4));
+                    TYPE mem_words, mem_cost, C, R;
+                    std::vector<std::size_t> word_size_lookup_area = {0, 1, 2, 3};
+
+                    context_type word_size_ct =
+                        context_object.subcontext(word_size_lookup_area, 0, 1);
+
+                    Word_Size word = Word_Size(word_size_ct, memory_input);
                     mem_words = word.size;
 
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
@@ -71,10 +69,10 @@ namespace nil {
                         R.is_zero() ? C = 0 : C = 1;
                     }
 
-                    allocate(mem_words, columns[4], rows[4]);
-                    allocate(mem_cost, columns[5], rows[5]);
-                    allocate(R, columns[6], rows[6]);
-                    allocate(C, columns[7], rows[7]);
+                    allocate(mem_words, 4, 0);
+                    allocate(mem_cost, 5, 0);
+                    allocate(R, 6, 0);
+                    allocate(C, 7, 0);
 
                     constrain(C * (1 - C));
                     constrain((1 - C) * R);

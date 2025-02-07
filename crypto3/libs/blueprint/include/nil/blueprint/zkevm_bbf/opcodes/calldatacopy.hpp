@@ -72,20 +72,24 @@ namespace nil {
                     allocate(length, 34, 0);
                     allocate(current_mem, 35, 0);
                     allocate(next_mem, 36, 0);
+
                     constrain(next_mem - current_mem - length);
 
-                    Word_Size word =
-                        Word_Size(context_object, length, {32, 33, 34, 35}, {1, 1, 1, 1});
+                    std::vector<std::size_t> word_size_lookup_area = {32, 33, 34, 35};
+                    std::vector<std::size_t> memory_cost_lookup_area = {37, 38, 39,40,41,43,44,45};
+                    
+                    context_type word_size_ct =
+                        context_object.subcontext(word_size_lookup_area, 1, 1);
+                    context_type current_memory_ct =
+                        context_object.subcontext(memory_cost_lookup_area, 0, 1);
+                    context_type next_memory_ct =
+                        context_object.subcontext(memory_cost_lookup_area, 1, 1);
 
-                    Memory_Cost current_memory = Memory_Cost(
-                        context_object, current_mem, {37, 38, 39, 40, 41, 42, 43, 44},
-                        {0, 0, 0, 0, 0, 0, 0, 0});
+                    Word_Size word = Word_Size(word_size_ct, length);
+                    Memory_Cost current_memory = Memory_Cost(current_memory_ct, current_mem);
+                    Memory_Cost next_memory = Memory_Cost(next_memory_ct, next_mem);
 
-                    Memory_Cost next_memory = Memory_Cost(
-                        context_object, next_mem, {37, 38, 39, 40, 41, 42, 43, 44},
-                        {1, 1, 1, 1, 1, 1, 1, 1});
-
-                    allocate(memory_expansion, 45, 0);
+                    allocate(memory_expansion, 36, 1);                    
                     memory_expansion = next_memory.cost - current_memory.cost;
 
                     if constexpr (stage == GenerationStage::CONSTRAINTS) {
@@ -93,52 +97,48 @@ namespace nil {
                                   1);  // PC transition
                         constrain(current_state.gas(0) - current_state.gas_next() - 3 -
                                   3 * word.size - memory_expansion);  // GAS transition
-                        constrain(current_state.stack_size(0) - current_state.stack_size_next() - 3);  // stack_size transition
+                        constrain(current_state.stack_size(0) -
+                                  current_state.stack_size_next() -
+                                  3);  // stack_size transition
                         constrain(
                             current_state.memory_size(0) -
-                            current_state.memory_size_next() );  // memory_size transition
+                            current_state.memory_size_next());  // memory_size transition
                         constrain(current_state.rw_counter_next() -
                                   current_state.rw_counter(0) -
                                   3);  // rw_counter transition
                         std::vector<TYPE> tmp;
-                        tmp = {
-                            TYPE(rw_op_to_num(rw_operation_type::stack)),
-                            current_state.call_id(0),
-                            current_state.stack_size(0) - 1,
-                            TYPE(0),// storage_key_hi
-                            TYPE(0),// storage_key_lo
-                            TYPE(0),// field
-                            current_state.rw_counter(0),
-                            TYPE(0),// is_write
-                            TYPE(0),
-                            destOffset
-                        };
+                        tmp = {TYPE(rw_op_to_num(rw_operation_type::stack)),
+                               current_state.call_id(0),
+                               current_state.stack_size(0) - 1,
+                               TYPE(0),  // storage_key_hi
+                               TYPE(0),  // storage_key_lo
+                               TYPE(0),  // field
+                               current_state.rw_counter(0),
+                               TYPE(0),  // is_write
+                               TYPE(0),
+                               destOffset};
                         lookup(tmp, "zkevm_rw");
-                        tmp = {
-                            TYPE(rw_op_to_num(rw_operation_type::stack)),
-                            current_state.call_id(0),
-                            current_state.stack_size(0) - 2,
-                            TYPE(0),// storage_key_hi
-                            TYPE(0),// storage_key_lo
-                            TYPE(0),// field
-                            current_state.rw_counter(0) + 1,
-                            TYPE(0),// is_write
-                            TYPE(0),
-                            offset
-                        };
+                        tmp = {TYPE(rw_op_to_num(rw_operation_type::stack)),
+                               current_state.call_id(0),
+                               current_state.stack_size(0) - 2,
+                               TYPE(0),  // storage_key_hi
+                               TYPE(0),  // storage_key_lo
+                               TYPE(0),  // field
+                               current_state.rw_counter(0) + 1,
+                               TYPE(0),  // is_write
+                               TYPE(0),
+                               offset};
                         lookup(tmp, "zkevm_rw");
-                        tmp = {
-                            TYPE(rw_op_to_num(rw_operation_type::stack)),
-                            current_state.call_id(0),
-                            current_state.stack_size(0) - 3,
-                            TYPE(0),// storage_key_hi
-                            TYPE(0),// storage_key_lo
-                            TYPE(0),// field
-                            current_state.rw_counter(0) + 2,
-                            TYPE(0),// is_write
-                            TYPE(0),
-                            length
-                        };
+                        tmp = {TYPE(rw_op_to_num(rw_operation_type::stack)),
+                               current_state.call_id(0),
+                               current_state.stack_size(0) - 3,
+                               TYPE(0),  // storage_key_hi
+                               TYPE(0),  // storage_key_lo
+                               TYPE(0),  // field
+                               current_state.rw_counter(0) + 2,
+                               TYPE(0),  // is_write
+                               TYPE(0),
+                               length};
                         lookup(tmp, "zkevm_rw");
                     } else {
                         std::cout << "\tSTATE transition implemented" << std::endl;
