@@ -37,8 +37,7 @@
 #include <nil/proof-generator/commands/compute_combined_q_command.hpp>
 #include <nil/proof-generator/commands/aggregated_fri_proof_command.hpp>
 #include <nil/proof-generator/commands/gen_consistency_check_command.hpp>
-
-#undef B0
+#include "nil/proof-generator/command_step.hpp"
 
 using namespace nil::proof_producer;
 
@@ -274,9 +273,8 @@ int run_prover(const nil::proof_producer::ProverOptions& prover_options) {
                 }
             }
         } catch (const std::exception& e) {
-            BOOST_LOG_TRIVIAL(error) << e.what();
-            throw e;
-            return 1;
+            BOOST_LOG_TRIVIAL(error) << "Unhandled exception: " << e.what();
+            return static_cast<int>(ResultCode::UnknownError);
         }
         return static_cast<int>(prover_result.result_code());
     };
