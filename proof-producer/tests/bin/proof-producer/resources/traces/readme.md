@@ -39,9 +39,9 @@ To collect traces by prover you need to run `nild` in another terminal from the 
 solc -o . --bin --abi contracts/tracer_data.sol --overwrite --no-cbor-metadata --metadata-hash none
 nil_block_generator init
 nil_block_generator add-contract --contract-name increment --contract-path SimpleStorage
-nil_block_generator call-contract --contract-name SimpleStorage --args "" --method increment --count 1
-nild run --http-port 8529 # should be run in another terminal (or with &) and stopped after collecting the traces with prover
+nil_block_generator call-contract --contract-name increment --args "" --method increment --count 1
 nil_block_generator get-block
+nild run --http-port 8529 # should be run in another terminal (or with &) and stopped after collecting the traces with prover
 prover trace simple/increment_simple 1 $block_hash
 ```
 

@@ -152,6 +152,12 @@
           default = develop;
         };
 
+        devShells = {
+          proof-producer-benchmarks = (staticPkgs.callPackage ./proof-producer.nix {
+            proof_producer_benchmarks = true;
+          });
+        };
+
         checks = rec {
           crypto3-gcc = (pkgs.callPackage ./crypto3.nix {
             runTests = true;
