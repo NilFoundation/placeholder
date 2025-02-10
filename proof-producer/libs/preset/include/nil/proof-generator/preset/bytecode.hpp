@@ -26,7 +26,7 @@ namespace nil {
             using AssignmentTable = typename PresetTypes<BlueprintFieldType>::AssignmentTable;
 
             // initialize assignment table
-            const auto desc = ComponentType::get_table_description(circuits_limits.max_bytecode_size, circuits_limits.max_keccak_blocks);
+            const auto desc = ComponentType::get_table_description(circuits_limits.max_bytecode_rows, circuits_limits.max_keccak_blocks);
             bytecode_table = std::make_shared<AssignmentTable>(desc.witness_columns, desc.public_input_columns, desc.constant_columns, desc.selector_columns);
 
             BOOST_LOG_TRIVIAL(debug) << "bytecode table:\n"
@@ -51,7 +51,7 @@ namespace nil {
             typename PresetTypes<BlueprintFieldType>::ConstraintSystem circuit;
 
             nil::blueprint::components::generate_circuit<BlueprintFieldType, nil::blueprint::bbf::bytecode, std::size_t, std::size_t>(
-                wrapper, circuit, *bytecode_table, input, start_row, circuits_limits.max_bytecode_size, circuits_limits.max_keccak_blocks);
+                wrapper, circuit, *bytecode_table, input, start_row, circuits_limits.max_bytecode_rows, circuits_limits.max_keccak_blocks);
 
             crypto3::zk::snark::pack_lookup_tables_horizontal(
                 circuit.get_reserved_indices(),

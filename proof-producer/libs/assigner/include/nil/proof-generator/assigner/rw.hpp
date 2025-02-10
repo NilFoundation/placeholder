@@ -21,7 +21,7 @@ namespace nil {
 
             using ComponentType = nil::blueprint::bbf::rw<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT>;
 
-            typename nil::blueprint::bbf::context<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT> context_object(assignment_table, options.circuits_limits.max_rows);
+            typename nil::blueprint::bbf::context<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT> context_object(assignment_table, options.circuits_limits.max_total_rows);
 
             const auto rw_trace_path = get_rw_trace_path(trace_base_path);
             auto input = deserialize_rw_traces_from_file(rw_trace_path, options);
@@ -29,7 +29,13 @@ namespace nil {
                 return "can't read rw from file: " + rw_trace_path.string();
             }
 
-            ComponentType instance(context_object, input->value, options.circuits_limits.max_rw_size, options.circuits_limits.max_mpt_size);
+            // TODO: there is no defined relation between input size and row size:
+            // replace this check with handling of an error returned by component instantiation
+            if (input->value.size() > options.circuits_limits.max_rw_rows) {
+                return std::format("rw operations size {} exceeds circuit limit {}", input->value.size(), options.circuits_limits.max_rw_rows);
+            }
+
+            ComponentType instance(context_object, input->value, options.circuits_limits.max_rw_rows, options.circuits_limits.max_mpt_rows);
 
             return {};
         }

@@ -25,7 +25,7 @@ namespace nil {
             using AssignmentTable = typename PresetTypes<BlueprintFieldType>::AssignmentTable;
 
             // initialize assignment table
-            const auto desc = ComponentType::get_table_description(circuits_limits.max_rw_size, circuits_limits.max_mpt_size);
+            const auto desc = ComponentType::get_table_description(circuits_limits.max_rw_rows, circuits_limits.max_mpt_rows);
             rw_table = std::make_shared<AssignmentTable>(desc.witness_columns, desc.public_input_columns, desc.constant_columns, desc.selector_columns);
 
             BOOST_LOG_TRIVIAL(debug) << "rw table:\n"
@@ -50,7 +50,7 @@ namespace nil {
             nil::blueprint::circuit<crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>> circuit;
 
             nil::blueprint::components::generate_circuit<BlueprintFieldType, nil::blueprint::bbf::rw, std::size_t, std::size_t>(
-                wrapper, circuit, *rw_table, input, start_row, circuits_limits.max_rw_size, circuits_limits.max_mpt_size);
+                wrapper, circuit, *rw_table, input, start_row, circuits_limits.max_rw_rows, circuits_limits.max_mpt_rows);
 
             crypto3::zk::snark::pack_lookup_tables_horizontal(
                 circuit.get_reserved_indices(),
