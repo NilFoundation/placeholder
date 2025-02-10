@@ -23,7 +23,7 @@ namespace nil {
 
             using ComponentType = nil::blueprint::bbf::copy<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT>;
 
-            typename nil::blueprint::bbf::context<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT> context_object(assignment_table, options.circuits_limits.max_rows);
+            typename nil::blueprint::bbf::context<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT> context_object(assignment_table, options.circuits_limits.max_total_rows);
 
             typename ComponentType::input_type input;
             input.rlc_challenge = options.circuits_limits.RLC_CHALLENGE;
@@ -40,8 +40,10 @@ namespace nil {
             if (!contract_bytecodes) {
                 return "can't read bytecode trace from file: " + bytecode_trace_path.string();
             }
+            size_t total_bytecode_size = 0;
             for (const auto& bytecode_it : contract_bytecodes->value) {
                 const auto raw_bytecode = string_to_bytes(bytecode_it.second);
+                total_bytecode_size += raw_bytecode.size();
                 input.bytecodes.new_buffer(raw_bytecode);
                 input.keccak_buffers.new_buffer(raw_bytecode);
             }
@@ -62,13 +64,30 @@ namespace nil {
             }
             input.rw_operations = std::move(rw_operations->value);
 
+            // TODO: there is no defined relation between input size and row size:
+            // replace these checks with handling of an error returned by component instantiation
+            if (total_bytecode_size > options.circuits_limits.max_bytecode_rows) {
+                return std::format("bytecode size {} exceeds circuit limit {}", total_bytecode_size, options.circuits_limits.max_bytecode_rows);
+            }
+            if (input.rw_operations.size() > options.circuits_limits.max_rw_rows) {
+                return std::format("rw operations size {} exceeds circuit limit {}", input.rw_operations.size(), options.circuits_limits.max_rw_rows);
+            }
+            size_t total_copy_bytes = 0;
+            for (const auto &copy_event : input.copy_events) {
+                total_copy_bytes += copy_event.bytes.size();
+            }
+            size_t expected_copy_table_size = total_copy_bytes * 2;
+            if (expected_copy_table_size > options.circuits_limits.max_copy_rows) {
+                return std::format("estimated size of copy table {} exceeds circuit limit {}", expected_copy_table_size, input.copy_events.size());
+            }
+
             ComponentType instance(
                 context_object,
                 input,
-                options.circuits_limits.max_copy,
-                options.circuits_limits.max_rw_size,
+                options.circuits_limits.max_copy_rows,
+                options.circuits_limits.max_rw_rows,
                 options.circuits_limits.max_keccak_blocks,
-                options.circuits_limits.max_bytecode_size
+                options.circuits_limits.max_bytecode_rows
             );
 
             return {};

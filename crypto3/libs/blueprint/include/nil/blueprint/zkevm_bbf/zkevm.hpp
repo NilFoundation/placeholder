@@ -99,9 +99,8 @@ namespace nil {
                     std::size_t max_zkevm_rows,
                     std::size_t max_copy,
                     std::size_t max_rw,
-                    std::size_t max_exponentations,
-                    std::size_t max_bytecode,
-                    std::size_t max_exponentiations = 50 // TODO:remove it later
+                    std::size_t max_exponentiations,
+                    std::size_t max_bytecode
                 ) :generic_component<FieldType,stage>(context_object), implemented_opcodes(get_implemented_opcodes_list()) {
                     std::size_t implemented_opcodes_amount = implemented_opcodes.size();
                     std::size_t opcode_selectors_amount = std::ceil(float(implemented_opcodes_amount)/4);

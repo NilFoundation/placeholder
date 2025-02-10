@@ -21,7 +21,7 @@ namespace nil {
 
             using ComponentType = nil::blueprint::bbf::keccak<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT>;
 
-            typename nil::blueprint::bbf::context<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT> context_object(assignment_table, options.circuits_limits.max_rows);
+            typename nil::blueprint::bbf::context<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT> context_object(assignment_table, options.circuits_limits.max_total_rows);
 
             typename ComponentType::input_type input;
             input.rlc_challenge = options.circuits_limits.RLC_CHALLENGE;
@@ -37,7 +37,7 @@ namespace nil {
             ComponentType instance(
                 context_object,
                 input
-                // ,options.circuits_limits.max_rows,
+                // ,options.circuits_limits.max_total_rows,
                 // options.circuits_limits.max_keccak_blocks
             );
 

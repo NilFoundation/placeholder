@@ -51,14 +51,15 @@ namespace nil {
 
         void register_circuits_limits_cli_args(CircuitsLimits& circuits_limits, po::options_description& cli_options) {
                 cli_options.add_options()
-                ("max-copy", make_defaulted_option(circuits_limits.max_copy), "Maximum copy events")
-                ("max-rw-size", make_defaulted_option(circuits_limits.max_rw_size), "Maximum rw operations")
+                ("max-copy-rows", make_defaulted_option(circuits_limits.max_copy_rows), "Maximum number of copy table rows")
+                ("max-rw-rows", make_defaulted_option(circuits_limits.max_rw_rows), "Maximum number of rw table rows")
                 ("max-keccak-blocks", make_defaulted_option(circuits_limits.max_keccak_blocks), "Maximum keccak blocks")
-                ("max-bytecode-size", make_defaulted_option(circuits_limits.max_bytecode_size), "Maximum size of bytecode")
-                ("max-rows", make_defaulted_option(circuits_limits.max_rows), "Maximum rows of assignemnt table")
-                ("max-mpt-size", make_defaulted_option(circuits_limits.max_mpt_size), "Maximum MPT operations")
-                ("max-zkevm-rows", make_defaulted_option(circuits_limits.max_zkevm_rows), "Maximum zkevm states")
-                ("max_exp_rows", make_defaulted_option(circuits_limits.max_exp_rows), "Maximum number of exponent operations")
+                ("max-bytecode-rows", make_defaulted_option(circuits_limits.max_bytecode_rows), "Maximum number of bytecode table rows")
+                ("max-total-rows", make_defaulted_option(circuits_limits.max_total_rows), "Maximum rows of assignemnt table")
+                ("max-mpt-rows", make_defaulted_option(circuits_limits.max_mpt_rows), "Maximum number of MPT table rows")
+                ("max-zkevm-rows", make_defaulted_option(circuits_limits.max_zkevm_rows), "Maximum number of zkevm table rows")
+                ("max-exp-rows", make_defaulted_option(circuits_limits.max_exp_rows), "Maximum number of exponent table rows")
+                ("max-exp-ops", make_defaulted_option(circuits_limits.max_exp_ops), "Maximum number of exponent operations")
                 ("RLC-CHALLENGE", make_defaulted_option(circuits_limits.RLC_CHALLENGE), "RLC_CHALLENGE (7 by default)");
         }
 

@@ -28,7 +28,7 @@ namespace nil {
 
 
             // initialize assignment table
-            const auto desc = ComponentType::get_table_description(circuits_limits.max_rows, circuits_limits.max_exp_rows);
+            const auto desc = ComponentType::get_table_description(circuits_limits.max_exp_rows, circuits_limits.max_exp_ops);
             exp_table = std::make_shared<AssignmentTable>(desc.witness_columns, desc.public_input_columns, desc.constant_columns, desc.selector_columns);
 
             BOOST_LOG_TRIVIAL(debug) << "exp table:\n"
@@ -55,7 +55,7 @@ namespace nil {
 
             nil::blueprint::components::generate_circuit<BlueprintFieldType, nil::blueprint::bbf::exponentiation, std::size_t, std::size_t>(
                 wrapper, circuit, *exp_table, input, start_row,
-                circuits_limits.max_rows, circuits_limits.max_exp_rows);
+                circuits_limits.max_exp_rows, circuits_limits.max_exp_ops);
 
             zk::snark::pack_lookup_tables_horizontal(
                 circuit.get_reserved_indices(),
