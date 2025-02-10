@@ -12,6 +12,8 @@
   cmake_modules,
   enableDebugging,
   gtest,
+  python3,
+  benchexec,
   enableDebug ? false,
   staticBuild ? true,
   runTests ? false,
@@ -20,6 +22,7 @@
   parallel_crypto3_tets? false,
   crypto3_bechmarks? false,
   parallel_crypto3_bechmarks? false,
+  proof_producer_benchmarks? false,
   }:
 let
   inherit (lib) optional;
@@ -38,7 +41,8 @@ in stdenv.mkDerivation {
   propagatedBuildInputs = [ (if enableDebug then (enableDebugging boost) else boost) ];
 
   buildInputs = [cmake_modules gtest protobuf] ++
-                  ( lib.optional (staticBuild) glibc.static );
+                  ( lib.optional (staticBuild) glibc.static ) ++
+                  ( lib.optional (proof_producer_benchmarks) [python3 benchexec]);
 
   cmakeFlags =
     [
