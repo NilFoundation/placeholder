@@ -14,6 +14,11 @@ protobuf_generate(
     PROTOC_OUT_DIR "${PROTO_BINARY_DIR}"
 )
 
+if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    # without it abseil-cpp fails to link with clang19-compiled code, see https://github.com/llvm/llvm-project/issues/102443
+    target_compile_options(proof_producer_proto PRIVATE "-fclang-abi-compat=17")
+endif()
+
 # Write header file with version of trace proto spec
 set(PROTO_HASH_HEADER "${CMAKE_CURRENT_BINARY_DIR}/proto_hash.h")
 add_custom_command(
@@ -51,9 +56,6 @@ target_link_libraries(proof_producer_assigner
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     target_compile_options(proof_producer_assigner PRIVATE "-fconstexpr-steps=2147483647")
-
-    # without it abseil-cpp fails to link with clang19-compiled code, see https://github.com/llvm/llvm-project/issues/102443
-    target_compile_options(proof_producer_assigner PRIVATE "-fclang-abi-compat=17")
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     target_compile_options(proof_producer_assigner PRIVATE "-fconstexpr-ops-limit=4294967295")
 endif ()
