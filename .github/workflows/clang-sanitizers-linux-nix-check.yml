@@ -25,7 +25,7 @@ jobs:
           cp result/test-logs/*_test.xml results/
         env:
           NIX_CONFIG: |
-            cores = 16
+            cores = 12
 
       - name: Publish Test Results
         uses: EnricoMi/publish-unit-test-result-action/linux@v2
