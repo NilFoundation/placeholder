@@ -37,6 +37,13 @@ jobs:
       always() && !cancelled()
     secrets: inherit
 
+  verify-proof-by-proof-producer:
+    name: Verify Proof
+    uses: ./.github/workflows/verify-proof-by-proof-producer.yml
+    if: |
+      always() && !cancelled()
+    secrets: inherit
+
   build-linux-proof-producer-deb-package:
     name: Build and upload deb package
     uses: ./.github/workflows/deb-package-proof-producer-bundler.yaml

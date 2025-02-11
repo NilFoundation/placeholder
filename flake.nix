@@ -228,6 +228,11 @@
             sanitize = true;
           });
 
+          verify-proofs = (pkgs.callPackage ./verify-proofs.nix {
+            enableDebug = false;
+            proof-producer = packages.proof-producer;
+          });
+
           all-clang = pkgs.symlinkJoin {
             name = "all";
             paths = [ crypto3-clang parallel-crypto3-clang proof-producer-clang ];
