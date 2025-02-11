@@ -77,7 +77,7 @@ namespace nil {
                         BOOST_LOG_TRIVIAL(info) << "Proof is verified";
                         return CommandResult::Ok();
                     }
-                    return CommandResult::UnknownError("Proof verification failed");
+                    return CommandResult::Error(ResultCode::ProverError, "Proof verification failed");
                 }
 
             private:

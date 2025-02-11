@@ -84,7 +84,7 @@ namespace nil {
                     pi_stream.open(output_folder_.string() + "/public_input.inp");
 
                     if(!pi_stream.is_open()) {
-                        return CommandResult::UnknownError("Can't open file {}/public_input.inp", output_folder_.string());
+                        return CommandResult::Error(ResultCode::IOError, "Can't open file {}/public_input.inp", output_folder_.string());
                     }
 
                     // Does not support public input columns.

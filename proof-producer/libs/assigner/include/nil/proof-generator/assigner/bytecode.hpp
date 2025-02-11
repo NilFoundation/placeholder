@@ -39,7 +39,7 @@ namespace nil {
             }
 
             const auto keccak_trace_path = get_keccak_trace_path(trace_base_path);
-            const auto keccak_operations = deserialize_keccak_traces_from_file(keccak_trace_path, options);
+            const auto keccak_operations = deserialize_keccak_traces_from_file(keccak_trace_path, options, contract_bytecodes->index);
             if (!keccak_operations) {
                 return "can't read keccak operations from file: " + keccak_trace_path.string();
             }

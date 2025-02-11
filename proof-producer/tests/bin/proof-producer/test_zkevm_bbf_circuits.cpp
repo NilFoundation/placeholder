@@ -112,7 +112,7 @@ TEST(ProverTest, TraceIndexMismatch) {
 
     ProverTests::AssignmentTableChecker checker(ZKEVM, trace_base_path);
     auto const res = checker.execute();
-    ASSERT_FALSE(res.succeeded());
+    ASSERT_EQ(res.result_code(), nil::proof_producer::ResultCode::InvalidInput);
     ASSERT_NE(checker.circuit_, nullptr);        // circuit is filled
     ASSERT_EQ(checker.assignment_table_, nullptr); // assignment table is not filled
 }
@@ -123,7 +123,7 @@ TEST(ProverTest, DifferentProtoHash) {
 
     ProverTests::AssignmentTableChecker checker(ZKEVM, trace_base_path);
     auto const res = checker.execute();
-    ASSERT_FALSE(res.succeeded());
+    ASSERT_EQ(res.result_code(), nil::proof_producer::ResultCode::InvalidInput);
     ASSERT_NE(checker.circuit_, nullptr);        // circuit is filled
     ASSERT_EQ(checker.assignment_table_, nullptr); // assignment table is not filled
 }

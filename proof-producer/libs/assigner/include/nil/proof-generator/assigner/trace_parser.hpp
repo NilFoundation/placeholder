@@ -1,14 +1,15 @@
 #ifndef PROOF_GENERATOR_LIBS_ASSIGNER_TRACE_PARSER_HPP_
 #define PROOF_GENERATOR_LIBS_ASSIGNER_TRACE_PARSER_HPP_
 
+#include <stdexcept>
 #include <utility>
 #include <fstream>
 #include <ios>
 #include <optional>
-#include <vector>
 #include <string>
 #include <cstdint>
-#include <unordered_map>
+#include <format>
+
 #include <boost/filesystem.hpp>
 #include <boost/log/trivial.hpp>
 #include <boost/filesystem.hpp>
@@ -26,6 +27,32 @@
 namespace nil {
     namespace proof_producer {
 
+        class trace_hash_mismatch : public std::logic_error {
+        public:
+            explicit trace_hash_mismatch(const std::string& path, const std::string& expectedHash, const std::string& readHash):
+                std::logic_error(std::format("Trace '{}' hash mismatch: expected {}, got {}", path, expectedHash, readHash)) {}
+        };
+
+        class trace_io_error : public std::logic_error {
+        public:
+            explicit trace_io_error(const std::string& path):
+                std::logic_error(std::format("Read '{}' trace io error", path)) {}
+        };
+
+        class trace_parse_error : public std::logic_error {
+        public:
+            explicit trace_parse_error(const std::string& path):
+                std::logic_error(std::format("Parse '{}' trace error", path)) {}
+        };
+
+        class trace_index_mismatch : public std::logic_error {
+        public:
+            explicit trace_index_mismatch(const std::string& path, uint64_t expectedIndex, uint64_t readIndex):
+                std::logic_error(std::format("Trace '{}' index mismatch: expected {}, got {}", path, expectedIndex, readIndex)) {}
+        };
+
+
+
         const char BYTECODE_EXTENSION[] = ".bc";
         const char RW_EXTENSION[] = ".rw";
         const char ZKEVM_EXTENSION[] = ".zkevm";
@@ -33,6 +60,9 @@ namespace nil {
         const char MPT_EXTENSION[] = ".mpt";
         const char EXP_EXTENSION[] = ".exp";
         const char KECCAK_EXTENSION[] = ".keccak";
+
+        using TraceIndex = uint64_t; // value expected to be the same for all traces from the same set
+        using TraceIndexOpt = std::optional<TraceIndex>;
 
         namespace {
             using exp_input = std::pair<blueprint::zkevm_word_type,blueprint::zkevm_word_type>; // base, exponent
@@ -53,23 +83,34 @@ namespace nil {
             }
 
             template<typename ProtoTraces>
-            [[nodiscard]] std::optional<ProtoTraces> read_pb_traces_from_file(const boost::filesystem::path& filename) {
+            [[nodiscard]] ProtoTraces read_pb_traces_from_file(
+                const boost::filesystem::path& filename,
+                TraceIndexOpt index_base,
+                const AssignerOptions& options
+            ) {
                 std::ifstream file(filename.c_str(), std::ios::in | std::ios::binary);
                 if (!file.is_open()) {
-                    return std::nullopt;
+                    throw trace_io_error(filename.string());
                 }
 
                 ProtoTraces pb_traces;
                 if (!pb_traces.ParseFromIstream(&file)) {
-                    return std::nullopt;
+                    throw trace_parse_error(filename.string());
                 }
 
                 if (pb_traces.proto_hash() != PROTO_HASH) {
-                    BOOST_LOG_TRIVIAL(error) << "Compatibility check failed for trace file " << filename.c_str()
-                                             << ": proto version mismatch";
-                    return std::nullopt;
+                    throw trace_hash_mismatch(filename.string(), PROTO_HASH, pb_traces.proto_hash());
 
                 }
+
+                auto index = pb_traces.trace_idx();
+                if (index_base.has_value() && index != *index_base) {
+                    BOOST_LOG_TRIVIAL(warning) << "Trace index mismatch: expected " << *index_base << ", got " << index;
+                    if (!options.ignore_index_mismatch) {
+                        throw trace_index_mismatch(filename.string(), *index_base, index); // TODO: add filename
+                    }
+                }
+
                 return pb_traces;
             }
 
@@ -156,18 +197,6 @@ namespace nil {
             return res;
         }
 
-        using TraceIndex = uint64_t; // value expected to be the same for all traces from the same set
-        using TraceIndexOpt = std::optional<TraceIndex>;
-
-        inline bool check_trace_index(const AssignerOptions& options, TraceIndexOpt base, TraceIndex index) {
-            if (base.has_value() && index != *base) {
-                BOOST_LOG_TRIVIAL(warning) << "Trace index mismatch: expected " << *base << ", got " << index;
-                if (!options.ignore_index_mismatch) {
-                    return false;
-                }
-            }
-            return true;
-        }
 
         template <typename TraceType>
         struct DeserializeResult {
@@ -197,24 +226,18 @@ namespace nil {
             const AssignerOptions& opts,
             TraceIndexOpt base_index = {}
         ) {
-            const auto pb_traces = read_pb_traces_from_file<executionproofs::BytecodeTraces>(bytecode_trace_path);
-            if (!pb_traces) {
-                return std::nullopt;
-            }
-            if (!check_trace_index(opts, base_index, pb_traces->trace_idx())) {
-                return std::nullopt;
-            }
+            const auto pb_traces = read_pb_traces_from_file<executionproofs::BytecodeTraces>(bytecode_trace_path, base_index, opts);
 
             // Read executed op codes
             std::unordered_map<std::string, std::string> contract_bytecodes;
-            const auto& bytecodes = pb_traces->contract_bytecodes();
+            const auto& bytecodes = pb_traces.contract_bytecodes();
             for (const auto& bytecode : bytecodes) {
                 contract_bytecodes.emplace(bytecode.first, bytecode.second);
             }
 
             return DeserializeResult<BytecodeTraces>{
                 std::move(contract_bytecodes),
-                pb_traces->trace_idx()
+                pb_traces.trace_idx()
             };
         }
 
@@ -223,19 +246,13 @@ namespace nil {
             const AssignerOptions& opts,
             TraceIndexOpt base_index = {}
         ) {
-            const auto pb_traces = read_pb_traces_from_file<executionproofs::RWTraces>(rw_traces_path);
-            if (!pb_traces) {
-                return std::nullopt;
-            }
-            if (!check_trace_index(opts, base_index, pb_traces->trace_idx())) {
-                return std::nullopt;
-            }
+            const auto pb_traces = read_pb_traces_from_file<executionproofs::RWTraces>(rw_traces_path, base_index, opts);
 
             blueprint::bbf::rw_operations_vector rw_traces;
-            rw_traces.reserve(pb_traces->stack_ops_size() + pb_traces->memory_ops_size() + pb_traces->storage_ops_size() + 1); // +1 slot for start op
+            rw_traces.reserve(pb_traces.stack_ops_size() + pb_traces.memory_ops_size() + pb_traces.storage_ops_size() + 1); // +1 slot for start op
 
             // Convert stack operations
-            for (const auto& pb_sop : pb_traces->stack_ops()) {
+            for (const auto& pb_sop : pb_traces.stack_ops()) {
                 rw_traces.push_back(blueprint::bbf::stack_rw_operation(
                     static_cast<uint64_t>(pb_sop.txn_id()),
                     static_cast<int32_t>(pb_sop.index()),
@@ -246,7 +263,7 @@ namespace nil {
             }
 
             // Convert memory operations
-            for (const auto& pb_mop : pb_traces->memory_ops()) {
+            for (const auto& pb_mop : pb_traces.memory_ops()) {
                 auto value = string_to_bytes(pb_mop.value());
                 auto const op = blueprint::bbf::memory_rw_operation(
                     static_cast<uint64_t>(pb_mop.txn_id()),
@@ -259,7 +276,7 @@ namespace nil {
             }
 
             // Convert storage operations
-            for (const auto& pb_sop : pb_traces->storage_ops()) {
+            for (const auto& pb_sop : pb_traces.storage_ops()) {
                 auto op = blueprint::bbf::storage_rw_operation(
                     static_cast<uint64_t>(pb_sop.txn_id()),
                     blueprint::zkevm_word_from_string(static_cast<std::string>(pb_sop.key())),
@@ -276,13 +293,13 @@ namespace nil {
             std::sort(rw_traces.begin(), rw_traces.end(), std::less());
 
             BOOST_LOG_TRIVIAL(debug) << "number RW operations " << rw_traces.size() << ":\n"
-                                     << "stack   " << pb_traces->stack_ops_size() << "\n"
-                                     << "memory  " << pb_traces->memory_ops_size() << "\n"
-                                     << "storage " << pb_traces->storage_ops_size() << "\n";
+                                     << "stack   " << pb_traces.stack_ops_size() << "\n"
+                                     << "memory  " << pb_traces.memory_ops_size() << "\n"
+                                     << "storage " << pb_traces.storage_ops_size() << "\n";
 
             return DeserializeResult<RWTraces>{
                 std::move(rw_traces),
-                pb_traces->trace_idx()
+                pb_traces.trace_idx()
             };
         }
 
@@ -291,17 +308,11 @@ namespace nil {
             const AssignerOptions& opts,
             TraceIndexOpt base_index = {}
         ) {
-            const auto pb_traces = read_pb_traces_from_file<executionproofs::ZKEVMTraces>(zkevm_traces_path);
-            if (!pb_traces) {
-                return std::nullopt;
-            }
-            if (!check_trace_index(opts, base_index, pb_traces->trace_idx())) {
-                return std::nullopt;
-            }
+            const auto pb_traces = read_pb_traces_from_file<executionproofs::ZKEVMTraces>(zkevm_traces_path, base_index, opts);
 
             std::vector<blueprint::bbf::zkevm_state> zkevm_states;
-            zkevm_states.reserve(pb_traces->zkevm_states_size());
-            for (const auto& pb_state : pb_traces->zkevm_states()) {
+            zkevm_states.reserve(pb_traces.zkevm_states_size());
+            for (const auto& pb_state : pb_traces.zkevm_states()) {
                 std::vector<blueprint::zkevm_word_type> stack;
                 stack.reserve(pb_state.stack_slice_size());
                 for (const auto& pb_stack_val : pb_state.stack_slice()) {
@@ -331,7 +342,7 @@ namespace nil {
 
             return DeserializeResult<ZKEVMTraces>{
                 std::move(zkevm_states),
-                pb_traces->trace_idx()
+                pb_traces.trace_idx()
             };
         }
 
@@ -340,25 +351,19 @@ namespace nil {
             const AssignerOptions& opts,
             TraceIndexOpt base_index = {}
         ) {
-            const auto pb_traces = read_pb_traces_from_file<executionproofs::CopyTraces>(copy_traces_file);
-            if (!pb_traces) {
-                return std::nullopt;
-            }
-            if (!check_trace_index(opts, base_index, pb_traces->trace_idx())) {
-                return std::nullopt;
-            }
+            const auto pb_traces = read_pb_traces_from_file<executionproofs::CopyTraces>(copy_traces_file, base_index, opts);
 
             namespace bbf = blueprint::bbf;
 
             std::vector<bbf::copy_event> copy_events;
-            copy_events.reserve(pb_traces->copy_events_size());
-            for (const auto& pb_event: pb_traces->copy_events()) {
+            copy_events.reserve(pb_traces.copy_events_size());
+            for (const auto& pb_event: pb_traces.copy_events()) {
                 bbf::copy_event event;
                 event.initial_rw_counter = pb_event.rw_idx();
 
                 const auto source = copy_operand_from_proto(pb_event.from());
                 if (!source) {
-                    return std::nullopt;
+                    throw trace_parse_error(copy_traces_file.string());
                 }
                 event.source_type = source->first;
                 event.source_id = source->second;
@@ -366,7 +371,7 @@ namespace nil {
 
                 const auto dest = copy_operand_from_proto(pb_event.to());
                 if (!dest) {
-                    return std::nullopt;
+                    throw trace_parse_error(copy_traces_file.string());
                 }
                 event.destination_type = dest->first;
                 event.destination_id = dest->second;
@@ -380,7 +385,7 @@ namespace nil {
 
             return DeserializeResult<CopyEvents>{
                 std::move(copy_events),
-                pb_traces->trace_idx()
+                pb_traces.trace_idx()
             };
         }
 
@@ -389,17 +394,11 @@ namespace nil {
             const AssignerOptions& opts,
             TraceIndexOpt base_index = {}
         ) {
-            const auto pb_traces = read_pb_traces_from_file<executionproofs::ExpTraces>(exp_traces_path);
-            if (!pb_traces) {
-                return std::nullopt;
-            }
-            if (!check_trace_index(opts, base_index, pb_traces->trace_idx())) {
-                return std::nullopt;
-            }
+            const auto pb_traces = read_pb_traces_from_file<executionproofs::ExpTraces>(exp_traces_path, base_index, opts);
 
             std::vector<exp_input> exps;
-            exps.reserve(pb_traces->exp_ops_size());
-            for (const auto& pb_exp_op : pb_traces->exp_ops()) {
+            exps.reserve(pb_traces.exp_ops_size());
+            for (const auto& pb_exp_op : pb_traces.exp_ops()) {
                 exps.emplace_back(
                     proto_uint256_to_zkevm_word(pb_exp_op.base()),
                     proto_uint256_to_zkevm_word(pb_exp_op.exponent())
@@ -408,7 +407,7 @@ namespace nil {
 
             return DeserializeResult<ExpTraces>{
                 std::move(exps),
-                pb_traces->trace_idx()
+                pb_traces.trace_idx()
             };
         }
 
@@ -417,17 +416,11 @@ namespace nil {
             const AssignerOptions& opts,
             TraceIndexOpt base_index = {}
         ) {
-            const auto pb_traces = read_pb_traces_from_file<executionproofs::KeccakTraces>(keccak_traces_path);
-            if (!pb_traces) {
-                return std::nullopt;
-            }
-            if (!check_trace_index(opts, base_index, pb_traces->trace_idx())) {
-                return std::nullopt;
-            }
+            const auto pb_traces = read_pb_traces_from_file<executionproofs::KeccakTraces>(keccak_traces_path, base_index, opts);
 
             KeccakTraces result;
-            result.reserve(pb_traces->hashed_buffers_size());
-            for (const auto& pb_hashed_buffer: pb_traces->hashed_buffers()) {
+            result.reserve(pb_traces.hashed_buffers_size());
+            for (const auto& pb_hashed_buffer: pb_traces.hashed_buffers()) {
                 result.push_back(keccak_input{
                     .buffer = string_to_bytes(pb_hashed_buffer.buffer()),
                     .hash =proto_uint256_to_zkevm_word(pb_hashed_buffer.keccak_hash())
@@ -436,7 +429,7 @@ namespace nil {
 
             return DeserializeResult<KeccakTraces>{
                 .value = std::move(result),
-                .index = pb_traces->trace_idx()
+                .index = pb_traces.trace_idx()
             };
         }
     } // namespace proof_producer

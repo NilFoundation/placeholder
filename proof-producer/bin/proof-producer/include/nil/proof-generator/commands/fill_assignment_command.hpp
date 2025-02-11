@@ -49,16 +49,25 @@ namespace nil {
                     using resources::notify;
 
                     if (!assignment_table_ || !table_description_) {
-                        return CommandResult::UnknownError("Assignment table is not initialized");
+                        return CommandResult::Error(ResultCode::ProverError, "Assignment table is not initialized");
                     }
 
-                    TIME_LOG_START("Fill assignment table")
-                    const auto err = fill_assignment_table_single_thread(*assignment_table_, *table_description_, circuit_name_, trace_base_path_, assigner_opts_);
-                    if (err) {
-                        return CommandResult::UnknownError("Can't fill assignment table from trace '{}', err: {}" , trace_base_path_.string(), err.value());
+                    try {
+                        TIME_LOG_START("Fill assignment table")
+                        const auto err = fill_assignment_table_single_thread(*assignment_table_, *table_description_, circuit_name_, trace_base_path_, assigner_opts_);
+                        if (err) {
+                            return CommandResult::UnknownError("Can't fill assignment table from trace '{}', err: {}" , trace_base_path_.string(), err.value());
+                        }
+                        TIME_LOG_END("Fill assignment table")
+                    } catch (trace_io_error& e) {
+                        return CommandResult::Error(ResultCode::IOError, "Can't read trace file: {}", e.what());
+                    } catch (trace_parse_error& e) {
+                        return CommandResult::Error(ResultCode::InvalidInput, "Can't parse trace file: {}", e.what());
+                    } catch (trace_index_mismatch& e) {
+                        return CommandResult::Error(ResultCode::InvalidInput, "Trace index mismatch: {}", e.what());
+                    } catch (trace_hash_mismatch& e) {
+                        return CommandResult::Error(ResultCode::InvalidInput, "Trace hash mismatch in file err: {}", e.what());
                     }
-                    TIME_LOG_END("Fill assignment table")
-
 
                     notify<AssignmentTable> (*this, assignment_table_);
                     notify<TableDescription>(*this, table_description_);

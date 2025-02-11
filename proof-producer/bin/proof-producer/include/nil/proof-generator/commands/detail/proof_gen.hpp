@@ -77,7 +77,7 @@ namespace nil {
                     BOOST_LOG_TRIVIAL(info) << "Reading proof from file " << proof_file_;
                     auto marshalled_proof = detail::decode_marshalling_from_file<ProofMarshalling>(proof_file_, true);
                     if (!marshalled_proof) {
-                        return CommandResult::UnknownError("Failed to read proof from {}", proof_file_.string());
+                        return CommandResult::Error(ResultCode::IOError, "Failed to read proof from {}", proof_file_.string());
                     }
 
                     notify<Proof>(*this, std::make_shared<Proof>(
@@ -125,7 +125,7 @@ namespace nil {
                     BOOST_ASSERT(this->lpc_scheme_);
 
                     if (!can_write_to_file(proof_file_.string())) {
-                        return CommandResult::UnknownError("Can't write to file {}", proof_file_.string());
+                        return CommandResult::Error(ResultCode::IOError, "Can't write to file {}", proof_file_.string());
                     }
 
                     BOOST_LOG_TRIVIAL(info) << "Generating proof...";
@@ -145,14 +145,14 @@ namespace nil {
 
                     auto res = write_proof_to_file(proof, this->lpc_scheme_->get_fri_params(), proof_file_);
                     if (!res) {
-                        return CommandResult::UnknownError("Failed to write proof to file {}", proof_file_.string());
+                        return CommandResult::Error(ResultCode::IOError, "Failed to write proof to file {}", proof_file_.string());
                     }
 
                     BOOST_LOG_TRIVIAL(info) << "Writing json proof to " << json_file_;
                     auto output_file = open_file<std::ofstream>(json_file_.string(), std::ios_base::out);
                     if (!output_file)
                     {
-                        return CommandResult::UnknownError("Failed to open file {}", json_file_.string());
+                        return CommandResult::Error(ResultCode::IOError, "Failed to open file {}", json_file_.string());
                     }
 
                     using nil::blueprint::recursive_verifier_generator;
@@ -204,7 +204,7 @@ namespace nil {
                     BOOST_ASSERT(this->lpc_scheme_);
 
                     if (!can_write_to_file(proof_file_.string())) {
-                        return CommandResult::UnknownError("Can't write to file {}", proof_file_.string());
+                        return CommandResult::Error(ResultCode::IOError, "Can't write to file {}", proof_file_.string());
                     }
 
                     BOOST_LOG_TRIVIAL(info) << "Generating partial proof...";
@@ -224,7 +224,7 @@ namespace nil {
 
                     auto res = write_proof_to_file(proof, this->lpc_scheme_->get_fri_params(), proof_file_);
                     if (!res) {
-                        return CommandResult::UnknownError("Failed to write proof to file {}", proof_file_.string());
+                        return CommandResult::Error(ResultCode::IOError, "Failed to write proof to file {}", proof_file_.string());
                     }
 
                     BOOST_LOG_TRIVIAL(info) << "Writing challenge to " << challenge_file_ << ".";
