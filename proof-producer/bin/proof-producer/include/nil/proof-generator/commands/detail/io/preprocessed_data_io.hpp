@@ -49,7 +49,7 @@ namespace nil {
                         marshalled_preprocessed_public_data
                     );
                     if (!res) {
-                        return CommandResult::UnknownError("Failed to write preprocessed public data");
+                        return CommandResult::Error(ResultCode::IOError, "Failed to write preprocessed public data");
                     }
                     BOOST_LOG_TRIVIAL(info) << "Preprocessed public data written.";
 
@@ -81,7 +81,7 @@ namespace nil {
                     auto marshalled_value = detail::decode_marshalling_from_file<PublicPreprocessedDataMarshalling>(
                         preprocessed_data_file_);
                     if (!marshalled_value) {
-                        return CommandResult::UnknownError("Failed to read preprocessed data from {}" , preprocessed_data_file_.string());
+                        return CommandResult::Error(ResultCode::IOError, "Failed to read preprocessed data from {}" , preprocessed_data_file_.string());
                     }
 
                     auto public_preprocessed_data = make_placeholder_preprocessed_public_data<Endianness, PublicPreprocessedData>(*marshalled_value);
@@ -118,7 +118,7 @@ namespace nil {
                         marshalled_common_data
                     );
                     if (!res) {
-                        return CommandResult::UnknownError("Failed to write preprocessed common data");
+                        return CommandResult::Error(ResultCode::IOError, "Failed to write preprocessed common data");
                     }
 
                     BOOST_LOG_TRIVIAL(info) << "Preprocessed common data written.";
@@ -148,7 +148,7 @@ namespace nil {
                         preprocessed_common_data_file_);
 
                     if (!marshalled_value) {
-                        return CommandResult::UnknownError("Failed to read preprocessed common data from {}", preprocessed_common_data_file_.string());
+                        return CommandResult::Error(ResultCode::IOError, "Failed to read preprocessed common data from {}", preprocessed_common_data_file_.string());
                     }
 
                     auto common_data = nil::crypto3::marshalling::types::make_placeholder_common_data<Endianness, CommonData>(*marshalled_value);

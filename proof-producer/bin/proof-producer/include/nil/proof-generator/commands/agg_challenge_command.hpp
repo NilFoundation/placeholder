@@ -50,7 +50,7 @@ namespace nil {
                 using ChallengeIO = ChallengeIO<CurveType, HashType>;
 
                 if (aggregate_input_files.empty()) {
-                    return CommandResult::UnknownError("No input files for challenge aggregation");
+                    return CommandResult::Error(ResultCode::InvalidInput, "No input files for challenge aggregation");
                 }
                 BOOST_LOG_TRIVIAL(info) << "Generating aggregated challenge to " << aggregated_challenge_file;
 
@@ -63,7 +63,7 @@ namespace nil {
                 for (const auto &input_file : aggregate_input_files) {
                     std::optional<typename BlueprintField::value_type> challenge = ChallengeIO::read_challenge(input_file);
                     if (!challenge) {
-                        return CommandResult::UnknownError("Failed to read challenge from {}", input_file.string());
+                        return CommandResult::Error(ResultCode::IOError, "Failed to read challenge from {}", input_file.string());
                     }
                     transcript(challenge.value());
                 }
@@ -73,7 +73,7 @@ namespace nil {
 
                 auto const res = ChallengeIO::save_challenge(aggregated_challenge_file, output_challenge);
                 if (!res) {
-                    return CommandResult::UnknownError("Failed to write aggregated challenge to {}", aggregated_challenge_file.string());
+                    return CommandResult::Error(ResultCode::IOError, "Failed to write aggregated challenge to {}", aggregated_challenge_file.string());
                 }
                 return CommandResult::Ok();
             }

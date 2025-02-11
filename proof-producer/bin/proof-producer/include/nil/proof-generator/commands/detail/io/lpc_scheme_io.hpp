@@ -46,7 +46,7 @@ namespace nil {
                         marshalled_lpc_state
                     );
                     if (!res) {
-                        return CommandResult::UnknownError("Failed to write commitment scheme");
+                        return CommandResult::Error(ResultCode::IOError, "Failed to write commitment scheme");
                     }
 
                     BOOST_LOG_TRIVIAL(info) << "Commitment scheme written.";
@@ -78,12 +78,12 @@ namespace nil {
                         commitment_scheme_state_file_);
 
                     if (!marshalled_value) {
-                        return CommandResult::UnknownError("Failed to read commitment scheme from {}", commitment_scheme_state_file_.string());
+                        return CommandResult::Error(ResultCode::IOError, "Failed to read commitment scheme from {}", commitment_scheme_state_file_.string());
                     }
 
                     auto commitment_scheme = make_commitment_scheme<Endianness, LpcScheme>(*marshalled_value);
                     if (!commitment_scheme) {
-                        return CommandResult::UnknownError("Error decoding commitment scheme");
+                        return CommandResult::Error(ResultCode::InvalidInput, "Error decoding commitment scheme");
                     }
 
                     auto lpc_scheme = std::make_shared<LpcScheme>(std::move(commitment_scheme.value()));
