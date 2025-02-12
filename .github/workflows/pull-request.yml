@@ -36,3 +36,12 @@ jobs:
     if: |
       always() && !cancelled()
     secrets: inherit
+
+  build-linux-proof-producer-deb-package:
+    name: Build and upload deb package
+    uses: ./.github/workflows/deb-package-proof-producer-bundler.yaml
+    if: |
+      always() && !cancelled()
+    # TODO add if it's a merge to master
+    secrets: inherit
+
