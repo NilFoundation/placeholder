@@ -171,12 +171,6 @@ namespace nil {
                         std::vector<math::expression<variable_type>> expressions(extended_domain_sizes.size());
                         auto theta_acc = FieldType::value_type::one();
 
-                        // Every constraint has variable type 'variable_type', but we want it to use
-                        // 'polynomial_dfs_variable_type' instead. The only difference is the coefficient type
-                        // inside a term. We want the coefficients to be dfs polynomials here.
-                        math::expression_variable_type_converter<variable_type, polynomial_dfs_variable_type> converter(
-                            value_type_to_polynomial_dfs);
-
                         math::expression_max_degree_visitor<variable_type> visitor;
 
                         const auto& gates = constraint_system.gates();
