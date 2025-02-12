@@ -398,7 +398,7 @@ namespace nil {
                             }
                         }
 
-                        if (_is_lookup_enabled||constraint_system.copy_constraints().size() > 0) {
+                        if (_is_lookup_enabled || constraint_system.copy_constraints().size() > 0) {
                             _commitment_scheme.append_eval_point(PERMUTATION_BATCH, _proof.eval_proof.challenge);
                         }
 
@@ -406,12 +406,10 @@ namespace nil {
                             _commitment_scheme.append_eval_point(PERMUTATION_BATCH, 0, _proof.eval_proof.challenge * _omega);
 
                         if (_is_lookup_enabled) {
+                            // For polynomail U, we need the shifted value as well.
                             _commitment_scheme.append_eval_point(PERMUTATION_BATCH, preprocessed_public_data.common_data->permutation_parts,
                                 _proof.eval_proof.challenge * _omega);
                             _commitment_scheme.append_eval_point(LOOKUP_BATCH, _proof.eval_proof.challenge);
-                            _commitment_scheme.append_eval_point(LOOKUP_BATCH, _proof.eval_proof.challenge * _omega);
-                            _commitment_scheme.append_eval_point(LOOKUP_BATCH, _proof.eval_proof.challenge *
-                                _omega.pow(assignment_desc.usable_rows_amount));
                         }
 
                         _commitment_scheme.append_eval_point(QUOTIENT_BATCH, _proof.eval_proof.challenge);

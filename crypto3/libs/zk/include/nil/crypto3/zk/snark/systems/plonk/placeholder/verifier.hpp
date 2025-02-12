@@ -56,6 +56,7 @@ namespace nil {
 
                     using commitment_scheme_type = typename ParamsType::commitment_scheme_type;
                     using commitment_type = typename commitment_scheme_type::commitment_type;
+                    using eval_storage_type = commitments::eval_storage<FieldType>;
 
                     constexpr static const std::size_t gate_parts = 1;
                     constexpr static const std::size_t permutation_parts = 3;
@@ -182,6 +183,53 @@ namespace nil {
                             }
                         }
                         return process(common_data, proof, table_description, constraint_system, commitment_scheme);
+                    }
+
+                    // Takes out values of different polynomials at challenge point 'Y' from the evaluation proofs.
+                    // All arguments except 'Z' and 'constraint_system' are output arguments.
+                    static inline void prepare_verifier_inputs(
+                            const eval_storage_type& Z,
+                            const plonk_constraint_system<FieldType> &constraint_system,
+                            const typename public_preprocessor_type::preprocessed_data_type::common_data_type &common_data,
+                            std::vector<typename FieldType::value_type>& counts,
+                            typename FieldType::value_type& U_value,
+                            typename FieldType::value_type& U_shifted_value,
+                            std::vector<typename FieldType::value_type>& hs,
+                            std::vector<typename FieldType::value_type>& gs) {
+
+                        // Get lookup inputs and lookup values sizes from the constraint system.
+                        size_t lookup_inputs_count = 0;
+                        for (const auto& gate: constraint_system.lookup_gates()) {
+                            lookup_inputs_count += gate.constraints.size();
+                        }
+                        
+                        size_t lookup_values_count = 0;
+                        for (const auto& table: constraint_system.lookup_tables()) {
+                            lookup_values_count += table.lookup_options.size();
+                        }
+
+                        // LOOKUP_BATCH consists of evaluations of 'counts' polynomial only.
+                        BOOST_ASSERT(lookup_values_count == Z.get_batch_size(LOOKUP_BATCH));
+
+                        for (std::size_t i = 0; i < lookup_values_count; i++) {
+                            counts.push_back(Z.get(LOOKUP_BATCH, i, 0));
+                        }
+
+                        U_value = Z.get(PERMUTATION_BATCH, common_data.permutation_parts)[0];
+                        U_shifted_value = Z.get(PERMUTATION_BATCH, common_data.permutation_parts)[1];
+
+                        // On the next lines +1 stands for polynomial U.
+                        for (std::size_t i = common_data.permutation_parts + 1;
+                             i < common_data.permutation_parts + 1 + lookup_inputs_count;
+                             i++) {
+                            hs.push_back(Z.get(PERMUTATION_BATCH, i, 0));
+                        }
+
+                        for (std::size_t i = common_data.permutation_parts + 1 + lookup_inputs_count;
+                             i < common_data.permutation_parts + 1 + lookup_inputs_count + lookup_values_count;
+                             i++) {
+                            gs.push_back(Z.get(PERMUTATION_BATCH, i, 0));
+                        }
                     }
 
                     static inline bool process(
@@ -372,53 +420,19 @@ namespace nil {
                         bool is_lookup_enabled = (constraint_system.lookup_gates().size() > 0);
                         std::array<typename FieldType::value_type, lookup_parts> lookup_argument;
                         if (is_lookup_enabled) {
-                            std::vector<typename FieldType::value_type> special_selector_values_shifted(2);
-                            special_selector_values_shifted[0] = Z.get(
-                                FIXED_VALUES_BATCH, 2 * common_data.permuted_columns.size(), 1);
-                            special_selector_values_shifted[1] = Z.get(
-                                FIXED_VALUES_BATCH, 2 * common_data.permuted_columns.size() + 1, 1);
-
-                            // Get lookup inputs and lookup values sizes from the constraint system.
-                            size_t lookup_inputs_count = 0;
-                            for (const auto& gate: constraint_system.lookup_gates()) {
-                                lookup_inputs_count += gate.constraints.size();
-                            }
-                            
-                            size_t lookup_values_count = 0;
-                            for (const auto& table: constraint_system.lookup_tables()) {
-                                lookup_values_count += table.lookup_options.size();
-                            }
-
-                            // LOOKUP_BATCH consists of evaluations of 'counts' polynomial only.
+                            // Prepare values of different polynomials required for lookup argument verification. 
                             std::vector<typename FieldType::value_type> counts;
-                            BOOST_ASSERT(lookup_values_count == Z.get_batch_size(LOOKUP_BATCH));
-
-                            for (std::size_t i = 0; i < lookup_values_count; i++) {
-                                counts.push_back(Z.get(LOOKUP_BATCH, i, 0));
-                            }
-
-                            typename FieldType::value_type U_value = Z.get(PERMUTATION_BATCH, common_data.permutation_parts)[0];
-                            typename FieldType::value_type U_shifted_value = Z.get(PERMUTATION_BATCH, common_data.permutation_parts)[1];
+                            typename FieldType::value_type U_value;
+                            typename FieldType::value_type U_shifted_value;
                             std::vector<typename FieldType::value_type> hs;
                             std::vector<typename FieldType::value_type> gs;
 
-                            // On the next lines +1 stands for polynomial U.
-                            for (std::size_t i = common_data.permutation_parts + 1;
-                                 i < common_data.permutation_parts + 1 + lookup_inputs_count;
-                                 i++) {
-                                hs.push_back(Z.get(PERMUTATION_BATCH, i, 0));
-                            }
-
-                            for (std::size_t i = common_data.permutation_parts + 1 + lookup_inputs_count;
-                                 i < common_data.permutation_parts + 1 + lookup_inputs_count + lookup_values_count;
-                                 i++) {
-                                gs.push_back(Z.get(PERMUTATION_BATCH, i, 0));
-                            }
+                            prepare_verifier_inputs(Z, constraint_system, common_data, counts, U_value, U_shifted_value, hs, gs);
 
                             placeholder_lookup_argument_verifier<FieldType, commitment_scheme_type, ParamsType> lookup_argument_verifier;
                             lookup_argument = lookup_argument_verifier.verify_eval(
                                 common_data,
-                                special_selector_values, special_selector_values_shifted,
+                                special_selector_values,
                                 constraint_system,
                                 proof.eval_proof.challenge,
                                 columns_at_y,
