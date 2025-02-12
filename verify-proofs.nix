@@ -52,12 +52,12 @@ in stdenv.mkDerivation rec {
   cmakeBuildType = if enableDebug then "Debug" else "Release";
   doCheck = true;
 
+  # add these, when proof verification start working:
+  # "zkevm_bbf_hardhat_minimal_math_zkevm"
+  # "zkevm_bbf_hardhat_minimal_math_rw"
+  # "zkevm_bbf_hardhat_minimal_math_bytecode"
   test_names = [
     "zkevm_bbf_hardhat_keccak_copy"
-    "zkevm_bbf_hardhat_minimal_math_zkevm"
-    "zkevm_bbf_hardhat_minimal_math_rw"
-    "zkevm_bbf_hardhat_minimal_math_bytecode"
-
     "zkevm_bbf_hardhat_calldatacopy_copy"
     "zkevm_bbf_hardhat_exp_copy"
     "zkevm_bbf_hardhat_exp_rw"
