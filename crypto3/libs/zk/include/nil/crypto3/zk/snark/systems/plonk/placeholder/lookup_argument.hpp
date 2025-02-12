@@ -56,60 +56,6 @@ namespace nil {
     namespace crypto3 {
         namespace zk {
             namespace snark {
-                template <typename FieldType>
-                std::vector<std::size_t> lookup_parts(
-                    const plonk_constraint_system<FieldType> &constraint_system,
-                    std::size_t max_quotient_chunks
-                ) {
-                    if (max_quotient_chunks == 0) {
-                        return {constraint_system.sorted_lookup_columns_number()};
-                    }
-
-                    using VariableType = plonk_variable<typename FieldType::value_type>;
-                    typedef math::expression_max_degree_visitor<VariableType> degree_visitor_type;
-                    std::vector<std::size_t> lookup_parts;
-                    degree_visitor_type lookup_visitor;
-
-                    std::size_t lookup_chunk = 0;
-                    std::size_t lookup_part = 0;
-                    std::size_t max_constraint_degree;
-                    for (const auto& gate :constraint_system.lookup_gates()) {
-                        for (const auto& constr : gate.constraints) {
-                            max_constraint_degree = 0;
-                            for (const auto& li : constr.lookup_input) {
-                                std::size_t deg = lookup_visitor.compute_max_degree(li);
-                                max_constraint_degree = std::max(
-                                    max_constraint_degree,
-                                    deg
-                                );
-                            }
-                            if (lookup_chunk + max_constraint_degree + 1>= max_quotient_chunks) {
-                                lookup_parts.push_back(lookup_part);
-                                lookup_chunk = 0;
-                                lookup_part = 0;
-                            }
-                            // +1 because lookup input is multiplied by selector
-                            lookup_chunk += max_constraint_degree + 1;
-                            lookup_part++;
-                        }
-                    }
-                    for (const auto& table : constraint_system.lookup_tables()) {
-                        for( const auto &lookup_options: table.lookup_options ){
-                            // +3 because now any lookup option is lookup_column * lookup_selector * (1-q_last-q_blind) -- three polynomials degree rows_amount-1
-                            if (lookup_chunk + 3 >= max_quotient_chunks) {
-                                lookup_parts.push_back(lookup_part);
-                                lookup_chunk = 0;
-                                lookup_part = 0;
-                            }
-                            lookup_chunk += 3;
-                            lookup_part++;
-                        }
-                    }
-
-                    lookup_parts.push_back(lookup_part);
-                    return lookup_parts;
-                }
-
                 template<typename FieldType, typename CommitmentSchemeTypePermutation, typename ParamsType>
                 class placeholder_lookup_argument_prover {
                     using transcript_hash_type = typename ParamsType::transcript_hash_type;
@@ -490,7 +436,6 @@ namespace nil {
                     std::array<typename FieldType::value_type, argument_size> verify_eval(
                         const typename placeholder_public_preprocessor<FieldType, ParamsType>::preprocessed_data_type::common_data_type &common_data,
                         const std::vector<typename FieldType::value_type> &special_selector_values,
-                        const std::vector<typename FieldType::value_type> &special_selector_values_shifted,
                         const plonk_constraint_system<FieldType> &constraint_system,
                         const typename FieldType::value_type &challenge,
                         typename policy_type::evaluation_map &evaluations,
