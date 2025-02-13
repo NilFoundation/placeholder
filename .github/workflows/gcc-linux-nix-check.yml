@@ -22,7 +22,7 @@ jobs:
           nix build -L .?#checks.x86_64-linux.crypto3-gcc
         env:
           NIX_CONFIG: |
-            cores = 12
+            cores = 10
       - name: Run all checks
         # This includes cached crypto3 check from previous step. We don't limit cores in this part
         run: |
