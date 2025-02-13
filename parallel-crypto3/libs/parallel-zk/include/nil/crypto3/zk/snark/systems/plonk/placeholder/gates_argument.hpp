@@ -227,7 +227,7 @@ namespace nil {
                                             });
                                         result[j] = evaluator.evaluate();
                                     }
-                            }, ThreadPool::PoolLevel::HIGH));
+                            }, ThreadPool::PoolLevel::LOW));
 
                             F[0] += result;
                         };

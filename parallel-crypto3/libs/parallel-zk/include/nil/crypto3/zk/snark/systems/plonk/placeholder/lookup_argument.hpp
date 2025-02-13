@@ -306,6 +306,8 @@ namespace nil {
                         const polynomial_dfs_type &mask_polynomial,
                         const polynomial_dfs_type &lagrange_0
                     ) {
+                        PROFILE_SCOPE("Lookup argument building variable values map");
+
                         // Get out all the variables used and maximal degree of any expression in all possible lookup inputs.
                         std::unordered_map<variable_type, size_t> variable_counts;
                         std::vector<variable_type> variables;
@@ -365,7 +367,6 @@ namespace nil {
 
                     // Run over all the lookup inputs, and collect a vector of expressions that will need to be evaluated.
                     std::vector<math::expression<variable_type>> prepare_lookup_input_expressions() {
-                        PROFILE_SCOPE("Lookup argument preparing lookup input expressions");
                         std::vector<math::expression<variable_type>> exprs;
 
                         using polynomial_dfs_variable_type = plonk_variable<polynomial_dfs_type>;
@@ -398,6 +399,7 @@ namespace nil {
                         );
 
                         auto lookup_input_ptr = std::make_unique<std::vector<polynomial_dfs_type>>();
+
                         for (const auto &gate : lookup_gates) {
                             polynomial_dfs_type lookup_selector;
                             if (gate.tag_index == PLONK_SPECIAL_SELECTOR_ALL_USABLE_ROWS_SELECTED) {
@@ -442,7 +444,7 @@ namespace nil {
                                                             });
                                                         result[j] = evaluator.evaluate();
                                                     }
-                                            }, ThreadPool::PoolLevel::HIGH));
+                                            }, ThreadPool::PoolLevel::LOW));
 
                                             l += theta_acc * lookup_selector * result;
                                         }
