@@ -176,7 +176,7 @@ namespace nil {
                     auto B_128 = chunks16_to_chunks128<TYPE>(B);
                     auto R_128 = chunks16_to_chunks128<TYPE>(R);
                     if constexpr( stage == GenerationStage::CONSTRAINTS ){
-                        constrain(current_state.pc_next() - current_state.pc(2) - 1);                   // PC transition
+                        constrain(current_state.pc_next() - current_state.pc(1) - 1);                   // PC transition
                         constrain(current_state.gas(1) - current_state.gas_next() - 5);                 // GAS transition
                         constrain(current_state.stack_size(1) - current_state.stack_size_next() - 1);   // stack_size transition
                         constrain(current_state.memory_size(1) - current_state.memory_size_next());     // memory_size transition
