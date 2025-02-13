@@ -67,8 +67,8 @@ namespace nil {
                     using transcript_hash_type = typename ParamsType::transcript_hash_type;
                     using transcript_type = transcript::fiat_shamir_heuristic_sequential<transcript_hash_type>;
                     using polynomial_dfs_type = math::polynomial_dfs<typename FieldType::value_type>;
-                    using VariableType = plonk_variable<typename FieldType::value_type>;
-                    using DfsVariableType = plonk_variable<polynomial_dfs_type>;
+                    using variable_type = plonk_variable<typename FieldType::value_type>;
+                    using polynomial_dfs_variable_type = plonk_variable<polynomial_dfs_type>;
                     using commitment_scheme_type = CommitmentSchemeTypePermutation;
 
 
@@ -296,21 +296,113 @@ namespace nil {
                         return std::move(lookup_value_ptr);
                     }
 
+                    // TODO: deduplicate this code, it's almost the same as in the gate argument.
+                    static inline void build_variable_value_map(
+                        const std::vector<math::expression<variable_type>>& exprs,
+                        const plonk_polynomial_dfs_table<FieldType>& assignments,
+                        std::shared_ptr<math::evaluation_domain<FieldType>> domain,
+                        std::unordered_map<variable_type, polynomial_dfs_type>& variable_values_out,
+                        size_t& extended_domain_size_out,
+                        const polynomial_dfs_type &mask_polynomial,
+                        const polynomial_dfs_type &lagrange_0
+                    ) {
+                        // Get out all the variables used and maximal degree of any expression in all possible lookup inputs.
+                        std::unordered_map<variable_type, size_t> variable_counts;
+                        std::vector<variable_type> variables;
+
+                        size_t max_expr_degree = 0;
+                        math::expression_max_degree_visitor<variable_type> max_degree_visitor;
+
+                        for (const auto& expr: exprs) {
+                            math::expression_for_each_variable_visitor<variable_type> visitor(
+                                [&variable_counts, &variables, &variable_values_out](const variable_type& var) {
+                                    // Create the structure of the map so we can change the values later.
+                                    if (variable_counts[var] == 0) {
+                                        variables.push_back(var);
+                                        // Create the structure of the map, so its values can be filled in parallel.
+                                        if (variable_values_out.find(var) == variable_values_out.end()) {
+                                            variable_values_out[var] = polynomial_dfs_type();
+                                        }
+                                    }
+                                    variable_counts[var]++;
+                            });
+
+                            visitor.visit(expr);
+                            size_t degree = max_degree_visitor.compute_max_degree(expr);
+                            max_expr_degree = std::max(max_expr_degree, degree); 
+                        }
+
+                        // We need to +1 on the next line, because we will multiply with selector.
+                        std::uint32_t max_degree = std::pow(2, ceil(std::log2(max_expr_degree + 1)));
+                        extended_domain_size_out = domain->m * max_degree;
+
+                        std::shared_ptr<math::evaluation_domain<FieldType>> extended_domain =
+                            math::make_evaluation_domain<FieldType>(extended_domain_size_out);
+
+                        parallel_for(0, variables.size(),
+                            [&variables, &variable_values_out, &assignments, &domain, &extended_domain, extended_domain_size_out, &mask_polynomial, &lagrange_0](std::size_t i) {
+                                const variable_type& var = variables[i];
+
+                                // Convert the variable to polynomial_dfs variable type.
+                                polynomial_dfs_variable_type var_dfs(var.index, var.rotation, var.relative,
+                                    static_cast<typename polynomial_dfs_variable_type::column_type>(
+                                        static_cast<std::uint8_t>(var.type)));
+
+                                polynomial_dfs_type assignment;
+                                if( var.index == PLONK_SPECIAL_SELECTOR_ALL_USABLE_ROWS_SELECTED && var.type == variable_type::column_type::selector){
+                                    assignment = mask_polynomial;
+                                } else if( var.index == PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED && var.type == variable_type::column_type::selector) {
+                                    assignment = mask_polynomial - lagrange_0;
+                                } else
+                                    assignment = assignments.get_variable_value(var_dfs, domain);
+
+                                // In parallel version we always resize the assignment poly, it's better for parallelization.
+                                // if (count > 1) {
+                                assignment.resize(extended_domain_size_out, domain, extended_domain);
+                                variable_values_out[var] = std::move(assignment);
+                            }, ThreadPool::PoolLevel::HIGH);
+                    }
+
+                    // Run over all the lookup inputs, and collect a vector of expressions that will need to be evaluated.
+                    std::vector<math::expression<variable_type>> prepare_lookup_input_expressions() {
+                        PROFILE_SCOPE("Lookup argument preparing lookup input expressions");
+                        std::vector<math::expression<variable_type>> exprs;
+
+                        using polynomial_dfs_variable_type = plonk_variable<polynomial_dfs_type>;
+                        for (const auto &gate : lookup_gates) {
+                            math::expression<polynomial_dfs_variable_type> expr;
+                            for (const auto &constraint : gate.constraints) {
+                                for(std::size_t k = 0; k < constraint.lookup_input.size(); k++){
+                                    exprs.push_back(constraint.lookup_input[k]);
+                                }        
+                            }
+                        }
+
+                        return exprs;
+                    }
+
                     std::unique_ptr<std::vector<polynomial_dfs_type>> prepare_lookup_input(
                         const polynomial_dfs_type &mask_assignment,
                         const polynomial_dfs_type &lagrange0
                     ) {
                         PROFILE_SCOPE("Lookup argument preparing lookup input");
 
-                        using polynomial_dfs_variable_type = plonk_variable<polynomial_dfs_type>;
+                        std::vector<math::expression<variable_type>> exprs = prepare_lookup_input_expressions();
 
-                        // Prepare lookup input
+                        std::unordered_map<variable_type, polynomial_dfs_type> variable_values;
+                        size_t extended_domain_size;
+
+                        build_variable_value_map(
+                            exprs, plonk_columns, basic_domain,
+                            variable_values, extended_domain_size, mask_assignment, lagrange0
+                        );
+
                         auto lookup_input_ptr = std::make_unique<std::vector<polynomial_dfs_type>>();
                         for (const auto &gate : lookup_gates) {
                             polynomial_dfs_type lookup_selector;
-                            if( gate.tag_index == PLONK_SPECIAL_SELECTOR_ALL_USABLE_ROWS_SELECTED ){
+                            if (gate.tag_index == PLONK_SPECIAL_SELECTOR_ALL_USABLE_ROWS_SELECTED) {
                                 lookup_selector = mask_assignment;
-                            } else if( gate.tag_index == PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED ){
+                            } else if (gate.tag_index == PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED) {
                                 lookup_selector = mask_assignment - lagrange0;
                             } else {
                                 lookup_selector = plonk_columns.selector(gate.tag_index);
@@ -322,43 +414,39 @@ namespace nil {
 
                             // Do NOT capture converter by reference.
                             parallel_for(0, gate.constraints.size(),
-                                [&lookup_input_ptr, this, &gate, &lookup_selector, lookup_inputs_used](std::size_t index) {
-                                    // Create the converter.
-                                    auto value_type_to_polynomial_dfs = [](const typename VariableType::assignment_type& coeff) {
-                                        return polynomial_dfs_type(0, 1, coeff);
-                                    };
-                                    math::expression_variable_type_converter<VariableType, DfsVariableType> converter(value_type_to_polynomial_dfs);
-
+                                [&lookup_input_ptr, this, &gate, &lookup_selector, lookup_inputs_used, extended_domain_size, &variable_values]
+                                (std::size_t index) {
                                     const auto& constraint = gate.constraints[index];
                                     polynomial_dfs_type l = lookup_selector * (typename FieldType::value_type(constraint.table_id));
 
                                     typename FieldType::value_type theta_acc = this->theta;
-                                    for(std::size_t k = 0; k < constraint.lookup_input.size(); k++){
-                                        math::expression<DfsVariableType> expr = converter.convert(constraint.lookup_input[k]);
+                                    for (std::size_t k = 0; k < constraint.lookup_input.size(); k++){
+                                         const math::expression<variable_type>& expr = constraint.lookup_input[k];
 
-                                        // For each variable with a rotation pre-compute its value.
-                                        std::unordered_map<polynomial_dfs_variable_type, polynomial_dfs_type> rotated_variable_values;
+                                        {
+                                            nil::crypto3::bench::detail::scoped_aggregate_profiler prof("Lookup evaluating expressions ==================");
 
-                                        math::expression_for_each_variable_visitor<polynomial_dfs_variable_type> visitor(
-                                            [&rotated_variable_values, &assignments=plonk_columns, &domain=basic_domain]
-                                            (const polynomial_dfs_variable_type& var) {
-                                                if (var.rotation == 0)
-                                                    return;
-                                                rotated_variable_values[var] = assignments.get_variable_value(var, domain);
-                                        });
-                                        visitor.visit(expr);
+                                            polynomial_dfs_type result(extended_domain_size - 1, extended_domain_size);
+                                            wait_for_all(parallel_run_in_chunks<void>(
+                                                extended_domain_size,
+                                                [&variable_values, &result, &expr]
+                                                (std::size_t begin, std::size_t end) {
+                                                    for (std::size_t j = begin; j < end; ++j) {
+                                                        // Don't use cache here. In practice it's slower to maintain the cache
+                                                        // than to re-compute the subexpression value when value type is field element.
+                                                        math::expression_evaluator<variable_type> evaluator(
+                                                            expr,
+                                                            [&variable_values, j]
+                                                                (const variable_type &var) -> const typename FieldType::value_type& {
+                                                                    return variable_values[var][j];
+                                                            });
+                                                        result[j] = evaluator.evaluate();
+                                                    }
+                                            }, ThreadPool::PoolLevel::HIGH));
 
-                                        math::cached_expression_evaluator<DfsVariableType> evaluator(expr,
-                                            [&domain=basic_domain, &assignments=plonk_columns, &rotated_variable_values]
-                                            (const polynomial_dfs_variable_type &var) -> const polynomial_dfs_type& {
-                                                if (var.rotation == 0) {
-                                                    return assignments.get_variable_value_without_rotation(var);
-                                                }
-                                                return rotated_variable_values[var];
-                                            }
-                                        );
+                                            l += theta_acc * lookup_selector * result;
+                                        }
 
-                                        l += theta_acc * lookup_selector * evaluator.evaluate();
                                         theta_acc *= this->theta;
                                     }
                                     (*lookup_input_ptr)[lookup_inputs_used + index] = l;
@@ -435,8 +523,8 @@ namespace nil {
                     using transcript_hash_type = typename ParamsType::transcript_hash_type;
                     using transcript_type = transcript::fiat_shamir_heuristic_sequential<transcript_hash_type>;
                     using polynomial_dfs_type = math::polynomial_dfs<typename FieldType::value_type>;
-                    using VariableType = plonk_variable<typename FieldType::value_type>;
-                    using DfsVariableType = plonk_variable<polynomial_dfs_type>;
+                    using variable_type = plonk_variable<typename FieldType::value_type>;
+                    using polynomial_dfs_variable_type = plonk_variable<polynomial_dfs_type>;
                     using commitment_scheme_type = CommitmentSchemeTypePermutation;
 
 
