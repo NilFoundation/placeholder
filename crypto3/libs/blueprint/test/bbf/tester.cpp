@@ -50,7 +50,7 @@ using namespace nil::blueprint::bbf;
 template <typename FieldType>
 void test_bbf_tester(std::array<typename FieldType::value_type,8> public_input) {
 
-    typename bbf_tester<FieldType, GenerationStage::ASSIGNMENT>::raw_input_type raw_input = {
+    typename bbf_tester<FieldType, GenerationStage::ASSIGNMENT>::input_type input = {
         public_input[0],
         public_input[1],
         public_input[2],
@@ -61,7 +61,7 @@ void test_bbf_tester(std::array<typename FieldType::value_type,8> public_input) 
         public_input[7]};
 
     auto B = circuit_builder<FieldType,bbf_tester>();
-    auto [at, A, desc] = B.assign(raw_input);
+    auto [at, A, desc] = B.assign(input);
     BOOST_TEST(B.is_satisfied(at), "constraints are not satisfied");
 }
 

@@ -42,16 +42,16 @@ void test_mod_p_check(
     using FieldType = BlueprintFieldType;
     using TYPE = typename FieldType::value_type;
     typename bbf::components::check_mod_p<
-        FieldType, bbf::GenerationStage::ASSIGNMENT>::raw_input_type raw_input;
-    raw_input.x =
+        FieldType, bbf::GenerationStage::ASSIGNMENT>::input_type input;
+    input.x =
         std::vector<TYPE>(public_input.begin(), public_input.begin() + num_chunks);
-    raw_input.pp = std::vector<TYPE>(public_input.begin() + num_chunks,
+    input.pp = std::vector<TYPE>(public_input.begin() + num_chunks,
                                      public_input.begin() + 2 * num_chunks);
-    raw_input.zero = TYPE(0);
+    input.zero = TYPE(0);
     auto B = bbf::circuit_builder<FieldType, bbf::components::check_mod_p, std::size_t,
                                   std::size_t, bool>(num_chunks, bit_size_chunk,
                                                      expect_output);
-    auto [at, A, desc] = B.assign(raw_input);
+    auto [at, A, desc] = B.assign(input);
     bool pass = B.is_satisfied(at);
     std::cout << "Is_satisfied = " << pass << std::endl;
 

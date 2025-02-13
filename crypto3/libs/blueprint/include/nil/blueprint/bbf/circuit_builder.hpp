@@ -147,24 +147,24 @@ namespace nil {
                     using value_type = typename FieldType::value_type;
                     using var = crypto3::zk::snark::plonk_variable<value_type>;
                     using TYPE = typename generator::TYPE;
-                    using raw_input_type = typename generator::raw_input_type;
 
                     using plonk_lookup_table = nil::crypto3::zk::snark::plonk_lookup_table<FieldType>;
 
-                    context_type ct = context_type(
+                    context_type ctx{
                         crypto3::zk::snark::plonk_table_description<FieldType>(
-                            witnesses_amount, public_inputs_amount, constants_amount, 0, rows_amount,
-                            std::pow(2, std::ceil(std::log2(rows_amount)))),
-                            rows_amount, 0 // use all rows, start from 0
-                        );
+                                witnesses_amount, public_inputs_amount, constants_amount, 0, rows_amount,
+                                std::pow(2, std::ceil(std::log2(rows_amount)))),
+                        rows_amount, 0 // use all rows, start from 0
+                    };
 
-                    raw_input_type raw_input = {};
-                    auto a = std::apply(generator::form_input, std::tuple_cat(std::make_tuple(std::ref(ct)),std::make_tuple(raw_input),static_info_args_storage));
-                    auto v = std::tuple_cat(std::make_tuple(std::ref(ct)), a,static_info_args_storage);
-                    std::make_from_tuple<generator>(v);
+                    typename generator::input_type input;
+                    std::apply(generator::allocate_public_inputs, std::tuple_cat(
+                            std::make_tuple(std::ref(ctx), std::ref(input)), static_info_args_storage));
+                    std::make_from_tuple<generator>(std::tuple_cat(
+                            std::make_tuple(std::ref(ctx), std::cref(input)), static_info_args_storage));
 
                     // constants
-                    auto c_list = ct.get_constants();
+                    auto c_list = ctx.get_constants();
                     // std::cout << "const list size = " << c_list.size() << "\n";
                     for(std::size_t i = 0; i < c_list.size(); i++) { // columns
                         // std::cout << "column size = " << c_list[i].size() << "\n";
@@ -176,8 +176,8 @@ namespace nil {
                     // assure minimum inflation after padding
                     size_t usable_rows = std::pow(2, std::ceil(std::log2(rows_amount))) - 1; 
 
-                    //////////////////////////  Don't use 'ct' below this line, we just moved it!!! /////////////////////////////
-                    gates_optimizer<FieldType> optimizer(std::move(ct));
+                    //////////////////////////  Don't use 'ctx' below this line, we just moved it!!! /////////////////////////////
+                    gates_optimizer<FieldType> optimizer(std::move(ctx));
                     optimized_gates<FieldType> gates = optimizer.optimize_gates();
 
                     // TODO: replace with PLONK_SPECIAL_SELECTOR_ALL_USABLE_ROWS_SELECTED.
@@ -469,16 +469,18 @@ namespace nil {
                     Component<FieldType, GenerationStage::ASSIGNMENT>,
                     crypto3::zk::snark::plonk_table_description<FieldType>
                 >
-                assign(typename Component<FieldType, GenerationStage::ASSIGNMENT>::raw_input_type raw_input) {
+                assign(typename Component<FieldType, GenerationStage::ASSIGNMENT>::input_type input) {
                     using generator = Component<FieldType,GenerationStage::ASSIGNMENT>;
                     using context_type = typename nil::blueprint::bbf::context<FieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT>;
 
                     auto at = get_presets();
-                    context_type ct = context_type(at, rows_amount, 0); // use all rows, start from 0
+                    context_type ctx = context_type(at, rows_amount, 0); // use all rows, start from 0
 
-                    auto a = std::apply(generator::form_input, std::tuple_cat(std::make_tuple(std::ref(ct)),std::make_tuple(raw_input),static_info_args_storage));
-                    auto v = std::tuple_cat(std::make_tuple(std::ref(ct)), a,static_info_args_storage);
-                    auto o = std::make_from_tuple<generator>(v);
+                    std::apply(generator::allocate_public_inputs, std::tuple_cat(
+                            std::make_tuple(std::ref(ctx), std::ref(input)), static_info_args_storage));
+
+                    auto component = std::make_from_tuple<generator>(std::tuple_cat(
+                            std::make_tuple(std::ref(ctx), std::cref(input)), static_info_args_storage));
 
                     crypto3::zk::snark::plonk_table_description<FieldType> desc = at.get_description();
                     std::cout << "Rows amount = " << at.rows_amount() << std::endl;
@@ -487,7 +489,7 @@ namespace nil {
                     std::cout << "Rows amount after padding = " << at.rows_amount() << std::endl;
                     desc.rows_amount = at.rows_amount();
 
-                    return std::make_tuple(at,o,desc);
+                    return {at, component, desc};
                 }
 
                 bool is_satisfied(const crypto3::zk::snark::plonk_assignment_table<FieldType> &assignments,

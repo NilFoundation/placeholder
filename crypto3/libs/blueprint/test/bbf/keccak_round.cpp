@@ -141,10 +141,10 @@ void test_bbf_keccak_round(const std::array<typename field_type::value_type, 25>
                            typename field_type::value_type RC, bool xor_with_mes,
                            const std::array<typename field_type::value_type, 25> &expected_res) {
 
-    typename bbf::keccak_round<field_type, bbf::GenerationStage::ASSIGNMENT>::raw_input_type
-        raw_input = {inner_state, message_chunks, RC};
+    typename bbf::keccak_round<field_type, bbf::GenerationStage::ASSIGNMENT>::input_type
+        input = {inner_state, message_chunks, RC};
     auto B = bbf::circuit_builder<field_type, bbf::keccak_round, bool>(xor_with_mes);
-    auto [at, A, desc] = B.assign(raw_input);
+    auto [at, A, desc] = B.assign(input);
     BOOST_TEST(B.is_satisfied(at), "constraints are not satisfied");
     for (std::size_t i = 0; i < 25; i++) {
         BOOST_CHECK(expected_res[i] == A.inner_state[i]);

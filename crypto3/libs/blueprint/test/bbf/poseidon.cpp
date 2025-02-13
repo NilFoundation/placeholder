@@ -54,11 +54,11 @@ void test_poseidon(std::vector<typename BlueprintFieldType::value_type> public_i
 
     using FieldType = BlueprintFieldType;
 
-    typename bbf::components::flexible_poseidon<FieldType,bbf::GenerationStage::ASSIGNMENT>::raw_input_type raw_input;
-    raw_input.state = public_input;
+    typename bbf::components::flexible_poseidon<FieldType,bbf::GenerationStage::ASSIGNMENT>::input_type input;
+    input.state = public_input;
 
     auto B = bbf::circuit_builder<FieldType,bbf::components::flexible_poseidon>();
-    auto [at, A, desc] = B.assign(raw_input);
+    auto [at, A, desc] = B.assign(input);
     BOOST_TEST(B.is_satisfied(at));
 
     for (std::uint32_t i = 0; i < public_input.size(); i++) {

@@ -43,16 +43,14 @@
 #include <nil/blueprint/zkevm_bbf/copy.hpp>
 #include <nil/blueprint/zkevm_bbf/input_generators/hardhat_input_generator.hpp>
 
-#include "./test_l1_wrapper.hpp"
+#include "./circuit_test_fixture.hpp"
 
 using namespace nil::crypto3;
 using namespace nil::blueprint;
 using namespace nil::blueprint::bbf;
 
-class zkEVMCopyTestFixture: public BBFTestFixture {
+class zkEVMCopyTestFixture: public CircuitTestFixture {
 public:
-    zkEVMCopyTestFixture():BBFTestFixture(){}
-
     template <typename field_type>
     void test_zkevm_copy(
         const std::vector<std::vector<std::uint8_t>>    &bytecodes,
@@ -77,7 +75,7 @@ public:
         std::size_t max_copy = max_sizes.max_copy;
         std::size_t max_zkevm_rows = max_sizes.max_zkevm_rows;
 
-        typename copy<field_type, GenerationStage::ASSIGNMENT>::raw_input_type copy_assignment_input;
+        typename copy<field_type, GenerationStage::ASSIGNMENT>::input_type copy_assignment_input;
         copy_assignment_input.rlc_challenge = 7;
         copy_assignment_input.bytecodes = circuit_inputs.bytecodes();
         copy_assignment_input.keccak_buffers = circuit_inputs.keccaks();

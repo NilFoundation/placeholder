@@ -54,19 +54,6 @@ namespace nil {
             // (expects zero vector constant as input) 
             // Output: xR[0],...,xR[k-1], yR[0],...,yR[k-1]
             //
-                template<typename FieldType>
-                struct ec_scalar_mult_raw_input {
-                    using TYPE = typename FieldType::value_type;
-                    std::vector<TYPE> s;
-                    std::vector<TYPE> x;
-                    std::vector<TYPE> y;
-                    std::vector<TYPE> p;
-                    std::vector<TYPE> pp;
-                    std::vector<TYPE> n;
-                    std::vector<TYPE> mp;
-                    TYPE zero;
-                };
-
                 template<typename FieldType, GenerationStage stage,
                          typename NonNativeFieldType>
                 class ec_scalar_mult : public generic_component<FieldType, stage> {
@@ -78,10 +65,17 @@ namespace nil {
                     using typename generic_component<FieldType, stage>::TYPE;
                     using typename generic_component<FieldType, stage>::context_type;
                     using typename generic_component<FieldType, stage>::table_params;
-                    using raw_input_type =
-                        typename std::conditional<stage == GenerationStage::ASSIGNMENT,
-                                                  ec_scalar_mult_raw_input<FieldType>,
-                                                  std::tuple<>>::type;
+
+                    struct input_type {
+                        std::vector<TYPE> s;
+                        std::vector<TYPE> x;
+                        std::vector<TYPE> y;
+                        std::vector<TYPE> p;
+                        std::vector<TYPE> pp;
+                        std::vector<TYPE> n;
+                        std::vector<TYPE> mp;
+                        TYPE zero;
+                    };
 
                   public:
                     std::vector<TYPE> xR;
@@ -96,60 +90,24 @@ namespace nil {
                         return {witness, public_inputs, constants, rows};
                     }
 
-                    static std::tuple<std::vector<TYPE>, std::vector<TYPE>,
-                                      std::vector<TYPE>, std::vector<TYPE>,
-                                      std::vector<TYPE>, std::vector<TYPE>, 
-                                      std::vector<TYPE>, TYPE>
-                    form_input(context_type& context_object, raw_input_type raw_input,
-                               std::size_t num_chunks, std::size_t bit_size_chunk) {
-                        std::vector<TYPE> input_s(num_chunks);
-                        std::vector<TYPE> input_x(num_chunks);
-                        std::vector<TYPE> input_y(num_chunks);
-                        std::vector<TYPE> input_n(num_chunks);
-                        std::vector<TYPE> input_mp(num_chunks);
-                        std::vector<TYPE> input_p(num_chunks);
-                        std::vector<TYPE> input_pp(num_chunks);
-                        TYPE input_zero;
+                    static void allocate_public_inputs(
+                            context_type &ctx, input_type &input,
+                            std::size_t num_chunks, std::size_t bit_size_chunk) {
+                        AllocatePublicInputChunks allocate_chunks(ctx, num_chunks);
 
-                        if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                            for (std::size_t i = 0; i < num_chunks; i++) {
-                                input_s[i] = raw_input.s[i];
-                                input_x[i] = raw_input.x[i];
-                                input_y[i] = raw_input.y[i];
-                                input_p[i] = raw_input.p[i];
-                                input_pp[i] = raw_input.pp[i];
-                                input_n[i] = raw_input.n[i];
-                                input_mp[i] = raw_input.mp[i];
-                            }
-                            input_zero = raw_input.zero;
-                        }
-                        for (std::size_t i = 0; i < num_chunks; i++) {
-                            context_object.allocate(input_s[i], 0, i,
-                                                    column_type::public_input);
-                            context_object.allocate(input_x[i], 0, i + num_chunks,
-                                                    column_type::public_input);
-                            context_object.allocate(input_y[i], 0, i + 2 * num_chunks,
-                                                    column_type::public_input);
-                            context_object.allocate(input_p[i], 0, i + 3 * num_chunks,
-                                                    column_type::public_input);
-                            context_object.allocate(input_pp[i], 0, i + 4 * num_chunks,
-                                                    column_type::public_input);
-                            context_object.allocate(input_n[i], 0, i + 5 * num_chunks,
-                                                    column_type::public_input);
-                            context_object.allocate(input_mp[i], 0, i + 6 * num_chunks,
-                                                    column_type::public_input);
-                        }
-                        context_object.allocate(input_zero, 0, 7 * num_chunks,
-                                                column_type::public_input);
-                        return std::make_tuple(input_s, input_x, input_y, input_p, 
-                                               input_pp, input_n, input_mp, input_zero);
+                        std::size_t row = 0;
+                        allocate_chunks(input.s, 0, &row);
+                        allocate_chunks(input.x, 0, &row);
+                        allocate_chunks(input.y, 0, &row);
+                        allocate_chunks(input.p, 0, &row);
+                        allocate_chunks(input.pp, 0, &row);
+                        allocate_chunks(input.n, 0, &row);
+                        allocate_chunks(input.mp, 0, &row);
+                        ctx.allocate(input.zero, 0, row++,
+                                     column_type::public_input);
                     }
 
-                    ec_scalar_mult(context_type& context_object,
-                                      std::vector<TYPE> input_s, std::vector<TYPE> input_x,
-                                      std::vector<TYPE> input_y, std::vector<TYPE> input_p,
-                                      std::vector<TYPE> input_pp, std::vector<TYPE> input_n,
-                                      std::vector<TYPE> input_mp, TYPE input_zero,
+                    ec_scalar_mult(context_type& context_object, const input_type &input,
                                       std::size_t num_chunks, std::size_t bit_size_chunk,
                                       bool make_links = true)
                         : generic_component<FieldType, stage>(context_object) {
@@ -200,10 +158,10 @@ namespace nil {
 
                             for (std::size_t i = 0; i < num_chunks; ++i) {
                                 s += non_native_integral_type(
-                                          integral_type(input_s[i].data)) *
+                                          integral_type(input.s[i].data)) *
                                       pow;
                                 n += non_native_integral_type(
-                                          integral_type(input_n[i].data)) *
+                                          integral_type(input.n[i].data)) *
                                       pow;
                                 pow <<= bit_size_chunk;
                             }
@@ -249,7 +207,7 @@ namespace nil {
                         }
                         for (std::size_t i = 0; i < num_chunks; ++i){
                             allocate(SP[i]);
-                            EXTEND_BIT_ARRAY[i] = input_zero;
+                            EXTEND_BIT_ARRAY[i] = input.zero;
                         }
 
                         auto RangeCheck = [&context_object, num_chunks, bit_size_chunk](std::vector<TYPE> x) {
@@ -257,13 +215,13 @@ namespace nil {
                                                          bit_size_chunk);
                         };
                         auto CarryOnAddition = [&context_object, num_chunks, bit_size_chunk](std::vector<TYPE> x ,std::vector<TYPE> y) {
-                            Carry_On_addition ca = Carry_On_addition(context_object, x,y, num_chunks,
-                                                         bit_size_chunk);
+                            Carry_On_addition ca = Carry_On_addition(
+                                context_object, {x ,y}, num_chunks, bit_size_chunk);
                             return ca;
                         };
                         auto ChoiceFunction = [&context_object, num_chunks, bit_size_chunk](TYPE q, std::vector<TYPE> x ,std::vector<TYPE> y) {
-                            Choice_Function cf = Choice_Function(context_object, q,x,y, num_chunks,
-                                                         bit_size_chunk);
+                            Choice_Function cf = Choice_Function(
+                                context_object, {q, x, y}, num_chunks, bit_size_chunk);
                             return cf.r;
                         };
 
@@ -279,34 +237,34 @@ namespace nil {
                             copy_constrain(x, y);
                         };
 
-                        auto NegModP = [&context_object, input_p, input_pp, input_zero, num_chunks,
+                        auto NegModP = [&context_object, &input, num_chunks,
                                         bit_size_chunk](std::vector<TYPE> x) {
                             Negation_Mod_P t =
-                                Negation_Mod_P(context_object, x, input_p, input_pp, input_zero, num_chunks,
-                                               bit_size_chunk);
+                                Negation_Mod_P(context_object, {x, input.p, input.pp, input.zero},
+                                               num_chunks, bit_size_chunk);
                             return t.r;
                         };
 
-                        auto ECDouble = [&context_object, input_p, input_pp, input_zero, num_chunks,
+                        auto ECDouble = [&context_object, &input, num_chunks,
                                         bit_size_chunk](std::vector<TYPE> xQ,std::vector<TYPE> yQ) {
                             Ec_Double t =
-                                Ec_Double(context_object, xQ,yQ, input_p, input_pp, input_zero, num_chunks,
+                                Ec_Double(context_object, {xQ,yQ, input.p, input.pp, input.zero}, num_chunks,
                                                bit_size_chunk);
                             return t;
                         };
 
-                        auto ECIncompleteAdd = [&context_object, input_p, input_pp, input_zero, num_chunks,
+                        auto ECIncompleteAdd = [&context_object, &input, num_chunks,
                                         bit_size_chunk](std::vector<TYPE> xP,std::vector<TYPE> yP,std::vector<TYPE> xQ,std::vector<TYPE> yQ) {
                             Ec_Incomplete_Add t =
-                                Ec_Incomplete_Add(context_object, xP,yP,xQ,yQ, input_p, input_pp, input_zero, num_chunks,
+                                Ec_Incomplete_Add(context_object, {xP,yP,xQ,yQ, input.p, input.pp, input.zero}, num_chunks,
                                                bit_size_chunk);
                             return t;
                         };
 
-                        auto ECTwoTPlusQ = [&context_object, input_p, input_pp, input_zero, num_chunks,
+                        auto ECTwoTPlusQ = [&context_object, &input, num_chunks,
                                         bit_size_chunk](std::vector<TYPE> xt,std::vector<TYPE> yt,std::vector<TYPE> xQ,std::vector<TYPE> yQ) {
                             Ec_Two_T_Plus_Q t =
-                                Ec_Two_T_Plus_Q(context_object, xt,yt,xQ,yQ, input_p, input_pp, input_zero, num_chunks,
+                                Ec_Two_T_Plus_Q(context_object, {xt,yt,xQ,yQ, input.p, input.pp, input.zero}, num_chunks,
                                                bit_size_chunk);
                             return t;
                         };
@@ -318,21 +276,21 @@ namespace nil {
                         };
 
                         // Part I : adjusting the scalar and the point
-                        auto t = CarryOnAddition(input_s,input_mp);
+                        auto t = CarryOnAddition(input.s,input.mp);
                         RangeCheck(t.r);
-                        auto alt_n = CarryOnAddition(input_s,SP);
-                        CopyConstrain(alt_n.r,input_n);
-                        SingleCopyConstrain(alt_n.c,input_zero);
+                        auto alt_n = CarryOnAddition(input.s,SP);
+                        CopyConstrain(alt_n.r,input.n);
+                        SingleCopyConstrain(alt_n.c,input.zero);
                         RangeCheck(SP);
-                        auto total_C = ChoiceFunction(t.c,input_s,SP); // labeled simply C without indices on the Notion page
-                        auto y_minus = NegModP(input_y);
-                        auto y1 = ChoiceFunction(t.c,input_y,y_minus);
+                        auto total_C = ChoiceFunction(t.c,input.s,SP); // labeled simply C without indices on the Notion page
+                        auto y_minus = NegModP(input.y);
+                        auto y1 = ChoiceFunction(t.c,input.y,y_minus);
                         // Assert s × (x,y) = C × (x,y1)
 
                         //Part II : precompute
-                        auto p2 = ECDouble(input_x,y1);
-                        auto p3 = ECIncompleteAdd(input_x,y1,p2.xR,p2.yR);
-                        auto y_minus1 = ChoiceFunction(t.c,y_minus,input_y);
+                        auto p2 = ECDouble(input.x,y1);
+                        auto p3 = ECIncompleteAdd(input.x,y1,p2.xR,p2.yR);
+                        auto y_minus1 = ChoiceFunction(t.c,y_minus,input.y);
                         auto y_minus3 = NegModP(p3.yR);
 
                         // we now have the points {+/-1, +/-3} × (x, y1)
@@ -355,13 +313,13 @@ namespace nil {
 
                                 auto C_p = CarryOnAddition(C[i+1],C[i+1]);
                                 RangeCheck(C_p.r);
-                                SingleCopyConstrain(C_p.c,input_zero);
+                                SingleCopyConstrain(C_p.c,input.zero);
 
                                 EXTEND_BIT_ARRAY[0] = CP[i];
                                 //here
                                 auto C_pp = CarryOnAddition(C_p.r,EXTEND_BIT_ARRAY);
                                 RangeCheck(C_pp.r);
-                                SingleCopyConstrain(C_pp.c,input_zero);
+                                SingleCopyConstrain(C_pp.c,input.zero);
                                 CopyChunks(C_pp.r,C[i]);
                             } else {
                                 EXTEND_BIT_ARRAY[0] = CP[i];
@@ -369,16 +327,16 @@ namespace nil {
                             }
                             auto C_ppp = CarryOnAddition(C[i],C[i]);
                             RangeCheck(C_ppp.r);
-                            SingleCopyConstrain(C_ppp.c,input_zero);
+                            SingleCopyConstrain(C_ppp.c,input.zero);
 
                             EXTEND_BIT_ARRAY[0] = CPP[i];
                             auto C_temp = CarryOnAddition(C_ppp.r,EXTEND_BIT_ARRAY);
-                            SingleCopyConstrain(C_temp.c,input_zero);
+                            SingleCopyConstrain(C_temp.c,input.zero);
                             CopyChunks(C_temp.r,C[i]);
                             RangeCheck(C[i]);
 
-                            auto xi_p = ChoiceFunction(CP[i],p3.xR,input_x);
-                            auto xi_pp = ChoiceFunction(CP[i],input_x,p3.xR);
+                            auto xi_p = ChoiceFunction(CP[i],p3.xR,input.x);
+                            auto xi_pp = ChoiceFunction(CP[i],input.x,p3.xR);
                             auto xi = ChoiceFunction(CPP[i],xi_p,xi_pp);
                             auto eta_p = ChoiceFunction(CP[i],y_minus3,y1);
                             auto eta_pp = ChoiceFunction(CP[i],y_minus1,p3.yR);
@@ -391,27 +349,27 @@ namespace nil {
                         // post-loop computations
                         auto C_p = CarryOnAddition(C[1],C[1]);
                         RangeCheck(C_p.r);
-                        SingleCopyConstrain(C_p.c,input_zero);
+                        SingleCopyConstrain(C_p.c,input.zero);
 
                         EXTEND_BIT_ARRAY[0] = CP[0];
                         auto C_pp = CarryOnAddition(C_p.r,EXTEND_BIT_ARRAY);
                         RangeCheck(C_pp.r);
-                        SingleCopyConstrain(C_pp.c,input_zero);
+                        SingleCopyConstrain(C_pp.c,input.zero);
 
                         auto C_ppp = CarryOnAddition(C_pp.r,C_pp.r);
                         RangeCheck(C_ppp.r);
-                        SingleCopyConstrain(C_ppp.c,input_zero);
+                        SingleCopyConstrain(C_ppp.c,input.zero);
 
                         EXTEND_BIT_ARRAY[0] = CPP[0];
                         auto C_temp = CarryOnAddition(C_ppp.r,EXTEND_BIT_ARRAY);
                         
                         CopyConstrain(total_C,C_temp.r);
                         
-                        SingleCopyConstrain(C_temp.c,input_zero);
+                        SingleCopyConstrain(C_temp.c,input.zero);
                         auto eta = ChoiceFunction(CP[0],y_minus1,y1);
                         auto Pp_pre = ECDouble(Xi[1],Yi[1]);
-                        auto Pp_temp = ECIncompleteAdd(Pp_pre.xR,Pp_pre.yR,input_x,eta);
-                        auto Ppp_temp = ECIncompleteAdd(Pp_temp.xR,Pp_temp.yR,input_x,y_minus1);
+                        auto Pp_temp = ECIncompleteAdd(Pp_pre.xR,Pp_pre.yR,input.x,eta);
+                        auto Ppp_temp = ECIncompleteAdd(Pp_temp.xR,Pp_temp.yR,input.x,y_minus1);
                         // this ^^^ will fail for 0 scalar (needs almost full addition)
                         auto XR = ChoiceFunction(CPP[0],Ppp_temp.xR,Pp_temp.xR);
                         auto YR = ChoiceFunction(CPP[0],Ppp_temp.yR,Pp_temp.yR);

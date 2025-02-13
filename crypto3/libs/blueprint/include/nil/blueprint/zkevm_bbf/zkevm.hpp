@@ -80,7 +80,6 @@ namespace nil {
                     > zkevm_states;
                     ExpTable::input_type exponentiations;
                 };
-                using raw_input_type = input_type;
 
                 static table_params get_minimal_requirements(
                     std::size_t max_zkevm_rows,
@@ -111,15 +110,11 @@ namespace nil {
                     };
                 }
 
-                static std::tuple<input_type> form_input(context_type &context_object,
-                                                         raw_input_type input,
-                                                         std::size_t max_zkevm_rows,
-                                                         std::size_t max_copy,
-                                                         std::size_t max_rw,
-                                                         std::size_t max_exponentations,
-                                                         std::size_t max_bytecode) {
-                    context_object.allocate(input.rlc_challenge, 0, 0, column_type::public_input);
-                    return {input};
+                static void allocate_public_inputs(
+                        context_type &context, input_type &input,
+                        std::size_t max_zkevm_rows, std::size_t max_copy, std::size_t max_rw,
+                        std::size_t max_exponentations, std::size_t max_bytecode) {
+                    context.allocate(input.rlc_challenge, 0, 0, column_type::public_input);
                 }
 
                 zkevm(

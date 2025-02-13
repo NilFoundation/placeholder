@@ -62,13 +62,6 @@ namespace nil {
                 }
             };
 
-            template<typename FieldType>
-            struct opcode_poc_raw_input {
-                using TYPE = typename FieldType::value_type;
-
-                std::vector<std::uint8_t> B;
-            };
-
             template<typename FieldType, GenerationStage stage>
             class opcode_poc : public generic_component<FieldType, stage> {
                 using typename generic_component<FieldType, stage>::context_type;
@@ -78,9 +71,11 @@ namespace nil {
             public:
                 using typename generic_component<FieldType,stage>::TYPE;
                 using typename generic_component<FieldType,stage>::table_params;
-                using raw_input_type = typename std::conditional<stage == GenerationStage::ASSIGNMENT,
-                                               opcode_poc_raw_input<FieldType>,std::tuple<>>::type;
-                using input_type = typename std::conditional<stage==GenerationStage::ASSIGNMENT, std::vector<std::uint8_t>, std::nullptr_t>::type;
+
+                using input_type = std::conditional_t<
+                    stage == GenerationStage::ASSIGNMENT,
+                    std::vector<std::uint8_t>, std::monostate>;
+
             public:
                 static nil::crypto3::zk::snark::plonk_table_description<FieldType>  get_table_description(std::size_t max_rows_amount){
                     nil::crypto3::zk::snark::plonk_table_description<FieldType> desc(11, 1, 0, 10);
@@ -92,13 +87,8 @@ namespace nil {
                      return {11,1,0,max_rows_amount};
                 }
 
-                static std::tuple<input_type> form_input(context_type &context_object, raw_input_type raw_input,std::size_t max_rows_amount) {
-                     input_type res;
-                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                         res = raw_input.B;
-                     }
-                     return std::make_tuple(res);
-                }
+                static void allocate_public_inputs(
+                    context_type &, input_type &, std::size_t max_rows) {}
 
                 opcode_poc(context_type &context_object, const input_type &input, std::size_t max_rows) :
                     generic_component<FieldType,stage>(context_object) {

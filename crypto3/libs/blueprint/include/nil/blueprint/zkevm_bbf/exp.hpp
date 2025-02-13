@@ -54,7 +54,6 @@ namespace nil {
                 using ExpTable = exp_table<FieldType, stage>;
 
                 using input_type = ExpTable::input_type;
-                using raw_input_type = input_type;
 
                 using typename generic_component<FieldType, stage>::TYPE;
                 using typename generic_component<FieldType, stage>::table_params;
@@ -129,12 +128,9 @@ namespace nil {
                     };
                 }
 
-                static std::tuple<input_type> form_input(context_type &context,
-                                                         raw_input_type input,
-                                                         std::size_t max_rows_amount,
-                                                         std::size_t max_exponentiations) {
-                    return {input};
-                }
+                static void allocate_public_inputs(
+                        context_type &context, input_type &input,
+                        std::size_t max_rows_amount, std::size_t max_exponentiations) {}
 
                 exponentiation(
                     context_type &context_object,

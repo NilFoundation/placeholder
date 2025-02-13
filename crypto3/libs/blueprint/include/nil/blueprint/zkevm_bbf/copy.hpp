@@ -58,7 +58,6 @@ namespace nil {
                     RWTable::input_type rw_operations;
                     CopyTable::input_type copy_events;
                 };
-                using raw_input_type = input_type;
 
                 static constexpr std::size_t copy_advice_amount = 11;
 
@@ -81,14 +80,10 @@ namespace nil {
                     };
                 }
 
-                static std::tuple<input_type> form_input(context_type &context,
-                                                         raw_input_type input,
-                                                         std::size_t max_copy,
-                                                         std::size_t max_rw,
-                                                         std::size_t max_keccak_blocks,
-                                                         std::size_t max_bytecode) {
+                static void allocate_public_inputs(
+                        context_type &context, input_type &input, std::size_t max_copy,
+                        std::size_t max_rw, std::size_t max_keccak_blocks, std::size_t max_bytecode) {
                     context.allocate(input.rlc_challenge, 0, 0, column_type::public_input);
-                    return {input};
                 }
 
                 copy(context_type &context_object,
