@@ -45,24 +45,24 @@ void test_ec_scalar_mult(
     using integral_type = typename BlueprintFieldType::integral_type;
     using non_native_integral_type = typename BlueprintFieldType::integral_type;
 
-    auto assign_and_check = [&](auto& B, auto& raw_input) {
-        raw_input.s =
+    auto assign_and_check = [&](auto& B, auto& input) {
+        input.s =
             std::vector<TYPE>(public_input.begin(), public_input.begin() + num_chunks);
-        raw_input.x = std::vector<TYPE>(public_input.begin() + num_chunks,
+        input.x = std::vector<TYPE>(public_input.begin() + num_chunks,
                                         public_input.begin() + 2 * num_chunks);
-        raw_input.y = std::vector<TYPE>(public_input.begin() + 2 * num_chunks,
+        input.y = std::vector<TYPE>(public_input.begin() + 2 * num_chunks,
                                         public_input.begin() + 3 * num_chunks);
-        raw_input.p = std::vector<TYPE>(public_input.begin() + 3 * num_chunks,
+        input.p = std::vector<TYPE>(public_input.begin() + 3 * num_chunks,
                                         public_input.begin() + 4 * num_chunks);
-        raw_input.pp = std::vector<TYPE>(public_input.begin() + 4 * num_chunks,
+        input.pp = std::vector<TYPE>(public_input.begin() + 4 * num_chunks,
                                          public_input.begin() + 5 * num_chunks);
-        raw_input.n = std::vector<TYPE>(public_input.begin() + 5 * num_chunks,
+        input.n = std::vector<TYPE>(public_input.begin() + 5 * num_chunks,
                                         public_input.begin() + 6 * num_chunks);
-        raw_input.mp = std::vector<TYPE>(public_input.begin() + 6 * num_chunks,
+        input.mp = std::vector<TYPE>(public_input.begin() + 6 * num_chunks,
                                          public_input.begin() + 7 * num_chunks);
-        raw_input.zero = public_input.back();
+        input.zero = public_input.back();
 
-        auto [at, A, desc] = B.assign(raw_input);
+        auto [at, A, desc] = B.assign(input);
         bool pass = B.is_satisfied(at);
         std::cout << "Is_satisfied = " << pass << std::endl;
 
@@ -85,23 +85,23 @@ void test_ec_scalar_mult(
     if constexpr (std::is_same_v<NonNativeFieldType,
                                  crypto3::algebra::curves::pallas::base_field_type>) {
         typename bbf::components::pallas_ec_scalar_mult<
-            FieldType, bbf::GenerationStage::ASSIGNMENT>::raw_input_type raw_input;
+            FieldType, bbf::GenerationStage::ASSIGNMENT>::input_type input;
 
         auto B =
             bbf::circuit_builder<FieldType, bbf::components::pallas_ec_scalar_mult,
                                  std::size_t, std::size_t>(num_chunks, bit_size_chunk);
 
-        assign_and_check(B, raw_input);
+        assign_and_check(B, input);
     } else if constexpr (std::is_same_v<
                              NonNativeFieldType,
                              crypto3::algebra::curves::vesta::base_field_type>) {
         typename bbf::components::vesta_ec_scalar_mult<
-            FieldType, bbf::GenerationStage::ASSIGNMENT>::raw_input_type raw_input;
+            FieldType, bbf::GenerationStage::ASSIGNMENT>::input_type input;
         auto B =
             bbf::circuit_builder<FieldType, bbf::components::vesta_ec_scalar_mult,
                                  std::size_t, std::size_t>(num_chunks, bit_size_chunk);
 
-        assign_and_check(B, raw_input);
+        assign_and_check(B, input);
     }
 }
 

@@ -142,10 +142,9 @@ bool check_proof(
     return verifier_res;
 }
 
-class BBFTestFixture
-{
-public:
-    explicit BBFTestFixture(){
+class CircuitTestFixture {
+  public:
+    explicit CircuitTestFixture() {
         check_satisfiability = true;
         generate_proof = false;
         print_to_file = false;
@@ -162,7 +161,7 @@ public:
         output_file = print_to_file ? std::string("./") + suite + "_" + test: "";
     }
 
-    ~BBFTestFixture(){}
+    ~CircuitTestFixture() {}
 
     template <
         typename field_type,
@@ -172,9 +171,9 @@ public:
     bool test_bbf_component(
         std::string circuit_name,
         std::vector<typename field_type::value_type> public_input,
-        typename BBFType<field_type, GenerationStage::ASSIGNMENT>::raw_input_type assignment_input,
+        typename BBFType<field_type, GenerationStage::ASSIGNMENT>::input_type assignment_input,
         ComponentStaticInfoArgs... component_static_info_args
-    ){
+    ) {
         // Max_copy, Max_rw, Max_keccak, Max_bytecode
         circuit_builder<field_type, BBFType, ComponentStaticInfoArgs...> builder(component_static_info_args...);
         auto &bp = builder.get_circuit();
@@ -199,4 +198,3 @@ public:
     bool print_to_file;
     std::string output_file;
 };
-

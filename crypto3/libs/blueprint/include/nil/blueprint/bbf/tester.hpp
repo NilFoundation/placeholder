@@ -46,14 +46,6 @@
 namespace nil {
     namespace blueprint {
         namespace bbf {
-            template<typename FieldType>
-            struct bbf_tester_raw_input {
-                using TYPE = typename FieldType::value_type;
-
-                TYPE X, Q;
-                std::array<TYPE,3> CX;
-                std::array<TYPE,3> CY;
-            };
 
             template<typename FieldType, GenerationStage stage>
             class bbf_tester : public generic_component<FieldType, stage> {
@@ -67,8 +59,12 @@ namespace nil {
                 public:
                     using typename generic_component<FieldType,stage>::TYPE;
                     using typename generic_component<FieldType,stage>::table_params;
-                    using raw_input_type = typename std::conditional<stage == GenerationStage::ASSIGNMENT,
-                                               bbf_tester_raw_input<FieldType>,std::tuple<>>::type;
+
+                    struct input_type {
+                      TYPE X, Q;
+                      std::array<TYPE,3> CX;
+                      std::array<TYPE,3> CY;
+                    };
 
                     TYPE input;
                     TYPE res;
@@ -77,30 +73,22 @@ namespace nil {
                         return {13,0,1,8191}; // W, PI, C, rows (so many rows, because carry_on_addition has a built-in range check
                     }
 
-                    static std::tuple<TYPE, TYPE, std::array<TYPE,3>, std::array<TYPE,3>>
-                    form_input(context_type &context_object, raw_input_type raw_input) {
-                        TYPE X, Q;
-                        std::array<TYPE,3> CX;
-                        std::array<TYPE,3> CY;
+                    static void allocate_public_inputs(context_type &ctx,
+                                                       input_type &input) {
+                        ctx.allocate(input.X, 0, 0, column_type::public_input);
+                        ctx.allocate(input.Q, 0, 1, column_type::public_input);
 
-                        if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                            X = raw_input.X;
-                            Q = raw_input.Q;
-                            std::copy(std::begin(raw_input.CX), std::end(raw_input.CX), std::begin(CX));
-                            std::copy(std::begin(raw_input.CY), std::end(raw_input.CY), std::begin(CY));
-                        }
-                        context_object.allocate(X,0,0,column_type::public_input);
-                        context_object.allocate(Q,0,1,column_type::public_input);
                         for(std::size_t i = 0; i < 3; i++) {
-                            context_object.allocate(CX[i],0,2+i,column_type::public_input);
-                            context_object.allocate(CY[i],0,5+i,column_type::public_input);
+                            ctx.allocate(input.CX[i], 0 , 2 + i,
+                                         column_type::public_input);
+                            ctx.allocate(input.CY[i], 0, 5 + i,
+                                         column_type::public_input);
                         }
-                        return std::make_tuple(X,Q,CX,CY);
                     }
 
                     bbf_tester(context_type &context_object,
-                            TYPE X, TYPE Q, std::array<TYPE,3> CX, std::array<TYPE,3> CY,
-                            bool make_links = true) :
+                               const input_type &input,
+                               bool make_links = true) :
                         generic_component<FieldType,stage>(context_object) {
 
                         using Is_Zero = is_zero<FieldType, stage>;
@@ -111,7 +99,7 @@ namespace nil {
                         TYPE const_test = 5;
                         allocate(const_test,0,0,column_type::constant);
 
-                        Is_Zero(context_object, X, make_links); // make_links delegated to subcomponent
+                        Is_Zero(context_object, input.X, make_links); // make_links delegated to subcomponent
 
                         // std::vector<std::size_t> ct2_area = {2,3,4,5};
                         // context_type ct2 = context_object.subcontext(ct2_area,0,4);

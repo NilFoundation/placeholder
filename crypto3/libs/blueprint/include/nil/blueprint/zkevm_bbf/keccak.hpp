@@ -50,7 +50,6 @@ namespace nil {
                     TYPE rlc_challenge;
                     private_input_type private_input;
                 };
-                using raw_input_type = input_type;
 
                 static table_params get_minimal_requirements() {
                     return {
@@ -61,10 +60,8 @@ namespace nil {
                     };
                 }
 
-                static std::tuple<input_type> form_input(context_type &context,
-                                                         raw_input_type input) {
+                static void allocate_public_inputs(context_type &context, input_type &input) {
                     context.allocate(input.rlc_challenge, 0, 0, column_type::public_input);
-                    return {input};
                 }
 
                 keccak(context_type &context_object, const input_type &input) :generic_component<FieldType,stage>(context_object) {

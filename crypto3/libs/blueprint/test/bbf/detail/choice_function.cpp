@@ -46,17 +46,17 @@ void test_choice_function(
     using TYPE = typename FieldType::value_type;
 
     typename bbf::components::choice_function<
-        FieldType, bbf::GenerationStage::ASSIGNMENT>::raw_input_type raw_input;
-    raw_input.q = public_input[0];
-    raw_input.x = std::vector<TYPE>(public_input.begin() + 1,
+        FieldType, bbf::GenerationStage::ASSIGNMENT>::input_type input;
+    input.q = public_input[0];
+    input.x = std::vector<TYPE>(public_input.begin() + 1,
                                     public_input.begin() + num_chunks + 1);
-    raw_input.y =
+    input.y =
         std::vector<TYPE>(public_input.begin() + num_chunks + 1, public_input.end());
     auto B =
         bbf::circuit_builder<FieldType, bbf::components::choice_function, std::size_t>(
             num_chunks);
 
-    auto [at, A, desc] = B.assign(raw_input);
+    auto [at, A, desc] = B.assign(input);
     bool pass = B.is_satisfied(at);
     std::cout << "Is_satisfied = " << pass << std::endl;
 
@@ -65,7 +65,7 @@ void test_choice_function(
     TYPE expected_res[num_chunks];
     for (std::size_t i = 0; i < num_chunks; i++) {
         expected_res[i] =
-            (1 - raw_input.q) * raw_input.x[i] + raw_input.q * raw_input.y[i];
+            (1 - input.q) * input.x[i] + input.q * input.y[i];
     }
 
     for (std::size_t i = 0; i < num_chunks; i++) {

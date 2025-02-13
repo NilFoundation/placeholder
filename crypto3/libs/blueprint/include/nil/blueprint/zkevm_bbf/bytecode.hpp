@@ -52,7 +52,6 @@ namespace nil {
                     BytecodeTable::input_type bytecodes;
                     KeccakTable::private_input_type keccak_buffers;
                 };
-                using raw_input_type = input_type;
 
                 std::size_t max_bytecode_size;
                 std::size_t max_keccak_blocks;
@@ -67,12 +66,10 @@ namespace nil {
                     };
                 }
 
-                static std::tuple<input_type> form_input(context_type &context,
-                                                         raw_input_type input,
-                                                         std::size_t max_bytecode_size,
-                                                         std::size_t max_keccak_blocks) {
+                static void allocate_public_inputs(
+                        context_type &context, input_type &input,
+                        std::size_t max_bytecode_size, std::size_t max_keccak_blocks) {
                     context.allocate(input.rlc_challenge, 0, 0, column_type::public_input);
-                    return {input};
                 }
 
                 bytecode(context_type &context_object,

@@ -44,16 +44,14 @@
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
 #include <nil/blueprint/zkevm_bbf/exp.hpp>
 
-#include "./test_l1_wrapper.hpp"
+#include "./circuit_test_fixture.hpp"
 
 using namespace nil::crypto3;
 using namespace nil::blueprint;
 using namespace nil::blueprint::bbf;
 
-class zkEVMExpTestFixture: public BBFTestFixture {
+class zkEVMExpTestFixture: public CircuitTestFixture {
 public:
-    zkEVMExpTestFixture():BBFTestFixture(){}
-
     template <typename field_type>
     void test_zkevm_exp(
         const std::vector<std::pair<zkevm_word_type, zkevm_word_type>> &exps,

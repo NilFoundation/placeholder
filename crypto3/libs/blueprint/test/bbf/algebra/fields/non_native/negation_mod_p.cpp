@@ -56,16 +56,16 @@ void test_negation_mod_p(
 
     extended_integral_type r = (x == 0) ? 0 : p - x;  // if x = 0, then r = 0
 
-    auto assign_and_check = [&](auto &B, auto &raw_input) {
-        raw_input.x =
+    auto assign_and_check = [&](auto &B, auto &input) {
+        input.x =
             std::vector<TYPE>(public_input.begin(), public_input.begin() + num_chunks);
-        raw_input.p = std::vector<TYPE>(public_input.begin() + num_chunks,
+        input.p = std::vector<TYPE>(public_input.begin() + num_chunks,
                                         public_input.begin() + 2 * num_chunks);
-        raw_input.pp = std::vector<TYPE>(public_input.begin() + 2 * num_chunks,
+        input.pp = std::vector<TYPE>(public_input.begin() + 2 * num_chunks,
                                          public_input.begin() + 3 * num_chunks);
-        raw_input.zero = public_input[3 * num_chunks];
+        input.zero = public_input[3 * num_chunks];
 
-        auto [at, A, desc] = B.assign(raw_input);
+        auto [at, A, desc] = B.assign(input);
         bool pass = B.is_satisfied(at);
         std::cout << "Is_satisfied = " << pass << std::endl;
 
@@ -87,23 +87,23 @@ void test_negation_mod_p(
     if constexpr (std::is_same_v<NonNativeFieldType,
                                  crypto3::algebra::curves::pallas::base_field_type>) {
         typename bbf::components::pallas_negation_mod_p<
-            FieldType, bbf::GenerationStage::ASSIGNMENT>::raw_input_type raw_input;
+            FieldType, bbf::GenerationStage::ASSIGNMENT>::input_type input;
 
         auto B =
             bbf::circuit_builder<FieldType, bbf::components::pallas_negation_mod_p,
                                  std::size_t, std::size_t>(num_chunks, bit_size_chunk);
 
-        assign_and_check(B, raw_input);
+        assign_and_check(B, input);
     } else if constexpr (std::is_same_v<
                              NonNativeFieldType,
                              crypto3::algebra::curves::vesta::base_field_type>) {
         typename bbf::components::vesta_negation_mod_p<
-            FieldType, bbf::GenerationStage::ASSIGNMENT>::raw_input_type raw_input;
+            FieldType, bbf::GenerationStage::ASSIGNMENT>::input_type input;
         auto B =
             bbf::circuit_builder<FieldType, bbf::components::vesta_negation_mod_p,
                                  std::size_t, std::size_t>(num_chunks, bit_size_chunk);
 
-        assign_and_check(B, raw_input);
+        assign_and_check(B, input);
     }
 }
 

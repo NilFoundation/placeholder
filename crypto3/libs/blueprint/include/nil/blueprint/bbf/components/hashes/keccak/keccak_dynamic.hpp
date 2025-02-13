@@ -23,6 +23,9 @@
 //---------------------------------------------------------------------------//
 
 #pragma once
+
+#include <utility>
+
 #include <nil/blueprint/bbf/components/hashes/keccak/keccak_round.hpp>
 #include <nil/blueprint/bbf/components/hashes/keccak/util.hpp>
 #include <nil/blueprint/bbf/generic.hpp>
@@ -30,15 +33,6 @@
 namespace nil {
     namespace blueprint {
         namespace bbf {
-            template<typename FieldType>
-            struct keccak_dynamic_raw_input {
-                using TYPE = typename FieldType::value_type;
-
-                TYPE rlc_challenge;
-                std::vector<std::tuple<std::vector<std::uint8_t>, std::pair<TYPE, TYPE>>>
-                    input;
-            };
-
             // Component for keccak table
             template<typename FieldType, GenerationStage stage>
             class keccak_dynamic : public generic_component<FieldType, stage> {
@@ -52,19 +46,20 @@ namespace nil {
               public:
                 using typename generic_component<FieldType, stage>::TYPE;
                 using typename generic_component<FieldType, stage>::table_params;
-                using raw_input_type =
-                    typename std::conditional<stage == GenerationStage::ASSIGNMENT,
-                                              keccak_dynamic_raw_input<FieldType>,
-                                              std::tuple<>>::type;
                 using integral_type = typename FieldType::integral_type;
                 using value_type = typename FieldType::value_type;
                 using KECCAK_ROUND = typename bbf::keccak_round<FieldType, stage>;
 
                 struct input_type {
                     TYPE rlc_challenge;
-                    std::vector<std::tuple<std::vector<std::uint8_t>,
-                                           std::pair<value_type, value_type>>>
-                        input;
+
+                    std::conditional_t<
+                        stage == GenerationStage::ASSIGNMENT,
+                        std::vector<std::tuple<
+                            std::vector<std::uint8_t>,
+                            std::pair<value_type, value_type>>>,
+                        std::monostate
+                    > input;
                 };
 
                 const std::size_t block_rows_amount = 6247;
@@ -196,19 +191,10 @@ namespace nil {
                     return {witness, public_inputs, constants, rows};
                 }
 
-                static std::tuple<input_type> form_input(context_type &context_object,
-                                                         raw_input_type raw_input,
-                                                         std::size_t max_blocks) {
-                    input_type input;
-                    if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                        input.input = raw_input.input;
-                        input.rlc_challenge = raw_input.rlc_challenge;
-                    }
-
+                static void allocate_public_inputs(
+                        context_type &context_object, input_type &input, std::size_t max_blocks) {
                     context_object.allocate(input.rlc_challenge, 0, 0,
                                             column_type::public_input);
-
-                    return std::make_tuple(input);
                 }
 
                 keccak_dynamic(context_type &context_object, input_type instance_input,

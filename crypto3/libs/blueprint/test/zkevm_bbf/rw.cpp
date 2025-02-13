@@ -44,16 +44,14 @@
 #include <nil/blueprint/zkevm_bbf/rw.hpp>
 #include <nil/blueprint/zkevm_bbf/input_generators/hardhat_input_generator.hpp>
 
-#include "./test_l1_wrapper.hpp"
+#include "./circuit_test_fixture.hpp"
 
 using namespace nil::crypto3;
 using namespace nil::blueprint;
 using namespace nil::blueprint::bbf;
 
-class zkEVMRWTestFixture: public BBFTestFixture {
+class zkEVMRWTestFixture: public CircuitTestFixture {
 public:
-    zkEVMRWTestFixture():BBFTestFixture(){}
-
     template <typename field_type>
     void test_zkevm_rw(
         std::vector<std::string> paths,

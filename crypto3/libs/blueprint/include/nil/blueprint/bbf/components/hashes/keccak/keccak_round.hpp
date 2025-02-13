@@ -23,19 +23,12 @@
 //---------------------------------------------------------------------------//
 
 #pragma once
+
 #include <nil/blueprint/bbf/generic.hpp>
 
 namespace nil {
     namespace blueprint {
         namespace bbf {
-            template<typename FieldType>
-            struct keccak_round_raw_input {
-                using TYPE = typename FieldType::value_type;
-
-                std::array<TYPE, 25> inner_state;
-                std::array<TYPE, 17> padded_message_chunk;
-                TYPE round_constant;
-            };
 
             // Component for keccak round
             template<typename FieldType, GenerationStage stage>
@@ -50,10 +43,6 @@ namespace nil {
               public:
                 using typename generic_component<FieldType, stage>::TYPE;
                 using typename generic_component<FieldType, stage>::table_params;
-                using raw_input_type =
-                    typename std::conditional<stage == GenerationStage::ASSIGNMENT,
-                                              keccak_round_raw_input<FieldType>,
-                                              std::tuple<>>::type;
                 using integral_type = typename FieldType::integral_type;
 
                 struct input_type {
@@ -152,20 +141,9 @@ namespace nil {
                     return {witness, public_inputs, constants, rows};
                 }
 
-                static std::tuple<input_type> form_input(context_type &context_object,
-                                                         raw_input_type raw_input,
-                                                         bool xor_with_mes = false) {
-                    input_type input;
-                    if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                        for (std::size_t i = 0; i < 25; i++) {
-                            input.inner_state[i] = raw_input.inner_state[i];
-                        }
-                        for (std::size_t i = 0; i < 17; i++) {
-                            input.padded_message_chunk[i] = raw_input.padded_message_chunk[i];
-                        }
-                        input.round_constant = raw_input.round_constant;
-                    }
-
+                static void allocate_public_inputs(
+                        context_type &context_object, input_type &input,
+                        bool xor_with_mes = false) {
                     for (std::size_t i = 0; i < 25; i++) {
                         context_object.allocate(input.inner_state[i], 0, i,
                                                 column_type::public_input);
@@ -175,8 +153,6 @@ namespace nil {
                                                 column_type::public_input);
                     }
                     context_object.allocate(input.round_constant, 0, 42, column_type::public_input);
-
-                    return std::make_tuple(input);
                 }
 
                 keccak_round(context_type &context_object, input_type input,
