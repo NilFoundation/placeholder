@@ -51,7 +51,6 @@ namespace nil {
 
                 using rw_table_type = rw_table<FieldType, stage>;
                 using input_type = typename rw_table_type::input_type;
-                using raw_input_type = input_type;
 
                 using value = typename FieldType::value_type;
                 using integral_type = nil::crypto3::multiprecision::big_uint<257>;
@@ -75,12 +74,9 @@ namespace nil {
                     };
                 }
 
-                static std::tuple<input_type> form_input(context_type &context,
-                                                         raw_input_type input,
-                                                         std::size_t max_rw_size,
-                                                         std::size_t max_mpt_size) {
-                    return {input};
-                }
+                static void allocate_public_inputs(
+                        context_type &context, input_type &input,
+                        std::size_t max_rw_size, std::size_t max_mpt_size) {}
 
                 template<std::size_t n>
                 TYPE bit_tag_selector(std::array<TYPE, n> bits, std::size_t k){

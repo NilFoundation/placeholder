@@ -32,6 +32,7 @@
 #include <nil/blueprint/bbf/components/algebra/fields/non_native/check_mod_p.hpp>
 #include <nil/blueprint/bbf/components/algebra/fields/non_native/flexible_multiplication.hpp>
 #include <nil/blueprint/bbf/components/algebra/fields/non_native/negation_mod_p.hpp>
+#include <nil/blueprint/bbf/components/detail/allocate_public_input_chunks.hpp>
 #include <nil/blueprint/bbf/components/detail/range_check_multi.hpp>
 #include <nil/blueprint/bbf/generic.hpp>
 #include <nil/crypto3/algebra/curves/pallas.hpp>
@@ -51,17 +52,6 @@ namespace nil {
                 //      yQ[0],...,yQ[k-1], p[0], ..., p[k-1], pp[0], ..., pp[k-1],
                 //      0 (expects zero constant as input)
                 // Output: xR[0],...,xR[k-1], yR[0],...,yR[k-1]
-                template<typename FieldType>
-                struct ec_full_add_raw_input {
-                    using TYPE = typename FieldType::value_type;
-                    std::vector<TYPE> xQ;
-                    std::vector<TYPE> yQ;
-                    std::vector<TYPE> xP;
-                    std::vector<TYPE> yP;
-                    std::vector<TYPE> p;
-                    std::vector<TYPE> pp;
-                    TYPE zero;
-                };
 
                 template<typename FieldType, GenerationStage stage,
                          typename NonNativeFieldType>
@@ -74,10 +64,16 @@ namespace nil {
                     using typename generic_component<FieldType, stage>::TYPE;
                     using typename generic_component<FieldType, stage>::context_type;
                     using typename generic_component<FieldType, stage>::table_params;
-                    using raw_input_type =
-                        typename std::conditional<stage == GenerationStage::ASSIGNMENT,
-                                                  ec_full_add_raw_input<FieldType>,
-                                                  std::tuple<>>::type;
+
+                    struct input_type {
+                      std::vector<TYPE> xQ;
+                      std::vector<TYPE> yQ;
+                      std::vector<TYPE> xP;
+                      std::vector<TYPE> yP;
+                      std::vector<TYPE> p;
+                      std::vector<TYPE> pp;
+                      TYPE zero;
+                    };
 
                   public:
                     std::vector<TYPE> xR;
@@ -94,55 +90,25 @@ namespace nil {
                         return {witness, public_inputs, constants, rows};
                     }
 
-                    static std::tuple<std::vector<TYPE>, std::vector<TYPE>,
-                                      std::vector<TYPE>, std::vector<TYPE>,
-                                      std::vector<TYPE>, std::vector<TYPE>, TYPE>
-                    form_input(context_type& context_object, raw_input_type raw_input,
-                               std::size_t num_chunks, std::size_t bit_size_chunk) {
-                        std::vector<TYPE> input_xP(num_chunks);
-                        std::vector<TYPE> input_yP(num_chunks);
-                        std::vector<TYPE> input_xQ(num_chunks);
-                        std::vector<TYPE> input_yQ(num_chunks);
-                        std::vector<TYPE> input_p(num_chunks);
-                        std::vector<TYPE> input_pp(num_chunks);
-                        TYPE input_zero;
+                    static void allocate_public_inputs(
+                            context_type& ctx, input_type& input,
+                            std::size_t num_chunks, std::size_t bit_size_chunk) {
+                        AllocatePublicInputChunks allocate_chunks(ctx, num_chunks);
 
-                        if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                            for (std::size_t i = 0; i < num_chunks; i++) {
-                                input_xP[i] = raw_input.xP[i];
-                                input_yP[i] = raw_input.yP[i];
-                                input_xQ[i] = raw_input.xQ[i];
-                                input_yQ[i] = raw_input.yQ[i];
-                                input_p[i] = raw_input.p[i];
-                                input_pp[i] = raw_input.pp[i];
-                            }
-                            input_zero = raw_input.zero;
-                        }
-                        for (std::size_t i = 0; i < num_chunks; i++) {
-                            context_object.allocate(input_xP[i], 0, i,
-                                                    column_type::public_input);
-                            context_object.allocate(input_yP[i], 0, i + num_chunks,
-                                                    column_type::public_input);
-                            context_object.allocate(input_xQ[i], 0, i + 2 * num_chunks,
-                                                    column_type::public_input);
-                            context_object.allocate(input_yQ[i], 0, i + 3 * num_chunks,
-                                                    column_type::public_input);
-                            context_object.allocate(input_p[i], 0, i + 4 * num_chunks,
-                                                    column_type::public_input);
-                            context_object.allocate(input_pp[i], 0, i + 5 * num_chunks,
-                                                    column_type::public_input);
-                        }
-                        context_object.allocate(input_zero, 0, 6 * num_chunks,
-                                                column_type::public_input);
-                        return std::make_tuple(input_xP, input_yP, input_xQ, input_yQ,
-                                               input_p, input_pp, input_zero);
+                        std::size_t row = 0;
+                        allocate_chunks(input.xP, 0, &row);
+                        allocate_chunks(input.yP, 0, &row);
+                        allocate_chunks(input.xQ, 0, &row);
+                        allocate_chunks(input.yQ, 0, &row);
+                        allocate_chunks(input.p, 0, &row);
+                        allocate_chunks(input.pp, 0, &row);
+                        ctx.allocate(input.zero, 0, row++,
+                                     column_type::public_input);
                     }
 
-                    ec_full_add(context_type& context_object, std::vector<TYPE> input_xP,
-                                std::vector<TYPE> input_yP, std::vector<TYPE> input_xQ,
-                                std::vector<TYPE> input_yQ, std::vector<TYPE> input_p,
-                                std::vector<TYPE> input_pp, TYPE input_zero,
-                                std::size_t num_chunks, std::size_t bit_size_chunk,
+                    ec_full_add(context_type& context_object,
+                                const input_type &input, std::size_t num_chunks,
+                                std::size_t bit_size_chunk,
                                 bool make_links = true)
                         : generic_component<FieldType, stage>(context_object) {
                         using integral_type = typename FieldType::integral_type;
@@ -180,16 +146,16 @@ namespace nil {
 
                             for (std::size_t i = 0; i < num_chunks; ++i) {
                                 xP += non_native_integral_type(
-                                          integral_type(input_xP[i].data)) *
+                                          integral_type(input.xP[i].data)) *
                                       pow;
                                 yP += non_native_integral_type(
-                                          integral_type(input_yP[i].data)) *
+                                          integral_type(input.yP[i].data)) *
                                       pow;
                                 xQ += non_native_integral_type(
-                                          integral_type(input_xQ[i].data)) *
+                                          integral_type(input.xQ[i].data)) *
                                       pow;
                                 yQ += non_native_integral_type(
-                                          integral_type(input_yQ[i].data)) *
+                                          integral_type(input.yQ[i].data)) *
                                       pow;
                                 pow <<= bit_size_chunk;
                             }
@@ -265,12 +231,12 @@ namespace nil {
                             allocate(WPQ[i]);
                         }
 
-                        auto check_chunked = [&context_object, num_chunks, bit_size_chunk,
-                                              input_pp, input_zero](std::vector<TYPE> x) {
+                        auto check_chunked = [&context_object, num_chunks, bit_size_chunk, &input](
+                                std::vector<TYPE> x) {
                             Range_Check rc = Range_Check(context_object, x, num_chunks,
                                                          bit_size_chunk);
                             Check_Mod_P cm =
-                                Check_Mod_P(context_object, x, input_pp, input_zero,
+                                Check_Mod_P(context_object, {x, input.pp, input.zero},
                                             num_chunks, bit_size_chunk);
                         };
 
@@ -291,48 +257,46 @@ namespace nil {
                         check_chunked(ZPQ);
                         check_chunked(WPQ);
 
-                        auto MultModP = [&context_object, input_p, input_pp, input_zero,
-                                         num_chunks, bit_size_chunk](
-                                            std::vector<TYPE> x, std::vector<TYPE> y) {
+                        auto MultModP = [&context_object, &input, num_chunks, bit_size_chunk](
+                                std::vector<TYPE> x, std::vector<TYPE> y) {
                             Multiplication_Mod_P t = Multiplication_Mod_P(
-                                context_object, x, y, input_p, input_pp, input_zero,
+                                context_object, {x, y, input.p, input.pp, input.zero},
                                 num_chunks, bit_size_chunk);
                             return t.r;
                         };
-                        auto AddModP = [&context_object, input_p, input_pp, input_zero,
-                                        num_chunks, bit_size_chunk](std::vector<TYPE> x,
-                                                                    std::vector<TYPE> y) {
+                        auto AddModP = [&context_object, &input, num_chunks, bit_size_chunk](
+                                std::vector<TYPE> x, std::vector<TYPE> y) {
                             Addition_Mod_P t =
-                                Addition_Mod_P(context_object, x, y, input_p, input_pp,
-                                               input_zero, num_chunks, bit_size_chunk);
+                                Addition_Mod_P(context_object, {x, y, input.p, input.pp, input.zero},
+                                               num_chunks, bit_size_chunk);
                             return t.r;
                         };
-                        auto SubModP = [&context_object, input_p, input_pp, input_zero,
-                                        num_chunks, bit_size_chunk](std::vector<TYPE> x,
-                                                                    std::vector<TYPE> y) {
+                        auto SubModP = [&context_object, &input, num_chunks, bit_size_chunk](
+                                std::vector<TYPE> x, std::vector<TYPE> y) {
                             Substraction_Mod_P t = Substraction_Mod_P(
-                                context_object, x, y, input_p, input_pp, input_zero,
+                                context_object, {x, y, input.p, input.pp, input.zero},
                                 num_chunks, bit_size_chunk);
                             return t.r;
                         };
-                        auto NegModP = [&context_object, input_p, input_pp, input_zero,
-                                        num_chunks, bit_size_chunk](std::vector<TYPE> x) {
+                        auto NegModP = [&context_object, &input, num_chunks, bit_size_chunk](
+                                std::vector<TYPE> x) {
                             Negation_Mod_P t =
-                                Negation_Mod_P(context_object, x, input_p, input_pp,
-                                               input_zero, num_chunks, bit_size_chunk);
+                                Negation_Mod_P(
+                                    context_object, {x, input.p, input.pp, input.zero},
+                                    num_chunks, bit_size_chunk);
                             return t.r;
                         };
 
-                        std::vector<TYPE> input_zero_vector(num_chunks, input_zero);
+                        std::vector<TYPE> input_zero_vector(num_chunks, input.zero);
 
                         // part 1
-                        auto t1 = SubModP(XR, input_xQ);       // t1 = xR - xQ
-                        auto t2 = SubModP(YR, input_yQ);       // t2 = yR - yQ
-                        auto t3 = SubModP(XR, input_xP);       // t3 = xR - xP
-                        auto t4 = SubModP(YR, input_yP);       // t4 = yR - yP
-                        auto t5 = SubModP(input_xP, input_xQ); // t5 = xP - xQ
-                        auto t6 = MultModP(input_yP, ZP);      // t6 = yP * zP
-                        auto t7 = MultModP(input_yQ, ZQ);      // t7 = yQ * zQ
+                        auto t1 = SubModP(XR, input.xQ);       // t1 = xR - xQ
+                        auto t2 = SubModP(YR, input.yQ);       // t2 = yR - yQ
+                        auto t3 = SubModP(XR, input.xP);       // t3 = xR - xP
+                        auto t4 = SubModP(YR, input.yP);       // t4 = yR - yP
+                        auto t5 = SubModP(input.xP, input.xQ); // t5 = xP - xQ
+                        auto t6 = MultModP(input.yP, ZP);      // t6 = yP * zP
+                        auto t7 = MultModP(input.yQ, ZQ);      // t7 = yQ * zQ
                         auto t8 = MultModP(t5, ZPQ);           // t8 = (xP - xQ) zPQ = ZPQ
                         auto t9 = MultModP(t1, t6);           // t9 = (xR - xQ) yP zP
                         CopyConstrain(t1, t9);        // t1 = t9
@@ -346,7 +310,7 @@ namespace nil {
                         CopyConstrain(t5, t13);        // t5 = t13
 
                         // // part 2
-                        auto t14 = AddModP(input_yP, input_yQ); // t14 = yP + yQ
+                        auto t14 = AddModP(input.yP, input.yQ); // t14 = yP + yQ
                         auto t15 = MultModP(t14, WPQ);          // t15 = (yP + yQ) wPQ = WPQ
                         auto t16 = AddModP(t8, t15);            // t16 = ZPQ + WPQ
                         auto t17 = MultModP(XR, t16);           // t17 = xR(ZPQ + WPQ)
@@ -359,13 +323,13 @@ namespace nil {
                         auto t20 = MultModP(t14, t19);          // t20 = -(yP + yQ) ZPQ
                         auto t21 = AddModP(t14, t20);           // t21 = (yP + yQ)(1 - ZPQ)
                         auto t22 = AddModP(t5, t21);            // t22 = (xP - xQ) + (yP + yQ)(1 - ZPQ)
-                        auto t23 = MultModP(input_yP, input_yQ);// t23 = yP * yQ
+                        auto t23 = MultModP(input.yP, input.yQ);// t23 = yP * yQ
                         auto t24 = MultModP( t22, t23);         // t24 = yP  yQ (xP - xQ + (yP + yQ)(1 - ZPQ))
                         auto t25 = MultModP(LAMBDA, LAMBDA);    // t25 = lambda * lambda
                         auto t26 = SubModP(XR, t25);            // t26 = xR - lambda^2
-                        auto t27 = AddModP(t26, input_xP);      // t27 = xR - lambda^2 + xP
-                        auto t28 = AddModP(t27, input_xQ);      // t28 = xR - lambda^2 + xP + xQ
-                        auto t29 = AddModP(YR, input_yP);       // t29 = yR + yP
+                        auto t27 = AddModP(t26, input.xP);      // t27 = xR - lambda^2 + xP
+                        auto t28 = AddModP(t27, input.xQ);      // t28 = xR - lambda^2 + xP + xQ
+                        auto t29 = AddModP(YR, input.yP);       // t29 = yR + yP
                         auto t30 = MultModP(t3, LAMBDA);        // t30 = (xR - xP) lambda
                         auto t31 = AddModP(t29, t30);           // t31 = yR + yP + (xR - xP)lambda
                         auto t32 = MultModP(t24, t28);          // t32 = yP  yQ (xP - xQ + (yP + yQ)(1 - ZPQ))(xR - lambda^2 + xP + xQ)
@@ -375,14 +339,14 @@ namespace nil {
 
                         // part 4
                         auto t34 = MultModP(t5, LAMBDA);        // t34 = (xP - xQ) lambda
-                        auto t35 = SubModP(t34, input_yP);      // t35 = (xP - xQ) lambda - yP
-                        auto t36 = AddModP(t35, input_yQ);      // t36 = (xP - xQ) lambda - yP + yQ
+                        auto t35 = SubModP(t34, input.yP);      // t35 = (xP - xQ) lambda - yP
+                        auto t36 = AddModP(t35, input.yQ);      // t36 = (xP - xQ) lambda - yP + yQ
                         auto t37 = MultModP(t5, t36);           // t37 = (xP - xQ)((xP - xQ) lambda - yP + yQ)
                         CopyConstrain(t37, input_zero_vector);  // t37 = 0
-                        auto t38 = MultModP(input_xP, input_xP);      // t38 = xP^2
+                        auto t38 = MultModP(input.xP, input.xP);      // t38 = xP^2
                         auto t39 = AddModP(t38, t38);           // t39 = 2xP^2
                         auto t40 = AddModP(t38, t39);           // t40 = 3xP^2
-                        auto t41 = AddModP(input_yP, input_yP); // t41 = 2yP
+                        auto t41 = AddModP(input.yP, input.yP); // t41 = 2yP
                         auto t42 = MultModP(t41, LAMBDA);       // t42 = 2yP lambda
                         auto t43 = SubModP(t42, t40);           // t43 = 2yP lambda - 3xP^2
                         auto t44 = MultModP(t43, t8);           // t44 = (2yP lambda - 3xP^2) ZPQ

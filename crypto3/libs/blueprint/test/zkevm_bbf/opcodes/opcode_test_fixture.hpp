@@ -53,16 +53,14 @@
 #include <nil/blueprint/zkevm_bbf/keccak.hpp>
 #include <nil/blueprint/zkevm_bbf/exp.hpp>
 
-#include "../test_l1_wrapper.hpp"
+#include "../circuit_test_fixture.hpp"
 
 using namespace nil::crypto3;
 using namespace nil::blueprint;
 using namespace nil::blueprint::bbf;
 
-class zkEVMOpcodeTestFixture: public BBFTestFixture {
+class zkEVMOpcodeTestFixture: public CircuitTestFixture {
 public:
-    zkEVMOpcodeTestFixture():BBFTestFixture(){}
-
     template<typename BlueprintFieldType>
     void complex_opcode_test(
         const zkevm_opcode_tester                       &opcode_tester,
@@ -84,14 +82,14 @@ public:
         std::size_t max_exponentiations = max_sizes.max_exponentiations;
         std::size_t max_exp_rows = max_sizes.max_exp_rows;
 
-        typename bbf::copy<BlueprintFieldType, GenerationStage::ASSIGNMENT>::raw_input_type copy_assignment_input;
+        typename bbf::copy<BlueprintFieldType, GenerationStage::ASSIGNMENT>::input_type copy_assignment_input;
         copy_assignment_input.rlc_challenge = 7;
         copy_assignment_input.bytecodes = circuit_inputs.bytecodes();
         copy_assignment_input.keccak_buffers = circuit_inputs.keccaks();
         copy_assignment_input.rw_operations = circuit_inputs.rw_operations();
         copy_assignment_input.copy_events = circuit_inputs.copy_events();
 
-        typename zkevm<BlueprintFieldType, GenerationStage::ASSIGNMENT>::raw_input_type zkevm_assignment_input;
+        typename zkevm<BlueprintFieldType, GenerationStage::ASSIGNMENT>::input_type zkevm_assignment_input;
         zkevm_assignment_input.rlc_challenge = 7;
         zkevm_assignment_input.bytecodes = circuit_inputs.bytecodes();
         zkevm_assignment_input.keccak_buffers = circuit_inputs.keccaks();
@@ -102,10 +100,10 @@ public:
 
         auto rw_assignment_input = circuit_inputs.rw_operations();
 
-        typename keccak<BlueprintFieldType, GenerationStage::ASSIGNMENT>::raw_input_type keccak_assignment_input;
+        typename keccak<BlueprintFieldType, GenerationStage::ASSIGNMENT>::input_type keccak_assignment_input;
         keccak_assignment_input.private_input = 12345;
 
-        typename bytecode<BlueprintFieldType, GenerationStage::ASSIGNMENT>::raw_input_type bytecode_assignment_input;
+        typename bytecode<BlueprintFieldType, GenerationStage::ASSIGNMENT>::input_type bytecode_assignment_input;
         bytecode_assignment_input.rlc_challenge = 7;
         bytecode_assignment_input.bytecodes = circuit_inputs.bytecodes();
         bytecode_assignment_input.keccak_buffers = circuit_inputs.keccaks();
@@ -128,6 +126,7 @@ public:
         BOOST_CHECK(result);
         std::cout << std::endl;
 
+        std::cout << "Exp circuit" << std::endl;
         result = test_bbf_component<BlueprintFieldType, nil::blueprint::bbf::exponentiation>(
             "exp",
             {}, exp_assignment_input,

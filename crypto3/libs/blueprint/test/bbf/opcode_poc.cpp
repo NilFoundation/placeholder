@@ -51,12 +51,9 @@ void test_opcode_poc(
     std::vector<std::uint8_t> blocks,
     std::size_t max_rows
 ){
-    typename opcode_poc<field_type, GenerationStage::ASSIGNMENT>::raw_input_type raw_input;
-    raw_input.B = blocks;
-
     std::cout << "input_size = " <<  blocks.size() << std::endl;
     auto B = circuit_builder<field_type,opcode_poc,std::size_t>(max_rows);
-    auto [at, A, desc] = B.assign(raw_input);
+    auto [at, A, desc] = B.assign(blocks);
     BOOST_TEST(B.is_satisfied(at), "constraints are not satisfied");
 }
 

@@ -46,14 +46,6 @@ namespace nil {
                 // (expects zero constant as input)
                 // Output: none
 
-                template<typename FieldType>
-                struct check_mod_p_raw_input {
-                    using TYPE = typename FieldType::value_type;
-                    std::vector<TYPE> x;
-                    std::vector<TYPE> pp;
-                    TYPE zero;
-                };
-
                 template<typename FieldType, GenerationStage stage>
                 class check_mod_p : public generic_component<FieldType, stage> {
                     using generic_component<FieldType, stage>::allocate;
@@ -64,10 +56,12 @@ namespace nil {
                     using typename generic_component<FieldType, stage>::TYPE;
                     using typename generic_component<FieldType, stage>::context_type;
                     using typename generic_component<FieldType, stage>::table_params;
-                    using raw_input_type =
-                        typename std::conditional<stage == GenerationStage::ASSIGNMENT,
-                                                  check_mod_p_raw_input<FieldType>,
-                                                  std::tuple<>>::type;
+
+                    struct input_type {
+                      std::vector<TYPE> x;
+                      std::vector<TYPE> pp;
+                      TYPE zero;
+                    };
 
                   public:
                     TYPE output;
@@ -89,33 +83,18 @@ namespace nil {
                         return {witness, public_inputs, constants, rows};
                     }
 
-                    static std::tuple<std::vector<TYPE>, std::vector<TYPE>, TYPE>
-                    form_input(context_type &context_object, raw_input_type raw_input,
-                               std::size_t num_chunks, std::size_t bit_size_chunk,
-                               bool expect_output = false) {
-                        std::vector<TYPE> input_x(num_chunks);
-                        std::vector<TYPE> input_pp(num_chunks);
-                        TYPE input_zero;
-                        if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                            for (std::size_t i = 0; i < num_chunks; i++) {
-                                input_x[i] = raw_input.x[i];
-                                input_pp[i] = raw_input.pp[i];
-                            }
-                            input_zero = raw_input.zero;
-                        }
-                        for (std::size_t i = 0; i < num_chunks; i++) {
-                            context_object.allocate(input_x[i], 0, i,
-                                                    column_type::public_input);
-                            context_object.allocate(input_pp[i], 0, i + num_chunks,
-                                                    column_type::public_input);
-                        }
-                        context_object.allocate(input_zero, 0, 2 * num_chunks + 1,
-                                                column_type::public_input);
-                        return std::make_tuple(input_x, input_pp, input_zero);
+                    static void allocate_public_inputs(
+                            context_type& ctx, input_type& input, std::size_t num_chunks,
+                            std::size_t bit_size_chunk, bool expect_output = false) {
+                        AllocatePublicInputChunks allocate_chunks(ctx, num_chunks);
+
+                        std::size_t row = 0;
+                        allocate_chunks(input.x, 0, &row);
+                        allocate_chunks(input.pp, 0, &row);
+                        ctx.allocate(input.zero, 0, row++, column_type::public_input);
                     }
 
-                    check_mod_p(context_type &context_object, std::vector<TYPE> input_x,
-                                std::vector<TYPE> input_pp, TYPE input_zero,
+                    check_mod_p(context_type &context_object, const input_type &input,
                                 std::size_t num_chunks, std::size_t bit_size_chunk,
                                 bool expect_output = false, bool make_links = true)
                         : generic_component<FieldType, stage>(context_object) {
@@ -126,16 +105,14 @@ namespace nil {
                         using Range_Check =
                             typename bbf::components::range_check_multi<FieldType, stage>;
 
-                        Carry_On_Addition ca =
-                            Carry_On_Addition(context_object, input_x, input_pp,
-                                              num_chunks, bit_size_chunk);
-                        Range_Check rc =
-                            Range_Check(context_object, ca.r, num_chunks, bit_size_chunk);
-
+                        Carry_On_Addition ca = Carry_On_Addition(
+                            context_object, {input.x, input.pp}, num_chunks, bit_size_chunk);
+                        Range_Check rc = Range_Check(
+                            context_object, ca.r, num_chunks, bit_size_chunk);
+                        
                         if (expect_output) {
                             output = ca.c;
-                        } else {
-                            copy_constrain(ca.c, input_zero);
+                            copy_constrain(ca.c, input.zero);
                         }
                     }
                 };
