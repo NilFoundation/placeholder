@@ -27,7 +27,6 @@
 #include <numeric>
 #include <algorithm>
 
-#include <nil/blueprint/zkevm/zkevm_word.hpp>
 #include <nil/blueprint/zkevm_bbf/types/opcode.hpp>
 
 namespace nil {
@@ -87,16 +86,16 @@ namespace nil {
                         };
                         lookup(tmp, "zkevm_rw");
                         tmp = {
-                            TYPE(rw_op_to_num(rw_operation_type::storage)),
+                            TYPE(rw_op_to_num(rw_operation_type::state)),
                             current_state.call_id(0),
                             TYPE(0),
                             K_hi,                                                  // storage_key_hi
                             K_lo,                                                  // storage_key_lo
                             TYPE(0),                                               // field
                             current_state.rw_counter(0)+1,
-                            TYPE(0),                                            // is_write
-                            V_128.first,                                        // hi bytes are 0
-                            V_128.second                                        // addr is smaller than maximum contract size
+                            TYPE(0),                                               // is_write
+                            V_128.first,                                           // hi bytes are 0
+                            V_128.second                                           // addr is smaller than maximum contract size
                         };
                         lookup(tmp, "zkevm_rw");
                         tmp = {

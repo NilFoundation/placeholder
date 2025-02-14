@@ -62,7 +62,7 @@ macro(define_blueprint_test test)
 
     set_target_properties(${full_test_name} PROPERTIES CXX_STANDARD 20)
 
-    target_compile_definitions(${full_test_name} PRIVATE TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/zkevm/data/")
+    target_compile_definitions(${full_test_name} PRIVATE TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/zkevm_bbf/data/")
 
     if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
         target_compile_options(${full_test_name} PRIVATE "${ARGV2}" "-fconstexpr-steps=2147483647" "-ftemplate-backtrace-limit=0")
@@ -185,30 +185,6 @@ set(PLONK_TESTS_FILES
     "verifiers/placeholder/dfri_input_generator"
     )
 
-
-set(ZKEVM_TESTS_FILES
-    "zkevm/bytecode"
-    # "zkevm/rw"
-    #"zkevm/copy"
-    "zkevm/connections"
-    #"zkevm/state_selector"
-    "zkevm/zkevm_word"
-    #"zkevm/state_transition"
-    "zkevm/opcodes/iszero"
-    "zkevm/opcodes/add_sub"
-    "zkevm/opcodes/mul"
-    "zkevm/opcodes/div"
-    "zkevm/opcodes/cmp"
-    "zkevm/opcodes/pushx"
-    "zkevm/opcodes/not"
-    "zkevm/opcodes/mod_ops"
-    "zkevm/opcodes/byte_ops"
-    "zkevm/opcodes/bitwise"
-    "zkevm/opcodes/err0"
-    "zkevm/opcodes/err1"
-    #"zkevm/opcodes/workload"
-    "zkevm/opcodes/jumps"
-)
 
 set(ZKEVM_BBF_TESTS_FILES
     "zkevm_bbf/hardhat"

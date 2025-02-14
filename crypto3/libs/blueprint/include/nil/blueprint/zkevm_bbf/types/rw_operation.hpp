@@ -29,90 +29,78 @@
 #include <nil/blueprint/components/hashes/keccak/util.hpp> //Move needed utils to bbf
 #include <nil/blueprint/bbf/generic.hpp>
 
-#include <nil/blueprint/zkevm/zkevm_word.hpp>
-#include <nil/blueprint/zkevm/util/ptree.hpp>
+#include <nil/blueprint/zkevm_bbf/types/zkevm_word.hpp>
+#include <nil/blueprint/zkevm_bbf/util/ptree.hpp>
 
 namespace nil {
     namespace blueprint {
         namespace bbf {
-            enum class rw_operation_type {
-                start,
-                stack,
-                memory,
-                storage,
-                transient_storage,
-                call_context,
-                account,
-                tx_refund_op,
-                tx_access_list_account,         // Not used, cluster messages don't support access list
-                tx_access_list_account_storage, // Not used, cluster messages don't support access list
-                tx_log,
-                tx_receipt,
-                padding
+            enum class rw_operation_type: std::uint8_t {
+                start = 0,
+                stack = 1,
+                memory = 2,
+
+                state = 3,          // Grouped by block, includes STORAGE and ACCOUNT operations
+                transient_storage = 4, // Grouped by transaction
+                call_context = 5,   // Grouped by call
+
+                tx_refund =6,
+                tx_log = 7,         // Do we really need it?
+                tx_receipt = 8,
+
+                call_state = 9,     // STATE operations grouped by call for REVERT proving
+                // call_transient_state -- may be later
+
+                padding = 10
             };
-            static constexpr std::size_t rw_operation_types_amount = 13;
+            static constexpr std::size_t rw_operation_types_amount = 11;
 
             std::size_t rw_op_to_num(rw_operation_type rw_op){
-                if( rw_op == rw_operation_type::start ) return 0;
-                if( rw_op == rw_operation_type::stack ) return 1;
-                if( rw_op == rw_operation_type::memory ) return 2;
-                if( rw_op == rw_operation_type::storage ) return 3;
-                if( rw_op == rw_operation_type::transient_storage ) return 4;
-                if( rw_op == rw_operation_type::call_context ) return 5;
-                if( rw_op == rw_operation_type::account ) return 6;
-                if( rw_op == rw_operation_type::tx_refund_op ) return 7;
-                if( rw_op == rw_operation_type::tx_access_list_account ) return 8;
-                if( rw_op == rw_operation_type::tx_access_list_account_storage ) return 9;
-                if( rw_op == rw_operation_type::tx_log ) return 10;
-                if( rw_op == rw_operation_type::tx_receipt ) return 11;
-                if( rw_op == rw_operation_type::padding ) return 12;
-                BOOST_ASSERT(false);
-                return 12;
-
+                return std::size_t(rw_op);
             }
 
             struct rw_operation{
                 using zkevm_word_type = nil::blueprint::zkevm_word_type;
 
                 rw_operation_type op;           // operation type
-                std::size_t       call_id;      // transaction number inside block
+                std::size_t       id;           // identifier of CALL, transaction or block for different types of operations
                 zkevm_word_type   address;      // account_address (160 bits)
-                std::uint8_t      field;        // — for storage only. If given value exist before current operation or not
+                std::uint8_t      field;
                 zkevm_word_type   storage_key;
                 std::size_t       rw_counter;
                 bool              is_write;
                 zkevm_word_type   value;
                 zkevm_word_type   initial_value; // for stack, memory ,it’s zero, Storage item value before transaction for storage operation
-                zkevm_word_type   root;          // used only for storage. Last operation.
-                zkevm_word_type   initial_root;  // used only for storage.
+                zkevm_word_type   root;          // used only for storage and account. Last operation.
+                zkevm_word_type   initial_root;  // used only for storage and account.
+
+                //std::size_t       call_id;       // call_id -- call identifier for opcode that produced this operation
+
                 bool operator< (const rw_operation &other) const {
-                    if( op != other.op ) return op < other.op;
-                    if( call_id != other.call_id ) return call_id < other.call_id;
-                    if( address != other.address ) return address < other.address;
-                    if( field != other.field ) return field < other.field;
-                    if( storage_key != other.storage_key ) return storage_key < other.storage_key;
-                    if( rw_counter != other.rw_counter) return rw_counter < other.rw_counter;
+                    if( op != other.op ) return op < other.op;                                      // 16 bits
+                    if( id != other.id ) return id < other.id;                                      // 16 bits
+                    if( address != other.address ) return address < other.address;                  // 160 bits
+                    if( field != other.field ) return field < other.field;                          // 16 bits
+                    if( storage_key != other.storage_key ) return storage_key < other.storage_key;  // 256 bits
+                    if( rw_counter != other.rw_counter) return rw_counter < other.rw_counter;       // 32 bits
                     return false;
                 }
             };
 
             // For testing purposes
             std::ostream& operator<<(std::ostream& os, const rw_operation& obj){
-                if(obj.op == rw_operation_type::start )                           os << "START                              : ";
-                if(obj.op == rw_operation_type::stack )                           os << "STACK                              : ";
-                if(obj.op == rw_operation_type::memory )                          os << "MEMORY                             : ";
-                if(obj.op == rw_operation_type::storage )                          os << "STORAGE                            : ";
-                if(obj.op == rw_operation_type::transient_storage )               os << "TRANSIENT_STORAGE                  : ";
-                if(obj.op == rw_operation_type::call_context )                    os << "CALL_CONTEXT_OP                    : ";
-                if(obj.op == rw_operation_type::account )                         os << "ACCOUNT_OP                         : ";
-                if(obj.op == rw_operation_type::tx_refund_op )                       os << "TX_REFUND_OP                       : ";
-                if(obj.op == rw_operation_type::tx_access_list_account )          os << "TX_ACCESS_LIST_ACCOUNT_OP          : ";
-                if(obj.op == rw_operation_type::tx_access_list_account_storage )  os << "TX_ACCESS_LIST_ACCOUNT_STORAGE_OP  : ";
-                if(obj.op == rw_operation_type::tx_log )                          os << "TX_LOG_OP                          : ";
-                if(obj.op == rw_operation_type::tx_receipt )                      os << "TX_RECEIPT_OP                      : ";
-                if(obj.op == rw_operation_type::padding )                         os << "PADDING_OP                         : ";
-                os << obj.rw_counter << " call_id = " << obj.call_id << ", addr =" << std::hex << obj.address << std::dec;
-                if(obj.op == rw_operation_type::storage || obj.op == rw_operation_type::transient_storage)
+                if(obj.op == rw_operation_type::start )                           os << "START               : ";
+                if(obj.op == rw_operation_type::stack )                           os << "STACK               : ";
+                if(obj.op == rw_operation_type::memory )                          os << "MEMORY              : ";
+                if(obj.op == rw_operation_type::state )                           os << "STATE               : ";
+                if(obj.op == rw_operation_type::transient_storage )               os << "TRANSIENT_STORAGE   : ";
+                if(obj.op == rw_operation_type::call_context )                    os << "CALL_CONTEXT_OP     : ";
+                if(obj.op == rw_operation_type::tx_refund )                       os << "TX_REFUND_OP        : ";
+                if(obj.op == rw_operation_type::tx_log )                          os << "TX_LOG_OP           : ";
+                if(obj.op == rw_operation_type::tx_receipt )                      os << "TX_RECEIPT_OP       : ";
+                if(obj.op == rw_operation_type::padding )                         os << "PADDING_OP          : ";
+                os << "rw_id = " << obj.rw_counter << " id = " << obj.id << ", addr =" << std::hex << obj.address << std::dec;
+                if(obj.op == rw_operation_type::state || obj.op == rw_operation_type::transient_storage)
                     os << " storage_key = " << obj.storage_key;
                 if(obj.is_write) os << " W "; else os << " R ";
                 os << "[" << std::hex << obj.initial_value << std::dec <<"] => ";
@@ -124,7 +112,13 @@ namespace nil {
                 return rw_operation({rw_operation_type::start, 0, 0, 0, 0, 0, 0, 0});
             }
 
-            rw_operation stack_rw_operation(std::size_t id, uint16_t address, std::size_t rw_id, bool is_write, zkevm_word_type value){
+            rw_operation stack_rw_operation(
+                std::size_t id,
+                uint16_t address,
+                std::size_t rw_id,
+                bool is_write,
+                zkevm_word_type value
+            ){
                 BOOST_ASSERT(id < ( 1 << 28)); // Maximum calls amount(?)
                 BOOST_ASSERT(address < 1024);
                 return rw_operation({rw_operation_type::stack, id, address, 0, 0, rw_id, is_write, value, 0});
@@ -144,7 +138,34 @@ namespace nil {
                 zkevm_word_type value_prev,
                 zkevm_word_type root = zkevm_word_type(0)
             ){
-                return rw_operation({rw_operation_type::storage, id, 0, 0, storage_key, rw_id, is_write, value, value_prev});
+                return rw_operation({rw_operation_type::state, id, 0, 0, storage_key, rw_id, is_write, value, value_prev});
+            }
+
+            rw_operation account_code_hash_rw_operation(
+                std::size_t id,
+                zkevm_word_type address,
+                std::size_t rw_id,
+                bool is_write,
+                zkevm_word_type value,
+                zkevm_word_type value_prev,
+                zkevm_word_type root = zkevm_word_type(0)
+            ){
+                return rw_operation({rw_operation_type::state, id, address, 0, 0, rw_id, is_write, value, value_prev});
+            }
+
+            enum class call_context_field: std::uint8_t {
+                parent_id = 1,
+                to = 2
+            };
+
+            rw_operation call_context_rw_operation(
+                std::size_t call_id,
+                call_context_field field,
+                std::size_t rw_id,
+                bool is_write,
+                zkevm_word_type value
+            ){
+                return rw_operation({rw_operation_type::call_context, call_id, 0, std::uint8_t(field), 0, rw_id, is_write, value, 0});
             }
 
             rw_operation padding_operation(){

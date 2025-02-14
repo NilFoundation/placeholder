@@ -89,13 +89,10 @@ namespace nil {
                     std::size_t START_OP = rw_op_to_num(rw_operation_type::start);
                     std::size_t STACK_OP = rw_op_to_num(rw_operation_type::stack);
                     std::size_t MEMORY_OP = rw_op_to_num(rw_operation_type::memory);
-                    std::size_t STORAGE_OP = rw_op_to_num(rw_operation_type::storage);
+                    std::size_t STATE_OP = rw_op_to_num(rw_operation_type::state);
                     std::size_t TRANSIENT_STORAGE_OP = rw_op_to_num(rw_operation_type::transient_storage);
                     std::size_t CALL_CONTEXT_OP = rw_op_to_num(rw_operation_type::call_context);
-                    std::size_t ACCOUNT_OP = rw_op_to_num(rw_operation_type::account);
-                    std::size_t TX_REFUND_OP = rw_op_to_num(rw_operation_type::tx_refund_op);
-                    std::size_t TX_ACCESS_LIST_ACCOUNT_OP = rw_op_to_num(rw_operation_type::tx_access_list_account);
-                    std::size_t TX_ACCESS_LIST_ACCOUNT_STORAGE_OP = rw_op_to_num(rw_operation_type::tx_access_list_account_storage);
+                    std::size_t TX_REFUND_OP = rw_op_to_num(rw_operation_type::tx_refund);
                     std::size_t TX_LOG_OP = rw_op_to_num(rw_operation_type::tx_log);
                     std::size_t TX_RECEIPT_OP = rw_op_to_num(rw_operation_type::tx_receipt);
                     std::size_t PADDING_OP = rw_op_to_num(rw_operation_type::padding);
@@ -146,9 +143,9 @@ namespace nil {
                             std::size_t cur_chunk = 0;
                             // id
                             mask = 0xffff0000;
-                            chunks[i][cur_chunk++] = (mask & integral_type(rw_trace[i].call_id)) >> 16;
+                            chunks[i][cur_chunk++] = (mask & integral_type(rw_trace[i].id)) >> 16;
                             mask = 0xffff;
-                            chunks[i][cur_chunk++] = (mask & integral_type(rw_trace[i].call_id));
+                            chunks[i][cur_chunk++] = (mask & integral_type(rw_trace[i].id));
 
                             // address
                             mask = 0xffff;
@@ -319,13 +316,10 @@ namespace nil {
                         TYPE start_selector = bit_tag_selector(op_bits[1], START_OP);
                         TYPE stack_selector = bit_tag_selector(op_bits[1], STACK_OP);
                         TYPE memory_selector = bit_tag_selector(op_bits[1], MEMORY_OP);
-                        TYPE storage_selector = bit_tag_selector(op_bits[1], STORAGE_OP);
+                        TYPE storage_selector = bit_tag_selector(op_bits[1], STATE_OP);
                         TYPE transient_storage_selector = bit_tag_selector(op_bits[1], TRANSIENT_STORAGE_OP);
                         TYPE call_context_selector = bit_tag_selector(op_bits[1], CALL_CONTEXT_OP);
-                        TYPE account_selector = bit_tag_selector(op_bits[1], ACCOUNT_OP);
                         TYPE tx_refund_selector = bit_tag_selector(op_bits[1], TX_REFUND_OP);
-                        TYPE tx_access_list_account_selector = bit_tag_selector(op_bits[1], TX_ACCESS_LIST_ACCOUNT_OP);
-                        TYPE tx_access_list_account_storage_selector = bit_tag_selector(op_bits[1], TX_ACCESS_LIST_ACCOUNT_STORAGE_OP);
                         TYPE tx_log_selector = bit_tag_selector(op_bits[1], TX_LOG_OP);
                         TYPE tx_receipt_selector = bit_tag_selector(op_bits[1], TX_RECEIPT_OP);
                         TYPE padding_selector = bit_tag_selector(op_bits[1], PADDING_OP);
@@ -408,7 +402,7 @@ namespace nil {
                         // Specific constraints for STORAGE
                         // lookup to MPT circuit
                         // field is 0
-                        special_constraints[STORAGE_OP].push_back(context_object.relativize(storage_selector * field_type[1], -1));
+                        special_constraints[STATE_OP].push_back(context_object.relativize(storage_selector * field_type[1], -1));
                         //lookup_constrain({"MPT table", {
                         //    storage_selector * addr,
                         //    storage_selector * field,
@@ -438,29 +432,6 @@ namespace nil {
                         special_constraints[CALL_CONTEXT_OP].push_back(context_object.relativize(call_context_selector * value_before_hi[1], -1));
                         special_constraints[CALL_CONTEXT_OP].push_back(context_object.relativize(call_context_selector * value_before_lo[1], -1));
 
-                        // Specific constraints for ACCOUNT_OP
-                        // id, storage_key 0
-                        // field_tag -- Range
-                        // MPT lookup for last access
-                        // value and value_prev consistency
-                        special_constraints[ACCOUNT_OP].push_back(context_object.relativize(account_selector * id[1], -1));
-                        special_constraints[ACCOUNT_OP].push_back(context_object.relativize(account_selector * storage_key_hi[1], -1));
-                        special_constraints[ACCOUNT_OP].push_back(context_object.relativize(account_selector * storage_key_lo[1], -1));
-                        //lookup_constrain({"MPT table", {
-                        //    storage_selector * is_last * addr,
-                        //    storage_selector * is_last * field,
-                        //    storage_selector * is_last * storage_key_hi,
-                        //    storage_selector * is_last * storage_key_lo,
-                        //    storage_selector * is_last * value_before_hi,
-                        //    storage_selector * is_last * value_before_lo,
-                        //    storage_selector * is_last * value_hi,
-                        //    storage_selector * is_last * value_lo,
-                        //    storage_selector * is_last * state_root_hi,
-                        //    storage_selector * is_last * state_root_lo,
-                        //    storage_selector * is_last * state_root_before_hi,
-                        //    storage_selector * is_last * state_root_before_lo
-                        //}});
-
                         // Specific constraints for TX_REFUND_OP
                         // address, field_tag and storage_key are 0
                         // state_root eqauls state_root_prev
@@ -475,48 +446,13 @@ namespace nil {
                         special_constraints[TX_REFUND_OP].push_back(context_object.relativize(tx_refund_selector * (state_root_hi[1] - state_root_before_hi[1]), -1));
                         special_constraints[TX_REFUND_OP].push_back(context_object.relativize(tx_refund_selector * (state_root_lo[1] - state_root_before_lo[1]), -1));
 
-                        // Specific constraints for TX_ACCESS_LIST_ACCOUNT_OP
-                        // field_tag and storage_key are 0
-                        // value is boolean
-                        // initial_value is 0
-                        // state_root eqauls state_root_prev
-                        // value column at previous rotation equals value_prev at current rotation
-                        special_constraints[TX_ACCESS_LIST_ACCOUNT_OP].push_back(context_object.relativize(tx_access_list_account_selector * field_type[1], -1));
-                        special_constraints[TX_ACCESS_LIST_ACCOUNT_OP].push_back(context_object.relativize(tx_access_list_account_selector * storage_key_hi[1], -1));
-                        special_constraints[TX_ACCESS_LIST_ACCOUNT_OP].push_back(context_object.relativize(tx_access_list_account_selector * storage_key_lo[1], -1));
-                        special_constraints[TX_ACCESS_LIST_ACCOUNT_OP].push_back(context_object.relativize(tx_access_list_account_selector * value_hi[1], -1));
-                        special_constraints[TX_ACCESS_LIST_ACCOUNT_OP].push_back(context_object.relativize(tx_access_list_account_selector * value_lo[1] * (1 - value_lo[1]), -1));
-                        special_constraints[TX_ACCESS_LIST_ACCOUNT_OP].push_back(context_object.relativize(tx_access_list_account_selector * (state_root_hi[1] - state_root_before_hi[1]), -1));
-                        special_constraints[TX_ACCESS_LIST_ACCOUNT_OP].push_back(context_object.relativize(tx_access_list_account_selector * (state_root_lo[1] - state_root_before_lo[1]), -1));
-                        //if(i != 0)
-                            non_first_row_constraints.push_back(context_object.relativize(tx_access_list_account_selector * (1 - is_first[1]) * (value_hi[0] - value_before_hi[1]), -1));
-                        //if(i != 0)
-                            non_first_row_constraints.push_back(context_object.relativize(tx_access_list_account_selector * (1 - is_first[1]) * (value_lo[0] - value_before_lo[1]), -1));
-
-                        // Specific constraints for
-                        //    field_tag is 0
-                        //    value is boolean
-                        //    initial_value is 0
-                        //    state_root equals state_root_prev
-                        //    value column at previous rotation equals value_prev at current rotation
-                        special_constraints[TX_ACCESS_LIST_ACCOUNT_STORAGE_OP].push_back(context_object.relativize(tx_access_list_account_selector * field_type[1], -1));
-                        special_constraints[TX_ACCESS_LIST_ACCOUNT_STORAGE_OP].push_back(context_object.relativize(tx_access_list_account_selector * value_hi[1], -1));
-                        special_constraints[TX_ACCESS_LIST_ACCOUNT_STORAGE_OP].push_back(context_object.relativize(tx_access_list_account_selector * value_lo[1] * (1 - value_lo[1]), -1));
-                        special_constraints[TX_ACCESS_LIST_ACCOUNT_STORAGE_OP].push_back(context_object.relativize(tx_access_list_account_selector * (state_root_hi[1] - state_root_before_hi[1]), -1));
-                        special_constraints[TX_ACCESS_LIST_ACCOUNT_STORAGE_OP].push_back(context_object.relativize(tx_access_list_account_selector * (state_root_lo[1] - state_root_before_lo[1]), -1));
-                        //if(i != 0)
-                            non_first_row_constraints.push_back(context_object.relativize(tx_access_list_account_selector * (1 - is_first[1]) * (value_hi[0] - value_before_hi[1]), -1));
-                        //if(i != 0)
-                            non_first_row_constraints.push_back(context_object.relativize(tx_access_list_account_selector * (1 - is_first[1]) * (value_lo[0] - value_before_lo[1]), -1));
-
-
                         // Specific constraints for TX_LOG_OP
                         //  is_write is true
                         //  initial_value is 0
                         //  state_root eqauls state_root_prev
                         //  value_prev equals initial_value
                         //  address 64 bits
-                        special_constraints[TX_LOG_OP].push_back(context_object.relativize(tx_log_selector * (1 - is_write[1]), -1));
+                        // Grouped by transactionints[TX_LOG_OP].push_back(context_object.relativize(tx_log_selector * (1 - is_write[1]), -1));
                         special_constraints[TX_LOG_OP].push_back(context_object.relativize(tx_log_selector * (state_root_hi[1] - state_root_before_hi[1]), -1));
                         special_constraints[TX_LOG_OP].push_back(context_object.relativize(tx_log_selector * (state_root_lo[1] - state_root_before_lo[1]), -1));
                         special_constraints[TX_LOG_OP].push_back(context_object.relativize(tx_log_selector * value_before_hi[1], -1));

@@ -30,7 +30,7 @@
 #include <nil/blueprint/components/hashes/keccak/util.hpp> //Move needed utils to bbf
 #include <nil/blueprint/bbf/generic.hpp>
 
-#include <nil/blueprint/zkevm/zkevm_word.hpp>
+#include <nil/blueprint/zkevm_bbf/types/zkevm_word.hpp>
 
 #include <nil/blueprint/zkevm_bbf/types/hashed_buffers.hpp>
 #include <nil/blueprint/zkevm_bbf/types/rw_operation.hpp>
@@ -71,7 +71,7 @@ namespace nil {
                         auto [opcode,additional_input] = tester.get_opcode_by_pc(pc);
 
                         zkevm_state state;              // TODO:optimize
-                        state.tx_hash = 0;              // * change it
+                        state.tx_id = 0;              // * change it
                         state.opcode = opcode_to_number(opcode);
                         state.call_id = call_id;
                         state.gas = gas;

@@ -29,15 +29,16 @@
 #include <nil/blueprint/components/hashes/keccak/util.hpp> //Move needed utils to bbf
 #include <nil/blueprint/bbf/generic.hpp>
 
-#include <nil/blueprint/zkevm/zkevm_word.hpp>
+#include <nil/blueprint/zkevm_bbf/types/zkevm_word.hpp>
 
 namespace nil {
     namespace blueprint {
         namespace bbf {
             class zkevm_state{
             public:
-                zkevm_word_type tx_hash; // full transaction hash. Now it is not used. But it’ll be used some day
-                std::size_t     call_id; // call_id — number of current transaction in block
+                std::size_t     block_id;         // RW counter on start_block
+                std::size_t     tx_id;            // RW counter on start_transaction
+                std::size_t     call_id;          // RW counter on start_call
                 std::size_t     pc;
                 std::size_t     gas;
                 std::size_t     rw_counter;
@@ -46,8 +47,6 @@ namespace nil {
                 zkevm_word_type additional_input; // data for pushX opcode
                 std::size_t     stack_size;       // BEFORE opcode
                 std::size_t     memory_size;      // BEFORE opcode
-                bool            tx_finish;       // convinent, but optional11.
-                std::size_t     error_opcode;    // real opcode if error
 
                 zkevm_word_type stack_top(std::size_t depth = 0) const{
                     BOOST_ASSERT(depth < stack_slice.size());
@@ -99,7 +98,7 @@ namespace nil {
                 TYPE step_start;
                 TYPE row_counter_inv;
                 TYPE opcode_parity;
-                TYPE is_even;// Do we really need it?
+                TYPE is_even;
 
                 static std::size_t get_items_amout(){ return 15; }
             };

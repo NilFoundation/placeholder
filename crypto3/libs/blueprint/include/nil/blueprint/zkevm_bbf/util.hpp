@@ -89,6 +89,15 @@ namespace nil {
                 while (d > 0) d /= 256u, ++count;
                 return count;
             }
+
+            std::vector<std::uint8_t> byte_vector_from_hex_string(const std::string &hex_string, std::size_t prefix_size = 0) {
+                std::vector<std::uint8_t> result;
+                for (std::size_t i = prefix_size; i < hex_string.size(); i += 2) {
+                    std::uint8_t byte = char_to_hex(hex_string[i]) * 16 + char_to_hex(hex_string[i + 1]);
+                    result.push_back(byte);
+                }
+                return result;
+            }
         }
     }
 }

@@ -30,41 +30,42 @@
 #include <nil/blueprint/bbf/generic.hpp>
 
 #include <nil/blueprint/zkevm_bbf/types/zkevm_word.hpp>
+#include <nil/blueprint/zkevm_bbf/util/ptree.hpp>
 
 namespace nil {
     namespace blueprint {
         namespace bbf {
-            enum class copy_operand_type {
-                padding, memory, bytecode, calldata, log, keccak, returndata
+            struct zkevm_account{
+                zkevm_word_type address;
+                bool initialized;
+                zkevm_word_type balance;
+                zkevm_word_type currency_root;
+                zkevm_word_type storage_root;
+                zkevm_word_type code_hash;
+                zkevm_word_type async_context_root;
+                std::size_t     seq_no;
+                std::size_t     ext_seq_no;
+                std::size_t     request_id;
+
+                std::map<zkevm_word_type, zkevm_word_type> storage; // Optional
+                std::vector<std::uint8_t> bytecode;                 // Optional
             };
-            std::size_t copy_op_to_num(copy_operand_type copy_op){
-                switch(copy_op){
-                case copy_operand_type::padding:       return 0;
-                case copy_operand_type::memory:        return 1;
-                case copy_operand_type::bytecode:      return 2;
-                case copy_operand_type::log:           return 3;
-                case copy_operand_type::keccak:        return 4;
-                case copy_operand_type::returndata:    return 5;
-                case copy_operand_type::calldata:      return 6;
+            std::ostream &operator<<(std::ostream &os, const zkevm_account &obj){
+                os << "\tAddress = 0x" << obj.address << std::dec << std::endl;
+                os << "\tBalance = " << obj.balance << std::endl;
+                os << "\tCurrency root = 0x" << std::hex << obj.currency_root << std::dec << std::endl;
+                os << "\tStorage root = 0x" << std::hex << obj.storage_root << std::dec << std::endl;
+                os << "\tCode hash = 0x" << std::hex << obj.code_hash << std::dec << std::endl;
+                //os << "\tAsync context root = " << obj.async_context_root << std::endl;
+                os << "\tSeq no = " << obj.seq_no << std::endl;
+                os << "\tExt seq no = " << obj.ext_seq_no << std::endl;
+                os << "\tRequest id = " << obj.request_id << std::endl;
+                for( auto &[k,v]: obj.storage){
+                    os << "\t\tStorage["
+                     << k << "] = " << v << std::endl;
                 }
-                BOOST_ASSERT(false);
-                return 0;
+                return os;
             }
-            static constexpr std::size_t copy_operand_types_amount = 7;
-
-            struct copy_event{
-                using zkevm_word_type = nil::blueprint::zkevm_word_type;
-
-                zkevm_word_type   source_id;
-                copy_operand_type source_type;
-                std::size_t       src_address;
-                zkevm_word_type   destination_id;
-                copy_operand_type destination_type;
-                std::size_t       dst_address;
-                std::size_t       length;
-                std::size_t       initial_rw_counter;
-                std::vector<std::uint8_t> bytes;
-            };
         } // namespace bbf
     } // namespace blueprint
 } // namespace nil

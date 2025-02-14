@@ -28,7 +28,6 @@
 #include <numeric>
 #include <algorithm>
 
-#include <nil/blueprint/zkevm/zkevm_word.hpp>
 #include <nil/blueprint/zkevm_bbf/types/opcode.hpp>
 
 namespace nil {
@@ -79,7 +78,7 @@ namespace nil {
                     constrain(result * (result - 1));
                     if constexpr( stage == GenerationStage::CONSTRAINTS ){
                         constrain(current_state.pc_next() - current_state.pc(0) - 1);                   // PC transition
-                        constrain(current_state.gas(0) - current_state.gas_next() - 3);                 // GAS transition
+                        //constrain(current_state.gas(0) - current_state.gas_next() - 3);                 // GAS transition
                         constrain(current_state.stack_size(0) - current_state.stack_size_next());       // stack_size transition
                         constrain(current_state.memory_size(0) - current_state.memory_size_next());     // memory_size transition
                         constrain(current_state.rw_counter_next() - current_state.rw_counter(0) - 2);   // rw_counter transition
@@ -122,14 +121,12 @@ namespace nil {
                     typename generic_component<FieldType, GenerationStage::ASSIGNMENT>::context_type &context,
                     const opcode_input_type<FieldType, GenerationStage::ASSIGNMENT> &current_state
                 ) override {
-                    std::cout << "\tAssign ISZERO input = " << current_state.stack_top() << std::endl;
                     zkevm_iszero_bbf<FieldType, GenerationStage::ASSIGNMENT> bbf_obj(context, current_state);
                 }
                 virtual void fill_context(
                     typename generic_component<FieldType, GenerationStage::CONSTRAINTS>::context_type &context,
                     const opcode_input_type<FieldType, GenerationStage::CONSTRAINTS> &current_state
                 ) override  {
-                    std::cout << "\tBuild ISZERO constraints" << std::endl;
                     zkevm_iszero_bbf<FieldType, GenerationStage::CONSTRAINTS> bbf_obj(context, current_state);
                 }
                 virtual std::size_t rows_amount() override {

@@ -64,13 +64,13 @@ namespace nil {
                 {
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
                         auto rw_trace = input;
-                        //std::cout << "RW assign size = " << rw_trace.size() << std::endl;
+                        std::cout << "RW assign size = " << rw_trace.size() << std::endl;
                         BOOST_ASSERT(rw_trace.size() < max_rw_size);
                         for( std::size_t i = 0; i < rw_trace.size(); i++ ){
-                            //if( rw_trace[i].op != rw_operation_type::padding )
-                            //    std::cout << "\t" << i << "." << rw_trace[i] << std::endl;
+                            // if( rw_trace[i].op != rw_operation_type::padding )
+                            //     std::cout << "\t" << i << "." << rw_trace[i] << std::endl;
                             op[i] = rw_op_to_num(rw_trace[i].op);
-                            id[i] = rw_trace[i].call_id;
+                            id[i] = rw_trace[i].id;
                             address[i] = integral_type(rw_trace[i].address);
                             storage_key_hi[i] = w_hi<FieldType>(rw_trace[i].storage_key);
                             storage_key_lo[i] = w_lo<FieldType>(rw_trace[i].storage_key);

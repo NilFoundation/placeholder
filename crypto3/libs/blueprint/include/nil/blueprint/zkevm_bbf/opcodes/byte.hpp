@@ -26,8 +26,6 @@
 
 #include <numeric>
 #include <algorithm>
-
-#include <nil/blueprint/zkevm/zkevm_word.hpp>
 #include <nil/blueprint/zkevm_bbf/types/opcode.hpp>
 
 namespace nil {

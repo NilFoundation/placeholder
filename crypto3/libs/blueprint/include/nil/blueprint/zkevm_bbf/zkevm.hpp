@@ -40,9 +40,10 @@
 #include <nil/blueprint/zkevm_bbf/subcomponents/rw_table.hpp>
 #include <nil/blueprint/zkevm_bbf/subcomponents/copy_table.hpp>
 #include <nil/blueprint/zkevm_bbf/subcomponents/exp_table.hpp>
+
 #include <nil/blueprint/zkevm_bbf/types/zkevm_state.hpp>
+
 #include <nil/blueprint/zkevm_bbf/opcodes/zkevm_opcodes.hpp>
-#include <nil/blueprint/zkevm/zkevm_word.hpp>
 
 namespace nil {
     namespace blueprint {
@@ -82,12 +83,16 @@ namespace nil {
                 ){
                     std::size_t implemented_opcodes_amount = get_implemented_opcodes_list().size();
 
-                    std::size_t witness_amount = state::get_items_amout() + std::ceil(float(implemented_opcodes_amount)/4) + max_opcode_height/2 + opcode_columns_amount;
+                    std::size_t witness_amount =
+                        state::get_items_amout() +
+                        std::ceil(float(implemented_opcodes_amount)/4) +
+                        max_opcode_height/2 +
+                        opcode_columns_amount;
                     witness_amount += BytecodeTable::get_witness_amount();
                     witness_amount += RWTable::get_witness_amount();
                     witness_amount += ExpTable::get_witness_amount();
                     witness_amount += CopyTable::get_witness_amount();
-                    witness_amount += 10;
+                    //witness_amount += 10; // But why?
                     nil::crypto3::zk::snark::plonk_table_description<FieldType> desc(witness_amount, 1, 5, 20);
                     desc.usable_rows_amount = std::max(max_zkevm_rows, std::max(std::max(max_copy, max_rw), std::max(max_exponentations, max_bytecode)) + 1);
                     return desc;
@@ -188,17 +193,18 @@ namespace nil {
                                 current_row + current_opcode_bare_rows_amount
                             );
                             std::size_t opcode_id = (std::find(implemented_opcodes.begin(), implemented_opcodes.end(), current_opcode) - implemented_opcodes.begin());
-                            std::cout << current_opcode
-                                << " id = " << opcode_id
+                            std::cout  << std::dec << current_opcode
+                                << " op = " << opcode_id
                                 //<< " assigned as " << std::hex << current_state.opcode << std::dec
                                 << " on row " << current_row
                                 << " uses " << current_opcode_rows_amount << " rows"
+                                << " call = " << current_state.call_id
                                 << " pc = " << current_state.pc
                                 << " sp = " << current_state.stack_size
                                 << " mems = " << current_state.memory_size
-                                << " rw_c = 0x" << std::hex<< current_state.rw_counter << std::dec
+                                << " rw_c = " << current_state.rw_counter
                                 << " gas = " << current_state.gas
-                                // << " bytecode_hash = " << current_state.bytecode_hash
+                                //<< " bytecode_hash = 0x" << std::hex << current_state.bytecode_hash << std::dec
                                 << std::endl;
 
                             for( std::size_t j = 0; j < current_opcode_rows_amount; j++ ){

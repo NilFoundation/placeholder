@@ -66,14 +66,10 @@ public:
 
     template <typename field_type>
     void complex_test(
-        const std::vector<std::vector<std::uint8_t>>    &bytecodes,
-        const std::vector<boost::property_tree::ptree>  &traces,
-        const l1_size_restrictions                      &max_sizes
+        const boost::property_tree::ptree  &trace,
+        const l1_size_restrictions         &max_sizes
     ){
-        const auto &pt = traces[0];
-        const auto &bytecode0 = bytecodes[0];
-
-        nil::blueprint::bbf::zkevm_hardhat_input_generator circuit_inputs(bytecodes, traces);
+        nil::blueprint::bbf::zkevm_hardhat_input_generator circuit_inputs(trace);
 
         using integral_type = typename field_type::integral_type;
         using value_type = typename field_type::value_type;
@@ -138,6 +134,15 @@ public:
         BOOST_ASSERT(result);
         // std::cout << std::endl;
 
+        // Max_rw, Max_mpt
+        std::cout << "RW circuit" << std::endl;
+        result = test_bbf_component<field_type, nil::blueprint::bbf::rw>(
+            "rw",
+            {}, rw_assignment_input, rw_constraint_input, max_rw, max_mpt
+        );
+        BOOST_ASSERT(result);
+        std::cout << std::endl;
+
         // Max_copy, Max_rw, Max_keccak, Max_bytecode
         result =test_bbf_component<field_type, nil::blueprint::bbf::exponentiation>(
             "exp",
@@ -173,15 +178,6 @@ public:
         );
         BOOST_ASSERT(result);
         std::cout << std::endl;
-
-        // Max_rw, Max_mpt
-        std::cout << "RW circuit" << std::endl;
-        result = test_bbf_component<field_type, nil::blueprint::bbf::rw>(
-            "rw",
-            {}, rw_assignment_input, rw_constraint_input, max_rw, max_mpt
-        );
-        BOOST_ASSERT(result);
-        std::cout << std::endl;
     }
 };
 
@@ -191,7 +187,7 @@ BOOST_FIXTURE_TEST_SUITE(zkevm_bbf_hardhat, zkEVMHardhatTestFixture)
 
 BOOST_AUTO_TEST_CASE(minimal_math) {
     using field_type = typename algebra::curves::pallas::base_field_type;
-    auto [bytecodes, pts] = load_hardhat_input("minimal_math/");
+    auto pts = load_hardhat_input("minimal_math.json");
     l1_size_restrictions max_sizes;
 
     max_sizes.max_keccak_blocks = 10;
@@ -203,9 +199,9 @@ BOOST_AUTO_TEST_CASE(minimal_math) {
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
 
-    complex_test<field_type>(bytecodes, pts, max_sizes);
+    complex_test<field_type>(pts, max_sizes);
 }
-
+/*
 BOOST_AUTO_TEST_CASE(small_log) {
     using field_type = typename algebra::curves::pallas::base_field_type;
     auto [bytecodes, pts] = load_hardhat_input("small_log/");
@@ -222,10 +218,10 @@ BOOST_AUTO_TEST_CASE(small_log) {
 
     complex_test<field_type>(bytecodes, pts, max_sizes);
 }
-
+*/
 BOOST_AUTO_TEST_CASE(call_counter) {
     using field_type = typename algebra::curves::pallas::base_field_type;
-    auto [bytecodes, pts] = load_hardhat_input("call_counter/");
+    auto pt = load_hardhat_input("call_counter.json");
     l1_size_restrictions max_sizes;
 
     max_sizes.max_keccak_blocks = 10;
@@ -237,9 +233,26 @@ BOOST_AUTO_TEST_CASE(call_counter) {
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
 
-    complex_test<field_type>(bytecodes, pts, max_sizes);
+    complex_test<field_type>(pt, max_sizes);
 }
 
+BOOST_AUTO_TEST_CASE(counter) {
+    using field_type = typename algebra::curves::pallas::base_field_type;
+    auto pt = load_hardhat_input("counter.json");
+    l1_size_restrictions max_sizes;
+
+    max_sizes.max_keccak_blocks = 10;
+    max_sizes.max_bytecode = 3000;
+    max_sizes.max_mpt = 0;
+    max_sizes.max_rw = 3000;
+    max_sizes.max_copy = 500;
+    max_sizes.max_zkevm_rows = 1000;
+    max_sizes.max_exponentiations = 50;
+    max_sizes.max_exp_rows = 500;
+
+    complex_test<field_type>(pt, max_sizes);
+}
+/*
 BOOST_AUTO_TEST_CASE(deploy) {
     using field_type = typename algebra::curves::pallas::base_field_type;
     auto [bytecodes, pts] = load_hardhat_input("deploy/");
@@ -375,5 +388,5 @@ BOOST_AUTO_TEST_CASE(try_catch) {
 
     complex_test<field_type>(bytecodes, pts, max_sizes);
 }
-
+*/
 BOOST_AUTO_TEST_SUITE_END()

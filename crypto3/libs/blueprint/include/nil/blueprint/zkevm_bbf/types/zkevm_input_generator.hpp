@@ -34,7 +34,6 @@
 #include <nil/blueprint/zkevm_bbf/types/rw_operation.hpp>
 #include <nil/blueprint/zkevm_bbf/types/copy_event.hpp>
 #include <nil/blueprint/zkevm_bbf/types/zkevm_state.hpp>
-
 #include <nil/blueprint/zkevm_bbf/opcodes/zkevm_opcodes.hpp>
 
 namespace nil {
