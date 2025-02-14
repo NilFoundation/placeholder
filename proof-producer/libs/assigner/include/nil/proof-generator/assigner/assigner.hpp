@@ -9,11 +9,12 @@
 #include <nil/proof-generator/assigner/copy.hpp>
 #include <nil/proof-generator/assigner/zkevm.hpp>
 #include <nil/proof-generator/assigner/exp.hpp>
+#include <nil/proof-generator/assigner/keccak.hpp>
 #include <nil/proof-generator/assigner/trace_parser.hpp>
 
 
 namespace nil {
-    namespace proof_generator {
+    namespace proof_producer {
 
         template<typename BlueprintFieldType>
         using AssignmentTableFiller = std::function<std::optional<std::string>(
@@ -29,6 +30,7 @@ namespace nil {
                 {circuits::ZKEVM, fill_zkevm_assignment_table<BlueprintFieldType>},
                 {circuits::COPY, fill_copy_events_assignment_table<BlueprintFieldType>},
                 {circuits::EXP, fill_exp_assignment_table<BlueprintFieldType>},
+                {circuits::KECCAK, fill_keccak_assignment_table<BlueprintFieldType>},
         };
 
         template<typename BlueprintFieldType>
@@ -88,7 +90,7 @@ namespace nil {
             BOOST_LOG_TRIVIAL(debug) << "total rows amount = " << desc.rows_amount << " for " << circuit_name << "\n";
             return {};
         }
-    } // proof_generator
+    } // proof_producer
 } // nil
 
 #endif  // PROOF_GENERATOR_LIBS_ASSIGNER__ASSIGNER_HPP_

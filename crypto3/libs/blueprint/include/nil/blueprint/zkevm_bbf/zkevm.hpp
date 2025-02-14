@@ -104,9 +104,8 @@ namespace nil {
                     std::size_t max_zkevm_rows,
                     std::size_t max_copy,
                     std::size_t max_rw,
-                    std::size_t max_exponentations,
-                    std::size_t max_bytecode,
-                    std::size_t max_exponentiations = 50 // TODO:remove it later
+                    std::size_t max_exponentiations,
+                    std::size_t max_bytecode
                 ) :generic_component<FieldType,stage>(context_object), implemented_opcodes(get_implemented_opcodes_list()) {
                     std::size_t implemented_opcodes_amount = implemented_opcodes.size();
                     std::size_t opcode_selectors_amount = std::ceil(float(implemented_opcodes_amount)/4);
@@ -447,15 +446,25 @@ namespace nil {
 
                                 opcode_impls[current_opcode]->fill_context(fresh_ct, opcode_state_vars);
                                 auto opcode_constraints = fresh_ct.get_constraints();
+                                //std::cout << "Current opcode " << current_opcode << std::endl;
                                 for( const auto &constr_list: opcode_constraints){
                                     for( const auto &local_row: constr_list.first){
                                         for( auto [constraint, name]: constr_list.second){
-                                            std::size_t real_row = std::ceil(float(current_opcode_bare_rows_amount) / 2) * 2 - local_row - current_opcode_bare_rows_amount % 2;
-                                            opcode_constraints_aggregator[{current_opcode, real_row}].push_back(constraint);
+                                            std::size_t real_row = 0;
+                                            auto C = constraint;
+                                            if( local_row > std::ceil(float(current_opcode_bare_rows_amount) / 2) * 2 - current_opcode_bare_rows_amount % 2  ){
+                                                // For constraints on the next opcode state-only
+                                                auto C1 = C.rotate(1);
+                                                BOOST_ASSERT(C1);
+                                                C = *C1;
+                                            } else {
+                                                real_row = std::ceil(float(current_opcode_bare_rows_amount) / 2) * 2 - current_opcode_bare_rows_amount % 2 - local_row;
+                                            }
+                                            opcode_constraints_aggregator[{current_opcode, real_row}].push_back(C);
                                             if(opcode_constraints_aggregator[{current_opcode, real_row}].size() > max_opcode_row_constraints){
                                                 max_opcode_row_constraints = opcode_constraints_aggregator[{current_opcode, real_row}].size();
                                             }
-                                            //std::cout << "\t" << local_row << "=>" << real_row << ": " << constraint << std::endl;
+                                            //std::cout << "\t" << local_row << "=>" << real_row << ": " << C << std::endl;
                                         }
                                         //std::cout << std::endl;
                                     }
@@ -488,7 +497,7 @@ namespace nil {
                                 relative_mc.push_back(acc_constraint);
                                 //std::cout << "\t" << acc_constraint << std::endl;
                             }
-                            //relative_mc.push_back(context_object.relativize(zkevm_opcode_row_selectors[{zkevm_opcode::PUSH1, 1}], -1));
+
                             std::cout << "Accumulate lookup constraints " << std::endl;
                             std::map<std::string, std::vector<std::vector<TYPE>>> acc_lookup_constraints;
                             for( auto &[key, exprs]:opcode_lookup_constraints_aggregator){
@@ -499,7 +508,7 @@ namespace nil {
                                 for( std::size_t i = 0; i < exprs.size(); i++ ) {
                                     acc_lookup_constraints[table_name][i].resize(exprs[i].size());
                                     for( std::size_t j = 0; j < exprs[i].size(); j++ ){
-                                //        std::cout << "\t\t" << exprs[i][j] << std::endl;
+                                        //std::cout << "\t\t" << exprs[i][j] << std::endl;
                                         acc_lookup_constraints[table_name][i][j] += context_object.relativize(
                                             zkevm_opcode_row_selectors[{local_opcode, local_row}], -1
                                         ) * exprs[i][j];

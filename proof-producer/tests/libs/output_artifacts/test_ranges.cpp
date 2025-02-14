@@ -2,8 +2,8 @@
 
 #include <nil/proof-generator/output_artifacts/output_artifacts.hpp>
 
-using nil::proof_generator::Range;
-using nil::proof_generator::Ranges;
+using nil::proof_producer::Range;
+using nil::proof_producer::Ranges;
 
 TEST(OutputArtifactsTests, RangesToString) {
     Ranges r {{

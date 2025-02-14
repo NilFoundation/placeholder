@@ -54,7 +54,9 @@ namespace nil {
                 using word_type = zkevm_word_type;
                 using field_integral_type = typename FieldType::integral_type;
 
+                const std::size_t start_row = 1;
                 std::size_t max_rows;
+                std::size_t max_working_rows;
                 std::size_t max_exponentiations;
 
 
@@ -129,10 +131,12 @@ namespace nil {
                     max_exponentiations(max_exponentiations_),
                     generic_component<FieldType, stage>(context_object)
                 {
-                    std::size_t num_proving_blocks = (max_rows) / 3;
-                    std::vector<std::array<TYPE, num_chunks>> base = std::vector<std::array<TYPE, num_chunks>>(max_rows);
-                    std::vector<std::array<TYPE, num_chunks>> exponent = std::vector<std::array<TYPE, num_chunks>>(max_rows);
-                    std::vector<std::array<TYPE, num_chunks>> exponentiation = std::vector<std::array<TYPE, num_chunks>>(max_rows);
+                    max_working_rows = max_rows - start_row;
+
+                    std::size_t num_proving_blocks = (max_working_rows) / 3;
+                    std::vector<std::array<TYPE, num_chunks>> base = std::vector<std::array<TYPE, num_chunks>>(max_working_rows);
+                    std::vector<std::array<TYPE, num_chunks>> exponent = std::vector<std::array<TYPE, num_chunks>>(max_working_rows);
+                    std::vector<std::array<TYPE, num_chunks>> exponentiation = std::vector<std::array<TYPE, num_chunks>>(max_working_rows);
 
                     std::vector<std::vector<TYPE>> a_chunks = std::vector<std::vector<TYPE>>(num_proving_blocks, std::vector<TYPE>(16));
                     std::vector<std::vector<TYPE>> b_chunks = std::vector<std::vector<TYPE>>(num_proving_blocks, std::vector<TYPE>(16));
@@ -143,18 +147,18 @@ namespace nil {
 
                     std::vector<TYPE> c_2 = std::vector<TYPE>(num_proving_blocks);
                     std::vector<TYPE> c_4 = std::vector<TYPE>(num_proving_blocks);
-                    std::vector<std::array<TYPE, num_chunks>> itermediate_exponents = std::vector<std::array<TYPE, 2>>(max_rows);
+                    std::vector<std::array<TYPE, num_chunks>> itermediate_exponents = std::vector<std::array<TYPE, 2>>(max_working_rows);
                     std::vector<TYPE> hi_last = std::vector<TYPE>(num_proving_blocks);
                     std::vector<TYPE> exp_is_even = std::vector<TYPE>(num_proving_blocks);
-                    std::vector<TYPE> is_last = std::vector<TYPE>(max_rows);
-                    std::vector<TYPE> header_selector = std::vector<TYPE>(max_rows);
+                    std::vector<TYPE> is_last = std::vector<TYPE>(max_working_rows);
+                    std::vector<TYPE> header_selector = std::vector<TYPE>(max_working_rows);
 
                     std::size_t current_column = 48;
                     std::vector<std::size_t> exp_lookup_area;
                     for( std::size_t i = 0; i < ExpTable::get_witness_amount(); i++){
                         exp_lookup_area.push_back(current_column++);
                     }
-                    context_type exp_ct = context_object.subcontext( exp_lookup_area, 1, max_exponentiations + 1);
+                    context_type exp_ct = context_object.subcontext( exp_lookup_area, start_row, max_exponentiations);
                     ExpTable exp_t = ExpTable(exp_ct, input, max_exponentiations);
 
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
@@ -275,35 +279,39 @@ namespace nil {
                         }
                     }
 
-                    for(std::size_t i = 0; i < max_rows; i++){
-                        allocate(header_selector[i], 0, i);
+                    for(std::size_t row_idx = 0; row_idx < max_working_rows; row_idx++){
+                        // start row is not zero, because we shouldn't place lookup table in the first row.
+                        std::size_t current_row = row_idx + start_row;
+                        allocate(header_selector[row_idx], 0, current_row);
 
-                        for(std::size_t j = 0; j < num_chunks; j++){
-                            allocate(base[i][j], j + 1, i);
-                            allocate(exponent[i][j], num_chunks + j + 1, i);
-                            allocate(exponentiation[i][j], 2*num_chunks + j + 1,i);
+                        for(std::size_t chunk_idx = 0; chunk_idx < num_chunks; chunk_idx++){
+                            allocate(base[row_idx][chunk_idx], chunk_idx + 1, current_row);
+                            allocate(exponent[row_idx][chunk_idx], num_chunks + chunk_idx + 1, current_row);
+                            allocate(exponentiation[row_idx][chunk_idx], 2*num_chunks + chunk_idx + 1, current_row);
                         }
-                        allocate(is_last[i], 3*num_chunks + 1, i);
+                        allocate(is_last[row_idx], 3*num_chunks + 1, current_row);
                     }
 
-                    for(std::size_t i=0; i < num_proving_blocks; i++){
+                    for(std::size_t block_idx =0; block_idx < num_proving_blocks; block_idx++){
+                        std::size_t block_start_row = 3*block_idx + start_row; // Each block needs 3 rows. First row is empty
+
                         for(std::size_t j = 0; j < 16; j++){
-                            allocate(r_chunks[i][j], 3*num_chunks + j + 2, 3*i);
-                            allocate(b_chunks[i][j], 3*num_chunks + j + 2, 3*i + 1);
-                            allocate(a_chunks[i][j], 3*num_chunks + j + 2, 3*i + 2);
+                            allocate(r_chunks[block_idx][j], 3*num_chunks + j + 2, block_start_row);
+                            allocate(b_chunks[block_idx][j], 3*num_chunks + j + 2, block_start_row + 1);
+                            allocate(a_chunks[block_idx][j], 3*num_chunks + j + 2, block_start_row + 2);
                         }
                         for(std::size_t j = 0; j < 4; j++){
-                            allocate(c_1_chunks[i][j], 3*num_chunks + j + 18, 3*i);
-                            allocate(c_3_chunks[i][j], 3*num_chunks + j + 18, 3*i + 1);
+                            allocate(c_1_chunks[block_idx][j], 3*num_chunks + j + 18, block_start_row);
+                            allocate(c_3_chunks[block_idx][j], 3*num_chunks + j + 18, block_start_row + 1);
                         }
-                        allocate(c_2[i], 3*num_chunks + 18, 3*i + 2);
-                        allocate(c_4[i], 3*num_chunks + 19, 3*i + 2);
+                        allocate(c_2[block_idx], 3*num_chunks + 18, block_start_row + 2);
+                        allocate(c_4[block_idx], 3*num_chunks + 19, block_start_row + 2);
 
-                        allocate(exp_is_even[i], 3*num_chunks + 20, 3*i + 2);
-                        allocate(hi_last[i], 3*num_chunks + 21, 3*i + 2);
+                        allocate(exp_is_even[block_idx], 3*num_chunks + 20, block_start_row + 2);
+                        allocate(hi_last[block_idx], 3*num_chunks + 21, block_start_row + 2);
                     }
 
-                    for(std::size_t i = 0; i < max_rows; i++){
+                    for(std::size_t i = 0; i < max_working_rows; i++){
                         lookup(std::vector<TYPE>({
                             header_selector[i],
                             header_selector[i]*base[i][0],
@@ -398,8 +406,8 @@ namespace nil {
                         constrain(c_2[i] * (c_2[i] - 1));
                         constrain(c_4[i] * (c_4[i] - 1) * (c_4[i] - 2) * (c_4[i] - 3));
                     }
-                    lookup_table("exp_prover", {0,1,2,3,4,5,6}, 0 ,max_rows_amount);
-                    for( std::size_t i = 0; i < max_exponentiations; i++){
+                    lookup_table("exp_prover", {0,1,2,3,4,5,6}, start_row ,max_working_rows);
+                    for( std::size_t i = start_row; i < max_exponentiations; i++){
                         lookup({
                             exp_t.selector[i],
                             exp_t.selector[i] * exp_t.base_hi[i],

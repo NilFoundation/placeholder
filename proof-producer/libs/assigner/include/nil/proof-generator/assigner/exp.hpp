@@ -10,7 +10,7 @@
 #include <nil/proof-generator/assigner/trace_parser.hpp>
 
 namespace nil {
-    namespace proof_generator {
+    namespace proof_producer {
 
         /// @brief Fill assignment table
         template<typename BlueprintFieldType>
@@ -21,7 +21,7 @@ namespace nil {
 
             using ComponentType = nil::blueprint::bbf::exponentiation<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT>;
 
-            typename nil::blueprint::bbf::context<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT> context_object(assignment_table, options.circuits_limits.max_rows);
+            typename nil::blueprint::bbf::context<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT> context_object(assignment_table, options.circuits_limits.max_total_rows);
 
             typename ComponentType::input_type input;
 
@@ -33,16 +33,20 @@ namespace nil {
             }
             input = std::move(exp_operations->value);
 
+            if (input.size() > options.circuits_limits.max_exp_ops) {
+                return std::format("exp operations size {} exceeds circuit limit {}", input.size(), options.circuits_limits.max_exp_ops);
+            }
+
             ComponentType instance(
                 context_object,
                 input,
-                options.circuits_limits.max_rows,
-                options.circuits_limits.max_exp_rows
+                options.circuits_limits.max_exp_rows,
+                options.circuits_limits.max_exp_ops
             );
 
             return {};
         }
-    } // proof_generator
+    } // proof_producer
 } // nil
 
 #endif  // PROOF_GENERATOR_LIBS_ASSIGNER_EXP_HPP_

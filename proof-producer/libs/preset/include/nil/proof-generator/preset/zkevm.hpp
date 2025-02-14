@@ -17,7 +17,7 @@
 
 
 namespace nil {
-    namespace proof_generator {
+    namespace proof_producer {
         template<typename BlueprintFieldType>
         std::optional<std::string> initialize_zkevm_circuit(
                 std::shared_ptr<typename PresetTypes<BlueprintFieldType>::ConstraintSystem>& zkevm_circuit,
@@ -30,8 +30,8 @@ namespace nil {
 
             // initialize assignment table
 
-            const auto desc = ComponentType::get_table_description(circuits_limits.max_zkevm_rows, circuits_limits.max_copy, circuits_limits.max_rw_size,
-                circuits_limits.max_keccak_blocks, circuits_limits.max_bytecode_size);
+            const auto desc = ComponentType::get_table_description(circuits_limits.max_zkevm_rows, circuits_limits.max_copy_rows, circuits_limits.max_rw_rows,
+                circuits_limits.max_keccak_blocks, circuits_limits.max_bytecode_rows);
             zkevm_table = std::make_shared<AssignmentTable>(desc.witness_columns, desc.public_input_columns, desc.constant_columns, desc.selector_columns);
 
             BOOST_LOG_TRIVIAL(debug) << "zkevm table:\n"
@@ -58,7 +58,7 @@ namespace nil {
 
             nil::blueprint::components::generate_circuit<BlueprintFieldType, nil::blueprint::bbf::zkevm, std::size_t, std::size_t, std::size_t, std::size_t, std::size_t>(
                 wrapper, circuit, *zkevm_table, input, start_row,
-                 circuits_limits.max_zkevm_rows, circuits_limits.max_copy, circuits_limits.max_rw_size, circuits_limits.max_keccak_blocks, circuits_limits.max_bytecode_size);
+                 circuits_limits.max_zkevm_rows, circuits_limits.max_copy_rows, circuits_limits.max_rw_rows, circuits_limits.max_keccak_blocks, circuits_limits.max_bytecode_rows);
 
             zk::snark::pack_lookup_tables_horizontal(
                 circuit.get_reserved_indices(),
@@ -73,6 +73,6 @@ namespace nil {
 
             return {};
         }
-    } // proof_generator
+    } // proof_producer
 } // nil
 #endif  // PROOF_GENERATOR_LIBS_PRESET_ZKEVM_HPP_

@@ -12,7 +12,7 @@
 
 
 namespace nil {
-    namespace proof_generator {
+    namespace proof_producer {
 
         template <typename CurveType, typename HashType>
         struct LpcSchemeIO {
@@ -46,7 +46,7 @@ namespace nil {
                         marshalled_lpc_state
                     );
                     if (!res) {
-                        return CommandResult::UnknownError("Failed to write commitment scheme");
+                        return CommandResult::Error(ResultCode::IOError, "Failed to write commitment scheme");
                     }
 
                     BOOST_LOG_TRIVIAL(info) << "Commitment scheme written.";
@@ -58,14 +58,14 @@ namespace nil {
                 boost::filesystem::path commitment_scheme_state_file_;
             };
 
-            struct Reader: 
+            struct Reader:
                 public command_step,
                 public resources::resource_provider<LpcScheme>
             {
                 Reader(const boost::filesystem::path& commitment_scheme_state_file):
                     commitment_scheme_state_file_(commitment_scheme_state_file)
                 {}
-                
+
                 CommandResult execute() override {
                     BOOST_LOG_TRIVIAL(info) << "Read commitment scheme from " << commitment_scheme_state_file_;
 
@@ -78,15 +78,15 @@ namespace nil {
                         commitment_scheme_state_file_);
 
                     if (!marshalled_value) {
-                        return CommandResult::UnknownError("Failed to read commitment scheme from {}", commitment_scheme_state_file_.string());
+                        return CommandResult::Error(ResultCode::IOError, "Failed to read commitment scheme from {}", commitment_scheme_state_file_.string());
                     }
 
                     auto commitment_scheme = make_commitment_scheme<Endianness, LpcScheme>(*marshalled_value);
                     if (!commitment_scheme) {
-                        return CommandResult::UnknownError("Error decoding commitment scheme");
+                        return CommandResult::Error(ResultCode::InvalidInput, "Error decoding commitment scheme");
                     }
 
-                    auto lpc_scheme = std::make_shared<LpcScheme>(std::move(commitment_scheme.value())); 
+                    auto lpc_scheme = std::make_shared<LpcScheme>(std::move(commitment_scheme.value()));
                     notify<LpcScheme>(*this, lpc_scheme);
 
                     return CommandResult::Ok();
@@ -96,5 +96,5 @@ namespace nil {
                 boost::filesystem::path commitment_scheme_state_file_;
             };
         };
-    } // namespace proof_generator
+    } // namespace proof_producer
 } // namespace nil

@@ -4,7 +4,7 @@
 #include <nil/proof-generator/preset/limits.hpp>
 
 namespace nil {
-    namespace proof_generator {
+    namespace proof_producer {
 
         struct AssignerOptions {
             AssignerOptions(bool ignore, const CircuitsLimits& limits):
@@ -15,7 +15,7 @@ namespace nil {
        };
 
 
-    } // proof_generator
+    } // proof_producer
 } // namespace nil
 
 #endif // PROOF_GENERATOR_LIBS_ASSIGNER_OPTIONS_HPP_

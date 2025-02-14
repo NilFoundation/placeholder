@@ -16,7 +16,7 @@
 #include <boost/program_options.hpp>
 
 namespace nil {
-    namespace proof_generator {
+    namespace proof_producer {
 
         /**
         * @brief Inclusive range of indexes: `[N-M]`. May be opened from both sides. If both bounds are not
@@ -130,21 +130,21 @@ namespace nil {
             bool empty() const noexcept {
                 return !write_full &&
                     (rows.empty() || (
-                        witness_columns.empty() && 
+                        witness_columns.empty() &&
                         public_input_columns.empty() &&
-                        constant_columns.empty() && 
+                        constant_columns.empty() &&
                         selector_columns.empty()
                    )
                 );
             }
-           
+
             private:
                 static constexpr auto stdout_filename = "-";
         };
 
         void register_output_artifacts_cli_args(OutputArtifacts& to_fill, boost::program_options::options_description& cli_options);
 
-    } // namespace proof_generator
+    } // namespace proof_producer
 } // namespace nil
 
 #endif  // PROOF_GENERATOR_OUTPUT_ARTIFACTS_HPP

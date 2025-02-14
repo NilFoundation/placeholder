@@ -37,19 +37,18 @@
 #include <nil/proof-generator/commands/compute_combined_q_command.hpp>
 #include <nil/proof-generator/commands/aggregated_fri_proof_command.hpp>
 #include <nil/proof-generator/commands/gen_consistency_check_command.hpp>
+#include "nil/proof-generator/command_step.hpp"
 
-#undef B0
-
-using namespace nil::proof_generator;
+using namespace nil::proof_producer;
 
 template<typename CurveType, typename HashType>
-int run_prover(const nil::proof_generator::ProverOptions& prover_options) {
+int run_prover(const nil::proof_producer::ProverOptions& prover_options) {
     auto prover_task = [&] {
         CommandResult prover_result = CommandResult::Ok();
         try {
             // TODO parse args individually
-            switch (nil::proof_generator::detail::prover_stage_from_string(prover_options.stage)) {
-                case nil::proof_generator::detail::ProverStage::ALL:
+            switch (nil::proof_producer::detail::prover_stage_from_string(prover_options.stage)) {
+                case nil::proof_producer::detail::ProverStage::ALL:
                 {
                     using Command = AllCommand<CurveType, HashType>;
                     using Args = typename Command::Args;
@@ -73,7 +72,7 @@ int run_prover(const nil::proof_generator::ProverOptions& prover_options) {
                     prover_result = cmd.execute();
                     break;
                 }
-                case nil::proof_generator::detail::ProverStage::PRESET:
+                case nil::proof_producer::detail::ProverStage::PRESET:
                 {
                     using Command = PresetCommand<CurveType, HashType>;
                     using Args = typename Command::Args;
@@ -87,7 +86,7 @@ int run_prover(const nil::proof_generator::ProverOptions& prover_options) {
                     prover_result = cmd.execute();
                     break;
                 }
-                case nil::proof_generator::detail::ProverStage::ASSIGNMENT:
+                case nil::proof_producer::detail::ProverStage::ASSIGNMENT:
                 {
                     using Command = FillAssignmentCommand<CurveType, HashType>;
                     using Args = typename Command::Args;
@@ -103,7 +102,7 @@ int run_prover(const nil::proof_generator::ProverOptions& prover_options) {
                     prover_result = cmd.execute();
                     break;
                 }
-                case nil::proof_generator::detail::ProverStage::PREPROCESS:
+                case nil::proof_producer::detail::ProverStage::PREPROCESS:
                 {
                     using Command = PreprocessCommand<CurveType, HashType>;
                     using Args = typename Command::Args;
@@ -126,7 +125,7 @@ int run_prover(const nil::proof_generator::ProverOptions& prover_options) {
                     prover_result = cmd.execute();
                     break;
                 }
-                case nil::proof_generator::detail::ProverStage::PROVE:
+                case nil::proof_producer::detail::ProverStage::PROVE:
                 {
                     using Command = ProveCommand<CurveType, HashType>;
                     using Args = typename Command::Args;
@@ -144,7 +143,7 @@ int run_prover(const nil::proof_generator::ProverOptions& prover_options) {
                     prover_result = cmd.execute();
                     break;
                 }
-                case nil::proof_generator::detail::ProverStage::GENERATE_PARTIAL_PROOF:
+                case nil::proof_producer::detail::ProverStage::GENERATE_PARTIAL_PROOF:
                 {
                     using Command = PartialProofCommand<CurveType, HashType>;
                     using Args = typename Command::Args;
@@ -164,7 +163,7 @@ int run_prover(const nil::proof_generator::ProverOptions& prover_options) {
                     prover_result = cmd.execute();
                     break;
                 }
-                case nil::proof_generator::detail::ProverStage::FAST_GENERATE_PARTIAL_PROOF:
+                case nil::proof_producer::detail::ProverStage::FAST_GENERATE_PARTIAL_PROOF:
                 {
                     using Command = FastPartialProofCommand<CurveType, HashType>;
                     using Args = typename Command::Args;
@@ -188,7 +187,7 @@ int run_prover(const nil::proof_generator::ProverOptions& prover_options) {
                     prover_result = cmd.execute();
                     break;
                 }
-                case nil::proof_generator::detail::ProverStage::VERIFY:
+                case nil::proof_producer::detail::ProverStage::VERIFY:
                 {
                     using Command = VerifyCommand<CurveType, HashType>;
                     using Args = typename Command::Args;
@@ -201,7 +200,7 @@ int run_prover(const nil::proof_generator::ProverOptions& prover_options) {
                     prover_result = cmd.execute();
                     break;
                 }
-                case nil::proof_generator::detail::ProverStage::GENERATE_AGGREGATED_CHALLENGE:
+                case nil::proof_producer::detail::ProverStage::GENERATE_AGGREGATED_CHALLENGE:
                 {
                     using Command = AggregatedChallengeCommand<CurveType, HashType>;
                     using Args = typename Command::Args;
@@ -212,7 +211,7 @@ int run_prover(const nil::proof_generator::ProverOptions& prover_options) {
                     prover_result = cmd.execute();
                     break;
                 }
-                case nil::proof_generator::detail::ProverStage::MERGE_PROOFS:
+                case nil::proof_producer::detail::ProverStage::MERGE_PROOFS:
                 {
                     using Command = MergeProofsCommand<CurveType, HashType>;
                     using Args = typename Command::Args;
@@ -225,7 +224,7 @@ int run_prover(const nil::proof_generator::ProverOptions& prover_options) {
                     prover_result = cmd.execute();
                     break;
                 }
-                case nil::proof_generator::detail::ProverStage::COMPUTE_COMBINED_Q:
+                case nil::proof_producer::detail::ProverStage::COMPUTE_COMBINED_Q:
                 {
                     using Command = CombinedQGeneratorCommand<CurveType, HashType>;
                     using Args = typename Command::Args;
@@ -238,7 +237,7 @@ int run_prover(const nil::proof_generator::ProverOptions& prover_options) {
                     prover_result = cmd.execute();
                     break;
                 }
-                case nil::proof_generator::detail::ProverStage::GENERATE_AGGREGATED_FRI_PROOF:
+                case nil::proof_producer::detail::ProverStage::GENERATE_AGGREGATED_FRI_PROOF:
                 {
                     using Command = AggregatedFriProofCommand<CurveType, HashType>;
                     using Args = typename Command::Args;
@@ -259,7 +258,7 @@ int run_prover(const nil::proof_generator::ProverOptions& prover_options) {
                     prover_result = cmd.execute();
                     break;
                 }
-                case nil::proof_generator::detail::ProverStage::GENERATE_CONSISTENCY_CHECKS_PROOF:
+                case nil::proof_producer::detail::ProverStage::GENERATE_CONSISTENCY_CHECKS_PROOF:
                 {
                     using Command = GenerateConsistencyCheckCommand<CurveType, HashType>;
                     using Args = typename Command::Args;
@@ -274,9 +273,8 @@ int run_prover(const nil::proof_generator::ProverOptions& prover_options) {
                 }
             }
         } catch (const std::exception& e) {
-            BOOST_LOG_TRIVIAL(error) << e.what();
-            throw e;
-            return 1;
+            BOOST_LOG_TRIVIAL(error) << "Unhandled exception: " << e.what();
+            return static_cast<int>(ResultCode::UnknownError);
         }
         return static_cast<int>(prover_result.result_code());
     };
@@ -289,11 +287,22 @@ int run_prover(const nil::proof_generator::ProverOptions& prover_options) {
 template<typename CurveType>
 int hash_wrapper(const ProverOptions& prover_options) {
     int ret;
-    auto run_prover_wrapper_void = [&prover_options, &ret]<typename HashTypeIdentity>() {
-        using HashType = typename HashTypeIdentity::type;
-        ret = run_prover<CurveType, HashType>(prover_options);
-    };
-    pass_variant_type_to_template_func<HashesVariant>(prover_options.hash_type, run_prover_wrapper_void);
+    if (prover_options.hash_type_str == "keccak") {
+        ret = run_prover<CurveType, nil::crypto3::hashes::keccak_1600<256>>(prover_options);
+    } else if (prover_options.hash_type_str == "sha256") {
+        ret = run_prover<CurveType, nil::crypto3::hashes::sha2<256>>(prover_options);
+    } else if (prover_options.hash_type_str == "poseidon") {
+        if constexpr (std::is_same<CurveType,nil::crypto3::algebra::curves::pallas>::value) {
+            ret = run_prover<CurveType,
+                nil::crypto3::hashes::poseidon<nil::crypto3::hashes::detail::pasta_poseidon_policy<typename CurveType::scalar_field_type>>>(prover_options);
+        } else {
+            ret = run_prover<CurveType,
+                nil::crypto3::hashes::poseidon<nil::crypto3::hashes::detail::poseidon_policy<typename CurveType::scalar_field_type, 128, 2>>>(prover_options);
+        }
+    } else {
+        BOOST_LOG_TRIVIAL(error) << "Unknown hash type " << prover_options.hash_type_str;
+        return static_cast<int>(ResultCode::InvalidInput);
+    }
     return ret;
 }
 
@@ -312,7 +321,7 @@ int initial_wrapper(const ProverOptions& prover_options) {
 }
 
 int main(int argc, char* argv[]) {
-    std::optional<nil::proof_generator::ProverOptions> prover_options = nil::proof_generator::parse_args(argc, argv);
+    std::optional<nil::proof_producer::ProverOptions> prover_options = nil::proof_producer::parse_args(argc, argv);
     if (!prover_options) {
         // Action has already taken a place (help, version, etc.)
         return 0;

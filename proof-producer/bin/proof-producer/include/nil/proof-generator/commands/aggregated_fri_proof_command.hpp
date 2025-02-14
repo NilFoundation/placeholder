@@ -22,7 +22,7 @@
 
 
 namespace nil {
-    namespace proof_generator {
+    namespace proof_producer {
 
             template <typename CurveType, typename HashType>
             struct AggregatedFriProofGenerator: public command_step
@@ -112,7 +112,7 @@ namespace nil {
                     std::optional<typename BlueprintField::value_type> aggregated_challenge = ChallengeIO::read_challenge(
                         aggregated_challenge_file);
                     if (!aggregated_challenge) {
-                        return CommandResult::UnknownError("Failed to read aggregated challenge from {}", aggregated_challenge_file.string());
+                        return CommandResult::Error(ResultCode::IOError, "Failed to read aggregated challenge from {}", aggregated_challenge_file.string());
                     }
 
                     // create the transcript
@@ -127,7 +127,7 @@ namespace nil {
                     for (const auto& path : input_combined_Q_polynomial_files) {
                         std::optional<polynomial_type> next_combined_Q = PolynomialIO::read_poly_from_file(path);
                         if (!next_combined_Q) {
-                            return CommandResult::UnknownError("Failed to read next combined Q from {}", path.string());
+                            return CommandResult::Error(ResultCode::IOError, "Failed to read next combined Q from {}", path.string());
                         }
                         sum_poly += next_combined_Q.value();
                     }
@@ -139,17 +139,17 @@ namespace nil {
 
                     auto res = save_fri_proof_to_file(fri_proof, aggregated_fri_proof_output_file);
                     if (!res) {
-                        return CommandResult::UnknownError("Failed to write aggregated FRI proof to file.");
+                        return CommandResult::Error(ResultCode::IOError, "Failed to write aggregated FRI proof to file.");
                     }
 
                     res = save_proof_of_work(proof_of_work, proof_of_work_output_file);
                     if (!res) {
-                        return CommandResult::UnknownError("Failed to write proof of work to file.");
+                        return CommandResult::Error(ResultCode::IOError, "Failed to write proof of work to file.");
                     }
 
                     res = ChallengeIO::save_challenge_vector_to_file(challenges, consistency_checks_challenges_output_file);
                     if (!res) {
-                        return CommandResult::UnknownError("Failed to write consistency checks challenges to file.");
+                        return CommandResult::Error(ResultCode::IOError, "Failed to write consistency checks challenges to file.");
                     }
 
                     return CommandResult::Ok();
@@ -199,5 +199,5 @@ namespace nil {
             }
         };
 
-    } // namespace proof_generator
+    } // namespace proof_producer
 } // namespace nil

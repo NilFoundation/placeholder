@@ -29,7 +29,7 @@
 #include <boost/program_options.hpp>
 
 namespace nil {
-    namespace proof_generator {
+    namespace proof_producer {
         namespace po = boost::program_options;
 
         void check_exclusive_options(const po::variables_map& vm, const std::vector<std::string>& opts) {
@@ -51,14 +51,15 @@ namespace nil {
 
         void register_circuits_limits_cli_args(CircuitsLimits& circuits_limits, po::options_description& cli_options) {
                 cli_options.add_options()
-                ("max-copy", make_defaulted_option(circuits_limits.max_copy), "Maximum copy events")
-                ("max-rw-size", make_defaulted_option(circuits_limits.max_rw_size), "Maximum rw operations")
+                ("max-copy-rows", make_defaulted_option(circuits_limits.max_copy_rows), "Maximum number of copy table rows")
+                ("max-rw-rows", make_defaulted_option(circuits_limits.max_rw_rows), "Maximum number of rw table rows")
                 ("max-keccak-blocks", make_defaulted_option(circuits_limits.max_keccak_blocks), "Maximum keccak blocks")
-                ("max-bytecode-size", make_defaulted_option(circuits_limits.max_bytecode_size), "Maximum size of bytecode")
-                ("max-rows", make_defaulted_option(circuits_limits.max_rows), "Maximum rows of assignemnt table")
-                ("max-mpt-size", make_defaulted_option(circuits_limits.max_mpt_size), "Maximum MPT operations")
-                ("max-zkevm-rows", make_defaulted_option(circuits_limits.max_zkevm_rows), "Maximum zkevm states")
-                ("max_exp_rows", make_defaulted_option(circuits_limits.max_exp_rows), "Maximum number of exponent operations")
+                ("max-bytecode-rows", make_defaulted_option(circuits_limits.max_bytecode_rows), "Maximum number of bytecode table rows")
+                ("max-total-rows", make_defaulted_option(circuits_limits.max_total_rows), "Maximum rows of assignemnt table")
+                ("max-mpt-rows", make_defaulted_option(circuits_limits.max_mpt_rows), "Maximum number of MPT table rows")
+                ("max-zkevm-rows", make_defaulted_option(circuits_limits.max_zkevm_rows), "Maximum number of zkevm table rows")
+                ("max-exp-rows", make_defaulted_option(circuits_limits.max_exp_rows), "Maximum number of exponent table rows")
+                ("max-exp-ops", make_defaulted_option(circuits_limits.max_exp_ops), "Maximum number of exponent operations")
                 ("RLC-CHALLENGE", make_defaulted_option(circuits_limits.RLC_CHALLENGE), "RLC_CHALLENGE (7 by default)");
         }
 
@@ -100,8 +101,8 @@ namespace nil {
                 ("assignment-table,t", po::value(&prover_options.assignment_table_file_path), "Assignment table input file")
                 ("assignment-description-file", po::value(&prover_options.assignment_description_file_path), "Assignment description file")
                 ("log-level,l", make_defaulted_option(prover_options.log_level), "Log level (trace, debug, info, warning, error, fatal)") // TODO is does not work
-                ("elliptic-curve-type,e", make_defaulted_option(prover_options.elliptic_curve_type), "Elliptic curve type (pallas)")
-                ("hash-type", make_defaulted_option(prover_options.hash_type), "Hash type (keccak, poseidon, sha256)")
+                ("elliptic-curve-type,e", make_defaulted_option(prover_options.elliptic_curve_type), "Elliptic curve type (pallas, alt_bn128_254)")
+                ("hash-type", po::value(&prover_options.hash_type_str), "Hash type (keccak, poseidon, sha256)")
                 ("lambda-param", make_defaulted_option(prover_options.lambda), "Lambda param (9)")
                 ("grind-param", make_defaulted_option(prover_options.grind), "Grind param (0)")
                 ("expand-factor,x", make_defaulted_option(prover_options.expand_factor), "Expand factor")
@@ -139,7 +140,7 @@ namespace nil {
             // clang-format on
             po::options_description cmdline_options("nil; Proof Producer");
             cmdline_options.add(generic).add(config);
-            
+
             po::variables_map vm;
             try {
                 po::store(parse_command_line(argc, argv, cmdline_options), vm);
@@ -234,7 +235,9 @@ namespace nil {
     if (NAME == str)               \
         return type_identity<TYPE>{};
 
-#define CURVE_TYPES X(nil::crypto3::algebra::curves::pallas, "pallas")
+#define CURVE_TYPES                                                      \
+    X(nil::crypto3::algebra::curves::alt_bn128<254>, "alt_bn128_254")    \
+    X(nil::crypto3::algebra::curves::pallas, "pallas")
 #define X(type, name) TYPE_TO_STRING(type, name)
         GENERATE_WRITE_OPERATOR(CURVE_TYPES, CurvesVariant)
 #undef X
@@ -242,18 +245,5 @@ namespace nil {
         GENERATE_READ_OPERATOR(CURVE_TYPES, CurvesVariant)
 #undef X
 
-#define HASH_TYPES                                                                       \
-    X(nil::crypto3::hashes::keccak_1600<256>, "keccak")                                  \
-    X(nil::crypto3::hashes::poseidon<nil::crypto3::hashes::detail::pasta_poseidon_policy< \
-          typename nil::crypto3::algebra::curves::pallas::base_field_type>>,             \
-      "poseidon")                                                                        \
-    X(nil::crypto3::hashes::sha2<256>, "sha256")
-#define X(type, name) TYPE_TO_STRING(type, name)
-        GENERATE_WRITE_OPERATOR(HASH_TYPES, HashesVariant)
-#undef X
-#define X(type, name) STRING_TO_TYPE(type, name)
-        GENERATE_READ_OPERATOR(HASH_TYPES, HashesVariant)
-#undef X
-
-    } // namespace proof_generator
+    } // namespace proof_producer
 } // namespace nil

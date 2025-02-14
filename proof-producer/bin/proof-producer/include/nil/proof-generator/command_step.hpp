@@ -1,8 +1,10 @@
 #pragma once
 
 #include <memory>
+#include <new>
 #include <optional>
 #include <queue>
+#include <stdexcept>
 #include <string>
 #include <utility>
 #include <format>
@@ -13,13 +15,14 @@
 
 namespace nil {
 
-    namespace proof_generator {
+    namespace proof_producer {
 
         enum class ResultCode: uint8_t {
             Success = 0,
             IOError = 10,        // cannot access some of input files
             InvalidInput = 20,   // input files are inconsistent or malformed
             ProverError = 30,    // some logical error from proof system
+            OutOfMemory = 40,    // managed memory allocation failure
             UnknownError = 0xFF,
         };
 
@@ -33,6 +36,8 @@ namespace nil {
                     return "InvalidInput";
                 case ResultCode::ProverError:
                     return "ProverError";
+                case ResultCode::OutOfMemory:
+                    return "OutOfMemory";
                 case ResultCode::UnknownError:
                     [[fallthrough]];
                 default:
@@ -47,7 +52,7 @@ namespace nil {
             std::optional<std::string> error_message_;
 
             constexpr explicit CommandResult() noexcept: result_(ResultCode::Success) {}
-            explicit CommandResult(ResultCode rc, std::string error_message): 
+            explicit CommandResult(ResultCode rc, std::string error_message):
                 result_(rc),
                 error_message_(std::move(error_message))
             {}
@@ -66,8 +71,8 @@ namespace nil {
                     return "";
                 }
 
-                return std::format("result_code={}({}): {}", 
-                    static_cast<uint8_t>(result_), 
+                return std::format("result_code={}({}): {}",
+                    static_cast<uint8_t>(result_),
                     result_code_to_string(result_),
                     error_message_.value_or("no description")
                 );
@@ -76,13 +81,13 @@ namespace nil {
             constexpr static CommandResult Ok() noexcept {
                 return CommandResult();
             }
-            
+
             template <typename... Args>
             static CommandResult Error(ResultCode rc, std::format_string<Args...> _fmt, Args&&... args) {
                 return CommandResult(rc, std::format(_fmt, std::forward<Args>(args)...));
             }
 
-            // TODO Remove this function and use the Error function instead
+            // Use this function only when it is not possible to provide a specific error code
             template <typename... Args>
             static CommandResult UnknownError(std::format_string<Args...> _fmt, Args&&... args) {
                 return Error(ResultCode::UnknownError, _fmt, std::forward<Args>(args)...);
@@ -104,30 +109,53 @@ namespace nil {
             command_step& operator=(command_step&&) = default;
         };
 
+
+        // a chain of command steps to be executed sequentially
+        // each step is executed in the queue order and is popped from the queue after execution and releases its resources
+        // the chain is considered failed if any of the steps fails
+        // includes exeption wrappers and meant to be used as a top-level command (however, it can be used as a step in another chain)
         class command_chain: public command_step {
 
         public:
             CommandResult execute() override final {
                 int stage{1};
                 int total_stages = steps_.size();
-                while (!steps_.empty()) {
-                    auto const res = steps_.front()->execute();
-                    if (!res.succeeded()) 
-                    {
-                        BOOST_LOG_TRIVIAL(error) << "command failed on stage " << stage << " of " << total_stages << ": " << res.error_message();
-                        return res;
+                CommandResult chain_res = CommandResult::Ok();
+                try {
+                    while (!steps_.empty()) {
+                        auto const res = steps_.front()->execute();
+                        if (!res.succeeded())
+                        {
+                            chain_res = res;
+                            break;
+                        }
+                        steps_.pop();
+                        stage++;
                     }
-                    steps_.pop();
-                    stage++;
                 }
-                return CommandResult::Ok();
+                catch (std::logic_error const& e) {
+                    chain_res = CommandResult::Error(ResultCode::ProverError, "caught logic error during command execution: {}", e.what());
+                }
+                catch (std::bad_alloc const& e) {
+                    chain_res = CommandResult::Error(ResultCode::OutOfMemory, "allocation failure: {}", e.what());
+                }
+                catch (std::exception const& e) {
+                    chain_res = CommandResult::UnknownError("unknown exception: {}", e.what());
+                }
+
+                if (!chain_res.succeeded()) {
+                    BOOST_LOG_TRIVIAL(error) << "command failed on stage " << stage << " of " << total_stages << ": " << chain_res.error_message();
+                    return chain_res;
+                }
+
+                return chain_res;
             }
 
         protected:
             // returns reference to the pushed step (non-owning, ownership is guaranteed by the step queue)
             template <typename Step, typename... Args>
-                requires (std::derived_from<Step, command_step> && std::constructible_from<Step, Args...>) 
-            Step& add_step(Args&&... args) { 
+                requires (std::derived_from<Step, command_step> && std::constructible_from<Step, Args...>)
+            Step& add_step(Args&&... args) {
                 BOOST_LOG_TRIVIAL(trace) << "adding " << steps_.size() + 1 << " step: " << __PRETTY_FUNCTION__;
                 std::unique_ptr<command_step>& pushed = steps_.emplace(std::make_unique<Step>(std::forward<Args>(args)...));
                 return dynamic_cast<Step&>(*pushed); // safe here because we know that we just pushed exactly this type
@@ -137,5 +165,5 @@ namespace nil {
             std::queue<std::unique_ptr<command_step>> steps_;
         };
 
-    } // namespace proof_generator
+    } // namespace proof_producer
 } // namespace nil

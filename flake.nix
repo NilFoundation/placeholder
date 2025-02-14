@@ -152,6 +152,12 @@
           default = develop;
         };
 
+        devShells = {
+          proof-producer-benchmarks = (staticPkgs.callPackage ./proof-producer.nix {
+            proof_producer_benchmarks = true;
+          });
+        };
+
         checks = rec {
           crypto3-gcc = (pkgs.callPackage ./crypto3.nix {
             runTests = true;
@@ -226,6 +232,11 @@
             runTests = true;
             enableDebug = false;
             sanitize = true;
+          });
+
+          verify-proofs = (pkgs.callPackage ./verify-proofs.nix {
+            enableDebug = false;
+            proof-producer = packages.proof-producer;
           });
 
           all-clang = pkgs.symlinkJoin {

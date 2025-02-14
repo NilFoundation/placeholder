@@ -14,7 +14,7 @@
 #include <nil/blueprint/transpiler/lpc_evm_verifier_gen.hpp>
 
 namespace nil {
-    namespace proof_generator {
+    namespace proof_producer {
 
         template <typename CurveType, typename HashType>
         struct EvmVerifierDebug {
@@ -30,7 +30,7 @@ namespace nil {
 
 
             struct Printer: public command_step {
-                
+
                 Printer(
                     resources::resource_provider<ConstraintSystem>& constraint_system_provider,
                     resources::resource_provider<CommonData>& common_data_provider,
@@ -62,7 +62,7 @@ namespace nil {
             };
 
             struct PublicInputPrinter: public command_step {
-                
+
                 PublicInputPrinter(
                     boost::filesystem::path output_folder,
                     resources::resource_provider<TableDescription>& table_description_provider,
@@ -84,8 +84,8 @@ namespace nil {
                     pi_stream.open(output_folder_.string() + "/public_input.inp");
 
                     if(!pi_stream.is_open()) {
-                        return CommandResult::UnknownError("Can't open file {}/public_input.inp", output_folder_.string());
-                    }  
+                        return CommandResult::Error(ResultCode::IOError, "Can't open file {}/public_input.inp", output_folder_.string());
+                    }
 
                     // Does not support public input columns.
                     if( table_description_->public_input_columns != 0 ) {
@@ -102,13 +102,13 @@ namespace nil {
                     } // else empty file is generated
                     pi_stream.close();
                     return CommandResult::Ok();
-                }                
+                }
             private:
                 boost::filesystem::path output_folder_;
                 std::shared_ptr<TableDescription> table_description_;
-                std::optional<AssignmentPublicInput> public_inputs_;            
+                std::optional<AssignmentPublicInput> public_inputs_;
             };
         };
 
-    } // namespace proof_generator
+    } // namespace proof_producer
 } // namespace nil

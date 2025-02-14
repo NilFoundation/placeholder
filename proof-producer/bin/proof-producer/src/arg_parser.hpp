@@ -28,12 +28,10 @@
 #include <nil/proof-generator/meta_utils.hpp>
 
 namespace nil {
-    namespace proof_generator {
+    namespace proof_producer {
 
         using CurvesVariant =
             typename tuple_to_variant<typename transform_tuple<CurveTypes, to_type_identity>::type>::type;
-        using HashesVariant =
-            typename tuple_to_variant<typename transform_tuple<HashTypes, to_type_identity>::type>::type;
 
         struct ProverOptions {
             std::string stage = "all";
@@ -65,7 +63,7 @@ namespace nil {
             boost::filesystem::path proof_of_work_output_file = "proof_of_work.dat";
             boost::log::trivial::severity_level log_level = boost::log::trivial::severity_level::info;
             CurvesVariant elliptic_curve_type = type_identity<nil::crypto3::algebra::curves::pallas>{};
-            HashesVariant hash_type = type_identity<nil::crypto3::hashes::keccak_1600<256>>{};
+            std::string hash_type_str = "keccak";
 
             std::size_t lambda = 9;
             std::size_t grind = 0;
@@ -77,5 +75,5 @@ namespace nil {
 
         std::optional<ProverOptions> parse_args(int argc, char* argv[]);
 
-    } // namespace proof_generator
+    } // namespace proof_producer
 } // namespace nil

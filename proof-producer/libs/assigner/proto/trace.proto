@@ -196,3 +196,14 @@ message ExpTraces {
     uint64 trace_idx = 2; // some randomly chosen value that should be checked in the proof generator to ensure integrity of the passed traces
     string proto_hash = 3;  // hash of this proto specification for compatibility check
 }
+
+message KeccakBuffer {
+    bytes buffer = 1;
+    Uint256 keccak_hash = 2;
+}
+
+message KeccakTraces {
+    repeated KeccakBuffer hashed_buffers = 1;
+    uint64 trace_idx = 2;
+    string proto_hash = 3;
+}

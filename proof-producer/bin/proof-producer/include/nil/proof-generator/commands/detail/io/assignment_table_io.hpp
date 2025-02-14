@@ -14,8 +14,8 @@
 
 
 namespace nil {
-    namespace proof_generator {
- 
+    namespace proof_producer {
+
         template <typename CurveType, typename HashType>
         struct AssignmentTableIO {
 
@@ -32,8 +32,8 @@ namespace nil {
                 BinaryWriter(
                     resources::resource_provider<AssignmentTable>& table_provider,
                     resources::resource_provider<TableDescription>& description_provider,
-                    const boost::filesystem::path& output_filename): 
-                output_filename_ (output_filename) 
+                    const boost::filesystem::path& output_filename):
+                output_filename_ (output_filename)
                 {
                     resources::subscribe_value<AssignmentTable>(table_provider, assignment_table_);
                     resources::subscribe_value<TableDescription>(description_provider, table_description_);
@@ -45,12 +45,12 @@ namespace nil {
                     BOOST_LOG_TRIVIAL(info) << "Writing binary assignment table to " << output_filename_;
 
                     if (!assignment_table_ || !table_description_) {
-                        return CommandResult::UnknownError("No assignment table is currently loaded");
+                        return CommandResult::Error(ResultCode::ProverError, "No assignment table is currently loaded");
                     }
 
                     std::ofstream out(output_filename_.string(), std::ios::binary | std::ios::out);
                     if (!out.is_open()) {
-                        return CommandResult::UnknownError("Failed to open file {}", output_filename_.string());
+                        return CommandResult::Error(ResultCode::IOError, "Failed to open file {}", output_filename_.string());
                     }
 
                     writer::write_binary_assignment(
@@ -71,7 +71,7 @@ namespace nil {
                 DescriptionWriter(
                     resources::resource_provider<TableDescription>& description_provider,
                     const boost::filesystem::path& assignment_description_file_path
-                ): assignment_description_file_path_(assignment_description_file_path) 
+                ): assignment_description_file_path_(assignment_description_file_path)
                 {
                     resources::subscribe_value<TableDescription>(description_provider, table_description_);
                 }
@@ -89,8 +89,8 @@ namespace nil {
                         marshalled_assignment_description
                     );
                     if (!res) {
-                        return CommandResult::UnknownError("Failed to write assignment description");
-                    } 
+                        return CommandResult::Error(ResultCode::IOError, "Failed to write assignment description");
+                    }
 
                     BOOST_LOG_TRIVIAL(info) << "Assignment description written.";
                     return CommandResult::Ok();
@@ -113,12 +113,12 @@ namespace nil {
                     resources::subscribe_value<TableDescription>(description_provider, table_description_);
                 }
 
-                CommandResult execute() override 
+                CommandResult execute() override
                 {
                     BOOST_ASSERT(!opts_.empty());
 
                     if (!assignment_table_ || !table_description_) {
-                        return CommandResult::UnknownError("No assignment table is currently loaded");
+                        return CommandResult::Error(ResultCode::ProverError,"No assignment table is currently loaded");
                     }
 
                     BOOST_LOG_TRIVIAL(debug) << "Rows to print: " << opts_.rows.to_string();
@@ -139,7 +139,7 @@ namespace nil {
                             opts_
                         );
                         if (!res) {
-                            return CommandResult::UnknownError("Failed to write text assignment table");
+                            return CommandResult::Error(ResultCode::IOError, "Failed to write text assignment table");
                         }
                         return CommandResult::Ok();
                     };
@@ -152,7 +152,7 @@ namespace nil {
                     BOOST_LOG_TRIVIAL(info) << "Writing text assignment table to " << opts_.output_filename;
                     std::ofstream out(opts_.output_filename, std::ios::binary | std::ios::out);
                     if (!out.is_open()) {
-                        return CommandResult::UnknownError("Failed to open file {}",  opts_.output_filename);
+                        return CommandResult::Error(ResultCode::IOError, "Failed to open file {}",  opts_.output_filename);
                     }
 
                     return write(out);
@@ -182,7 +182,7 @@ namespace nil {
                     auto marshalled_table =
                         detail::decode_marshalling_from_file<TableMarshalling>(assignment_table_file_path_);
                     if (!marshalled_table) {
-                        return CommandResult::UnknownError("Failed to read assignment table from {}", assignment_table_file_path_.string());
+                        return CommandResult::Error(ResultCode::IOError, "Failed to read assignment table from {}", assignment_table_file_path_.string());
                     }
 
                     auto [table_description, assignment_table] =
@@ -217,7 +217,7 @@ namespace nil {
                     auto marshalled_description =
                         detail::decode_marshalling_from_file<TableDescriptionMarshalling>(assignment_description_file_);
                     if (!marshalled_description) {
-                        return CommandResult::UnknownError("Failed to read assignment description from {}", assignment_description_file_.string());
+                        return CommandResult::Error(ResultCode::IOError, "Failed to read assignment description from {}", assignment_description_file_.string());
                     }
                     auto table_description =
                         nil::crypto3::marshalling::types::make_assignment_table_description<Endianness, BlueprintField>(
@@ -234,5 +234,5 @@ namespace nil {
             };
         };
 
-    } // namespace proof_generator
+    } // namespace proof_producer
 } // namespace nil

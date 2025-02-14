@@ -12,7 +12,7 @@
 #include <nil/crypto3/marshalling/math/types/polynomial.hpp>
 
 namespace nil {
-    namespace proof_generator {
+    namespace proof_producer {
 
         template <typename CurveType, typename HashType>
         struct PolynomialIO {
@@ -23,7 +23,7 @@ namespace nil {
             // NOTE: PolynomialType is not required to match Types::polynomial_type
             template <typename PolynomialType = Types::polynomial_type>
             static std::optional<PolynomialType> read_poly_from_file(const boost::filesystem::path &input_file) {
-                
+
                 namespace marshalling_types = nil::crypto3::marshalling::types;
                 using polynomial_marshalling_type = marshalling_types::polynomial<
                     TTypeBase, PolynomialType>::type;
@@ -46,7 +46,7 @@ namespace nil {
 
             // NOTE: PolynomialType is not required to match Types::polynomial_type
             template <typename PolynomialType = Types::polynomial_type>
-            static bool save_poly_to_file(const PolynomialType& poly, const boost::filesystem::path &output_file) 
+            static bool save_poly_to_file(const PolynomialType& poly, const boost::filesystem::path &output_file)
             {
                 namespace marshalling_types = nil::crypto3::marshalling::types;
 
@@ -61,6 +61,6 @@ namespace nil {
                     output_file, marshalled_poly);
             }
         };
- 
-    } // namespace proof_generator
+
+    } // namespace proof_producer
 } // namespace nil

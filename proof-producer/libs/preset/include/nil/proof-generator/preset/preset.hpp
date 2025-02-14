@@ -11,13 +11,14 @@
 #include <nil/proof-generator/preset/zkevm.hpp>
 #include <nil/proof-generator/preset/copy.hpp>
 #include <nil/proof-generator/preset/exp.hpp>
+#include <nil/proof-generator/preset/keccak.hpp>
 
 #include <functional>
 #include <optional>
 #include <string>
 
 namespace nil {
-    namespace proof_generator {
+    namespace proof_producer {
         namespace circuits {
             using Name = std::string;
 
@@ -26,6 +27,7 @@ namespace nil {
             const Name ZKEVM = "zkevm";
             const Name COPY = "copy";
             const Name EXP = "exp";
+            const Name KECCAK = "keccak";
 
         } // namespace circuits
 
@@ -77,7 +79,8 @@ namespace nil {
                 {circuits::ZKEVM, initialize_zkevm_circuit<BlueprintFieldType>},
                 {circuits::COPY, initialize_copy_circuit<BlueprintFieldType>},
                 {circuits::EXP, initialize_exp_circuit<BlueprintFieldType>},
+                {circuits::KECCAK, initialize_keccak_circuit<BlueprintFieldType>}
         };
-    } // proof_generator
+    } // proof_producer
 } // nil
 #endif  // PROOF_GENERATOR_LIBS_PRESET_PRESET_HPP_

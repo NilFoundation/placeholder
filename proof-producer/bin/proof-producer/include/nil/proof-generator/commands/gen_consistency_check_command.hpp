@@ -17,7 +17,7 @@
 #include <nil/proof-generator/commands/detail/io/polynomial_io.hpp>
 
 namespace nil {
-    namespace proof_generator {
+    namespace proof_producer {
 
         template <typename CurveType, typename HashType>
         struct ConsistencyChecksGenerator: public command_step {
@@ -82,17 +82,17 @@ namespace nil {
                 std::optional<std::vector<Challenge>> challenges = ChallengeIO::read_challenge_vector_from_file(
                     consistency_checks_challenges_output_file);
                 if (!challenges)
-                    return CommandResult::UnknownError("Failed to read challenges from {}", consistency_checks_challenges_output_file.string());
+                    return CommandResult::Error(ResultCode::IOError, "Failed to read challenges from {}", consistency_checks_challenges_output_file.string());
 
                 std::optional<polynomial_type> combined_Q = PolynomialIO::read_poly_from_file(combined_Q_file);
                 if (!combined_Q)
-                    return CommandResult::UnknownError("Failed to read combined Q from {}", combined_Q_file.string());
+                    return CommandResult::Error(ResultCode::IOError, "Failed to read combined Q from {}", combined_Q_file.string());
 
                 LpcProofType proof = lpc_scheme->proof_eval_lpc_proof(combined_Q.value(), challenges.value());
 
                 auto const res = save_lpc_consistency_proof_to_file(proof, output_proof_file);
                 if (!res)
-                    return CommandResult::UnknownError("Failed to write proof to file {}", output_proof_file.string());
+                    return CommandResult::Error(ResultCode::IOError, "Failed to write proof to file {}", output_proof_file.string());
 
                 return CommandResult::Ok();
             }
@@ -129,5 +129,5 @@ namespace nil {
             }
         };
 
-    } // namespace proof_generator
+    } // namespace proof_producer
 } // namespace nil

@@ -19,7 +19,7 @@
 
 
 namespace nil {
-    namespace proof_generator {
+    namespace proof_producer {
 
         template <typename CurveType, typename HashType>
         struct CombinedQGenerator: public command_step {
@@ -68,13 +68,13 @@ namespace nil {
                 std::optional<typename BlueprintField::value_type> challenge = ChallengeIO::read_challenge(
                     aggregated_challenge_file);
                 if (!challenge) {
-                    return CommandResult::UnknownError("Failed to read challenge from {}", aggregated_challenge_file.string());
+                    return CommandResult::Error(ResultCode::IOError, "Failed to read challenge from {}", aggregated_challenge_file.string());
                 }
                 polynomial_type combined_Q = lpc_scheme.prepare_combined_Q(
                     challenge.value(), starting_power);
                 const auto res = PolynomialIO::save_poly_to_file(combined_Q, output_combined_Q_file);
                 if (!res) {
-                    return CommandResult::UnknownError("Failed to write combined Q to {}", output_combined_Q_file.string());
+                    return CommandResult::Error(ResultCode::IOError, "Failed to write combined Q to {}", output_combined_Q_file.string());
                 }
                 return CommandResult::Ok();
             }
@@ -106,5 +106,5 @@ namespace nil {
             }
         };
 
-    } // namespace proof_generator
+    } // namespace proof_producer
 } // namespace nil

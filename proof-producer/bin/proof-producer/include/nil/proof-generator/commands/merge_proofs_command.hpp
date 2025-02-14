@@ -14,7 +14,7 @@
 #include <nil/proof-generator/resources.hpp>
 
 namespace nil {
-    namespace proof_generator {
+    namespace proof_producer {
 
         template <typename CurveType, typename HashType>
         struct MergeProofsCommand: public command_step {
@@ -79,7 +79,7 @@ namespace nil {
                 placeholder_aggregated_proof_type merged_proof;
 
                 if (partial_proof_files.size() != initial_proof_files.size() ) {
-                    return CommandResult::UnknownError("Number of partial and initial proof files should match (got {} vs {})",
+                    return CommandResult::Error(ResultCode::ProverError, "Number of partial and initial proof files should match (got {} vs {})",
                         partial_proof_files.size(), initial_proof_files.size());
                 }
 
@@ -88,7 +88,7 @@ namespace nil {
                     BOOST_LOG_TRIVIAL(info) << "Reading partial proof from file \"" << partial_proof_file << "\"";
                     auto marshalled_partial_proof = detail::decode_marshalling_from_file<partial_proof_marshalled_type>(partial_proof_file, true);
                     if (!marshalled_partial_proof) {
-                        return CommandResult::UnknownError("Error reading partial_proof from from {}", partial_proof_file.string());
+                        return CommandResult::Error(ResultCode::IOError, "Error reading partial_proof from from {}", partial_proof_file.string());
                     }
 
                     partial_proof_type partial_proof = nil::crypto3::marshalling::types::
@@ -103,7 +103,7 @@ namespace nil {
                     auto initial_proof =
                         detail::decode_marshalling_from_file<initial_proof_marshalling_type>(initial_proof_file);
                     if (!initial_proof) {
-                        return CommandResult::UnknownError("Error reading lpc_consistency_proof from from {}", initial_proof_file.string());
+                        return CommandResult::Error(ResultCode::IOError, "Error reading lpc_consistency_proof from from {}", initial_proof_file.string());
                     }
 
                     merged_proof.aggregated_proof.initial_proofs_per_prover.emplace_back(
@@ -116,8 +116,7 @@ namespace nil {
                 auto marshalled_fri_proof = detail::decode_marshalling_from_file<fri_proof_marshalling_type>(aggregated_FRI_file);
 
                 if (!marshalled_fri_proof) {
-                    BOOST_LOG_TRIVIAL(error) << "Error reading fri_proof from \"" << aggregated_FRI_file << "\"";
-                    return CommandResult::UnknownError("Error reading fri_proof from from {}", aggregated_FRI_file.string());
+                    return CommandResult::Error(ResultCode::IOError, "Error reading fri_proof from from {}", aggregated_FRI_file.string());
                 }
                 merged_proof.aggregated_proof.fri_proof =
                     nil::crypto3::marshalling::types::make_initial_fri_proof<Endianness, LpcScheme>(*marshalled_fri_proof);
@@ -129,11 +128,11 @@ namespace nil {
 
                 const auto res = detail::encode_marshalling_to_file<merged_proof_marshalling_type>(merged_proof_file, marshalled_proof);
                 if (!res) {
-                    return CommandResult::UnknownError("Failed to write merged proof to file {}", merged_proof_file.string());
+                    return CommandResult::Error(ResultCode::IOError, "Failed to write merged proof to file {}", merged_proof_file.string());
                 }
 
                 return CommandResult::Ok();
             }
         };
-    } // namespace proof_generator
+    } // namespace proof_producer
 } // namespace nil

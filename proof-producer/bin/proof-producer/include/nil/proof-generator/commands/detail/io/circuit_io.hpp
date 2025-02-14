@@ -13,8 +13,8 @@
 
 
 namespace nil {
-    namespace proof_generator {
- 
+    namespace proof_producer {
+
         template <typename CurveType, typename HashType>
         struct CircuitIO {
             using Types = TypeSystem<CurveType, HashType>;
@@ -42,7 +42,7 @@ namespace nil {
 
                     auto marshalled_value = detail::decode_marshalling_from_file<ConstraintMarshalling>(circuit_file_path_);
                     if (!marshalled_value) {
-                        return CommandResult::UnknownError("Failed to read circuit from {}", circuit_file_path_.string());
+                        return CommandResult::Error(ResultCode::IOError, "Failed to read circuit from {}", circuit_file_path_.string());
                     }
                     auto constraint_system = std::make_shared<ConstraintSystem>(
                         nil::crypto3::marshalling::types::make_plonk_constraint_system<Endianness, ZkConstraintSystem>(
@@ -59,27 +59,27 @@ namespace nil {
                 const boost::filesystem::path circuit_file_path_;
             };
 
-            
+
             struct Writer: public command_step {
 
-                Writer(resources::resource_provider<ConstraintSystem>& provider, const boost::filesystem::path& circuit_file_path): 
-                    circuit_file_path_(circuit_file_path) 
+                Writer(resources::resource_provider<ConstraintSystem>& provider, const boost::filesystem::path& circuit_file_path):
+                    circuit_file_path_(circuit_file_path)
                 {
                     resources::subscribe_value(provider, constraint_system_);
                 }
 
-                CommandResult execute() override 
+                CommandResult execute() override
                 {
                     using writer = circuit_writer<Endianness, BlueprintField>;
 
                     BOOST_LOG_TRIVIAL(info) << "Writing circuit to " << circuit_file_path_;
                     if (!constraint_system_) {
-                        return CommandResult::UnknownError("No circuit is currently loaded");
+                        return CommandResult::Error(ResultCode::IOError, "No circuit is currently loaded");
                     }
 
                     std::ofstream out(circuit_file_path_, std::ios::binary | std::ios::out);
                     if (!out.is_open()) {
-                        return CommandResult::UnknownError("Failed to open file {}", circuit_file_path_.string());
+                        return CommandResult::Error(ResultCode::IOError, "Failed to open file {}", circuit_file_path_.string());
                     }
 
                     writer::write_binary_circuit(out, *constraint_system_, constraint_system_->public_input_sizes());
@@ -92,5 +92,5 @@ namespace nil {
             };
         };
 
-    } // namespace proof_generator
+    } // namespace proof_producer
 } // namespace nil

@@ -76,12 +76,11 @@ namespace nil {
                     exponentiation_lo(max_exponentiations)
                 {
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                        BOOST_ASSERT(input.size() < max_exponentiations);
+                        BOOST_ASSERT(input.size() <= max_exponentiations);
 
                         std::size_t i = 0;
                         std::cout << "Exp table:" << std::endl;
                         for (i = 0; i < input.size(); i++) {
-                            BOOST_ASSERT(input.size() < max_exponentiations);
                             zkevm_word_type base = input[i].first;
                             zkevm_word_type exponent = input[i].second;
                             zkevm_word_type exponentiation = exp_by_squaring(base, exponent);
@@ -112,4 +111,3 @@ namespace nil {
         }  // namespace bbf
     }  // namespace blueprint
 }  // namespace nil
-

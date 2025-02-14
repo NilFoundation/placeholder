@@ -20,7 +20,7 @@
 #include <variant>
 
 namespace nil {
-    namespace proof_generator {
+    namespace proof_producer {
 
         // C++20 has it inside std::
         template<typename T>
@@ -78,5 +78,5 @@ namespace nil {
             );
         }
 
-    } // namespace proof_generator
+    } // namespace proof_producer
 } // namespace nil

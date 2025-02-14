@@ -20,7 +20,7 @@
 #include "nil/proof-generator/preset/limits.hpp"
 
 namespace nil {
-    namespace proof_generator {
+    namespace proof_producer {
 
         template<typename CurveType, typename HashType>
         struct PresetStep {
@@ -59,7 +59,7 @@ namespace nil {
                     TIME_LOG_END("Preset")
 
                     if (err) {
-                        return CommandResult::UnknownError("Can't initialize circuit '{}', err: {}" , circuit_name_, err.value());
+                        return CommandResult::Error(ResultCode::InvalidInput, "Can't initialize circuit '{}', err: {}" , circuit_name_, err.value());
                     }
 
                     notify<ConstraintSystem>(*this, circuit);
@@ -83,8 +83,8 @@ namespace nil {
                 std::string circuit_name;
                 boost::filesystem::path out_circuit_file_path;
                 boost::filesystem::path out_assignment_table_file_path;
-                nil::proof_generator::OutputArtifacts output_artifacts;
-                nil::proof_generator::CircuitsLimits circuit_limits;
+                nil::proof_producer::OutputArtifacts output_artifacts;
+                nil::proof_producer::CircuitsLimits circuit_limits;
             };
 
             PresetCommand(const Args& args) {
@@ -112,5 +112,5 @@ namespace nil {
             }
         };
 
-    } // namespace proof_generator
+    } // namespace proof_producer
 } // namespace nil

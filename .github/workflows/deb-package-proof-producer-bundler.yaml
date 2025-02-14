@@ -1,4 +1,4 @@
-name: Check Linux bundlers
+name: Build Linux bundlers
 
 on:
   workflow_call:
@@ -21,3 +21,17 @@ jobs:
         run: |
           nix bundle --bundler . .#proof-producer
           ls -l ./deb-package-proof-producer/proof-producer_*_amd64.deb
+
+      - name: upload packages to s3
+        if: (github.event_name == 'push' && github.ref == 'refs/heads/master') || github.event_name == 'workflow_dispatch'
+        env:
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+        run: |
+          export PATH=/home/ec2-user/.local/bin:${PATH}
+          sudo yum update -y
+          sudo yum install -y awscli python3-pip
+          pip3 install -U mkrepo
+          aws s3 cp "deb-package-proof-producer/`ls deb-package-proof-producer`" s3://nil-deb-repo/ubuntu/pool/main/p/proof-producer/
+          mkrepo s3://nil-deb-repo/ubuntu

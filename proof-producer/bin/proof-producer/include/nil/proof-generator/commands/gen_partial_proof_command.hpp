@@ -18,7 +18,7 @@
 
 
 namespace nil {
-    namespace proof_generator {
+    namespace proof_producer {
 
         template<typename CurveType, typename HashType>
         class PartialProofCommand: public command_chain {
@@ -77,5 +77,5 @@ namespace nil {
                 add_step<LpcSchemeWriter>(lpc_scheme_reader, args.out_updated_lpc_scheme_file_path);
             }
         };
-    } // namespace proof_generator
+    } // namespace proof_producer
 } // namespace nil

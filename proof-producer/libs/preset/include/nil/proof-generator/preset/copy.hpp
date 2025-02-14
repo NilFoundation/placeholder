@@ -10,7 +10,7 @@
 
 
 namespace nil {
-    namespace proof_generator {
+    namespace proof_producer {
 
         template<typename BlueprintFieldType>
         std::optional<std::string> initialize_copy_circuit(
@@ -30,7 +30,7 @@ namespace nil {
 
             // initialize assignment table
             const auto desc = ComponentType::get_table_description(
-                circuits_limits.max_copy, circuits_limits.max_rw_size, circuits_limits.max_keccak_blocks, circuits_limits.max_bytecode_size
+                circuits_limits.max_copy_rows, circuits_limits.max_rw_rows, circuits_limits.max_keccak_blocks, circuits_limits.max_bytecode_rows
             );
             copy_table = std::make_shared<AssignmentTable>(desc.witness_columns, desc.public_input_columns, desc.constant_columns, desc.selector_columns);
 
@@ -70,10 +70,10 @@ namespace nil {
                 *copy_table,
                 input,
                 start_row,
-                circuits_limits.max_copy,
-                circuits_limits.max_rw_size,
+                circuits_limits.max_copy_rows,
+                circuits_limits.max_rw_rows,
                 circuits_limits.max_keccak_blocks,
-                circuits_limits.max_bytecode_size
+                circuits_limits.max_bytecode_rows
             );
 
             snark::pack_lookup_tables_horizontal(
@@ -98,5 +98,5 @@ namespace nil {
             return {};
         }
 
-    } // namespace proof_generator
+    } // namespace proof_producer
 } // namespace nil
