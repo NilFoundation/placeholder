@@ -78,14 +78,16 @@ namespace nil::crypto3::multiprecision {
 #if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC diagnostic push
                 // Disable a false positive triggered by
-                // -Waggressive-loop-optimizations
+                // -Waggressive-loop-optimizations.
                 //
                 // The warning message is "warning:
                 // iteration 2305843009213693951 invokes undefined behavior
-                // [-Waggressive-loop-optimizations]"
+                // [-Waggressive-loop-optimizations]".
                 //
                 // Of course if i becomes 2^61
-                // uint64_t will overflow, this is expected
+                // uint64_t will overflow, this is expected.
+                //
+                // See https://gcc.gnu.org/bugzilla/show_bug.cgi?id=100801
 #pragma GCC diagnostic ignored "-Waggressive-loop-optimizations"
 #endif
 
@@ -285,7 +287,27 @@ namespace nil::crypto3::multiprecision {
                 borrow = subborrow(borrow, pa[i + 3], pb[i + 3], pr + i + 3);
             }
             for (; i < m; ++i) {
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic push
+                // Disable a false positive triggered by
+                // -Waggressive-loop-optimizations.
+                //
+                // The warning message is "warning:
+                // iteration 2305843009213693951 invokes undefined behavior
+                // [-Waggressive-loop-optimizations]".
+                //
+                // Of course if i becomes 2^61
+                // uint64_t will overflow, this is expected.
+                //
+                // See https://gcc.gnu.org/bugzilla/show_bug.cgi?id=100801
+#pragma GCC diagnostic ignored "-Waggressive-loop-optimizations"
+#endif
+
                 borrow = subborrow(borrow, pa[i], pb[i], pr + i);
+
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
             }
             // Now where only a has digits, only as long as we've borrowed:
             while (borrow && (i < as)) {
