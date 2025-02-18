@@ -26,9 +26,6 @@
 
 #include <nil/crypto3/multiprecision/literals.hpp>
 
-#include <nil/crypto3/algebra/fields/goldilocks64/base_field.hpp>
-#include <nil/crypto3/algebra/fields/bls12/base_field.hpp>
-
 #include <nil/crypto3/hash/type_traits.hpp>
 #include <nil/crypto3/hash/algorithm/hash.hpp>
 #include <nil/crypto3/hash/keccak.hpp>
