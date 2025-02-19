@@ -22,7 +22,7 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE plonk_keccak_test
+#define BOOST_TEST_MODULE plonk_keccak_padding_test
 
 #include <array>
 #include <cstdlib>

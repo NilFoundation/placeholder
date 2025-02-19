@@ -55,9 +55,12 @@
 #include <nil/crypto3/algebra/fields/secp/secp_r1/base_field.hpp>
 #include <nil/crypto3/algebra/fields/secp/secp_r1/scalar_field.hpp>
 
+#include <nil/crypto3/algebra/fields/babybear/base_field.hpp>
 #include <nil/crypto3/algebra/fields/curve25519/base_field.hpp>
 #include <nil/crypto3/algebra/fields/curve25519/scalar_field.hpp>
 #include <nil/crypto3/algebra/fields/goldilocks64/base_field.hpp>
+#include <nil/crypto3/algebra/fields/koalabear/base_field.hpp>
+#include <nil/crypto3/algebra/fields/mersenne31/base_field.hpp>
 
 #include <nil/crypto3/algebra/fields/detail/element/fp.hpp>
 #include <nil/crypto3/algebra/fields/detail/element/fp2.hpp>
@@ -354,6 +357,27 @@ BOOST_DATA_TEST_CASE(field_operation_test_goldilocks64_fq, string_data("field_op
     field_operation_test<policy_type>(data_set);
 }
 
+// BOOST_DATA_TEST_CASE(field_operation_test_mersenne31,
+//                      string_data("field_operation_test_mersenne31"), data_set) {
+//     using policy_type = fields::mersenne31;
+
+//     field_operation_test<policy_type>(data_set);
+// }
+
+// BOOST_DATA_TEST_CASE(field_operation_test_koalabear,
+//                      string_data("field_operation_test_koalabear"), data_set) {
+//     using policy_type = fields::koalabear;
+
+//     field_operation_test<policy_type>(data_set);
+// }
+
+// BOOST_DATA_TEST_CASE(field_operation_test_babybear,
+//                      string_data("field_operation_test_babybear"), data_set) {
+//     using policy_type = fields::babybear;
+
+//     field_operation_test<policy_type>(data_set);
+// }
+
 BOOST_DATA_TEST_CASE(field_operation_test_bls12_381_fr, string_data("field_operation_test_bls12_381_fr"), data_set) {
     using policy_type = fields::bls12_fr<381>;
 
@@ -467,6 +491,9 @@ BOOST_DATA_TEST_CASE(field_operation_test_secp256r1_fq, string_data("field_opera
  * vesta_base_field
 
  * goldilocks64
+ * mersenne31
+ * koalabear
+ * babybear
 
  */
 
@@ -567,6 +594,30 @@ BOOST_DATA_TEST_CASE(field_not_square_test_goldilocks64_base_field, string_data(
 
     field_not_square_test<policy_type>(data_set);
 }
+
+// BOOST_DATA_TEST_CASE(field_not_square_test_mersenne31_base_field,
+//                      string_data("field_not_square_test_mersenne31_base_field"),
+//                      data_set) {
+//     using policy_type = typename fields::mersenne31_base_field;
+
+//     field_not_square_test<policy_type>(data_set);
+// }
+
+// BOOST_DATA_TEST_CASE(field_not_square_test_koalabear_base_field,
+//                      string_data("field_not_square_test_koalabear_base_field"),
+//                      data_set) {
+//     using policy_type = typename fields::koalabear_base_field;
+
+//     field_not_square_test<policy_type>(data_set);
+// }
+
+// BOOST_DATA_TEST_CASE(field_not_square_test_babybear_base_field,
+//                      string_data("field_not_square_test_babybear_base_field"),
+//                      data_set) {
+//     using policy_type = typename fields::babybear_base_field;
+
+//     field_not_square_test<policy_type>(data_set);
+// }
 
 BOOST_AUTO_TEST_CASE(field_not_square_test_secp_k1) {
 

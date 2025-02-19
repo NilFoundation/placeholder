@@ -22,7 +22,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //---------------------------------------------------------------------------//
-#define BOOST_TEST_MODULE plonk_keccak_test
+#define BOOST_TEST_MODULE bbf_keccak_round_test
 #include <array>
 #include <boost/test/unit_test.hpp>
 #include <cstdlib>
