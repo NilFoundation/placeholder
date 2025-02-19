@@ -58,14 +58,16 @@ namespace nil {
                     using Memory_Cost = typename bbf::memory_cost<FieldType, stage>;
 
                     TYPE destOffset, offset, length, current_mem, next_mem,
-                        memory_expansion, S;
+                        memory_expansion_cost, memory_expansion_size, S;
 
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
                         destOffset = w_lo<FieldType>(current_state.stack_top());
                         offset = w_lo<FieldType>(current_state.stack_top(1));
                         length = w_lo<FieldType>(current_state.stack_top(2));
                         current_mem = current_state.memory_size;
-                        next_mem = std::max(destOffset + length, current_mem);
+                        next_mem = length.is_zero()
+                                       ? current_mem
+                                       : std::max(destOffset + length, current_mem);
                         S = next_mem > current_mem;
                     }
                     allocate(destOffset, 32, 0);
@@ -80,9 +82,10 @@ namespace nil {
                               (1 - S) * (next_mem - current_mem));
 
                     std::vector<std::size_t> word_size_lookup_area = {32, 33, 34};
-                    allocate(memory_expansion, 35, 1);
+                    allocate(memory_expansion_cost, 35, 1);
+                    allocate(memory_expansion_size, 36, 1);
                     std::vector<std::size_t> memory_cost_lookup_area = {42, 43, 44,
-                                                                        45, 46,47};
+                                                                        45, 46, 47};
 
                     context_type word_size_ct =
                         context_object.subcontext(word_size_lookup_area, 1, 1);
@@ -95,24 +98,26 @@ namespace nil {
                     Memory_Cost current_memory =
                         Memory_Cost(current_memory_ct, current_mem);
                     Memory_Cost next_memory = Memory_Cost(next_memory_ct, next_mem);
-                    memory_expansion = next_memory.cost - current_memory.cost;
-
-                    Word_Size word = Word_Size(word_size_ct, length);
+                    memory_expansion_cost = next_memory.cost - current_memory.cost;
+                    memory_expansion_size =
+                        (next_memory.word_size - current_memory.word_size) * 32;
+                    Word_Size minimum_word = Word_Size(word_size_ct, length);
 
                     if constexpr (stage == GenerationStage::CONSTRAINTS) {
                         constrain(current_state.pc_next() - current_state.pc(0) -
                                   1);  // PC transition
                         constrain(current_state.gas(0) - current_state.gas_next() - 3 -
-                                  3 * word.size - memory_expansion);  // GAS transition
+                                  3 * minimum_word.size -
+                                  memory_expansion_cost);  // GAS transition
                         constrain(current_state.stack_size(0) -
                                   current_state.stack_size_next() -
                                   3);  // stack_size transition
-                        constrain(
-                            current_state.memory_size(0) -
-                            current_state.memory_size_next());  // memory_size transition
+                        constrain(current_state.memory_size_next() -
+                                  current_state.memory_size(0) -
+                                  memory_expansion_size);  // memory_size transition
                         constrain(current_state.rw_counter_next() -
-                                  current_state.rw_counter(0) -
-                                  3);  // rw_counter transition
+                                  current_state.rw_counter(0) - 3 -
+                                  length);  // rw_counter transition
                         std::vector<TYPE> tmp;
                         tmp = {TYPE(rw_op_to_num(rw_operation_type::stack)),
                                current_state.call_id(0),
