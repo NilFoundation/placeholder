@@ -62,31 +62,39 @@ using namespace nil::blueprint::bbf;
 // Remember that in production sizes should be preset.
 // Here they are different for different tests just for fast and easy testing
 BOOST_FIXTURE_TEST_SUITE(zkevm_opcode_test_suite, zkEVMOpcodeTestFixture)
-BOOST_AUTO_TEST_CASE(calldata) {
+BOOST_AUTO_TEST_CASE(logx) {
     using field_type = typename algebra::curves::pallas::base_field_type;
     zkevm_opcode_tester opcode_tester;
     l1_size_restrictions max_sizes;
 
     opcode_tester.push_opcode(zkevm_opcode::PUSH1, 32);
     opcode_tester.push_opcode(zkevm_opcode::PUSH1, 0);
-    opcode_tester.push_opcode(zkevm_opcode::PUSH1, 0);
-    opcode_tester.push_opcode(zkevm_opcode::CALLDATACOPY);
-    opcode_tester.push_opcode(zkevm_opcode::PUSH1, 8);
-    opcode_tester.push_opcode(zkevm_opcode::PUSH1, 31);
-    opcode_tester.push_opcode(zkevm_opcode::PUSH1, 32);
-    opcode_tester.push_opcode(zkevm_opcode::CALLDATACOPY);
-    opcode_tester.push_opcode(zkevm_opcode::PUSH1, 64);
-    opcode_tester.push_opcode(zkevm_opcode::PUSH1, 0);
-    opcode_tester.push_opcode(zkevm_opcode::PUSH1, 0);
-    opcode_tester.push_opcode(zkevm_opcode::CALLDATACOPY);
+    opcode_tester.push_opcode(zkevm_opcode::LOG0);
     opcode_tester.push_opcode(zkevm_opcode::PUSH2, 800);
-    opcode_tester.push_opcode(zkevm_opcode::PUSH1, 0);
-    opcode_tester.push_opcode(zkevm_opcode::PUSH1, 0);
-    opcode_tester.push_opcode(zkevm_opcode::CALLDATACOPY);
-    opcode_tester.push_opcode(zkevm_opcode::PUSH1, 0);
-    opcode_tester.push_opcode(zkevm_opcode::PUSH1, 0);
-    opcode_tester.push_opcode(zkevm_opcode::PUSH1, 0);
-    opcode_tester.push_opcode(zkevm_opcode::CALLDATACOPY);
+    opcode_tester.push_opcode(zkevm_opcode::PUSH1, 31);
+    opcode_tester.push_opcode(zkevm_opcode::LOG0);
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, hex_string_to_bytes("0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016"));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH2, 800);
+    opcode_tester.push_opcode(zkevm_opcode::PUSH1, 31);
+    opcode_tester.push_opcode(zkevm_opcode::LOG1);
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, hex_string_to_bytes("0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016"));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, hex_string_to_bytes("0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016"));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH2, 800);
+    opcode_tester.push_opcode(zkevm_opcode::PUSH1, 31);
+    opcode_tester.push_opcode(zkevm_opcode::LOG2);
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, hex_string_to_bytes("0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016"));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, hex_string_to_bytes("0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016"));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, hex_string_to_bytes("0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016"));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH2, 800);
+    opcode_tester.push_opcode(zkevm_opcode::PUSH1, 31);
+    opcode_tester.push_opcode(zkevm_opcode::LOG3);
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, hex_string_to_bytes("0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016"));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, hex_string_to_bytes("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, hex_string_to_bytes("0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e015"));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, hex_string_to_bytes("0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e014"));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH2, 800);
+    opcode_tester.push_opcode(zkevm_opcode::PUSH1, 31);
+    opcode_tester.push_opcode(zkevm_opcode::LOG4);
     opcode_tester.push_opcode(zkevm_opcode::STOP);
 
     max_sizes.max_keccak_blocks = 10;

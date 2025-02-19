@@ -46,6 +46,7 @@ namespace nil {
 
               public:
                 TYPE cost;
+                TYPE word_size;
 
                 memory_cost(context_type &context_object, TYPE memory_input)
                     : generic_component<FieldType, stage>(context_object, false) {
@@ -75,6 +76,7 @@ namespace nil {
                               R);
 
                     cost = mem_cost;
+                    word_size = word.size;
                 };
             };
         }  // namespace bbf
