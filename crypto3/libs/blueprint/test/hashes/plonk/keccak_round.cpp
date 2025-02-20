@@ -23,7 +23,7 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE plonk_keccak_test
+#define BOOST_TEST_MODULE plonk_hashes_plonk_keccak_round_test
 
 #include <array>
 #include <cstdlib>

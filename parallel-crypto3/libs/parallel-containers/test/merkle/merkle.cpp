@@ -24,7 +24,7 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE containter_merkletree_test
+#define BOOST_TEST_MODULE parallel_containter_merkletree_test
 
 #include <nil/crypto3/algebra/random_element.hpp>
 #include <nil/crypto3/algebra/type_traits.hpp>

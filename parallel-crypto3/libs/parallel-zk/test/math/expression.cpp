@@ -22,7 +22,7 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE expression_test
+#define BOOST_TEST_MODULE parallel_expression_test
 
 #include <string>
 #include <random>
@@ -44,7 +44,7 @@
 using namespace nil::crypto3;
 using namespace nil::crypto3::math;
 
-BOOST_AUTO_TEST_SUITE(expression_tests_suite)
+BOOST_AUTO_TEST_SUITE(parallel_expression_tests_suite)
 
 BOOST_AUTO_TEST_CASE(expression_to_non_linear_combination_test) {
 

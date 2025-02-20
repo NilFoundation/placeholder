@@ -27,7 +27,7 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE fri_test
+#define BOOST_TEST_MODULE parallel_fri_test
 
 #include <string>
 #include <random>
@@ -57,7 +57,7 @@
 
 using namespace nil::crypto3;
 
-BOOST_AUTO_TEST_SUITE(fri_test_suite)
+BOOST_AUTO_TEST_SUITE(parallel_fri_test_suite)
 
 template<typename FieldType, typename PolynomialType>
 void fri_basic_test()

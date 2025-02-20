@@ -22,7 +22,7 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE blueprint_plonk_bytecode_test
+#define BOOST_TEST_MODULE blueprint_bbf_opcode_poc
 
 #include <boost/test/unit_test.hpp>
 

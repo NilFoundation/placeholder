@@ -24,7 +24,7 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE polynomial_test
+#define BOOST_TEST_MODULE parallel_polynomial_test
 
 #include <vector>
 #include <cstdint>
