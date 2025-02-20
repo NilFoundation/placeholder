@@ -24,7 +24,7 @@
 //---------------------------------------------------------------------------//
 
 #include "nil/crypto3/algebra/fields/pallas/base_field.hpp"
-#define BOOST_TEST_MODULE zkevm_add_test
+#define BOOST_TEST_MODULE zkevm_opcodes_add_sub_test
 
 #include <boost/test/unit_test.hpp>
 

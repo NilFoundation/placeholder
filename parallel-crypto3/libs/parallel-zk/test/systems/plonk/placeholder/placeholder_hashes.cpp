@@ -30,7 +30,7 @@
 // Test circuit1 on different hashes: poseidon, keccak<256>, keccak<512>, sha2
 //
 
-#define BOOST_TEST_MODULE placeholder_hashes_test
+#define BOOST_TEST_MODULE parallel_placeholder_hashes_test
 
 #include <boost/test/data/monomorphic.hpp>
 #include <boost/test/data/test_case.hpp>
@@ -52,7 +52,7 @@ using namespace nil::crypto3;
 using namespace nil::crypto3::zk;
 using namespace nil::crypto3::zk::snark;
 
-BOOST_AUTO_TEST_SUITE(placeholder_hashes_test)
+BOOST_AUTO_TEST_SUITE(parallel_placeholder_hashes_test)
 
 using pallas_curve_type = algebra::curves::pallas;
 using pallas_field_type = typename pallas_curve_type::base_field_type;

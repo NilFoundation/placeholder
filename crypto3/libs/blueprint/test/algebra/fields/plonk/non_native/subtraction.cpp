@@ -24,7 +24,7 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE blueprint_plonk_non_native_field_test
+#define BOOST_TEST_MODULE blueprint_plonk_non_native_field_test_substaction
 
 #include <boost/test/unit_test.hpp>
 

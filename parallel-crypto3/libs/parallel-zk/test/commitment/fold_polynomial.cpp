@@ -24,7 +24,7 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE fold_polynomial_test
+#define BOOST_TEST_MODULE parallel_fold_polynomial_test
 
 #include <string>
 
@@ -134,9 +134,9 @@ void test_fold_polynomial_dfs() {
     BOOST_CHECK(x1 == x2);
 }
 
-BOOST_AUTO_TEST_SUITE(fold_polynomial_test_suite)
+BOOST_AUTO_TEST_SUITE(parallel_fold_polynomial_test_suite)
 
-    BOOST_AUTO_TEST_CASE(fold_polynomial_test) {
+    BOOST_AUTO_TEST_CASE(parallel_fold_polynomial_test) {
         test_fold_polynomial<algebra::curves::mnt4<298>>();
 
         test_fold_polynomial<algebra::curves::pallas>();

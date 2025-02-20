@@ -22,7 +22,7 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE plonk_permutation_loop_test
+#define BOOST_TEST_MODULE plonk_permutation_loop_f1_test
 
 #include <boost/test/unit_test.hpp>
 

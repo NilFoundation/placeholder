@@ -23,7 +23,7 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE commitments_type_traits_test
+#define BOOST_TEST_MODULE parallel_commitments_type_traits_test
 
 #include <string>
 
@@ -40,7 +40,7 @@
 
 using namespace nil::crypto3;
 
-BOOST_AUTO_TEST_SUITE(commitments_type_traits_test_suite)
+BOOST_AUTO_TEST_SUITE(parallel_commitments_type_traits_test_suite)
 
     BOOST_AUTO_TEST_CASE(commitments_type_traits_basic_test) {
 

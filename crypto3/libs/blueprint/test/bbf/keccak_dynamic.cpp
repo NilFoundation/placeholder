@@ -23,7 +23,7 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE plonk_keccak_test
+#define BOOST_TEST_MODULE plonk_keccak_dyncamic_test
 
 #include <array>
 #include <boost/test/unit_test.hpp>

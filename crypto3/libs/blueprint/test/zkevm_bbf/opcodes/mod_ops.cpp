@@ -22,7 +22,7 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE blueprint_plonk_l1_wrapper_test
+#define BOOST_TEST_MODULE blueprint_zkevm_bbf_opcodes_mod_ops
 
 #include <boost/assert.hpp>
 #include <boost/test/unit_test.hpp>

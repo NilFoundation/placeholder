@@ -25,7 +25,7 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE hash_pack_test
+#define BOOST_TEST_MODULE marshalling_hash_pack_test
 
 #include <boost/array.hpp>
 #include <boost/cstdint.hpp>

@@ -24,7 +24,7 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE plonk_constraint_test
+#define BOOST_TEST_MODULE parallel_plonk_constraint_test
 
 #include <string>
 
@@ -48,7 +48,7 @@
 
 using namespace nil::crypto3;
 
-BOOST_AUTO_TEST_SUITE(plonk_constraint_test_suite)
+BOOST_AUTO_TEST_SUITE(parallel_plonk_constraint_test_suite)
     // setup
     using curve_type = algebra::curves::pallas;
     using FieldType = typename curve_type::base_field_type;

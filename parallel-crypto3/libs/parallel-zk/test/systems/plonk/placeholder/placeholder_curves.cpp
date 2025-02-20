@@ -30,7 +30,7 @@
 // Test circuit1 on different curves field: pallas, vesta, mnt4, mnt6, bls12
 //
 
-#define BOOST_TEST_MODULE placeholder_curves_test
+#define BOOST_TEST_MODULE parallel_placeholder_curves_test
 
 #include <boost/test/unit_test.hpp>
 #include <boost/test/data/test_case.hpp>
@@ -63,7 +63,7 @@ using namespace nil::crypto3::zk;
 using namespace nil::crypto3::zk::snark;
 
 
-BOOST_AUTO_TEST_SUITE(placeholder_curves_test)
+BOOST_AUTO_TEST_SUITE(parallel_placeholder_curves_test)
 
     using hash_type = hashes::keccak_1600<256>;
 

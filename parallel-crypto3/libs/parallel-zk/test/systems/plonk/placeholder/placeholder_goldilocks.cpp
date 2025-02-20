@@ -30,7 +30,7 @@
 // Test circuit1 on goldilocks field
 //
 
-#define BOOST_TEST_MODULE placeholder_goldilocks_test
+#define BOOST_TEST_MODULE parallel_placeholder_goldilocks_test
 
 #include <boost/test/unit_test.hpp>
 #include <boost/test/data/test_case.hpp>

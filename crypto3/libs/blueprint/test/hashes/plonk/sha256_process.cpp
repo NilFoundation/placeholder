@@ -24,7 +24,7 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE plonk_sha256_test
+#define BOOST_TEST_MODULE plonk_sha256_process_test
 
 #include <boost/test/unit_test.hpp>
 

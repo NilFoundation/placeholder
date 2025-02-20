@@ -23,7 +23,7 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE fft_evaluation_domain_test
+#define BOOST_TEST_MODULE parallel_fft_evaluation_domain_test
 
 #include <boost/test/unit_test.hpp>
 
@@ -384,7 +384,7 @@ void test_get_vanishing_polynomial(std::size_t m) {
     std::cout << "type name " << typeid(EvaluationDomainType).name() << std::endl;
 }
 
-BOOST_AUTO_TEST_SUITE(fft_evaluation_domain_test_suite)
+BOOST_AUTO_TEST_SUITE(parallel_fft_evaluation_domain_test_suite)
 
 BOOST_AUTO_TEST_CASE(fft) {
     test_fft<fields::bls12<381>>();

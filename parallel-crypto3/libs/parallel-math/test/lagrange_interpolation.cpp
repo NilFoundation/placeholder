@@ -24,7 +24,7 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE polynomial_lagrange_interpolation_test
+#define BOOST_TEST_MODULE parallel_polynomial_lagrange_interpolation_test
 
 #include <vector>
 #include <cstdint>
@@ -41,7 +41,7 @@
 using namespace nil::crypto3::algebra;
 using namespace nil::crypto3::math;
 
-BOOST_AUTO_TEST_SUITE(polynomial_lagrange_interpolation_test_suite)
+BOOST_AUTO_TEST_SUITE(parallel_polynomial_lagrange_interpolation_test_suite)
 
 BOOST_AUTO_TEST_CASE(polynomial_lagrange_interpolation_manual_test) {
     using field_type = fields::bls12_fr<381>;

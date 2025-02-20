@@ -30,7 +30,7 @@
 // Test for permutation argument for circuit2
 //
 
-#define BOOST_TEST_MODULE placeholder_permutation_test
+#define BOOST_TEST_MODULE parallel_placeholder_permutation_test
 
 #include <boost/test/unit_test.hpp>
 #include <boost/test/data/test_case.hpp>

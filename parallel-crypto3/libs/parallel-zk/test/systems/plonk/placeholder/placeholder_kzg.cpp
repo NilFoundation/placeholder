@@ -30,7 +30,7 @@
 // Test circuit2 with KZG commitment schemes, v1 and v2 on different curves
 //
 
-#define BOOST_TEST_MODULE placeholder_kzg_test
+#define BOOST_TEST_MODULE parallel_placeholder_kzg_test
 
 #include <boost/test/unit_test.hpp>
 #include <boost/test/data/test_case.hpp>
