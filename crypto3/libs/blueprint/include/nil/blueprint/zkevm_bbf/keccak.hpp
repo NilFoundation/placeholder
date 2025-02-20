@@ -1,5 +1,6 @@
 //---------------------------------------------------------------------------//
-// Elena Tatuzova
+// Copyright (c) 2024 Elena Tatuzova <e.tatuzova@nil.foundation>
+// Copyright (c) 2025 Antoine Cyr <antoinecyr@nil.foundation>
 //
 // MIT License
 //
@@ -23,40 +24,102 @@
 //---------------------------------------------------------------------------//
 #pragma once
 
+#include <nil/blueprint/bbf/components/hashes/keccak/keccak_dynamic.hpp>
 #include <nil/blueprint/zkevm_bbf/subcomponents/keccak_table.hpp>
 
 namespace nil {
     namespace blueprint {
         namespace bbf {
             template<typename FieldType, GenerationStage stage>
-            class keccak : public generic_component<FieldType, stage> {
+            class zkevm_keccak : public generic_component<FieldType, stage> {
                 using typename generic_component<FieldType, stage>::context_type;
                 using generic_component<FieldType, stage>::allocate;
                 using generic_component<FieldType, stage>::copy_constrain;
                 using generic_component<FieldType, stage>::constrain;
                 using generic_component<FieldType, stage>::lookup;
                 using generic_component<FieldType, stage>::lookup_table;
-            public:
-                using typename generic_component<FieldType,stage>::TYPE;
-                using private_input_type = typename std::conditional<stage == GenerationStage::ASSIGNMENT, std::size_t, std::nullptr_t>::type;
 
-                struct input_type{
+              public:
+                using typename generic_component<FieldType, stage>::TYPE;
+                using private_input_type =
+                    typename std::conditional<stage == GenerationStage::ASSIGNMENT,
+                                              zkevm_keccak_buffers, std::nullptr_t>::type;
+
+                struct input_type {
                     TYPE rlc_challenge;
                     private_input_type private_input;
                 };
-            public:
-                static nil::crypto3::zk::snark::plonk_table_description<FieldType> get_table_description(){
-                    nil::crypto3::zk::snark::plonk_table_description<FieldType> desc(20, 1, 3, 5);
-                    desc.usable_rows_amount = 300;
+
+                std::size_t max_keccak_blocks;
+
+              public:
+                static nil::crypto3::zk::snark::plonk_table_description<FieldType>
+                get_table_description(std::size_t max_keccak_blocks_) {
+                    nil::crypto3::zk::snark::plonk_table_description<FieldType> desc(
+                        200, 10, 30, 50);
+                    using Keccak_Dynamic = typename bbf::keccak_dynamic<FieldType, stage>;
+                    desc.usable_rows_amount =
+                        Keccak_Dynamic::get_minimal_requirements(max_keccak_blocks_).rows;
                     return desc;
                 }
 
-                keccak(context_type &context_object, const input_type &input) :generic_component<FieldType,stage>(context_object) {
-                    if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                        std::cout << "Keccak assign = " << input.private_input << std::endl;
+                zkevm_keccak(context_type& context_object, const input_type& input,
+                             std::size_t max_keccak_blocks_)
+                    : max_keccak_blocks(max_keccak_blocks_),
+                      generic_component<FieldType, stage>(context_object) {
+                    std::cout << "INSIDE zkevm_keccak " << std::endl;
+                    using Keccak_Table = typename bbf::keccak_table<FieldType, stage>;
+                    using Keccak_Dynamic = typename bbf::keccak_dynamic<FieldType, stage>;
+
+                    std::vector<std::size_t> keccak_lookup_area;
+                    std::vector<std::size_t> keccak_dynamic_lookup_area;
+                    std::size_t current_column = 1;
+                    std::size_t dynamic_rows =
+                        Keccak_Dynamic::get_minimal_requirements(max_keccak_blocks).rows;
+
+                    for (std::size_t i = 0; i < Keccak_Table::get_witness_amount(); i++) {
+                        keccak_lookup_area.push_back(current_column++);
                     }
+
+                    for (std::size_t i = 0;
+                         i < Keccak_Dynamic::get_minimal_requirements(max_keccak_blocks)
+                                 .witnesses;
+                         i++) {
+                        keccak_dynamic_lookup_area.push_back(current_column++);
+                    }
+
+                    context_type keccak_ct = context_object.subcontext(
+                        keccak_lookup_area, 1, dynamic_rows + 1);
+
+                    context_type dynamic_keccak_ct = context_object.subcontext(
+                        keccak_dynamic_lookup_area, 1, dynamic_rows + 1);
+                    typename Keccak_Dynamic::input_type dynamic_input;
+                    TYPE rlc_challenge;
+
+                    if constexpr (stage == GenerationStage::ASSIGNMENT) {
+                        rlc_challenge = input.rlc_challenge;
+                        dynamic_input.rlc_challenge = input.rlc_challenge;
+                        for (const auto& item : input.private_input.get_data()) {
+                            const auto& buffer = item.first;
+                            const auto& zkevm_word = item.second;
+
+                            TYPE hi = w_hi<FieldType>(zkevm_word);
+                            TYPE lo = w_lo<FieldType>(zkevm_word);
+                            std::pair<TYPE, TYPE> pair_values = {hi, lo};
+
+                            dynamic_input.input.emplace_back(buffer, pair_values);
+                        }
+                    }
+                    Keccak_Table kt = Keccak_Table(
+                            keccak_ct, {input.rlc_challenge, input.private_input},
+                            max_keccak_blocks);
+                    
+                    allocate(rlc_challenge, 0, 0);
+                    dynamic_input.rlc_challenge = rlc_challenge;
+                    Keccak_Dynamic kd = Keccak_Dynamic(dynamic_keccak_ct, dynamic_input,
+                                                       max_keccak_blocks);
                 }
             };
-        }
-    }
-}
+        }  // namespace bbf
+    }  // namespace blueprint
+}  // namespace nil
