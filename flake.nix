@@ -236,7 +236,6 @@
 
           verify-proofs = (pkgs.callPackage ./verify-proofs.nix {
             enableDebug = false;
-            proof-producer = packages.proof-producer;
           });
 
           all-clang = pkgs.symlinkJoin {
