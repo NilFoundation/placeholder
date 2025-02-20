@@ -61,29 +61,9 @@ in stdenv.mkDerivation rec {
   test_lines = buildTestRunLines {
     binary = "./crypto3/libs/blueprint/test/zkevm_bbf/multi_thread_tests/blueprint_zkevm_bbf_multi_thread__hardhat_test";
 
-    test_suite = "zkevm_bbf_hardhat";
-
-    test_runs = {
-      # test case name
-      keccak = [
-        "copy" # circuit name (leave empty to run all circuits)
-      ];
-
-      calldatacopy = [ "copy" ];
-
-      exp = [ "copy" "rw" ];
-
-      # add these, when proof verification start working:
-      # "zkevm_bbf_hardhat/minimal_math zkevm"
-      # "zkevm_bbf_hardhat/minimal_math rw"
-      # "zkevm_bbf_hardhat/minimal_math bytecode"
-      minimal_math = [ "copy" ];
-
-      modular_operations = [ "copy" ];
-    };
-  };
-
-  checkPhase = lib.concatLines (["set -x"] ++ test_lines);
+  checkPhase = ''
+    ./crypto3/libs/blueprint/test/zkevm_bbf/multi_thread_tests/blueprint_zkevm_bbf_multi_thread__hardhat_test -- --proof --run_test=${lib.strings.concatStringsSep "," test_names}
+  '';
 
   dontInstall = true;
   installPhase = "true";
