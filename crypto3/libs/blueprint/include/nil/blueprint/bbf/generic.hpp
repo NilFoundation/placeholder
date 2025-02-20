@@ -227,7 +227,7 @@ namespace nil {
                     mark_allocated(col, row, t);
                 }
 
-                void copy_constrain(TYPE &A, TYPE &B) {
+                void copy_constrain(const TYPE &A, const TYPE &B) {
 #ifdef BLUEPRINT_BBF_VALIDATE_CONSTRAINTS
                     if (A != B) {
                         // NB: This might be an error, but we don't stop execution,
@@ -354,7 +354,7 @@ namespace nil {
                     mark_allocated(col, row, t);
                 }
 
-                void copy_constrain(TYPE &A, TYPE &B) {
+                void copy_constrain(const TYPE &A, const TYPE &B) {
                     auto is_var = nil::crypto3::math::expression_is_variable_visitor<var>::is_var;
 
                     if (!is_var(A) || !is_var(B)) {
@@ -708,7 +708,7 @@ namespace nil {
                     ct.allocate(C,col,row,t);
                 }
 
-                void copy_constrain(TYPE &A, TYPE &B) {
+                void copy_constrain(const TYPE &A, const TYPE &B) {
                     ct.copy_constrain(A,B);
                 }
 

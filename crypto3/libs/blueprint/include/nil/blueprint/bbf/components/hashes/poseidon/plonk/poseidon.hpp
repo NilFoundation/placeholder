@@ -43,13 +43,6 @@ namespace nil {
     namespace blueprint {
         namespace bbf {
             namespace components {
-                template<typename FieldType>
-                struct flexible_poseidon_raw_input {
-                    using TYPE = typename FieldType::value_type;
-
-                    std::vector<TYPE> state;
-                };
-
                 template<typename FieldType, GenerationStage stage>
                 class flexible_poseidon : public generic_component<FieldType, stage> {
                     using generic_component<FieldType, stage>::allocate;
@@ -90,9 +83,10 @@ namespace nil {
                     using typename generic_component<FieldType, stage>::TYPE;
                     using typename generic_component<FieldType, stage>::context_type;
                     using typename generic_component<FieldType,stage>::table_params;
-                    using raw_input_type = typename std::conditional<stage == GenerationStage::ASSIGNMENT,
-                                               flexible_poseidon_raw_input<FieldType>,std::tuple<>>::type;
 
+                    struct input_type {
+                        std::vector<TYPE> state;
+                    };
 /*
                   public:
                     static nil::crypto3::zk::snark::plonk_table_description<FieldType>
@@ -120,42 +114,45 @@ namespace nil {
                         return {witness, public_inputs, constants, rows};
                     }
 
-                    static std::tuple<std::array<TYPE,state_size>> form_input(context_type &context_object, raw_input_type raw_input) {
-                       std::array<TYPE,state_size> input_state;
-                       for(std::size_t i = 0; i < state_size; i++) {
-                           if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                               input_state[i] = raw_input.state[i];
-                           }
-                           context_object.allocate(input_state[i],0,i,column_type::public_input);
+                    static void allocate_public_inputs(
+                            context_type& ctx, input_type& input) {
+                       if constexpr (stage == GenerationStage::ASSIGNMENT) {
+                          assert(input.state.size() == state_size);
+                       } else {
+                          input.state.resize(state_size);
                        }
-                       return std::make_tuple(input_state);
+
+                       for (std::size_t i = 0; i < state_size; i++) {
+                           ctx.allocate(input.state[i], 0, i,
+                                        column_type::public_input);
+                       }
                     }
 
                     flexible_poseidon(context_type &context_object,
-                                      std::array<TYPE, state_size> input_state,
+                                      const input_type &input,
                                       bool make_links = true)
                         : generic_component<FieldType, stage>(context_object) {
                         TYPE X[total_rounds_amount + 1][state_size];
 //                        TYPE W[(total_rounds_amount + 1) * state_size];
 
                         if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                            X[0][0] = input_state[0];
-                            X[0][1] = input_state[1];
-                            X[0][2] = input_state[2];
+                            X[0][0] = input.state[0];
+                            X[0][1] = input.state[1];
+                            X[0][2] = input.state[2];
                         }
 
                         allocate(X[0][0]);
                         allocate(X[0][1]);
                         allocate(X[0][2]);
 /*
-                        allocate(input_state[0]);
-                        allocate(input_state[1]);
-                        allocate(input_state[2]);
+                        allocate(input.state[0]);
+                        allocate(input.state[1]);
+                        allocate(input.state[2]);
 */
                         if (make_links) {
-                            copy_constrain(X[0][0], input_state[0]);
-                            copy_constrain(X[0][1], input_state[1]);
-                            copy_constrain(X[0][2], input_state[2]);
+                            copy_constrain(X[0][0], input.state[0]);
+                            copy_constrain(X[0][1], input.state[1]);
+                            copy_constrain(X[0][2], input.state[2]);
                         }
 
                         static_assert(state_size == 3);
@@ -234,9 +231,9 @@ namespace nil {
                                 }
                             }
                         }
-                        input[0] = X[0][0];
-                        input[1] = X[0][1];
-                        input[2] = X[0][2];
+                        this->input[0] = X[0][0];
+                        this->input[1] = X[0][1];
+                        this->input[2] = X[0][2];
                         res[0] = X[total_rounds_amount][0];
                         res[1] = X[total_rounds_amount][1];
                         res[2] = X[total_rounds_amount][2];

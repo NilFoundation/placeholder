@@ -40,13 +40,6 @@
 namespace nil {
     namespace blueprint {
         namespace bbf {
-            template<typename FieldType>
-            struct mrc_raw_input {
-                using TYPE = typename FieldType::value_type;
-
-                TYPE X;
-            };
-
             template<typename FieldType, GenerationStage stage>
             class micro_range_check : public generic_component<FieldType, stage> {
                 using typename generic_component<FieldType, stage>::context_type;
@@ -59,8 +52,8 @@ namespace nil {
                 public:
                     using typename generic_component<FieldType,stage>::TYPE;
                     using typename generic_component<FieldType,stage>::table_params;
-                    using raw_input_type = typename std::conditional<stage == GenerationStage::ASSIGNMENT,
-                                               mrc_raw_input<FieldType>,std::tuple<>>::type;
+
+                    using input_type = TYPE;
 
                     TYPE input;
 
@@ -69,13 +62,9 @@ namespace nil {
                         return {1,0,0,4095};
                     }
 
-                    static std::tuple<TYPE> form_input(context_type &context_object, raw_input_type raw_input) {
-                        TYPE X;
-                        if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                            X = raw_input.X;
-                        }
-                        context_object.allocate(X,0,0,column_type::public_input);
-                        return std::make_tuple(X);
+                    static void allocate_public_inputs(context_type& ctx,
+                                                       TYPE &input_x) {
+                        ctx.allocate(input_x, 0, 0, column_type::public_input);
                     }
 
                     micro_range_check(context_type &context_object, TYPE input_x, bool make_links = true) :

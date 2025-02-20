@@ -93,7 +93,7 @@ namespace nil {
             const std::string path,
             const nil::crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType> &bp,
             const nil::crypto3::zk::snark::plonk_table_description<BlueprintFieldType> &desc,
-            const nil::crypto3::zk::snark::plonk_table<BlueprintFieldType, nil::crypto3::zk::snark::plonk_column<BlueprintFieldType>> &assignment
+            const crypto3::zk::snark::plonk_assignment_table<BlueprintFieldType> &assignment
         ){
             using ArithmetizationType = nil::crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>;
             using AssignmentType = nil::crypto3::zk::snark::plonk_table<BlueprintFieldType, nil::crypto3::zk::snark::plonk_column<BlueprintFieldType>>;
@@ -123,21 +123,6 @@ namespace nil {
                 ocircuit.write(reinterpret_cast<char*>(cv.data()), cv.size());
                 ocircuit.close();
             }
-        }
-
-        template <typename BlueprintFieldType>
-        void print_bp_circuit_and_table_to_file(
-            const std::string path,
-            const nil::blueprint::circuit<crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>> &bp,
-            const nil::crypto3::zk::snark::plonk_table_description<BlueprintFieldType> &desc,
-            const nil::blueprint::assignment<crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>> &assignments
-        ){
-            print_zk_circuit_and_table_to_file<BlueprintFieldType>(
-                path,
-                *((nil::crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>*)(&bp)),
-                desc,
-                *((nil::crypto3::zk::snark::plonk_table<BlueprintFieldType, nil::crypto3::zk::snark::plonk_column<BlueprintFieldType>>*)(&assignments))
-            );
         }
 
         template <typename BlueprintFieldType>
@@ -551,7 +536,7 @@ namespace nil {
 
             if( output_path != "" ){
                 std::cout << "Print to file" << std::endl;
-                print_bp_circuit_and_table_to_file(
+                print_zk_circuit_and_table_to_file(
                     output_path, bp, desc, assignments
                 );
             }

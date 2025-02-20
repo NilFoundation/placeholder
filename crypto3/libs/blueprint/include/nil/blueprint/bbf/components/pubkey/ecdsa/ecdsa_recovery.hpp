@@ -33,6 +33,7 @@
 #include <nil/blueprint/bbf/components/algebra/fields/non_native/add_sub_mod_p.hpp>
 #include <nil/blueprint/bbf/components/algebra/fields/non_native/check_mod_p.hpp>
 #include <nil/blueprint/bbf/components/algebra/fields/non_native/flexible_multiplication.hpp>
+#include <nil/blueprint/bbf/components/detail/allocate_public_input_chunks.hpp>
 #include <nil/blueprint/bbf/components/detail/carry_on_addition.hpp>
 #include <nil/blueprint/bbf/components/detail/choice_function.hpp>
 #include <nil/blueprint/bbf/components/detail/range_check_multi.hpp>
@@ -54,15 +55,6 @@ namespace nil {
                 // Input: z[0],...,z[k-1], r[0],...,r[k-1], s[0],...,s[k-1], V
                 // Output: c, xQA[0],...,xQA[k-1], yQA[0],...,yQA[k-1]
                 //
-                template<typename FieldType>
-                struct ecdsa_recovery_raw_input {
-                    using TYPE = typename FieldType::value_type;
-                    std::vector<TYPE> z;
-                    std::vector<TYPE> r;
-                    std::vector<TYPE> s;
-                    TYPE v;
-                };
-
                 template<typename FieldType, GenerationStage stage, typename CurveType>
                 class ecdsa_recovery : public generic_component<FieldType, stage> {
                     using generic_component<FieldType, stage>::allocate;
@@ -73,10 +65,13 @@ namespace nil {
                     using typename generic_component<FieldType, stage>::TYPE;
                     using typename generic_component<FieldType, stage>::context_type;
                     using typename generic_component<FieldType, stage>::table_params;
-                    using raw_input_type =
-                        typename std::conditional<stage == GenerationStage::ASSIGNMENT,
-                                                  ecdsa_recovery_raw_input<FieldType>,
-                                                  std::tuple<>>::type;
+
+                    struct input_type {
+                      std::vector<TYPE> z;
+                      std::vector<TYPE> r;
+                      std::vector<TYPE> s;
+                      TYPE v;
+                    };
 
                   public:
                     TYPE c;
@@ -92,39 +87,20 @@ namespace nil {
                         return {witness, public_inputs, constants, rows};
                     }
 
-                    static std::tuple<std::vector<TYPE>, std::vector<TYPE>,
-                                      std::vector<TYPE>, TYPE>
-                    form_input(context_type& context_object, raw_input_type raw_input,
-                               std::size_t num_chunks, std::size_t bit_size_chunk) {
-                        std::vector<TYPE> input_z(num_chunks);
-                        std::vector<TYPE> input_r(num_chunks);
-                        std::vector<TYPE> input_s(num_chunks);
-                        TYPE input_v;
+                    static void allocate_public_inputs(
+                            context_type &ctx, input_type &input,
+                            std::size_t num_chunks, std::size_t bit_size_chunk) {
+                        AllocatePublicInputChunks allocate_chunks(ctx, num_chunks);
 
-                        if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                            for (std::size_t i = 0; i < num_chunks; i++) {
-                                input_z[i] = raw_input.z[i];
-                                input_r[i] = raw_input.r[i];
-                                input_s[i] = raw_input.s[i];
-                            }
-                            input_v = raw_input.v;
-                        }
-                        for (std::size_t i = 0; i < num_chunks; i++) {
-                            context_object.allocate(input_z[i], 0, i,
-                                                    column_type::public_input);
-                            context_object.allocate(input_r[i], 0, i + num_chunks,
-                                                    column_type::public_input);
-                            context_object.allocate(input_s[i], 0, i + 2 * num_chunks,
-                                                    column_type::public_input);
-                        }
-                        context_object.allocate(input_v, 0, 3 * num_chunks,
-                                                column_type::public_input);
-                        return std::make_tuple(input_z, input_r, input_s, input_v);
+                        std::size_t row = 0;
+                        allocate_chunks(input.z, 0, &row);
+                        allocate_chunks(input.r, 0, &row);
+                        allocate_chunks(input.s, 0, &row);
+                        ctx.allocate(input.v, 0, row++,
+                                     column_type::public_input);
                     }
 
-                    ecdsa_recovery(context_type& context_object,
-                                   std::vector<TYPE> input_z, std::vector<TYPE> input_r,
-                                   std::vector<TYPE> input_s, TYPE input_v,
+                    ecdsa_recovery(context_type& context_object, const input_type &input,
                                    std::size_t num_chunks, std::size_t bit_size_chunk,
                                    bool make_links = true)
                         : generic_component<FieldType, stage>(context_object) {
@@ -279,14 +255,14 @@ namespace nil {
                                           zero](std::vector<TYPE> x,
                                                 std::vector<TYPE> pp) {
                             Check_Mod_P rc =
-                                Check_Mod_P(context_object, x, pp, zero, num_chunks,
+                                Check_Mod_P(context_object, {x, pp, zero}, num_chunks,
                                             bit_size_chunk, false);
                         };
                         auto CheckModPOut = [&context_object, num_chunks, bit_size_chunk,
                                              zero](std::vector<TYPE> x,
                                                    std::vector<TYPE> pp) {
                             Check_Mod_P rc =
-                                Check_Mod_P(context_object, x, pp, zero, num_chunks,
+                                Check_Mod_P(context_object, {x, pp, zero}, num_chunks,
                                             bit_size_chunk, true);
                             return rc.output;
                         };
@@ -295,7 +271,7 @@ namespace nil {
                                                                 std::vector<TYPE> y,
                                                                 bool make_link = true) {
                             Carry_On_addition ca =
-                                Carry_On_addition(context_object, x, y, num_chunks,
+                                Carry_On_addition(context_object, {x, y}, num_chunks,
                                                   bit_size_chunk, make_link);
                             return ca;
                         };
@@ -303,7 +279,7 @@ namespace nil {
                             [&context_object, num_chunks, bit_size_chunk](
                                 TYPE q, std::vector<TYPE> x, std::vector<TYPE> y) {
                                 Choice_Function cf = Choice_Function(
-                                    context_object, q, x, y, num_chunks, bit_size_chunk);
+                                    context_object, {q, x, y}, num_chunks, bit_size_chunk);
                                 return cf.r;
                             };
 
@@ -321,7 +297,7 @@ namespace nil {
                         auto SubModP = [&context_object, P, PP, zero, num_chunks,
                                         bit_size_chunk](std::vector<TYPE> x, std::vector<TYPE> y) {
                             Substitution_Mod_P t =
-                                Substitution_Mod_P(context_object, x,y, P, PP, zero,
+                                Substitution_Mod_P(context_object, {x,y, P, PP, zero},
                                                num_chunks, bit_size_chunk);
                             return t.r;
                         };
@@ -330,7 +306,7 @@ namespace nil {
                                         bit_size_chunk](std::vector<TYPE> x,
                                                         std::vector<TYPE> y) {
                             Addition_Mod_P t =
-                                Addition_Mod_P(context_object, x, y, P, PP, zero,
+                                Addition_Mod_P(context_object, {x, y, P, PP, zero},
                                                num_chunks, bit_size_chunk);
                             return t.r;
                         };
@@ -339,7 +315,7 @@ namespace nil {
                                          bit_size_chunk](std::vector<TYPE> x,
                                                          std::vector<TYPE> y) {
                             Multiplication_Mod_P t =
-                                Multiplication_Mod_P(context_object, x, y, P, PP, zero,
+                                Multiplication_Mod_P(context_object, {x, y, P, PP, zero},
                                                      num_chunks, bit_size_chunk);
                             return t.r;
                         };
@@ -348,7 +324,7 @@ namespace nil {
                                         bit_size_chunk](std::vector<TYPE> x, 
                                                         std::vector<TYPE> y) {
                             Substitution_Mod_N t =
-                                Substitution_Mod_N(context_object, x,y, N, NP, zero,
+                                Substitution_Mod_N(context_object, {x,y, N, NP, zero},
                                                num_chunks, bit_size_chunk);
                             return t.r;
                         };
@@ -357,7 +333,7 @@ namespace nil {
                                         bit_size_chunk](std::vector<TYPE> x,
                                                         std::vector<TYPE> y) {
                             Addition_Mod_N t =
-                                Addition_Mod_N(context_object, x, y, N, NP, zero,
+                                Addition_Mod_N(context_object, {x, y, N, NP, zero},
                                                num_chunks, bit_size_chunk);
                             return t.r;
                         };
@@ -366,7 +342,7 @@ namespace nil {
                                          bit_size_chunk](std::vector<TYPE> x,
                                                          std::vector<TYPE> y) {
                             Multiplication_Mod_N t =
-                                Multiplication_Mod_N(context_object, x, y, N, NP, zero,
+                                Multiplication_Mod_N(context_object, {x, y, N, NP, zero},
                                                      num_chunks, bit_size_chunk);
                             return t.r;
                         };
@@ -376,8 +352,8 @@ namespace nil {
                                              std::vector<TYPE> xP, std::vector<TYPE> yP,
                                              std::vector<TYPE> xQ, std::vector<TYPE> yQ) {
                             Ec_Full_Add t =
-                                Ec_Full_Add(context_object, xP, yP, xQ, yQ, P, PP,
-                                            zero, num_chunks, bit_size_chunk);
+                                Ec_Full_Add(context_object, {xP, yP, xQ, yQ, P, PP, zero},
+                                            num_chunks, bit_size_chunk);
                             return t;
                         };
 
@@ -386,8 +362,8 @@ namespace nil {
                                                 std::vector<TYPE> s, std::vector<TYPE> x,
                                                 std::vector<TYPE> y) {
                             Ec_Scalar_Mult t =
-                                Ec_Scalar_Mult(context_object, s, x, y, P, PP, N, MP,
-                                               zero, num_chunks, bit_size_chunk);
+                                Ec_Scalar_Mult(context_object, {s, x, y, P, PP, N, MP, zero},
+                                               num_chunks, bit_size_chunk);
                             return t;
                         };
 
@@ -425,24 +401,24 @@ namespace nil {
                         // Assigning intermediate values
                         if constexpr (stage == GenerationStage::ASSIGNMENT) {
                             for (std::size_t i = 0; i < num_chunks; i++) {
-                                Z[i] = input_z[i];
-                                R[i] = input_r[i];
-                                S[i] = input_s[i];
+                                Z[i] = input.z[i];
+                                R[i] = input.r[i];
+                                S[i] = input.s[i];
                             }
-                            V = input_v.data;
+                            V = input.v.data;
 
                             integral_type pow = 1;
                             SCALAR_TYPE z = 0, r = 0, s = 0;
 
                             for (std::size_t i = 0; i < num_chunks; ++i) {
                                 z +=
-                                    scalar_integral_type(integral_type(input_z[i].data)) *
+                                    scalar_integral_type(integral_type(input.z[i].data)) *
                                     pow;
                                 r +=
-                                    scalar_integral_type(integral_type(input_r[i].data)) *
+                                    scalar_integral_type(integral_type(input.r[i].data)) *
                                     pow;
                                 s +=
-                                    scalar_integral_type(integral_type(input_s[i].data)) *
+                                    scalar_integral_type(integral_type(input.s[i].data)) *
                                     pow;
                                 pow <<= bit_size_chunk;
                             }

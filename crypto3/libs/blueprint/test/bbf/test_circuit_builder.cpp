@@ -104,12 +104,12 @@ bool check_proof(
 
 
 template <typename FieldType, template<typename, bbf::GenerationStage stage> class Component, typename... ComponentStaticInfoArgs>
-void test_circuit_builder(typename Component<FieldType,bbf::GenerationStage::ASSIGNMENT>::raw_input_type raw_input,
+void test_circuit_builder(typename Component<FieldType,bbf::GenerationStage::ASSIGNMENT>::input_type input,
                           ComponentStaticInfoArgs... args) {
 
     auto B = bbf::circuit_builder<FieldType,Component,ComponentStaticInfoArgs...>(args...);
 
-    auto [at, A, desc] = B.assign(raw_input);
+    auto [at, A, desc] = B.assign(input);
     std::cout << "Input = " << A.input << std::endl;
     bool pass = B.is_satisfied(at);
     std::cout << "Is_satisfied = " << pass << std::endl;
@@ -138,8 +138,8 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_cicruit_builder_test) {
 
     for (std::size_t i = 0; i < random_tests_amount; i++) {
         auto random_input = value_type(integral_type(generate_random().data) % (i % 2 ? base16 : base17));
-        bbf::micro_range_check<field_type,bbf::GenerationStage::ASSIGNMENT>::raw_input_type raw_input = {random_input};
-        test_circuit_builder<field_type,bbf::micro_range_check>(raw_input);
+        bbf::micro_range_check<field_type,bbf::GenerationStage::ASSIGNMENT>::input_type input = {random_input};
+        test_circuit_builder<field_type,bbf::micro_range_check>(input);
     }
 }
 

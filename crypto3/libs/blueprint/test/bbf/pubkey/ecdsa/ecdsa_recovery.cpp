@@ -74,16 +74,16 @@ void test_ecdsa_recovery(
     chunks_to_public_input(sf);
     public_input.push_back(TYPE(vf));
 
-    auto assign_and_check = [&](auto& B, auto& raw_input) {
-        raw_input.z =
+    auto assign_and_check = [&](auto& B, auto& input) {
+        input.z =
             std::vector<TYPE>(public_input.begin(), public_input.begin() + num_chunks);
-        raw_input.r = std::vector<TYPE>(public_input.begin() + num_chunks,
+        input.r = std::vector<TYPE>(public_input.begin() + num_chunks,
                                         public_input.begin() + 2 * num_chunks);
-        raw_input.s = std::vector<TYPE>(public_input.begin() + 2 * num_chunks,
+        input.s = std::vector<TYPE>(public_input.begin() + 2 * num_chunks,
                                         public_input.begin() + 3 * num_chunks);
-        raw_input.v = public_input[3 * num_chunks];
+        input.v = public_input[3 * num_chunks];
 
-        auto [at, A, desc] = B.assign(raw_input);
+        auto [at, A, desc] = B.assign(input);
         bool pass = B.is_satisfied(at);
         std::cout << "Is_satisfied = " << pass << std::endl;
         std::cout << "to_pass = " << to_pass << std::endl;
@@ -107,23 +107,23 @@ void test_ecdsa_recovery(
     if constexpr (std::is_same_v<BaseField,
                                  crypto3::algebra::curves::pallas::base_field_type>) {
         typename bbf::components::pallas_ecdsa_recovery<
-            FieldType, bbf::GenerationStage::ASSIGNMENT>::raw_input_type raw_input;
+            FieldType, bbf::GenerationStage::ASSIGNMENT>::input_type input;
 
         auto B =
             bbf::circuit_builder<FieldType, bbf::components::pallas_ecdsa_recovery,
                                  std::size_t, std::size_t>(num_chunks, bit_size_chunk);
 
-        assign_and_check(B, raw_input);
+        assign_and_check(B, input);
     } else if constexpr (std::is_same_v<
                              BaseField,
                              crypto3::algebra::curves::vesta::base_field_type>) {
         typename bbf::components::vesta_ecdsa_recovery<
-            FieldType, bbf::GenerationStage::ASSIGNMENT>::raw_input_type raw_input;
+            FieldType, bbf::GenerationStage::ASSIGNMENT>::input_type input;
         auto B =
             bbf::circuit_builder<FieldType, bbf::components::vesta_ecdsa_recovery,
                                  std::size_t, std::size_t>(num_chunks, bit_size_chunk);
 
-        assign_and_check(B, raw_input);
+        assign_and_check(B, input);
     }
 }
 

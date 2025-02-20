@@ -48,16 +48,6 @@ namespace nil {
                 // Output: r[0] = x[0] + y[0] - qp[0], ..., r[k-1] = x[k-1] + y[k-1]
                 //      - qp[k-1]
 
-                template<typename FieldType>
-                struct add_sub_mod_p_raw_input {
-                    using TYPE = typename FieldType::value_type;
-                    std::vector<TYPE> x;
-                    std::vector<TYPE> y;
-                    std::vector<TYPE> p;
-                    std::vector<TYPE> pp;
-                    TYPE zero;
-                };
-
                 template<typename FieldType, GenerationStage stage,
                          typename NonNativeFieldType, bool is_add = true>
                 class add_sub_mod_p : public generic_component<FieldType, stage> {
@@ -70,10 +60,14 @@ namespace nil {
                     using typename generic_component<FieldType, stage>::TYPE;
                     using typename generic_component<FieldType, stage>::context_type;
                     using typename generic_component<FieldType, stage>::table_params;
-                    using raw_input_type =
-                        typename std::conditional<stage == GenerationStage::ASSIGNMENT,
-                                                  add_sub_mod_p_raw_input<FieldType>,
-                                                  std::tuple<>>::type;
+
+                    struct input_type {
+                      std::vector<TYPE> x;
+                      std::vector<TYPE> y;
+                      std::vector<TYPE> p;
+                      std::vector<TYPE> pp;
+                      TYPE zero;
+                    };
 
                   public:
                     std::vector<TYPE> r;
@@ -89,44 +83,21 @@ namespace nil {
                         return {witness, public_inputs, constants, rows};
                     }
 
-                    static std::tuple<std::vector<TYPE>, std::vector<TYPE>,
-                                      std::vector<TYPE>, std::vector<TYPE>, TYPE>
-                    form_input(context_type &context_object, raw_input_type raw_input,
-                               std::size_t num_chunks, std::size_t bit_size_chunk) {
-                        std::vector<TYPE> input_x(num_chunks);
-                        std::vector<TYPE> input_y(num_chunks);
-                        std::vector<TYPE> input_p(num_chunks);
-                        std::vector<TYPE> input_pp(num_chunks);
-                        TYPE input_zero;
+                    static void allocate_public_inputs(
+                            context_type& ctx, input_type& input,
+                            std::size_t num_chunks, std::size_t bit_size_chunk) {
+                        AllocatePublicInputChunks allocate_chunks(ctx, num_chunks);
 
-                        if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                            for (std::size_t i = 0; i < num_chunks; i++) {
-                                input_x[i] = raw_input.x[i];
-                                input_y[i] = raw_input.y[i];
-                                input_p[i] = raw_input.p[i];
-                                input_pp[i] = raw_input.pp[i];
-                            }
-                            input_zero = raw_input.zero;
-                        }
-                        for (std::size_t i = 0; i < num_chunks; i++) {
-                            context_object.allocate(input_x[i], 0, i,
-                                                    column_type::public_input);
-                            context_object.allocate(input_y[i], 0, i + num_chunks,
-                                                    column_type::public_input);
-                            context_object.allocate(input_p[i], 0, i + 2 * num_chunks,
-                                                    column_type::public_input);
-                            context_object.allocate(input_pp[i], 0, i + 3 * num_chunks,
-                                                    column_type::public_input);
-                        }
-                        context_object.allocate(input_zero, 0, 4 * num_chunks,
-                                                column_type::public_input);
-                        return std::make_tuple(input_x, input_y, input_p, input_pp,
-                                               input_zero);
+                        std::size_t row = 0;
+                        allocate_chunks(input.x, 0, &row);
+                        allocate_chunks(input.y, 0, &row);
+                        allocate_chunks(input.p, 0, &row);
+                        allocate_chunks(input.pp, 0, &row);
+                        ctx.allocate(input.zero, 0, row++,
+                                     column_type::public_input);
                     }
 
-                    add_sub_mod_p(context_type &context_object, std::vector<TYPE> input_x,
-                                  std::vector<TYPE> input_y, std::vector<TYPE> input_p,
-                                  std::vector<TYPE> input_pp, TYPE input_zero,
+                    add_sub_mod_p(context_type &context_object, const input_type &input,
                                   std::size_t num_chunks, std::size_t bit_size_chunk,
                                   bool make_links = true)
                         : generic_component<FieldType, stage>(context_object) {
@@ -156,13 +127,13 @@ namespace nil {
                             // Populate x, y, p
                             for (std::size_t i = 0; i < num_chunks; ++i) {
                                 x += extended_integral_type(
-                                         integral_type(input_x[i].data)) *
+                                         integral_type(input.x[i].data)) *
                                      pow;
                                 y += extended_integral_type(
-                                         integral_type(input_y[i].data)) *
+                                         integral_type(input.y[i].data)) *
                                      pow;
                                 p += extended_integral_type(
-                                         integral_type(input_p[i].data)) *
+                                         integral_type(input.p[i].data)) *
                                      pow;
                                 pow <<= bit_size_chunk;
                             }
@@ -199,26 +170,26 @@ namespace nil {
 
                         for (std::size_t i = 0; i < num_chunks; ++i) {
                             if (is_add) {
-                                ca_1_inp[i] = input_x[i];
+                                ca_1_inp[i] = input.x[i];
                                 ca_2_inp[i] = R[i];
                             } else {
                                 ca_1_inp[i] = R[i];
-                                ca_2_inp[i] = input_x[i];
+                                ca_2_inp[i] = input.x[i];
                             }
                         }
 
                         Carry_On_Addition ca_1 =
-                            Carry_On_Addition(context_object, ca_1_inp, input_y,
+                            Carry_On_Addition(context_object, {ca_1_inp, input.y},
                                               num_chunks, bit_size_chunk);
                         Range_Check rc_1 = Range_Check(context_object, ca_1.r, num_chunks,
                                                        bit_size_chunk);
                         //(qp = 0 or p)
-                        std::vector<TYPE> input_zero_vector(num_chunks, input_zero);
+                        std::vector<TYPE> input_zero_vector(num_chunks, input.zero);
                         Choice_Function cf = Choice_Function(
-                            context_object, Q, input_zero_vector, input_p, num_chunks);
+                            context_object, {Q, input_zero_vector, input.p}, num_chunks);
 
                         Carry_On_Addition ca_2 =
-                            Carry_On_Addition(context_object, ca_2_inp, cf.r, num_chunks,
+                            Carry_On_Addition(context_object, {ca_2_inp, cf.r}, num_chunks,
                                               bit_size_chunk);  // qp + r
 
                         for (std::size_t i = 0; i < num_chunks; i++) {
@@ -232,7 +203,7 @@ namespace nil {
                             Range_Check(context_object, R, num_chunks, bit_size_chunk);
 
                         Check_Mod_P cm =
-                            Check_Mod_P(context_object, R, input_pp, input_zero,
+                            Check_Mod_P(context_object, {R, input.pp, input.zero},
                                         num_chunks, bit_size_chunk);
                         for (int i = 0; i < num_chunks; ++i) {
                             r.push_back(R[i]);
