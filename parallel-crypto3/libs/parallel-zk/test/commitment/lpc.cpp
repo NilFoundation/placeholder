@@ -26,7 +26,7 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE lpc_test
+#define BOOST_TEST_MODULE parallel_lpc_test
 
 #include <string>
 #include <random>

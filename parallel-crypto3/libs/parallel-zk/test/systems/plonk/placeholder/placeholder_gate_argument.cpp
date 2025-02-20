@@ -29,7 +29,7 @@
 //---------------------------------------------------------------------------//
 // Test gate argument for single circuit - circuit_test_t
 
-#define BOOST_TEST_MODULE placeholder_gate_argument_test
+#define BOOST_TEST_MODULE parallel_placeholder_gate_argument_test
 
 #include <boost/test/unit_test.hpp>
 #include <boost/test/data/test_case.hpp>
@@ -91,7 +91,7 @@ BOOST_AUTO_TEST_SUITE(placeholder_gate_argument)
     using kzg_scheme_type = typename commitments::kzg_commitment_scheme<kzg_type>;
     using kzg_placeholder_params_type = nil::crypto3::zk::snark::placeholder_params<circuit_t_params, kzg_scheme_type>;
 
-    BOOST_FIXTURE_TEST_CASE(placeholder_gate_argument_test, test_tools::random_test_initializer<field_type>) {
+    BOOST_FIXTURE_TEST_CASE(parallel_placeholder_gate_argument_test, test_tools::random_test_initializer<field_type>) {
         auto pi0 = alg_random_engines.template get_alg_engine<field_type>()();
         auto circuit = circuit_test_t<field_type>(
                 pi0,

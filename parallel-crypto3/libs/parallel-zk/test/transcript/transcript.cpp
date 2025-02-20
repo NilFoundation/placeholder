@@ -23,7 +23,7 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE zk_transcript_test
+#define BOOST_TEST_MODULE parallel_zk_transcript_test
 
 #include <vector>
 
@@ -52,7 +52,7 @@
 using namespace nil::crypto3;
 using namespace nil::crypto3::zk;
 
-BOOST_AUTO_TEST_SUITE(zk_transcript_test_suite)
+BOOST_AUTO_TEST_SUITE(parallel_zk_transcript_test_suite)
 
 BOOST_AUTO_TEST_CASE(zk_transcript_manual_test) {
     using field_type = algebra::curves::alt_bn128_254::scalar_field_type;

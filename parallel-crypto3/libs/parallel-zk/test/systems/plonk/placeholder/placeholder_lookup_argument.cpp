@@ -29,7 +29,7 @@
 //---------------------------------------------------------------------------//
 // Lookup argument test for circuits circuit3 and circuit4
 
-#define BOOST_TEST_MODULE placeholder_lookup_argument_test
+#define BOOST_TEST_MODULE parallel_placeholder_lookup_argument_test
 
 #include <boost/test/unit_test.hpp>
 #include <boost/test/data/test_case.hpp>

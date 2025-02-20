@@ -23,7 +23,7 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE blueprint_plonk_opcodes_test
+#define BOOST_TEST_MODULE blueprint_plonk_opcodes_test_calldata
 
 #include <boost/assert.hpp>
 #include <boost/test/unit_test.hpp>

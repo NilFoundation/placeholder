@@ -22,7 +22,7 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE plonk_sha512_test
+#define BOOST_TEST_MODULE plonk_sha512_process_test
 
 #include <boost/test/unit_test.hpp>
 

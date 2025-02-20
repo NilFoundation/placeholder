@@ -25,7 +25,7 @@
 //---------------------------------------------------------------------------//
 
 #include "nil/crypto3/algebra/curves/alt_bn128.hpp"
-#define BOOST_TEST_MODULE algebra_curves_test
+#define BOOST_TEST_MODULE algebra_pairing_test
 
 #include <iostream>
 #include <vector>

@@ -23,7 +23,7 @@
 //---------------------------------------------------------------------------//
 
 #include "nil/crypto3/algebra/fields/pallas/base_field.hpp"
-#define BOOST_TEST_MODULE zkevm_cmp_test
+#define BOOST_TEST_MODULE zkevm_mod_ops_test
 
 #include <boost/test/unit_test.hpp>
 
