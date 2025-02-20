@@ -47,8 +47,15 @@ cm_test_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
 set_target_properties(_cm_internal_tests-crypto3-blueprint-test PROPERTIES CXX_STANDARD 20)
 target_precompile_headers(_cm_internal_tests-crypto3-blueprint-test REUSE_FROM crypto3_precompiled_headers)
 
-macro(define_blueprint_test test)
-    string(REPLACE "/" "_" full_test_name blueprint_${test}_test)
+set(BLUEPRINT_TEST_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
+
+macro(define_custom_blueprint_test test prefix)
+    string(REPLACE "." "" _test ${test})
+    string(REPLACE "/" "_" full_test_name ${prefix}_${_test}_test)
+
+    if (NOT "${postfix}" STREQUAL "")
+        set(full_test_name "${full_test_name}")
+    endif()
 
     set(TEST_RESULTS_DIR "${CMAKE_CURRENT_BINARY_DIR}/junit_results")
     set(TEST_LOGS_DIR "${TEST_RESULTS_DIR}/logs")
@@ -62,7 +69,7 @@ macro(define_blueprint_test test)
 
     set_target_properties(${full_test_name} PROPERTIES CXX_STANDARD 20)
 
-    target_compile_definitions(${full_test_name} PRIVATE TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/zkevm/data/")
+    target_compile_definitions(${full_test_name} PRIVATE TEST_DATA_DIR="${BLUEPRINT_TEST_ROOT}/zkevm/data/")
 
     if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
         target_compile_options(${full_test_name} PRIVATE "${ARGV2}" "-fconstexpr-steps=2147483647" "-ftemplate-backtrace-limit=0")
@@ -78,6 +85,10 @@ macro(define_blueprint_test test)
     endif()
 
     target_precompile_headers(${full_test_name} REUSE_FROM crypto3_precompiled_headers)
+endmacro()
+
+macro(define_blueprint_test test)
+    define_custom_blueprint_test(${test} "blueprint" "")
 endmacro()
 
 set(COMMON_TEST_FILES
@@ -212,32 +223,6 @@ set(ZKEVM_TESTS_FILES
     "zkevm/opcodes/jumps"
 )
 
-set(ZKEVM_BBF_TESTS_FILES
-    "zkevm_bbf/hardhat"
-    "zkevm_bbf/rw"
-    "zkevm_bbf/bytecode"
-    "zkevm_bbf/copy"
-    "zkevm_bbf/exp"
-    "zkevm_bbf/opcodes/pushx"
-    "zkevm_bbf/opcodes/iszero"
-    "zkevm_bbf/opcodes/mod_ops"
-    "zkevm_bbf/opcodes/bitwise"
-    "zkevm_bbf/opcodes/cmp"
-    "zkevm_bbf/opcodes/add_sub"
-    "zkevm_bbf/opcodes/byte_ops"
-    "zkevm_bbf/opcodes/mul"
-    "zkevm_bbf/opcodes/div"
-    "zkevm_bbf/opcodes/jumps"
-    "zkevm_bbf/opcodes/not"
-    "zkevm_bbf/opcodes/exp"
-    "zkevm_bbf/opcodes/calldata"
-    "zkevm_bbf/opcodes/logx"
-    "zkevm_bbf/opcodes/gas"
-    "zkevm_bbf/opcodes/pc"
-    "zkevm_bbf/opcodes/msize"
-)
-
-
 SET(ALGEBRA_TESTS_FILES
     ${FIELDS_TESTS_FILES}
     ${CURVES_TESTS_FILES}
@@ -249,7 +234,6 @@ SET(ALL_TESTS_FILES
     ${PLONK_TESTS_FILES}
     ${ALGEBRA_TESTS_FILES}
     ${ZKEVM_TESTS_FILES}
-    ${ZKEVM_BBF_TESTS_FILES}
     ${HASHES_TESTS_FILES}
     ${ROUTING_TESTS_FILES}
     ${SCHEMES_TESTS_FILES}
@@ -263,3 +247,6 @@ endforeach()
 foreach(TEST_FILE ${NON_NATIVE_TESTS_FILES_WITH_PROOF_GEN})
     define_blueprint_test(${TEST_FILE} ARGS "-DBLUEPRINT_PLACEHOLDER_PROOF_GEN=True")
 endforeach()
+
+# long tests built with single and multi-threaded modes
+add_subdirectory(zkevm_bbf)
