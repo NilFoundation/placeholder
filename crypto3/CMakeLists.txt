@@ -26,7 +26,7 @@ option(BUILD_DOCS "Build with configuring Doxygen documentation compiler" FALSE)
 # If Nix is used, LSP could not guess the locations of implicit include
 # directories, so we need to include them explicitly.
 if(CMAKE_EXPORT_COMPILE_COMMANDS)
-  set(CMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES 
+  set(CMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES
       ${CMAKE_CXX_IMPLICIT_INCLUDE_DIRECTORIES})
 endif()
 

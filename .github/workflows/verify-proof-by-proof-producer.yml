@@ -20,4 +20,3 @@ jobs:
       - name: Run checks for proofs-verification
         run: |
           nix build -L .?#checks.x86_64-linux.verify-proofs
-
