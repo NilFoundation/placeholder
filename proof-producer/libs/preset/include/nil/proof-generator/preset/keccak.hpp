@@ -24,13 +24,14 @@ namespace nil {
 
             namespace bbf = nil::blueprint::bbf;
 
-            using ComponentType = bbf::keccak<BlueprintFieldType, bbf::GenerationStage::CONSTRAINTS>;
+            using ComponentType = bbf::zkevm_keccak<BlueprintFieldType, bbf::GenerationStage::CONSTRAINTS>;
             using ConstraintSystem = typename PresetTypes<BlueprintFieldType>::ConstraintSystem;
             using AssignmentTable = typename PresetTypes<BlueprintFieldType>::AssignmentTable;
 
 
             // initialize assignment table
-            const auto desc = ComponentType::get_table_description(); // TODO(oclaw): add circuits_limits.max_total_rows, circuits_limits.max_keccak_blocks?
+            std::size_t max_keccak_blocks = 50; //TODO: current max_keccak_blocks is a placeholder value
+            const auto desc = ComponentType::get_table_description(max_keccak_blocks); // TODO(oclaw): add circuits_limits.max_total_rows, circuits_limits.max_keccak_blocks?
             keccak_table = std::make_shared<AssignmentTable>(desc.witness_columns, desc.public_input_columns, desc.constant_columns, desc.selector_columns);
 
             BOOST_LOG_TRIVIAL(debug) << "keccak table:\n"
@@ -47,7 +48,7 @@ namespace nil {
             std::vector<std::size_t> constants(desc.constant_columns);
             std::iota(constants.begin(), constants.end(), 0);  // fill 0, 1, ...
 
-            using L1WrapperType = nil::blueprint::components::plonk_l1_wrapper<BlueprintFieldType, bbf::keccak>;
+            using L1WrapperType = nil::blueprint::components::plonk_l1_wrapper<BlueprintFieldType, bbf::zkevm_keccak>;
             L1WrapperType wrapper(witnesses, public_inputs, constants);
 
             typename ComponentType::input_type input;
@@ -55,8 +56,8 @@ namespace nil {
 
             nil::blueprint::circuit<crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>> circuit;
 
-            nil::blueprint::components::generate_circuit<BlueprintFieldType, bbf::keccak>(
-                wrapper, circuit, *keccak_table, input, start_row); // circuits_limits.max_total_rows, circuits_limits.max_keccak_blocks
+            nil::blueprint::components::generate_circuit<BlueprintFieldType, bbf::zkevm_keccak>(
+                wrapper, circuit, *keccak_table, input, start_row, max_keccak_blocks); // circuits_limits.max_total_rows, circuits_limits.max_keccak_blocks
 
             zk::snark::pack_lookup_tables_horizontal(
                 circuit.get_reserved_indices(),

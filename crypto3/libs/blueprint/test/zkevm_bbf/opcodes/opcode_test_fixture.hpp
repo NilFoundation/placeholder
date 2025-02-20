@@ -105,9 +105,10 @@ public:
         typename nil::blueprint::bbf::rw<BlueprintFieldType,nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type rw_assignment_input = circuit_inputs.rw_operations();
         typename nil::blueprint::bbf::rw<BlueprintFieldType,nil::blueprint::bbf::GenerationStage::CONSTRAINTS>::input_type rw_constraint_input;
 
-        typename nil::blueprint::bbf::keccak<BlueprintFieldType,nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type keccak_assignment_input;
-        typename nil::blueprint::bbf::keccak<BlueprintFieldType,nil::blueprint::bbf::GenerationStage::CONSTRAINTS>::input_type keccak_constraint_input;
-        keccak_assignment_input.private_input = 12345;
+        typename nil::blueprint::bbf::zkevm_keccak<BlueprintFieldType,nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type keccak_assignment_input;
+        typename nil::blueprint::bbf::zkevm_keccak<BlueprintFieldType,nil::blueprint::bbf::GenerationStage::CONSTRAINTS>::input_type keccak_constraint_input;
+        keccak_assignment_input.rlc_challenge = 7;
+        keccak_assignment_input.private_input = circuit_inputs.keccaks();
 
         typename nil::blueprint::bbf::bytecode<BlueprintFieldType,nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type bytecode_assignment_input;
         typename nil::blueprint::bbf::bytecode<BlueprintFieldType,nil::blueprint::bbf::GenerationStage::CONSTRAINTS>::input_type bytecode_constraint_input;
@@ -172,9 +173,9 @@ public:
         std::cout << std::endl;
 
         // Max_keccak
-        result = test_bbf_component<BlueprintFieldType, nil::blueprint::bbf::keccak>(
+        result = test_bbf_component<BlueprintFieldType, nil::blueprint::bbf::zkevm_keccak>(
             "keccak",
-            {}, keccak_assignment_input , keccak_constraint_input
+            {}, keccak_assignment_input , keccak_constraint_input, max_keccak_blocks
         );
         BOOST_CHECK(result);
         std::cout << std::endl;
