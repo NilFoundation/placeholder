@@ -50,6 +50,8 @@
 
 #include "../test_plonk_component.hpp"
 
+#include <boost/algorithm/string.hpp>
+
 using namespace nil::crypto3;
 using namespace nil::blueprint;
 using namespace nil::blueprint::bbf;
@@ -152,9 +154,26 @@ class CircuitTestFixture {
         std::size_t argc = boost::unit_test::framework::master_test_suite().argc;
         auto &argv = boost::unit_test::framework::master_test_suite().argv;
         for( std::size_t i = 0; i < argc; i++ ){
-            if( std::string(argv[i]) == "--print" ) print_to_file = true;
-            if( std::string(argv[i]) == "--no-sat-check" ) check_satisfiability = false;
-            if( std::string(argv[i]) == "--proof" ) generate_proof = true;
+            std::string arg(argv[i]);
+            if(arg == "--print" ) {
+                print_to_file = true;
+            }
+            if(arg == "--no-sat-check" ) {
+                check_satisfiability = false;
+            }
+            if(arg == "--proof" ) {
+                generate_proof = true;
+            }
+            constexpr std::string_view prefix = "--run-for-circuits=";
+            if (arg.starts_with(prefix)) {
+                std::vector<std::string> circuits;
+                std::string arg_value = arg.substr(prefix.size());
+                boost::algorithm::split(circuits, arg_value, boost::is_any_of(","));
+                for (const auto &circuit : circuits) {
+                    std::cout << "Running circuit '" << circuit << "'" << std::endl;
+                    circuits_to_run.insert(circuit);
+                }
+            }
         }
         std::string suite(boost::unit_test::framework::get<boost::unit_test::test_suite>(boost::unit_test::framework::current_test_case().p_parent_id).p_name);
         std::string test(boost::unit_test::framework::current_test_case().p_name);
@@ -193,8 +212,15 @@ class CircuitTestFixture {
         return result;
     }
 
+    // all circuits are run by default
+    inline bool should_run_circuit(const std::string &circuit_name){
+        return circuits_to_run.empty() || circuits_to_run.find(circuit_name) != circuits_to_run.end();
+    }
+
+
     bool check_satisfiability;
     bool generate_proof;
     bool print_to_file;
     std::string output_file;
+    std::unordered_set<std::string> circuits_to_run;
 };

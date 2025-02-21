@@ -20,6 +20,10 @@ set(ZKEVM_BBF_TESTS_FILES
     "../opcodes/not"
     "../opcodes/exp"
     "../opcodes/calldata"
+    "../opcodes/logx"
+    "../opcodes/gas"
+    "../opcodes/pc"
+    "../opcodes/msize"
 )
 
 add_subdirectory(single_thread_tests)

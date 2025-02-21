@@ -18,6 +18,14 @@
 }:
 let
   inherit (lib) optional;
+
+  # Aux function that assembles a shell line for running test binary for specific (test suite, test case, circuit subset) combination
+  buildTestRunLines = {binary, test_suite, test_runs}:
+    builtins.map
+      (test_name: "${binary} --run_test=${test_suite}/${test_name} -- --proof --run-for-circuits=${lib.strings.concatStringsSep "," test_runs.${test_name}}\n")
+      (builtins.attrNames test_runs)
+  ;
+
 in stdenv.mkDerivation rec {
   name = "Proof verifier test";
   pname = "proof-verifier-test";
@@ -50,22 +58,32 @@ in stdenv.mkDerivation rec {
   cmakeBuildType = if enableDebug then "Debug" else "Release";
   doCheck = true;
 
-  # add these, when proof verification start working:
-  # "zkevm_bbf_hardhat_minimal_math_zkevm"
-  # "zkevm_bbf_hardhat_minimal_math_rw"
-  # "zkevm_bbf_hardhat_minimal_math_bytecode"
-  test_names = [
-    "zkevm_bbf_hardhat_keccak_copy"
-    "zkevm_bbf_hardhat_calldatacopy_copy"
-    "zkevm_bbf_hardhat_exp_copy"
-    "zkevm_bbf_hardhat_exp_rw"
-    "zkevm_bbf_hardhat_minimal_math_copy"
-    "zkevm_bbf_hardhat_modular_operations_copy"
-  ];
+  test_lines = buildTestRunLines {
+    binary = "./crypto3/libs/blueprint/test/zkevm_bbf/multi_thread_tests/blueprint_zkevm_bbf_multi_thread__hardhat_test";
 
-  checkPhase = ''
-    ./crypto3/libs/blueprint/test/zkevm_bbf/multi_thread_tests/blueprint_zkevm_bbf_multi_thread__hardhat_test -- --proof --run_test=${lib.strings.concatStringsSep "," test_names}
-  '';
+    test_suite = "zkevm_bbf_hardhat";
+
+    test_runs = {
+      # test case name
+      keccak = [
+        "copy" # circuit name (leave empty to run all circuits)
+      ];
+
+      calldatacopy = [ "copy" ];
+
+      exp = [ "copy" "rw" ];
+
+      # add these, when proof verification start working:
+      # "zkevm_bbf_hardhat/minimal_math zkevm"
+      # "zkevm_bbf_hardhat/minimal_math rw"
+      # "zkevm_bbf_hardhat/minimal_math bytecode"
+      minimal_math = [ "copy" ];
+
+      modular_operations = [ "copy" ];
+    };
+  };
+
+  checkPhase = lib.concatLines (["set -x"] ++ test_lines);
 
   dontInstall = true;
   installPhase = "true";
