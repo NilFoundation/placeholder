@@ -1,11 +1,11 @@
-name: Verify proofs by means of proof-producer
+name: Verify hardhat proofs
 
 on:
   workflow_call:
 
 jobs:
   build-and-test:
-    name: "Verify proofs by means of proof-producer"
+    name: "Verify hardhat proofs"
     runs-on: [self-hosted, Linux, X64, aws_autoscaling]
     steps:
       # https://github.com/actions/checkout/issues/1552

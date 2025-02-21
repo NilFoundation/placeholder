@@ -37,9 +37,9 @@ jobs:
       always() && !cancelled()
     secrets: inherit
 
-  verify-proof-by-proof-producer:
-    name: Verify Proof
-    uses: ./.github/workflows/verify-proof-by-proof-producer.yml
+  verify-hardhat-proofs:
+    name: Verify Hardhat Proofs
+    uses: ./.github/workflows/verify-hardhat-proofs.yml
     if: |
       always() && !cancelled()
     secrets: inherit
@@ -51,4 +51,3 @@ jobs:
       always() && !cancelled()
     # TODO add if it's a merge to master
     secrets: inherit
-
