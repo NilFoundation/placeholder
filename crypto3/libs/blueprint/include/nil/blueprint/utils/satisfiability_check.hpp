@@ -39,6 +39,7 @@
 namespace nil {
     namespace blueprint {
 
+        // For bbf use CircuitBuilder::is_satisfied instead
         template<typename BlueprintFieldType>
         bool is_satisfied(
             const circuit<crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>> &bp,
@@ -99,6 +100,7 @@ namespace nil {
             return result;
         }
 
+        // For bbf use CircuitBuilder::is_satisfied instead
         template<typename BlueprintFieldType>
         bool is_satisfied(
             const circuit<crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>> &bp,
