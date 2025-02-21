@@ -179,15 +179,15 @@ public:
         circuit_builder<field_type, BBFType, ComponentStaticInfoArgs...> builder(component_static_info_args...);
         auto &bp = builder.get_circuit();
         auto [assignment, component, desc] = builder.assign(assignment_input);
-        if( print_to_file ){
+        if (print_to_file) {
             print_zk_circuit_and_table_to_file(output_file + "_" + circuit_name, bp, desc, assignment);
         }
         bool result = true;
-        if( check_satisfiability ){
-            result = result & is_satisfied(bp, assignment);
+        if (check_satisfiability) {
+            result = result & builder.is_satisfied(assignment, /* verbose = */ true);
         }
         // It's debug mode. Prover from non-satisfied circuit will throw asserts
-        if( result && generate_proof ){
+        if (result && generate_proof) {
             result = result & check_proof(bp, assignment, desc);
         }
         std::cout << std::endl;
