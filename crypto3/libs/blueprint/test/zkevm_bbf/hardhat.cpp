@@ -22,9 +22,13 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
+#include <cstdlib>
+#include <string_view>
+#include <unordered_map>
 #define BOOST_TEST_MODULE blueprint_plonk_l1_wrapper_test
 
 #include <boost/assert.hpp>
+#include <boost/algorithm/string.hpp>
 #include <boost/test/unit_test.hpp>
 
 #include <nil/crypto3/algebra/curves/pallas.hpp>
@@ -116,63 +120,92 @@ public:
 
         auto exp_assignment_input = circuit_inputs.exponentiations();
 
-        // Max_rows, max_bytecode, max_rw
-        bool result = test_bbf_component<field_type, zkevm>(
-            "zkevm",
-            {}, zkevm_assignment_input,
-            max_zkevm_rows,
-            max_copy,
-            max_rw,
-            max_exponentiations,
-            max_bytecode
-        );
-        BOOST_ASSERT(result);
-        // std::cout << std::endl;
+        bool result{false};
 
-        // Max_copy, Max_rw, Max_keccak, Max_bytecode
-        result =test_bbf_component<field_type, nil::blueprint::bbf::exponentiation>(
-            "exp",
-            {}, exp_assignment_input,
-            max_exp_rows,
-            max_exponentiations
-        );
-        BOOST_ASSERT(result);
-        std::cout << std::endl;
+        const std::string zkevm_circuit = "zkevm";
+        if (should_run_circuit(zkevm_circuit)) {
+            std::cout << "circuit '" << zkevm_circuit << "'" << std::endl;
 
-        // Max_copy, Max_rw, Max_keccak, Max_bytecode
-        result =test_bbf_component<field_type, nil::blueprint::bbf::copy>(
-            "copy",
-            {7}, copy_assignment_input,
-            max_copy, max_rw, max_keccak_blocks, max_bytecode
-        );
-        BOOST_ASSERT(result);
-        std::cout << std::endl;
+            // Max_rows, max_bytecode, max_rw
+            result = test_bbf_component<field_type, nil::blueprint::bbf::zkevm>(
+                zkevm_circuit,
+                {}, zkevm_assignment_input,
+                max_zkevm_rows,
+                max_copy,
+                max_rw,
+                max_exponentiations,
+                max_bytecode
+            );
+            BOOST_ASSERT(result);
+        }
 
-        // Max_keccak
-        result = test_bbf_component<field_type, nil::blueprint::bbf::keccak>(
-            "keccak",
-            {}, keccak_assignment_input
-        );
-        BOOST_ASSERT(result);
-        std::cout << std::endl;
+        const std::string exp_circuit = "exp";
+        if (should_run_circuit(exp_circuit)) {
+            std::cout << "circuit '" << exp_circuit << "'" << std::endl;
 
-        // Max_bytecode, max_bytecode
-        std::cout << "Bytecode circuit" << std::endl;
-        result = test_bbf_component<field_type, nil::blueprint::bbf::bytecode>(
-            "bytecode",
-            {7}, bytecode_assignment_input, max_bytecode, max_keccak_blocks
-        );
-        BOOST_ASSERT(result);
-        std::cout << std::endl;
+            // Max_copy, Max_rw, Max_keccak, Max_bytecode
+            result =test_bbf_component<field_type, nil::blueprint::bbf::exponentiation>(
+                exp_circuit,
+                {}, exp_assignment_input,
+                max_exp_rows,
+                max_exponentiations
+            );
+            BOOST_ASSERT(result);
+            std::cout << std::endl;
+        }
 
-        // Max_rw, Max_mpt
-        std::cout << "RW circuit" << std::endl;
-        result = test_bbf_component<field_type, nil::blueprint::bbf::rw>(
-            "rw",
-            {}, rw_assignment_input, max_rw, max_mpt
-        );
-        BOOST_ASSERT(result);
-        std::cout << std::endl;
+        const std::string copy_circuit = "copy";
+        if (should_run_circuit(copy_circuit)) {
+            std::cout << "circuit '" << copy_circuit << "'" << std::endl;
+
+            // Max_copy, Max_rw, Max_keccak, Max_bytecode
+            result =test_bbf_component<field_type, nil::blueprint::bbf::copy>(
+                copy_circuit,
+                {7}, copy_assignment_input,
+                max_copy, max_rw, max_keccak_blocks, max_bytecode
+            );
+            BOOST_ASSERT(result);
+            std::cout << std::endl;
+        }
+
+        const std::string keccak_circuit = "keccak";
+        if (should_run_circuit(keccak_circuit)) {
+            std::cout << "circuit '" << keccak_circuit << "'" << std::endl;
+
+            // Max_keccak
+            result = test_bbf_component<field_type, nil::blueprint::bbf::keccak>(
+                keccak_circuit,
+                {}, keccak_assignment_input
+            );
+            BOOST_ASSERT(result);
+            std::cout << std::endl;
+        }
+
+        const std::string bytecode_circuit = "bytecode";
+        if (should_run_circuit(bytecode_circuit)) {
+            std::cout << "circuit '" << bytecode_circuit << "'" << std::endl;
+
+            // Max_bytecode, max_bytecode
+            result = test_bbf_component<field_type, nil::blueprint::bbf::bytecode>(
+                bytecode_circuit,
+                {7}, bytecode_assignment_input, max_bytecode, max_keccak_blocks
+            );
+            BOOST_ASSERT(result);
+            std::cout << std::endl;
+        }
+
+        const std::string rw_circuit = "rw";
+        if (should_run_circuit(rw_circuit)) {
+            std::cout << "circuit '" << rw_circuit << "'" << std::endl;
+
+            // Max_rw, Max_mpt
+            result = test_bbf_component<field_type, nil::blueprint::bbf::rw>(
+                rw_circuit,
+                {}, rw_assignment_input, max_rw, max_mpt
+            );
+            BOOST_ASSERT(result);
+            std::cout << std::endl;
+        }
     }
 };
 
