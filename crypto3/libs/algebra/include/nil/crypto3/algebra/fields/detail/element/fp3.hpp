@@ -168,7 +168,7 @@ namespace nil {
                         }
 
                         constexpr element_fp3 sqrt() const {
-                            std::size_t v = policy_type::s;
+                            std::size_t v = policy_type::two_adicity;
                             element_fp3 z(policy_type::nqr_to_t[0], policy_type::nqr_to_t[1], policy_type::nqr_to_t[2]);
                             element_fp3 w = this->pow(policy_type::t_minus_1_over_2);
                             element_fp3 x((*this) * w);

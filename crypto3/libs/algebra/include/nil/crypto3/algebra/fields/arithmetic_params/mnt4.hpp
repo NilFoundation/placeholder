@@ -48,7 +48,7 @@ namespace nil {
                     typedef typename policy_type::modular_type modular_type;
                     typedef typename policy_type::integral_type integral_type;
 
-                    constexpr static const std::size_t s = 0x11;
+                    constexpr static const std::size_t two_adicity = 0x11;
                     constexpr static const integral_type t =
                         0x1DE7BDE6A39D133124ED3D82A47657764B1AE89987520D4F1AF2890070964866B2D38B3_big_uint281;
                     constexpr static const integral_type t_minus_1_over_2 =
@@ -81,7 +81,7 @@ namespace nil {
                     typedef typename policy_type::integral_type integral_type;
                     using extended_integral_type = nil::crypto3::multiprecision::big_uint<2 * policy_type::modulus_bits>;
 
-                    constexpr static const std::size_t s = 0x12;
+                    constexpr static const std::size_t two_adicity = 0x12;
                     constexpr static const extended_integral_type t =
                         0x37E52CE842B39321A34D7BA62E2C735153C68D35F7A312CDB18451030CB297F3B772167A8487033D5772A0EF6BEA9BCA60190FFE1CDB642F88A0FF2EFF7A6A3A80FD00203385638B3_big_uint578;
                     constexpr static const extended_integral_type t_minus_1_over_2 =
@@ -95,8 +95,10 @@ namespace nil {
                         0x6FCA59D085672643469AF74C5C58E6A2A78D1A6BEF46259B6308A20619652FE76EE42CF5090E067AAEE541DED7D53794C0321FFC39B6C85F1141FE5DFEF4D47501FA0040670AC71660000_big_uint595;
                 };
 
-                constexpr std::size_t const arithmetic_params<mnt4_base_field<298>>::s;
-                constexpr std::size_t const arithmetic_params<fp2<mnt4_base_field<298>>>::s;
+                constexpr std::size_t const
+                    arithmetic_params<mnt4_base_field<298>>::two_adicity;
+                constexpr std::size_t const
+                    arithmetic_params<fp2<mnt4_base_field<298>>>::two_adicity;
 
                 constexpr typename arithmetic_params<mnt4_base_field<298>>::integral_type const
                     arithmetic_params<mnt4_base_field<298>>::t;

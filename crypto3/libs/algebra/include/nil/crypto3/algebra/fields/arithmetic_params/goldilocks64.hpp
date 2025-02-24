@@ -43,7 +43,7 @@ namespace nil {
                     typedef typename policy_type::modular_type modular_type;
                     typedef typename policy_type::integral_type integral_type;
 
-                    constexpr static const std::size_t s = 0x20;
+                    constexpr static const std::size_t two_adicity = 0x20;
                     constexpr static const integral_type arithmetic_generator = 0x01;
                     constexpr static const integral_type geometric_generator = 0x02;
                     constexpr static const integral_type multiplicative_generator = 0x07;
@@ -51,7 +51,8 @@ namespace nil {
                         0x185629DCDA58878C_big_uint64;
                 };
 
-                constexpr std::size_t const arithmetic_params<goldilocks64_base_field>::s;
+                constexpr std::size_t const
+                    arithmetic_params<goldilocks64_base_field>::two_adicity;
 
                 constexpr typename arithmetic_params<goldilocks64_base_field>::integral_type const
                     arithmetic_params<goldilocks64_base_field>::root_of_unity;

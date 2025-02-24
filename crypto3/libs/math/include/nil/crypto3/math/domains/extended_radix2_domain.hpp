@@ -73,9 +73,9 @@ namespace nil {
                         throw std::invalid_argument("extended_radix2(): expected m > 1");
 
                     const std::size_t logm = static_cast<std::size_t>(std::ceil(std::log2(m)));
-                    if (logm != (fields::arithmetic_params<FieldType>::s + 1))
+                    if (logm != (fields::arithmetic_params<FieldType>::two_adicity + 1))
                         throw std::invalid_argument(
-                                "extended_radix2(): expected logm == fields::arithmetic_params<FieldType>::s + 1");
+                                "extended_radix2(): expected logm == fields::arithmetic_params<FieldType>::two_adicity + 1");
                 }
 
                 void fft(std::vector<value_type> &a) override {

@@ -66,7 +66,7 @@ namespace nil {
                         typedef base_field_type underlying_field_type;
                         typedef typename underlying_field_type::value_type underlying_type;
 
-                        constexpr static const std::size_t s = 0x03;
+                        constexpr static const std::size_t two_adicity = 0x03;
                         constexpr static const extended_integral_type t =
                                 0x5486F497186BF8E97A4F1D5445E4BD3C5B921CA1CE08D68CDCB3C92693D17A0A14C59FA2DBB94DDEA62926612F1DE023AD0C3390C30B8F6525D0B50E1234092CD7F23DA7CE36E862C586706C42279FAF9DAD63AEC705D564D54000038E31C7_big_uint759;
                         constexpr static const extended_integral_type t_minus_1_over_2 =
@@ -110,7 +110,7 @@ namespace nil {
                         typedef base_field_type underlying_field_type;
                         typedef underlying_field_type::value_type underlying_type;
 
-                        constexpr static const std::size_t s = 0x2F;
+                        constexpr static const std::size_t two_adicity =0x2F;
                         constexpr static const extended_integral_type t =
                                 0x5A60FA1775FF644AD227766C24C78977170FB495DD27E3EBCE2827BB49AB813A0315F720CC19B8029CE24A0549AD88C155555176E15C063064972B0C7193AD797F7A46BE3813495B44D1E5C37B000E671A4A9E00000021423_big_uint707;
                         constexpr static const extended_integral_type t_minus_1_over_2 =
@@ -136,8 +136,10 @@ namespace nil {
                     constexpr typename fp2_extension_params<bls12_base_field<377>>::non_residue_type const
                             fp2_extension_params<bls12_base_field<377>>::non_residue;
 
-                    constexpr typename std::size_t const fp2_extension_params<bls12_base_field<381>>::s;
-                    constexpr typename std::size_t const fp2_extension_params<bls12_base_field<377>>::s;
+                    constexpr typename std::size_t const
+                        fp2_extension_params<bls12_base_field<381>>::two_adicity;
+                    constexpr typename std::size_t const
+                        fp2_extension_params<bls12_base_field<377>>::two_adicity;
 
                     constexpr typename fp2_extension_params<bls12_base_field<381>>::extended_integral_type const
                             fp2_extension_params<bls12_base_field<381>>::t;

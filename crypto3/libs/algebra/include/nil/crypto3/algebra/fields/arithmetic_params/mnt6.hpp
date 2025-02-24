@@ -48,7 +48,7 @@ namespace nil {
                     typedef typename policy_type::modular_type modular_type;
                     typedef typename policy_type::integral_type integral_type;
 
-                    constexpr static const std::size_t s = 0x22;
+                    constexpr static const std::size_t two_adicity = 0x22;
                     constexpr static const integral_type t =
                         0xEF3DEF351CE899892769EC1523B2BBB258D73D10653ED25301E4975AB4EED0CD29_big_uint264;
                     constexpr static const integral_type t_minus_1_over_2 =
@@ -81,7 +81,7 @@ namespace nil {
                     typedef typename policy_type::integral_type integral_type;
                     using extended_integral_type = nil::crypto3::multiprecision::big_uint<3 * policy_type::modulus_bits>;
 
-                    constexpr static const std::size_t s = 0x22;
+                    constexpr static const std::size_t two_adicity = 0x22;
                     constexpr static const extended_integral_type t =
                         0xD0F1EB0C5D321E87BF885ACDEBEDB4C0D6B30E63AB6E7BF6417A7990679AA640A7D58FB90CC708D572D32DFD6443366D2F92F48FF1A02FDB0CC11573BAB71F8E5E05B07DEA208A7E11F3E61C9968CC65F379EFCEF9472C7FC6DEE40194CA1DF9F801DC0D24656EACC72677B_big_uint860;
                     constexpr static const extended_integral_type t_minus_1_over_2 =
@@ -96,8 +96,10 @@ namespace nil {
                         0x1A1E3D618BA643D0F7F10B59BD7DB6981AD661CC756DCF7EC82F4F320CF354C814FAB1F72198E11AAE5A65BFAC8866CDA5F25E91FE3405FB619822AE7756E3F1CBC0B60FBD44114FC23E7CC3932D198CBE6F3DF9DF28E58FF8DBDC80329943BF3F003B81A48CADD598E4CEF600000000_big_uint893;
                 };
 
-                constexpr std::size_t const arithmetic_params<mnt6_base_field<298>>::s;
-                constexpr std::size_t const arithmetic_params<fp3<mnt6_base_field<298>>>::s;
+                constexpr std::size_t const
+                    arithmetic_params<mnt6_base_field<298>>::two_adicity;
+                constexpr std::size_t const
+                    arithmetic_params<fp3<mnt6_base_field<298>>>::two_adicity;
 
                 constexpr typename arithmetic_params<mnt6_base_field<298>>::integral_type const
                     arithmetic_params<mnt6_base_field<298>>::t;

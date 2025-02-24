@@ -48,7 +48,7 @@ namespace nil {
                     typedef typename policy_type::modular_type modular_type;
                     typedef typename policy_type::integral_type integral_type;
 
-                    constexpr static const std::size_t s = 0x01;
+                    constexpr static const std::size_t two_adicity = 0x01;
                     constexpr static const integral_type t =
                         0x183227397098D014DC2822DB40C0AC2ECBC0B548B438E5469E10460B6C3E7EA3_big_uint253;
                     constexpr static const integral_type t_minus_1_over_2 =
@@ -82,7 +82,7 @@ namespace nil {
 
                     using extended_integral_type = nil::crypto3::multiprecision::big_uint<2 * policy_type::modulus_bits>;
 
-                    constexpr static const std::size_t s = 0x04;
+                    constexpr static const std::size_t two_adicity = 0x04;
                     constexpr static const extended_integral_type t =
                         0x925C4B8763CBF9C599A6F7C0348D21CB00B85511637560626EDFA5C34C6B38D04689E957A1242C84A50189C6D96CADCA602072D09EAC1013B5458A2275D69B_big_uint504;
                     constexpr static const extended_integral_type t_minus_1_over_2 =
@@ -106,7 +106,7 @@ namespace nil {
                     typedef typename policy_type::modular_type modular_type;
                     typedef typename policy_type::integral_type integral_type;
 
-                    constexpr static const std::size_t s = 0x1C;
+                    constexpr static const std::size_t two_adicity =0x1C;
                     constexpr static const integral_type t =
                         0x30644E72E131A029B85045B68181585D2833E84879B9709143E1F593F_big_uint226;
                     constexpr static const integral_type t_minus_1_over_2 =
@@ -129,9 +129,12 @@ namespace nil {
                         0x183227397098D014DC2822DB40C0AC2E9419F4243CDCB848A1F0FAC9F8000000_big_uint254;
                 };
 
-                constexpr std::size_t const arithmetic_params<alt_bn128_base_field<254>>::s;
-                constexpr std::size_t const arithmetic_params<fp2<alt_bn128_base_field<254>>>::s;
-                constexpr std::size_t const arithmetic_params<alt_bn128_scalar_field<254>>::s;
+                constexpr std::size_t const
+                    arithmetic_params<alt_bn128_base_field<254>>::two_adicity;
+                constexpr std::size_t const
+                    arithmetic_params<fp2<alt_bn128_base_field<254>>>::two_adicity;
+                constexpr std::size_t const
+                    arithmetic_params<alt_bn128_scalar_field<254>>::two_adicity;
 
                 constexpr typename arithmetic_params<alt_bn128_base_field<254>>::integral_type const
                     arithmetic_params<alt_bn128_base_field<254>>::t;
