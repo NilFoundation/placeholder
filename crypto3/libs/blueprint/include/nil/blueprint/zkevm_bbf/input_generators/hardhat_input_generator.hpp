@@ -336,13 +336,33 @@ namespace nil {
 
                             } else if(opcode == "CODECOPY") {
                                 // 0x39
-                                std::cout << "CODECOPY not implemented" << std::endl;
-                                exit(2);
                                 _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-1, rw_counter++, false, stack[stack.size()-1]));
                                 _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-2, rw_counter++, false, stack[stack.size()-2]));
                                 _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-3, rw_counter++, false, stack[stack.size()-3]));
 
-                                // TODO: add length write operations to memory
+                                std::size_t length = std::size_t(stack[stack.size()-3]);
+                                std::size_t src = std::size_t(stack[stack.size()-2]);
+                                std::size_t dest = std::size_t(stack[stack.size()-1]);
+
+                                std::cout << "\tAdd copy event for CODECOPY length = " << length << std::endl;
+                                copy_event cpy;
+                                cpy.source_id = call_id;
+                                cpy.source_type = copy_operand_type::bytecode;
+                                cpy.src_address = src;
+                                cpy.destination_id = call_id;
+                                cpy.destination_type = copy_operand_type::memory;
+                                cpy.dst_address = dest;
+                                cpy.length = length;
+                                cpy.initial_rw_counter = rw_counter;
+                                cpy.bytes = {};
+
+                                // add read operations on bytecode?
+                                for( std::size_t i = 0; i < length; i++){
+                                    _rw_operations.push_back(memory_rw_operation(call_id, dest+i, rw_counter++, true, memory_next[dest+i]));
+                                    cpy.bytes.push_back(memory_next[dest+i]); //TODO: change it on bytecode?
+                                }
+                                //_copy_events.push_back(cpy);
+                                memory_size_before = memory_next.size();
                                 // Consistency with bytecode table will be checked by bytecode circuit
                             } else if(opcode == "GASPRICE") {
                                 // 0x3a
@@ -374,21 +394,38 @@ namespace nil {
                                 // Consistency with bytecode table will be checked by bytecode circuit
                             } else if(opcode == "RETURNDATASIZE") {
                                 // 0x3d
-                                // std::cout << "Test me, please!" << std::endl;
-                                std::cout << "RETURNDATASIZE not implemented" << std::endl;
-                                exit(2);
+                               // TODO: get real return data size
                                 _rw_operations.push_back(stack_rw_operation(call_id,  stack_next.size()-1, rw_counter++, true, stack_next[stack_next.size()-1]));
 
                             } else if(opcode == "RETURNDATACOPY") {
                                 // 0x3e
-                                // std::cout << "Test me, please!" << std::endl;
-                                std::cout << "RETURNDATACOPY not implemented" << std::endl;
-                                exit(2);
                                 _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-1, rw_counter++, false, stack[stack.size()-1]));
                                 _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-2, rw_counter++, false, stack[stack.size()-2]));
                                 _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-3, rw_counter++, false, stack[stack.size()-3]));
 
-                                // TODO: add length write operations to memory
+                                std::size_t length = std::size_t(stack[stack.size()-3]);
+                                std::size_t src = std::size_t(stack[stack.size()-2]);
+                                std::size_t dest = std::size_t(stack[stack.size()-1]);
+
+                                std::cout << "\tAdd copy event for RETURNDATACOPY length = " << length << std::endl;
+                                copy_event cpy;
+                                cpy.source_id = call_id;
+                                cpy.source_type = copy_operand_type::returndata;
+                                cpy.src_address = src;
+                                cpy.destination_id = call_id;
+                                cpy.destination_type = copy_operand_type::memory;
+                                cpy.dst_address = dest;
+                                cpy.length = length;
+                                cpy.initial_rw_counter = rw_counter;
+                                cpy.bytes = {};
+
+                                // add read operations on return data?
+                                for( std::size_t i = 0; i < length; i++){
+                                    _rw_operations.push_back(memory_rw_operation(call_id, dest+i, rw_counter++, true, memory_next[dest+i]));
+                                    cpy.bytes.push_back(memory_next[dest+i]); //TODO: change it on return data?
+                                }
+                                //_copy_events.push_back(cpy);
+                                memory_size_before = memory_next.size();
                                 // Where will consistency check be done?
                             } else if(opcode == "EXTCODEHASH") {
                                 // 0x3f
@@ -572,14 +609,35 @@ namespace nil {
                                 // TODO: add trasient storage write operations
                             } else if(opcode == "MCOPY") {
                                 // 0x5d
-                                std::cout << "MCOPY not implemented. Add copy event" << std::endl;
+                                std::cout << "MCOPY not tested" << std::endl;
                                 exit(2);
                                 _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-3, rw_counter++, false, stack[stack.size()-3]));
                                 _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-2, rw_counter++, false, stack[stack.size()-2]));
                                 _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-1, rw_counter++, false, stack[stack.size()-1]));
 
-                                // TODO: add length read operations to memory
-                                // TODO: add length write operations to memory
+                                std::size_t length = std::size_t(stack[stack.size()-3]);
+                                std::size_t src = std::size_t(stack[stack.size()-2]);
+                                std::size_t dest = std::size_t(stack[stack.size()-1]);
+
+                                std::cout << "\tAdd copy event for MCOPY length = " << length << std::endl;
+                                copy_event cpy;
+                                cpy.source_id = call_id;
+                                cpy.source_type = copy_operand_type::bytecode;
+                                cpy.src_address = src;
+                                cpy.destination_id = call_id;
+                                cpy.destination_type = copy_operand_type::memory;
+                                cpy.dst_address = dest;
+                                cpy.length = length;
+                                cpy.initial_rw_counter = rw_counter;
+                                cpy.bytes = {};
+
+                                for( std::size_t i = 0; i < length; i++){
+                                    _rw_operations.push_back(memory_rw_operation(call_id, dest+i, rw_counter++, false, memory_next[src+i]));
+                                    _rw_operations.push_back(memory_rw_operation(call_id, dest+i, rw_counter++, true, memory_next[dest+i]));
+                                    cpy.bytes.push_back(memory_next[dest+i]); //TODO: change it on memory?
+                                }
+                                _copy_events.push_back(cpy);
+                                memory_size_before = memory_next.size();
                                 // Consistensy will be checked by copy circuit
                             }  else  if(opcode == "PUSH0") {
                                 // 0x5f
@@ -844,32 +902,150 @@ namespace nil {
                                 // 0xa0
                                 _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-1, rw_counter++, false, stack[stack.size()-1]));
                                 _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-2, rw_counter++, false, stack[stack.size()-2]));
+
+                                std::size_t length = std::size_t(stack[stack.size()-2]);
+                                std::size_t dest = std::size_t(stack[stack.size()-1]);
+
+                                std::cout << "\tAdd copy event for LOG0"<< std::endl;
+                                copy_event cpy;
+                                cpy.source_id = call_id;
+                                cpy.source_type = copy_operand_type::log;
+                                cpy.src_address = 0;
+                                cpy.destination_id = call_id;
+                                cpy.destination_type = copy_operand_type::memory;
+                                cpy.dst_address = dest;
+                                cpy.length = length;
+                                cpy.initial_rw_counter = rw_counter;
+                                cpy.bytes = {};
+
+                                //Add read operations on log?
+                                for( std::size_t i = 0; i < length; i++){
+                                    _rw_operations.push_back(memory_rw_operation(call_id, dest+i, rw_counter++, true, memory_next[dest+i]));
+                                    cpy.bytes.push_back(memory_next[dest+i]); //TODO use log data
+                                }
+                                _copy_events.push_back(cpy);
+                                memory_size_before = memory_next.size();
                             } else if(opcode == "LOG1") {
                                 // 0xa1
                                 _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-1, rw_counter++, false, stack[stack.size()-1]));
                                 _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-2, rw_counter++, false, stack[stack.size()-2]));
                                 _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-3, rw_counter++, false, stack[stack.size()-3]));
+
+                                std::size_t length = std::size_t(stack[stack.size()-2]);
+                                std::size_t dest = std::size_t(stack[stack.size()-1]);
+
+                                std::cout << "\tAdd copy event for LOG1"<< std::endl;
+                                copy_event cpy;
+                                cpy.source_id = call_id;
+                                cpy.source_type = copy_operand_type::log;
+                                cpy.src_address = 0;
+                                cpy.destination_id = call_id;
+                                cpy.destination_type = copy_operand_type::memory;
+                                cpy.dst_address = dest;
+                                cpy.length = length;
+                                cpy.initial_rw_counter = rw_counter;
+                                cpy.bytes = {};
+
+                                for( std::size_t i = 0; i < length; i++){
+                                    _rw_operations.push_back(memory_rw_operation(call_id, dest+i, rw_counter++, true, memory_next[dest+i]));
+                                    cpy.bytes.push_back(memory_next[dest+i]); //TODO use log data
+                                }
+                                //_copy_events.push_back(cpy);
+                                memory_size_before = memory_next.size();
                             } else if(opcode == "LOG2") {
-                                // 0xa2
+                                //0xa2
                                 _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-1, rw_counter++, false, stack[stack.size()-1]));
                                 _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-2, rw_counter++, false, stack[stack.size()-2]));
                                 _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-3, rw_counter++, false, stack[stack.size()-3]));
                                 _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-4, rw_counter++, false, stack[stack.size()-4]));
+
+                                std::size_t length = std::size_t(stack[stack.size()-2]);
+                                std::size_t dest = std::size_t(stack[stack.size()-1]);
+
+                                std::cout << "\tAdd copy event for LOG2"<< std::endl;
+                                copy_event cpy;
+                                cpy.source_id = call_id;
+                                cpy.source_type = copy_operand_type::log;
+                                cpy.src_address = 0;
+                                cpy.destination_id = call_id;
+                                cpy.destination_type = copy_operand_type::memory;
+                                cpy.dst_address = dest;
+                                cpy.length = length;
+                                cpy.initial_rw_counter = rw_counter;
+                                cpy.bytes = {};
+                                std::cout << "memory_size_before: " << memory_next.size() << std::endl;
+                                std::cout << "dest: " << dest << std::endl;
+                                std::cout << "length: " << length << std::endl;
+                                for( std::size_t i = 0; i < length; i++){
+                                    _rw_operations.push_back(memory_rw_operation(call_id, dest+i, rw_counter++, true, memory_next[dest+i]));
+                                    cpy.bytes.push_back(memory_next[dest+i]); //TODO use log data
+                                }
+                                std::cout << "memory_size_after: " << memory_next.size() << std::endl;
+                                //_copy_events.push_back(cpy);
+                                memory_size_before = memory_next.size();
                             } else if(opcode == "LOG3") {
                                 // 0xa3
-                                _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-5, rw_counter++, false, stack[stack.size()-1]));
-                                _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-4, rw_counter++, false, stack[stack.size()-2]));
+                                _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-1, rw_counter++, false, stack[stack.size()-1]));
+                                _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-2, rw_counter++, false, stack[stack.size()-2]));
                                 _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-3, rw_counter++, false, stack[stack.size()-3]));
-                                _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-2, rw_counter++, false, stack[stack.size()-4]));
-                                _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-1, rw_counter++, false, stack[stack.size()-5]));
+                                _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-4, rw_counter++, false, stack[stack.size()-4]));
+                                _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-5, rw_counter++, false, stack[stack.size()-5]));
+
+                                std::size_t length = std::size_t(stack[stack.size()-2]);
+                                std::size_t dest = std::size_t(stack[stack.size()-1]);
+
+                                std::cout << "\tAdd copy event for LOG3"<< std::endl;
+                                copy_event cpy;
+                                cpy.source_id = call_id;
+                                cpy.source_type = copy_operand_type::log;
+                                cpy.src_address = 0;
+                                cpy.destination_id = call_id;
+                                cpy.destination_type = copy_operand_type::memory;
+                                cpy.dst_address = dest;
+                                cpy.length = length;
+                                cpy.initial_rw_counter = rw_counter;
+                                cpy.bytes = {};
+
+                                for( std::size_t i = 0; i < length; i++){
+                                    _rw_operations.push_back(memory_rw_operation(call_id, dest+i, rw_counter++, true, memory_next[dest+i]));
+                                    cpy.bytes.push_back(memory_next[dest+i]); //TODO use log data
+                                }
+                                //_copy_events.push_back(cpy);
+                                memory_size_before = memory_next.size();
                             } else if(opcode == "LOG4") {
                                 // 0xa4
-                                _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-6, rw_counter++, false, stack[stack.size()-1]));
-                                _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-5, rw_counter++, false, stack[stack.size()-2]));
-                                _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-4, rw_counter++, false, stack[stack.size()-3]));
-                                _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-3, rw_counter++, false, stack[stack.size()-4]));
-                                _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-2, rw_counter++, false, stack[stack.size()-5]));
-                                _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-1, rw_counter++, false, stack[stack.size()-6]));
+                                _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-1, rw_counter++, false, stack[stack.size()-1]));
+                                _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-2, rw_counter++, false, stack[stack.size()-2]));
+                                _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-3, rw_counter++, false, stack[stack.size()-3]));
+                                _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-4, rw_counter++, false, stack[stack.size()-4]));
+                                _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-5, rw_counter++, false, stack[stack.size()-5]));
+                                _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-6, rw_counter++, false, stack[stack.size()-6]));
+
+                                std::size_t length = std::size_t(stack[stack.size()-2]);
+                                std::size_t dest = std::size_t(stack[stack.size()-1]);
+
+                                std::cout << "\tAdd copy event for LOG4"<< std::endl;
+                                copy_event cpy;
+                                cpy.source_id = call_id;
+                                cpy.source_type = copy_operand_type::log;
+                                cpy.src_address = 0;
+                                cpy.destination_id = call_id;
+                                cpy.destination_type = copy_operand_type::memory;
+                                cpy.dst_address = dest;
+                                cpy.length = length;
+                                cpy.initial_rw_counter = rw_counter;
+                                cpy.bytes = {};
+                                std::cout << "memory_size_before: " << memory_next.size() << std::endl;
+                                std::cout << "dest: " << dest << std::endl;
+                                std::cout << "length: " << length << std::endl;
+
+                                for( std::size_t i = 0; i < length; i++){
+                                    _rw_operations.push_back(memory_rw_operation(call_id, dest+i, rw_counter++, true, memory_next[dest+i]));
+                                    cpy.bytes.push_back(memory_next[dest+i]); //TODO use log data
+                                }
+                                std::cout << "memory_size_after: " << memory_next.size() << std::endl;
+                                //_copy_events.push_back(cpy);
+                                memory_size_before = memory_next.size();
                             } else if(opcode == "CREATE") {
                                 // 0xf0
                                 _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-3, rw_counter++, false, stack[stack.size()-1]));

@@ -39,7 +39,7 @@ namespace nil {
             class opcode_abstract;
 
             template<typename FieldType, GenerationStage stage>
-            class zkevm_mcopy_bbf : generic_component<FieldType, stage> {
+            class zkevm_codecopy_bbf : generic_component<FieldType, stage> {
                 using typename generic_component<FieldType, stage>::context_type;
                 using generic_component<FieldType, stage>::allocate;
                 using generic_component<FieldType, stage>::copy_constrain;
@@ -50,48 +50,35 @@ namespace nil {
               public:
                 using typename generic_component<FieldType, stage>::TYPE;
 
-                zkevm_mcopy_bbf(context_type &context_object,
-                                const opcode_input_type<FieldType, stage> &current_state)
+                zkevm_codecopy_bbf(
+                    context_type &context_object,
+                    const opcode_input_type<FieldType, stage> &current_state)
                     : generic_component<FieldType, stage>(context_object, false) {
                     using Word_Size = typename bbf::word_size<FieldType, stage>;
                     using Memory_Cost = typename bbf::memory_cost<FieldType, stage>;
 
-                    TYPE destOffset, offset, maxOffset, length, current_mem, next_mem,
-                        memory_expansion_cost, memory_expansion_size, S, M;
-
-                    // In other copy operation, memory is expanded if
-                    // destOffset + length > current_memory
-
-                    // In MCOPY, memory can also be extended if
-                    // offset + length > current_memory
+                    TYPE destOffset, offset, length, current_mem, next_mem,
+                        memory_expansion_cost, memory_expansion_size, S;
 
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
                         destOffset = w_lo<FieldType>(current_state.stack_top());
                         offset = w_lo<FieldType>(current_state.stack_top(1));
                         length = w_lo<FieldType>(current_state.stack_top(2));
                         current_mem = current_state.memory_size;
-                        maxOffset = std::max(destOffset, offset);
                         next_mem = length.is_zero()
                                        ? current_mem
-                                       : std::max(maxOffset + length, current_mem);
+                                       : std::max(destOffset + length, current_mem);
                         S = next_mem > current_mem;
-                        M = destOffset > offset;
                     }
                     allocate(destOffset, 32, 0);
                     allocate(offset, 33, 0);
                     allocate(length, 34, 0);
-                    allocate(maxOffset, 35, 0);
-                    allocate(current_mem, 36, 0);
-                    allocate(next_mem, 37, 0);
-                    allocate(S, 38, 0);
-                    allocate(M, 39, 0);
+                    allocate(current_mem, 35, 0);
+                    allocate(next_mem, 36, 0);
+                    allocate(S, 37, 0);
 
                     constrain(S * (S - 1));
-                    constrain(M * (M - 1));
-
-                    constrain(M * (destOffset - maxOffset) +
-                              (M - 1) * (offset - maxOffset));
-                    constrain(S * (next_mem - maxOffset - length) +
+                    constrain(S * (next_mem - destOffset - length) +
                               (1 - S) * (next_mem - current_mem));
 
                     std::vector<std::size_t> word_size_lookup_area = {32, 33, 34};
@@ -114,23 +101,25 @@ namespace nil {
                     memory_expansion_cost = next_memory.cost - current_memory.cost;
                     memory_expansion_size =
                         (next_memory.word_size - current_memory.word_size) * 32;
+
                     Word_Size minimum_word = Word_Size(word_size_ct, length);
 
                     if constexpr (stage == GenerationStage::CONSTRAINTS) {
-                        constrain(current_state.pc_next() - current_state.pc(0) -
-                                  1);  // PC transition
+                        constrain(current_state.pc_next() - current_state.pc(0) - 1);
+                        // PC transition
                         constrain(current_state.gas(0) - current_state.gas_next() - 3 -
-                                  3 * minimum_word.size -
-                                  memory_expansion_cost);  // GAS transition
+                                  3 * minimum_word.size - memory_expansion_cost);
+                        // GAS transition
                         constrain(current_state.stack_size(0) -
-                                  current_state.stack_size_next() -
-                                  3);  // stack_size transition
-                        constrain(current_state.memory_size_next() -
-                                  current_state.memory_size(0) -
-                                  memory_expansion_size);  // memory_size transition
+                                  current_state.stack_size_next() - 3);
+                        // stack_size transition
+                        constrain(current_state.memory_size(0) -
+                                  current_state.memory_size_next() -
+                                  memory_expansion_size);
+                        // memory_size transition
                         constrain(current_state.rw_counter_next() -
-                                  current_state.rw_counter(0) - 3 -
-                                  2 * length);  // rw_counter transition
+                                  current_state.rw_counter(0) - 3 - length);
+                        // rw_counter transition
                         std::vector<TYPE> tmp;
                         tmp = {TYPE(rw_op_to_num(rw_operation_type::stack)),
                                current_state.call_id(0),
@@ -172,7 +161,7 @@ namespace nil {
             };
 
             template<typename FieldType>
-            class zkevm_mcopy_operation : public opcode_abstract<FieldType> {
+            class zkevm_codecopy_operation : public opcode_abstract<FieldType> {
               public:
                 virtual std::size_t rows_amount() override { return 2; }
                 virtual void fill_context(
@@ -180,7 +169,7 @@ namespace nil {
                         FieldType, GenerationStage::ASSIGNMENT>::context_type &context,
                     const opcode_input_type<FieldType, GenerationStage::ASSIGNMENT>
                         &current_state) override {
-                    zkevm_mcopy_bbf<FieldType, GenerationStage::ASSIGNMENT> bbf_obj(
+                    zkevm_codecopy_bbf<FieldType, GenerationStage::ASSIGNMENT> bbf_obj(
                         context, current_state);
                 }
                 virtual void fill_context(
@@ -188,7 +177,7 @@ namespace nil {
                         FieldType, GenerationStage::CONSTRAINTS>::context_type &context,
                     const opcode_input_type<FieldType, GenerationStage::CONSTRAINTS>
                         &current_state) override {
-                    zkevm_mcopy_bbf<FieldType, GenerationStage::CONSTRAINTS> bbf_obj(
+                    zkevm_codecopy_bbf<FieldType, GenerationStage::CONSTRAINTS> bbf_obj(
                         context, current_state);
                 }
             };

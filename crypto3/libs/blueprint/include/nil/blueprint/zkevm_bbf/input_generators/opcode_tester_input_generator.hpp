@@ -64,7 +64,7 @@ namespace nil {
                     std::size_t gas = initial_gas;
                     std::vector<zkevm_word_type> stack;
                     zkevm_word_type bytecode_hash = _bytecodes.get_data()[current_buffer_id].second;
-                    const std::map<std::size_t, std::uint8_t> memory;
+                    std::map<std::size_t, std::uint8_t> memory;
                     const std::map<zkevm_word_type, zkevm_word_type> storage;
 
                     while(true){
@@ -484,6 +484,39 @@ namespace nil {
                             stack.push_back(result);
                             pc++;
                             gas -= 3;
+                        }else if(opcode == zkevm_opcode::CALLDATACOPY){
+                            // 0x37
+                            
+                            auto destOffset = std::size_t(stack.back());
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, destOffset));
+
+                            auto offset = std::size_t(stack.back());
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, offset));
+
+                            auto length = std::size_t(stack.back());
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, length));
+
+                            for( std::size_t i = 0; i < length; i++){
+                                _rw_operations.push_back(memory_rw_operation(call_id, stack.size(), rw_counter++, true, 0)); // placeholder
+                            }
+
+                            std::size_t minimum_word_size = (length + 31) / 32;
+                            std::size_t next_mem = std::max(destOffset + length, state.memory_size);
+                            std::size_t memory_expansion = memory_expansion_cost(next_mem, state.memory_size);
+                            std::size_t next_memory_size = (memory_size_word_util(next_mem))*32;
+
+                            
+                            //placeholder values to mimic memory expansion
+                            for (std::size_t i = 0; i < next_memory_size; ++i) {
+                                memory[i] = static_cast<std::uint8_t>(i);
+                            }
+
+                            gas-=3; //static gas
+                            gas -= 3 * minimum_word_size + memory_expansion; //dynamic gas
+                            pc++;
                         } else if(opcode == zkevm_opcode::JUMP){
                             // 0x56
                             auto addr = std::size_t(stack.back());
@@ -703,6 +736,169 @@ namespace nil {
                             stack.push_back(additional_input);
                             gas -= 3;
                             pc += 33;
+                        } else if(opcode == zkevm_opcode::LOG0){
+                            // 0xA0
+                            auto offset = std::size_t(stack.back());
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, offset));
+
+                            auto length = std::size_t(stack.back());
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, length));
+
+                            for( std::size_t i = 0; i < length; i++){
+                                _rw_operations.push_back(memory_rw_operation(call_id, stack.size(), rw_counter++, true, 0)); // placeholder
+                            }
+
+                            std::size_t next_mem = std::max(offset + length, state.memory_size);
+                            std::size_t memory_expansion = memory_expansion_cost(next_mem, state.memory_size);
+
+                            std::size_t next_memory_size = (memory_size_word_util(next_mem))*32;
+                            
+                            //placeholder values to mimic memory expansion
+                            for (std::size_t i = 0; i < next_memory_size; ++i) {
+                                memory[i] = static_cast<std::uint8_t>(i);
+                            }
+                            gas-=375; //static gas
+                            gas -= 8 * length + memory_expansion; //dynamic gas
+                            pc++;
+                        } else if(opcode == zkevm_opcode::LOG1){
+                            // 0xA1
+                            auto offset = std::size_t(stack.back());
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, offset));
+
+                            auto length = std::size_t(stack.back());
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, length));
+
+                            auto topic1 = stack.back();
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, topic1));
+
+                            
+                            for( std::size_t i = 0; i < length; i++){
+                                _rw_operations.push_back(memory_rw_operation(call_id, stack.size(), rw_counter++, true, 0)); // placeholder
+                            }
+                            
+                            std::size_t next_mem = std::max(offset + length, state.memory_size);
+                            std::size_t memory_expansion = memory_expansion_cost(next_mem, state.memory_size);
+                            std::size_t next_memory_size = (memory_size_word_util(next_mem))*32;
+                            //placeholder values to mimic memory expansion
+                            for (std::size_t i = 0; i < next_memory_size; ++i) {
+                                memory[i] = static_cast<std::uint8_t>(i);
+                            }
+                            gas-=375; //static gas
+                            gas -= 375 + 8 * length + memory_expansion; //dynamic gas
+                            pc++;
+                        } else if(opcode == zkevm_opcode::LOG2){
+                            // 0xA2
+                            auto offset = std::size_t(stack.back());
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, offset));
+
+                            auto length = std::size_t(stack.back());
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, length));
+
+                            auto topic1 = stack.back();
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, topic1));
+
+                            auto topic2 = stack.back();
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, topic2));
+
+                            for( std::size_t i = 0; i < length; i++){
+                                _rw_operations.push_back(memory_rw_operation(call_id, stack.size(), rw_counter++, true, 0)); // placeholder
+                            }
+                            
+                            std::size_t next_mem = std::max(offset + length, state.memory_size);
+                            std::size_t memory_expansion = memory_expansion_cost(next_mem, state.memory_size);
+                            std::size_t next_memory_size = (memory_size_word_util(next_mem))*32;
+                            //placeholder values to mimic memory expansion
+                            for (std::size_t i = 0; i < next_memory_size; ++i) {
+                                memory[i] = static_cast<std::uint8_t>(i);
+                            }
+                            gas-=375; //static gas
+                            gas -= 375 * 2 + 8 * length + memory_expansion; //dynamic gas
+                            pc++;
+                        } else if(opcode == zkevm_opcode::LOG3){
+                            // 0xA3
+                            auto offset = std::size_t(stack.back());
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, offset));
+
+                            auto length = std::size_t(stack.back());
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, length));
+
+                            auto topic1 = stack.back();
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, topic1));
+
+                            auto topic2 = stack.back();
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, topic2));
+
+                            auto topic3 = stack.back();
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, topic3));
+
+                            for( std::size_t i = 0; i < length; i++){
+                                _rw_operations.push_back(memory_rw_operation(call_id, stack.size(), rw_counter++, true, 0)); // placeholder
+                            }
+                            
+                            std::size_t next_mem = std::max(offset + length, state.memory_size);
+                            std::size_t memory_expansion = memory_expansion_cost(next_mem, state.memory_size);
+                            std::size_t next_memory_size = (memory_size_word_util(next_mem))*32;
+                            //placeholder values to mimic memory expansion
+                            for (std::size_t i = 0; i < next_memory_size; ++i) {
+                                memory[i] = static_cast<std::uint8_t>(i);
+                            }
+                            gas-=375; //static gas
+                            gas -= 375 * 3 + 8 * length + memory_expansion; //dynamic gas
+                            pc++;
+                        } else if(opcode == zkevm_opcode::LOG4){
+                            // 0xA4
+                            auto offset = std::size_t(stack.back());
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, offset));
+
+                            auto length = std::size_t(stack.back());
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, length));
+
+                            auto topic1 = stack.back();
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, topic1));
+
+                            auto topic2 = stack.back();
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, topic2));
+
+                            auto topic3 = stack.back();
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, topic3));
+
+                            auto topic4 = stack.back();
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, topic4));
+
+                            for( std::size_t i = 0; i < length; i++){
+                                _rw_operations.push_back(memory_rw_operation(call_id, stack.size(), rw_counter++, true, 0)); // placeholder
+                            }
+                            
+                            std::size_t next_mem = std::max(offset + length, state.memory_size);
+                            std::size_t memory_expansion = memory_expansion_cost(next_mem, state.memory_size);
+                            std::size_t next_memory_size = (memory_size_word_util(next_mem))*32;
+                            //placeholder values to mimic memory expansion
+                            for (std::size_t i = 0; i < next_memory_size; ++i) {
+                                memory[i] = static_cast<std::uint8_t>(i);
+                            }
+                            gas-=375; //static gas
+                            gas -= 375 * 4 + 8 * length + memory_expansion; //dynamic gas
+                            pc++;
                         } else {
                             std::cout << "Opcode tester machine doesn't contain " << opcode << " implementation" << std::endl;
                             BOOST_ASSERT(false);
