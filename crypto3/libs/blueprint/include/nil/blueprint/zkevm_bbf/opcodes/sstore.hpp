@@ -144,6 +144,7 @@ namespace nil {
                         std::cout << "\tw_counter_before = " << w_counter_before << std::endl;
                         std::cout << "\tis_cold = " << is_cold << std::endl;
                         std::cout << "\tis_clean = " << is_clean << std::endl;
+                        std::cout << "\tis_equal = " << is_equal << std::endl;
                         std::cout << "\tblock_id = " << block_id << std::endl;
                         std::cout << "\ttx_id = " << tx_id << std::endl;
                     }
@@ -198,12 +199,17 @@ namespace nil {
                     constrain(is_equal_lo - (1 - (U_128.second - V_128.second) * R_lo_inv));
                     constrain(is_equal - is_equal_hi * is_equal_lo);
 
-                    // TODO: Cluster has another formula
                     TYPE gas_cost =
+                        100 +                                             // is_dirty anyway
+                        is_cold * 2100 +                                  // is_cold
+                        is_clean * (1 - is_equal) * is_U_zero * 19900 +   // is_clean => is_cold
+                        is_clean * (1 - is_equal) * (1 - is_U_zero) * 2800;
+                    // TODO: Formula from cluster comments
+                    /* TYPE gas_cost =
                         is_equal * 200 +
                         is_cold *  1900 +
                         (1 - is_equal) * is_clean  * (is_U_zero * 20000 + (1 - is_U_zero) * 5000) +
-                        (1 - is_equal) * (1 - is_clean) * 200;
+                        (1 - is_equal) * (1 - is_clean) * 200;*/
                     std::cout << "\tGas cost = " << gas_cost << std::endl;
 
                     // TODO: Append refunds
