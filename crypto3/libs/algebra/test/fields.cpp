@@ -357,27 +357,6 @@ BOOST_DATA_TEST_CASE(field_operation_test_goldilocks64_fq, string_data("field_op
     field_operation_test<policy_type>(data_set);
 }
 
-// BOOST_DATA_TEST_CASE(field_operation_test_mersenne31,
-//                      string_data("field_operation_test_mersenne31"), data_set) {
-//     using policy_type = fields::mersenne31;
-
-//     field_operation_test<policy_type>(data_set);
-// }
-
-// BOOST_DATA_TEST_CASE(field_operation_test_koalabear,
-//                      string_data("field_operation_test_koalabear"), data_set) {
-//     using policy_type = fields::koalabear;
-
-//     field_operation_test<policy_type>(data_set);
-// }
-
-// BOOST_DATA_TEST_CASE(field_operation_test_babybear,
-//                      string_data("field_operation_test_babybear"), data_set) {
-//     using policy_type = fields::babybear;
-
-//     field_operation_test<policy_type>(data_set);
-// }
-
 BOOST_DATA_TEST_CASE(field_operation_test_bls12_381_fr, string_data("field_operation_test_bls12_381_fr"), data_set) {
     using policy_type = fields::bls12_fr<381>;
 
@@ -594,30 +573,6 @@ BOOST_DATA_TEST_CASE(field_not_square_test_goldilocks64_base_field, string_data(
 
     field_not_square_test<policy_type>(data_set);
 }
-
-// BOOST_DATA_TEST_CASE(field_not_square_test_mersenne31_base_field,
-//                      string_data("field_not_square_test_mersenne31_base_field"),
-//                      data_set) {
-//     using policy_type = typename fields::mersenne31_base_field;
-
-//     field_not_square_test<policy_type>(data_set);
-// }
-
-// BOOST_DATA_TEST_CASE(field_not_square_test_koalabear_base_field,
-//                      string_data("field_not_square_test_koalabear_base_field"),
-//                      data_set) {
-//     using policy_type = typename fields::koalabear_base_field;
-
-//     field_not_square_test<policy_type>(data_set);
-// }
-
-// BOOST_DATA_TEST_CASE(field_not_square_test_babybear_base_field,
-//                      string_data("field_not_square_test_babybear_base_field"),
-//                      data_set) {
-//     using policy_type = typename fields::babybear_base_field;
-
-//     field_not_square_test<policy_type>(data_set);
-// }
 
 BOOST_AUTO_TEST_CASE(field_not_square_test_secp_k1) {
 
