@@ -65,7 +65,7 @@ namespace nil {
                         typedef base_field_type underlying_field_type;
                         typedef typename underlying_field_type::value_type underlying_type;
 
-                        constexpr static const std::size_t s = 0x04;
+                        constexpr static const std::size_t two_adicity = 0x04;
                         constexpr static const extended_integral_type t =
                             0x925C4B8763CBF9C599A6F7C0348D21CB00B85511637560626EDFA5C34C6B38D04689E957A1242C84A50189C6D96CADCA602072D09EAC1013B5458A2275D69B_big_uint504;
                         constexpr static const extended_integral_type t_minus_1_over_2 =
@@ -94,7 +94,8 @@ namespace nil {
                         fp2_extension_params<alt_bn128_base_field<Version>>::non_residue;
 
                     template<std::size_t Version>
-                    constexpr typename std::size_t const fp2_extension_params<alt_bn128_base_field<Version>>::s;
+                    constexpr typename std::size_t const
+                        fp2_extension_params<alt_bn128_base_field<Version>>::two_adicity;
 
                     template<std::size_t Version>
                     constexpr typename fp2_extension_params<alt_bn128_base_field<Version>>::extended_integral_type const

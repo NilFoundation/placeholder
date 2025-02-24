@@ -204,7 +204,7 @@ namespace nil {
 
                             element_fp2 one = this->one();
 
-                            std::size_t v = policy_type::s;
+                            std::size_t v = policy_type::two_adicity;
                             element_fp2 z(policy_type::nqr_to_t[0], policy_type::nqr_to_t[1]);
                             element_fp2 w = this->pow(policy_type::t_minus_1_over_2);
                             element_fp2 x((*this) * w);

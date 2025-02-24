@@ -52,7 +52,9 @@ namespace nil {
                 bool is_basic_radix2_domain(std::size_t m) {
                     const std::size_t log_m = static_cast<std::size_t>(std::ceil(std::log2(m)));
 
-                    return (m > 1) && (log_m <= fields::arithmetic_params<FieldType>::s) && (m == (1ul << log_m));
+                    return (m > 1) &&
+                           (log_m <= fields::arithmetic_params<FieldType>::two_adicity) &&
+                           (m == (1ul << log_m));
                 }
 
                 template<typename FieldType>
@@ -61,9 +63,12 @@ namespace nil {
                     const std::size_t small_m = m / 2;
                     const std::size_t log_small_m = static_cast<std::size_t>(std::ceil(std::log2(small_m)));
 
-                    return (m > 1) && (log_m == fields::arithmetic_params<FieldType>::s + 1) &&
+                    return (m > 1) &&
+                           (log_m ==
+                            fields::arithmetic_params<FieldType>::two_adicity + 1) &&
                            (small_m == (1ul << log_small_m)) &&
-                           (log_small_m <= fields::arithmetic_params<FieldType>::s);
+                           (log_small_m <=
+                            fields::arithmetic_params<FieldType>::two_adicity);
                 }
 
                 template<typename FieldType>
@@ -74,8 +79,10 @@ namespace nil {
                     const std::size_t small_m = m - (1ul << (static_cast<std::size_t>(std::ceil(std::log2(m))) - 1));
                     const std::size_t log_small_m = static_cast<std::size_t>(std::ceil(std::log2(small_m)));
 
-                    return (m > 1) && (small_m == (1ul << log_small_m)) && (shift_log_m == (1ul << log_shift_log_m)) &&
-                           (log_shift_log_m <= fields::arithmetic_params<FieldType>::s);
+                    return (m > 1) && (small_m == (1ul << log_small_m)) &&
+                           (shift_log_m == (1ul << log_shift_log_m)) &&
+                           (log_shift_log_m <=
+                            fields::arithmetic_params<FieldType>::two_adicity);
                 }
 
                 template<typename FieldType>

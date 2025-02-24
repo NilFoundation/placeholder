@@ -34,7 +34,7 @@
 namespace nil::crypto3::algebra::fields {
     template<>
     struct arithmetic_params<babybear_base_field> : public params<babybear_base_field> {
-        constexpr static std::size_t s = 27;
+        constexpr static std::size_t two_adicity = 27;
         constexpr static integral_type arithmetic_generator = 1u;
         constexpr static integral_type geometric_generator = 0x02;
         constexpr static integral_type multiplicative_generator = 31u;
