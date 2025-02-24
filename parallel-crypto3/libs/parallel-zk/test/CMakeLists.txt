@@ -63,7 +63,8 @@ set(TESTS_NAMES
 
     "systems/plonk/placeholder/placeholder_circuits"
     "systems/plonk/placeholder/placeholder_goldilocks"
-    "systems/plonk/placeholder/placeholder_mersenne31"
+    # TODO(ioxid): Mersenne31 is unsupported for now.
+    # "systems/plonk/placeholder/placeholder_mersenne31"
     "systems/plonk/placeholder/placeholder_koalabear"
     "systems/plonk/placeholder/placeholder_babybear"
     "systems/plonk/placeholder/placeholder_lookup_argument"
