@@ -22,7 +22,7 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE blueprint_plonk_opcodes_test_pc
+#define BOOST_TEST_MODULE blueprint_plonk_opcodes_test_msize
 
 #include <boost/assert.hpp>
 #include <boost/test/unit_test.hpp>
@@ -61,18 +61,27 @@ using namespace nil::blueprint::bbf;
 // Remember that in production sizes should be preset.
 // Here they are different for different tests just for fast and easy testing
 BOOST_FIXTURE_TEST_SUITE(zkevm_opcode_test_suite, zkEVMOpcodeTestFixture)
-BOOST_AUTO_TEST_CASE(pc) {
+BOOST_AUTO_TEST_CASE(msize) {
     using field_type = typename algebra::curves::pallas::base_field_type;
     zkevm_opcode_tester opcode_tester;
 
     l1_size_restrictions max_sizes;
 
-    opcode_tester.push_opcode(zkevm_opcode::PC);
-    opcode_tester.push_opcode(zkevm_opcode::PC);
-    opcode_tester.push_opcode(zkevm_opcode::JUMPDEST);
-    opcode_tester.push_opcode(zkevm_opcode::PC);
-    opcode_tester.push_opcode(zkevm_opcode::PUSH1, hex_string_to_bytes("0x01"));
-    opcode_tester.push_opcode(zkevm_opcode::PC);
+    opcode_tester.push_opcode(zkevm_opcode::MSIZE); 
+    opcode_tester.push_opcode(zkevm_opcode::PUSH5, hex_string_to_bytes("0x68656c6c6f"));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH1, hex_string_to_bytes("0x10"));
+    opcode_tester.push_opcode(zkevm_opcode::MSTORE);
+    opcode_tester.push_opcode(zkevm_opcode::MSIZE);
+    opcode_tester.push_opcode(zkevm_opcode::PUSH1, hex_string_to_bytes("0x20"));
+    opcode_tester.push_opcode(zkevm_opcode::MLOAD);
+    opcode_tester.push_opcode(zkevm_opcode::MSIZE);
+    opcode_tester.push_opcode(zkevm_opcode::PUSH1, hex_string_to_bytes("0x10"));
+    opcode_tester.push_opcode(zkevm_opcode::MLOAD);
+    opcode_tester.push_opcode(zkevm_opcode::MSIZE);
+    opcode_tester.push_opcode(zkevm_opcode::PUSH2, hex_string_to_bytes("0xFFFF"));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH1, hex_string_to_bytes("0x40"));
+    opcode_tester.push_opcode(zkevm_opcode::MSTORE8);
+    opcode_tester.push_opcode(zkevm_opcode::MSIZE);
     opcode_tester.push_opcode(zkevm_opcode::STOP);
 
 
