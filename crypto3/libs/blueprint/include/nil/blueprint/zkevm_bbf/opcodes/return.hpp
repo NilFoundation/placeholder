@@ -28,6 +28,7 @@
 #include <algorithm>
 
 #include <nil/blueprint/zkevm/zkevm_word.hpp>
+#include <nil/blueprint/zkevm_bbf/subcomponents/memory_cost.hpp>
 #include <nil/blueprint/zkevm_bbf/types/copy_event.hpp>
 #include <nil/blueprint/zkevm_bbf/types/opcode.hpp>
 
@@ -49,16 +50,39 @@ namespace nil {
                 using typename generic_component<FieldType,stage>::TYPE;
 
                 zkevm_return_bbf(context_type &context_object, const opcode_input_type<FieldType, stage> &current_state):
-                    generic_component<FieldType,stage>(context_object, false)
-                {
-                    TYPE offset;
-                    TYPE length;
+                    generic_component<FieldType,stage>(context_object, false){
+                    using Memory_Cost = typename bbf::memory_cost<FieldType, stage>;
+                    
+                    TYPE offset, length, current_mem, next_mem, memory_expansion_cost, memory_expansion_size, S;
                     if constexpr( stage == GenerationStage::ASSIGNMENT ){
                         offset = w_lo<FieldType>(current_state.stack_top());
                         length = w_lo<FieldType>(current_state.stack_top(1));
+                        current_mem = current_state.memory_size;
+                        next_mem = length.is_zero()? current_mem : std::max(offset + length, current_mem);
+                        S = next_mem > current_mem;
                     }
                     allocate(offset, 32, 0);
                     allocate(length, 33, 0);
+                    allocate(current_mem, 34, 0);
+                    allocate(next_mem, 35, 0);
+                    allocate(S, 36, 0);
+
+                    allocate(memory_expansion_cost, 32, 1);
+                    allocate(memory_expansion_size, 33, 1);
+                    std::vector<std::size_t> memory_cost_lookup_area = {42, 43, 44,
+                                                                        45, 46, 47};
+
+                    context_type current_memory_ct =
+                        context_object.subcontext(memory_cost_lookup_area, 0, 1);
+                    context_type next_memory_ct =
+                        context_object.subcontext(memory_cost_lookup_area, 1, 1);
+
+                    Memory_Cost current_memory =
+                        Memory_Cost(current_memory_ct, current_mem);
+                    Memory_Cost next_memory = Memory_Cost(next_memory_ct, next_mem);
+                    memory_expansion_cost = next_memory.cost - current_memory.cost;
+                    memory_expansion_size =
+                        (next_memory.word_size - current_memory.word_size) * 32;
                     if constexpr( stage == GenerationStage::CONSTRAINTS ){
                         std::vector<TYPE> tmp;
                         tmp = {
@@ -111,10 +135,10 @@ namespace nil {
                         };
                         lookup(tmp, "zkevm_copy");
                         // constrain(current_state.pc_next() - current_state.pc(0) - 1);                   // PC transition
-                        // constrain(current_state.gas(0) - current_state.gas_next() - 1);                 // GAS transition
+                        // constrain(current_state.gas(0) - current_state.gas_next()  - memory_expansion_cost)  // GAS transition
                         // constrain(current_state.stack_size(0) - current_state.stack_size_next());       // stack_size transition
-                        // constrain(current_state.memory_size(0) - current_state.memory_size_next());     // memory_size transition
-                        // constrain(current_state.rw_counter_next() - current_state.rw_counter(0));       // rw_counter transition
+                        // constrain(current_state.memory_size_next() - current_state.memory_size() - memory_expansion_size);     // memory_size transition
+                        // constrain(current_state.rw_counter_next() - current_state.rw_counter(0) - length);       // rw_counter transition
                     } else {
                         // std::cout << "\tASSIGNMENT implemented" << std::endl;
                     }
