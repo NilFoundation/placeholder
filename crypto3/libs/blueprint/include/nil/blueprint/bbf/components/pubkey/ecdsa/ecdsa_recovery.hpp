@@ -39,6 +39,7 @@
 #include <nil/blueprint/bbf/generic.hpp>
 #include <nil/crypto3/algebra/curves/pallas.hpp>
 #include <nil/crypto3/algebra/curves/vesta.hpp>
+#include <nil/crypto3/algebra/curves/secp_k1.hpp>
 
 namespace nil {
     namespace blueprint {
@@ -467,7 +468,7 @@ namespace nil {
                                     ? (x1 * x1 * x1 + a).sqrt()
                                     : 1;  // should be signaled as invalid signaure
                             if (base_basic_integral_type(y1.data) % 2 !=
-                                scalar_basic_integral_type(V.data) % 2) {
+                                scalar_basic_integral_type(integral_type(V.data)) % 2) {
                                 y1 = -y1;
                             }
                             C[5] = (x1 * x1 * x1 + a - y1 * y1).is_zero();
@@ -485,10 +486,10 @@ namespace nil {
                                           .inversed();
 
                             C[7] = ((base_basic_integral_type(y1.data) % 2) ==
-                                    (scalar_basic_integral_type(V.data) % 2));
+                                    (scalar_basic_integral_type(integral_type(V.data)) % 2));
                             d2 = (base_basic_integral_type(y1.data) +
                                   base_basic_integral_type(
-                                      scalar_basic_integral_type(V.data))) /
+                                      scalar_basic_integral_type(integral_type(V.data)))) /
                                  2;
 
                             SCALAR_TYPE
@@ -752,6 +753,17 @@ namespace nil {
                                             crypto3::algebra::curves::vesta> {
                     using Base =
                         ecdsa_recovery<FieldType, stage, crypto3::algebra::curves::vesta>;
+
+                  public:
+                    using Base::Base;
+                };
+
+                template<typename FieldType, GenerationStage stage>
+                class secp_k1_256_ecdsa_recovery
+                    : public ecdsa_recovery<FieldType, stage,
+                                            crypto3::algebra::curves::secp_k1<256>> {
+                    using Base =
+                        ecdsa_recovery<FieldType, stage, crypto3::algebra::curves::secp_k1<256>>;
 
                   public:
                     using Base::Base;
