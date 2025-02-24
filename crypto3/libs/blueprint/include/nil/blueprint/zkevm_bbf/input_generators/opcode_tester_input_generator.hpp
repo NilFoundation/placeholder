@@ -517,6 +517,107 @@ namespace nil {
                             gas-=3; //static gas
                             gas -= 3 * minimum_word_size + memory_expansion; //dynamic gas
                             pc++;
+                        } else if(opcode == zkevm_opcode::MLOAD) {
+                            // 0x51
+
+                            zkevm_word_type addr = stack.back();
+                            stack.pop_back();
+                            BOOST_ASSERT_MSG(addr < 65536, "Cannot process so large memory address"); // for bigger memory operations use hardhat input generator
+                            std::cout << "\t\t Address = 0x" << std::hex << addr << std::dec << " memory size " << memory.size() << std::endl;
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, addr));
+                            for( std::size_t i = 0; i < 32; i++){
+                                _rw_operations.push_back(memory_rw_operation(call_id, addr+i, rw_counter++, false, addr+i < memory.size() ? memory[std::size_t(addr+i)]: 0));
+                            }
+                            
+                            if (addr + 32 >= memory.size()){
+                                while ((addr + 32) % 32 != 0) {
+                                    addr++;
+                                }
+                                for( std::size_t i = memory.size(); i < addr + 32; i++){
+                                    memory[i] = 0;
+                                }
+                            }
+                            std::vector<std::uint8_t> byte;
+                            std::size_t addr1 = w_to_16(addr)[15];
+                            for( std::size_t i = addr1; i < addr1 + 32; i++){
+                                byte.push_back(memory[i]);
+                            }
+                            zkevm_word_type result = zkevm_word_from_bytes(byte);
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, result));
+                            stack.push_back(result);
+                            pc++;
+                            gas -= 3;
+                        } else if(opcode == zkevm_opcode::MSTORE) {
+                            // 0x52
+                            zkevm_word_type addr = stack.back();
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, addr));
+
+                            zkevm_word_type data = stack.back();
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, data));
+
+                            auto bytes = w_to_8(data);
+                            auto addr1 = w_to_16(addr)[15];
+
+                            std::size_t memory_size_word = (memory.size() + 31) / 32;
+                            std::size_t last_memory_cost = memory_size_word * memory_size_word / 512 + (3*memory_size_word);
+
+                            if( addr1 > memory.size()){
+                                for(std::size_t i = memory.size(); i < addr1; i++){
+                                    memory[i] = 0;
+                                }
+                            }
+                            for(std::size_t i = 0; i < 32; i++){
+                                memory[addr1 + i] = bytes[i];
+                                _rw_operations.push_back(memory_rw_operation(call_id, addr1+i, rw_counter++, true, bytes[i]));
+                            }
+                            addr1+= 32;
+                            while(addr1 % 32 != 0){
+                                memory[addr1] = 0;
+                                addr1++;
+                            }
+
+                            memory_size_word = (memory.size() + 31) / 32;
+                            std::size_t new_memory_cost = memory_size_word * memory_size_word / 512 + (3*memory_size_word);
+                            std::size_t memory_expansion = new_memory_cost - last_memory_cost;
+
+                            gas -= 3 + memory_expansion;
+                            pc += 1;
+                        } else if(opcode == zkevm_opcode::MSTORE8) {
+                            // 0x53
+                            zkevm_word_type addr = stack.back();
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, addr));
+
+                            zkevm_word_type data = stack.back();
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, data));
+                            auto byte = w_to_8(data)[31];
+                            auto addr1 = w_to_16(addr)[15];
+
+                            std::size_t memory_size_word = (memory.size() + 31) / 32;
+                            std::size_t last_memory_cost = memory_size_word * memory_size_word / 512 + (3*memory_size_word);
+
+                            if( addr1 > memory.size()){
+                                for(std::size_t i = memory.size(); i < addr1; i++){
+                                    memory[i] = 0;
+                                }
+                            }
+                            memory[addr1] = byte; // write to memory
+                            _rw_operations.push_back(memory_rw_operation(call_id, addr1, rw_counter++, true, byte));
+                            addr1++;
+                            while(addr1 % 32 != 0){
+                                memory[addr1] = 0;
+                                addr1++;
+                            }
+
+                            memory_size_word = (memory.size() + 31) / 32;
+                            std::size_t new_memory_cost = memory_size_word * memory_size_word / 512 + (3*memory_size_word);
+                            std::size_t memory_expansion = new_memory_cost - last_memory_cost;
+
+                            gas -= 3 + memory_expansion;
+                            pc += 1;
                         } else if(opcode == zkevm_opcode::JUMP){
                             // 0x56
                             auto addr = std::size_t(stack.back());
@@ -540,12 +641,17 @@ namespace nil {
                             stack.push_back(pc);
                             gas -= 2;
                             pc++;
+                        } else if(opcode == zkevm_opcode::MSIZE){
+                            // 0x58
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, memory.size()));
+                            stack.push_back(memory.size());
+                            gas -= 2;
+                            pc++;
                         } else if(opcode == zkevm_opcode::GAS){
                             // 0x5a
                             gas -= 2;
                             _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, gas));
                             stack.push_back(gas);
-                            
                             pc++;
                         } else if(opcode == zkevm_opcode::JUMPDEST){
                             // 0x5b

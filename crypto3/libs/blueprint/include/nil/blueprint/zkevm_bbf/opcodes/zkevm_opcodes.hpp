@@ -83,6 +83,7 @@
 #include <nil/blueprint/zkevm_bbf/opcodes/staticcall.hpp>
 #include <nil/blueprint/zkevm_bbf/opcodes/gas.hpp>
 #include <nil/blueprint/zkevm_bbf/opcodes/pc.hpp>
+#include <nil/blueprint/zkevm_bbf/opcodes/msize.hpp>
 #include "nil/blueprint/zkevm_bbf/opcodes/logx.hpp"
 
 namespace nil {
@@ -640,6 +641,7 @@ namespace nil {
                 opcodes[zkevm_opcode::MSTORE] = std::make_shared<zkevm_mstore_operation<BlueprintFieldType>>();
                 opcodes[zkevm_opcode::MSTORE8] = std::make_shared<zkevm_mstore8_operation<BlueprintFieldType>>();
                 opcodes[zkevm_opcode::MLOAD] = std::make_shared<zkevm_mload_operation<BlueprintFieldType>>();
+                opcodes[zkevm_opcode::MSIZE] = std::make_shared<zkevm_msize_operation<BlueprintFieldType>>();
 
                 // // Storage operations
                 opcodes[zkevm_opcode::SLOAD] = std::make_shared<zkevm_sload_operation<BlueprintFieldType>>();

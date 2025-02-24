@@ -26,6 +26,13 @@ namespace nil {
                 zkevm_msize_bbf(context_type &context_object, const opcode_input_type<FieldType, stage> &current_state):
                     generic_component<FieldType,stage>(context_object, false)
                 {
+                    using integral_type = typename FieldType::integral_type;
+                    TYPE memory_words;
+                    if constexpr( stage == GenerationStage::ASSIGNMENT ){
+                        std::cout << "\tASSIGNMENT implemented" << std::endl;
+                        memory_words = integral_type(current_state.memory_size) / 32;
+                    }
+                    allocate(memory_words, 0, 0);
                     
                     if constexpr( stage == GenerationStage::CONSTRAINTS ){
                         constrain(current_state.pc_next() - current_state.pc(0) - 1);                   // PC transition
@@ -33,6 +40,7 @@ namespace nil {
                         constrain(current_state.stack_size(0) - current_state.stack_size_next() + 1);       // stack_size transition
                         constrain(current_state.memory_size(0) - current_state.memory_size_next());     // memory_size transition
                         constrain(current_state.rw_counter_next() - current_state.rw_counter(0) - 1);   // rw_counter transition
+                        constrain(current_state.memory_size(0) - 32*memory_words);
                         std::vector<TYPE> tmp({
                             TYPE(rw_op_to_num(rw_operation_type::stack)),
                             current_state.call_id(0),
@@ -57,14 +65,12 @@ namespace nil {
                     typename generic_component<FieldType, GenerationStage::ASSIGNMENT>::context_type &context,
                     const opcode_input_type<FieldType, GenerationStage::ASSIGNMENT> &current_state
                 ) override {
-                    // std::cout << "\tAssign MSIZE input = " << current_state.stack_top() << std::endl;
                     zkevm_msize_bbf<FieldType, GenerationStage::ASSIGNMENT> bbf_obj(context, current_state);
                 }
                 virtual void fill_context(
                     typename generic_component<FieldType, GenerationStage::CONSTRAINTS>::context_type &context,
                     const opcode_input_type<FieldType, GenerationStage::CONSTRAINTS> &current_state
                 ) override  {
-                    // std::cout << "\tBuild MSIZE constraints" << std::endl;
                     zkevm_msize_bbf<FieldType, GenerationStage::CONSTRAINTS> bbf_obj(context, current_state);
                 }
                 virtual std::size_t rows_amount() override {
