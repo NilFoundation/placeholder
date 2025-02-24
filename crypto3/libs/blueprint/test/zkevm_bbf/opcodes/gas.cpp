@@ -46,7 +46,6 @@
 
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
-#include <nil/blueprint/bbf/l1_wrapper.hpp>
 #include <nil/blueprint/zkevm_bbf/zkevm.hpp>
 #include <nil/blueprint/zkevm_bbf/rw.hpp>
 #include <nil/blueprint/zkevm_bbf/copy.hpp>
@@ -69,8 +68,11 @@ BOOST_AUTO_TEST_CASE(gas) {
 
     opcode_tester.push_opcode(zkevm_opcode::GAS);
     opcode_tester.push_opcode(zkevm_opcode::PUSH4, hex_string_to_bytes("0x01c9c37e"));
+    opcode_tester.push_opcode(zkevm_opcode::GAS);
     opcode_tester.push_opcode(zkevm_opcode::SUB);
+    opcode_tester.push_opcode(zkevm_opcode::GAS);
     opcode_tester.push_opcode(zkevm_opcode::ISZERO);
+    opcode_tester.push_opcode(zkevm_opcode::GAS);
     opcode_tester.push_opcode(zkevm_opcode::STOP);
 
 
