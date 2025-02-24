@@ -36,17 +36,18 @@ namespace nil {
         namespace bbf {
             class zkevm_state{
             public:
-                std::size_t     block_id;         // RW counter on start_block
-                std::size_t     tx_id;            // RW counter on start_transaction
-                std::size_t     call_id;          // RW counter on start_call
+                std::size_t     block_id;               // RW counter on start_block
+                std::size_t     tx_id;                  // RW counter on start_transaction
+                std::size_t     call_id;                // RW counter on start_call
                 std::size_t     pc;
                 std::size_t     gas;
                 std::size_t     rw_counter;
                 zkevm_word_type bytecode_hash;
                 std::size_t     opcode;
-                zkevm_word_type additional_input; // data for pushX opcode
-                std::size_t     stack_size;       // BEFORE opcode
-                std::size_t     memory_size;      // BEFORE opcode
+                zkevm_word_type additional_input;       // data for pushX opcode
+                std::size_t     stack_size;             // BEFORE opcode
+                std::size_t     memory_size;            // BEFORE opcode
+                zkevm_word_type call_context_address;   // tx_to for transaction depends on CALL/DELEGATECALL opcodes
 
                 zkevm_word_type stack_top(std::size_t depth = 0) const{
                     BOOST_ASSERT(depth < stack_slice.size());
@@ -66,17 +67,36 @@ namespace nil {
                     else
                         return storage_slice.at(key);
                 }
+
+                std::size_t last_access(zkevm_word_type address, std::size_t field, zkevm_word_type key) const{
+                    if( last_access_rw_counter.find(std::make_tuple(address, field, key)) == last_access_rw_counter.end() )
+                        return 0;
+                    else
+                        return last_access_rw_counter.at(std::make_tuple(address, field, key));
+                }
+
+                std::size_t last_write(zkevm_word_type address, std::size_t field, zkevm_word_type key) const{
+                    if( last_write_rw_counter.find(std::make_tuple(address, field, key)) == last_write_rw_counter.end() )
+                        return 0;
+                    else
+                        return last_write_rw_counter.at(std::make_tuple(address, field, key));
+                }
+
                 zkevm_state(
                     const std::vector<zkevm_word_type>        &stack,
                     const std::map<std::size_t, std::uint8_t> &memory,
-                    const std::map<zkevm_word_type, zkevm_word_type> &storage
-                ): stack_slice(stack), memory_slice(memory), storage_slice(storage){}
+                    const std::map<zkevm_word_type, zkevm_word_type> &storage,
+                    const std::map<std::tuple<zkevm_word_type, std::size_t, zkevm_word_type>, std::size_t> &_last_access_rw_counter
+                ): stack_slice(stack), memory_slice(memory), storage_slice(storage), last_access_rw_counter(_last_access_rw_counter){}
 
                 zkevm_state(){}
             public:
                 std::vector<zkevm_word_type>                stack_slice; // BEFORE opcode
                 std::map<std::size_t, std::uint8_t>         memory_slice; // BEFORE opcode
                 std::map<zkevm_word_type, zkevm_word_type>  storage_slice; // BEFORE opcode
+                // RW counter for last access to STATE item BEFORE opcode
+                std::map<std::tuple<zkevm_word_type, std::size_t, zkevm_word_type>, std::size_t>  last_access_rw_counter; // BEFORE opcode
+                std::map<std::tuple<zkevm_word_type, std::size_t, zkevm_word_type>, std::size_t>  last_write_rw_counter; // BEFORE opcode
             };
 
             template <typename FieldType, GenerationStage stage>

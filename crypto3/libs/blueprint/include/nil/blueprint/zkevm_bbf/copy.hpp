@@ -187,7 +187,10 @@ namespace nil {
                             memory_selector * rw_counter[i],
                             memory_selector * is_write[i],// is_write
                             TYPE(0),
-                            memory_selector * bytes[i]
+                            memory_selector * bytes[i],
+                            TYPE(0),// rw_counter_before
+                            TYPE(0),// w_counter_before
+                            TYPE(0) // helper_id
                         };
                         lookup(tmp, "zkevm_rw");
                         tmp = {

@@ -70,31 +70,23 @@ namespace nil {
                         constrain(current_state.rw_counter_next() - current_state.rw_counter(0) - 2);   // rw_counter transition
                         auto A_128 = chunks16_to_chunks128<TYPE>(A_chunks);
                         std::vector<TYPE> tmp;
-                        tmp = {
-                            TYPE(rw_op_to_num(rw_operation_type::stack)),
+                        tmp = rw_table<FieldType, stage>::stack_lookup(
                             current_state.call_id(0),
                             current_state.stack_size(0) - x,
-                            TYPE(0),// storage_key_hi
-                            TYPE(0),// storage_key_lo
-                            TYPE(0),// field
                             current_state.rw_counter(0),
                             TYPE(0),// is_write
                             A_128.first,
                             A_128.second
-                        };
+                        );
                         lookup(tmp, "zkevm_rw");
-                        tmp = {
-                            TYPE(rw_op_to_num(rw_operation_type::stack)),
+                        tmp = rw_table<FieldType, stage>::stack_lookup(
                             current_state.call_id(0),
                             current_state.stack_size(0),
-                            TYPE(0),// storage_key_hi
-                            TYPE(0),// storage_key_lo
-                            TYPE(0),// field
                             current_state.rw_counter(0) + 1,
                             TYPE(1),// is_write
                             A_128.first,
                             A_128.second
-                        };
+                        );
                         lookup(tmp, "zkevm_rw");
                     }
                 }

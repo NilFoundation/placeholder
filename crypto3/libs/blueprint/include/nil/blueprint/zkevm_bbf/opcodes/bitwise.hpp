@@ -125,54 +125,52 @@ namespace nil {
                         constrain(current_state.stack_size(3) - current_state.stack_size_next() - 1);   // stack_size transition
                         constrain(current_state.memory_size(3) - current_state.memory_size_next());     // memory_size transition
                         constrain(current_state.rw_counter_next() - current_state.rw_counter(3) - 3);   // rw_counter transition
-                        tmp = {
-                            TYPE(rw_op_to_num(rw_operation_type::stack)),
+                        tmp = rw_table<FieldType, stage>::stack_lookup(
                             current_state.call_id(1),
                             current_state.stack_size(1) - 1,
-                            TYPE(0),// storage_key_hi
-                            TYPE(0),// storage_key_lo
-                            TYPE(0),// field
                             current_state.rw_counter(1),
                             TYPE(0),// is_write
                             A0,
                             A1
-                        };
+                        );
                         lookup(tmp, "zkevm_rw");
-                        tmp = {
-                            TYPE(rw_op_to_num(rw_operation_type::stack)),
+                        tmp = rw_table<FieldType, stage>::stack_lookup(
                             current_state.call_id(1),
                             current_state.stack_size(1) - 2,
-                            TYPE(0),// storage_key_hi
-                            TYPE(0),// storage_key_lo
-                            TYPE(0),// field
                             current_state.rw_counter(1) + 1,
                             TYPE(0),// is_write
                             B0,
                             B1
-                        };
+                        );
                         lookup(tmp, "zkevm_rw");
-                        tmp = {
-                            TYPE(rw_op_to_num(rw_operation_type::stack)),
-                            current_state.call_id(1),
-                            current_state.stack_size(1) - 2,
-                            TYPE(0),// storage_key_hi
-                            TYPE(0),// storage_key_lo
-                            TYPE(0),// field
-                            current_state.rw_counter(1) + 2,
-                            TYPE(1)// is_write
-                        };
                         switch(bitwise_operation){
                         case B_AND:
-                            tmp.push_back(AND0);
-                            tmp.push_back(AND1);
+                            tmp = rw_table<FieldType, stage>::stack_lookup(
+                                current_state.call_id(1),
+                                current_state.stack_size(1) - 2,
+                                current_state.rw_counter(1) + 2,
+                                TYPE(1),// is_write
+                                AND0, AND1
+                            );
                             break;
                         case B_OR:
-                            tmp.push_back(OR0);
-                            tmp.push_back(OR1);
+                            tmp = rw_table<FieldType, stage>::stack_lookup(
+                                current_state.call_id(1),
+                                current_state.stack_size(1) - 2,
+                                current_state.rw_counter(1) + 2,
+                                TYPE(1),// is_write
+                                OR0, OR1
+                            );
                             break;
                         case B_XOR:
-                            tmp.push_back(XOR0);
-                            tmp.push_back(XOR1);
+                            tmp = rw_table<FieldType, stage>::stack_lookup(
+                                current_state.call_id(1),
+                                current_state.stack_size(1) - 2,
+                                current_state.rw_counter(1) + 2,
+                                TYPE(1),// is_write
+                                XOR0,
+                                XOR1
+                            );
                             break;
                         }
                         lookup(tmp, "zkevm_rw");

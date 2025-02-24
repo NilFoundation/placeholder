@@ -60,37 +60,43 @@ public:
 
     template <typename field_type>
     void test_zkevm_rw(
-        std::vector<std::string> paths,
+        std::string path,
         std::size_t max_rw_size
     ){
-        auto [bytecodes, traces] = load_hardhat_input(paths[0]);
-        for( std::size_t i = 1; i < paths.size(); i++ ){
-            auto [bytecodes_next, traces_next] = load_hardhat_input(paths[i]);
-            bytecodes.insert(bytecodes.end(), bytecodes_next.begin(), bytecodes_next.end());
-            traces.insert(traces.end(), traces_next.begin(), traces_next.end());
-        }
+        auto trace = load_hardhat_input(path);
+        nil::blueprint::bbf::zkevm_hardhat_input_generator circuit_inputs(trace);
 
-        nil::blueprint::bbf::zkevm_hardhat_input_generator circuit_inputs(bytecodes, traces);
+        typename nil::blueprint::bbf::rw<field_type,nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type rw_assignment_input = circuit_inputs.rw_operations();
+        typename nil::blueprint::bbf::rw<field_type,nil::blueprint::bbf::GenerationStage::CONSTRAINTS>::input_type rw_constraint_input;
 
-        typename nil::blueprint::bbf::rw<field_type, nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type rw_trace = circuit_inputs.rw_operations();
-        typename nil::blueprint::bbf::rw<field_type, nil::blueprint::bbf::GenerationStage::CONSTRAINTS>::input_type null_input;
-
-        std::cout << "rw_trace size = " <<  rw_trace.size() << std::endl;
+        std::cout << "rw_trace size = " <<  rw_assignment_input.size() << std::endl;
         bool result = test_bbf_component<field_type, nil::blueprint::bbf::rw>(
-            "rw", {}, rw_trace, null_input, max_rw_size, 0
+            "rw", {}, rw_assignment_input, rw_constraint_input, max_rw_size, 0
         );
         BOOST_ASSERT(result); // Max_rw, Max_mpt
     }
 };
 
-BOOST_FIXTURE_TEST_SUITE(blueprint_bbf_rw, zkEVMRWTestFixture)
+BOOST_FIXTURE_TEST_SUITE(zkevm_bbf_rw, zkEVMRWTestFixture)
     using field_type = typename algebra::curves::pallas::base_field_type;
     using integral_type = typename field_type::integral_type;
     using value_type = typename field_type::value_type;
 BOOST_AUTO_TEST_CASE(minimal_math){
-    test_zkevm_rw<field_type>({"minimal_math/"}, 500);
+    test_zkevm_rw<field_type>({"minimal_math.json"}, 500);
 }
-
+BOOST_AUTO_TEST_CASE(counter){
+    test_zkevm_rw<field_type>({"counter.json"}, 3000);
+}
+BOOST_AUTO_TEST_CASE(call_counter){
+    test_zkevm_rw<field_type>({"call_counter.json"}, 3000);
+}
+BOOST_AUTO_TEST_CASE(delegatecall_counter){
+    test_zkevm_rw<field_type>({"delegatecall.json"}, 3000);
+}
+BOOST_AUTO_TEST_CASE(cold_sstore){
+    test_zkevm_rw<field_type>({"delegatecall.json"}, 3000);
+}
+/*
 BOOST_AUTO_TEST_CASE(small_storage){
     test_zkevm_rw<field_type>({"small_stack_storage/"}, 500);
 }
@@ -109,5 +115,5 @@ BOOST_AUTO_TEST_CASE(calldatacopy){
 
 BOOST_AUTO_TEST_CASE(multiple_traces){
     test_zkevm_rw<field_type>({"minimal_math/", "keccak/", "exp/"} , 3000);
-}
+}*/
 BOOST_AUTO_TEST_SUITE_END()

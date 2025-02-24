@@ -35,9 +35,12 @@ namespace nil {
     namespace blueprint {
         namespace bbf {
             struct zkevm_call_context{
-                zkevm_state state;
+                zkevm_state state;            // State from parent CALL before CALL
+                std::size_t call_id;          // Current CALL id
                 std::size_t returndataoffset; // CALL opcode parameters
                 std::size_t returndatalength; // CALL opcode parameters
+                std::map<std::tuple<zkevm_word_type, std::size_t, zkevm_word_type>, rw_operation> cold_access_list; // For REVERT proving. First state access rw_operation in the given CALL
+                std::map<std::tuple<zkevm_word_type, std::size_t, zkevm_word_type>, rw_operation> cold_write_list;
             };
         } // namespace bbf
     } // namespace blueprint

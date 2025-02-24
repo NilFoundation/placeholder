@@ -80,6 +80,7 @@
 #include <nil/blueprint/zkevm_bbf/opcodes/returndatasize.hpp>
 #include <nil/blueprint/zkevm_bbf/opcodes/returndatacopy.hpp>
 #include <nil/blueprint/zkevm_bbf/opcodes/call.hpp>
+#include <nil/blueprint/zkevm_bbf/opcodes/delegatecall.hpp>
 #include <nil/blueprint/zkevm_bbf/opcodes/staticcall.hpp>
 #include <nil/blueprint/zkevm_bbf/opcodes/gas.hpp>
 #include "nil/blueprint/zkevm_bbf/opcodes/logx.hpp"
@@ -723,6 +724,7 @@ namespace nil {
                 opcodes[zkevm_opcode::RETURNDATASIZE] = std::make_shared<zkevm_returndatasize_operation<BlueprintFieldType>>();
                 opcodes[zkevm_opcode::RETURNDATACOPY] = std::make_shared<zkevm_returndatacopy_operation<BlueprintFieldType>>();
                 opcodes[zkevm_opcode::CALL] = std::make_shared<zkevm_call_operation<BlueprintFieldType>>();
+                opcodes[zkevm_opcode::DELEGATECALL] = std::make_shared<zkevm_delegatecall_operation<BlueprintFieldType>>();
                 opcodes[zkevm_opcode::GAS] = std::make_shared<zkevm_gas_operation<BlueprintFieldType>>();
                 opcodes[zkevm_opcode::STATICCALL] = std::make_shared<zkevm_staticcall_operation<BlueprintFieldType>>();
 

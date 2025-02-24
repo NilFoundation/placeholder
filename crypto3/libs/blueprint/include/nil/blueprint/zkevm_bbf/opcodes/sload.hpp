@@ -45,71 +45,145 @@ namespace nil {
                 using generic_component<FieldType, stage>::lookup_table;
             public:
                 using typename generic_component<FieldType,stage>::TYPE;
+                using value_type = typename FieldType::value_type;
+                constexpr static const value_type two_128 = 0x100000000000000000000000000000000_big_uint254;
 
                 zkevm_sload_bbf(context_type &context_object, const opcode_input_type<FieldType, stage> &current_state):
                     generic_component<FieldType,stage>(context_object, false)
                 {
-                    TYPE K_hi;
-                    TYPE K_lo;
+                    TYPE K_hi;                  // Range checked by rw circuit
+                    TYPE K_lo;                  // Range checked by rw circuit
                     std::vector<TYPE> V(16);
+                    TYPE diff_0;               // 16 bits
+                    TYPE diff_1;               // 16 bits
+                    TYPE is_cold;               // boolean
+                    TYPE call_context_address_hi;  // Range checked by rw circuit
+                    TYPE call_context_address_lo;  // Range checked by rw circuit
+                    TYPE block_id;              // Range checked by rw circuit
+                    TYPE tx_id;                 // Range checked by rw circuit
+                    TYPE rw_counter_before;     // Range checked by rw circuit
+                    TYPE write_counter_before;  // Range checked by rw circuit
+
                     if constexpr( stage == GenerationStage::ASSIGNMENT ){
                         K_hi = w_hi<FieldType>(current_state.stack_top());
                         K_lo = w_lo<FieldType>(current_state.stack_top());
+                        block_id = current_state.block_id;
+                        tx_id = current_state.tx_id;
+                        call_context_address_hi = w_hi<FieldType>(current_state.call_context_address);
+                        call_context_address_lo = w_lo<FieldType>(current_state.call_context_address);
+
+                        std::size_t rw_counter_before_num = current_state.last_access(
+                            current_state.call_context_address, 0, current_state.stack_top()
+                        );
+                        rw_counter_before = TYPE(rw_counter_before_num);
+                        std::size_t write_counter_before_num = current_state.last_write(
+                            current_state.call_context_address, 0, current_state.stack_top()
+                        );
+                        write_counter_before = TYPE(write_counter_before_num);
+
+                        std::size_t diff =
+                            rw_counter_before_num > current_state.tx_id ?
+                            rw_counter_before_num - current_state.tx_id :
+                            current_state.tx_id - rw_counter_before_num;
+                        diff_0 = ((diff & 0xFFFF0000) >> 16);
+                        diff_1 = (diff & 0xFFFF);
+                        is_cold = (rw_counter_before_num <  current_state.tx_id);
+
                         auto v = w_to_16(current_state.storage(current_state.stack_top()));
-                        std::cout << "K = " << std::hex << K_hi << " " << K_lo << std::dec << std::endl;
-                        std::cout << "v = " << std::hex << current_state.storage(current_state.stack_top()) << std::endl;
+                        std::cout << "\taddress = " << std::hex << call_context_address_hi << " " <<call_context_address_lo << std::dec << std::endl;
+                        std::cout << "\tK = " << std::hex << K_hi << " " << K_lo << std::dec << std::endl;
+                        std::cout << "\tv = " << std::hex << current_state.storage(current_state.stack_top()) << std::dec << std::endl;
+                        std::cout << "\trw_counter_before = " << rw_counter_before << std::endl;
+                        std::cout << "\trw_counter_before = " << write_counter_before << std::endl;
+                        std::cout << "\tis_cold = " << is_cold << std::endl;
+                        std::cout << "\tblock_id = " << block_id << std::endl;
+                        std::cout << "\ttx_id = " << tx_id << std::endl;
                         for(std::size_t i = 0; i < 16; i++) V[i] = v[i];
                     }
                     for(std::size_t i = 0; i < 16; i++)
                         allocate(V[i], i,0);
-                    allocate(K_hi, 32, 0);
-                    allocate(K_lo, 33, 0);
+                    allocate(diff_0, 17, 0);
+                    allocate(diff_1, 18, 0);
+                    allocate(is_cold, 19, 0);
+                    allocate(call_context_address_hi, 32, 0);
+                    allocate(call_context_address_lo, 33, 0);
+                    allocate(K_hi, 34, 0);
+                    allocate(K_lo, 35, 0);
+                    allocate(block_id, 36, 0);
+                    allocate(tx_id, 37, 0);
+                    allocate(rw_counter_before, 38, 0);
+                    allocate(write_counter_before, 39, 0);
+
+                    constrain(is_cold * (1 - is_cold));
+                    constrain(is_cold * (tx_id - rw_counter_before - diff_0 * 0x10000 - diff_1) + (1 - is_cold) * (rw_counter_before - tx_id - diff_0 * 0x10000 - diff_1));
                     auto V_128 = chunks16_to_chunks128<TYPE>(V);
                     if constexpr( stage == GenerationStage::CONSTRAINTS ){
-                        constrain(current_state.pc_next() - current_state.pc(0) - 1);                   // PC transition
-                        //constrain(current_state.gas(0) - current_state.gas_next() - 3);               // GAS transition: TODO: update gas cost
-                        constrain(current_state.stack_size(0) - current_state.stack_size_next());   // stack_size transition
-                        constrain(current_state.memory_size(0) - current_state.memory_size_next());     // memory_size transition
-                        constrain(current_state.rw_counter_next() - current_state.rw_counter(0) - 3);   // rw_counter transition
+                        constrain(current_state.pc_next() - current_state.pc(0) - 1);                       // PC transition
+                        constrain(current_state.gas(0) - current_state.gas_next() - 100 - 2000 * is_cold);  // GAS transition: TODO: update gas cost
+                        constrain(current_state.stack_size(0) - current_state.stack_size_next());           // stack_size transition
+                        constrain(current_state.memory_size(0) - current_state.memory_size_next());         // memory_size transition
+                        constrain(current_state.rw_counter_next() - current_state.rw_counter(0) - 3);       // rw_counter transition
                         std::vector<TYPE> tmp;
-                        tmp = {
-                            TYPE(rw_op_to_num(rw_operation_type::stack)),
+                        tmp = rw_table<FieldType, stage>::stack_lookup(
                             current_state.call_id(0),
                             current_state.stack_size(0) - 1,
-                            TYPE(0),                                               // storage_key_hi
-                            TYPE(0),                                               // storage_key_lo
-                            TYPE(0),                                               // field
                             current_state.rw_counter(0),
                             TYPE(0),                                               // is_write
                             K_hi,                                                  // hi bytes are 0
-                            K_lo                                                   // addr is smaller than maximum contract size
-                        };
+                            K_lo
+                        );
                         lookup(tmp, "zkevm_rw");
+
+                        // Prove block_id correctness
+                        tmp = rw_table<FieldType, stage>::call_context_lookup(
+                            current_state.call_id(0),
+                            std::size_t(call_context_field::block_id),
+                            TYPE(0),
+                            block_id
+                        );
+                        lookup(tmp, "zkevm_rw");
+
+                        tmp = rw_table<FieldType, stage>::call_context_lookup(
+                            current_state.call_id(0),
+                            std::size_t(call_context_field::tx_id),
+                            TYPE(0),
+                            tx_id
+                        );
+                        lookup(tmp, "zkevm_rw");
+
+                        tmp = rw_table<FieldType, stage>::call_context_lookup(
+                            current_state.call_id(0),
+                            std::size_t(call_context_field::call_context_address),
+                            call_context_address_hi,
+                            call_context_address_lo
+                        );
+                        lookup(tmp, "zkevm_rw");
+
+
                         tmp = {
                             TYPE(rw_op_to_num(rw_operation_type::state)),
-                            current_state.call_id(0),
-                            TYPE(0),
+                            block_id,                                              // All state changes are grouped by block
+                            call_context_address_hi * two_128 + call_context_address_lo,
                             K_hi,                                                  // storage_key_hi
                             K_lo,                                                  // storage_key_lo
                             TYPE(0),                                               // field
                             current_state.rw_counter(0)+1,
                             TYPE(0),                                               // is_write
-                            V_128.first,                                           // hi bytes are 0
-                            V_128.second                                           // addr is smaller than maximum contract size
+                            V_128.first,
+                            V_128.second,
+                            rw_counter_before,                                     // rw_counter_before
+                            write_counter_before,                                  // write_counter_before
+                            current_state.call_id(0)                               // helper_id
                         };
                         lookup(tmp, "zkevm_rw");
-                        tmp = {
-                            TYPE(rw_op_to_num(rw_operation_type::stack)),
+                        tmp = rw_table<FieldType, stage>::stack_lookup(
                             current_state.call_id(0),
                             current_state.stack_size(0) - 1,
-                            TYPE(0),                                               // storage_key_hi
-                            TYPE(0),                                               // storage_key_lo
-                            TYPE(0),                                               // field
                             current_state.rw_counter(0) + 2,
                             TYPE(1),                                               // is_write
-                            V_128.first,                                           // hi bytes are 0
-                            V_128.second                                           // addr is smaller than maximum contract size
-                        };
+                            V_128.first,
+                            V_128.second
+                        );
                         lookup(tmp, "zkevm_rw");
                     }
                 }

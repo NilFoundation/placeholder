@@ -60,31 +60,23 @@ namespace nil {
                     allocate(length, 33, 0);
                     if constexpr( stage == GenerationStage::CONSTRAINTS ){
                         std::vector<TYPE> tmp;
-                        tmp = {
-                            TYPE(rw_op_to_num(rw_operation_type::stack)),
+                        tmp = rw_table<FieldType, stage>::stack_lookup(
                             current_state.call_id(0),
                             current_state.stack_size(0) - 1,
-                            TYPE(0),// storage_key_hi
-                            TYPE(0),// storage_key_lo
-                            TYPE(0),// field
                             current_state.rw_counter(0),
                             TYPE(0),// is_write
                             TYPE(0),// hi bytes are 0
-                            offset    // addr is smaller than maximum contract size
-                        };
+                            offset
+                        );
                         lookup(tmp, "zkevm_rw");
-                        tmp = {
-                            TYPE(rw_op_to_num(rw_operation_type::stack)),
+                        tmp = rw_table<FieldType, stage>::stack_lookup(
                             current_state.call_id(0),
                             current_state.stack_size(0) - 2,
-                            TYPE(0),// storage_key_hi
-                            TYPE(0),// storage_key_lo
-                            TYPE(0),// field
                             current_state.rw_counter(0) +1,
                             TYPE(0),// is_write
                             TYPE(0),// hi bytes are 0
-                            length    // addr is smaller than maximum contract size
-                        };
+                            length
+                        );
                         lookup(tmp, "zkevm_rw");
 
                         tmp = {

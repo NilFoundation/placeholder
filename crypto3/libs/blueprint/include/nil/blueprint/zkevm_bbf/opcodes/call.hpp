@@ -53,6 +53,7 @@ namespace nil {
             template<typename FieldType>
             class zkevm_call_operation : public opcode_abstract<FieldType> {
             public:
+                zkevm_call_operation() {}
                 virtual void fill_context(
                     typename generic_component<FieldType, GenerationStage::ASSIGNMENT>::context_type &context,
                     const opcode_input_type<FieldType, GenerationStage::ASSIGNMENT> &current_state
