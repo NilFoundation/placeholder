@@ -283,6 +283,24 @@
                 cp -r *.deb $out
               '';
             };
+          deb-benchmarks = pkg:
+            pkgs.stdenv.mkDerivation rec {
+              name = "deb-package-${pkg.pname}-benchmarks";
+              pname = name;
+              buildInputs = [ pkgs.fpm ];
+
+              unpackPhase = "true";
+              buildPhase = ''
+                mkdir -p ./var/lib/proof-producer-benchmarks
+                cp -r ${pkg.src.origSrc}/proof-producer/benchmarks/* ./var/lib/proof-producer-benchmarks/
+                chmod -R u+rw,g+r,o+r ./var
+                ${pkgs.fpm}/bin/fpm -s dir -t deb --name ${pkg.pname}-benchmarks -v ${version} -d 'proof-producer' -d 'python3 > 3.8' --deb-use-file-permissions var
+              '';
+              installPhase = ''
+                mkdir -p $out
+                cp -r *.deb $out
+              '';
+            };
           default = deb;
         };
       }));
