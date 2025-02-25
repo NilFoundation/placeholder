@@ -19,7 +19,7 @@ namespace nil {
                                                              const AssignerOptions& options) {
             BOOST_LOG_TRIVIAL(debug) << "fill keccak table from " << trace_base_path << "\n";
 
-            using ComponentType = nil::blueprint::bbf::keccak<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT>;
+            using ComponentType = nil::blueprint::bbf::zkevm_keccak<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT>;
 
             typename nil::blueprint::bbf::context<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT> context_object(assignment_table, options.circuits_limits.max_total_rows);
 
@@ -33,10 +33,12 @@ namespace nil {
             }
             // TODO(oclaw) adjust input
             // input = std::move(keccak_operations->value);
+            std::size_t max_keccak_blocks = 25; //TODO: current max_keccak_blocks is a placeholder value
 
             ComponentType instance(
                 context_object,
-                input
+                input,
+                max_keccak_blocks
                 // ,options.circuits_limits.max_total_rows,
                 // options.circuits_limits.max_keccak_blocks
             );

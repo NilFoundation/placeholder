@@ -74,7 +74,6 @@ namespace nil {
                 ) :
                     max_blocks(max_blocks_),
                     generic_component<FieldType,stage>(context_object) {
-                    std::cout << "a";
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
                         TYPE theta = input.rlc_challenge;
 

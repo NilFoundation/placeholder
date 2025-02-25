@@ -80,17 +80,11 @@ namespace nil {
                         carry1 = (A_128.first + B_128.first + carry0 >= two_128);
                     }
                     for( std::size_t i = 0; i < 16; i++){
-                        std::cout<<"i: "<<i<<std::endl;
-                        std::cout<<"A[i]: "<<A[i]<<std::endl;
                         allocate(A[i], i, 0);
-                        std::cout<<"B[i]: "<<B[i]<<std::endl;
                         allocate(B[i], i + 16, 0);
-                        std::cout<<"A[i]: "<<A[i]<<std::endl;
                         allocate(S[i], i, 1);
                     }
-                    std::cout<<"allocate carry0"<<std::endl;
                     allocate(carry0, 32, 0);
-                    std::cout<<"allocate carry1"<<std::endl;
                     allocate(carry1, 33, 0);
                     auto A_128 = chunks16_to_chunks128<TYPE>(A);
                     auto B_128 = chunks16_to_chunks128<TYPE>(B);
