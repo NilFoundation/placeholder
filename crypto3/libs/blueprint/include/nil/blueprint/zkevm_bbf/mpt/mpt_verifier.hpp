@@ -23,6 +23,7 @@
 //---------------------------------------------------------------------------//
 
 #include <nil/blueprint/zkevm_bbf/subcomponents/poseidon_table.hpp>
+#include <nil/blueprint/bbf/poseidon.hpp>
 
 namespace nil {
     namespace blueprint {
@@ -35,6 +36,8 @@ namespace nil {
                 using generic_component<FieldType, stage>::constrain;
                 using generic_component<FieldType, stage>::lookup;
                 using generic_component<FieldType, stage>::lookup_table;
+
+                constexpr static const std::size_t state_size = nil::blueprint::bbf::poseidon_constants<FieldType>::state_size;
 
             public:
                 using typename generic_component<FieldType,stage>::TYPE;
@@ -50,8 +53,11 @@ namespace nil {
                 std::size_t account_trie_length;
 
             public:
+                using Poseidon_Table = poseidon_table<FieldType,stage>;
+
                 static nil::crypto3::zk::snark::plonk_table_description<FieldType> get_table_description(std::size_t max_mpt_, std::size_t max_poseidon_size_, std::size_t account_trie_length){
                     std::size_t witness_amount = 40;
+                    witness_amount += Poseidon_Table::get_witness_amount();
                     nil::crypto3::zk::snark::plonk_table_description<FieldType> desc(witness_amount, 1, 3, 5);
                     desc.usable_rows_amount = max_mpt_ + max_poseidon_size_;
                     return desc;
@@ -62,7 +68,8 @@ namespace nil {
                         account_trie_length(account_trie_length_),
                         generic_component<FieldType,stage>(context_object) {
 
-                    using Poseidon_Table = poseidon_table<FieldType,stage>;
+                    // using Poseidon_Table = poseidon_table<FieldType,stage>;
+                    using Flexible_Poseidon = typename bbf::flexible_poseidon<FieldType, stage>;
 
                     std::vector<std::size_t> poseidon_lookup_area = {0,1,2};
                     context_type poseidon_ct = context_object.subcontext(poseidon_lookup_area, max_mpt, max_mpt + max_poseidon_size);
@@ -133,15 +140,17 @@ namespace nil {
                     std::size_t num_rc_chunks = (bit_size_chunk / bit_size_rc) + (bit_size_chunk % bit_size_rc > 0);
                     std::size_t first_chunk_size = bit_size_chunk % bit_size_rc;
 
-                    // // Create input for Poseidon table
-                    // for(std::size_t i = 0; i < account_trie_length - 1; i++) {
-                    //     old_msg = {input.proof[10 + 7*(i + 1)], input.proof[12 + 7*(i + 1)]};
-                    //     old_poseidon_hash = input.proof[10 + 7*i];
-                    //     poseidon_tab_input.push_back({old_msg, old_poseidon_hash});
-                    //     // new_msg = {address_hash_traces[i + 1][3], address_hash_traces[i + 1][4]};
-                    //     // new_poseidon_hash = address_hash_traces[i][3];
-                    //     // poseidon_tab_input.push_back({new_msg, new_poseidon_hash});
-                    // }                    
+                    auto FlexiblePoseidon = [&context_object](std::array<TYPE, state_size> input_state, bool make_link = true) {
+                        Flexible_Poseidon fp = Flexible_Poseidon(context_object, input_state, make_link);
+                        return fp;
+                    };
+
+                    // std::vector<std::size_t> poseidon_lookup_area;
+                    // for( std::size_t i = 0; i < BytecodeTable::get_witness_amount(); i++){
+                    //     bytecode_lookup_area.push_back(current_column++);
+                    // }
+
+                    // Poseidon_Table p_t = Poseidon_Table(poseidon_ct, poseidon_tab_input, max_poseidon_size);
 
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
                         std::cout << "MPT assign " << input.proof.size() << std::endl;
@@ -508,49 +517,49 @@ namespace nil {
                         //     is_padding[i] = 0;
                         // }
 
-                        // Create input for Poseidon table
-                        for(std::size_t i = 0; i < account_trie_length - 1; i++) {
-                            old_msg = {address_hash_traces[i + 1][2], address_hash_traces[i + 1][4]};
-                            old_poseidon_hash = address_hash_traces[i][2];
-                            poseidon_tab_input.push_back({old_msg, old_poseidon_hash});
-                            new_msg = {address_hash_traces[i + 1][3], address_hash_traces[i + 1][4]};
-                            new_poseidon_hash = address_hash_traces[i][3];
-                            poseidon_tab_input.push_back({new_msg, new_poseidon_hash});
-                        }
+                        // // Create input for Poseidon table
+                        // for(std::size_t i = 0; i < account_trie_length - 1; i++) {
+                        //     old_msg = {address_hash_traces[i + 1][2], address_hash_traces[i + 1][4]};
+                        //     old_poseidon_hash = address_hash_traces[i][2];
+                        //     poseidon_tab_input.push_back({old_msg, old_poseidon_hash});
+                        //     new_msg = {address_hash_traces[i + 1][3], address_hash_traces[i + 1][4]};
+                        //     new_poseidon_hash = address_hash_traces[i][3];
+                        //     poseidon_tab_input.push_back({new_msg, new_poseidon_hash});
+                        // }
 
-                        old_msg = {old_account_hash_traces[6][1], old_account_hash_traces[6][0]};
-                        old_poseidon_hash = old_account_hash_traces[6][2];
-                        poseidon_tab_input.push_back({old_msg, old_poseidon_hash});
-                        new_msg = {new_account_hash_traces[6][1], new_account_hash_traces[6][0]};
-                        new_poseidon_hash = new_account_hash_traces[6][2];
-                        poseidon_tab_input.push_back({new_msg, new_poseidon_hash});
+                        // old_msg = {old_account_hash_traces[6][1], old_account_hash_traces[6][0]};
+                        // old_poseidon_hash = old_account_hash_traces[6][2];
+                        // poseidon_tab_input.push_back({old_msg, old_poseidon_hash});
+                        // new_msg = {new_account_hash_traces[6][1], new_account_hash_traces[6][0]};
+                        // new_poseidon_hash = new_account_hash_traces[6][2];
+                        // poseidon_tab_input.push_back({new_msg, new_poseidon_hash});
 
-                        old_msg = {old_account_hash_traces[5][0], old_account_hash_traces[5][1]};
-                        old_poseidon_hash = old_account_hash_traces[5][2];
-                        poseidon_tab_input.push_back({old_msg, old_poseidon_hash});
-                        new_msg = {new_account_hash_traces[5][0], new_account_hash_traces[5][1]};
-                        new_poseidon_hash = new_account_hash_traces[5][2];
-                        poseidon_tab_input.push_back({new_msg, new_poseidon_hash});
+                        // old_msg = {old_account_hash_traces[5][0], old_account_hash_traces[5][1]};
+                        // old_poseidon_hash = old_account_hash_traces[5][2];
+                        // poseidon_tab_input.push_back({old_msg, old_poseidon_hash});
+                        // new_msg = {new_account_hash_traces[5][0], new_account_hash_traces[5][1]};
+                        // new_poseidon_hash = new_account_hash_traces[5][2];
+                        // poseidon_tab_input.push_back({new_msg, new_poseidon_hash});
 
-                        old_msg = {old_account_hash_traces[3][0], old_account_hash_traces[3][1]};
-                        old_poseidon_hash = old_account_hash_traces[3][2];
-                        poseidon_tab_input.push_back({old_msg, old_poseidon_hash});
-                        new_msg = {new_account_hash_traces[3][0], new_account_hash_traces[3][1]};
-                        new_poseidon_hash = new_account_hash_traces[3][2];
-                        poseidon_tab_input.push_back({new_msg, new_poseidon_hash});
+                        // old_msg = {old_account_hash_traces[3][0], old_account_hash_traces[3][1]};
+                        // old_poseidon_hash = old_account_hash_traces[3][2];
+                        // poseidon_tab_input.push_back({old_msg, old_poseidon_hash});
+                        // new_msg = {new_account_hash_traces[3][0], new_account_hash_traces[3][1]};
+                        // new_poseidon_hash = new_account_hash_traces[3][2];
+                        // poseidon_tab_input.push_back({new_msg, new_poseidon_hash});
 
-                        old_msg = {old_account_hash_traces[2][0], old_account_hash_traces[2][1]};
-                        old_poseidon_hash = old_account_hash_traces[2][2];
-                        poseidon_tab_input.push_back({old_msg, old_poseidon_hash});
-                        new_msg = {new_account_hash_traces[2][0], new_account_hash_traces[2][1]};
-                        new_poseidon_hash = new_account_hash_traces[2][2];
-                        poseidon_tab_input.push_back({new_msg, new_poseidon_hash});
+                        // old_msg = {old_account_hash_traces[2][0], old_account_hash_traces[2][1]};
+                        // old_poseidon_hash = old_account_hash_traces[2][2];
+                        // poseidon_tab_input.push_back({old_msg, old_poseidon_hash});
+                        // new_msg = {new_account_hash_traces[2][0], new_account_hash_traces[2][1]};
+                        // new_poseidon_hash = new_account_hash_traces[2][2];
+                        // poseidon_tab_input.push_back({new_msg, new_poseidon_hash});
 
-                        Poseidon_Table p_t = Poseidon_Table(poseidon_ct, poseidon_tab_input, max_poseidon_size);
+                        // Poseidon_Table p_t = Poseidon_Table(poseidon_ct, poseidon_tab_input, max_poseidon_size);
 
-                        const std::vector<TYPE> &hash_value = p_t.hash_value;
-                        const std::vector<TYPE> &left_msg = p_t.left_msg;
-                        const std::vector<TYPE> &right_msg = p_t.right_msg;
+                        // const std::vector<TYPE> &hash_value = p_t.hash_value;
+                        // const std::vector<TYPE> &left_msg = p_t.left_msg;
+                        // const std::vector<TYPE> &right_msg = p_t.right_msg;
 
                         // std::cout << "hash_value[0] = " << hash_value[0] << std::endl;
                         // std::cout << "left_msg[0] = " << left_msg[0] << std::endl;
