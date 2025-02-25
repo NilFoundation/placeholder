@@ -374,35 +374,37 @@ namespace nil {
                         return theta_power;
                     }
 
-                    std::size_t get_total_points() {
+                    size_t get_total_points() {
                         auto points = this->get_unique_points();
 
                         // List of unique eval points set. [id=>points]
-                        std::size_t total_points = points.size();
+                        size_t total_points = points.size();
                         if (std::any_of(_batch_fixed.begin(), _batch_fixed.end(), [](auto i){return i.second != false;}))
                             total_points++;
                         return total_points;
                     }
 
                     void generate_U_V_polymap(
-                        typename std::vector<typename field_type::value_type> U,
-                        typename std::vector<math::polynomial<value_type>> V,
-                        typename std::vector<std::vector<std::tuple<std::size_t, std::size_t>>> poly_map,
-                        eval_storage_type z,
-                        value_type theta,
-                        value_type &theta_acc,
-                        size_t starting_index;
-                        ) {
+                            typename std::vector<typename field_type::value_type>& U,
+                            typename std::vector<math::polynomial<value_type>>& V,
+                            typename std::vector<std::vector<std::tuple<std::size_t, std::size_t>>>& poly_map,
+                            const eval_storage_type& z,
+                            const value_type& theta,
+                            value_type& theta_acc,
+                            size_t total_points,
+                            size_t starting_index) {
 
                         auto points = this->get_unique_points();
-                        for (std::size_t p = 0; p < points.size(); p++){
+                        for (std::size_t p = 0; p < points.size(); p++) {
                             auto &point = points[p];
-                            V[p+starting_index] = {-point, 1u};
-                            for(std::size_t i:z.get_batches()){
-                                for(std::size_t j = 0; j < z.get_batch_size(i); j++){
+                            V[p + starting_index] = {-point, 1u};
+                            for (std::size_t i:z.get_batches()) {
+                                for (std::size_t j = 0; j < z.get_batch_size(i); j++) {
                                     auto it = std::find(this->_points[i][j].begin(), this->_points[i][j].end(), point);
-                                    if( it == this->_points[i][j].end()) continue;
-                                    U[p+starting_index] += this->_z.geat(i, j, it - this->_points[i][j].begin()) * theta_acc;
+                                    if (it == this->_points[i][j].end())
+                                        continue;
+
+                                    U[p + starting_index] += this->_z.get(i, j, it - this->_points[i][j].begin()) * theta_acc;
                                     poly_map[p+starting_index].push_back(std::make_tuple(i, j));
                                     theta_acc *= theta;
                                 }
@@ -416,7 +418,7 @@ namespace nil {
                                 if (!_batch_fixed[i])
                                     continue;
                                 for (std::size_t j = 0; j < z.get_batch_size(i); j++) {
-                                    U[p+starting_index] += _fixed_polys_values[i][j] * theta_acc;
+                                    U[p + starting_index] += _fixed_polys_values[i][j] * theta_acc;
                                     poly_map[p+starting_index].push_back(std::make_tuple(i, j));
                                     theta_acc *= theta;
                                 }
@@ -429,19 +431,26 @@ namespace nil {
                         const std::map<std::size_t, commitment_type> &commitments,
                         transcript_type &transcript
                     ) {
+                        this->_z = proof.z;
                         for (auto const &it: commitments) {
                             transcript(commitments.at(it.first));
                         }
-                        auto total_points = get_total_points();
+
+                        size_t total_points = get_total_points();
                         typename std::vector<typename field_type::value_type> U(total_points);
+
                         // V is product of (x - eval_point) polynomial for each eval_point
                         typename std::vector<math::polynomial<value_type>> V(total_points);
+
                         // List of involved polynomials for each eval point [batch_id, poly_id, point_id]
                         typename std::vector<std::vector<std::tuple<std::size_t, std::size_t>>> poly_map(total_points);
+
                         value_type theta = transcript.template challenge<field_type>();
                         value_type theta_acc = value_type::one();
-                        generate_U_V_polymap(U, V, poly_map, proof.z, theta, *theta_acc, 0);
-                        if (!nil::crypto3::zk::algorithms::verify_eval<fri_type>(
+
+                        generate_U_V_polymap(U, V, poly_map, proof.z, theta, theta_acc, total_points, 0);
+
+                        return nil::crypto3::zk::algorithms::verify_eval<fri_type>(
                             proof.fri_proof,
                             _fri_params,
                             commitments,
@@ -450,10 +459,7 @@ namespace nil {
                             U,
                             V,
                             transcript
-                        )) {
-                            return false;
-                        }
-                        return true;
+                        );
                     }
 
                     // Params for LPC are actually FRI params. We can return some LPC params from here in the future if needed.
