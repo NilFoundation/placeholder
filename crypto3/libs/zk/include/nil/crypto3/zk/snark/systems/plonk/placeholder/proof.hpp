@@ -92,7 +92,7 @@ namespace nil {
                     using partial_proof_type = placeholder_partial_proof<FieldType, ParamsType>;
 
                     struct evaluation_proof {
-                        // TODO: remove it!
+                        // TODO: We don't use this any more, remove it! It's not being set, just delete it, and remove from marshalling.
                         typename FieldType::value_type challenge;
 
                         typename commitment_scheme_type::proof_type eval_proof;
