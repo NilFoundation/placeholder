@@ -49,10 +49,10 @@
 #include <nil/crypto3/algebra/fields/fp6_2over3.hpp>
 #include <nil/crypto3/algebra/fields/fp12_2over3over2.hpp>
 
-#include <nil/crypto3/algebra/fields/babybear/base_field.hpp>
-#include <nil/crypto3/algebra/fields/goldilocks/base_field.hpp>
-#include <nil/crypto3/algebra/fields/koalabear/base_field.hpp>
-#include <nil/crypto3/algebra/fields/mersenne31/base_field.hpp>
+#include <nil/crypto3/algebra/fields/babybear.hpp>
+#include <nil/crypto3/algebra/fields/goldilocks.hpp>
+#include <nil/crypto3/algebra/fields/koalabear.hpp>
+#include <nil/crypto3/algebra/fields/mersenne31.hpp>
 
 #include <nil/crypto3/algebra/type_traits.hpp>
 

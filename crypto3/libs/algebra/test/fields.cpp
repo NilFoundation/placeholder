@@ -55,12 +55,12 @@
 #include <nil/crypto3/algebra/fields/secp/secp_r1/base_field.hpp>
 #include <nil/crypto3/algebra/fields/secp/secp_r1/scalar_field.hpp>
 
-#include <nil/crypto3/algebra/fields/babybear/base_field.hpp>
+#include <nil/crypto3/algebra/fields/babybear.hpp>
 #include <nil/crypto3/algebra/fields/curve25519/base_field.hpp>
 #include <nil/crypto3/algebra/fields/curve25519/scalar_field.hpp>
-#include <nil/crypto3/algebra/fields/goldilocks/base_field.hpp>
-#include <nil/crypto3/algebra/fields/koalabear/base_field.hpp>
-#include <nil/crypto3/algebra/fields/mersenne31/base_field.hpp>
+#include <nil/crypto3/algebra/fields/goldilocks.hpp>
+#include <nil/crypto3/algebra/fields/koalabear.hpp>
+#include <nil/crypto3/algebra/fields/mersenne31.hpp>
 
 #include <nil/crypto3/algebra/fields/detail/element/fp.hpp>
 #include <nil/crypto3/algebra/fields/detail/element/fp2.hpp>

@@ -36,7 +36,7 @@
 #include <nil/crypto3/algebra/vector/vector.hpp>
 #include <nil/crypto3/algebra/vector/operators.hpp>
 
-#include <nil/crypto3/algebra/fields/goldilocks/base_field.hpp>
+#include <nil/crypto3/algebra/fields/goldilocks.hpp>
 
 using namespace nil::crypto3::algebra;
 

@@ -29,7 +29,7 @@
 
 #include <nil/crypto3/algebra/fields/params.hpp>
 
-#include <nil/crypto3/algebra/fields/koalabear/base_field.hpp>
+#include <nil/crypto3/algebra/fields/koalabear.hpp>
 
 namespace nil::crypto3::algebra::fields {
     template<>

@@ -27,7 +27,7 @@
 
 #include <nil/crypto3/algebra/fields/params.hpp>
 
-#include <nil/crypto3/algebra/fields/goldilocks/base_field.hpp>
+#include <nil/crypto3/algebra/fields/goldilocks.hpp>
 
 namespace nil {
     namespace crypto3 {

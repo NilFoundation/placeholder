@@ -22,8 +22,8 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_ALGEBRA_FIELDS_GOLDILOCKS_BASE_FIELD_HPP
-#define CRYPTO3_ALGEBRA_FIELDS_GOLDILOCKS_BASE_FIELD_HPP
+#ifndef CRYPTO3_ALGEBRA_FIELDS_GOLDILOCKS_HPP
+#define CRYPTO3_ALGEBRA_FIELDS_GOLDILOCKS_HPP
 
 #include <nil/crypto3/algebra/fields/detail/element/fp.hpp>
 
@@ -68,4 +68,4 @@ namespace nil {
     }            // namespace crypto3
 }    // namespace nil
 
-#endif  // CRYPTO3_ALGEBRA_FIELDS_GOLDILOCKS_BASE_FIELD_HPP
+#endif  // CRYPTO3_ALGEBRA_FIELDS_GOLDILOCKS_HPP

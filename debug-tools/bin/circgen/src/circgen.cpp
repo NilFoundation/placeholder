@@ -41,10 +41,10 @@
 #include <nil/crypto3/algebra/curves/mnt4.hpp>
 #include <nil/crypto3/algebra/curves/mnt6.hpp>
 
-#include <nil/crypto3/algebra/fields/babybear/base_field.hpp>
-#include <nil/crypto3/algebra/fields/goldilocks/base_field.hpp>
-#include <nil/crypto3/algebra/fields/koalabear/base_field.hpp>
-#include <nil/crypto3/algebra/fields/mersenne31/base_field.hpp>
+#include <nil/crypto3/algebra/fields/babybear.hpp>
+#include <nil/crypto3/algebra/fields/goldilocks.hpp>
+#include <nil/crypto3/algebra/fields/koalabear.hpp>
+#include <nil/crypto3/algebra/fields/mersenne31.hpp>
 
 #include <nil/marshalling/endianness.hpp>
 #include <nil/marshalling/field_type.hpp>

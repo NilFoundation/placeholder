@@ -37,7 +37,7 @@
 #include <boost/test/unit_test.hpp>
 
 #include <nil/crypto3/algebra/fields/arithmetic_params/koalabear.hpp>
-#include <nil/crypto3/algebra/fields/koalabear/base_field.hpp>
+#include <nil/crypto3/algebra/fields/koalabear.hpp>
 
 #include <nil/crypto3/hash/keccak.hpp>
 #include <nil/crypto3/test_tools/random_test_initializer.hpp>
