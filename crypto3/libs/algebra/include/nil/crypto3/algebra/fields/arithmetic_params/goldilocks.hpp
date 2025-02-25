@@ -22,12 +22,12 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_ALGEBRA_FIELDS_GOLDILOCKS64_ARITHMETIC_PARAMS_HPP
-#define CRYPTO3_ALGEBRA_FIELDS_GOLDILOCKS64_ARITHMETIC_PARAMS_HPP
+#ifndef CRYPTO3_ALGEBRA_FIELDS_GOLDILOCKS_ARITHMETIC_PARAMS_HPP
+#define CRYPTO3_ALGEBRA_FIELDS_GOLDILOCKS_ARITHMETIC_PARAMS_HPP
 
 #include <nil/crypto3/algebra/fields/params.hpp>
 
-#include <nil/crypto3/algebra/fields/goldilocks64/base_field.hpp>
+#include <nil/crypto3/algebra/fields/goldilocks/base_field.hpp>
 
 namespace nil {
     namespace crypto3 {
@@ -35,11 +35,11 @@ namespace nil {
             namespace fields {
 
                 template<>
-                struct arithmetic_params<goldilocks64_base_field> : public params<goldilocks64_base_field> {
-                private:
-                    typedef params<goldilocks64_base_field> policy_type;
+                struct arithmetic_params<goldilocks> : public params<goldilocks> {
+                  private:
+                    typedef params<goldilocks> policy_type;
 
-                public:
+                  public:
                     typedef typename policy_type::modular_type modular_type;
                     typedef typename policy_type::integral_type integral_type;
 
@@ -51,23 +51,22 @@ namespace nil {
                         0x185629DCDA58878C_big_uint64;
                 };
 
-                constexpr std::size_t const
-                    arithmetic_params<goldilocks64_base_field>::two_adicity;
+                constexpr std::size_t const arithmetic_params<goldilocks>::two_adicity;
 
-                constexpr typename arithmetic_params<goldilocks64_base_field>::integral_type const
-                    arithmetic_params<goldilocks64_base_field>::root_of_unity;
+                constexpr typename arithmetic_params<goldilocks>::integral_type const
+                    arithmetic_params<goldilocks>::root_of_unity;
 
-                constexpr typename arithmetic_params<goldilocks64_base_field>::integral_type const
-                    arithmetic_params<goldilocks64_base_field>::arithmetic_generator;
+                constexpr typename arithmetic_params<goldilocks>::integral_type const
+                    arithmetic_params<goldilocks>::arithmetic_generator;
 
-                constexpr typename arithmetic_params<goldilocks64_base_field>::integral_type const
-                    arithmetic_params<goldilocks64_base_field>::geometric_generator;
+                constexpr typename arithmetic_params<goldilocks>::integral_type const
+                    arithmetic_params<goldilocks>::geometric_generator;
 
-                constexpr typename arithmetic_params<goldilocks64_base_field>::integral_type const
-                    arithmetic_params<goldilocks64_base_field>::multiplicative_generator;
+                constexpr typename arithmetic_params<goldilocks>::integral_type const
+                    arithmetic_params<goldilocks>::multiplicative_generator;
             }    // namespace fields
         }        // namespace algebra
     }            // namespace crypto3
 }    // namespace nil
 
-#endif    // CRYPTO3_ALGEBRA_FIELDS_GOLDILOCKS64_ARITHMETIC_PARAMS_HPP
+#endif  // CRYPTO3_ALGEBRA_FIELDS_GOLDILOCKS_ARITHMETIC_PARAMS_HPP
