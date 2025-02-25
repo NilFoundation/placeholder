@@ -46,16 +46,16 @@
 #include <nil/crypto3/algebra/fields/arithmetic_params/mnt6.hpp>
 
 #include <nil/crypto3/algebra/fields/arithmetic_params/goldilocks.hpp>
-#include <nil/crypto3/algebra/fields/goldilocks/base_field.hpp>
+#include <nil/crypto3/algebra/fields/goldilocks.hpp>
 
 #include <nil/crypto3/algebra/fields/arithmetic_params/mersenne31.hpp>
-#include <nil/crypto3/algebra/fields/mersenne31/base_field.hpp>
+#include <nil/crypto3/algebra/fields/mersenne31.hpp>
 
 #include <nil/crypto3/algebra/fields/arithmetic_params/koalabear.hpp>
-#include <nil/crypto3/algebra/fields/koalabear/base_field.hpp>
+#include <nil/crypto3/algebra/fields/koalabear.hpp>
 
 #include <nil/crypto3/algebra/fields/arithmetic_params/babybear.hpp>
-#include <nil/crypto3/algebra/fields/babybear/base_field.hpp>
+#include <nil/crypto3/algebra/fields/babybear.hpp>
 
 #include <nil/crypto3/algebra/random_element.hpp>
 

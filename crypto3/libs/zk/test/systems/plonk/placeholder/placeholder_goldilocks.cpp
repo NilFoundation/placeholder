@@ -36,7 +36,7 @@
 #include <boost/test/data/test_case.hpp>
 
 #include <nil/crypto3/algebra/fields/arithmetic_params/goldilocks.hpp>
-#include <nil/crypto3/algebra/fields/goldilocks/base_field.hpp>
+#include <nil/crypto3/algebra/fields/goldilocks.hpp>
 
 #include <nil/crypto3/hash/keccak.hpp>
 #include <nil/crypto3/test_tools/random_test_initializer.hpp>

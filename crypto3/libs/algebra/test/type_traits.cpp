@@ -49,10 +49,10 @@
 #include <nil/crypto3/algebra/fields/fp6_2over3.hpp>
 #include <nil/crypto3/algebra/fields/fp12_2over3over2.hpp>
 
-#include <nil/crypto3/algebra/fields/babybear/base_field.hpp>
-#include <nil/crypto3/algebra/fields/goldilocks/base_field.hpp>
-#include <nil/crypto3/algebra/fields/koalabear/base_field.hpp>
-#include <nil/crypto3/algebra/fields/mersenne31/base_field.hpp>
+#include <nil/crypto3/algebra/fields/babybear.hpp>
+#include <nil/crypto3/algebra/fields/goldilocks.hpp>
+#include <nil/crypto3/algebra/fields/koalabear.hpp>
+#include <nil/crypto3/algebra/fields/mersenne31.hpp>
 
 #include <nil/crypto3/algebra/type_traits.hpp>
 
@@ -189,16 +189,14 @@ BOOST_AUTO_TEST_CASE(goldilocks_field_type_traits) {
 }
 
 BOOST_AUTO_TEST_CASE(mersenne31_field_type_traits) {
-    test_field_types<fields::mersenne31_base_field>();
+    test_field_types<fields::mersenne31>();
 }
 
 BOOST_AUTO_TEST_CASE(koalabear_field_type_traits) {
-    test_field_types<fields::koalabear_base_field>();
+    test_field_types<fields::koalabear>();
 }
 
-BOOST_AUTO_TEST_CASE(babybear_field_type_traits) {
-    test_field_types<fields::babybear_base_field>();
-}
+BOOST_AUTO_TEST_CASE(babybear_field_type_traits) { test_field_types<fields::babybear>(); }
 
 BOOST_AUTO_TEST_CASE(secp_type_traits) {
     test_ordinary_curve_types<curves::secp160r1>();
@@ -274,9 +272,9 @@ BOOST_AUTO_TEST_CASE(test_extended_fields_sqrt_trait) {
     BOOST_ASSERT( FIELD_HAS_SQRT(curves::ed25519::template g1_type<>::field_type) );
 
     BOOST_ASSERT(FIELD_HAS_SQRT(fields::goldilocks));
-    BOOST_ASSERT( FIELD_HAS_SQRT(fields::mersenne31_base_field) );
-    BOOST_ASSERT( FIELD_HAS_SQRT(fields::koalabear_base_field) );
-    BOOST_ASSERT( FIELD_HAS_SQRT(fields::babybear_base_field)) ;
+    BOOST_ASSERT(FIELD_HAS_SQRT(fields::mersenne31));
+    BOOST_ASSERT(FIELD_HAS_SQRT(fields::koalabear));
+    BOOST_ASSERT(FIELD_HAS_SQRT(fields::babybear));
 }
 
 BOOST_AUTO_TEST_CASE(test_extended_fields_trait) {
@@ -332,12 +330,9 @@ BOOST_AUTO_TEST_CASE(test_extended_fields_trait) {
     BOOST_ASSERT( !is_extended_field_element<curves::ed25519::template g1_type<>::field_type::value_type>::value );
 
     BOOST_ASSERT(!is_extended_field_element<fields::goldilocks::value_type>::value);
-    BOOST_ASSERT(
-        !is_extended_field_element<fields::mersenne31_base_field::value_type>::value);
-    BOOST_ASSERT(
-        !is_extended_field_element<fields::koalabear_base_field::value_type>::value);
-    BOOST_ASSERT(
-        !is_extended_field_element<fields::babybear_base_field::value_type>::value);
+    BOOST_ASSERT(!is_extended_field_element<fields::mersenne31::value_type>::value);
+    BOOST_ASSERT(!is_extended_field_element<fields::koalabear::value_type>::value);
+    BOOST_ASSERT(!is_extended_field_element<fields::babybear::value_type>::value);
 }
 
 

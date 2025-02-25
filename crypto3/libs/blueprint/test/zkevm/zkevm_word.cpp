@@ -27,7 +27,7 @@
 #include <boost/test/unit_test.hpp>
 
 #include <nil/crypto3/algebra/fields/arithmetic_params/goldilocks.hpp>
-#include <nil/crypto3/algebra/fields/goldilocks/base_field.hpp>
+#include <nil/crypto3/algebra/fields/goldilocks.hpp>
 #include <nil/crypto3/algebra/fields/pallas/base_field.hpp>
 
 #include <nil/crypto3/algebra/curves/pallas.hpp>
