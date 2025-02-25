@@ -34,11 +34,11 @@
 #include <nil/crypto3/algebra/vector/operators.hpp>
 #include <nil/crypto3/algebra/vector/utility.hpp>
 
-#include <nil/crypto3/algebra/fields/goldilocks64/base_field.hpp>
+#include <nil/crypto3/algebra/fields/goldilocks/base_field.hpp>
 
 using namespace nil::crypto3::algebra;
 
-using field = fields::goldilocks64_base_field;
+using field = fields::goldilocks;
 using value = field::value_type;
 
 static_assert(make_vector(1, 2, 3) == vector {1, 2, 3}, "make_vector and uniform initialization deduction guide");

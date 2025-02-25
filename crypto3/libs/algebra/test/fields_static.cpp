@@ -53,7 +53,7 @@
 #include <nil/crypto3/algebra/fields/babybear/base_field.hpp>
 #include <nil/crypto3/algebra/fields/detail/element/fp.hpp>
 #include <nil/crypto3/algebra/fields/detail/element/fp2.hpp>
-#include <nil/crypto3/algebra/fields/goldilocks64/base_field.hpp>
+#include <nil/crypto3/algebra/fields/goldilocks/base_field.hpp>
 #include <nil/crypto3/algebra/fields/koalabear/base_field.hpp>
 #include <nil/crypto3/algebra/fields/mersenne31/base_field.hpp>
 
@@ -803,7 +803,7 @@ BOOST_AUTO_TEST_CASE(field_operation_test_mnt6_fq6) {
 }
 
 BOOST_AUTO_TEST_CASE(test_goldilocks) {
-    using field_type = nil::crypto3::algebra::fields::goldilocks64;
+    using field_type = nil::crypto3::algebra::fields::goldilocks;
     using value_type = field_type::value_type;
     constexpr value_type val = 0xdef0;
     static_assert(val.data.base() == 0xdef0u, "goldilocks initialization error");

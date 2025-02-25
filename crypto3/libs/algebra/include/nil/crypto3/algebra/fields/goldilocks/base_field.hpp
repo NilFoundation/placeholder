@@ -22,8 +22,8 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_ALGEBRA_FIELDS_GOLDILOCKS64_BASE_FIELD_HPP
-#define CRYPTO3_ALGEBRA_FIELDS_GOLDILOCKS64_BASE_FIELD_HPP
+#ifndef CRYPTO3_ALGEBRA_FIELDS_GOLDILOCKS_BASE_FIELD_HPP
+#define CRYPTO3_ALGEBRA_FIELDS_GOLDILOCKS_BASE_FIELD_HPP
 
 #include <nil/crypto3/algebra/fields/detail/element/fp.hpp>
 
@@ -38,7 +38,7 @@ namespace nil {
                  * @brief A struct representing a goldilocks 64 bit field.
                  * https://polygon.technology/blog/plonky2-a-deep-dive#:~:text=Hamish%20Ivey%2DLaw.-,The%20Goldilocks%20Field%C2%A0,-p%20%3D%202%2064
                  */
-                class goldilocks64_base_field : public field<64> {
+                class goldilocks : public field<64> {
                 public:
                     typedef field<64> policy_type;
 
@@ -54,21 +54,18 @@ namespace nil {
                     constexpr static const integral_type group_order_minus_one_half = (modulus - 1u) / 2;
 
                     typedef nil::crypto3::multiprecision::auto_big_mod<modulus> modular_type;
-                    typedef typename detail::element_fp<params<goldilocks64_base_field>> value_type;
+                    typedef typename detail::element_fp<params<goldilocks>> value_type;
                 };
 
-                constexpr typename std::size_t const goldilocks64_base_field::modulus_bits;
-                constexpr typename std::size_t const goldilocks64_base_field::number_bits;
-                constexpr typename std::size_t const goldilocks64_base_field::value_bits;
+                constexpr typename std::size_t const goldilocks::modulus_bits;
+                constexpr typename std::size_t const goldilocks::number_bits;
+                constexpr typename std::size_t const goldilocks::value_bits;
 
-                constexpr typename goldilocks64_base_field::integral_type const goldilocks64_base_field::group_order_minus_one_half;
-                using goldilocks64_fq = goldilocks64_base_field;
-
-                using goldilocks64 = goldilocks64_base_field;
+                constexpr typename goldilocks::integral_type const goldilocks::group_order_minus_one_half;
 
             }    // namespace fields
         }        // namespace algebra
     }            // namespace crypto3
 }    // namespace nil
 
-#endif    // CRYPTO3_ALGEBRA_FIELDS_GOLDILOCKS64_BASE_FIELD_HPP
+#endif  // CRYPTO3_ALGEBRA_FIELDS_GOLDILOCKS_BASE_FIELD_HPP
