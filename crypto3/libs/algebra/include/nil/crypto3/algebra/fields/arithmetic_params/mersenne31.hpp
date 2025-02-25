@@ -29,12 +29,11 @@
 
 #include <nil/crypto3/algebra/fields/params.hpp>
 
-#include <nil/crypto3/algebra/fields/mersenne31/base_field.hpp>
+#include <nil/crypto3/algebra/fields/mersenne31.hpp>
 
 namespace nil::crypto3::algebra::fields {
     template<>
-    struct arithmetic_params<mersenne31_base_field>
-        : public params<mersenne31_base_field> {
+    struct arithmetic_params<mersenne31> : public params<mersenne31> {
         constexpr static std::size_t two_adicity = 1;
         constexpr static integral_type arithmetic_generator = 1u;
         constexpr static integral_type geometric_generator = 0x02;

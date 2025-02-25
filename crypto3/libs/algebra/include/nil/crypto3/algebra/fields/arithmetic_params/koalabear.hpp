@@ -29,11 +29,11 @@
 
 #include <nil/crypto3/algebra/fields/params.hpp>
 
-#include <nil/crypto3/algebra/fields/koalabear/base_field.hpp>
+#include <nil/crypto3/algebra/fields/koalabear.hpp>
 
 namespace nil::crypto3::algebra::fields {
     template<>
-    struct arithmetic_params<koalabear_base_field> : public params<koalabear_base_field> {
+    struct arithmetic_params<koalabear> : public params<koalabear> {
         constexpr static std::size_t two_adicity = 24;
         constexpr static integral_type arithmetic_generator = 1u;
         constexpr static integral_type geometric_generator = 0x02;

@@ -22,8 +22,8 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_ALGEBRA_FIELDS_BABYBEAR_BASE_FIELD_HPP
-#define CRYPTO3_ALGEBRA_FIELDS_BABYBEAR_BASE_FIELD_HPP
+#ifndef CRYPTO3_ALGEBRA_FIELDS_MERSENNE31_HPP
+#define CRYPTO3_ALGEBRA_FIELDS_MERSENNE31_HPP
 
 #include <cstddef>
 
@@ -38,9 +38,9 @@
 
 namespace nil::crypto3::algebra::fields {
     /**
-     * @brief A struct representing a Baby Bear field
+     * @brief A struct representing a Mersenne31 field
      */
-    class babybear_base_field : public field<31> {
+    class mersenne31 : public field<31> {
       public:
         using policy_type = field<31>;
 
@@ -49,15 +49,13 @@ namespace nil::crypto3::algebra::fields {
 
         using integral_type = policy_type::integral_type;
 
-        // 2^31 - 2^27 + 1
-        constexpr static integral_type modulus = 0x78000001_big_uint31;
+        // 2^31 - 1
+        constexpr static integral_type modulus = 0x7fffffff_big_uint31;
         constexpr static integral_type group_order_minus_one_half = (modulus - 1u) / 2;
 
         using modular_type = nil::crypto3::multiprecision::auto_big_mod<modulus>;
-        using value_type = detail::element_fp<params<babybear_base_field>>;
+        using value_type = detail::element_fp<params<mersenne31>>;
     };
-
-    using babybear = babybear_base_field;
 }  // namespace nil::crypto3::algebra::fields
 
-#endif  // CRYPTO3_ALGEBRA_FIELDS_BABYBEAR_BASE_FIELD_HPP
+#endif  // CRYPTO3_ALGEBRA_FIELDS_MERSENNE31_HPP
