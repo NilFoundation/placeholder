@@ -196,10 +196,13 @@ namespace nil {
                     context_object.allocate(input.rlc_challenge, 0, 0,
                                             column_type::public_input);
                 }
+                
+                std::size_t max_blocks;
+                std::vector<keccak_map> m = std::vector<keccak_map>(max_blocks);
 
                 keccak_dynamic(context_type &context_object, input_type instance_input,
-                               std::size_t max_blocks, bool make_links = true)
-                    : generic_component<FieldType, stage>(context_object) {
+                               std::size_t max_blocks_, bool make_links = true)
+                    : max_blocks(max_blocks_), generic_component<FieldType, stage>(context_object) {
                     using integral_type = typename FieldType::integral_type;
                     using value_type = typename FieldType::value_type;
 
@@ -213,7 +216,6 @@ namespace nil {
                     TYPE RLC;
                     // constants
 
-                    keccak_map m[max_blocks];
                     std::array<TYPE, 25> state;
                     std::vector<uint8_t> msg = std::vector<uint8_t>();
                     std::vector<uint8_t> padded_msg = std::vector<uint8_t>();

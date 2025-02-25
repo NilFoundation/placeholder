@@ -77,7 +77,7 @@ namespace nil {
                         return CommandResult::Error(ResultCode::IOError, "No circuit is currently loaded");
                     }
 
-                    std::ofstream out(circuit_file_path_, std::ios::binary | std::ios::out);
+                    std::ofstream out(circuit_file_path_.string(), std::ios::binary | std::ios::out);
                     if (!out.is_open()) {
                         return CommandResult::Error(ResultCode::IOError, "Failed to open file {}", circuit_file_path_.string());
                     }

@@ -26,8 +26,11 @@ namespace nil {
             using ConstraintSystem = typename PresetTypes<BlueprintFieldType>::ConstraintSystem;
             using AssignmentTable = typename PresetTypes<BlueprintFieldType>::AssignmentTable;
 
-            // TODO(oclaw): add circuits_limits.max_total_rows, circuits_limits.max_keccak_blocks?
-            blueprint::bbf::circuit_builder<BlueprintFieldType, bbf::keccak> builder;
+            // TODO(oclaw): circuits_limits.max_keccak_blocks?
+            std::size_t max_keccak_blocks = 25; //TODO: current max_keccak_blocks is a placeholder value
+            blueprint::bbf::circuit_builder<
+                BlueprintFieldType, nil::blueprint::bbf::zkevm_keccak, std::size_t
+            > builder(max_keccak_blocks);
 
             keccak_circuit = std::make_shared<ConstraintSystem>(builder.get_circuit());
 
