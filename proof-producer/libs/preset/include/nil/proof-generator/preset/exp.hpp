@@ -7,6 +7,7 @@
 #include <nil/blueprint/bbf/enums.hpp>
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
 #include <nil/crypto3/zk/snark/arithmetization/plonk/assignment.hpp>
+#include <nil/proof-generator/types/type_system.hpp>
 #include <nil/proof-generator/preset/limits.hpp>
 #include <nil/blueprint/zkevm_bbf/exp.hpp>
 #include <nil/blueprint/bbf/circuit_builder.hpp>
@@ -21,6 +22,7 @@ namespace nil {
                 std::shared_ptr<typename PresetTypes<BlueprintFieldType>::ConstraintSystem>& exp_circuit,
                 std::shared_ptr<typename PresetTypes<BlueprintFieldType>::AssignmentTable>&  exp_table,
                 const CircuitsLimits& circuits_limits) {
+
             using ConstraintSystem = typename PresetTypes<BlueprintFieldType>::ConstraintSystem;
             using AssignmentTable = typename PresetTypes<BlueprintFieldType>::AssignmentTable;
 

@@ -202,7 +202,9 @@ class CircuitTestFixture {
         }
         bool result = true;
         if (check_satisfiability) {
-            result = result & builder.is_satisfied(assignment, /* verbose = */ true);
+            result = result & builder.is_satisfied(assignment, satisfiability_check_options{
+                .verbose = true
+            });
         }
         // It's debug mode. Prover from non-satisfied circuit will throw asserts
         if (result && generate_proof) {

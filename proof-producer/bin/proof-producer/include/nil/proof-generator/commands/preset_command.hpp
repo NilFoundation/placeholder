@@ -24,11 +24,11 @@ namespace nil {
 
         template<typename CurveType, typename HashType>
         struct PresetStep {
-            using Types            = TypeSystem<CurveType, HashType>;
-            using BlueprintField   = typename Types::BlueprintField;
-            using ConstraintSystem = typename Types::ConstraintSystem;
-            using AssignmentTable  = typename Types::AssignmentTable;
-            using TableDescription = typename Types::TableDescription;
+            using Types                  = TypeSystem<CurveType, HashType>;
+            using BlueprintField         = typename Types::BlueprintField;
+            using ConstraintSystem       = typename Types::ConstraintSystem;
+            using AssignmentTable        = typename Types::AssignmentTable;
+            using TableDescription       = typename Types::TableDescription;
 
             struct Executor:
                 public command_step,

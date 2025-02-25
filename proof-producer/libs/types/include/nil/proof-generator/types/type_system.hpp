@@ -46,16 +46,16 @@
 #include <nil/blueprint/transpiler/recursive_verifier_generator.hpp>
 #include <nil/blueprint/transpiler/lpc_evm_verifier_gen.hpp>
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
-
+#include <nil/blueprint/bbf/circuit_builder.hpp>
+#include <nil/blueprint/utils/satisfiability_check.hpp>
 
 namespace nil {
     namespace proof_producer {
 
-        // TODO naming
         template <typename BlueprintField>
         struct PresetTypes {
             using ConstraintSystem = nil::blueprint::circuit<nil::crypto3::zk::snark::plonk_constraint_system<BlueprintField>>;
-            using AssignmentTable = nil::crypto3::zk::snark::plonk_assignment_table<BlueprintField>;
+            using AssignmentTable  = nil::crypto3::zk::snark::plonk_assignment_table<BlueprintField>;
             using TableDescription = nil::crypto3::zk::snark::plonk_table_description<BlueprintField>;
         };
 
