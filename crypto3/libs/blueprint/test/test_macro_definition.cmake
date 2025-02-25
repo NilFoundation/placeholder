@@ -1,10 +1,8 @@
 macro(define_custom_blueprint_test test prefix)
-    string(REPLACE "." "" _test ${test})
+    string(REPLACE "${BLUEPRINT_TEST_ROOT}" "" _test ${test})
+    string(REPLACE "." "" _test ${_test})
     string(REPLACE "/" "_" full_test_name ${prefix}_${_test}_test)
-
-    if (NOT "${postfix}" STREQUAL "")
-        set(full_test_name "${full_test_name}")
-    endif()
+    string(REGEX REPLACE "_+" "_" full_test_name ${full_test_name})
 
     set(TEST_RESULTS_DIR "${CMAKE_CURRENT_BINARY_DIR}/junit_results")
     set(TEST_LOGS_DIR "${TEST_RESULTS_DIR}/logs")
@@ -18,7 +16,9 @@ macro(define_custom_blueprint_test test prefix)
 
     set_target_properties(${full_test_name} PROPERTIES CXX_STANDARD 20)
 
-    target_compile_definitions(${full_test_name} PRIVATE TEST_DATA_DIR="${BLUEPRINT_TEST_ROOT}/zkevm/data/")
+    file(INSTALL "${BLUEPRINT_TEST_ROOT}/zkevm/data" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
+
+    target_compile_definitions(${full_test_name} PRIVATE TEST_DATA_DIR="${CMAKE_CURRENT_BINARY_DIR}/data/")
 
     if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
         target_compile_options(${full_test_name} PRIVATE "${ARGV2}" "-fconstexpr-steps=2147483647" "-ftemplate-backtrace-limit=0")
