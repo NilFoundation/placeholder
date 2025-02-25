@@ -29,7 +29,6 @@ class ProverTests: public ::testing::TestWithParam<Input> {
         using BlueprintFieldType = nil::proof_producer::TypeSystem<CurveType, HashType>::BlueprintField;
         using AssignmentTable = nil::proof_producer::TypeSystem<CurveType, HashType>::AssignmentTable;
 
-
         class AssignmentTableChecker: public nil::proof_producer::command_chain {
 
         public:
@@ -67,12 +66,14 @@ TEST_P(ProverTests, FillAssignmentAndCheck) {
     ASSERT_NE(checker.circuit_, nullptr);
     ASSERT_NE(checker.assignment_table_, nullptr);
 
-    ASSERT_TRUE(nil::blueprint::is_satisfied<BlueprintFieldType>(
+    auto const check_res = nil::blueprint::satisfiability_checker<BlueprintFieldType>::is_satisfied(
         *checker.circuit_,
-        *checker.assignment_table_
-    ));
-}
+        *checker.assignment_table_,
+        nil::blueprint::satisfiability_check_options{.verbose = true}
+    );
 
+    ASSERT_TRUE(check_res);
+}
 
 using namespace nil::proof_producer::circuits;
 

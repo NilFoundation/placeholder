@@ -73,6 +73,8 @@ namespace nil {
             gate_selector_map selector_map = {};
             lookup_gate_selector_map lookup_selector_map = {};
             std::size_t next_selector_index = 0;
+            std::map<uint32_t, std::vector<std::string>> constraint_names_;
+
         protected:
             lookup_library<BlueprintFieldType> _lookup_library;
         public:
@@ -206,6 +208,11 @@ namespace nil {
                 _lookup_library.reserve_dynamic_table(name);
             }
 
+            // used in satisfiability check
+            void register_constraint_names(std::uint32_t selector_id, std::vector<std::string> names) {
+                constraint_names_.insert({selector_id, names});
+            }
+
             std::shared_ptr<crypto3::zk::snark::dynamic_table_definition<BlueprintFieldType>> get_dynamic_table_definition(std::string name){
                 return _lookup_library.get_dynamic_table_definition(name);
             }
@@ -231,6 +238,11 @@ namespace nil {
 
             virtual const std::map<std::string, std::shared_ptr<dynamic_table_definition>> &get_reserved_dynamic_tables() const {
                 return _lookup_library.get_reserved_dynamic_tables();
+            }
+
+            // used in satisfiability check
+            virtual std::string get_constraint_name(std::size_t selector_id, std::size_t index) const {
+                return constraint_names_.at(selector_id).at(index);
             }
 
             #undef GATE_ADDER_MACRO
