@@ -532,9 +532,8 @@ namespace nil {
                             std::size_t memory_size_word = (memory.size() + 31) / 32;
                             std::size_t last_memory_cost = memory_size_word * memory_size_word / 512 + (3*memory_size_word);
 
-                            std::size_t tmp = addr1 + 32;
-                            tmp = 32*std::ceil((tmp + 31) / 32);
-                            std::cout << "memsize: " << memory.size() << " vs addr " <<  addr1 << " vs new memsize " << tmp << std::endl;
+                            std::size_t tmp = addr1 + 32; 
+                            tmp = 32*((tmp + 31) / 32);
                             for( std::size_t i = memory.size(); i < tmp; i++){
                                 memory[i] = 0;
                             }
@@ -568,10 +567,9 @@ namespace nil {
                             std::size_t memory_size_word = (memory.size() + 31) / 32;
                             std::size_t last_memory_cost = memory_size_word * memory_size_word / 512 + (3*memory_size_word);
 
-                            if( addr1 > memory.size()){
-                                for(std::size_t i = memory.size(); i < addr1; i++){
-                                    memory[i] = 0;
-                                }
+                            
+                            for(std::size_t i = memory.size(); i < addr1; i++){
+                                memory[i] = 0;
                             }
                             for(std::size_t i = 0; i < 32; i++){
                                 memory[addr1 + i] = bytes[i];
@@ -604,13 +602,12 @@ namespace nil {
                             std::size_t memory_size_word = (memory.size() + 31) / 32;
                             std::size_t last_memory_cost = memory_size_word * memory_size_word / 512 + (3*memory_size_word);
 
-                            if( addr1 > memory.size()){
-                                for(std::size_t i = memory.size(); i < addr1; i++){
-                                    memory[i] = 0;
-                                }
+                            for(std::size_t i = memory.size(); i < addr1; i++){
+                                memory[i] = 0;
                             }
                             memory[addr1] = byte; // write to memory
                             _rw_operations.push_back(memory_rw_operation(call_id, addr1, rw_counter++, true, byte));
+                            
                             addr1++;
                             while(addr1 % 32 != 0){
                                 memory[addr1] = 0;
