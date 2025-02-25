@@ -42,7 +42,7 @@
 #include <nil/crypto3/algebra/curves/mnt6.hpp>
 
 #include <nil/crypto3/algebra/fields/babybear/base_field.hpp>
-#include <nil/crypto3/algebra/fields/goldilocks64/base_field.hpp>
+#include <nil/crypto3/algebra/fields/goldilocks/base_field.hpp>
 #include <nil/crypto3/algebra/fields/koalabear/base_field.hpp>
 #include <nil/crypto3/algebra/fields/mersenne31/base_field.hpp>
 
@@ -374,7 +374,7 @@ int main(int argc, char *argv[])
         using circuit_field = typename curve_type::base_field_type;
         return run_main<circuit_field>(opts);
     } else if (opts.field == "goldilocks") {
-        using circuit_field = nil::crypto3::algebra::fields::goldilocks64_base_field;
+        using circuit_field = nil::crypto3::algebra::fields::goldilocks;
         return run_main<circuit_field>(opts);
     } else if (opts.field == "mersenne31") {
         using circuit_field = nil::crypto3::algebra::fields::mersenne31_base_field;

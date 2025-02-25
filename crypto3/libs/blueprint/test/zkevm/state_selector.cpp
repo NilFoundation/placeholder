@@ -26,8 +26,8 @@
 
 #include <boost/test/unit_test.hpp>
 
-#include <nil/crypto3/algebra/fields/goldilocks64/base_field.hpp>
-#include <nil/crypto3/algebra/fields/arithmetic_params/goldilocks64.hpp>
+#include <nil/crypto3/algebra/fields/arithmetic_params/goldilocks.hpp>
+#include <nil/crypto3/algebra/fields/goldilocks/base_field.hpp>
 
 #include <nil/crypto3/hash/keccak.hpp>
 #include <nil/crypto3/random/algebraic_engine.hpp>
@@ -81,7 +81,7 @@ void test_state_selector(std::size_t options_amount, std::size_t option){
 BOOST_AUTO_TEST_SUITE(blueprint_plonk_test_suite)
 
 BOOST_AUTO_TEST_CASE(blueprint_plonk_equality_flag_test_vesta) {
-    using field_type = typename crypto3::algebra::fields::goldilocks64_base_field;
+    using field_type = typename crypto3::algebra::fields::goldilocks;
     boost::random::mt19937 gen(1444);
 
     for (std::size_t i = 1; i < 30; i++) {
