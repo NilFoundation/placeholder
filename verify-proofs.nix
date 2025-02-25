@@ -44,22 +44,22 @@ in stdenv.mkDerivation rec {
 
   cmakeFlags =
     [
-      "-DBUILD_CRYPTO3_TESTS=TRUE"
       "-DPARALLEL_CRYPTO3_ENABLE=TRUE"
+      "-DBUILD_PARALLEL_CRYPTO3_TESTS=TRUE"
       (if sanitize then "-DSANITIZE=ON" else "-DSANITIZE=OFF")
       "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON" # to allow VSCode navigation/completion/etc
       "-G Ninja"
     ];
 
   buildPhase = ''
-    ninja blueprint_zkevm_bbf_multi_thread__hardhat_test
+    ninja blueprint_multi_thread_zkevm_bbf_hardhat_test
   '';
 
   cmakeBuildType = if enableDebug then "Debug" else "Release";
   doCheck = true;
 
   test_lines = buildTestRunLines {
-    binary = "./crypto3/libs/blueprint/test/zkevm_bbf/multi_thread_tests/blueprint_zkevm_bbf_multi_thread__hardhat_test";
+    binary = "./parallel-crypto3/libs/parallel-blueprint/test/blueprint_multi_thread_zkevm_bbf_hardhat_test";
 
     test_suite = "zkevm_bbf_hardhat";
 
