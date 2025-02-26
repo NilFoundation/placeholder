@@ -67,6 +67,66 @@ nild run --http-port 8529 # should be run in another terminal (or with &) and st
 prover trace exp/exp 1 $block_hash
 ```
 
+### arithmetic corner cases
+
+#### add overflow
+```bash
+solc -o . --bin --abi contracts/tracer_data.sol --overwrite --no-cbor-metadata --metadata-hash none
+nil_block_generator init
+nil_block_generator add-contract --contract-name Uint256CornerCaseTests --contract-path Uint256CornerCaseTests
+nil_block_generator call-contract --contract-name Uint256CornerCaseTests --method addAsm --count 1 --args "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF 0x2"
+
+nil_block_generator get-block
+nild run --http-port 8529 # should be run in another terminal (or with &) and stopped after collecting the traces with prover
+prover trace corner_cases/addition_overflow/addition_overflow 1 $block_hash
+```
+
+#### mul overflow
+```bash
+solc -o . --bin --abi contracts/tracer_data.sol --overwrite --no-cbor-metadata --metadata-hash none
+nil_block_generator init
+nil_block_generator add-contract --contract-name Uint256CornerCaseTests --contract-path Uint256CornerCaseTests
+nil_block_generator call-contract --contract-name Uint256CornerCaseTests --method mulAsm --count 1 --args "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFE 0xFF"
+
+nil_block_generator get-block
+nild run --http-port 8529 # should be run in another terminal (or with &) and stopped after collecting the traces with prover
+prover trace corner_cases/multiplication_overflow/mul_overflow 1 $block_hash
+```
+
+#### exp overflow
+```bash
+solc -o . --bin --abi contracts/tracer_data.sol --overwrite --no-cbor-metadata --metadata-hash none
+nil_block_generator init
+nil_block_generator add-contract --contract-name Uint256CornerCaseTests --contract-path Uint256CornerCaseTests
+nil_block_generator call-contract --contract-name Uint256CornerCaseTests --method expAsm --count 1 --args "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFE 0xFF"
+
+nil_block_generator get-block
+nild run --http-port 8529 # should be run in another terminal (or with &) and stopped after collecting the traces with prover
+prover trace corner_cases/exponentiation_overflow/exp_overflow 1 $block_hash
+```
+
+#### sub underflow
+```bash
+solc -o . --bin --abi contracts/tracer_data.sol --overwrite --no-cbor-metadata --metadata-hash none
+nil_block_generator init
+nil_block_generator add-contract --contract-name exp --contract-path Uint256CornerCaseTests
+nil_block_generator call-contract --contract-name Uint256CornerCaseTests --method subAsm --count 1 --args "0x1 0x2"
+nil_block_generator get-block
+nild run --http-port 8529 # should be run in another terminal (or with &) and stopped after collecting the traces with prover
+prover trace corner_cases/substraction_underflow/substraction_underflow 1 $block_hash
+```
+
+#### div by zero
+```bash
+solc -o . --bin --abi contracts/tracer_data.sol --overwrite --no-cbor-metadata --metadata-hash none
+nil_block_generator init
+nil_block_generator add-contract --contract-name Uint256CornerCaseTests --contract-path Uint256CornerCaseTests
+nil_block_generator call-contract --contract-name Uint256CornerCaseTests --method divAsm --count 1 --args "0x11 0x0"
+nil_block_generator get-block
+nild run --http-port 8529 # should be run in another terminal (or with &) and stopped after collecting the traces with prover
+prover trace corner_cases/division_by_zero/div_by_zero 1 $block_hash
+```
+
 ### broken index
 ```bash
 solc -o . --bin --abi contracts/tracer_data.sol --overwrite --no-cbor-metadata --metadata-hash none
