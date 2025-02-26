@@ -237,9 +237,15 @@ namespace nil {
                             r_64_chunks.push_back(chunk_sum_64<value_type>(r_chunks, i));
                             q_64_chunks.push_back(chunk_sum_64<value_type>(q_chunks, i));
                         }
-                        // caluclate first row carries
-                        first_carryless = first_carryless_construct<TYPE>(a_64_chunks, b_64_chunks,
+                    }
+                    first_carryless = first_carryless_construct<TYPE>(a_64_chunks, b_64_chunks,
                                                                           r_64_chunks, q_64_chunks);
+                    second_carryless = second_carryless_construct<TYPE>(
+                            a_64_chunks, b_64_chunks, r_64_chunks, q_64_chunks);
+                    third_carryless = third_carryless_construct<TYPE>(b_64_chunks, r_64_chunks);
+                        
+                    if constexpr (stage == GenerationStage::ASSIGNMENT) {
+                        // caluclate first row carries
                         auto first_row_carries = first_carryless.data.base() >> 128;
 
                         c_1 = value_type(first_row_carries & (two_64 - 1).data.base());
@@ -247,11 +253,7 @@ namespace nil {
                         BOOST_ASSERT(first_carryless - c_1 * two_128 - c_2 * two_192 == 0);
                         c_1_chunks = chunk_64_to_16<FieldType>(c_1);
                         // no need for c_2 chunks as there is only a single chunk
-                        second_carryless = second_carryless_construct<TYPE>(
-                            a_64_chunks, b_64_chunks, r_64_chunks, q_64_chunks);
                         c_1_64 = chunk_sum_64<TYPE>(c_1_chunks, 0);
-
-                        third_carryless = third_carryless_construct<TYPE>(b_64_chunks, r_64_chunks);
 
                         // lookup constrain b0p < 16, b0pp < 16, b0ppp < 256
                         b0p_range_check = 4096 * b0p;
@@ -318,7 +320,7 @@ namespace nil {
                     constrain(b0ppp * (1 - b0ppp * I1));
 
                     constrain(sum_part_b * (1 - sum_part_b * I2));
-                    constrain((z - (1 - b0ppp * I1) * (1 - sum_part_b * I2)));
+                    constrain(z - (1 - b0ppp * I1) * (1 - sum_part_b * I2));
 
                     allocate(first_carryless, 35, 0);
                     allocate(second_carryless, 36, 0);
