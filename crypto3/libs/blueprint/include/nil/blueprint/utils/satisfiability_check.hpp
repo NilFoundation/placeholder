@@ -27,6 +27,7 @@
 #define CRYPTO3_BLUEPRINT_UTILS_PLONK_SATISFIABILITY_CHECK_HPP
 
 #include <atomic>
+#include <functional>
 #include <mutex>
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
 #include <nil/crypto3/zk/snark/arithmetization/plonk/table_description.hpp>
@@ -50,6 +51,7 @@ namespace nil {
             bool verbose{false};
             size_t thread_pool_size{std::thread::hardware_concurrency()};
             size_t split_per_thread{16};
+            const std::map<uint32_t, std::vector<std::string>>* constraint_names{nullptr}; // non-owning
         };
 
         template <typename FieldType>
@@ -126,7 +128,12 @@ namespace nil {
                                 std::cout << "Constraint " << j << " from gate " << gate_idx << " on row " << row
                                     << " is not satisfied." << std::endl;
                                 std::cout << "Constraint result: " << constraint_result << std::endl;
-                                std::cout << "Offending constraint name: " << bp.get_constraint_name(gates[gate_idx].selector_index, j) << std::endl;
+
+                                std::string constraint_name;
+                                if (options_.constraint_names) {
+                                    constraint_name = options_.constraint_names->at(gates[gate_idx].selector_index).at(j);
+                                }
+                                std::cout << "Offending constraint name: " << constraint_name << std::endl;
                                 std::cout << "Offending contraint: " << gates[gate_idx].constraints[j] << std::endl;
 
                                 return false;
