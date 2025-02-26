@@ -3,6 +3,7 @@
 // Copyright (c) 2020-2021 Nikita Kaskov <nbering@nil.foundation>
 // Copyright (c) 2020-2021 Ilias Khairullin <ilias@nil.foundation>
 // Copyright (c) 2024 Vasiliy Olekhov <vasiliy.olekhov@nil.foundation>
+// Copyright (c) 2025 Andrey Nefedov <ioxid@nil.foundation>
 //
 // MIT License
 //
@@ -27,10 +28,11 @@
 
 #define BOOST_TEST_MODULE algebra_fields_bench_test
 
-#include <chrono>
-#include <fstream>
-#include <ostream>
+#include <cstddef>
+#include <format>
+#include <iostream>
 #include <string>
+#include <tuple>
 
 #include <boost/test/data/monomorphic.hpp>
 #include <boost/test/data/test_case.hpp>
@@ -38,6 +40,8 @@
 
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
+
+#include <boost/core/demangle.hpp>
 
 #include <nil/crypto3/algebra/fields/alt_bn128/scalar_field.hpp>
 #include <nil/crypto3/algebra/fields/babybear.hpp>
@@ -48,193 +52,71 @@
 #include <nil/crypto3/algebra/fields/koalabear.hpp>
 #include <nil/crypto3/algebra/fields/mersenne31.hpp>
 #include <nil/crypto3/algebra/fields/mnt4/base_field.hpp>
-#include <nil/crypto3/algebra/fields/mnt4/scalar_field.hpp>
 #include <nil/crypto3/algebra/fields/mnt6/base_field.hpp>
-#include <nil/crypto3/algebra/fields/mnt6/scalar_field.hpp>
 #include <nil/crypto3/algebra/fields/pallas/base_field.hpp>
-#include <nil/crypto3/algebra/fields/pallas/scalar_field.hpp>
-#include <nil/crypto3/algebra/fields/secp/secp_k1/base_field.hpp>
-#include <nil/crypto3/algebra/fields/secp/secp_k1/scalar_field.hpp>
-#include <nil/crypto3/algebra/fields/secp/secp_r1/base_field.hpp>
-#include <nil/crypto3/algebra/fields/secp/secp_r1/scalar_field.hpp>
-#include <nil/crypto3/algebra/random_element.hpp>
+
+#include <nil/crypto3/bench/benchmark.hpp>
 
 using namespace nil::crypto3::algebra;
 
-BOOST_AUTO_TEST_SUITE(fields_manual_tests)
+template<typename Field>
+std::string field_name() {
+    auto demangled = boost::core::demangle(typeid(Field).name());
+    std::size_t last_colon = demangled.find_last_of(':');
+    if (last_colon != std::string::npos) {
+        demangled = demangled.substr(last_colon + 1);
+    }
+    return demangled;
+}
 
 template<class Field>
 void run_perf_test(std::string const& field_name) {
-    using namespace nil::crypto3;
-    using namespace nil::crypto3::algebra;
-    using namespace nil::crypto3::algebra::fields;
+    using V = typename Field::value_type;
 
-    typedef typename Field::value_type value_type;
-    std::vector<value_type> points1;
-    std::vector<value_type> points2;
+    std::cout << std::endl;
 
-    // size of arrays is 4 times larger than typical L1 data cache
-    size_t SAMPLES_COUNT = 4 * 32 * 1024 / sizeof(value_type);
-
-    for (int i = 0; i < SAMPLES_COUNT; ++i) {
-        points1.push_back(algebra::random_element<Field>());
-        points2.push_back(algebra::random_element<Field>());
-    }
-
-    auto gather_stats = [&points1, &points2](
-                            std::function<void(std::vector<value_type> & result,
-                                               std::vector<value_type> const& samples,
-                                               std::size_t sample)>
-                                operation,
-                            size_t samples_per_batch, const std::string& operation_name) {
-        size_t BATCHES = 1000;
-
-        using duration = std::chrono::duration<double, std::nano>;
-
-        std::vector<duration> batch_duration;
-        batch_duration.resize(BATCHES);
-        auto save = points1[3];
-        ;
-
-        for (size_t b = 0; b < BATCHES; ++b) {
-            // if (b % (BATCHES/10) == 0) std::cerr << "Batch progress:" << b <<
-            // std::endl;
-            auto start = std::chrono::high_resolution_clock::now();
-            auto points_index = 0;
-
-            for (size_t i = 0; i < samples_per_batch; ++i) {
-                operation(points1, points2, i);
-                ++points_index;
-                if (points_index == 1000) points_index = 0;
-            }
-
-            auto finish = std::chrono::high_resolution_clock::now();
-            batch_duration[b] = (finish - start) * 1.0 / samples_per_batch;
-        }
-
-        // prevent value 'result' from optimizating out
-        std::cerr << save << std::endl;
-
-        auto s = batch_duration[0];
-        for (size_t b = 1; b < batch_duration.size(); ++b) {
-            s += batch_duration[b];
-        }
-
-        s /= batch_duration.size() - 2;
-        std::cout << "Average time for operator " << operation_name << ": " << std::fixed
-                  << std::setprecision(3) << s.count() << std::endl;
-
-        return batch_duration;
+    auto bench_name = [&](std::string const& op) {
+        return std::format("{:29} {:7}:", field_name, op);
     };
 
-    for (int mult = 1; mult <= 100; ++mult) {
-        int MULTIPLICATOR = mult;
-        std::cout << "MULT: " << MULTIPLICATOR << std::endl;
+    constexpr std::size_t INDEPENDENT_FOLDS = 10;
 
-        auto plus_results = gather_stats(
-            [&](std::vector<value_type>& result, std::vector<value_type> const& samples,
-                std::size_t sample) {
-                for (int m = 0; m < MULTIPLICATOR; m++)
-                    result[sample * (sample + m) % SAMPLES_COUNT] +=
-                        samples[sample * (sample + m) * 17 % SAMPLES_COUNT];
-            },
-            10000 / MULTIPLICATOR, "Addition");
+    nil::crypto3::bench::run_fold_benchmark<1, Field>(bench_name("mul_lat"),
+                                                      [](V& a, V const& b) { a *= b; });
 
-        auto mul_results = gather_stats(
-            [&](std::vector<value_type>& result, std::vector<value_type> const& samples,
-                std::size_t sample) {
-                for (int m = 0; m < MULTIPLICATOR; m++)
-                    result[sample * (sample + m) % SAMPLES_COUNT] *=
-                        samples[sample * (sample + m) * 17 % SAMPLES_COUNT];
-            },
-            1000 / MULTIPLICATOR, "Multiplication");
+    nil::crypto3::bench::run_independent_folds_benchmark<INDEPENDENT_FOLDS, Field>(
+        bench_name("mul_thr"), [](V& a, V const& b) { a *= b; });
 
-        auto minus_results = gather_stats(
-            [&](std::vector<value_type>& result, std::vector<value_type> const& samples,
-                std::size_t sample) {
-                for (int m = 0; m < MULTIPLICATOR; m++)
-                    result[sample * (sample + m) % SAMPLES_COUNT] -=
-                        samples[sample * (sample + m) * 17 % SAMPLES_COUNT];
-            },
-            10000 / MULTIPLICATOR, "Subtraction");
+    nil::crypto3::bench::run_fold_benchmark<0, Field>(bench_name("add_lat"),
+                                                      [](V& a, V const& b) { a += b; });
 
-        auto sqr_results = gather_stats(
-            [&](std::vector<value_type>& result, std::vector<value_type> const& samples,
-                std::size_t sample) {
-                for (int m = 0; m < MULTIPLICATOR; m++)
-                    result[sample * (sample + m) % SAMPLES_COUNT].square_inplace();
-            },
-            1000 / MULTIPLICATOR, "Square In-Place");
+    nil::crypto3::bench::run_independent_folds_benchmark<INDEPENDENT_FOLDS, Field>(
+        bench_name("add_thr"), [](V& a, V const& b) { a += b; });
 
-        auto inv_results = gather_stats(
-            [&](std::vector<value_type>& result, std::vector<value_type> const& samples,
-                std::size_t sample) {
-                for (int m = 0; m < MULTIPLICATOR; m++)
-                    result[sample * (sample + m) % SAMPLES_COUNT] =
-                        samples[sample * (sample + m) * 17 % SAMPLES_COUNT].inversed();
-            },
-            100 / MULTIPLICATOR, "Inverse");
-        char filename[200] = {0};
-        sprintf(filename, "%s-stats-%03d.csv", field_name.c_str(), MULTIPLICATOR);
+    nil::crypto3::bench::run_fold_benchmark<0, Field>(bench_name("sub_lat"),
+                                                      [](V& a, V const& b) { a -= b; });
 
-        std::ofstream f(filename, std::ofstream::out);
-        f << "# " << typeid(Field).name() << std::endl;
-        f << "sum,mul,sub,sqr,inv" << std::endl;
+    nil::crypto3::bench::run_independent_folds_benchmark<INDEPENDENT_FOLDS, Field>(
+        bench_name("sub_thr"), [](V& a, V const& b) { a -= b; });
 
-        for (size_t i = 0; i < plus_results.size(); ++i) {
-            f << std::fixed << std::setprecision(3) << plus_results[i].count() << ","
-              << std::fixed << std::setprecision(3) << mul_results[i].count() << ","
-              << std::fixed << std::setprecision(3) << minus_results[i].count() << ","
-              << std::fixed << std::setprecision(3) << sqr_results[i].count() << ","
-              << std::fixed << std::setprecision(3) << inv_results[i].count()
-              << std::endl;
-        }
+    nil::crypto3::bench::run_benchmark<Field>(bench_name("sqr"),
+                                              [](V& a) { a.square_inplace(); });
 
-        f.close();
-    }
+    nil::crypto3::bench::run_benchmark<Field>(bench_name("inv"),
+                                              [](V& a) { a = a.inversed(); });
 }
 
-BOOST_AUTO_TEST_CASE(field_operation_perf_test_pallas) {
-    run_perf_test<nil::crypto3::algebra::fields::pallas_base_field>("pallas");
-}
+using field_types = std::tuple<
+    nil::crypto3::algebra::fields::alt_bn128_scalar_field<254u>,
+    nil::crypto3::algebra::fields::goldilocks, nil::crypto3::algebra::fields::mersenne31,
+    nil::crypto3::algebra::fields::koalabear, nil::crypto3::algebra::fields::babybear,
+    nil::crypto3::algebra::fields::pallas_base_field,
+    nil::crypto3::algebra::fields::mnt4_base_field<298>,
+    nil::crypto3::algebra::fields::mnt6_base_field<298>,
+    nil::crypto3::algebra::fields::ed25519,
+    nil::crypto3::algebra::fields::bls12_base_field<381u>,
+    nil::crypto3::algebra::fields::bls12_scalar_field<381u>>;
 
-BOOST_AUTO_TEST_CASE(field_operation_perf_test_mnt) {
-    run_perf_test<nil::crypto3::algebra::fields::mnt4_base_field<298>>("mnt4_298");
-    run_perf_test<nil::crypto3::algebra::fields::mnt6_base_field<298>>("mnt6_298");
+BOOST_AUTO_TEST_CASE_TEMPLATE(field_operation_perf_test, Field, field_types) {
+    run_perf_test<Field>(field_name<Field>());
 }
-
-BOOST_AUTO_TEST_CASE(field_operation_perf_test_ed25519) {
-    run_perf_test<nil::crypto3::algebra::fields::ed25519>("ed25519");
-}
-
-BOOST_AUTO_TEST_CASE(field_operation_perf_test_bls12_381_base) {
-    run_perf_test<nil::crypto3::algebra::fields::bls12_base_field<381u>>("bls12_381");
-}
-
-BOOST_AUTO_TEST_CASE(field_operation_perf_test_bls12_381_scalar) {
-    run_perf_test<nil::crypto3::algebra::fields::bls12_scalar_field<381u>>(
-        "bls12_381_scalar");
-}
-
-BOOST_AUTO_TEST_CASE(field_operation_perf_test_alt_bn128_254_scalar) {
-    run_perf_test<nil::crypto3::algebra::fields::alt_bn128_scalar_field<254u>>(
-        "alt_bn128_254_scalar");
-}
-
-BOOST_AUTO_TEST_CASE(field_operation_perf_test_goldilocks) {
-    run_perf_test<nil::crypto3::algebra::fields::goldilocks>("goldilocks");
-}
-
-BOOST_AUTO_TEST_CASE(field_operation_perf_test_mersenne31) {
-    run_perf_test<nil::crypto3::algebra::fields::mersenne31>("mersenne31");
-}
-
-BOOST_AUTO_TEST_CASE(field_operation_perf_test_koalabear) {
-    run_perf_test<nil::crypto3::algebra::fields::koalabear>("koalabear");
-}
-
-BOOST_AUTO_TEST_CASE(field_operation_perf_test_babybear) {
-    run_perf_test<nil::crypto3::algebra::fields::babybear>("babybear");
-}
-
-BOOST_AUTO_TEST_SUITE_END()
