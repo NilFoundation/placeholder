@@ -135,10 +135,12 @@ namespace nil {
                     R_64[3] = chunk_sum_64(R, 3);
 
 
-                    if constexpr( stage == GenerationStage::ASSIGNMENT ){
-                        TYPE lo_carries = lo_carryless_construct(A_64, B_64, R_64);
-                        TYPE hi_carries = hi_carryless_construct(A_64, B_64, R_64);
+                    // std::vector<TYPE> DUMMY_64(4);
+                    TYPE lo_carries = lo_carryless_construct(A_64, B_64, R_64);
+                    // TYPE lo_carries = first_carryless_construct(R_64, A_64, B_64, DUMMY_64);
+                    TYPE hi_carries = hi_carryless_construct(A_64, B_64, R_64);
 
+                    if constexpr( stage == GenerationStage::ASSIGNMENT ){
                         zkevm_word_type c_first_i = typename FieldType::integral_type(lo_carries.data) >> 128;
                         auto c_first = w_to_16(c_first_i);
                         zkevm_word_type c_second_i = (typename FieldType::integral_type(hi_carries.data) + c_first_i) >> 128;
@@ -149,8 +151,8 @@ namespace nil {
                         C0 = c_second[11];
                     }
 
-                    TYPE lo_carries = lo_carryless_construct(A_64, B_64, R_64);
-                    TYPE hi_carries = hi_carryless_construct(A_64, B_64, R_64);
+//                    TYPE lo_carries = lo_carryless_construct(A_64, B_64, R_64);
+//                    TYPE hi_carries = hi_carryless_construct(A_64, B_64, R_64);
 
                     allocate(C3[0], 17, 1);
                     allocate(C3[1], 18, 1);

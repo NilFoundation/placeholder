@@ -49,25 +49,10 @@ namespace nil {
 
                 constexpr static const std::size_t chunk_amount = 16;
                 constexpr static const std::size_t carry_amount = 16 / 3 + 1;
-                constexpr static const value_type two_16 = 65536;
-                constexpr static const value_type two_32 = 4294967296;
-                constexpr static const value_type two_48 = 281474976710656;
-                constexpr static const value_type two_64 = 0x10000000000000000_big_uint254;
-                constexpr static const value_type two128 =
-                    0x100000000000000000000000000000000_big_uint254;
-                constexpr static const value_type two192 =
-                    0x1000000000000000000000000000000000000000000000000_big_uint254;
 
               public:
                 using typename generic_component<FieldType, stage>::TYPE;
                 using typename generic_component<FieldType, stage>::context_type;
-
-                template<typename T, typename V = T>
-                T chunk_sum_64(const std::vector<V> &chunks, const unsigned char chunk_idx) const {
-                    BOOST_ASSERT(chunk_idx < 8);  // corrected to allow 512-bit numbers
-                    return chunks[4 * chunk_idx] + chunks[4 * chunk_idx + 1] * two_16 +
-                           chunks[4 * chunk_idx + 2] * two_32 + chunks[4 * chunk_idx + 3] * two_48;
-                }
 
                 // a = b*r, a and r have 8 64-bit chunks, b has 4 64-bit chunks
                 template<typename T>
@@ -75,9 +60,9 @@ namespace nil {
                                             const std::vector<T> &b_64_chunks,
                                             const std::vector<T> &r_64_chunks) const {
                     return r_64_chunks[0] * b_64_chunks[0] +
-                           two_64 *
+                           T(two_64) *
                                (r_64_chunks[0] * b_64_chunks[1] + r_64_chunks[1] * b_64_chunks[0]) -
-                           a_64_chunks[0] - two_64 * a_64_chunks[1];
+                           a_64_chunks[0] - T(two_64) * a_64_chunks[1];
                 }
 
                 template<typename T>
@@ -86,10 +71,10 @@ namespace nil {
                                              const std::vector<T> &r_64_chunks) const {
                     return (r_64_chunks[0] * b_64_chunks[2] + r_64_chunks[1] * b_64_chunks[1] +
                             r_64_chunks[2] * b_64_chunks[0]) +
-                           two_64 *
+                           T(two_64) *
                                (r_64_chunks[0] * b_64_chunks[3] + r_64_chunks[1] * b_64_chunks[2] +
                                 r_64_chunks[2] * b_64_chunks[1] + r_64_chunks[3] * b_64_chunks[0]) -
-                           a_64_chunks[2] - two_64 * a_64_chunks[3];
+                           a_64_chunks[2] - T(two_64) * a_64_chunks[3];
                 }
 
                 template<typename T>
@@ -98,10 +83,10 @@ namespace nil {
                                             const std::vector<T> &r_64_chunks) const {
                     return (r_64_chunks[1] * b_64_chunks[3] + r_64_chunks[2] * b_64_chunks[2] +
                             r_64_chunks[3] * b_64_chunks[1] + r_64_chunks[4] * b_64_chunks[0]) +
-                           two_64 *
+                           T(two_64) *
                                (r_64_chunks[2] * b_64_chunks[3] + r_64_chunks[3] * b_64_chunks[2] +
                                 r_64_chunks[4] * b_64_chunks[1] + r_64_chunks[5] * b_64_chunks[0]) -
-                           a_64_chunks[4] - two_64 * a_64_chunks[5];
+                           a_64_chunks[4] - T(two_64) * a_64_chunks[5];
                 }
 
                 template<typename T>
@@ -110,10 +95,10 @@ namespace nil {
                                             const std::vector<T> &r_64_chunks) const {
                     return (r_64_chunks[3] * b_64_chunks[3] + r_64_chunks[4] * b_64_chunks[2] +
                             r_64_chunks[5] * b_64_chunks[1] + r_64_chunks[6] * b_64_chunks[0]) +
-                           two_64 *
+                           T(two_64) *
                                (r_64_chunks[4] * b_64_chunks[3] + r_64_chunks[5] * b_64_chunks[2] +
                                 r_64_chunks[6] * b_64_chunks[1] + r_64_chunks[7] * b_64_chunks[0]) -
-                           a_64_chunks[6] - two_64 * a_64_chunks[7];
+                           a_64_chunks[6] - T(two_64) * a_64_chunks[7];
                 }
                 TYPE carry_on_addition_constraint(TYPE a_0, TYPE a_1, TYPE a_2, TYPE b_0, TYPE b_1,
                                                   TYPE b_2, TYPE r_0, TYPE r_1, TYPE r_2,
@@ -276,7 +261,7 @@ namespace nil {
 
                     first_carryless =
                         first_carryless_construct<TYPE>(Nr_64_chunks, N_64_chunks, r_64_chunks);
-                    second_carryless = 
+                    second_carryless =
                         second_carryless_construct<TYPE>(Nr_64_chunks, N_64_chunks, r_64_chunks);
                     third_carryless =
                         third_carryless_construct<TYPE>(Nr_64_chunks, N_64_chunks, r_64_chunks);
@@ -287,23 +272,21 @@ namespace nil {
                         // computation of s = a*b product
                         auto s_first_row_carries = s_first_carryless.data.base() >> 128;
                         value_type s_c_1 =
-                            static_cast<value_type>(s_first_row_carries & (two_64 - 1).data.base());
+                            static_cast<value_type>(s_first_row_carries & (two_64 - 1));
                         s_c_2 = static_cast<value_type>(s_first_row_carries >> 64);
                         s_c_1_chunks = chunk_64_to_16<FieldType>(s_c_1);
                         // no need for c_2 chunks as there is only a single chunk
-                        
-                        auto s_second_row_carries = 
+
+                        auto s_second_row_carries =
                             (s_second_carryless + s_c_1 + s_c_2 * two_64).data.base() >> 128;
                         // computation of s = a*b product
 
-                        value_type s_c_3 =
-                            static_cast<value_type>(s_second_row_carries & (two_64 - 1).data.base());
+                        value_type s_c_3 = static_cast<value_type>(s_second_row_carries & (two_64 - 1));
                         s_c_4 = static_cast<value_type>(s_second_row_carries >> 64);
-                        s_c_3_chunks = chunk_64_to_16<FieldType>(s_c_3); 
+                        s_c_3_chunks = chunk_64_to_16<FieldType>(s_c_3);
                         auto s_third_row_carries = s_third_carryless.data.base() >> 128;
 
-                        value_type s_c_5 =
-                            static_cast<value_type>(s_third_row_carries & (two_64 - 1).data.base());
+                        value_type s_c_5 = static_cast<value_type>(s_third_row_carries & (two_64 - 1));
                         s_c_6 = static_cast<value_type>(s_third_row_carries >> 64);
                         s_c_5_chunks = chunk_64_to_16<FieldType>(s_c_5);
 
@@ -311,20 +294,20 @@ namespace nil {
                         // caluclate first row carries
                         auto first_row_carries = first_carryless.data.base() >> 128;
                         value_type c_1 =
-                            static_cast<value_type>(first_row_carries & (two_64 - 1).data.base());
+                            static_cast<value_type>(first_row_carries & (two_64 - 1));
                         c_2 = static_cast<value_type>(first_row_carries >> 64);
                         c_1_chunks = chunk_64_to_16<FieldType>(c_1);
                         // no need for c_2 chunks as there is only a single chunk
-                        auto second_row_carries = 
+                        auto second_row_carries =
                             (second_carryless + c_1 + c_2 * two_64) .data.base() >> 128;
                         value_type c_3 =
-                            static_cast<value_type>(second_row_carries & (two_64 - 1).data.base());
+                            static_cast<value_type>(second_row_carries & (two_64 - 1));
                         c_4 = static_cast<value_type>(second_row_carries >> 64);
                         c_3_chunks = chunk_64_to_16<FieldType>(c_3);
                         auto third_row_carries =
                             (third_carryless + c_3 + c_4 * two_64) .data.base() >> 128;
                         value_type c_5 =
-                            static_cast<value_type>(third_row_carries & (two_64 - 1).data.base());
+                            static_cast<value_type>(third_row_carries & (two_64 - 1));
                         c_6 = static_cast<value_type>(third_carryless.data.base() >> 64);
                         c_5_chunks = chunk_64_to_16<FieldType>(c_5);
 
@@ -415,17 +398,17 @@ namespace nil {
                     allocate(s_c_5_64, 40, 0);
                     allocate(s_c_6, 41, 0);
 
-                    constrain(s_first_carryless - s_c_1_64 * two128 - s_c_2 * two192);
-                    constrain(s_second_carryless + s_c_1_64 + s_c_2 * two_64 - s_c_3_64 * two128 -
-                               s_c_4 * two192);
+                    constrain(s_first_carryless - s_c_1_64 * two_128 - s_c_2 * two_192);
+                    constrain(s_second_carryless + s_c_1_64 + s_c_2 * two_64 - s_c_3_64 * two_128 -
+                               s_c_4 * two_192);
                     // add constraints for s_c_2/s_c_4/s_c_6: s_c_2 is 0/1, s_c_4 is 0/1/2/3,s_c_6
                     // is 0/1
                     constrain(s_c_2 * (s_c_2 - 1));
                     constrain(s_c_4 * (s_c_4 - 1) * (s_c_4 - 2) * (s_c_4 - 3));
                     constrain(s_c_6 * (s_c_6 - 1));
 
-                    constrain(s_third_carryless + s_c_3_64 + s_c_4 * two_64 - s_c_5_64 * two128 -
-                              s_c_6 * two192);
+                    constrain(s_third_carryless + s_c_3_64 + s_c_4 * two_64 - s_c_5_64 * two_128 -
+                              s_c_6 * two_192);
                     constrain(s_forth_carryless + s_c_5_64 + s_c_6 * two_64);
 
                     // s = Nr + q carries
@@ -508,9 +491,9 @@ namespace nil {
                     allocate(c_5_64, 40, 1);
                     allocate(c_6, 41, 1);
 
-                    constrain((first_carryless - c_1_64 * two128 - c_2 * two192));
-                    constrain((second_carryless + c_1_64 + c_2 * two_64 - c_3_64 * two128 -
-                               c_4 * two192));
+                    constrain((first_carryless - c_1_64 * two_128 - c_2 * two_192));
+                    constrain((second_carryless + c_1_64 + c_2 * two_64 - c_3_64 * two_128 -
+                               c_4 * two_192));
 
                     // add constraints for c_2/c_4/c_6: c_2 is 0/1, c_4, c_6 is 0/1/2/3
                     constrain(c_2 * (c_2 - 1));
@@ -518,7 +501,7 @@ namespace nil {
                     constrain(c_6 * (c_6 - 1) * (c_6 - 2) * (c_6 - 3));
 
                     constrain(
-                        (third_carryless + c_3_64 + c_4 * two_64 - c_5_64 * two128 - c_6 * two192));
+                        (third_carryless + c_3_64 + c_4 * two_64 - c_5_64 * two_128 - c_6 * two_192));
                     constrain((forth_carryless + c_5_64 + c_6 * two_64));
 
                     auto A_128 = chunks16_to_chunks128_reversed<TYPE>(input_a_chunks);
