@@ -82,10 +82,7 @@ namespace nil {
                     for( std::size_t i = 0; i < 16; i++ ){
                         allocate(A[i], i, 0);
                         R[i] = 0xFFFF - A[i]; // 16-bit bitwise NOT 
-                        allocate(R[i], i + 16, 0);
-                    }
-                    for( std::size_t i = 0; i < 16; i++ ){
-                        constrain(R[i] + A[i] - 0xFFFF);  // A[i] + R[i] = 0xFFFF  <==> R[i] = ~A[i]
+                        allocate(R[i], i + 16, 0);  // implicit constraint R[i] - (0xFFFF - A[i])
                     }
 
                     // combine 16-bit chunks to make 128-bit chunks
@@ -108,8 +105,8 @@ namespace nil {
                             TYPE(0),// field
                             current_state.rw_counter(0),
                             TYPE(0),// is_write
-                            A_128.first,  // high bits of a
-                            A_128.second  // low bits of a
+                            A_128.first,// high bits of a
+                            A_128.second// low bits of a
                         }, "zkevm_rw");
                         
                         // stack write lookup
