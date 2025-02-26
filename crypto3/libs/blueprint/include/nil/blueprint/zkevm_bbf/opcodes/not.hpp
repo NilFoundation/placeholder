@@ -41,11 +41,11 @@ namespace nil {
             *  Opcode: 0x19 NOT
             *  Description: Bitwise NOT operation 
             *  GAS: 3
-            *  Memory: None
+            *  Memory: Unchanged
             *  Stack Input: a
             *  Stack Output: ~a
-            *  Stack Read  Lookup: A_128
-            *  Stack Write Lookup: R_128
+            *  Stack Read  Lookup: a
+            *  Stack Write Lookup: ~a
             */
             template<typename FieldType, GenerationStage stage>
             class zkevm_not_bbf : generic_component<FieldType, stage> {
@@ -61,7 +61,7 @@ namespace nil {
                 zkevm_not_bbf(context_type &context_object, const opcode_input_type<FieldType, stage> &current_state):
                     generic_component<FieldType,stage>(context_object, false)
                 {
-                    // NOT checked by current test
+
                     std::vector<TYPE> A(16); // 16-bit chunks of a
                     std::vector<TYPE> R(16); // 16-bit chunks of ~a
 
@@ -70,10 +70,8 @@ namespace nil {
                         auto a = w_to_16(current_state.stack_top());
                         for( std::size_t i = 0; i < 16; i++ ){
                             A[i] = a[i];
-                            R[i] = 0xFFFF - a[i]; // 16-bit bitwise NOT 
                         }
                     }
-
                     
                     /* Layout:         range_checked_opcode_area
                            W0     W1     ...    W15    W16    W17    ...    W31   
@@ -83,6 +81,7 @@ namespace nil {
                     */
                     for( std::size_t i = 0; i < 16; i++ ){
                         allocate(A[i], i, 0);
+                        R[i] = 0xFFFF - A[i]; // 16-bit bitwise NOT 
                         allocate(R[i], i + 16, 0);
                     }
                     for( std::size_t i = 0; i < 16; i++ ){
@@ -109,8 +108,8 @@ namespace nil {
                             TYPE(0),// field
                             current_state.rw_counter(0),
                             TYPE(0),// is_write
-                            A_128.first,
-                            A_128.second
+                            A_128.first,  // high bits of a
+                            A_128.second  // low bits of a
                         }, "zkevm_rw");
                         
                         // stack write lookup
@@ -123,8 +122,8 @@ namespace nil {
                             TYPE(0),// field
                             current_state.rw_counter(0) + 1,
                             TYPE(1),// is_write
-                            R_128.first,
-                            R_128.second
+                            R_128.first,// high bits of ~a
+                            R_128.second// low bits of ~a
                         }, "zkevm_rw");
                     } else {
                         std::cout << "Assignment implemented" << std::endl;
