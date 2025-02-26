@@ -44,15 +44,6 @@ namespace nil {
             *  Memory: None
             *  Stack Input: a
             *  Stack Output: ~a
-            *  Variables: 
-            *               - A[16] (16-bit chunks of a), 
-            *               - R[16] (16-bit chunks of ~a)
-            *               - A_128[2] (128-bit chunks of a, i.e low and high bits)
-            *               - R_128[2] (128-bit chunks of ~a, i.e low and high bits)
-            *  Layout:  +------+------+------+------+------+------+------+------+
-                        | A[0] | A[1] |  ... | A[15]| R[0] | R[1] |  ... | R[15]|
-                        +------+------+------|------+------+------+------|------+
-            *  Constraints: A[i] + R[i] - 0xFFFF  <==> R[i] = ~A[i]
             *  Stack Read  Lookup: A_128
             *  Stack Write Lookup: R_128
             */
@@ -71,8 +62,8 @@ namespace nil {
                     generic_component<FieldType,stage>(context_object, false)
                 {
                     // NOT checked by current test
-                    std::vector<TYPE> A(16);
-                    std::vector<TYPE> R(16);
+                    std::vector<TYPE> A(16); // 16-bit chunks of a
+                    std::vector<TYPE> R(16); // 16-bit chunks of ~a
 
                     if constexpr( stage == GenerationStage::ASSIGNMENT ){
                         // split a (stack top) to 16-bit chunks
@@ -82,12 +73,20 @@ namespace nil {
                             R[i] = 0xFFFF - a[i]; // 16-bit bitwise NOT 
                         }
                     }
+
+                    
+                    /* Layout:  
+                           W0     W1     ...    W15    W16    W17    ...    W31   
+                        +------+------+------+------+------+------+------+------+
+                        | A[0] | A[1] |  ... | A[15]| R[0] | R[1] |  ... | R[15]|
+                        +------+------+------|------+------+------+------|------+
+                    */
                     for( std::size_t i = 0; i < 16; i++ ){
                         allocate(A[i], i, 0);
                         allocate(R[i], i + 16, 0);
                     }
                     for( std::size_t i = 0; i < 16; i++ ){
-                        constrain(R[i] + A[i] - 0xFFFF);
+                        constrain(R[i] + A[i] - 0xFFFF);  // A[i] + R[i] = 0xFFFF  <==> R[i] = ~A[i]
                     }
 
                     // combine 16-bit chunks to make 128-bit chunks
