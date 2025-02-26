@@ -90,9 +90,28 @@ struct GoldilocksCustom {
     static constexpr auto name = "[    custom][  goldilocks]";
 };
 
-using cases = std::tuple<MontgomeryCompileTimeCase, MontgomeryRuntimeCase,
-                         BarrettCompileTimeCase, BarrettRuntimeCase, GoldilocksMontgomery,
-                         GoldilocksBarrett, GoldilocksCustom>;
+constexpr std::uint64_t x_31 = 0xaf6f977ULL;
+constexpr std::uint64_t y_31 = 0x9f93335ULL;
+constexpr big_uint<31> babybear_modulus_big_uint = 0x78000001_big_uint31;
+
+struct BabyBearMontgomery {
+    using big_mod_t = montgomery_big_mod<babybear_modulus_big_uint>;
+    static constexpr big_mod_t x{x_31};
+    static constexpr big_mod_t y{y_31};
+    static constexpr auto name = "[montgomery][    babybear]";
+};
+
+struct BabyBearBarrett {
+    using big_mod_t = big_mod<babybear_modulus_big_uint>;
+    static constexpr big_mod_t x{x_31};
+    static constexpr big_mod_t y{y_31};
+    static constexpr auto name = "[   barrett][    babybear]";
+};
+
+using cases =
+    std::tuple<MontgomeryCompileTimeCase, MontgomeryRuntimeCase, BarrettCompileTimeCase,
+               BarrettRuntimeCase, GoldilocksMontgomery, GoldilocksBarrett,
+               GoldilocksCustom, BabyBearBarrett, BabyBearMontgomery>;
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(direct_mul_perf, Case, cases) {
     auto raw_base = detail::get_raw_base(Case::x);
