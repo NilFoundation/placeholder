@@ -204,7 +204,7 @@ namespace nil {
                             names.push_back(d.second);
                         }
                         bp.add_gate(selector_id, constraints);
-                        bp.register_constraint_names(selector_id, std::move(names));
+                        constraint_names.insert({selector_id, std::move(names)});
                         //std::cout << "\n";
                     }
 
@@ -475,6 +475,12 @@ namespace nil {
 
                 bool is_satisfied(const crypto3::zk::snark::plonk_assignment_table<FieldType> &assignments,
                                   const satisfiability_check_options &options = {}) {
+
+                    if (!constraint_names.empty() && !options.constraint_names) {
+                        auto opts_copy = options;
+                        opts_copy.constraint_names = &constraint_names;
+                        return satisfiability_checker<FieldType>::is_satisfied(bp, assignments, opts_copy);
+                    }
                     return satisfiability_checker<FieldType>::is_satisfied(bp, assignments, options);
                 }
 
@@ -506,6 +512,7 @@ namespace nil {
 
                     circuit<crypto3::zk::snark::plonk_constraint_system<FieldType>> bp;
                     crypto3::zk::snark::plonk_assignment_table<FieldType> presets;
+                    std::map<uint32_t, std::vector<std::string>> constraint_names;
             };
 
         }  // namespace bbf
