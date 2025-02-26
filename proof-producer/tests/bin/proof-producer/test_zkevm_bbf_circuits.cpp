@@ -98,7 +98,7 @@ INSTANTIATE_TEST_SUITE_P(MultiTxZkevm, ProverTests, ::testing::Values(Input{Mult
 INSTANTIATE_TEST_SUITE_P(MultiTxExp, ProverTests, ::testing::Values(Input{MultiTxIncrement, EXP}));
 INSTANTIATE_TEST_SUITE_P(MultiTxKeccak, ProverTests, ::testing::Values(Input{MultiTxIncrement, KECCAK}));
 
-// // Single call of exp operation
+// Single call of exp operation
 const std::string SimpleExp = "exp/exp";
 INSTANTIATE_TEST_SUITE_P(SimpleExpRw, ProverTests, ::testing::Values(Input{SimpleExp, RW}));
 INSTANTIATE_TEST_SUITE_P(SimpleExpBytecode, ProverTests, :: testing::Values(Input{SimpleExp, BYTECODE}));
@@ -106,6 +106,48 @@ INSTANTIATE_TEST_SUITE_P(SimpleExpCopy, ProverTests, ::testing::Values(Input{Sim
 INSTANTIATE_TEST_SUITE_P(SimpleExpZkevm, ProverTests, ::testing::Values(Input{SimpleExp, ZKEVM}));
 INSTANTIATE_TEST_SUITE_P(SimpleExpExp, ProverTests, ::testing::Values(Input{SimpleExp, EXP}));
 INSTANTIATE_TEST_SUITE_P(SimpleExpKeccak, ProverTests, ::testing::Values(Input{SimpleExp, KECCAK}));
+
+// ARITHMETIC CORNER CASES (OVERFLOW, UNDERFLOW, DIVISION BY ZERO)
+
+const std::string AdditionOverflow = "corner_cases/addition_overflow/addition_overflow";
+INSTANTIATE_TEST_SUITE_P(AdditionOverflowRw, ProverTests, ::testing::Values(Input{AdditionOverflow, RW}));
+INSTANTIATE_TEST_SUITE_P(AdditionOverflowBytecode, ProverTests, :: testing::Values(Input{AdditionOverflow, BYTECODE}));
+INSTANTIATE_TEST_SUITE_P(AdditionOverflowCopy, ProverTests, ::testing::Values(Input{AdditionOverflow, COPY}));
+INSTANTIATE_TEST_SUITE_P(AdditionOverflowZkevm, ProverTests, ::testing::Values(Input{AdditionOverflow, ZKEVM}));
+INSTANTIATE_TEST_SUITE_P(AdditionOverflowExp, ProverTests, ::testing::Values(Input{AdditionOverflow, EXP}));
+INSTANTIATE_TEST_SUITE_P(AdditionOverflowKeccak, ProverTests, ::testing::Values(Input{AdditionOverflow, KECCAK}));
+
+const std::string SubstractionUnderflow = "corner_cases/substraction_underflow/substraction_underflow";
+INSTANTIATE_TEST_SUITE_P(SubstractionUnderflowRw, ProverTests, ::testing::Values(Input{SubstractionUnderflow, RW}));
+INSTANTIATE_TEST_SUITE_P(SubstractionUnderflowBytecode, ProverTests, :: testing::Values(Input{SubstractionUnderflow, BYTECODE}));
+INSTANTIATE_TEST_SUITE_P(SubstractionUnderflowCopy, ProverTests, ::testing::Values(Input{SubstractionUnderflow, COPY}));
+INSTANTIATE_TEST_SUITE_P(SubstractionUnderflowZkevm, ProverTests, ::testing::Values(Input{SubstractionUnderflow, ZKEVM}));
+INSTANTIATE_TEST_SUITE_P(SubstractionUnderflowExp, ProverTests, ::testing::Values(Input{SubstractionUnderflow, EXP}));
+INSTANTIATE_TEST_SUITE_P(SubstractionUnderflowKeccak, ProverTests, ::testing::Values(Input{SubstractionUnderflow, KECCAK}));
+
+const std::string DivByZero = "corner_cases/division_by_zero/div_by_zero";
+INSTANTIATE_TEST_SUITE_P(DivByZeroRw, ProverTests, ::testing::Values(Input{DivByZero, RW}));
+INSTANTIATE_TEST_SUITE_P(DivByZeroBytecode, ProverTests, :: testing::Values(Input{DivByZero, BYTECODE}));
+INSTANTIATE_TEST_SUITE_P(DivByZeroCopy, ProverTests, ::testing::Values(Input{DivByZero, COPY}));
+INSTANTIATE_TEST_SUITE_P(DivByZeroZkevm, ProverTests, ::testing::Values(Input{DivByZero, ZKEVM}));
+INSTANTIATE_TEST_SUITE_P(DivByZeroExp, ProverTests, ::testing::Values(Input{DivByZero, EXP}));
+INSTANTIATE_TEST_SUITE_P(DivByZeroKeccak, ProverTests, ::testing::Values(Input{DivByZero, KECCAK}));
+
+const std::string MultiplicationOverflow = "corner_cases/multiplication_overflow/mul_overflow";
+INSTANTIATE_TEST_SUITE_P(MultiplicationOverflowRw, ProverTests, ::testing::Values(Input{MultiplicationOverflow, RW}));
+INSTANTIATE_TEST_SUITE_P(MultiplicationOverflowBytecode, ProverTests, :: testing::Values(Input{MultiplicationOverflow, BYTECODE}));
+INSTANTIATE_TEST_SUITE_P(MultiplicationOverflowCopy, ProverTests, ::testing::Values(Input{MultiplicationOverflow, COPY}));
+INSTANTIATE_TEST_SUITE_P(MultiplicationOverflowZkevm, ProverTests, ::testing::Values(Input{MultiplicationOverflow, ZKEVM}));
+INSTANTIATE_TEST_SUITE_P(MultiplicationOverflowExp, ProverTests, ::testing::Values(Input{MultiplicationOverflow, EXP}));
+INSTANTIATE_TEST_SUITE_P(MultiplicationOverflowKeccak, ProverTests, ::testing::Values(Input{MultiplicationOverflow, KECCAK}));
+
+const std::string ExponentiationOverflow = "corner_cases/exponentiation_overflow/exp_overflow";
+INSTANTIATE_TEST_SUITE_P(ExponentiationOverflowRw, ProverTests, ::testing::Values(Input{ExponentiationOverflow, RW}));
+INSTANTIATE_TEST_SUITE_P(ExponentiationOverflowBytecode, ProverTests, :: testing::Values(Input{ExponentiationOverflow, BYTECODE}));
+INSTANTIATE_TEST_SUITE_P(ExponentiationOverflowCopy, ProverTests, ::testing::Values(Input{ExponentiationOverflow, COPY}));
+INSTANTIATE_TEST_SUITE_P(ExponentiationOverflowZkevm, ProverTests, ::testing::Values(Input{ExponentiationOverflow, ZKEVM}));
+INSTANTIATE_TEST_SUITE_P(ExponentiationOverflowExp, ProverTests, ::testing::Values(Input{ExponentiationOverflow, EXP}));
+INSTANTIATE_TEST_SUITE_P(ExponentiationOverflowKeccak, ProverTests, ::testing::Values(Input{ExponentiationOverflow, KECCAK}));
 
 // RW trace is picked from another trace set and has different trace_idx
 TEST(ProverTest, TraceIndexMismatch) {
