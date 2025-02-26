@@ -47,14 +47,14 @@ namespace nil {
             *  Variables: 
             *               - A[16] (16-bit chunks of a), 
             *               - R[16] (16-bit chunks of ~a)
-            *               - A128[2] (128-bit chunks of a, i.e low and high bits)
-            *               - R128[2] (128-bit chunks of ~a, i.e low and high bits)
+            *               - A_128[2] (128-bit chunks of a, i.e low and high bits)
+            *               - R_128[2] (128-bit chunks of ~a, i.e low and high bits)
             *  Layout:  +------+------+------+------+------+------+------+------+
                         | A[0] | A[1] |  ... | A[15]| R[0] | R[1] |  ... | R[15]|
                         +------+------+------|------+------+------+------|------+
             *  Constraints: A[i] + R[i] - 0xFFFF  <==> R[i] = ~A[i]
-            *  Stack Read  Lookup: A128
-            *  Stack Write Lookup: R128
+            *  Stack Read  Lookup: A_128
+            *  Stack Write Lookup: R_128
             */
             template<typename FieldType, GenerationStage stage>
             class zkevm_not_bbf : generic_component<FieldType, stage> {
@@ -75,10 +75,11 @@ namespace nil {
                     std::vector<TYPE> R(16);
 
                     if constexpr( stage == GenerationStage::ASSIGNMENT ){
+                        // split a (stack top) to 16-bit chunks
                         auto a = w_to_16(current_state.stack_top());
                         for( std::size_t i = 0; i < 16; i++ ){
                             A[i] = a[i];
-                            R[i] = 0xFFFF - a[i];
+                            R[i] = 0xFFFF - a[i]; // 16-bit bitwise NOT 
                         }
                     }
                     for( std::size_t i = 0; i < 16; i++ ){
@@ -89,8 +90,9 @@ namespace nil {
                         constrain(R[i] + A[i] - 0xFFFF);
                     }
 
-                    auto A_128 = chunks16_to_chunks128<TYPE>(A);
-                    auto R_128 = chunks16_to_chunks128<TYPE>(R);
+                    // combine 16-bit chunks to make 128-bit chunks
+                    auto A_128 = chunks16_to_chunks128<TYPE>(A);  // 128-bit chunks of a
+                    auto R_128 = chunks16_to_chunks128<TYPE>(R);  // 128-bit chunks of ~a
                     if constexpr( stage == GenerationStage::CONSTRAINTS ){
                         constrain(current_state.pc_next() - current_state.pc(0) - 1);                   // PC transition
                         constrain(current_state.gas(0) - current_state.gas_next() - 3);                 // GAS transition
@@ -98,6 +100,7 @@ namespace nil {
                         constrain(current_state.memory_size(0) - current_state.memory_size_next());     // memory_size transition
                         constrain(current_state.rw_counter_next() - current_state.rw_counter(0) - 2);   // rw_counter transition
                         
+                        // stack read lookup
                         lookup({
                             TYPE(rw_op_to_num(rw_operation_type::stack)),
                             current_state.call_id(0),
@@ -111,6 +114,7 @@ namespace nil {
                             A_128.second
                         }, "zkevm_rw");
                         
+                        // stack write lookup
                         lookup( {
                             TYPE(rw_op_to_num(rw_operation_type::stack)),
                             current_state.call_id(0),
