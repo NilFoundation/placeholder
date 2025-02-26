@@ -36,6 +36,26 @@ namespace nil {
             template<typename FieldType>
             class opcode_abstract;
 
+
+            /*
+            *  Opcode: 0x19 NOT
+            *  Description: Bitwise NOT operation 
+            *  GAS: 3
+            *  Memory: None
+            *  Stack Input: a
+            *  Stack Output: ~a
+            *  Variables: 
+            *               - A[16] (16-bit chunks of a), 
+            *               - R[16] (16-bit chunks of ~a)
+            *               - A128[2] (128-bit chunks of a, i.e low and high bits)
+            *               - R128[2] (128-bit chunks of ~a, i.e low and high bits)
+            *  Layout:  +------+------+------+------+------+------+------+------+
+                        | A[0] | A[1] |  ... | A[15]| R[0] | R[1] |  ... | R[15]|
+                        +------+------+------|------+------+------+------|------+
+            *  Constraints: A[i] + R[i] - 0xFFFF  <==> R[i] = ~A[i]
+            *  Stack Read  Lookup: A128
+            *  Stack Write Lookup: R128
+            */
             template<typename FieldType, GenerationStage stage>
             class zkevm_not_bbf : generic_component<FieldType, stage> {
                 using typename generic_component<FieldType, stage>::context_type;
@@ -77,8 +97,8 @@ namespace nil {
                         constrain(current_state.stack_size(0) - current_state.stack_size_next());       // stack_size transition
                         constrain(current_state.memory_size(0) - current_state.memory_size_next());     // memory_size transition
                         constrain(current_state.rw_counter_next() - current_state.rw_counter(0) - 2);   // rw_counter transition
-                        std::vector<TYPE> tmp;
-                        tmp = {
+                        
+                        lookup({
                             TYPE(rw_op_to_num(rw_operation_type::stack)),
                             current_state.call_id(0),
                             current_state.stack_size(0) - 1,
@@ -89,9 +109,9 @@ namespace nil {
                             TYPE(0),// is_write
                             A_128.first,
                             A_128.second
-                        };
-                        lookup(tmp, "zkevm_rw");
-                        tmp = {
+                        }, "zkevm_rw");
+                        
+                        lookup( {
                             TYPE(rw_op_to_num(rw_operation_type::stack)),
                             current_state.call_id(0),
                             current_state.stack_size(0) - 1,
@@ -102,8 +122,7 @@ namespace nil {
                             TYPE(1),// is_write
                             R_128.first,
                             R_128.second
-                        };
-                        lookup(tmp, "zkevm_rw");
+                        }, "zkevm_rw");
                     } else {
                         std::cout << "Assignment implemented" << std::endl;
                     }
