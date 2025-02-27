@@ -6,7 +6,7 @@
 
 namespace nil::crypto3::multiprecision::detail {
     /*
-     * Compute -input^-1 mod 2^Bits. Throws an exception if input
+     * Compute input^-1 mod 2^Bits. Throws an exception if input
      * is even. If input is odd, then input and 2^n are relatively prime
      * and an inverse exists.
      */
@@ -21,7 +21,7 @@ namespace nil::crypto3::multiprecision::detail {
         T b = 1;
         T r = 0;
 
-        for (std::size_t i = 0; i != Bits; ++i) {
+        for (std::size_t i = 0; i < Bits; ++i) {
             const T bi = b % 2;
             r >>= 1;
             r += bi << (Bits - 1);
@@ -29,9 +29,6 @@ namespace nil::crypto3::multiprecision::detail {
             b -= a * bi;
             b >>= 1;
         }
-
-        // Now invert in addition space
-        r = (~static_cast<T>(0u) - r) + 1;
 
         return r;
     }

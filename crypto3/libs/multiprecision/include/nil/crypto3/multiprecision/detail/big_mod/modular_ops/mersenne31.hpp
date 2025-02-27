@@ -13,17 +13,31 @@
 
 #include <boost/assert.hpp>
 
-#include "nil/crypto3/multiprecision/detail/big_mod/modular_ops/montgomery.hpp"
+#include "nil/crypto3/multiprecision/detail/big_mod/modular_ops/simple_31_bit.hpp"
 #include "nil/crypto3/multiprecision/detail/big_mod/modular_ops_storage.hpp"
 
 namespace nil::crypto3::multiprecision {
     inline constexpr std::uint32_t mersenne31_modulus = 0x7FFFFFFFU;
 
     namespace detail {
-        class mersenne31_modular_ops : public detail::montgomery_modular_ops<31> {
+        // Optimized Mersenne31 ops. Custom multiplication implementation is used.
+        class mersenne31_modular_ops : public simple_31_bit_modular_ops {
           public:
+            using base_type = std::uint32_t;
+
             constexpr mersenne31_modular_ops()
-                : detail::montgomery_modular_ops<31>(mersenne31_modulus) {}
+                : simple_31_bit_modular_ops(mersenne31_modulus) {}
+
+            constexpr void mul(base_type &result, const base_type &y) const {
+                BOOST_ASSERT(result < mod() && y < mod());
+                auto prod = static_cast<std::uint64_t>(result) * y;
+                std::uint32_t prod_lo =
+                    prod & ((static_cast<std::uint64_t>(1) << 31) - 1);
+                std::uint32_t prod_hi = prod >> 31;
+                result = prod_lo;
+                this->add(result, prod_hi);
+                BOOST_ASSERT(result < mod());
+            }
         };
 
         using mersenne31_modular_ops_storage =

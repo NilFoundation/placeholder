@@ -50,7 +50,8 @@ namespace nil::crypto3::multiprecision::detail {
                 throw std::invalid_argument("module not usable with montgomery");
             }
 
-            m_montgomery_p_dash = montgomery_inverse(this->mod().limbs()[0]);
+            // This is negation modulo 2^limb_bits
+            m_montgomery_p_dash = -montgomery_inverse(this->mod().limbs()[0]);
 
             big_uint<2 * limb_count * limb_bits + 1> r;
             r.bit_set(2 * limb_count * limb_bits);
