@@ -89,7 +89,7 @@ namespace nil {
         template <typename CurveType, typename HashType>
         class FillAssignmentCommand: public command_chain {
         public:
-            struct Args { // TODO fill from boost program options and print as help
+            struct Args {
                 std::string circuit_name;
                 boost::filesystem::path in_trace_file_path;
                 boost::filesystem::path out_circuit_file_path;
@@ -97,6 +97,17 @@ namespace nil {
                 boost::filesystem::path out_assignment_description_file_path;
                 nil::proof_producer::OutputArtifacts output_artifacts;
                 nil::proof_producer::CircuitsLimits circuit_limits;
+
+                Args(boost::program_options::options_description& config) {
+                    config.add_options()
+                        ("circuit-name", po::value(&circuit_name)->required(), "Target circuit name")
+                        ("circuit", po::value(&out_circuit_file_path)->required(), "Circuit output file")
+                        ("assignment-table,t", po::value(&out_assignment_table_file_path)->required(), "Assignment table output file")
+                        ("assignment-description-file", po::value(&out_assignment_description_file_path)->required(), "Assignment table description output file")
+                        ("trace", po::value(&in_trace_file_path), "Base path for EVM trace files");
+                    register_output_artifacts_cli_args(output_artifacts, config);
+                    register_circuits_limits_cli_args(circuit_limits, config);
+                }
             };
 
             FillAssignmentCommand(const Args& args) {

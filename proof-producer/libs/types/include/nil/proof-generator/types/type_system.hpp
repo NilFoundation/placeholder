@@ -93,10 +93,10 @@ namespace nil {
         };
 
         struct PlaceholderConfig {
-            const std::size_t max_quotient_chunks;
-            const std::size_t expand_factor;
-            const std::size_t lambda;
-            const std::size_t grind;
+            std::size_t max_quotient_chunks{0};
+            std::size_t expand_factor{2};
+            std::size_t lambda{9};
+            std::size_t grind{0};
         };
     }
 }

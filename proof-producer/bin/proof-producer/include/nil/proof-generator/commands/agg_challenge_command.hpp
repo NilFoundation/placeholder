@@ -4,6 +4,7 @@
 
 #include <boost/filesystem.hpp>
 #include <boost/log/trivial.hpp>
+#include <boost/program_options.hpp>
 
 #include <nil/crypto3/marshalling/algebra/types/field_element.hpp>
 
@@ -27,6 +28,16 @@ namespace nil {
             struct Args {
                 std::vector<boost::filesystem::path> in_aggregate_files;
                 boost::filesystem::path out_aggregated_challenge_file;
+
+                Args(boost::program_options::options_description &desc) {
+
+                    namespace po = boost::program_options;
+
+                    desc.add_options()
+                        ("input-challenge-files,u",
+                            po::value<std::vector<boost::filesystem::path>>(&in_aggregate_files)->multitoken()->required())
+                        ("aggregated-challenge-file", po::value<boost::filesystem::path>(&out_aggregated_challenge_file)->required());
+                }
             };
 
             AggregatedChallengeCommand(const Args& args): args_(args) {}

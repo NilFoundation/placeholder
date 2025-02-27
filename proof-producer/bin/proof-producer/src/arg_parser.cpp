@@ -17,50 +17,27 @@
 #include <arg_parser.hpp>
 
 #include <nil/proof-generator/arithmetization_params.hpp>
-#include <nil/proof-generator/output_artifacts/output_artifacts.hpp>
 
-#include <fstream>
-#include <iomanip>
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <type_traits>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/program_options.hpp>
+#include <boost/log/core.hpp>
+#include <boost/log/trivial.hpp>
+#include <boost/log/expressions.hpp>
 
 namespace nil {
     namespace proof_producer {
         namespace po = boost::program_options;
 
-        void check_exclusive_options(const po::variables_map& vm, const std::vector<std::string>& opts) {
-            std::vector<std::string> found_opts;
-            for (const auto& opt : opts) {
-                if (vm.count(opt) && !vm[opt].defaulted()) {
-                    found_opts.push_back(opt);
-                }
+        namespace {
+            template<typename T>
+            po::typed_value<T>* make_defaulted_option(T& variable) {
+                return po::value(&variable)->default_value(variable);
             }
-            if (found_opts.size() > 1) {
-                throw std::logic_error("Conflicting options: " + boost::algorithm::join(found_opts, " and "));
-            }
-        }
-
-        template<typename T>
-        po::typed_value<T>* make_defaulted_option(T& variable) {
-            return po::value(&variable)->default_value(variable);
-        }
-
-        void register_circuits_limits_cli_args(CircuitsLimits& circuits_limits, po::options_description& cli_options) {
-                cli_options.add_options()
-                ("max-copy-rows", make_defaulted_option(circuits_limits.max_copy_rows), "Maximum number of copy table rows")
-                ("max-rw-rows", make_defaulted_option(circuits_limits.max_rw_rows), "Maximum number of rw table rows")
-                ("max-keccak-blocks", make_defaulted_option(circuits_limits.max_keccak_blocks), "Maximum keccak blocks")
-                ("max-bytecode-rows", make_defaulted_option(circuits_limits.max_bytecode_rows), "Maximum number of bytecode table rows")
-                ("max-total-rows", make_defaulted_option(circuits_limits.max_total_rows), "Maximum rows of assignemnt table")
-                ("max-mpt-rows", make_defaulted_option(circuits_limits.max_mpt_rows), "Maximum number of MPT table rows")
-                ("max-zkevm-rows", make_defaulted_option(circuits_limits.max_zkevm_rows), "Maximum number of zkevm table rows")
-                ("max-exp-rows", make_defaulted_option(circuits_limits.max_exp_rows), "Maximum number of exponent table rows")
-                ("max-exp-ops", make_defaulted_option(circuits_limits.max_exp_ops), "Maximum number of exponent operations")
-                ("RLC-CHALLENGE", make_defaulted_option(circuits_limits.RLC_CHALLENGE), "RLC_CHALLENGE (7 by default)");
         }
 
         std::optional<ProverOptions> parse_args(int argc, char* argv[]) {
@@ -85,65 +62,27 @@ namespace nil {
                 /*line_length=*/120,
                 /*min_description_length=*/60
             );
+
             // clang-format off
             auto options_appender = config.add_options()
-                ("stage", make_defaulted_option(prover_options.stage),
+                ("stage", po::value(&prover_options.stage),
                  "Stage of the prover to run, one of (all, preprocess, prove, verify, generate-aggregated-challenge, generate-combined-Q, aggregated-FRI, consistency-checks). Defaults to 'all'.")
-                ("proof,p", make_defaulted_option(prover_options.proof_file_path), "Proof file")
-                ("json,j", make_defaulted_option(prover_options.json_file_path), "JSON proof file")
-                ("common-data", make_defaulted_option(prover_options.preprocessed_common_data_path), "Preprocessed common data file")
-                ("preprocessed-data", make_defaulted_option(prover_options.preprocessed_public_data_path), "Preprocessed public data file")
-                ("commitment-state-file", make_defaulted_option(prover_options.commitment_scheme_state_path), "Commitment state data file")
-                ("updated-commitment-state-file", make_defaulted_option(prover_options.updated_commitment_scheme_state_path), "Updated commitment state data file")
-                ("trace", po::value(&prover_options.trace_base_path), "Base path for EVM trace files")
-                ("circuit", po::value(&prover_options.circuit_file_path), "Circuit input file")
-                ("circuit-name", po::value(&prover_options.circuit_name), "Target circuit name")
-                ("assignment-table,t", po::value(&prover_options.assignment_table_file_path), "Assignment table input file")
-                ("assignment-description-file", po::value(&prover_options.assignment_description_file_path), "Assignment description file")
                 ("log-level,l", make_defaulted_option(prover_options.log_level), "Log level (trace, debug, info, warning, error, fatal)") // TODO is does not work
                 ("elliptic-curve-type,e", make_defaulted_option(prover_options.elliptic_curve_type), "Elliptic curve type (pallas, alt_bn128_254)")
-                ("hash-type", po::value(&prover_options.hash_type_str), "Hash type (keccak, poseidon, sha256)")
-                ("lambda-param", make_defaulted_option(prover_options.lambda), "Lambda param (9)")
-                ("grind-param", make_defaulted_option(prover_options.grind), "Grind param (0)")
-                ("expand-factor,x", make_defaulted_option(prover_options.expand_factor), "Expand factor")
-                ("max-quotient-chunks,q", make_defaulted_option(prover_options.max_quotient_chunks), "Maximum quotient polynomial parts amount")
-                ("evm-verifier", make_defaulted_option(prover_options.evm_verifier_path), "Output folder for EVM verifier")
-                ("input-challenge-files,u", po::value<std::vector<boost::filesystem::path>>(&prover_options.input_challenge_files)->multitoken(),
-                 "Input challenge files. Used with 'generate-aggregated-challenge' stage.")
-                ("challenge-file", po::value<boost::filesystem::path>(&prover_options.challenge_file_path),
-                 "Input challenge files. Used with 'generate-aggregated-challenge' stage.")
-                ("theta-power-file", po::value<boost::filesystem::path>(&prover_options.theta_power_file_path),
-                 "File to output theta power. Used by main prover to arrange starting powers of Q")
-                ("aggregated-challenge-file", po::value<boost::filesystem::path>(&prover_options.aggregated_challenge_file),
-                 "Aggregated challenge file. Used with 'generate-aggregated-challenge' stage")
-                ("consistency-checks-challenges-file", po::value<boost::filesystem::path>(&prover_options.consistency_checks_challenges_file),
-                 "A file containing 'lambda' challenges generated by stage 'aggregated-FRI' and used in the stage 'FRI_consistency_checks'.")
-                ("combined-Q-polynomial-file", po::value<boost::filesystem::path>(&prover_options.combined_Q_polynomial_file),
-                 "File containing the polynomial combined-Q, generated on a single prover.")
-                ("combined-Q-starting-power", po::value<std::size_t>(&prover_options.combined_Q_starting_power),
-                 "The starting power for combined-Q polynomial for the current prover.")
-                ("partial-proof", po::value<std::vector<boost::filesystem::path>>(&prover_options.partial_proof_files)->multitoken(),
-                 "Partial proofs. Used with 'merge-proofs' stage.")
-                ("aggregated-proof", po::value<std::vector<boost::filesystem::path>>(&prover_options.aggregated_proof_files)->multitoken(),
-                 "Parts of aggregated proof. Used with 'merge-proofs' stage.")
-                ("initial-proof", po::value<std::vector<boost::filesystem::path>>(&prover_options.initial_proof_files)->multitoken(),
-                 "Inital proofs, produced by consistency-check stage. Used with 'merge-proofs' stage.")
-                ("aggregated-FRI-proof", po::value<boost::filesystem::path>(&prover_options.aggregated_FRI_proof_file),
-                 "Aggregated FRI proof part of the final proof. Used with 'merge-proofs' stage.")
-                ("input-combined-Q-polynomial-files", po::value<std::vector<boost::filesystem::path>>(&prover_options.input_combined_Q_polynomial_files),
-                 "Files containing polynomials combined-Q, 1 per prover instance.")
-                ("proof-of-work-file", make_defaulted_option(prover_options.proof_of_work_output_file), "File with proof of work.");
-
-            register_output_artifacts_cli_args(prover_options.output_artifacts, config);
-            register_circuits_limits_cli_args(prover_options.circuits_limits, config);
+                ("hash-type", po::value(&prover_options.hash_type_str), "Hash type (keccak, poseidon, sha256)");
 
             // clang-format on
             po::options_description cmdline_options("nil; Proof Producer");
             cmdline_options.add(generic).add(config);
 
             po::variables_map vm;
+            std::optional<po::parsed_options> parsed_options;
             try {
-                po::store(parse_command_line(argc, argv, cmdline_options), vm);
+                parsed_options = po::command_line_parser(argc, argv)
+                    .options(cmdline_options)
+                    .allow_unregistered()
+                    .run();
+                po::store(*parsed_options, vm);
             } catch (const po::validation_error& e) {
                 std::cerr << e.what() << std::endl;
                 std::cout << cmdline_options << std::endl;
@@ -151,8 +90,15 @@ namespace nil {
             }
 
             if (vm.count("help")) {
-                std::cout << cmdline_options << std::endl;
-                return std::nullopt;
+                if (!vm.count("stage")) {
+                    std::cout << cmdline_options << std::endl;
+                    return std::nullopt;
+                }
+                prover_options.help_mode = true;
+            }
+
+            if (!vm.count("stage")) {
+                prover_options.stage = "all";
             }
 
             if (vm.count("version")) {
@@ -188,13 +134,11 @@ namespace nil {
                 throw e;
             }
 
-            try {
-                check_exclusive_options(vm, {"verification-only", "skip-verification"});
-            } catch (const std::logic_error& e) {
-                std::cerr << e.what() << std::endl;
-                std::cout << cmdline_options << std::endl;
-                throw e;
-            }
+            boost::log::trivial::severity_level log_level;
+            boost::log::trivial::from_string(prover_options.log_level.data(), prover_options.log_level.size(), log_level);
+            boost::log::core::get()->set_filter(boost::log::trivial::severity >= log_level);
+
+            prover_options.stage_args = po::collect_unrecognized(parsed_options->options, po::include_positional);
 
             return prover_options;
         }
