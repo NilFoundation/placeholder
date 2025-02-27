@@ -27,7 +27,6 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
-#include <system_error>
 #include <type_traits>
 
 #include <boost/assert.hpp>

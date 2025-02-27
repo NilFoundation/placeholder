@@ -30,7 +30,8 @@ def generate_big_uint_test_data():
             size = bits
         else:
             size = rnd.randint(1, bits)
-        result = rnd.randint(0 if size == 1 else 2 ** (size - 1), (2**size) - 1)
+        result = rnd.randint(0 if size == 1 else 2 **
+                             (size - 1), (2**size) - 1)
         assert result < 2**bits
         return result
 
@@ -110,16 +111,18 @@ def generate_big_mod_test_data():
         if rnd.random() < MAX_BITS_PROB:
             return rnd.randint(1 << (bits - 1), m - 1)
         size = rnd.randint(1, bits)
-        result = rnd.randint(0 if size == 1 else 1 << (size - 1), (1 << size) - 1)
+        result = rnd.randint(0 if size == 1 else 1 <<
+                             (size - 1), (1 << size) - 1)
         assert result < 2**bits
         return result
-
-    rnd = random.Random(0)
 
     params = [
         ["prime_mod_montgomery_130", 0x314107B9EF725F87FA08F9FDADD4F48BB, 130],
         ["even_mod_130", 0x314107B9EF725F87FA08F9FDADD4F48BA, 130],
         ["goldilocks", 0xFFFFFFFF00000001, 64],
+        ["mersenne31", 0x7FFFFFFF, 31],
+        ["koalabear", 0x7F000001, 31],
+        ["babybear", 0x78000001, 31],
         ["even_mod_17", 0x1E240, 17],
         ["montgomery_17", 0x1E241, 17],
     ]
@@ -128,6 +131,9 @@ def generate_big_mod_test_data():
         tests = {}
         for test_name, m, bits in params:
             assert math.ceil(math.log2(m)) == bits
+
+            rnd = random.Random(0)
+
             cases = []
             for i in range(TEST_CASES):
                 a = gen_arg(bits, m, rnd)
