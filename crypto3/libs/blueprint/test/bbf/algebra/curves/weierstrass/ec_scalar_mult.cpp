@@ -28,6 +28,7 @@
 #include <nil/blueprint/bbf/circuit_builder.hpp>
 #include <nil/blueprint/bbf/components/algebra/curves/weierstrass/ec_scalar_mult.hpp>
 #include <nil/crypto3/algebra/curves/pallas.hpp>
+#include <nil/crypto3/algebra/curves/secp_k1.hpp>
 #include <nil/crypto3/algebra/curves/vesta.hpp>
 #include <nil/crypto3/random/algebraic_engine.hpp>
 
@@ -38,12 +39,14 @@ template<typename BlueprintFieldType, typename NonNativeFieldType, std::size_t n
          std::size_t bit_size_chunk>
 void test_ec_scalar_mult(
     const std::vector<typename BlueprintFieldType::value_type>& public_input,
-    typename BlueprintFieldType::integral_type expected_xR,
-    typename BlueprintFieldType::integral_type expected_yR) {
+    typename NonNativeFieldType::integral_type expected_xR,
+    typename NonNativeFieldType::integral_type expected_yR) {
     using FieldType = BlueprintFieldType;
     using TYPE = typename FieldType::value_type;
     using integral_type = typename BlueprintFieldType::integral_type;
-    using non_native_integral_type = typename BlueprintFieldType::integral_type;
+    typedef nil::crypto3::multiprecision::big_uint<2 *
+                                                   NonNativeFieldType::modulus_bits>
+        non_native_integral_type;
 
     auto assign_and_check = [&](auto& B, auto& input) {
         input.s =
@@ -102,6 +105,16 @@ void test_ec_scalar_mult(
                                  std::size_t, std::size_t>(num_chunks, bit_size_chunk);
 
         assign_and_check(B, input);
+    } else if constexpr (std::is_same_v<
+                             NonNativeFieldType,
+                             crypto3::algebra::curves::secp_k1<256>::base_field_type>) {
+        typename bbf::components::secp_k1_256_ec_scalar_mult<
+            FieldType, bbf::GenerationStage::ASSIGNMENT>::input_type input;
+        auto B =
+            bbf::circuit_builder<FieldType, bbf::components::secp_k1_256_ec_scalar_mult,
+                                 std::size_t, std::size_t>(num_chunks, bit_size_chunk);
+
+        assign_and_check(B, input);
     }
 }
 
@@ -114,6 +127,7 @@ void ec_scalar_mult_tests() {
     using ec_point_value_type = typename CurveType::template g1_type<
         nil::crypto3::algebra::curves::coordinates::affine>::value_type;
     using scalar_value_type = typename CurveType::scalar_field_type::value_type;
+    using foreign_integral_type = typename CurveType::base_field_type::integral_type;
 
     typedef nil::crypto3::multiprecision::big_uint<2 *
                                                    CurveType::base_field_type::modulus_bits>
@@ -145,11 +159,11 @@ void ec_scalar_mult_tests() {
         ec_point_value_type P = ec_point_value_type::one() * D, R = P * S;
 
         public_input.resize(8 * num_chunks);
-        integral_type s = integral_type(S.data);
-        integral_type x = integral_type(P.X.data);
-        integral_type y = integral_type(P.Y.data);
-        integral_type xR = integral_type(R.X.data);
-        integral_type yR = integral_type(R.Y.data);
+        foreign_integral_type s = foreign_integral_type(S.data);
+        foreign_integral_type x = foreign_integral_type(P.X.data);
+        foreign_integral_type y = foreign_integral_type(P.Y.data);
+        foreign_integral_type xR = foreign_integral_type(R.X.data);
+        foreign_integral_type yR = foreign_integral_type(R.Y.data);
         for (std::size_t j = 0; j < num_chunks; j++) {
             public_input[j] = value_type(s & mask);
             s >>= bit_size_chunk;
@@ -188,10 +202,12 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_bbf_ec_scalar_mult_test) {
     // The curve is passed in as an argument to access additionnal properties
     using pallas = typename crypto3::algebra::curves::pallas;
     using vesta = typename crypto3::algebra::curves::vesta;
+    using secp_k1_256 = typename crypto3::algebra::curves::secp_k1<256>;
 
 
     ec_scalar_mult_tests<pallas::base_field_type, vesta, 3, 96, random_tests_amount>();
     ec_scalar_mult_tests<vesta::base_field_type, pallas, 3, 96, random_tests_amount>();
+    ec_scalar_mult_tests<pallas::base_field_type, secp_k1_256, 3, 96, random_tests_amount>();
 }
 
 BOOST_AUTO_TEST_SUITE_END()
