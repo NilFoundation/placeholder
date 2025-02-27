@@ -15,11 +15,11 @@
 #include <nil/proof-generator/commands/detail/proof_gen.hpp>
 #include <nil/proof-generator/commands/fill_assignment_command.hpp>
 #include <nil/proof-generator/output_artifacts/output_artifacts.hpp>
+#include <nil/proof-generator/cli_arg_utils.hpp>
 
 namespace nil {
     namespace proof_producer {
 
-        // TODO move to files
         template<typename CurveType, typename HashType>
         class ProveCommand: public command_chain {
         public:
@@ -31,9 +31,25 @@ namespace nil {
 
                 OutputArtifacts out_assignment_debug_opts;
                 boost::filesystem::path out_evm_verifier_dir_path;
-                boost::filesystem::path out_assignment_desc_file_path;
-                boost::filesystem::path out_proof_file_path;
-                boost::filesystem::path out_proof_json_file_path;
+                boost::filesystem::path out_assignment_desc_file_path{"assignment_description.desc"};
+                boost::filesystem::path out_proof_file_path{"proof.bin"};
+                boost::filesystem::path out_proof_json_file_path{"proof.json"};
+
+                Args(boost::program_options::options_description& config) {
+                    namespace po = boost::program_options;
+
+                    config.add_options()
+                        ("circuit", po::value(&in_circuit_file_path)->required(), "Circuit input file")
+                        ("assignment-table,t", po::value(&in_assignment_table_file_path)->required(), "Assignment table input file")
+                        ("public-preprocessed-data", po::value(&in_public_preprocessed_data_file_path)->required(), "Public preprocessed data input file")
+                        ("commitment-state-file", po::value(&in_lpc_scheme_file_path)->required(), "Commitment state data input file")
+                        ("evm-verifier-dir", po::value(&out_evm_verifier_dir_path), "EVM verifier directory")
+                        ("assignment-description-file", make_defaulted_option(out_assignment_desc_file_path), "Assignment description output file")
+                        ("proof",  make_defaulted_option(out_proof_file_path), "Proof output file")
+                        ("proof-json",  make_defaulted_option(out_proof_json_file_path), "Proof JSON output file");
+
+                    register_output_artifacts_cli_args(out_assignment_debug_opts, config);
+                }
             };
 
             ProveCommand(const Args& args) {

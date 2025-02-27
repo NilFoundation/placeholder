@@ -6,6 +6,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/log/trivial.hpp>
 #include <boost/assert.hpp>
+#include <boost/program_options.hpp>
 
 #include <nil/proof-generator/types/type_system.hpp>
 #include <nil/proof-generator/resources.hpp>
@@ -113,6 +114,19 @@ namespace nil {
                 boost::filesystem::path in_combined_Q_file;
                 boost::filesystem::path out_consistency_checks_challenges_file;
                 boost::filesystem::path out_proof_file;
+
+                Args(boost::program_options::options_description& desc) {
+                    namespace po = boost::program_options;
+
+                    desc.add_options()
+                        ("commitment-state-file", po::value(&in_lpc_scheme_file)->required(),
+                            "Commitment state data input file")
+                        ("combined-Q-polynomial-file", po::value(&in_combined_Q_file),
+                            "File containing the polynomial combined-Q, generated on a single prover")
+                        ("consistency-checks-challenges-file", po::value(&out_consistency_checks_challenges_file),
+                        "A file containing 'lambda' challenges")
+                        ("proof", po::value(&out_proof_file)->required(), "Proof output file");
+                }
             };
 
             GenerateConsistencyCheckCommand(const Args& args) {

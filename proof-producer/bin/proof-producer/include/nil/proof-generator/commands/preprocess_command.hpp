@@ -157,13 +157,27 @@ namespace nil {
             struct Args {
                 boost::filesystem::path in_circuit_file_path;
                 boost::filesystem::path in_assignment_table_file_path;
-                boost::filesystem::path out_assignment_desc_file_path;
-                boost::filesystem::path out_public_preprocessed_data_file_path;
-                boost::filesystem::path out_common_data_file_path;
-                boost::filesystem::path out_lpc_scheme_file_path;
+                boost::filesystem::path out_assignment_desc_file_path{"assignment_description.desc"};
+                boost::filesystem::path out_public_preprocessed_data_file_path{"preprocessed_data.dat"};
+                boost::filesystem::path out_common_data_file_path{"preprocessed_common_data.dat"};
+                boost::filesystem::path out_lpc_scheme_file_path{"commitment_scheme_state.dat"};
                 boost::filesystem::path out_evm_verifier_dir_path;
                 OutputArtifacts assignment_debug_opts;
                 PlaceholderConfig placeholder_config;
+
+                Args(boost::program_options::options_description& config) {
+                    config.add_options()
+                        ("circuit", po::value(&in_circuit_file_path)->required(), "Circuit input file")
+                        ("assignment-table,t", po::value(&in_assignment_table_file_path)->required(), "Assignment table input file")
+                        ("assignment-description-file", make_defaulted_option(out_assignment_desc_file_path), "Assignment table description file")
+                        ("public-preprocessed-data", make_defaulted_option(out_public_preprocessed_data_file_path), "Public preprocessed output data file")
+                        ("common-data", make_defaulted_option(out_common_data_file_path), "Common data output file")
+                        ("commitment-state-file", make_defaulted_option(out_lpc_scheme_file_path), "Commitment state data output file")
+                        ("evm-verifier", po::value(&out_evm_verifier_dir_path), "Output folder for EVM verifier");
+
+                    register_output_artifacts_cli_args(assignment_debug_opts, config);
+                    register_placeholder_config_cli_args(placeholder_config, config);
+                }
             };
 
             PreprocessCommand(const Args& args) {

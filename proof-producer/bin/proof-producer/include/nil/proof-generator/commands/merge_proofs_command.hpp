@@ -4,6 +4,7 @@
 
 #include <boost/filesystem.hpp>
 #include <boost/log/trivial.hpp>
+#include <boost/program_options.hpp>
 
 #include <nil/crypto3/marshalling/algebra/types/field_element.hpp>
 
@@ -32,6 +33,16 @@ namespace nil {
                 std::vector<boost::filesystem::path> in_initial_proof_files;
                 boost::filesystem::path in_aggregated_FRI_proof_file;
                 boost::filesystem::path out_merged_proof_file;
+
+                Args(boost::program_options::options_description &desc) {
+                    namespace po = boost::program_options;
+
+                    desc.add_options()
+                        ("partial-proof", po::value<std::vector<boost::filesystem::path>>(&in_partial_proof_files)->multitoken()->required())
+                        ("initial-proof", po::value<std::vector<boost::filesystem::path>>(&in_initial_proof_files)->multitoken()->required())
+                        ("aggregated-FRI-proof", po::value<boost::filesystem::path>(&in_aggregated_FRI_proof_file)->required())
+                        ("proof", po::value<boost::filesystem::path>(&out_merged_proof_file)->required());
+                }
             };
 
             MergeProofsCommand(Args args): args_(args) {}

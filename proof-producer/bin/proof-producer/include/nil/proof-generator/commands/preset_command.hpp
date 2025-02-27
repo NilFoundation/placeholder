@@ -7,6 +7,7 @@
 #include <nil/crypto3/bench/scoped_profiler.hpp>
 
 #include <nil/proof-generator/command_step.hpp>
+#include <nil/proof-generator/cli_arg_utils.hpp>
 #include <nil/proof-generator/types/type_system.hpp>
 #include <nil/proof-generator/resources.hpp>
 #include <nil/proof-generator/marshalling_utils.hpp>
@@ -16,8 +17,7 @@
 #include <nil/proof-generator/preset/preset.hpp>
 #include <nil/proof-generator/output_artifacts/circuit_writer.hpp>
 #include <nil/proof-generator/output_artifacts/output_artifacts.hpp>
-#include "nil/crypto3/bench/scoped_profiler.hpp"
-#include "nil/proof-generator/preset/limits.hpp"
+#include <nil/proof-generator/preset/limits.hpp>
 
 namespace nil {
     namespace proof_producer {
@@ -79,12 +79,24 @@ namespace nil {
         template <typename CurveType, typename HashType>
         class PresetCommand: public command_chain {
         public:
-            struct Args { // TODO fill from boost program options and print as help
+            struct Args {
                 std::string circuit_name;
                 boost::filesystem::path out_circuit_file_path;
                 boost::filesystem::path out_assignment_table_file_path;
                 nil::proof_producer::OutputArtifacts output_artifacts;
                 nil::proof_producer::CircuitsLimits circuit_limits;
+
+                Args(boost::program_options::options_description& config) {
+                    namespace po = boost::program_options;
+
+                    config.add_options()
+                        ("circuit-name", po::value(&circuit_name)->required(), "Target circuit name")
+                        ("circuit", po::value(&out_circuit_file_path), "Circuit output file")
+                        ("assignment-table,t", po::value(&out_assignment_table_file_path), "Assignment table (empty) output file");
+
+                    register_output_artifacts_cli_args(output_artifacts, config);
+                    register_circuits_limits_cli_args(circuit_limits, config);
+                }
             };
 
             PresetCommand(const Args& args) {

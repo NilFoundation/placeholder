@@ -13,6 +13,7 @@
 #include <nil/proof-generator/commands/gen_proof_command.hpp>
 #include <nil/proof-generator/commands/verify_command.hpp>
 #include <nil/proof-generator/output_artifacts/output_artifacts.hpp>
+#include <nil/proof-generator/cli_arg_utils.hpp>
 
 namespace nil {
     namespace proof_producer {
@@ -26,12 +27,29 @@ namespace nil {
                 boost::filesystem::path in_assignment_table_file_path;
 
                 OutputArtifacts out_assignment_debug_opts;
-                boost::filesystem::path out_public_preprocessed_data_file_path;
-                boost::filesystem::path out_common_data_file_path;
-                boost::filesystem::path out_lpc_scheme_file_path;
+                boost::filesystem::path out_public_preprocessed_data_file_path{"preprocessed_data.dat"};
+                boost::filesystem::path out_common_data_file_path{"preprocessed_common_data.dat"};
+                boost::filesystem::path out_lpc_scheme_file_path{"commitment_scheme_state.dat"};
                 boost::filesystem::path out_evm_verifier_dir_path;
-                boost::filesystem::path out_proof_file_path;
-                boost::filesystem::path out_json_proof_file_path;
+                boost::filesystem::path out_proof_file_path{"proof.bin"};
+                boost::filesystem::path out_json_proof_file_path{"proof.json"};
+
+                Args(boost::program_options::options_description& config) {
+                    namespace po = boost::program_options;
+
+                    config.add_options()
+                        ("circuit", po::value(&in_circuit_file_path)->required(), "Circuit input file")
+                        ("assignment-table,t", po::value(&in_assignment_table_file_path)->required(), "Assignment table input file")
+                        ("public-preprocessed-data", make_defaulted_option(out_public_preprocessed_data_file_path), "Public preprocessed output data file")
+                        ("common-data", make_defaulted_option(out_common_data_file_path), "Common data output file")
+                        ("commitment-state-file", make_defaulted_option(out_lpc_scheme_file_path), "Commitment state data output file")
+                        ("evm-verifier", po::value(&out_evm_verifier_dir_path), "Output folder for EVM verifier")
+                        ("proof",  make_defaulted_option(out_proof_file_path), "Proof output file")
+                        ("proof-json",  make_defaulted_option(out_json_proof_file_path), "Proof JSON output file");
+
+                    register_output_artifacts_cli_args(out_assignment_debug_opts, config);
+                    register_placeholder_config_cli_args(this->config, config);
+                }
             };
 
             AllCommand(const Args& args) {
