@@ -29,6 +29,8 @@
 
 using namespace nil::crypto3::multiprecision;
 using namespace nil::crypto3::bench;
+using nil::crypto3::multiprecision::detail::get_raw_base;
+using nil::crypto3::multiprecision::detail::pow_unsigned;
 
 constexpr auto modulus_256 =
     0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f_big_uint256;
@@ -108,16 +110,23 @@ struct BabyBearBarrett {
     static constexpr auto name = "[   barrett][    babybear]";
 };
 
+struct BabyBearCustom {
+    using big_mod_t = babybear_mod;
+    static constexpr big_mod_t x{x_31};
+    static constexpr big_mod_t y{y_31};
+    static constexpr auto name = "[    custom][    babybear]";
+};
+
 using cases =
     std::tuple<MontgomeryCompileTimeCase, MontgomeryRuntimeCase, BarrettCompileTimeCase,
                BarrettRuntimeCase, GoldilocksMontgomery, GoldilocksBarrett,
-               GoldilocksCustom, BabyBearBarrett, BabyBearMontgomery>;
+               GoldilocksCustom, BabyBearMontgomery, BabyBearBarrett, BabyBearCustom>;
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(direct_mul_perf, Case, cases) {
-    auto raw_base = detail::get_raw_base(Case::x);
+    auto raw_base = get_raw_base(Case::x);
     const auto &mod_ops = Case::x.ops_storage().ops();
     run_benchmark<>(std::string(Case::name) + " direct mul", [&]() {
-        mod_ops.mul(raw_base, detail::get_raw_base(Case::y));
+        mod_ops.mul(raw_base, get_raw_base(Case::y));
         return raw_base;
     });
 }
@@ -156,10 +165,10 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(inverse_perf, Case, cases) {
 }
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(pow_perf, Case, cases) {
-    auto raw_base = detail::get_raw_base(Case::x);
+    auto raw_base = get_raw_base(Case::x);
     const auto &mod_ops = Case::x.ops_storage().ops();
     run_benchmark<>(std::string(Case::name) + " direct pow", [&]() {
-        detail::pow_unsigned(raw_base, raw_base, 0xf309d588016520ddULL, mod_ops);
+        pow_unsigned(raw_base, raw_base, 0xf309d588016520ddULL, mod_ops);
         return raw_base;
     });
 }
