@@ -2,7 +2,7 @@
 // Copyright (c) 2020 Mikhail Komarov <nemo@nil.foundation>
 // Copyright (c) 2020 Ilias Khairullin <ilias@nil.foundation>
 // Copyright (c) 2021 Aleksei Moskvin <alalmoskvin@nil.foundation>
-// Copyright (c) 2024 Andrey Nefedov <ioxid@nil.foundation>
+// Copyright (c) 2024-2025 Andrey Nefedov <ioxid@nil.foundation>
 //
 // Distributed under the Boost Software License, Version 1.0
 // See accompanying file LICENSE_1_0.txt or copy at
@@ -29,6 +29,25 @@ namespace nil::crypto3::multiprecision::detail {
 
       private:
         static constexpr modular_ops_t m_modular_ops{Modulus};
+    };
+
+    // Compile-time storage for modular arithmetic operations without modulus parameter.
+    // Stores them in a constexpr variable.
+    template<typename modular_ops_t_>
+    class modular_ops_storage_fixed_ct {
+      public:
+        using modular_ops_t = modular_ops_t_;
+
+        constexpr modular_ops_storage_fixed_ct() {}
+
+        static constexpr const modular_ops_t &ops() { return m_modular_ops; }
+
+        static constexpr bool compare_eq(const modular_ops_storage_fixed_ct & /*other*/) {
+            return true;
+        }
+
+      private:
+        static constexpr modular_ops_t m_modular_ops{};
     };
 
     // Runtime storage for modular arithmetic operations. Stores them in a plain variable
