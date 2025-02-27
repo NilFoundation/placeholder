@@ -322,7 +322,7 @@ BOOST_AUTO_TEST_CASE(byte_ops) {
     opcode_tester.push_opcode(zkevm_opcode::SHL);
     opcode_tester.push_opcode(zkevm_opcode::STOP);
 
-    max_sizes.max_keccak_blocks = 400;
+    max_sizes.max_keccak_blocks = 30;
     max_sizes.max_bytecode = 5000;
     max_sizes.max_mpt = 0;
     max_sizes.max_rw = 3000;

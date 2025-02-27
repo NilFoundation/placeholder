@@ -48,8 +48,8 @@ in stdenv.mkDerivation rec {
       "-DBUILD_PARALLEL_CRYPTO3_TESTS=TRUE"
       (if sanitize then "-DSANITIZE=ON" else "-DSANITIZE=OFF")
       "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON" # to allow VSCode navigation/completion/etc
-      "-G Ninja"
-    ];
+    "-G Ninja"
+  ];
 
   buildPhase = ''
     ninja blueprint_multi_thread_zkevm_bbf_hardhat_test

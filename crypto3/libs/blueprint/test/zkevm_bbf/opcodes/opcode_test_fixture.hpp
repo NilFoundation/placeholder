@@ -100,8 +100,9 @@ public:
 
         auto rw_assignment_input = circuit_inputs.rw_operations();
 
-        typename keccak<BlueprintFieldType, GenerationStage::ASSIGNMENT>::input_type keccak_assignment_input;
-        keccak_assignment_input.private_input = 12345;
+        typename nil::blueprint::bbf::zkevm_keccak<BlueprintFieldType,nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type keccak_assignment_input;
+        keccak_assignment_input.rlc_challenge = 7;
+        keccak_assignment_input.private_input = circuit_inputs.keccaks();
 
         typename bytecode<BlueprintFieldType, GenerationStage::ASSIGNMENT>::input_type bytecode_assignment_input;
         bytecode_assignment_input.rlc_challenge = 7;
@@ -164,9 +165,9 @@ public:
         std::cout << std::endl;
 
         // Max_keccak
-        result = test_bbf_component<BlueprintFieldType, nil::blueprint::bbf::keccak>(
+        result = test_bbf_component<BlueprintFieldType, nil::blueprint::bbf::zkevm_keccak>(
             "keccak",
-            {}, keccak_assignment_input
+            {}, keccak_assignment_input , max_keccak_blocks
         );
         BOOST_CHECK(result);
         std::cout << std::endl;

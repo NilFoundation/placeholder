@@ -110,8 +110,9 @@ public:
 
         auto rw_assignment_input = circuit_inputs.rw_operations();
 
-        typename keccak<field_type, GenerationStage::ASSIGNMENT>::input_type keccak_assignment_input;
-        keccak_assignment_input.private_input = 12345;
+        typename zkevm_keccak<field_type,GenerationStage::ASSIGNMENT>::input_type keccak_assignment_input;
+        keccak_assignment_input.rlc_challenge = 7;
+        keccak_assignment_input.private_input = circuit_inputs.keccaks();
 
         typename bytecode<field_type, GenerationStage::ASSIGNMENT>::input_type bytecode_assignment_input;
         bytecode_assignment_input.rlc_challenge = 7;
@@ -121,6 +122,18 @@ public:
         auto exp_assignment_input = circuit_inputs.exponentiations();
 
         bool result{false};
+        // Max_rows, max_bytecode, max_rw
+        result = test_bbf_component<field_type, zkevm>(
+            "zkevm",
+            {}, zkevm_assignment_input,
+            max_zkevm_rows,
+            max_copy,
+            max_rw,
+            max_exponentiations,
+            max_bytecode
+        );
+        BOOST_ASSERT(result);
+        std::cout << std::endl;
 
         const std::string zkevm_circuit = "zkevm";
         if (should_run_circuit(zkevm_circuit)) {
@@ -141,8 +154,6 @@ public:
 
         const std::string exp_circuit = "exp";
         if (should_run_circuit(exp_circuit)) {
-            std::cout << "circuit '" << exp_circuit << "'" << std::endl;
-
             // Max_copy, Max_rw, Max_keccak, Max_bytecode
             result =test_bbf_component<field_type, nil::blueprint::bbf::exponentiation>(
                 exp_circuit,
@@ -173,9 +184,9 @@ public:
             std::cout << "circuit '" << keccak_circuit << "'" << std::endl;
 
             // Max_keccak
-            result = test_bbf_component<field_type, nil::blueprint::bbf::keccak>(
+            result = test_bbf_component<field_type, nil::blueprint::bbf::zkevm_keccak>(
                 keccak_circuit,
-                {}, keccak_assignment_input
+                {}, keccak_assignment_input,max_keccak_blocks
             );
             BOOST_ASSERT(result);
             std::cout << std::endl;
@@ -218,14 +229,14 @@ BOOST_AUTO_TEST_CASE(minimal_math) {
     auto [bytecodes, pts] = load_hardhat_input("minimal_math/");
     l1_size_restrictions max_sizes;
 
-    max_sizes.max_keccak_blocks = 10;
-    max_sizes.max_bytecode = 3000;
+    max_sizes.max_keccak_blocks = 3;
+    max_sizes.max_bytecode = 300;
     max_sizes.max_mpt = 0;
     max_sizes.max_rw = 500;
-    max_sizes.max_copy = 500;
+    max_sizes.max_copy = 70;
     max_sizes.max_zkevm_rows = 500;
-    max_sizes.max_exponentiations = 50;
-    max_sizes.max_exp_rows = 500;
+    max_sizes.max_exponentiations = 10;
+    max_sizes.max_exp_rows = 100;
 
     complex_test<field_type>(bytecodes, pts, max_sizes);
 }
@@ -235,14 +246,14 @@ BOOST_AUTO_TEST_CASE(modular_operations) {
     auto [bytecodes, pts] = load_hardhat_input("modular_operations/");
     l1_size_restrictions max_sizes;
 
-    max_sizes.max_keccak_blocks = 10;
-    max_sizes.max_bytecode = 3000;
+    max_sizes.max_keccak_blocks = 4;
+    max_sizes.max_bytecode = 300;
     max_sizes.max_mpt = 0;
     max_sizes.max_rw = 500;
-    max_sizes.max_copy = 500;
+    max_sizes.max_copy = 70;
     max_sizes.max_zkevm_rows = 500;
-    max_sizes.max_exponentiations = 50;
-    max_sizes.max_exp_rows = 500;
+    max_sizes.max_exponentiations = 10;
+    max_sizes.max_exp_rows = 100;
 
     complex_test<field_type>(bytecodes, pts, max_sizes);
 }
@@ -252,14 +263,14 @@ BOOST_AUTO_TEST_CASE(exp) {
     auto [bytecodes, pts] = load_hardhat_input("exp/");
     l1_size_restrictions max_sizes;
 
-    max_sizes.max_keccak_blocks = 10;
-    max_sizes.max_bytecode = 3000;
+    max_sizes.max_keccak_blocks = 4;
+    max_sizes.max_bytecode = 400;
     max_sizes.max_mpt = 0;
-    max_sizes.max_rw = 1000;
-    max_sizes.max_copy = 500;
-    max_sizes.max_zkevm_rows = 2000;
-    max_sizes.max_exp_rows = 500;
-    max_sizes.max_exponentiations = 50;
+    max_sizes.max_rw = 950;
+    max_sizes.max_copy = 80;
+    max_sizes.max_zkevm_rows = 1250;
+    max_sizes.max_exponentiations = 10;
+    max_sizes.max_exp_rows = 100;
 
     complex_test<field_type>(bytecodes, pts, max_sizes);
 }
@@ -269,14 +280,14 @@ BOOST_AUTO_TEST_CASE(keccak) {
     auto [bytecodes, pts] = load_hardhat_input("keccak/");
     l1_size_restrictions max_sizes;
 
-    max_sizes.max_keccak_blocks = 10;
-    max_sizes.max_bytecode = 3000;
+    max_sizes.max_keccak_blocks = 5;
+    max_sizes.max_bytecode = 400;
     max_sizes.max_mpt = 0;
-    max_sizes.max_rw = 1000;
-    max_sizes.max_copy = 500;
+    max_sizes.max_rw = 900;
+    max_sizes.max_copy = 200;
     max_sizes.max_zkevm_rows = 500;
-    max_sizes.max_exponentiations = 50;
-    max_sizes.max_exp_rows = 500;
+    max_sizes.max_exponentiations = 10;
+    max_sizes.max_exp_rows = 100;
 
     complex_test<field_type>(bytecodes, pts, max_sizes);
 }
@@ -286,7 +297,7 @@ BOOST_AUTO_TEST_CASE(mstore8) {
     auto [bytecodes, pts] = load_hardhat_input("mstore8/");
     l1_size_restrictions max_sizes;
 
-    max_sizes.max_keccak_blocks = 50;
+    max_sizes.max_keccak_blocks = 25;
     max_sizes.max_bytecode = 3000;
     max_sizes.max_mpt = 0;
     max_sizes.max_rw = 5000;
@@ -303,7 +314,7 @@ BOOST_AUTO_TEST_CASE(meminit) {
     auto [bytecodes, pts] = load_hardhat_input("mem_init/");
     l1_size_restrictions max_sizes;
 
-    max_sizes.max_keccak_blocks = 50;
+    max_sizes.max_keccak_blocks = 10;
     max_sizes.max_bytecode = 3000;
     max_sizes.max_mpt = 0;
     max_sizes.max_rw = 10000;
@@ -320,14 +331,14 @@ BOOST_AUTO_TEST_CASE(calldatacopy) {
     auto [bytecodes, pts] = load_hardhat_input("calldatacopy/");
     l1_size_restrictions max_sizes;
 
-    max_sizes.max_keccak_blocks = 50;
-    max_sizes.max_bytecode = 3000;
+    max_sizes.max_keccak_blocks = 4;
+    max_sizes.max_bytecode = 300;
     max_sizes.max_mpt = 0;
-    max_sizes.max_rw = 5000;
-    max_sizes.max_copy = 3000;
-    max_sizes.max_zkevm_rows = 4500;
-    max_sizes.max_exponentiations = 50;
-    max_sizes.max_exp_rows = 500;
+    max_sizes.max_rw = 500;
+    max_sizes.max_copy = 90;
+    max_sizes.max_zkevm_rows = 500;
+    max_sizes.max_exponentiations = 10;
+    max_sizes.max_exp_rows = 100;
 
     complex_test<field_type>(bytecodes, pts, max_sizes);
 }
