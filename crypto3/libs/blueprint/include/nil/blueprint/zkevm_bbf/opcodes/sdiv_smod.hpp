@@ -142,8 +142,8 @@ namespace nil {
                     TYPE carry[3][carry_amount + 1];
                     TYPE c_1_64;
                     TYPE first_carryless;
-                    TYPE second_row_carries;
-                    TYPE third_row_carries;
+                    TYPE second_carryless;
+                    TYPE third_carryless;
                     TYPE b_sum;
                     TYPE b2;
                     TYPE b_zero;
@@ -191,13 +191,14 @@ namespace nil {
                     std::vector<TYPE> b_abs_chunks(chunk_amount);
                     std::vector<TYPE> q_abs_chunks(chunk_amount);
                     std::vector<TYPE> q_out_chunks(chunk_amount);
+                    zkevm_word_type a,b,q;
 
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                        zkevm_word_type a = current_state.stack_top();
+                        a = current_state.stack_top();
                         zkevm_word_type b_input = current_state.stack_top(1);
 
                         bool overflow = (a == neg_one) && (b_input == min_neg);
-                        zkevm_word_type b = overflow ? 1 : b_input;
+                        b = overflow ? 1 : b_input;
                         is_overflow = overflow;
 
                         zkevm_word_type a_abs = abs_word(a), b_abs = abs_word(b);
@@ -205,8 +206,8 @@ namespace nil {
                         zkevm_word_type r_abs = b != 0u ? a_abs / b_abs : 0u;
                         zkevm_word_type q_abs = b != 0u ? a_abs % b_abs : a_abs,
                                         r = (is_negative(a) == is_negative(b)) ? r_abs
-                                                                               : negate_word(r_abs),
-                                        q = is_negative(a) ? negate_word(q_abs) : q_abs;
+                                                                               : negate_word(r_abs);
+                        q = is_negative(a) ? negate_word(q_abs) : q_abs;
 
                         zkevm_word_type q_out =
                             b != 0u ? q : 0u;  // according to EVM spec a % 0 = 0
@@ -232,9 +233,16 @@ namespace nil {
                             r_64_chunks.push_back(chunk_sum_64<value_type>(r_chunks, i));
                             q_64_chunks.push_back(chunk_sum_64<value_type>(q_chunks, i));
                         }
-                        // caluclate first row carries
-                        first_carryless = first_carryless_construct<TYPE>(a_64_chunks, b_64_chunks,
-                                                                          r_64_chunks, q_64_chunks);
+                    }
+
+                    first_carryless = first_carryless_construct<TYPE>(a_64_chunks, b_64_chunks,
+                                                                        r_64_chunks, q_64_chunks);
+                    second_carryless = second_carryless_construct<TYPE>(a_64_chunks, b_64_chunks,
+                                                                        r_64_chunks, q_64_chunks);
+                    third_carryless = third_carryless_construct<TYPE>(b_64_chunks, r_64_chunks);
+
+                    if constexpr (stage == GenerationStage::ASSIGNMENT) {
+                         // caluclate first row carries
                         auto first_row_carries = first_carryless.data.base() >> 128;
                         value_type c_1 =
                             static_cast<value_type>(first_row_carries & (two_64 - 1).data.base());
@@ -242,17 +250,12 @@ namespace nil {
                         c_1_chunks = chunk_64_to_16<FieldType>(c_1);
                         // no need for c_2 chunks as there is only a single chunk
                         auto second_row_carries =
-                            (second_carryless_construct(a_64_chunks, b_64_chunks, r_64_chunks,
-                                                        q_64_chunks) +
-                             c_1 + c_2 * two_64)
-                                .data.base() >>
-                            128;
+                            (second_carryless + c_1 + c_2 * two_64).data.base() >> 128;
 
                         // value_type
                         c_1_64 = chunk_sum_64<TYPE>(c_1_chunks, 0);
 
-                        auto third_row_carries =
-                            third_carryless_construct(b_64_chunks, r_64_chunks).data.base() >> 128;
+                        auto third_row_carries = third_carryless.data.base() >> 128;
 
                         b_sum = std::accumulate(b_chunks.begin(), b_chunks.end(), value_type(0));
                         a_sum = std::accumulate(a_chunks.begin(), a_chunks.end(), value_type(0)) -
@@ -441,10 +444,10 @@ namespace nil {
                     allocate(c_2, 42, 4);
                     constrain(c_2 * (c_2 - 1));
                     constrain(first_carryless - c_1_64 * two_128 - c_2 * two_192);
-                    allocate(second_row_carries, 43, 4);
-                    constrain(second_row_carries + c_1_64 + c_2 * two_64);
-                    allocate(third_row_carries, 44, 4);
-                    constrain(third_row_carries);
+                    allocate(second_carryless, 43, 4);
+                    constrain(second_carryless + c_1_64 + c_2 * two_64);
+                    allocate(third_carryless, 44, 4);
+                    constrain(third_carryless);
                     allocate(b_sum, 33, 0);
                     allocate(b_sum_inverse, 34, 0);
                     allocate(b_lower_sum, 35, 0);
