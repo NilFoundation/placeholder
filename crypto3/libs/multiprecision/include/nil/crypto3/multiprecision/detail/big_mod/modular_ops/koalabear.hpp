@@ -13,17 +13,18 @@
 
 #include <boost/assert.hpp>
 
-#include "nil/crypto3/multiprecision/detail/big_mod/modular_ops/montgomery.hpp"
+#include "nil/crypto3/multiprecision/detail/big_mod/modular_ops/montgomery_31_bit.hpp"
 #include "nil/crypto3/multiprecision/detail/big_mod/modular_ops_storage.hpp"
 
 namespace nil::crypto3::multiprecision {
     inline constexpr std::uint32_t koalabear_modulus = 0x7F000001U;
 
     namespace detail {
-        class koalabear_modular_ops : public detail::montgomery_modular_ops<31> {
+        // Optimized KoalaBear ops. Montomery form is used for fast multiplication.
+        class koalabear_modular_ops : public montgomery_31_bit_modular_ops {
           public:
             constexpr koalabear_modular_ops()
-                : detail::montgomery_modular_ops<31>(koalabear_modulus) {}
+                : montgomery_31_bit_modular_ops(koalabear_modulus) {}
         };
 
         using koalabear_modular_ops_storage =

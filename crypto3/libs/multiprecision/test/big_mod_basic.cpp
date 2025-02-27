@@ -48,6 +48,9 @@ static_assert(std::is_same_v<auto_big_mod<even_mod>, big_mod<even_mod>>);
 using montgomery_big_mod_t = montgomery_big_mod<odd_mod>;
 using barrett_big_mod_t = big_mod<odd_mod>;
 
+using at_least_40_bit_modular_types =
+    std::tuple<montgomery_big_mod_t, barrett_big_mod_t, goldilocks_mod>;
+
 using modular_types = std::tuple<montgomery_big_mod_t, barrett_big_mod_t, goldilocks_mod,
                                  mersenne31_mod, koalabear_mod, babybear_mod>;
 
@@ -178,7 +181,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(simple, big_mod_t, modular_types) {
         static_cast<big_mod_t>(0x5_big_uint64));
 }
 
-BOOST_AUTO_TEST_CASE_TEMPLATE(multilimb, big_mod_t, modular_types) {
+BOOST_AUTO_TEST_CASE_TEMPLATE(multilimb, big_mod_t, at_least_40_bit_modular_types) {
     BOOST_CHECK_EQUAL(static_cast<big_mod_t>(0xAFFFFFFFF_big_uint64) +
                           static_cast<big_mod_t>(0x2_big_uint36),
                       static_cast<big_mod_t>(0xB00000001_big_uint64));
@@ -194,7 +197,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(simple, big_mod_t, modular_types) {
         static_cast<big_mod_t>(0x6_big_uint64));
 }
 
-BOOST_AUTO_TEST_CASE_TEMPLATE(multilimb, big_mod_t, modular_types) {
+BOOST_AUTO_TEST_CASE_TEMPLATE(multilimb, big_mod_t, at_least_40_bit_modular_types) {
     BOOST_CHECK_EQUAL(static_cast<big_mod_t>(0xAFFFFFFFF_big_uint64) *
                           static_cast<big_mod_t>(0x2_big_uint36),
                       static_cast<big_mod_t>(0x15FFFFFFFE_big_uint64));
@@ -227,6 +230,11 @@ BOOST_AUTO_TEST_CASE(big_assign) {
 
     BOOST_CHECK_EQUAL(
         a.base(), 0x107BC09A9F3443A6F6458495ADD98CBA1FCD15F17D0EAB66302FEFA6_big_uint224);
+}
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(minus_one_squared_is_one, big_mod_t, modular_types) {
+    big_mod_t x = -1;
+    BOOST_CHECK_EQUAL(x * x, 1);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

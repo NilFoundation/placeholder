@@ -64,6 +64,8 @@ struct ModularArithmeticSample {
     static base_type parse_number(const std::string &s) {
         if constexpr (std::is_same_v<base_type, std::uint64_t>) {
             return std::stoull(s, nullptr, 16);
+        } else if constexpr (std::is_same_v<base_type, std::uint32_t>) {
+            return std::stoul(s, nullptr, 16);
         } else {
             return s;
         }
