@@ -32,8 +32,6 @@
 
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
-#include <nil/blueprint/blueprint/plonk/circuit_proxy.hpp>
-#include <nil/blueprint/blueprint/plonk/assignment_proxy.hpp>
 
 #include <nil/blueprint/zkevm/zkevm_circuit.hpp>
 #include "../opcode_tester.hpp"

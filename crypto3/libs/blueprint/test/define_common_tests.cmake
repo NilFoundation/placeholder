@@ -6,7 +6,6 @@ set(COMMON_TEST_FILES
     "gate_id"
     "utils/connectedness_check"
     "private_input"
-    "proxy"
     #"mock/mocked_components"
     "component_batch"
     "bbf/tester"

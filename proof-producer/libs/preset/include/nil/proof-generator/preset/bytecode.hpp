@@ -20,6 +20,7 @@ namespace nil {
                 std::shared_ptr<typename PresetTypes<BlueprintFieldType>::ConstraintSystem>& bytecode_circuit,
                 std::shared_ptr<typename PresetTypes<BlueprintFieldType>::AssignmentTable>& bytecode_table,
                 const CircuitsLimits& circuits_limits) {
+
             using ConstraintSystem = typename PresetTypes<BlueprintFieldType>::ConstraintSystem;
             using AssignmentTable = typename PresetTypes<BlueprintFieldType>::AssignmentTable;
 

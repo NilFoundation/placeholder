@@ -33,9 +33,9 @@ namespace nil {
 
         template<typename BlueprintFieldType>
         class CircuitFactory {
-            using Circuit          = typename PresetTypes<BlueprintFieldType>::ConstraintSystem;
-            using AssignmentTable  = typename PresetTypes<BlueprintFieldType>::AssignmentTable;
-            using TableDescription = typename PresetTypes<BlueprintFieldType>::TableDescription;
+            using Circuit                = typename PresetTypes<BlueprintFieldType>::ConstraintSystem;
+            using AssignmentTable        = typename PresetTypes<BlueprintFieldType>::AssignmentTable;
+            using TableDescription       = typename PresetTypes<BlueprintFieldType>::TableDescription;
 
             using CircuitInitializer = std::function<std::optional<std::string>(
                 std::shared_ptr<Circuit>& circuit,

@@ -23,6 +23,7 @@ namespace nil {
                 std::shared_ptr<typename PresetTypes<BlueprintFieldType>::ConstraintSystem>& zkevm_circuit,
                 std::shared_ptr<typename PresetTypes<BlueprintFieldType>::AssignmentTable>& zkevm_table,
                 const CircuitsLimits& circuits_limits) {
+
             using ConstraintSystem = typename PresetTypes<BlueprintFieldType>::ConstraintSystem;
             using AssignmentTable = typename PresetTypes<BlueprintFieldType>::AssignmentTable;
 

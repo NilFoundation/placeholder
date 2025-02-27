@@ -73,6 +73,7 @@ namespace nil {
             gate_selector_map selector_map = {};
             lookup_gate_selector_map lookup_selector_map = {};
             std::size_t next_selector_index = 0;
+
         protected:
             lookup_library<BlueprintFieldType> _lookup_library;
         public:
