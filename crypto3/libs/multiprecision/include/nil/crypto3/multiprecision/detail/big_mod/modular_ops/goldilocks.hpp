@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------//
-// Copyright (c) 2024 Andrey Nefedov <ioxid@nil.foundation>
+// Copyright (c) 2024-2025 Andrey Nefedov <ioxid@nil.foundation>
 //
 // Distributed under the Boost Software License, Version 1.0
 // See accompanying file LICENSE_1_0.txt or copy at
@@ -17,6 +17,7 @@
 
 #include "nil/crypto3/multiprecision/detail/addcarry_subborrow.hpp"
 #include "nil/crypto3/multiprecision/detail/big_mod/modular_ops/common.hpp"
+#include "nil/crypto3/multiprecision/detail/big_mod/modular_ops_storage.hpp"
 #include "nil/crypto3/multiprecision/detail/int128.hpp"
 
 #if !defined(NIL_CO3_MP_HAS_INT128)
@@ -24,7 +25,7 @@
 #endif
 
 namespace nil::crypto3::multiprecision {
-    inline constexpr std::uint64_t goldilocks_modulus = 0xffffffff00000001ULL;
+    inline constexpr std::uint64_t goldilocks_modulus = 0xFFFFFFFF00000001ULL;
 
     namespace detail {
 #if defined(NIL_CO3_MP_HAS_INT128)
@@ -114,23 +115,7 @@ Goldilocks::new(t2)
         };
 #endif
 
-        // Compile-time storage for goldilocks arithmetic operations. Differs from
-        // modular_ops_storage_ct in that goldilocks has no modulus parameter
-        class goldilocks_modular_ops_storage {
-          public:
-            using modular_ops_t = goldilocks_modular_ops;
-
-            constexpr goldilocks_modular_ops_storage() {}
-
-            static constexpr const modular_ops_t &ops() { return m_modular_ops; }
-
-            static constexpr bool compare_eq(
-                const goldilocks_modular_ops_storage & /*other*/) {
-                return true;
-            }
-
-          private:
-            static constexpr modular_ops_t m_modular_ops{};
-        };
+        using goldilocks_modular_ops_storage =
+            modular_ops_storage_fixed_ct<goldilocks_modular_ops>;
     }  // namespace detail
 }  // namespace nil::crypto3::multiprecision

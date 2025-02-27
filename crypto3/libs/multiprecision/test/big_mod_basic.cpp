@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------//
-// Copyright (c) 2024 Andrey Nefedov <ioxid@nil.foundation>
+// Copyright (c) 2024-2025 Andrey Nefedov <ioxid@nil.foundation>
 //
 // Distributed under the Boost Software License, Version 1.0
 // See accompanying file LICENSE_1_0.txt or copy at
@@ -30,6 +30,15 @@ NIL_CO3_MP_DEFINE_BIG_UINT_LITERAL(60)
 constexpr big_uint<64> goldilocks_modulus_big_uint = 0xFFFFFFFF00000001ULL;
 static_assert(std::is_same_v<auto_big_mod<goldilocks_modulus_big_uint>, goldilocks_mod>);
 
+constexpr big_uint<31> mersenne31_modulus_big_uint = 0x7FFFFFFFU;
+static_assert(std::is_same_v<auto_big_mod<mersenne31_modulus_big_uint>, mersenne31_mod>);
+
+constexpr big_uint<31> koalabear_modulus_big_uint = 0x7F000001U;
+static_assert(std::is_same_v<auto_big_mod<koalabear_modulus_big_uint>, koalabear_mod>);
+
+constexpr big_uint<31> babybear_modulus_big_uint = 0x78000001U;
+static_assert(std::is_same_v<auto_big_mod<babybear_modulus_big_uint>, babybear_mod>);
+
 constexpr auto odd_mod = 0x123456789ABCDEF_big_uint57;
 constexpr auto even_mod = 0x123456789ABCDEE_big_uint57;
 
@@ -39,7 +48,8 @@ static_assert(std::is_same_v<auto_big_mod<even_mod>, big_mod<even_mod>>);
 using montgomery_big_mod_t = montgomery_big_mod<odd_mod>;
 using barrett_big_mod_t = big_mod<odd_mod>;
 
-using modular_types = std::tuple<montgomery_big_mod_t, barrett_big_mod_t, goldilocks_mod>;
+using modular_types = std::tuple<montgomery_big_mod_t, barrett_big_mod_t, goldilocks_mod,
+                                 mersenne31_mod, koalabear_mod, babybear_mod>;
 
 BOOST_AUTO_TEST_SUITE(smoke)
 
