@@ -40,6 +40,7 @@
 #include <nil/blueprint/bbf/generic.hpp>
 #include <nil/crypto3/algebra/curves/pallas.hpp>
 #include <nil/crypto3/algebra/curves/vesta.hpp>
+#include <nil/crypto3/algebra/curves/secp_k1.hpp>
 
 namespace nil {
     namespace blueprint {
@@ -407,7 +408,7 @@ namespace nil {
                             }
                             V = input.v.data;
 
-                            integral_type pow = 1;
+                            scalar_integral_type pow = 1;
                             SCALAR_TYPE z = 0, r = 0, s = 0;
 
                             for (std::size_t i = 0; i < num_chunks; ++i) {
@@ -422,6 +423,7 @@ namespace nil {
                                     pow;
                                 pow <<= bit_size_chunk;
                             }
+
                             SCALAR_TYPE i1, i3, i6;
                             BASE_TYPE i5, d2, i8;
 
@@ -443,7 +445,7 @@ namespace nil {
                                     ? (x1 * x1 * x1 + a).sqrt()
                                     : 1;  // should be signaled as invalid signaure
                             if (base_basic_integral_type(y1.data) % 2 !=
-                                scalar_basic_integral_type(V.data) % 2) {
+                                scalar_basic_integral_type(integral_type(V.data)) % 2) {
                                 y1 = -y1;
                             }
                             C[5] = (x1 * x1 * x1 + a - y1 * y1).is_zero();
@@ -461,10 +463,10 @@ namespace nil {
                                           .inversed();
 
                             C[7] = ((base_basic_integral_type(y1.data) % 2) ==
-                                    (scalar_basic_integral_type(V.data) % 2));
+                                    (scalar_basic_integral_type(integral_type(V.data)) % 2));
                             d2 = (base_basic_integral_type(y1.data) +
                                   base_basic_integral_type(
-                                      scalar_basic_integral_type(V.data))) /
+                                      scalar_basic_integral_type(integral_type(V.data)))) /
                                  2;
 
                             SCALAR_TYPE
@@ -480,6 +482,7 @@ namespace nil {
                                 ec_point_value_type(scalar_basic_integral_type(x1.data),
                                                     scalar_basic_integral_type(y1.data));
                             QA = G * u1 + R * u2;
+
                             C[8] = 1 - QA.is_zero();
 
                             i8 = QA.Y.is_zero() ? 0 : QA.Y.inversed();
@@ -701,6 +704,7 @@ namespace nil {
                         auto t36 = ChoiceFunction(C[6], CHUNKED_ZERO, t35);
                         auto t37 = ChoiceFunction(C[7], CHUNKED_ZERO, t36);
                         auto t38 = ChoiceFunction(C[8], CHUNKED_ZERO, t37);
+                        CHUNKED_BIT[0] = C[0];
                         CopyConstrain(t38, CHUNKED_BIT);  // t38 = (0,...,0,c)
 
                         for (int i = 0; i < num_chunks; ++i) {
@@ -728,6 +732,17 @@ namespace nil {
                                             crypto3::algebra::curves::vesta> {
                     using Base =
                         ecdsa_recovery<FieldType, stage, crypto3::algebra::curves::vesta>;
+
+                  public:
+                    using Base::Base;
+                };
+
+                template<typename FieldType, GenerationStage stage>
+                class secp_k1_256_ecdsa_recovery
+                    : public ecdsa_recovery<FieldType, stage,
+                                            crypto3::algebra::curves::secp_k1<256>> {
+                    using Base =
+                        ecdsa_recovery<FieldType, stage, crypto3::algebra::curves::secp_k1<256>>;
 
                   public:
                     using Base::Base;

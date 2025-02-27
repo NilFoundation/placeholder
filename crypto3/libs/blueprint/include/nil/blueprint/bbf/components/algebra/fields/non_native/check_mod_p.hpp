@@ -112,6 +112,8 @@ namespace nil {
                         
                         if (expect_output) {
                             output = ca.c;
+                        }
+                        else {
                             copy_constrain(ca.c, input.zero);
                         }
                     }

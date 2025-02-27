@@ -36,6 +36,7 @@
 #include <nil/blueprint/bbf/components/detail/range_check_multi.hpp>
 #include <nil/blueprint/bbf/generic.hpp>
 #include <nil/crypto3/algebra/curves/pallas.hpp>
+#include <nil/crypto3/algebra/curves/secp_k1.hpp>
 #include <nil/crypto3/algebra/curves/vesta.hpp>
 
 namespace nil {
@@ -380,6 +381,19 @@ namespace nil {
                     using Base =
                         ec_full_add<FieldType, stage,
                                     crypto3::algebra::curves::vesta::base_field_type>;
+
+                  public:
+                    using Base::Base;
+                };
+
+                template<typename FieldType, GenerationStage stage>
+                class secp_k1_256_ec_full_add
+                    : public ec_full_add<
+                          FieldType, stage,
+                          crypto3::algebra::curves::secp_k1<256>::base_field_type> {
+                    using Base = ec_full_add<
+                        FieldType, stage,
+                        crypto3::algebra::curves::secp_k1<256>::base_field_type>;
 
                   public:
                     using Base::Base;

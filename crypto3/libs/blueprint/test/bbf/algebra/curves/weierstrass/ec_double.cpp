@@ -28,6 +28,7 @@
 #include <nil/blueprint/bbf/circuit_builder.hpp>
 #include <nil/blueprint/bbf/components/algebra/curves/weierstrass/ec_double.hpp>
 #include <nil/crypto3/algebra/curves/pallas.hpp>
+#include <nil/crypto3/algebra/curves/secp_k1.hpp>
 #include <nil/crypto3/algebra/curves/vesta.hpp>
 #include <nil/crypto3/random/algebraic_engine.hpp>
 
@@ -42,7 +43,9 @@ void test_ec_double(
     using TYPE = typename FieldType::value_type;
     using NON_NATIVE_TYPE = typename NonNativeFieldType::value_type;
     using integral_type = typename BlueprintFieldType::integral_type;
-    using non_native_integral_type = typename BlueprintFieldType::integral_type;
+    typedef nil::crypto3::multiprecision::big_uint<2 *
+                                                   NonNativeFieldType::modulus_bits>
+        non_native_integral_type;
 
     non_native_integral_type pow = 1;
     NON_NATIVE_TYPE xQ = 0, yQ = 0;
@@ -115,6 +118,16 @@ void test_ec_double(
                                  std::size_t>(num_chunks, bit_size_chunk);
 
         assign_and_check(B, input);
+    } else if constexpr (std::is_same_v<
+                             NonNativeFieldType,
+                             crypto3::algebra::curves::secp_k1<256>::base_field_type>) {
+        typename bbf::components::secp_k1_256_ec_double<
+            FieldType, bbf::GenerationStage::ASSIGNMENT>::input_type input;
+        auto B =
+            bbf::circuit_builder<FieldType, bbf::components::secp_k1_256_ec_double,
+                                 std::size_t, std::size_t>(num_chunks, bit_size_chunk);
+
+        assign_and_check(B, input);
     }
 }
 
@@ -124,7 +137,8 @@ void ec_double_tests() {
     using NonNativeFieldType = typename Curve::base_field_type;
     using value_type = typename BlueprintFieldType::value_type;
     using integral_type = typename BlueprintFieldType::integral_type;
-    using foreign_value_type = typename NonNativeFieldType::value_type;
+    using foreign_value_type = typename Curve::scalar_field_type::value_type;
+    using foreign_integral_type = typename NonNativeFieldType::integral_type;
     using ec_point_value_type = typename Curve::template g1_type<
         nil::crypto3::algebra::curves::coordinates::affine>::value_type;
 
@@ -132,8 +146,8 @@ void ec_double_tests() {
         extended_integral_type;
 
     static boost::random::mt19937 seed_seq;
-    static nil::crypto3::random::algebraic_engine<BlueprintFieldType> generate_random(
-        seed_seq);
+    static nil::crypto3::random::algebraic_engine<typename Curve::scalar_field_type>
+        generate_random(seed_seq);
     boost::random::uniform_int_distribution<> t_dist(0, 1);
 
     extended_integral_type mask = (extended_integral_type(1) << bit_size_chunk) - 1;
@@ -145,13 +159,13 @@ void ec_double_tests() {
                                ext_pow = extended_base << (num_chunks * bit_size_chunk),
                                p = NonNativeFieldType::modulus, pp = ext_pow - p;
 
-        value_type d = generate_random();
+        foreign_value_type d = generate_random();
         ec_point_value_type Q = ec_point_value_type::one();
         Q = Q * d;
 
         public_input.resize(5 * num_chunks);
-        integral_type xQ = integral_type(Q.X.data);
-        integral_type yQ = integral_type(Q.Y.data);
+        foreign_integral_type xQ = foreign_integral_type(Q.X.data);
+        foreign_integral_type yQ = foreign_integral_type(Q.Y.data);
         for (std::size_t j = 0; j < num_chunks; j++) {
             public_input[j] = value_type(xQ & mask);
             xQ >>= bit_size_chunk;
@@ -180,6 +194,7 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_bbf_ec_double_test) {
     // The curve is passed in as an argument to access additionnal properties
     using pallas = typename crypto3::algebra::curves::pallas;
     using vesta = typename crypto3::algebra::curves::vesta;
+    using secp_k1_256 = typename crypto3::algebra::curves::secp_k1<256>;
 
     ec_double_tests<pallas::base_field_type, vesta, 8, 32, random_tests_amount>();
 
@@ -188,6 +203,10 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_bbf_ec_double_test) {
     ec_double_tests<vesta::base_field_type, pallas, 4, 65, random_tests_amount>();
 
     ec_double_tests<vesta::base_field_type, pallas, 12, 22, random_tests_amount>();
+
+    ec_double_tests<pallas::base_field_type, secp_k1_256, 3, 96, random_tests_amount>();
+
+    ec_double_tests<vesta::base_field_type, secp_k1_256, 3, 96, random_tests_amount>();
 }
 
 BOOST_AUTO_TEST_SUITE_END()

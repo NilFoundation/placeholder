@@ -29,6 +29,7 @@
 #include <nil/blueprint/bbf/circuit_builder.hpp>
 #include <nil/blueprint/bbf/components/algebra/fields/non_native/negation_mod_p.hpp>
 #include <nil/crypto3/algebra/curves/pallas.hpp>
+#include <nil/crypto3/algebra/curves/secp_k1.hpp>
 #include <nil/crypto3/algebra/curves/vesta.hpp>
 #include <nil/crypto3/random/algebraic_engine.hpp>
 
@@ -104,6 +105,16 @@ void test_negation_mod_p(
                                  std::size_t, std::size_t>(num_chunks, bit_size_chunk);
 
         assign_and_check(B, input);
+    } else if constexpr (std::is_same_v<
+                             NonNativeFieldType,
+                             crypto3::algebra::curves::secp_k1<256>::base_field_type>) {
+        typename bbf::components::secp_k1_256_negation_mod_p<
+            FieldType, bbf::GenerationStage::ASSIGNMENT>::input_type input;
+        auto B =
+            bbf::circuit_builder<FieldType, bbf::components::secp_k1_256_negation_mod_p,
+                                 std::size_t, std::size_t>(num_chunks, bit_size_chunk);
+
+        assign_and_check(B, input);
     }
 }
 
@@ -113,25 +124,24 @@ void negation_mod_p_tests() {
     using value_type = typename BlueprintFieldType::value_type;
     using integral_type = typename BlueprintFieldType::integral_type;
     using foreign_value_type = typename NonNativeFieldType::value_type;
+    using foreign_integral_type = NonNativeFieldType::integral_type;
     typedef nil::crypto3::multiprecision::big_uint<2 * NonNativeFieldType::modulus_bits>
-        extended_integral_type;
+        extended_foreign_integral_type;
 
     static boost::random::mt19937 seed_seq;
     static nil::crypto3::random::algebraic_engine<NonNativeFieldType> generate_random(
         seed_seq);
     boost::random::uniform_int_distribution<> t_dist(0, 1);
-    extended_integral_type mask = (extended_integral_type(1) << bit_size_chunk) - 1;
+    extended_foreign_integral_type mask = (extended_foreign_integral_type(1) << bit_size_chunk) - 1;
 
     for (std::size_t i = 0; i < RandomTestsAmount; i++) {
         std::vector<typename BlueprintFieldType::value_type> public_input;
 
-        foreign_value_type src_x = generate_random();
-
-        extended_integral_type x = extended_integral_type(integral_type(src_x.data)),
+        extended_foreign_integral_type x = extended_foreign_integral_type(foreign_integral_type(generate_random().data)),
                                extended_base = 1,
                                ext_pow = extended_base << (num_chunks * bit_size_chunk),
                                p = NonNativeFieldType::modulus;
-        extended_integral_type pp = ext_pow - p;
+        extended_foreign_integral_type pp = ext_pow - p;
 
         public_input.resize(4 * num_chunks);
         for (std::size_t j = 0; j < num_chunks; j++) {
@@ -158,6 +168,8 @@ BOOST_AUTO_TEST_SUITE(blueprint_plonk_test_suite)
 BOOST_AUTO_TEST_CASE(blueprint_plonk_bbf_negation_mod_p_test) {
     using pallas_field_type = typename crypto3::algebra::curves::pallas::base_field_type;
     using vesta_field_type = typename crypto3::algebra::curves::vesta::base_field_type;
+    using secp_k1_256_field_type =
+        typename crypto3::algebra::curves::secp_k1<256>::base_field_type;
 
     negation_mod_p_tests<pallas_field_type, vesta_field_type, 8, 32,
                          random_tests_amount>();
@@ -165,7 +177,7 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_bbf_negation_mod_p_test) {
     negation_mod_p_tests<pallas_field_type, vesta_field_type, 4, 65,
                          random_tests_amount>();
 
-    negation_mod_p_tests<pallas_field_type, pallas_field_type, 8, 34,
+    negation_mod_p_tests<pallas_field_type, secp_k1_256_field_type, 8, 34,
                          random_tests_amount>();
 
     negation_mod_p_tests<vesta_field_type, pallas_field_type, 2, 253,
@@ -174,7 +186,7 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_bbf_negation_mod_p_test) {
     negation_mod_p_tests<vesta_field_type, pallas_field_type, 12, 22,
                          random_tests_amount>();
 
-    negation_mod_p_tests<vesta_field_type, vesta_field_type, 8, 33,
+    negation_mod_p_tests<vesta_field_type, secp_k1_256_field_type, 8, 33,
                          random_tests_amount>();
 }
 
