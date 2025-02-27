@@ -105,6 +105,7 @@ namespace nil {
             // We define constants using the smallest possible bitlengths from nil/crypto3/multiprecision/literals.hpp
             // Maybe it would have been better to define more bitlenghts, but this will probably all disappear, once
             // small fields are introduced.
+            static const unsigned int two_15 = 32768;
             static const unsigned int two_16 = 65536;
             static const nil::crypto3::multiprecision::big_uint<64> two_32 = 4294967296;
             static const nil::crypto3::multiprecision::big_uint<64> two_48 = 281474976710656;

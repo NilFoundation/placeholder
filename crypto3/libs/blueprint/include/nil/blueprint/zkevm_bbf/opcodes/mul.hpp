@@ -48,11 +48,6 @@ namespace nil {
             public:
                 using typename generic_component<FieldType,stage>::TYPE;
 
-                constexpr static const typename FieldType::value_type two_64 =
-                    0x10000000000000000_big_uint256;
-                constexpr static const typename FieldType::value_type two_128 = 0x100000000000000000000000000000000_big_uint254;
-                constexpr static const typename FieldType::value_type two_192 = 0x1000000000000000000000000000000000000000000000000_big_uint254;
-
                 TYPE chunk_sum_64(const std::vector<TYPE> &chunks, const unsigned char chunk_idx) const {
                     BOOST_ASSERT(chunk_idx < 4);
                     TYPE result;
@@ -70,7 +65,7 @@ namespace nil {
                 ) const {
                     return
                         a_64_chunks[3] * b_64_chunks[3] +
-                        two_64 * (a_64_chunks[3] * b_64_chunks[2] + a_64_chunks[2] * b_64_chunks[3]) - r_64_chunks[3] - two_64 * r_64_chunks[2];
+                        TYPE(two_64) * (a_64_chunks[3] * b_64_chunks[2] + a_64_chunks[2] * b_64_chunks[3]) - r_64_chunks[3] - TYPE(two_64) * r_64_chunks[2];
                 }
 
 
@@ -82,7 +77,7 @@ namespace nil {
                     return
                        (a_64_chunks[3] * b_64_chunks[1] + a_64_chunks[2] * b_64_chunks[2] +
                         a_64_chunks[1] * b_64_chunks[3] - r_64_chunks[1]) +
-                        two_64 * (a_64_chunks[3] * b_64_chunks[0] + a_64_chunks[1] * b_64_chunks[2] +
+                        TYPE(two_64) * (a_64_chunks[3] * b_64_chunks[0] + a_64_chunks[1] * b_64_chunks[2] +
                             a_64_chunks[2] * b_64_chunks[1] + a_64_chunks[0] * b_64_chunks[3] - r_64_chunks[0]);
                 }
 
