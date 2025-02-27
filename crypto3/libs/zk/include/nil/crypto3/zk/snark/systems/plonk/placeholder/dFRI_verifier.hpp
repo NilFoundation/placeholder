@@ -51,7 +51,7 @@ namespace nil {
                     using transcript_hash_type = typename ParamsType::transcript_hash_type;
                     using policy_type = detail::placeholder_policy<FieldType, ParamsType>;
                     using public_preprocessor_type = placeholder_public_preprocessor<FieldType, ParamsType>;
-
+                    using common_data_type = typename public_preprocessor_type::preprocessed_data_type::common_data_type;
                     using commitment_scheme_type = typename ParamsType::commitment_scheme_type;
                     using commitment_type = typename commitment_scheme_type::commitment_type;
                     using transcript_type = typename commitment_scheme_type::transcript_type;
@@ -59,12 +59,12 @@ namespace nil {
                 public:
 
                    static inline bool process(
-                            const std::vector<typename public_preprocessor_type::preprocessed_data_type::common_data_type> &common_datas,
+                            const std::vector<common_data_type> &common_datas,
                             const placeholder_aggregated_proof<FieldType, ParamsType> &agg_proof,
                             const std::vector<plonk_table_description<FieldType>> &table_descriptions,
                             const std::vector<plonk_constraint_system<FieldType>> &constraint_systems,
                             std::vector<commitment_scheme_type>& commitment_schemes,
-                            std::vector<public_input_type> &public_inputs
+                            const std::vector<public_input_type> &public_inputs
                    ) {
                         const size_t N = agg_proof.partial_proofs.size();
                         std::vector<transcript::fiat_shamir_heuristic_sequential<transcript_hash_type>> transcripts(N, std::vector<std::uint8_t>({}));
@@ -75,7 +75,14 @@ namespace nil {
                         for (size_t i = 0; i < N; i++) {
                             // Create a proof from aggregated_proof.
                             typename placeholder_proof<FieldType, ParamsType>::evaluation_proof eval_proof;
-                            eval_proof.eval_proof = agg_proof.aggregated_proof.initial_proofs_per_prover[i];
+                            // eval_proof.challenge = XXX; // Do we want to set the challenge to something??????
+                            eval_proof.eval_proof.z = agg_proof.aggregated_proof.initial_proofs_per_prover[i].z;
+                            const auto& initial_fri_proofs = agg_proof.aggregated_proof.initial_proofs_per_prover[i].initial_fri_proofs.initial_proofs;
+                            eval_proof.eval_proof.fri_proof.query_proofs.resize(initial_fri_proofs.size()); 
+                            for (size_t j = 0; i < initial_fri_proofs.size(); ++j) {
+                                eval_proof.eval_proof.fri_proof.query_proofs[j].initial_proof = initial_fri_proofs[j];
+                            }
+
                             proofs.push_back(placeholder_proof<FieldType, ParamsType>(agg_proof.partial_proofs[i], eval_proof));
                             
                             if (!verifier_type::verify_partial_proof(
@@ -91,7 +98,7 @@ namespace nil {
                         transcript_type transcript_for_aggregation;
                 
                         for (size_t i = 0; i < N; i++) {
-                            transcript_for_aggregation(transcripts[i].challenge());
+                            transcript_for_aggregation(transcripts[i].template challenge<FieldType>());
                         }
 
                         // produce the aggregated challenge
@@ -107,12 +114,13 @@ namespace nil {
                         for (size_t i = 0; i < N; i++) {
                             // We need a fresh copy of this transcript for each prover.
                             transcript_type aggregated_transcript_copy = aggregated_transcript;
-                            if (!verifier_type::verify_consolidated_polynomial(common_datas[i], proofs[i], F_consolidated, aggregated_transcript_copy))
+                            if (!verifier_type::verify_consolidated_polynomial(common_datas[i], proofs[i], F_consolidated[i], aggregated_transcript_copy))
                                 return false;
 
                             verifier_type::prepare_polynomials(
                                 proofs[i].eval_proof,
                                 common_datas[i],
+                                table_descriptions[i],
                                 constraint_systems[i],
                                 commitment_schemes[i]);
 
@@ -139,7 +147,8 @@ namespace nil {
                             typename std::vector<std::vector<std::tuple<std::size_t, std::size_t>>> poly_map(total_points);
 
                             typename FieldType::value_type theta_acc = theta.pow(starting_indexes[i]);
-                            commitment_schemes[i].generate_U_V_polymap(U, V, poly_map, proofs[i].eval_proof.z, theta, theta_acc, starting_indexes[i]);
+                            commitment_schemes[i].generate_U_V_polymap(
+                                U, V, poly_map, proofs[i].eval_proof.eval_proof.z, theta, theta_acc, total_points, starting_indexes[i]);
 
                             // We shall sum up the values in U, and the values in V and poly_map must be the same for each prover.
                             if (i == 0) {
@@ -165,6 +174,7 @@ namespace nil {
                             }
                         }
 
+//Check Proof Of Work!
                         // TODO: finalize the last FRI part.
                         //if (!nil::crypto3::zk::algorithms::verify_eval<fri_type>(
                         //        proof.aggregated_proof.fri_proof,

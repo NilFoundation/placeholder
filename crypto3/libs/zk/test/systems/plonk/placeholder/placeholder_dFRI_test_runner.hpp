@@ -45,14 +45,12 @@ using namespace nil::crypto3;
 using namespace nil::crypto3::zk;
 using namespace nil::crypto3::zk::snark;
 
-template<typename FieldType,
+template<typename field_type,
         typename merkle_hash_type,
         typename transcript_hash_type,
         bool UseGrinding = false,
         std::size_t max_quotient_poly_chunks = 0>
 struct placeholder_dFRI_test_runner {
-    using field_type = FieldType;
-
     struct placeholder_test_params {
         constexpr static const std::size_t lambda = 40;
         constexpr static const std::size_t m = 2;
@@ -76,6 +74,11 @@ struct placeholder_dFRI_test_runner {
     using fri_type = typename lpc_scheme_type::fri_type;
     using proof_of_work_type = typename fri_type::grinding_type::output_type;
     using polynomial_type = typename lpc_scheme_type::polynomial_type;
+    using public_input_type = std::vector<std::vector<typename field_type::value_type>>;
+    using public_preprocessor_type = placeholder_public_preprocessor<field_type, lpc_placeholder_params_type>;
+    using private_preprocessor_type = placeholder_private_preprocessor<field_type, lpc_placeholder_params_type>;
+    using common_data_type = typename public_preprocessor_type::preprocessed_data_type::common_data_type;
+
     using placeholder_aggregated_proof_type = nil::crypto3::zk::snark::
                     placeholder_aggregated_proof<field_type, lpc_placeholder_params_type>;
 
@@ -106,11 +109,11 @@ struct placeholder_dFRI_test_runner {
     bool run_test() {
         lpc_scheme_type lpc_scheme1(fri_params);
 
-        typename placeholder_public_preprocessor<field_type, lpc_placeholder_params_type>::preprocessed_data_type
+        typename public_preprocessor_type::preprocessed_data_type
                 preprocessed_public_data1 = placeholder_public_preprocessor<field_type, lpc_placeholder_params_type>::process(
                 constraint_system1, assignments1.public_table(), desc1, lpc_scheme1, max_quotient_poly_chunks);
 
-        typename placeholder_private_preprocessor<field_type, lpc_placeholder_params_type>::preprocessed_data_type
+        typename private_preprocessor_type::preprocessed_data_type
                 preprocessed_private_data1 = placeholder_private_preprocessor<field_type, lpc_placeholder_params_type>::process(
                 constraint_system1, assignments1.private_table(), desc1);
 
@@ -121,11 +124,11 @@ struct placeholder_dFRI_test_runner {
 
         lpc_scheme_type lpc_scheme2(fri_params);
 
-        typename placeholder_public_preprocessor<field_type, lpc_placeholder_params_type>::preprocessed_data_type
+        typename public_preprocessor_type::preprocessed_data_type
                 preprocessed_public_data2 = placeholder_public_preprocessor<field_type, lpc_placeholder_params_type>::process(
                 constraint_system2, assignments2.public_table(), desc2, lpc_scheme2, max_quotient_poly_chunks);
 
-        typename placeholder_private_preprocessor<field_type, lpc_placeholder_params_type>::preprocessed_data_type
+        typename private_preprocessor_type::preprocessed_data_type
                 preprocessed_private_data2 = placeholder_private_preprocessor<field_type, lpc_placeholder_params_type>::process(
                 constraint_system2, assignments2.private_table(), desc2);
 
@@ -185,8 +188,8 @@ struct placeholder_dFRI_test_runner {
             lpc_scheme1.get_fri_params(), aggregated_transcript);
 
         // Generate consistency check proofs.
-        lpc_proof_type initial_proof1 = lpc_scheme1.proof_eval_lpc_proof(combined_Q1, consistency_checks_challenges);
-        lpc_proof_type initial_proof2 = lpc_scheme2.proof_eval_lpc_proof(combined_Q2, consistency_checks_challenges);
+        lpc_proof_type initial_proof1 = lpc_scheme1.proof_eval_lpc_proof(consistency_checks_challenges);
+        lpc_proof_type initial_proof2 = lpc_scheme2.proof_eval_lpc_proof(consistency_checks_challenges);
 
         // Aggregate all the parts of proofs into 1 aggregated proof.
         placeholder_aggregated_proof_type agg_proof;
@@ -201,11 +204,15 @@ struct placeholder_dFRI_test_runner {
         lpc_scheme_type verifier_lpc_scheme1(fri_params);
         lpc_scheme_type verifier_lpc_scheme2(fri_params);
 
+        std::vector<common_data_type> common_datas = {
+            *preprocessed_public_data1.common_data, *preprocessed_public_data2.common_data};
+        std::vector<plonk_table_description<field_type>> table_descriptions = {desc1, desc2};
+        std::vector<plonk_constraint_system<field_type>> constraint_systems = {constraint_system1, constraint_system2};
+        std::vector<lpc_scheme_type> commitment_schemes = {verifier_lpc_scheme1, verifier_lpc_scheme2};
+        std::vector<public_input_type> public_inputs = {assignments1.public_inputs(), assignments2.public_inputs()};
+
         bool verifier_res = placeholder_DFRI_verifier<field_type, lpc_placeholder_params_type>::process(
-                {preprocessed_public_data1.common_data, preprocessed_public_data2.common_data},
-                agg_proof, {desc1, desc2}, {constraint_system1, constraint_system2},
-                {verifier_lpc_scheme1, verifier_lpc_scheme1}
-            );
+                common_datas, agg_proof, table_descriptions, constraint_systems, commitment_schemes, public_inputs);
         return verifier_res;
     }
 

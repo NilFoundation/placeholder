@@ -226,7 +226,8 @@ namespace nil {
                         const plonk_constraint_system<FieldType> &constraint_system,
                         commitment_scheme_type& commitment_scheme,
                         const std::vector<std::vector<typename FieldType::value_type>> &public_input,
-                        transcript_type &transcript
+                        transcript_type &transcript,
+                        typename FieldType::value_type& F_consolidated_out
                     ) {
                         // TODO: process rotations for public input.
                         
@@ -260,9 +261,9 @@ namespace nil {
                             }
                         }
 
-                        verify_partial_proof(
+                        return verify_partial_proof(
                             common_data, proof, table_description, constraint_system,
-                            commitment_scheme, transcript);
+                            commitment_scheme, transcript, F_consolidated_out);
                     }
 
                     /** Even though this function accepts the full proof, it does only partial verifications.
@@ -450,7 +451,8 @@ namespace nil {
                                 PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED, 1,
                                 plonk_variable<typename FieldType::value_type>::column_type::selector
                             );
-                            columns_at_y[key] = shifted_mask_value - common_data.lagrange_0.evaluate(proof.eval_proof.challenge * common_data.basic_domain->get_domain_element(1));
+                            columns_at_y[key] = shifted_mask_value - common_data.lagrange_0.evaluate(
+                                proof.eval_proof.challenge * common_data.basic_domain->get_domain_element(1));
                         }
 
                         // 6. lookup argument
@@ -458,8 +460,10 @@ namespace nil {
                         std::array<typename FieldType::value_type, lookup_parts> lookup_argument;
                         if (is_lookup_enabled) {
                             std::vector<typename FieldType::value_type> special_selector_values_shifted(2);
-                            special_selector_values_shifted[0] = proof.eval_proof.eval_proof.z.get(FIXED_VALUES_BATCH, 2*common_data.permuted_columns.size(), 1);
-                            special_selector_values_shifted[1] = proof.eval_proof.eval_proof.z.get(FIXED_VALUES_BATCH, 2*common_data.permuted_columns.size() + 1, 1);
+                            special_selector_values_shifted[0] = proof.eval_proof.eval_proof.z.get(
+                                FIXED_VALUES_BATCH, 2*common_data.permuted_columns.size(), 1);
+                            special_selector_values_shifted[1] = proof.eval_proof.eval_proof.z.get(
+                                FIXED_VALUES_BATCH, 2*common_data.permuted_columns.size() + 1, 1);
 
                             std::vector<typename FieldType::value_type> lookup_parts_values;
                             for( std::size_t i = common_data.permutation_parts + 1;
@@ -479,7 +483,7 @@ namespace nil {
                                 proof.commitments.at(LOOKUP_BATCH), transcript
                             );
                         }
-                        if( constraint_system.copy_constraints().size() > 0 || constraint_system.lookup_gates().size() > 0){
+                        if (constraint_system.copy_constraints().size() > 0 || constraint_system.lookup_gates().size() > 0) {
                             transcript(proof.commitments.at(PERMUTATION_BATCH));
                         }
 
