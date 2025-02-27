@@ -481,6 +481,10 @@ namespace nil {
                         return evaluation_points_public;
                     }
 
+                public:
+                    // Transcript is used from the outside to generate an aggregated challenge for dFRI.
+                    transcript::fiat_shamir_heuristic_sequential<transcript_hash_type> transcript;
+
                 private:
                     // Structures passed from outside by reference.
                     const typename public_preprocessor_type::preprocessed_data_type &preprocessed_public_data;
@@ -491,7 +495,6 @@ namespace nil {
                     std::unique_ptr<plonk_polynomial_dfs_table<FieldType>> _polynomial_table;
                     placeholder_proof<FieldType, ParamsType> _proof;
                     std::array<polynomial_dfs_type, f_parts> _F_dfs;
-                    transcript::fiat_shamir_heuristic_sequential<transcript_hash_type> transcript;
                     bool _is_lookup_enabled;
                     typename FieldType::value_type _omega;
                     std::vector<typename FieldType::value_type> _challenge_point;

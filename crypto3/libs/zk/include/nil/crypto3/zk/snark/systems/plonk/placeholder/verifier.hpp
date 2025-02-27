@@ -54,6 +54,7 @@ namespace nil {
                     using policy_type = detail::placeholder_policy<FieldType, ParamsType>;
                     using public_preprocessor_type = placeholder_public_preprocessor<FieldType, ParamsType>;
 
+                    using proof_type = placeholder_proof<FieldType, ParamsType>;
                     using commitment_scheme_type = typename ParamsType::commitment_scheme_type;
                     using commitment_type = typename commitment_scheme_type::commitment_type;
                     using transcript_type = typename commitment_scheme_type::transcript_type;
@@ -148,7 +149,7 @@ namespace nil {
 
                     static inline bool process(
                         const typename public_preprocessor_type::preprocessed_data_type::common_data_type &common_data,
-                        const placeholder_proof<FieldType, ParamsType> &proof,
+                        const proof_type &proof,
                         const plonk_table_description<FieldType> &table_description,
                         const plonk_constraint_system<FieldType> &constraint_system,
                         commitment_scheme_type& commitment_scheme,
@@ -189,7 +190,7 @@ namespace nil {
 
                     static inline bool process(
                         const typename public_preprocessor_type::preprocessed_data_type::common_data_type &common_data,
-                        const placeholder_proof<FieldType, ParamsType> &proof,
+                        const proof_type &proof,
                         const plonk_table_description<FieldType> &table_description,
                         const plonk_constraint_system<FieldType> &constraint_system,
                         commitment_scheme_type& commitment_scheme
@@ -206,7 +207,7 @@ namespace nil {
                         }
 
                         verify_consolidated_polynomial(common_data, proof, F_consolidated, transcript);
-                        prepare_polynomials(proof, common_data, table_description, constraint_system, commitment_scheme);
+                        prepare_polynomials(proof.eval_proof, common_data, table_description, constraint_system, commitment_scheme);
                         
                         std::map<std::size_t, typename commitment_scheme_type::commitment_type> commitments = proof.commitments;
                         commitments[FIXED_VALUES_BATCH] = common_data.commitments.fixed_values;
@@ -220,7 +221,7 @@ namespace nil {
 
                     static inline bool verify_partial_proof(
                         const typename public_preprocessor_type::preprocessed_data_type::common_data_type &common_data,
-                        const placeholder_proof<FieldType, ParamsType> &proof,
+                        const proof_type &proof,
                         const plonk_table_description<FieldType> &table_description,
                         const plonk_constraint_system<FieldType> &constraint_system,
                         commitment_scheme_type& commitment_scheme,
@@ -272,7 +273,7 @@ namespace nil {
                      */
                     static inline bool verify_partial_proof(
                         const typename public_preprocessor_type::preprocessed_data_type::common_data_type &common_data,
-                        const placeholder_proof<FieldType, ParamsType> &proof,
+                        const proof_type &proof,
                         const plonk_table_description<FieldType> &table_description,
                         const plonk_constraint_system<FieldType> &constraint_system,
                         commitment_scheme_type& commitment_scheme,
@@ -512,7 +513,7 @@ namespace nil {
 
                     static inline bool verify_consolidated_polynomial(
                         const typename public_preprocessor_type::preprocessed_data_type::common_data_type &common_data,
-                        const placeholder_proof<FieldType, ParamsType> &proof,
+                        const proof_type &proof,
                         const typename FieldType::value_type& F_consolidated,
                         transcript_type &transcript)
                     { 
@@ -540,31 +541,31 @@ namespace nil {
                     }
 
                     static inline void prepare_polynomials(
-                            const placeholder_proof<FieldType, ParamsType> &proof,
+                            const typename proof_type::evaluation_proof &eval_proof,
                             const typename public_preprocessor_type::preprocessed_data_type::common_data_type &common_data,
                             const plonk_table_description<FieldType> &table_description,
                             const plonk_constraint_system<FieldType> &constraint_system,
                             commitment_scheme_type &commitment_scheme) {
 
                         commitment_scheme.set_batch_size(VARIABLE_VALUES_BATCH,
-                            proof.eval_proof.eval_proof.z.get_batch_size(VARIABLE_VALUES_BATCH));
+                            eval_proof.eval_proof.z.get_batch_size(VARIABLE_VALUES_BATCH));
                         commitment_scheme.set_batch_size(FIXED_VALUES_BATCH,
-                            proof.eval_proof.eval_proof.z.get_batch_size(FIXED_VALUES_BATCH));
+                            eval_proof.eval_proof.z.get_batch_size(FIXED_VALUES_BATCH));
                         bool is_lookup_enabled = (constraint_system.lookup_gates().size() > 0);
 
                         if (is_lookup_enabled || constraint_system.copy_constraints().size())
                             commitment_scheme.set_batch_size(PERMUTATION_BATCH,
-                                proof.eval_proof.eval_proof.z.get_batch_size(PERMUTATION_BATCH));
+                                eval_proof.eval_proof.z.get_batch_size(PERMUTATION_BATCH));
 
                         commitment_scheme.set_batch_size(QUOTIENT_BATCH,
-                            proof.eval_proof.eval_proof.z.get_batch_size(QUOTIENT_BATCH));
+                            eval_proof.eval_proof.z.get_batch_size(QUOTIENT_BATCH));
 
                         if (is_lookup_enabled)
                             commitment_scheme.set_batch_size(LOOKUP_BATCH,
-                                proof.eval_proof.eval_proof.z.get_batch_size(LOOKUP_BATCH));
+                                eval_proof.eval_proof.z.get_batch_size(LOOKUP_BATCH));
 
                         generate_evaluation_points(commitment_scheme, common_data, constraint_system,
-                                                   table_description, proof.eval_proof.challenge, is_lookup_enabled);
+                                                   table_description, eval_proof.challenge, is_lookup_enabled);
 
                     }
                 };

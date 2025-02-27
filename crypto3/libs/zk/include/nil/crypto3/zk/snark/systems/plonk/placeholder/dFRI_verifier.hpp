@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------//
-// Copyright (c) 2022-2023 Martun Karapetyan <martun@nil.foundation>
+// Copyright (c) 2025 Martun Karapetyan <martun@nil.foundation>
 //
 // MIT License
 //
@@ -48,6 +48,14 @@ namespace nil {
                 class placeholder_DFRI_verifier {
                     using verifier_type = placeholder_verifier<FieldType, ParamsType>; 
                     using public_input_type = std::vector<std::vector<typename FieldType::value_type>>;
+                    using transcript_hash_type = typename ParamsType::transcript_hash_type;
+                    using policy_type = detail::placeholder_policy<FieldType, ParamsType>;
+                    using public_preprocessor_type = placeholder_public_preprocessor<FieldType, ParamsType>;
+
+                    using commitment_scheme_type = typename ParamsType::commitment_scheme_type;
+                    using commitment_type = typename commitment_scheme_type::commitment_type;
+                    using transcript_type = typename commitment_scheme_type::transcript_type;
+
                 public:
 
                    static inline bool process(
@@ -58,16 +66,16 @@ namespace nil {
                             std::vector<commitment_scheme_type>& commitment_schemes,
                             std::vector<public_input_type> &public_inputs
                    ) {
-                        const size_t N = proof.partial_proofs.size();
-                        std::vector<transcript::fiat_shamir_heuristic_sequential<transcript_hash_type>> transcript(N, std::vector<std::uint8_t>({}));
+                        const size_t N = agg_proof.partial_proofs.size();
+                        std::vector<transcript::fiat_shamir_heuristic_sequential<transcript_hash_type>> transcripts(N, std::vector<std::uint8_t>({}));
 
                         std::vector<placeholder_proof<FieldType, ParamsType>> proofs;
                         std::vector<typename FieldType::value_type> F_consolidated;
                         // Verify partial proofs.
                         for (size_t i = 0; i < N; i++) {
                             // Create a proof from aggregated_proof.
-                            placeholder_proof<FieldType, ParamsType>::evaluation_proof eval_proof;
-                            eval_proof.eval_proof = proof.aggregated_proof.initial_proofs_per_prover[i];
+                            typename placeholder_proof<FieldType, ParamsType>::evaluation_proof eval_proof;
+                            eval_proof.eval_proof = agg_proof.aggregated_proof.initial_proofs_per_prover[i];
                             proofs.push_back(placeholder_proof<FieldType, ParamsType>(agg_proof.partial_proofs[i], eval_proof));
                             
                             if (!verifier_type::verify_partial_proof(
@@ -83,14 +91,14 @@ namespace nil {
                         transcript_type transcript_for_aggregation;
                 
                         for (size_t i = 0; i < N; i++) {
-                            transcript_for_aggregation(transcript[i].challenge());
+                            transcript_for_aggregation(transcripts[i].challenge());
                         }
 
                         // produce the aggregated challenge
-                        auto aggregated_challenge = transcript_for_aggregation.template challenge<BlueprintField>();
+                        auto aggregated_challenge = transcript_for_aggregation.template challenge<FieldType>();
 
-                        // This the transcript that our provers will use, it's not the same as 'transcript_for_aggregation', it's the transcript that your get
-                        // after injesting the aggregated challenge.
+                        // This the transcript that our provers will use, it's not the same as 'transcript_for_aggregation', it's the transcript that
+                        // you get after injesting the aggregated challenge.
                         transcript_type aggregated_transcript;
                         aggregated_transcript(aggregated_challenge);
 
@@ -103,15 +111,14 @@ namespace nil {
                                 return false;
 
                             verifier_type::prepare_polynomials(
-                                *proof,
-                                *common_data,
-                                *constraint_system,
-                                *commitment_scheme);
+                                proofs[i].eval_proof,
+                                common_datas[i],
+                                constraint_systems[i],
+                                commitment_schemes[i]);
 
                             starting_indexes[i] = i == 0 ? 0 : starting_indexes[i-1];
-                            starting_indexes[i] += commitments[i].compute_theta_power_for_combined_Q();
+                            starting_indexes[i] += commitment_schemes[i].compute_theta_power_for_combined_Q();
                         }
-
 
                         typename std::vector<typename FieldType::value_type> U_combined;
                         // V is product of (x - eval_point) polynomial for each eval_point
@@ -120,9 +127,9 @@ namespace nil {
                         // List of involved polynomials for each eval point [batch_id, poly_id, point_id]
                         typename std::vector<std::vector<std::tuple<std::size_t, std::size_t>>> poly_map_expected;
 
-                        typename FieldType::value_type theta = aggregated_challenge_transcript.template challenge<FieldType>();
+                        typename FieldType::value_type theta = aggregated_transcript.template challenge<FieldType>();
                         for (size_t i = 0; i < N; i++) {
-                            size_t total_points = lpc_schemes[i].get_total_points();
+                            size_t total_points = commitment_schemes[i].get_total_points();
                             typename std::vector<typename FieldType::value_type> U(total_points);
 
                             // V is product of (x - eval_point) polynomial for each eval_point
@@ -132,7 +139,7 @@ namespace nil {
                             typename std::vector<std::vector<std::tuple<std::size_t, std::size_t>>> poly_map(total_points);
 
                             typename FieldType::value_type theta_acc = theta.pow(starting_indexes[i]);
-                            lpc_schemes[i].generate_U_V_polymap(U, V, poly_map, *partial_proofs_i[i].z, theta, theta_acc, starting_indexes[i]);
+                            commitment_schemes[i].generate_U_V_polymap(U, V, poly_map, proofs[i].eval_proof.z, theta, theta_acc, starting_indexes[i]);
 
                             // We shall sum up the values in U, and the values in V and poly_map must be the same for each prover.
                             if (i == 0) {
@@ -158,18 +165,19 @@ namespace nil {
                             }
                         }
 
-                        if (!nil::crypto3::zk::algorithms::verify_eval<fri_type>(
-                                proof.aggregated_proof.fri_proof,
-                                lpc_schemes[i].get_commitment_params(),
-                                fri_proof.commitments, // TODO or fri_proof.fri_roots instead? which one's which?
-                                theta,
-                                poly_map_expected,
-                                U_combined,
-                                V_expected,
-                                aggregated_challenge_transcript)) {
-                            BOOST_LOG_TRIVIAL(info) << "dFRI Verification failed: final FRI proof failed.";
-                            return false;
-                        }
+                        // TODO: finalize the last FRI part.
+                        //if (!nil::crypto3::zk::algorithms::verify_eval<fri_type>(
+                        //        proof.aggregated_proof.fri_proof,
+                        //        commitment_schemes[i].get_commitment_params(),
+                        //        fri_proof.commitments, // TODO or fri_proof.fri_roots instead? which one's which?
+                        //        theta,
+                        //        poly_map_expected,
+                        //        U_combined,
+                        //        V_expected,
+                        //        aggregated_challenge_transcript)) {
+                        //    BOOST_LOG_TRIVIAL(info) << "dFRI Verification failed: final FRI proof failed.";
+                        //    return false;
+                        //}
                         return true;
                     }
                 };
