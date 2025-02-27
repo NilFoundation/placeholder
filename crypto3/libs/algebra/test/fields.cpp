@@ -358,6 +358,27 @@ BOOST_DATA_TEST_CASE(field_operation_test_goldilocks,
     field_operation_test<policy_type>(data_set);
 }
 
+BOOST_DATA_TEST_CASE(field_operation_test_mersenne31,
+                     string_data("field_operation_test_mersenne31"), data_set) {
+    using policy_type = fields::mersenne31;
+
+    field_operation_test<policy_type>(data_set);
+}
+
+BOOST_DATA_TEST_CASE(field_operation_test_koalabear,
+                     string_data("field_operation_test_koalabear"), data_set) {
+    using policy_type = fields::koalabear;
+
+    field_operation_test<policy_type>(data_set);
+}
+
+BOOST_DATA_TEST_CASE(field_operation_test_babybear,
+                     string_data("field_operation_test_babybear"), data_set) {
+    using policy_type = fields::babybear;
+
+    field_operation_test<policy_type>(data_set);
+}
+
 BOOST_DATA_TEST_CASE(field_operation_test_bls12_381_fr, string_data("field_operation_test_bls12_381_fr"), data_set) {
     using policy_type = fields::bls12_fr<381>;
 
@@ -571,6 +592,29 @@ BOOST_DATA_TEST_CASE(field_not_square_test_vesta_scalar_field, string_data("fiel
 BOOST_DATA_TEST_CASE(field_not_square_test_goldilocks,
                      string_data("field_not_square_test_goldilocks"), data_set) {
     using policy_type = typename fields::goldilocks;
+
+    field_not_square_test<policy_type>(data_set);
+}
+
+BOOST_DATA_TEST_CASE(field_not_square_test_mersenne31,
+                     string_data("field_not_square_test_mersenne31"),
+                     data_set) {
+    using policy_type = typename fields::mersenne31;
+
+    field_not_square_test<policy_type>(data_set);
+}
+
+BOOST_DATA_TEST_CASE(field_not_square_test_koalabear,
+                     string_data("field_not_square_test_koalabear"),
+                     data_set) {
+    using policy_type = typename fields::koalabear;
+
+    field_not_square_test<policy_type>(data_set);
+}
+
+BOOST_DATA_TEST_CASE(field_not_square_test_babybear,
+                     string_data("field_not_square_test_babybear"), data_set) {
+    using policy_type = typename fields::babybear;
 
     field_not_square_test<policy_type>(data_set);
 }
