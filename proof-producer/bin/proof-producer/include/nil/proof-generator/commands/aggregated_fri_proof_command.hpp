@@ -122,6 +122,11 @@ namespace nil {
 
                     transcript(aggregated_challenge.value());
 
+                    // We don't use this challenge, but we should still create it, because the creation of
+                    // combined Q uses this challenge in the previous step. If we don't do this,
+                    // the next challenge taken from this transcript will match that value of 'theta'.
+                    auto aggregated_challenge = aggregated_transcript.template challenge<field_type>();
+
                     // Sum up all the polynomials from the files.
                     polynomial_type sum_poly;
                     for (const auto& path : input_combined_Q_polynomial_files) {

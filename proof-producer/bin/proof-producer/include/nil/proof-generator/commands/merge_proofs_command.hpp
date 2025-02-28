@@ -121,6 +121,7 @@ namespace nil {
                 merged_proof.aggregated_proof.fri_proof =
                     nil::crypto3::marshalling::types::make_initial_fri_proof<Endianness, LpcScheme>(*marshalled_fri_proof);
 
+                // TODO(martun): we're missing the proof of work here, need to add.
                 BOOST_LOG_TRIVIAL(info) << "Writing merged proof to \"" << merged_proof_file << "\"";
 
                 auto marshalled_proof = nil::crypto3::marshalling::types::fill_placeholder_aggregated_proof

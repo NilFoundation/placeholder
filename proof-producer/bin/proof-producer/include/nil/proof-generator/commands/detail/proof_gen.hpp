@@ -232,7 +232,8 @@ namespace nil {
                         nil::crypto3::marshalling::types::field_element<
                         TTypeBase, typename BlueprintField::value_type>;
 
-                    challenge_marshalling_type marshalled_challenge(proof.eval_proof.challenge);
+                    challenge_marshalling_type marshalled_challenge(
+                        prover.transcript.template challenge<BlueprintField>());
 
                     res = detail::encode_marshalling_to_file<challenge_marshalling_type>(
                                 challenge_file_, marshalled_challenge);
