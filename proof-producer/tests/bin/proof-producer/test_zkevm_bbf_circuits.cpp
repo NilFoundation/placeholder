@@ -87,7 +87,7 @@ INSTANTIATE_TEST_SUITE_P(SimpleBytecode, ProverTests, ::testing::Values(Input{Si
 INSTANTIATE_TEST_SUITE_P(SimpleCopy, ProverTests, ::testing::Values(Input{SimpleIncAndKeccak,  COPY}));
 INSTANTIATE_TEST_SUITE_P(SimpleZkevm, ProverTests, ::testing::Values(Input{SimpleIncAndKeccak,  ZKEVM}));
 INSTANTIATE_TEST_SUITE_P(SimpleExp, ProverTests, ::testing::Values(Input{SimpleIncAndKeccak, EXP}));
-INSTANTIATE_TEST_SUITE_P(SimpleKeccak, ProverTests, ::testing::Values(Input{SimpleIncAndKeccak, KECCAK, true})); // TODO(oclaw) enable test
+INSTANTIATE_TEST_SUITE_P(SimpleKeccak, ProverTests, ::testing::Values(Input{SimpleIncAndKeccak, KECCAK}));
 
 // Multiple calls of SimpleStorage contract increment function (several transactions)
 const std::string MultiTxIncrement = "multi_tx/increment_multi_tx";
@@ -96,7 +96,7 @@ INSTANTIATE_TEST_SUITE_P(MultiTxBytecode, ProverTests, :: testing::Values(Input{
 INSTANTIATE_TEST_SUITE_P(MultiTxCopy, ProverTests, ::testing::Values(Input{MultiTxIncrement,  COPY}));
 INSTANTIATE_TEST_SUITE_P(MultiTxZkevm, ProverTests, ::testing::Values(Input{MultiTxIncrement,  ZKEVM}));
 INSTANTIATE_TEST_SUITE_P(MultiTxExp, ProverTests, ::testing::Values(Input{MultiTxIncrement, EXP}));
-INSTANTIATE_TEST_SUITE_P(MultiTxKeccak, ProverTests, ::testing::Values(Input{MultiTxIncrement, KECCAK, true})); // TODO(oclaw) enable test
+INSTANTIATE_TEST_SUITE_P(MultiTxKeccak, ProverTests, ::testing::Values(Input{MultiTxIncrement, KECCAK}));
 
 // // Single call of exp operation
 const std::string SimpleExp = "exp/exp";
@@ -105,7 +105,7 @@ INSTANTIATE_TEST_SUITE_P(SimpleExpBytecode, ProverTests, :: testing::Values(Inpu
 INSTANTIATE_TEST_SUITE_P(SimpleExpCopy, ProverTests, ::testing::Values(Input{SimpleExp, COPY}));
 INSTANTIATE_TEST_SUITE_P(SimpleExpZkevm, ProverTests, ::testing::Values(Input{SimpleExp, ZKEVM}));
 INSTANTIATE_TEST_SUITE_P(SimpleExpExp, ProverTests, ::testing::Values(Input{SimpleExp, EXP}));
-INSTANTIATE_TEST_SUITE_P(SimpleExpKeccak, ProverTests, ::testing::Values(Input{SimpleExp, KECCAK, true})); // TODO(oclaw) enable test
+INSTANTIATE_TEST_SUITE_P(SimpleExpKeccak, ProverTests, ::testing::Values(Input{SimpleExp, KECCAK}));
 
 // RW trace is picked from another trace set and has different trace_idx
 TEST(ProverTest, TraceIndexMismatch) {
