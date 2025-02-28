@@ -41,11 +41,13 @@ namespace nil {
             *  Opcode: 0x19 NOT
             *  Description: Bitwise NOT operation 
             *  GAS: 3
+            *  PC: +1
             *  Memory: Unchanged
             *  Stack Input: a
             *  Stack Output: ~a
             *  Stack Read  Lookup: a
             *  Stack Write Lookup: ~a
+            *  rw_counter: +2
             */
             template<typename FieldType, GenerationStage stage>
             class zkevm_not_bbf : generic_component<FieldType, stage> {
@@ -73,8 +75,7 @@ namespace nil {
                         }
                     }
                     
-                    /* Layout:         range_checked_opcode_area
-                           W0     W1     ...    W15    W16    W17    ...    W31   
+                    /* Layout:         range_checked_opcode_area 
                         +------+------+------+------+------+------+------+------+
                         | A[0] | A[1] |  ... | A[15]| R[0] | R[1] |  ... | R[15]|
                         +------+------+------|------+------+------+------|------+
