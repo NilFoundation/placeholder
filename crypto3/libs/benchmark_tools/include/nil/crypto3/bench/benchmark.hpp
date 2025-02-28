@@ -171,7 +171,7 @@ namespace nil::crypto3::bench {
         }
     }  // namespace detail
 
-    template<auto start_value, typename T, typename F>
+    template<typename T, typename F>
     void run_fold_benchmark(std::string const& name, const F& func) {
         using V = typename T::value_type;
         detail::run_benchmark_impl(
@@ -181,10 +181,9 @@ namespace nil::crypto3::bench {
                 for (std::size_t b = 0; b < batch_size; ++b) {
                     vals.push_back(algebra::random_element<T>());
                 }
-                return std::make_tuple(vals);
+                return std::make_tuple(algebra::random_element<T>(), vals);
             },
-            [&func](std::size_t batch_size, const std::vector<V>& vals) {
-                V accum = start_value;
+            [&func](std::size_t batch_size, V& accum, const std::vector<V>& vals) {
                 for (std::size_t b = 0; b < batch_size; ++b) {
                     std::invoke(func, accum, vals[b]);
                 }
