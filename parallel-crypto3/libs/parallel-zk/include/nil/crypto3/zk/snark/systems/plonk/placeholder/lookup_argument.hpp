@@ -364,8 +364,6 @@ namespace nil {
                                 } else
                                     assignment = assignments.get_variable_value(var_dfs, domain);
 
-                                // In parallel version we always resize the assignment poly, it's better for parallelization.
-                                // if (count > 1) {
                                 assignment.resize(extended_domain_size_out, domain, extended_domain);
                                 variable_values_out[var] = std::move(assignment);
                             }, ThreadPool::PoolLevel::HIGH);
@@ -458,7 +456,7 @@ namespace nil {
                                         theta_acc *= this->theta;
                                     }
                                     (*lookup_input_ptr)[lookup_inputs_used + index] = l;
-                                }, ThreadPool::PoolLevel::HIGH);
+                                }, ThreadPool::PoolLevel::LASTPOOL);
                         }
                         return std::move(lookup_input_ptr);
                     }
