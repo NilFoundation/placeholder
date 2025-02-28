@@ -81,20 +81,20 @@ void run_perf_test(std::string const& field_name) {
 
     constexpr std::size_t INDEPENDENT_FOLDS = 10;
 
-    nil::crypto3::bench::run_fold_benchmark<1, Field>(bench_name("mul_lat"),
-                                                      [](V& a, V const& b) { a *= b; });
+    nil::crypto3::bench::run_fold_benchmark<Field>(bench_name("mul_lat"),
+                                                   [](V& a, V const& b) { a *= b; });
 
     nil::crypto3::bench::run_independent_folds_benchmark<INDEPENDENT_FOLDS, Field>(
         bench_name("mul_thr"), [](V& a, V const& b) { a *= b; });
 
-    nil::crypto3::bench::run_fold_benchmark<0, Field>(bench_name("add_lat"),
-                                                      [](V& a, V const& b) { a += b; });
+    nil::crypto3::bench::run_fold_benchmark<Field>(bench_name("add_lat"),
+                                                   [](V& a, V const& b) { a += b; });
 
     nil::crypto3::bench::run_independent_folds_benchmark<INDEPENDENT_FOLDS, Field>(
         bench_name("add_thr"), [](V& a, V const& b) { a += b; });
 
-    nil::crypto3::bench::run_fold_benchmark<0, Field>(bench_name("sub_lat"),
-                                                      [](V& a, V const& b) { a -= b; });
+    nil::crypto3::bench::run_fold_benchmark<Field>(bench_name("sub_lat"),
+                                                   [](V& a, V const& b) { a -= b; });
 
     nil::crypto3::bench::run_independent_folds_benchmark<INDEPENDENT_FOLDS, Field>(
         bench_name("sub_thr"), [](V& a, V const& b) { a -= b; });
