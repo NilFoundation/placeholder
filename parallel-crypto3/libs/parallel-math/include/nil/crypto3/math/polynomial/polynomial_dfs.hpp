@@ -629,7 +629,7 @@ namespace nil {
                 /* Inverses the values in polynomial using Montgomery trick.
                  * Calls inverse on a group element just once, so it's much faster than inverting each element separately.
                  */
-                void inverse() {
+                void element_wise_inverse() {
                     // Divide the vector of size "this->val.size()" into chunks and inverse each chunk.
                     container_type result(this->val.size());
                     wait_for_all(parallel_run_in_chunks<void>(

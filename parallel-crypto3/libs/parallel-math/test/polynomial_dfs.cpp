@@ -1242,7 +1242,7 @@ BOOST_AUTO_TEST_CASE(polynomial_dfs_inverse_test) {
          0x225563a322dac633d1c77fc14960780266d5b167b8a62ccc942322dcfdb21707_big_uint}};
 
     poly_type a_inv = a;
-    a_inv.inverse();
+    a_inv.element_wise_inverse();
     for (size_t i = 0; i < a.size(); ++i) {
         BOOST_CHECK_EQUAL(a[i] * a_inv[i], FieldType::value_type::one());
     }

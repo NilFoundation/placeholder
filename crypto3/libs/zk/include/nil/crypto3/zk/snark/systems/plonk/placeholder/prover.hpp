@@ -147,7 +147,7 @@ namespace nil {
                         transcript(_proof.commitments[VARIABLE_VALUES_BATCH]);
 
                         // 4. permutation_argument
-                        if( constraint_system.copy_constraints().size() > 0 ){
+                        if (constraint_system.copy_constraints().size() > 0) {
                             auto permutation_argument = placeholder_permutation_argument<FieldType, ParamsType>::prove_eval(
                                 constraint_system,
                                 preprocessed_public_data,

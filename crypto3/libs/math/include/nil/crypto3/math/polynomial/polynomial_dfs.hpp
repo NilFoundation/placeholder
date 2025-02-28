@@ -608,7 +608,7 @@ namespace nil {
                 /* Inverses the values in polynomial using Montgomery trick.
                  * Calls inverse on a group element just once, so it's much faster than inverting each element separately.
                  */
-                void inverse() {
+                void element_wise_inverse() {
                     container_type result(this->val.size());
                     result[0] = value_type::one(); 
                     for (size_t i = 1; i < val.size(); ++i) {
