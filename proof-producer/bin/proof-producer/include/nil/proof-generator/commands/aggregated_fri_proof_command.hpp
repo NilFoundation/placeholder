@@ -77,7 +77,7 @@ namespace nil {
 
                     BOOST_LOG_TRIVIAL(info) << "Writing aggregated FRI proof to " << output_file;
 
-                    fri_proof_marshalling_type marshalled_proof = nil::crypto3::marshalling::types::fill_fri_round_proof<Endianness, LpcScheme>(fri_proof);
+                    fri_proof_marshalling_type marshalled_proof = nil::crypto3::marshalling::types::fill_initial_fri_proof<Endianness, LpcScheme>(fri_proof);
 
                     return detail::encode_marshalling_to_file<fri_proof_marshalling_type>(
                         output_file, marshalled_proof);
@@ -121,6 +121,11 @@ namespace nil {
                     transcript_type transcript;
 
                     transcript(aggregated_challenge.value());
+
+                    // We don't use this challenge, but we should still create it, because the creation of
+                    // combined Q uses this challenge in the previous step. If we don't do this,
+                    // the next challenge taken from this transcript will match that value of 'theta'.
+                    auto aggregated_challenge = aggregated_transcript.template challenge<field_type>();
 
                     // Sum up all the polynomials from the files.
                     polynomial_type sum_poly;
