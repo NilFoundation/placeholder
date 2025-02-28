@@ -99,6 +99,16 @@ namespace nil {
                 boost::filesystem::path in_assignment_description_file_path;
                 boost::filesystem::path in_common_data_file_path;
                 boost::filesystem::path in_proof_file_path;
+
+                Args(boost::program_options::options_description& config) {
+                    namespace po = boost::program_options;
+
+                    config.add_options()
+                        ("circuit", po::value(&in_circuit_file_path)->required(), "Circuit input file")
+                        ("assignment-description-file", po::value(&in_assignment_description_file_path)->required(), "Assignment description input file")
+                        ("common-data", po::value(&in_common_data_file_path)->required(), "Common data input file")
+                        ("proof", po::value(&in_proof_file_path)->required(), "Proof input file");
+                }
             };
 
             VerifyCommand(const Args& args) {

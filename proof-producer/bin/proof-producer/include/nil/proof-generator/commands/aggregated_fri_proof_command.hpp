@@ -6,6 +6,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/assert.hpp>
 #include <boost/log/trivial.hpp>
+#include <boost/program_options.hpp>
 
 #include <nil/proof-generator/types/type_system.hpp>
 #include <nil/proof-generator/resources.hpp>
@@ -18,7 +19,9 @@
 #include <nil/proof-generator/commands/preprocess_command.hpp>
 
 #include <nil/crypto3/marshalling/math/types/polynomial.hpp>
-#include "nil/proof-generator/commands/detail/io/polynomial_io.hpp"
+#include <nil/proof-generator/cli_arg_utils.hpp>
+#include <nil/proof-generator/commands/detail/io/polynomial_io.hpp>
+#include <nil/proof-generator/output_artifacts/output_artifacts.hpp>
 
 
 namespace nil {
@@ -178,6 +181,21 @@ namespace nil {
                 boost::filesystem::path out_aggregated_fri_proof_file;
                 boost::filesystem::path out_proof_of_work_file;
                 boost::filesystem::path out_consistency_checks_challenges_file;
+
+                Args(boost::program_options::options_description& desc) {
+
+                    namespace po = boost::program_options;
+
+                    desc.add_options()
+                        ("assignment-table-description", po::value(&in_table_description_file)->required(), "Input table description file")
+                        ("aggregated-challenge-file", po::value(&in_aggregated_challenge_file), "Aggregated challenge input file")
+                        ("input-combined-Q-polynomial-files", po::value(&in_combined_Q_polynomial_files)->multitoken()->required(), "Input files containing polynomials combined-Q, 1 per prover instance")
+                        ("aggregated-FRI-proof", po::value(&out_aggregated_fri_proof_file)->required(), "Aggregated FRI proof output file (part of the final proof)")
+                        ("proof-of-work-file", po::value(&out_proof_of_work_file)->required(), "File with proof of work")
+                        ("consistency-checks-challenges-file", po::value(&out_consistency_checks_challenges_file)->required(), "A file containing 'lambda' challenges");
+
+                    register_placeholder_config_cli_args(config, desc);
+                }
             };
 
             AggregatedFriProofCommand(const Args& args) {

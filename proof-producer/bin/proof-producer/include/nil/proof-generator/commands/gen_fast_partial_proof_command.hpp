@@ -15,7 +15,8 @@
 #include <nil/proof-generator/commands/detail/proof_gen.hpp>
 #include <nil/proof-generator/commands/fill_assignment_command.hpp>
 #include <nil/proof-generator/output_artifacts/output_artifacts.hpp>
-#include "nil/proof-generator/assigner/options.hpp"
+#include <nil/proof-generator/assigner/options.hpp>
+#include <nil/proof-generator/cli_arg_utils.hpp>
 
 
 namespace nil {
@@ -30,12 +31,29 @@ namespace nil {
                 CircuitsLimits circuit_limits;
                 boost::filesystem::path in_trace_file_path;
 
-                boost::filesystem::path out_proof_file_path;
-                boost::filesystem::path out_challenge_file_path;
-                boost::filesystem::path out_theta_power_file_path;
-                boost::filesystem::path out_updated_lpc_scheme_file_path;
-                boost::filesystem::path out_common_data_file_path;
-                boost::filesystem::path out_assignment_desc_file_path;
+                boost::filesystem::path out_proof_file_path{"proof.bin"};
+                boost::filesystem::path out_challenge_file_path{"challenge.dat"};
+                boost::filesystem::path out_theta_power_file_path{"theta_power.dat"};
+                boost::filesystem::path out_updated_lpc_scheme_file_path{"updated_commitment_scheme_state.bin"};
+                boost::filesystem::path out_common_data_file_path{"preprocessed_common_data.dat"};
+                boost::filesystem::path out_assignment_desc_file_path{"assignment_description.desc"};
+
+                Args(boost::program_options::options_description& desc) {
+                    namespace po = boost::program_options;
+
+                    desc.add_options()
+                        ("circuit-name", po::value(&circuit_name)->required(), "Target circuit name")
+                        ("trace", po::value(&in_trace_file_path)->required(), "Base path for EVM trace input files")
+                        ("proof", make_defaulted_option(out_proof_file_path), "Proof output file")
+                        ("challenge-file", make_defaulted_option(out_challenge_file_path), "Challenge output file")
+                        ("theta-power-file", make_defaulted_option(out_theta_power_file_path), "Theta power output file")
+                        ("updated-lpc-scheme-file", make_defaulted_option(out_updated_lpc_scheme_file_path), "Updated commitment scheme state output file")
+                        ("common-data-file", make_defaulted_option(out_common_data_file_path), "Common data output file")
+                        ("assignment-desc-file", make_defaulted_option(out_assignment_desc_file_path), "Assignment description output file");
+
+                    register_placeholder_config_cli_args(config, desc);
+                    register_circuits_limits_cli_args(circuit_limits, desc);
+                }
             };
 
             FastPartialProofCommand(const Args& args) {

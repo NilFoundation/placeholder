@@ -22,6 +22,7 @@
 
 #include <string>
 #include <unordered_map>
+#include <stdexcept>
 
 namespace nil {
     namespace proof_producer {
