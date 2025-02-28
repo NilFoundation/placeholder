@@ -31,16 +31,15 @@ namespace nil {
             if (!keccak_operations) {
                 return "can't read keccak operations from file: " + keccak_trace_path.string();
             }
-            // TODO(oclaw) adjust input
-            // input = std::move(keccak_operations->value);
-            std::size_t max_keccak_blocks = 25; //TODO: current max_keccak_blocks is a placeholder value
+
+            for (const auto& keccak_operation : keccak_operations->value) {
+                input.private_input.new_buffer(keccak_operation.buffer);
+            }
 
             ComponentType instance(
                 context_object,
                 input,
-                max_keccak_blocks
-                // ,options.circuits_limits.max_total_rows,
-                // options.circuits_limits.max_keccak_blocks
+                options.circuits_limits.max_keccak_blocks
             );
 
             return {};

@@ -7,6 +7,7 @@
 #include <nil/blueprint/bbf/enums.hpp>
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
 #include <nil/crypto3/zk/snark/arithmetization/plonk/assignment.hpp>
+#include <nil/proof-generator/types/type_system.hpp>
 #include <nil/proof-generator/preset/limits.hpp>
 #include <nil/blueprint/bbf/circuit_builder.hpp>
 #include <nil/blueprint/zkevm_bbf/keccak.hpp>
@@ -26,11 +27,7 @@ namespace nil {
             using ConstraintSystem = typename PresetTypes<BlueprintFieldType>::ConstraintSystem;
             using AssignmentTable = typename PresetTypes<BlueprintFieldType>::AssignmentTable;
 
-            // TODO(oclaw): circuits_limits.max_keccak_blocks?
-            std::size_t max_keccak_blocks = 25; //TODO: current max_keccak_blocks is a placeholder value
-            blueprint::bbf::circuit_builder<
-                BlueprintFieldType, nil::blueprint::bbf::zkevm_keccak, std::size_t
-            > builder(max_keccak_blocks);
+            bbf::circuit_builder<BlueprintFieldType, bbf::zkevm_keccak, std::size_t> builder(circuits_limits.max_keccak_blocks);
 
             keccak_circuit = std::make_shared<ConstraintSystem>(builder.get_circuit());
 
