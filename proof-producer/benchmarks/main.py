@@ -6,6 +6,7 @@ from dfri import DFRIPipeline
 from single_circuits import SingleCircuitMeasure
 from circuits import circuit_names
 from sys import argv
+from signoz_post import post_results
 
 from argparse import ArgumentParser
 
@@ -18,8 +19,9 @@ def parse_arguments():
     parser.add_argument("-o", "--out-dir", default="/tmp", help="directory where run artifacts will be saved")
     parser.add_argument("-m", "--execution_mode", choices=["subprocess", "benchexec"], default="subprocess",
                         help="the mode of execution for the binary. Simple subprocess and benchexec are supported")
-    parser.add_argument("-s", "--scenario", choices=(["dfri", "single_circuits"] + circuit_names), default="dfri",
-                        help="benchmarking scenario. Supported proving and verification for all the available circuit, plus full DFRI pipeline")
+    parser.add_argument("-s", "--scenario", choices=(["full", "dfri", "single_circuits"] + circuit_names), default="dfri",
+                        help="benchmarking scenario. Supported proving and verification for all the available circuit, plus DFRI pipeline")
+    parser.add_argument("-p", "--post-results", action='store_true', help="post results to SigNoz. OTLP_ENDPOINT variable is expected in the environment.")
 
     return parser.parse_args()
 
@@ -48,18 +50,26 @@ if __name__ == "__main__":
     out_dir = Path(args.out_dir)
     out_dir.mkdir(exist_ok=True)
 
-    if args.scenario == "dfri":
+    results = []
+
+    # DFRI part
+    if args.scenario == "dfri" or args.scenario == "full":
         dfri = DFRIPipeline(args.proof_producer_binary, args.trace, out_dir)
 
         dfri_results = runner.run_set(dfri.get_first_stage_commands())
         dfri_results += runner.run_set(dfri.get_second_stage_commands())
 
-        print_results(dfri_results)
-    else:
+        results += dfri_results
+
+    # Single circuits
+    if args.scenario != "dfri":
         single_circuits = SingleCircuitMeasure(args.proof_producer_binary, args.trace, out_dir)
         if args.scenario == "single_circuits":
             single_circuit_results = runner.run_set(single_circuits.make_all_commands())
         else:
             single_circuit_results = runner.run_set(single_circuits.make_circuit_command(args.scenario))
+        results += single_circuit_results
 
-        print_results(single_circuit_results)
+    print_results(results)
+    if args.post_results:
+        post_results(results)
