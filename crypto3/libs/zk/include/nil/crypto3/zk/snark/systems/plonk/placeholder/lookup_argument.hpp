@@ -173,22 +173,24 @@ namespace nil {
                         std::array<polynomial_dfs_type, argument_size> F_dfs;
 
                         // Create a constraint for H_i(X) * (alpha - F_i(X)) + 1 == 0.
-                        std::vector<typename FieldType::value_type> h_challenges =
-                            transcript.template challenges<FieldType>(hs.size());
-                         
+                        typename FieldType::value_type h_challenge = transcript.template challenge<FieldType>();
+                        typename FieldType::value_type h_challenge_acc = h_challenge;
+
                         std::vector<polynomial_dfs_type> h_constraint_parts(hs.size());
                         for (size_t i = 0; i < hs.size(); ++i) {
-                            h_constraint_parts[i] = h_challenges[i] * (hs[i] * (alpha - lookup_input[i]) + one);
+                            h_constraint_parts[i] = h_challenge_acc * (hs[i] * (alpha - lookup_input[i]) + one);
+                            h_challenge_acc *= h_challenge;
                         }
                         F_dfs[0] = polynomial_sum<FieldType>(std::move(h_constraint_parts));
 
                         // Create a constraint for G_i(X) * (alpha - t_i(X)) - m_i(X) == 0.
-                        std::vector<typename FieldType::value_type> g_challenges =
-                            transcript.template challenges<FieldType>(gs.size());
+                        typename FieldType::value_type g_challenge = transcript.template challenge<FieldType>();
+                        typename FieldType::value_type g_challenge_acc = g_challenge;
 
                         std::vector<polynomial_dfs_type> g_constraint_parts(gs.size());
                         for (size_t i = 0; i < gs.size(); ++i) {
-                            g_constraint_parts[i] = g_challenges[i] * (gs[i] * (alpha - lookup_value[i]) - counts[i]);
+                            g_constraint_parts[i] = g_challenge_acc * (gs[i] * (alpha - lookup_value[i]) - counts[i]);
+                            g_challenge_acc *= g_challenge;
                         }
 
                         F_dfs[0] += polynomial_sum<FieldType>(std::move(g_constraint_parts));
@@ -220,7 +222,7 @@ namespace nil {
                         std::vector<polynomial_dfs_type> Hs = lookup_input;
                         for (auto& h: Hs) {
                             h -= alpha;
-                            h.inverse();
+                            h.element_wise_inverse();
                         }
                         return Hs;
                     }
@@ -238,7 +240,7 @@ namespace nil {
                             for (size_t j = 0; j < g.size(); ++j) {
                                 g[j] = alpha - g[j];
                             }
-                            g.inverse();
+                            g.element_wise_inverse();
 
                             // Don't multiply as polynomials here, they will resize.
                             for (size_t j = 0; j < g.size(); ++j) {
@@ -513,19 +515,22 @@ namespace nil {
                         typename FieldType::value_type sum_H_G = std::accumulate(hs.begin(), hs.end(), FieldType::value_type::zero());
                         sum_H_G = std::accumulate(gs.begin(), gs.end(), sum_H_G);
 
-                        std::vector<typename FieldType::value_type> h_challenges =
-                            transcript.template challenges<FieldType>(hs.size());
+                        typename FieldType::value_type h_challenge = transcript.template challenge<FieldType>();
+                        typename FieldType::value_type h_challenge_acc = h_challenge;
 
                         F[0] = FieldType::value_type::zero();
                         for (size_t i = 0; i < hs.size(); ++i) {
-                            F[0] += h_challenges[i] * (hs[i] * (alpha - lookup_input[i]) + one);
+                            F[0] += h_challenge_acc * (hs[i] * (alpha - lookup_input[i]) + one);
+                            h_challenge_acc *= h_challenge;
                         }
 
                         // Create a constraint for G_i(X) * (alpha - t_i(X)) - m_i(X) == 0.
-                        std::vector<typename FieldType::value_type> g_challenges =
-                            transcript.template challenges<FieldType>(gs.size());
+                        typename FieldType::value_type g_challenge = transcript.template challenge<FieldType>();
+                        typename FieldType::value_type g_challenge_acc = g_challenge;
+
                         for (size_t i = 0; i < gs.size(); ++i) {
-                            F[0] += g_challenges[i] * (gs[i] * (alpha - lookup_value[i]) - counts[i]);
+                            F[0] += g_challenge_acc * (gs[i] * (alpha - lookup_value[i]) - counts[i]);
+                            g_challenge_acc *= g_challenge;
                         }
 
                         // Check that U[0] == 0.
