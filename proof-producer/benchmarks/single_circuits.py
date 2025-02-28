@@ -17,7 +17,7 @@ class SingleCircuitMeasure:
             "--assignment-description-file", str(self.out_dir / "assignment_description.{}".format(circuit)),
             ] + circuit_limits
         return {
-            "name" : f"Prepare assignment for {circuit}",
+            "name" : f"make-assignment-{circuit}",
             "args" : assignment_command,
         }
 
@@ -32,7 +32,7 @@ class SingleCircuitMeasure:
             "--commitment-state-file", "/dev/null", "--preprocessed-data", "/dev/null", "--common-data", "/dev/null", "-p", "/dev/null", "-j", "/dev/null",
             ]
         return {
-            "name" : f"Build proof and run verifier for {circuit}",
+            "name" : f"prove-verify-{circuit}",
             "args" : prove_verify_command
         }
 
