@@ -21,9 +21,10 @@
 #include "nil/crypto3/multiprecision/detail/big_mod/modular_ops/common.hpp"
 
 namespace nil::crypto3::multiprecision::detail {
-    template<std::size_t Bits>
-    class common_big_uint_modular_ops : public common_modular_ops<big_uint<Bits>> {
+    template<std::size_t Bits_>
+    class common_big_uint_modular_ops : public common_modular_ops<big_uint<Bits_>> {
       public:
+        static constexpr std::size_t Bits = Bits_;
         using big_uint_t = big_uint<Bits>;
 
         constexpr common_big_uint_modular_ops(const big_uint_t &m)

@@ -42,6 +42,7 @@ namespace nil::crypto3::multiprecision {
         using modular_ops_storage_t = modular_ops_storage_t_;
         using modular_ops_t = typename modular_ops_storage_t::modular_ops_t;
         using base_type = typename modular_ops_t::base_type;
+        static constexpr std::size_t Bits = modular_ops_t::Bits;
 
         // Constructors
 
@@ -89,9 +90,15 @@ namespace nil::crypto3::multiprecision {
         }
 
       public:
-        constexpr auto base() const { return detail::as_big_uint(internal_base()); }
+        constexpr auto base() const { return big_uint<Bits>(internal_base()); }
 
-        constexpr decltype(auto) mod() const { return detail::as_big_uint(ops().mod()); }
+        constexpr decltype(auto) mod() const {
+            if constexpr (is_big_uint_v<base_type>) {
+                return ops().mod();
+            } else {
+                return big_uint<Bits>(ops().mod());
+            }
+        }
 
         explicit constexpr operator auto() const { return base(); }
 
