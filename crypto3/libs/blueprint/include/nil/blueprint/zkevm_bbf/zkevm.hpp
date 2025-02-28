@@ -178,6 +178,7 @@ namespace nil {
 
                             if( opcode_impls.find(current_opcode) == opcode_impls.end() ){
                                 std::cout << "Opcode not found " << current_opcode << " skip it" << std::endl;
+                                BOOST_ASSERT(false);
                                 continue;
                             }
                             std::size_t current_opcode_bare_rows_amount = opcode_impls[current_opcode]->rows_amount();

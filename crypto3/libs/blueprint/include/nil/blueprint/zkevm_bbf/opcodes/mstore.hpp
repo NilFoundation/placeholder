@@ -96,7 +96,7 @@ namespace nil {
                         // memory_quad_mod512 = 512 - memory_quad_mod;
 
                         std::cout << "\tMemory words = " << memory_words
-                            <<  " memory size = " << current_state.memory_size
+                            << " memory size = " << current_state.memory_size
                             << " memory mod = " << memory_mod
                             << " address = " << address
                             << " last_address = " << last_address

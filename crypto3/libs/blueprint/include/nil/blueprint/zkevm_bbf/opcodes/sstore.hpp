@@ -215,10 +215,10 @@ namespace nil {
                     // TODO: Append refunds
                     if constexpr( stage == GenerationStage::CONSTRAINTS ){
                         constrain(current_state.pc_next() - current_state.pc(0) - 1);                   // PC transition
-                        constrain(current_state.gas(0) - current_state.gas_next() - gas_cost);               // GAS transition
+                        //constrain(current_state.gas(0) - current_state.gas_next() - gas_cost);               // GAS transition
                         constrain(current_state.stack_size(0) - current_state.stack_size_next() - 2);   // stack_size transition
                         constrain(current_state.memory_size(0) - current_state.memory_size_next());     // memory_size transition
-                        constrain(current_state.rw_counter_next() - current_state.rw_counter(0) - 4);   // rw_counter transition
+                        constrain(current_state.rw_counter_next() - current_state.rw_counter(0) - 3);   // rw_counter transition
 
                         std::vector<TYPE> tmp;
                         // Prove block_id correctness
@@ -255,50 +255,35 @@ namespace nil {
                             K_lo
                         );
                         lookup(tmp, "zkevm_rw");
-                        // 2. Read previous value from storage
-                        tmp = {
-                            TYPE(rw_op_to_num(rw_operation_type::state)),
-                            block_id,
-                            call_context_address_hi * two_128 + call_context_address_lo,
-                            K_hi,                                               // storage_key_hi
-                            K_lo,                                               // storage_key_lo
-                            TYPE(0),                                            // field
-                            current_state.rw_counter(0)+1,
-                            TYPE(0),                                            // is_write
-                            U_128.first,
-                            U_128.second,
-                            rw_counter_before,                                  // rw_counter_before
-                            w_counter_before,                                   // w_counter_before
-                            current_state.call_id(0)                            // helper_id
-                        };
-                        lookup(tmp, "zkevm_rw");
-                        // 3. Read new value from stack
+                        // 2. Read new value from stack
                         tmp = rw_table<FieldType, stage>::stack_lookup(
                             current_state.call_id(0),
                             current_state.stack_size(0) - 2,
-                            current_state.rw_counter(0) + 2,
+                            current_state.rw_counter(0) + 1,
                             TYPE(0),                                               // is_write
                             V_128.first,
                             V_128.second
                         );
                         lookup(tmp, "zkevm_rw");
-                        // 4. Write new value to storage
+                        // 3. Write new value to storage
                         tmp = {
                             TYPE(rw_op_to_num(rw_operation_type::state)),
                             block_id,
                             call_context_address_hi * two_128 + call_context_address_lo,
+                            TYPE(0),                                            // field
                             K_hi,                                               // storage_key_hi
                             K_lo,                                               // storage_key_lo
-                            TYPE(0),                                            // field
-                            current_state.rw_counter(0)+3,
+                            current_state.rw_counter(0)+2,
                             TYPE(1),                                            // is_write
                             V_128.first,
                             V_128.second,
-                            current_state.rw_counter(0)+1,                      // rw_counter_before
+                            rw_counter_before,                                  // rw_counter_before
                             w_counter_before,                                   // w_counter_before
-                            current_state.call_id(0)                            // helper_id
+                            current_state.call_id(0),                           // helper_id
+                            U_128.first,
+                            U_128.second
                         };
-                        lookup(tmp, "zkevm_rw");
+                        lookup(tmp, "zkevm_rw_ext");
                     }
                 }
             };

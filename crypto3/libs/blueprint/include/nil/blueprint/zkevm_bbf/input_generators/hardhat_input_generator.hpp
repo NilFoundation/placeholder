@@ -109,6 +109,7 @@ namespace nil {
                             state.last_access_rw_counter = last_access_rw_counter;
                             state.last_write_rw_counter = last_write_rw_counter;
                             _zkevm_states.push_back(state);
+                            _call_stack.push_back({state, block_id, 0, 0});
 
                             _rw_operations.push_back(call_context_rw_operation(
                                 block_id, call_context_field::parent_id, 0
@@ -520,11 +521,22 @@ namespace nil {
                                 } else if(opcode == "RETURNDATACOPY") {
                                     // 0x3e
                                     // std::cout << "Test me, please!" << std::endl;
-                                    _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-1, rw_counter++, false, stack[stack.size()-1]));
-                                    _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-2, rw_counter++, false, stack[stack.size()-2]));
-                                    _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-3, rw_counter++, false, stack[stack.size()-3]));
+                                    auto dest_offset = stack[stack.size()-1];
+                                    auto offset = stack[stack.size()-2];
+                                    auto length = stack[stack.size()-3];
+                                    _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-1, rw_counter++, false, dest_offset));
+                                    _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-2, rw_counter++, false, offset));
+                                    _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-3, rw_counter++, false, length));
 
-                                    // TODO: add length write operations to memory
+                                    // TODO: add length read operations from last return data
+                                    for( std::size_t ind = 0; ind < length; ind++){
+                                        _rw_operations.push_back(
+                                            memory_rw_operation(
+                                                call_id, dest_offset+ind, rw_counter++, true, memory_next[std::size_t(dest_offset+ind)]
+                                            )
+                                        );
+                                    }
+                                    memory_size_before = memory_next.size();
                                     // Where will consistency check be done?
                                 } else if(opcode == "EXTCODEHASH") {
                                     // 0x3f
@@ -642,7 +654,6 @@ namespace nil {
                                     // 0x54
                                     _rw_operations.push_back(stack_rw_operation(call_id,  stack_next.size()-1, rw_counter++, false, stack[stack.size()-1]));
                                     auto storage_key = stack[stack.size() - 1];
-                                    last_access_rw_counter[std::make_tuple(call_context_address, 0, storage_key)] = rw_counter;
                                     _rw_operations.push_back(storage_rw_operation(
                                         block_id,
                                         call_context_address,
@@ -651,8 +662,12 @@ namespace nil {
                                         false,
                                         _accounts_current_state[call_context_address].storage[storage_key],
                                         _accounts_initial_state[call_context_address].storage[storage_key],
-                                        call_id
+                                        call_id,
+                                        last_access_rw_counter.count(std::make_tuple(call_context_address, 0, storage_key)) == 0 ? 0 : last_access_rw_counter[std::make_tuple(call_context_address, 0, storage_key)],
+                                        last_write_rw_counter.count(std::make_tuple(call_context_address, 0, storage_key)) == 0 ? 0 : last_write_rw_counter[std::make_tuple(call_context_address, 0, storage_key)],
+                                        _accounts_current_state[call_context_address].storage[storage_key]
                                     ));
+                                    last_access_rw_counter[std::make_tuple(call_context_address, 0, storage_key)] = rw_counter - 1;
                                     std::cout << _rw_operations[_rw_operations.size()-1] << std::endl;
                                     update_cold_access_list(call_context_address,0, storage_key, _rw_operations[_rw_operations.size()-1]);
                                     _rw_operations.push_back(stack_rw_operation(call_id,  stack_next.size()-1, rw_counter++, true, stack_next[stack_next.size()-1]));
@@ -661,23 +676,11 @@ namespace nil {
                                     // 0x55call_context_rw_operation
                                     auto storage_key = stack[stack.size() - 1];
                                     _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-1, rw_counter++, false, storage_key));
-                                    _rw_operations.push_back(storage_rw_operation(
-                                        block_id,
-                                        call_context_address,
-                                        storage_key,
-                                        rw_counter++,
-                                        false,
-                                        _accounts_current_state[call_context_address].storage[storage_key],
-                                        _accounts_initial_state[call_context_address].storage[storage_key], // initial value
-                                        call_id                                               // For REVERT correctness
-                                    ));
                                     std::cout << _rw_operations[_rw_operations.size()-1] << std::endl;
                                     _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-2, rw_counter++, false, stack[stack.size()-2]));
                                     auto value = stack[stack.size() - 2];
                                     std::cout << "Value_after = " << value << std::endl;
 
-                                    last_access_rw_counter[std::make_tuple(call_context_address, 0, storage_key)] = rw_counter;
-                                    last_write_rw_counter[std::make_tuple(call_context_address, 0, storage_key)] = rw_counter;
                                     _rw_operations.push_back(storage_rw_operation(
                                         block_id,
                                         call_context_address,
@@ -686,8 +689,13 @@ namespace nil {
                                         true,
                                         value,
                                         _accounts_initial_state[call_context_address].storage[storage_key], // initial value
-                                        call_id                                               // For REVERT correctness
+                                        call_id,                                                // For REVERT correctness
+                                        last_access_rw_counter.count(std::make_tuple(call_context_address, 0, storage_key)) == 0 ? 0 : last_access_rw_counter[std::make_tuple(call_context_address, 0, storage_key)],
+                                        last_write_rw_counter.count(std::make_tuple(call_context_address, 0, storage_key)) == 0 ? 0 : last_write_rw_counter[std::make_tuple(call_context_address, 0, storage_key)],
+                                        _accounts_current_state[call_context_address].storage[storage_key]
                                     )); // Second parameter should be transaction_id
+                                    last_access_rw_counter[std::make_tuple(call_context_address, 0, storage_key)] = rw_counter-1;
+                                    last_write_rw_counter[std::make_tuple(call_context_address, 0, storage_key)] = rw_counter-1;
                                     _accounts_current_state[call_context_address].storage[storage_key] = value;
                                     std::cout << _rw_operations[_rw_operations.size()-1] << std::endl;
                                     update_cold_access_list(call_context_address,0, storage_key, _rw_operations[_rw_operations.size()-1]);
@@ -1118,6 +1126,28 @@ namespace nil {
                                     // 0xfd
                                     _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-1, rw_counter++, false, stack[stack.size()-1]));
                                     _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-2, rw_counter++, false, stack[stack.size()-2]));
+                                    for( auto &cold_access : _call_stack.back().cold_write_list){
+                                        _rw_operations.push_back(
+                                            state_rw_operation(
+                                                block_id,
+                                                cold_access.second.address,
+                                                cold_access.second.field,
+                                                cold_access.second.storage_key,
+                                                rw_counter++,
+                                                true,
+                                                cold_access.second.value_before,
+                                                cold_access.second.initial_value,
+                                                call_id,
+                                                last_access_rw_counter[cold_access.first],
+                                                last_write_rw_counter[cold_access.first],
+                                                _accounts_current_state[cold_access.second.address].storage[cold_access.second.storage_key]
+                                            )
+                                        );
+                                        last_access_rw_counter[cold_access.first] = rw_counter-1;
+                                        last_write_rw_counter[cold_access.first] = rw_counter-1;
+                                        _accounts_current_state[cold_access.second.address].storage[cold_access.second.storage_key] = cold_access.second.value_before;
+                                        std::cout << "REVERT " <<  _rw_operations.back() << std::endl;
+                                    }
                                 } else if(opcode == "SELFDESTRUCT") {
                                     // 0xff
                                     _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-1, rw_counter++, false, stack[stack.size()-1]));
@@ -1178,6 +1208,17 @@ namespace nil {
                                     memory_size_before = memory_next.size();
                                     bytecode_hash = _accounts_initial_state[call_to].code_hash;
                                 }
+                                if( opcode == "STOP" ){
+                                    while( _call_stack.size() != 1){
+                                        zkevm_state end_call_state = _call_stack[_call_stack.size() - 1].state;
+                                        end_call_state.opcode = _call_stack.size() == 1? opcode_number_from_str("end_transaction") : opcode_number_from_str("end_call");
+                                        end_call_state.last_write_rw_counter = last_write_rw_counter;
+                                        end_call_state.last_access_rw_counter = last_access_rw_counter;
+                                        _zkevm_states.push_back(end_call_state);
+                                        append_cold_access_rw_operations();
+                                        successful_call_finish_cold_access_update();
+                                    }
+                                }
                                 if( opcode == "RETURN"){
                                     std::size_t offset = std::size_t(stack[stack.size()-1]); // Real value
                                     std::size_t length = std::size_t(stack[stack.size()-2]); // Real value
@@ -1185,11 +1226,11 @@ namespace nil {
                                     std::size_t returndataoffset = _call_stack[_call_stack.size() - 1].returndataoffset; // caller CALL opcode parameters
                                     std::size_t returndatalength = _call_stack[_call_stack.size() - 1].returndatalength; // caller CALL opcode parameters
                                     append_cold_access_rw_operations();
-                                    _call_stack.pop_back();
+                                    successful_call_finish_cold_access_update();
                                     // end_call_state.block_id = block_id;
                                     // end_call_state.tx_id = tx_id;
                                     // end_call_state.call_id = call_id;
-                                    end_call_state.opcode = _call_stack.size() == 0? opcode_number_from_str("end_transaction") : opcode_number_from_str("end_call");
+                                    end_call_state.opcode = _call_stack.size() == 1? opcode_number_from_str("end_transaction") : opcode_number_from_str("end_call");
                                     // end_call_state.gas = 0;
                                     // end_call_state.pc = 0;
                                     // end_call_state.rw_counter = rw_counter;
@@ -1199,7 +1240,48 @@ namespace nil {
                                     // end_call_state.memory_size = {};
                                     // end_call_state.stack_slice = {};
                                     end_call_state.last_access_rw_counter = last_access_rw_counter;
+                                    end_call_state.last_write_rw_counter = last_write_rw_counter;
+                                    _zkevm_states.push_back(end_call_state);
+                                    call_id = end_call_state.call_id;
+                                    memory_size_before = memory_next.size();
+                                    bytecode_hash = end_call_state.bytecode_hash;
+                                    call_context_address = end_call_state.call_context_address;
+                                    if( call_id != 0 ){
+                                        for(std::size_t i = 0; i < returndatalength; i++){
+                                            _rw_operations.push_back(memory_rw_operation(
+                                                call_id,
+                                                returndataoffset+i,
+                                                rw_counter++,
+                                                true,
+                                                offset+i < state.memory_size? state.memory(offset+i): 0
+                                            ));
+                                        }
+                                    }
+                                    // Push CALL status to stack
+                                    _rw_operations.push_back(stack_rw_operation(call_id,  stack_next.size()-1, rw_counter++, true, stack_next[stack_next.size()-1]));
+                                }
+                                if( opcode == "REVERT"){
+                                    std::size_t offset = std::size_t(stack[stack.size()-1]); // Real value
+                                    std::size_t length = std::size_t(stack[stack.size()-2]); // Real value
+                                    zkevm_state end_call_state = _call_stack[_call_stack.size() - 1].state;
+                                    std::size_t returndataoffset = _call_stack[_call_stack.size() - 1].returndataoffset; // caller CALL opcode parameters
+                                    std::size_t returndatalength = _call_stack[_call_stack.size() - 1].returndatalength; // caller CALL opcode parameters
+                                    append_cold_access_rw_operations();
+                                    unsuccessful_call_finish_cold_access_update();
+                                    // end_call_state.block_id = block_id;
+                                    // end_call_state.tx_id = tx_id;
+                                    // end_call_state.call_id = call_id;
+                                    end_call_state.opcode = _call_stack.size() == 1? opcode_number_from_str("end_transaction") : opcode_number_from_str("end_call");
+                                    // end_call_state.gas = 0;
+                                    // end_call_state.pc = 0;
+                                    // end_call_state.rw_counter = rw_counter;
+                                    // end_call_state.bytecode_hash = 0;
+                                    // end_call_state.additional_input = 0;
+                                    // end_call_state.stack_size = 0;
+                                    // end_call_state.memory_size = {};
+                                    // end_call_state.stack_slice = {};
                                     end_call_state.last_access_rw_counter = last_access_rw_counter;
+                                    end_call_state.last_write_rw_counter = last_write_rw_counter;
                                     _zkevm_states.push_back(end_call_state);
                                     call_id = end_call_state.call_id;
                                     memory_size_before = memory_next.size();
@@ -1221,7 +1303,6 @@ namespace nil {
                                 }
                                 stack = stack_next;
                                 memory = memory_next;
-                                //storage = storage_next;
                             }
                         }
                         std::cout << "END BLOCK " << block_id << std::endl;
@@ -1241,6 +1322,8 @@ namespace nil {
                             state.stack_slice = {};
                             _zkevm_states.push_back(state);
                             _accounts_initial_state = _accounts_current_state;
+                            append_cold_access_rw_operations();
+                            _call_stack.pop_back();
                         }
                     }
 
@@ -1268,29 +1351,61 @@ namespace nil {
                     zkevm_word_type     storage_key,
                     const rw_operation  &rw_op
                 ){
-                    for( std::size_t i = 0; i < _call_stack.size(); i++ ){
-                        if( !_call_stack[i].cold_access_list.count(std::make_tuple(address, field_tag, storage_key)) ){
-                            _call_stack[i].cold_access_list[std::make_tuple(address, field_tag, storage_key)] = rw_op;
-                        }
-                        if( !rw_op.is_write ) continue;
-                        if( !_call_stack[i].cold_write_list.count(std::make_tuple(address, field_tag, storage_key)) ){
-                            _call_stack[i].cold_write_list[std::make_tuple(address, field_tag, storage_key)] = rw_op;
-                        }
+                    std::cout << "Update cold access RW operations depth = " << _call_stack.size() << std::endl;
+                    std::size_t end = _call_stack.size() - 1;
+
+                    if( !_call_stack[end].cold_access_list.count(std::make_tuple(address, field_tag, storage_key)) ){
+                        _call_stack[end].cold_access_list[std::make_tuple(address, field_tag, storage_key)] = rw_op;
+                    }
+                    if( !rw_op.is_write ) return;
+                    if( !_call_stack[end].cold_write_list.count(std::make_tuple(address, field_tag, storage_key)) ){
+                        _call_stack[end].cold_write_list[std::make_tuple(address, field_tag, storage_key)] = rw_op;
                     }
                 }
 
+                void successful_call_finish_cold_access_update(){
+                    auto &call = _call_stack.back();
+                    _call_stack.pop_back();
+
+                    std::size_t back = _call_stack.size() - 1;
+                    if( back == 0 ) return;
+
+                    for(auto &[k,v]: call.cold_access_list){
+                        if( !_call_stack[back].cold_access_list.count(k) ) _call_stack[back].cold_access_list[k] = v;
+                    }
+                    for(auto &[k,v]: call.cold_write_list){
+                        if( !_call_stack[back].cold_write_list.count(k) ) _call_stack[back].cold_write_list[k] = v;
+                    }
+                }
+
+                void unsuccessful_call_finish_cold_access_update(){
+                    _call_stack.pop_back();
+                }
+
                 void append_cold_access_rw_operations(){
-                    std::cout << "Append cold access RW operations" << std::endl;
+                    std::cout << "Append cold access RW operations depth = " << _call_stack.size();
                     auto &call_context = _call_stack[_call_stack.size()-1];
+                    std::size_t parent_id = _call_stack.size() == 1? 0 : _call_stack[_call_stack.size()-2].call_id;
+                    std::cout << " parent_id = " << parent_id << std::endl;
+                    std::size_t counter = 1;
                     for( auto &cold_access : call_context.cold_write_list ){
                         _rw_operations.push_back(
                             cold_access_rw_operation(
                                 call_context.call_id,
+                                counter++,
+                                parent_id,
                                 cold_access.second
                             )
                         );
                         std::cout << "\t" << cold_access.second << std::endl;
                     }
+                    _rw_operations.push_back(
+                        call_context_rw_operation(
+                            call_context.call_id,
+                            call_context_field::modified_items,
+                            call_context.cold_write_list.size()
+                        )
+                    );
                 }
 
                 std::map<zkevm_word_type, zkevm_account>                _accounts_initial_state; // Initial state; Update it after block.

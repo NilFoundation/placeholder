@@ -84,6 +84,7 @@
 #include <nil/blueprint/zkevm_bbf/opcodes/staticcall.hpp>
 #include <nil/blueprint/zkevm_bbf/opcodes/gas.hpp>
 #include "nil/blueprint/zkevm_bbf/opcodes/logx.hpp"
+#include "nil/blueprint/zkevm_bbf/opcodes/revert.hpp"
 
 #include <nil/blueprint/zkevm_bbf/opcodes/start_block.hpp>
 #include <nil/blueprint/zkevm_bbf/opcodes/start_transaction.hpp>
@@ -769,6 +770,8 @@ namespace nil {
                 opcodes[zkevm_opcode::LOG2] = std::make_shared<zkevm_logx_operation<BlueprintFieldType>>();
                 opcodes[zkevm_opcode::LOG3] = std::make_shared<zkevm_logx_operation<BlueprintFieldType>>();
                 opcodes[zkevm_opcode::LOG4] = std::make_shared<zkevm_logx_operation<BlueprintFieldType>>();
+
+                opcodes[zkevm_opcode::REVERT] = std::make_shared<zkevm_revert_operation<BlueprintFieldType>>();
 
                 // // fake opcodes for errors and padding
                 opcodes[zkevm_opcode::err0] = std::make_shared<zkevm_err0_operation<BlueprintFieldType>>();

@@ -94,7 +94,13 @@ BOOST_AUTO_TEST_CASE(delegatecall_counter){
     test_zkevm_rw<field_type>({"delegatecall.json"}, 3000);
 }
 BOOST_AUTO_TEST_CASE(cold_sstore){
-    test_zkevm_rw<field_type>({"delegatecall.json"}, 3000);
+    test_zkevm_rw<field_type>({"cold_sstore.json"}, 3000);
+}
+BOOST_AUTO_TEST_CASE(try_catch){
+    test_zkevm_rw<field_type>({"try_catch.json"}, 6000);
+}
+BOOST_AUTO_TEST_CASE(try_catch2){
+    test_zkevm_rw<field_type>({"try_catch2.json"}, 6000);
 }
 /*
 BOOST_AUTO_TEST_CASE(small_storage){

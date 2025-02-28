@@ -61,7 +61,7 @@ namespace nil {
                 static constexpr std::size_t chunks_amount = 30;
 
                 static nil::crypto3::zk::snark::plonk_table_description<FieldType> get_table_description(std::size_t max_rw_size, std::size_t max_mpt_size){
-                    nil::crypto3::zk::snark::plonk_table_description<FieldType> desc(rw_table_type::get_witness_amount() + 51, 0, 2, 6);
+                    nil::crypto3::zk::snark::plonk_table_description<FieldType> desc(rw_table_type::get_witness_amount() + 61, 0, 2, 9);
                     desc.usable_rows_amount = max_rw_size + max_mpt_size;
                     return desc;
                 }
@@ -119,9 +119,9 @@ namespace nil {
                     const std::vector<TYPE>  &value_before_lo = t.value_before_lo;
                     const std::vector<TYPE>  &rw_id_before = t.rw_id_before;
                     const std::vector<TYPE>  &helper_id = t.helper_id;
-                    const std::vector<TYPE>  &counter = t.counter;
                     const std::vector<TYPE>  &previous_write = t.write_id_before;
 
+                    // Allocated cells
                     std::vector<std::array<TYPE,op_bits_amount>> op_bits(max_rw_size);
                     std::vector<std::array<TYPE,diff_index_bits_amount>> diff_index_bits(max_rw_size);
                     std::vector<TYPE> is_first(max_rw_size);
@@ -135,6 +135,21 @@ namespace nil {
                     std::vector<TYPE> state_root_before_hi(max_rw_size);
                     std::vector<TYPE> state_root_before_lo(max_rw_size);
                     std::vector<TYPE> is_last(max_rw_size);
+
+                    // Only for COLD_ACCESS subtable proving
+                    std::vector<TYPE> parent_id(max_rw_size);
+                    std::vector<TYPE> parent_id_inv(max_rw_size);
+                    std::vector<TYPE> rw_id_helper(max_rw_size);
+                    std::vector<TYPE> call_id_helper(max_rw_size);
+                    std::vector<TYPE> is_first_for_id(max_rw_size);
+                    std::vector<TYPE> is_last_for_id(max_rw_size);
+                    // TODO: Rename these somehow
+                    std::vector<TYPE> diff_0(max_rw_size); // rw_id_helper - id
+                    std::vector<TYPE> diff_1(max_rw_size);
+                    std::vector<TYPE> diff_2(max_rw_size); // id - write_id_before
+                    std::vector<TYPE> diff_3(max_rw_size);
+
+                    // Temporary variables
                     std::vector<TYPE> sorted;
                     std::vector<TYPE> sorted_prev;
 
@@ -208,6 +223,23 @@ namespace nil {
                             }
                             diff[i] = sorted[diff_ind] - sorted_prev[diff_ind];
                             inv_diff[i] = diff[i] == 0? 0: diff[i].inversed();
+
+                            parent_id[i] = rw_trace[i].parent_id;
+                            parent_id_inv[i] = parent_id[i] ==0 ? 0 : parent_id[i].inversed();
+                            rw_id_helper[i] = rw_trace[i].rw_counter_helper;
+                            call_id_helper[i] = rw_trace[i].call_id_helper;
+                            is_first_for_id[i] = (diff_ind < 3);
+                            is_last_for_id[i-1] = is_first_for_id[i];
+
+                            std::cout << " is_first_for_id = " << is_first_for_id[i];
+                            std::cout << " diff_ind = " << diff_ind;
+
+                            if( rw_trace[i].op == rw_operation_type::cold_access ){
+                                diff_0[i] = (rw_trace[i].rw_counter_helper - rw_trace[i].id) & 0xffff;
+                                diff_1[i] = (((rw_trace[i].rw_counter_helper - rw_trace[i].id) & 0xffff0000) >> 16);
+                                diff_2[i] = (rw_trace[i].id - rw_trace[i].write_id_before) & 0xffff;
+                                diff_3[i] = (((rw_trace[i].id - rw_trace[i].write_id_before) & 0xffff0000) >> 16);
+                            }
                             std::cout << std::endl;
                         }
                         for( std::size_t i = rw_trace.size(); i < max_rw_size; i++ ){
@@ -241,6 +273,18 @@ namespace nil {
                         allocate(state_root_lo[i], ++cur_column, i);
                         allocate(state_root_before_hi[i], ++cur_column, i);
                         allocate(state_root_before_lo[i], ++cur_column, i);
+
+                        // For COLD_ACCESS-only subtable proving
+                        allocate(parent_id[i], ++cur_column, i);
+                        allocate(parent_id_inv[i], ++cur_column, i);
+                        allocate(rw_id_helper[i], ++cur_column, i);
+                        allocate(call_id_helper[i], ++cur_column, i);
+                        allocate(is_first_for_id[i], ++cur_column, i);
+                        allocate(is_last_for_id[i], ++cur_column, i);
+                        allocate(diff_0[i], ++cur_column, i);
+                        allocate(diff_1[i], ++cur_column, i);
+                        allocate(diff_2[i], ++cur_column, i);
+                        allocate(diff_3[i], ++cur_column, i);
                     }
                     std::cout << std::endl;
                     if constexpr (stage == GenerationStage::CONSTRAINTS) {
@@ -253,6 +297,10 @@ namespace nil {
                         for( std::size_t k = 0; k < chunks_amount; k++){
                             chunked_16_lookups.push_back(context_object.relativize(chunks[1][k], -1));
                         }
+                        chunked_16_lookups.push_back(context_object.relativize(diff_0[1], -1));
+                        chunked_16_lookups.push_back(context_object.relativize(diff_1[1], -1));
+                        chunked_16_lookups.push_back(context_object.relativize(diff_2[1], -1));
+                        chunked_16_lookups.push_back(context_object.relativize(diff_3[1], -1));
                         TYPE op_bit_composition;
                         for( std::size_t j = 0; j < op_bits_amount; j++){
                             every_row_constraints.push_back(context_object.relativize(op_bits[1][j] * (op_bits[1][j] - 1), -1));
@@ -331,6 +379,7 @@ namespace nil {
                         TYPE tx_refund_selector = bit_tag_selector(op_bits[1], TX_REFUND_OP);
                         TYPE tx_log_selector = bit_tag_selector(op_bits[1], TX_LOG_OP);
                         TYPE tx_receipt_selector = bit_tag_selector(op_bits[1], TX_RECEIPT_OP);
+                        TYPE cold_access_selector = bit_tag_selector(op_bits[1], COLD_ACCESS_OP);
                         TYPE padding_selector = bit_tag_selector(op_bits[1], PADDING_OP);
 
                         for( std::size_t diff_ind = 0; diff_ind < sorted.size(); diff_ind++ ){
@@ -343,14 +392,39 @@ namespace nil {
 
                         every_row_constraints.push_back(context_object.relativize(is_write[1] * (is_write[1]-1), -1));
                         every_row_constraints.push_back(context_object.relativize(is_first[1] * (is_first[1]-1), -1));
+                        every_row_constraints.push_back(context_object.relativize(is_last[1] * (is_last[1] - 1), -1));
+                        every_row_constraints.push_back(context_object.relativize(is_first_for_id[1] * (is_first_for_id[1] - 1), -1));
+                        every_row_constraints.push_back(context_object.relativize(is_last_for_id[1] * (is_last_for_id[1] - 1), -1));
+
                         every_row_constraints.push_back(context_object.relativize((diff[1] * inv_diff[1] - 1) * diff[1], -1));
                         every_row_constraints.push_back(context_object.relativize((diff[1] * inv_diff[1] - 1) * inv_diff[1], -1));
-                        every_row_constraints.push_back(context_object.relativize(is_first[1] * (is_first[1] - 1), -1));
-                        every_row_constraints.push_back(context_object.relativize(is_last[1] * (is_last[1] - 1), -1));
+
                         every_row_constraints.push_back(context_object.relativize((op[1] - START_OP) * (op[1] - PADDING_OP) * (is_first[1] - 1) * (diff_index_bits[1][0] - 1), -1));
                         every_row_constraints.push_back(context_object.relativize((op[1] - START_OP) * (op[1] - PADDING_OP) * (is_first[1] - 1) * (diff_index_bits[1][1] - 1), -1));
                         every_row_constraints.push_back(context_object.relativize((op[1] - START_OP) * (op[1] - PADDING_OP) * (is_first[1] - 1) * (diff_index_bits[1][2] - 1), -1));
                         every_row_constraints.push_back(context_object.relativize((op[1] - START_OP) * (op[1] - PADDING_OP) * (is_first[1] - 1) * (diff_index_bits[1][3] - 1), -1));
+                        every_row_constraints.push_back(context_object.relativize(diff_index_bits[1][0] * diff_index_bits[1][1] * diff_index_bits[1][2] * diff_index_bits[1][3] * is_first[1], -1));
+                        non_first_row_constraints.push_back(context_object.relativize(is_last[0] * (1 - is_first[1]) * (op[1] - PADDING_OP), -1));
+                        non_first_row_constraints.push_back(context_object.relativize(is_last_for_id[0] * (1 - is_first_for_id[1]) * (op[1] - PADDING_OP), -1));
+                        non_first_row_constraints.push_back(context_object.relativize((1 - is_last[0]) * is_first[1] * (op[0] - START_OP), -1));
+                        non_first_row_constraints.push_back(context_object.relativize((1 - is_last_for_id[0]) * is_first_for_id[1] * (op[0] - START_OP), -1));
+
+                        every_row_constraints.push_back(context_object.relativize((op[1] - START_OP) * (op[1] - PADDING_OP) * is_first_for_id[1] * diff_index_bits[1][0], -1));
+                        every_row_constraints.push_back(context_object.relativize((op[1] - START_OP) * (op[1] - PADDING_OP) * is_first_for_id[1] * diff_index_bits[1][1], -1));
+                        every_row_constraints.push_back(context_object.relativize((op[1] - START_OP) * (op[1] - PADDING_OP) * is_first_for_id[1] * diff_index_bits[1][2], -1));
+                        every_row_constraints.push_back(context_object.relativize((op[1] - START_OP) * (op[1] - PADDING_OP) * is_first_for_id[1] * diff_index_bits[1][3] *  diff_index_bits[1][4], -1));
+                        every_row_constraints.push_back(context_object.relativize(
+                            (op[1] - START_OP) * (op[1] - PADDING_OP) *
+                            (1 - is_first_for_id[1]) *
+                            (1 - diff_index_bits[1][0]) *
+                            (1 - diff_index_bits[1][1]) *
+                            (1 - diff_index_bits[1][2]) *
+                            (2 - diff_index_bits[1][3] - diff_index_bits[1][4])
+                        , -1));
+                        // every_row_constraints.push_back(context_object.relativize(
+                        //     (op[1] - START_OP) * (op[1] - PADDING_OP) * (1 - is_first_for_id[1]) *
+                        //     (4 - diff_index_bits[1][0]  - diff_index_bits[1][1] - diff_index_bits[1][2] - diff_index_bits[1][3]*diff_index_bits[1][4]))
+                        // ));
 
                         non_first_row_constraints.push_back(context_object.relativize((op[0] - START_OP) * (op[0] - PADDING_OP)
                             * is_last[0] * diff_index_bits[1][0]
@@ -364,6 +438,8 @@ namespace nil {
                         );
                         every_row_constraints.push_back(context_object.relativize((op[1] - START_OP) * (op[1] - PADDING_OP) * (is_first[1] - 1) * (initial_value_hi[1] - initial_value_hi[0]), -1));
                         every_row_constraints.push_back(context_object.relativize((op[1] - START_OP) * (op[1] - PADDING_OP) * (is_first[1] - 1) * (initial_value_lo[1] - initial_value_lo[0]), -1));
+                        every_row_constraints.push_back(context_object.relativize(parent_id[1] * (parent_id_inv[1] * parent_id[1] - 1), -1));
+                        every_row_constraints.push_back(context_object.relativize(parent_id_inv[1] * (parent_id_inv[1] * parent_id[1] - 1), -1));
     //                     // Specific constraints for START
                         std::map<std::size_t, std::vector<TYPE>> special_constraints;
                         special_constraints[START_OP].push_back(context_object.relativize(start_selector * storage_key_hi[1], -1));
@@ -434,12 +510,20 @@ namespace nil {
                         non_first_row_constraints.push_back(context_object.relativize(
                             state_selector * is_first[1] * (value_before_lo[1] - initial_value_lo[1]), -1
                         ));
-                        // non_first_row_constraints.push_back(context_object.relativize(
-                        //     state_selector * (1 - is_first[1]) * is_write[0] * (previous_write[1] - rw_id[0]), -1)
-                        // );
-                        // non_first_row_constraints.push_back(context_object.relativize(
-                        //     state_selector  * (1 - is_first[1]) * (1 - is_write[0]) * (previous_write[1] - previous_write[0]), -1)
-                        // );
+                        non_first_row_constraints.push_back(context_object.relativize(
+                            state_selector * (1 - is_first[1]) * is_write[0] * (previous_write[1] - rw_id[0]), -1)
+                        );
+                        non_first_row_constraints.push_back(context_object.relativize(
+                            state_selector  * (1 - is_first[1]) * (1 - is_write[0]) * (previous_write[1] - previous_write[0]), -1)
+                        );
+                        // Each modified state item for a given call is presented in COLD_ACCESS part for this call
+                        std::vector<TYPE> write_items_lookup = rw_table<FieldType, stage>::rw_item_lookup(
+                            COLD_ACCESS_OP, helper_id[1], address[1], field_type[1], storage_key_hi[1], storage_key_lo[1]
+                        );
+                        for( std::size_t j = 0; j < write_items_lookup.size(); j++){
+                            write_items_lookup[j] = context_object.relativize(state_selector * is_write[1] * write_items_lookup[j], -1);
+                        }
+                        context_object.relative_lookup( write_items_lookup, "zkevm_rw_items", 1, max_rw_size-1 );
                         //lookup_constrain({"MPT table", {
                         //    state_selector * addr,
                         //    state_selector * field,
@@ -505,6 +589,86 @@ namespace nil {
                         special_constraints[TX_RECEIPT_OP].push_back(context_object.relativize(tx_receipt_selector * address[1], -1));
                         special_constraints[TX_RECEIPT_OP].push_back(context_object.relativize(tx_receipt_selector * storage_key_hi[1], -1));
                         special_constraints[TX_RECEIPT_OP].push_back(context_object.relativize(tx_receipt_selector * storage_key_lo[1], -1));
+
+                        // Specific constraints for COLD_ACCESS_OP
+                        // is_write is always 1
+                        // is_first is always 1 i.e. each item may be here only once
+                        // parent_id field is  id of parent of call_id_helper field
+                        // each item that was changed in current context was also changed in parent context
+                        // any item presented in any context exists in STATE section
+                        special_constraints[COLD_ACCESS_OP].push_back(context_object.relativize(cold_access_selector * (1 - is_write[1]), -1));
+                        special_constraints[COLD_ACCESS_OP].push_back(context_object.relativize(cold_access_selector * (1 - is_first[1]), -1));
+                        special_constraints[COLD_ACCESS_OP].push_back(context_object.relativize(
+                            cold_access_selector * (rw_id_helper[1] - id[1] - diff_0[1] - diff_1[1] * 0x10000), -1
+                        ));
+                        special_constraints[COLD_ACCESS_OP].push_back(context_object.relativize(
+                            cold_access_selector * (id[1] - previous_write[1] - diff_2[1] - diff_3[1] * 0x10000), -1
+                        ));
+                        special_constraints[COLD_ACCESS_OP].push_back(context_object.relativize(
+                            cold_access_selector * (is_first_for_id[1] * (rw_id[1] - 1)), -1
+                        ));
+                        non_first_row_constraints.push_back(context_object.relativize(
+                            cold_access_selector * ((1 - is_first_for_id[1]) * (rw_id[1] - rw_id[0] - 1)), -1
+                        ));
+                        std::vector<TYPE> parent_call_lookup = rw_table<FieldType, stage>::call_context_lookup(
+                            id[1],
+                            std::size_t(call_context_field::parent_id),
+                            TYPE(0),
+                            parent_id[1]
+                        );
+                        for( std::size_t j = 0; j < parent_call_lookup.size(); j++){
+                            parent_call_lookup[j] = context_object.relativize(cold_access_selector * parent_call_lookup[j], -1);
+                        }
+                        context_object.relative_lookup( parent_call_lookup, "zkevm_rw", 1, max_rw_size-1 );
+                        std::vector<TYPE> parent_cold_access_lookup = rw_table<FieldType, stage>::rw_item_lookup(
+                            COLD_ACCESS_OP,
+                            parent_id[1],
+                            address[1],
+                            field_type[1],
+                            storage_key_hi[1],
+                            storage_key_lo[1]
+                        );
+                        for( std::size_t j = 0; j < parent_cold_access_lookup.size(); j++){
+                            parent_cold_access_lookup[j] = context_object.relativize(
+                                cold_access_selector * parent_id[1] * parent_id_inv[1] * parent_cold_access_lookup[j], -1
+                            );
+                        }
+                        context_object.relative_lookup( parent_cold_access_lookup, "zkevm_rw_items", 1, max_rw_size-1 );
+                        std::vector<TYPE> access_is_real_lookup = {
+                            STATE_OP,
+                            helper_id[1], // block_id
+                            address[1],
+                            field_type[1],
+                            storage_key_hi[1],
+                            storage_key_lo[1],
+                            rw_id_helper[1],
+                            TYPE(1),
+                            value_before_hi[1],
+                            value_before_lo[1],
+                            rw_id_before[1],
+                            previous_write[1],
+                            call_id_helper[1],
+                            value_hi[1],
+                            value_lo[1]
+                        };
+                        for( std::size_t j = 0; j < access_is_real_lookup.size(); j++){
+                            access_is_real_lookup[j] = context_object.relativize(
+                                cold_access_selector * parent_id[1] * parent_id_inv[1] * access_is_real_lookup[j], -1
+                            );
+                        }
+                        context_object.relative_lookup( access_is_real_lookup, "zkevm_rw_ext", 1, max_rw_size-1 );
+                        std::vector<TYPE> modified_items_amount_lookup = rw_table<FieldType, stage>::call_context_lookup(
+                            id[1],
+                            std::size_t(call_context_field::modified_items),
+                            TYPE(0),
+                            rw_id[1]
+                        );
+                        for( std::size_t j = 0; j < modified_items_amount_lookup.size(); j++){
+                            modified_items_amount_lookup[j] = context_object.relativize(
+                                cold_access_selector * is_last_for_id[1] * modified_items_amount_lookup[j]
+                            , -1);
+                        }
+                        context_object.relative_lookup( modified_items_amount_lookup, "zkevm_rw", 1, max_rw_size-1 );
 
                         // Specific constraints for PADDING
                         special_constraints[PADDING_OP].push_back(context_object.relativize(padding_selector * address[1], -1));

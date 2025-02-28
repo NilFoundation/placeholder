@@ -94,7 +94,7 @@ namespace nil {
                         std::cout << "\tK = " << std::hex << K_hi << " " << K_lo << std::dec << std::endl;
                         std::cout << "\tv = " << std::hex << current_state.storage(current_state.stack_top()) << std::dec << std::endl;
                         std::cout << "\trw_counter_before = " << rw_counter_before << std::endl;
-                        std::cout << "\trw_counter_before = " << write_counter_before << std::endl;
+                        std::cout << "\twrite_counter_before = " << write_counter_before << std::endl;
                         std::cout << "\tis_cold = " << is_cold << std::endl;
                         std::cout << "\tblock_id = " << block_id << std::endl;
                         std::cout << "\ttx_id = " << tx_id << std::endl;
@@ -164,18 +164,20 @@ namespace nil {
                             TYPE(rw_op_to_num(rw_operation_type::state)),
                             block_id,                                              // All state changes are grouped by block
                             call_context_address_hi * two_128 + call_context_address_lo,
+                            TYPE(0),                                               // field
                             K_hi,                                                  // storage_key_hi
                             K_lo,                                                  // storage_key_lo
-                            TYPE(0),                                               // field
                             current_state.rw_counter(0)+1,
                             TYPE(0),                                               // is_write
                             V_128.first,
                             V_128.second,
                             rw_counter_before,                                     // rw_counter_before
                             write_counter_before,                                  // write_counter_before
-                            current_state.call_id(0)                               // helper_id
+                            current_state.call_id(0),
+                            V_128.first,
+                            V_128.second
                         };
-                        lookup(tmp, "zkevm_rw");
+                        lookup(tmp, "zkevm_rw_ext");
                         tmp = rw_table<FieldType, stage>::stack_lookup(
                             current_state.call_id(0),
                             current_state.stack_size(0) - 1,

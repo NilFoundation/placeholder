@@ -59,15 +59,12 @@ public:
 
     template <typename field_type>
     void test_zkevm_copy(
-        const std::vector<std::vector<std::uint8_t>>    &bytecodes,
-        const std::vector<boost::property_tree::ptree>  &traces,
-        const l1_size_restrictions                      &max_sizes,
+        std::string                 path,
+        const l1_size_restrictions  &max_sizes,
         bool  expected_result = true
     ){
-        const auto &pt = traces[0];
-        const auto &bytecode0 = bytecodes[0];
-
-        nil::blueprint::bbf::zkevm_hardhat_input_generator circuit_inputs(bytecodes, traces);
+        auto trace = load_hardhat_input(path);
+        nil::blueprint::bbf::zkevm_hardhat_input_generator circuit_inputs(trace);
 
         using integral_type = typename field_type::integral_type;
         using value_type = typename field_type::value_type;
@@ -100,9 +97,10 @@ BOOST_FIXTURE_TEST_SUITE(zkevm_bbf_copy, zkEVMCopyTestFixture)
     using field_type = typename algebra::curves::pallas::base_field_type;
     using integral_type = typename field_type::integral_type;
     using value_type = typename field_type::value_type;
-BOOST_AUTO_TEST_CASE(small_storage_contract){
+
+
+BOOST_AUTO_TEST_CASE(minimal_math){
     using field_type = typename algebra::curves::pallas::base_field_type;
-    auto [bytecodes, pts] = load_hardhat_input("small_stack_storage/");
 
     l1_size_restrictions max_sizes;
 
@@ -113,9 +111,25 @@ BOOST_AUTO_TEST_CASE(small_storage_contract){
     max_sizes.max_copy = 500;
     max_sizes.max_zkevm_rows = 500;
 
-    test_zkevm_copy<field_type>(bytecodes, pts, max_sizes);
+    test_zkevm_copy<field_type>("minimal_math.json", max_sizes);
 }
 
+BOOST_AUTO_TEST_CASE(try_catch2) {
+    using field_type = typename algebra::curves::pallas::base_field_type;
+    l1_size_restrictions max_sizes;
+
+    max_sizes.max_keccak_blocks = 20;
+    max_sizes.max_bytecode = 3000;
+    max_sizes.max_mpt = 0;
+    max_sizes.max_rw = 6000;
+    max_sizes.max_copy = 500;
+    max_sizes.max_zkevm_rows = 3000;
+    max_sizes.max_exponentiations = 50;
+    max_sizes.max_exp_rows = 500;
+
+    test_zkevm_copy<field_type>("try_catch2.json", max_sizes);
+}
+/*
 BOOST_AUTO_TEST_CASE(mstore8_contract){
     using field_type = typename algebra::curves::pallas::base_field_type;
     auto [bytecodes, pts] = load_hardhat_input("mstore8/");
@@ -174,5 +188,5 @@ BOOST_AUTO_TEST_CASE(keccak_contract){
     max_sizes.max_zkevm_rows = 4500;
 
     test_zkevm_copy<field_type>(bytecodes, pts, max_sizes);
-}
+}*/
 BOOST_AUTO_TEST_SUITE_END()

@@ -176,22 +176,14 @@ namespace nil {
 
                         TYPE memory_selector = type_selector[i][copy_op_to_num(copy_operand_type::memory) - 1];
                         TYPE keccak_selector = type_selector[i][copy_op_to_num(copy_operand_type::keccak) - 1];
-                        std::vector<TYPE> tmp;
-                        tmp = {
-                            memory_selector * TYPE(rw_op_to_num(rw_operation_type::memory)),
-                            memory_selector * id_lo[i],
-                            memory_selector * addr[i],
-                            TYPE(0),// storage_key_hi
-                            TYPE(0),// storage_key_lo
-                            TYPE(0),// field
-                            memory_selector * rw_counter[i],
-                            memory_selector * is_write[i],// is_write
-                            TYPE(0),
-                            memory_selector * bytes[i],
-                            TYPE(0),// rw_counter_before
-                            TYPE(0),// w_counter_before
-                            TYPE(0) // helper_id
-                        };
+                        std::vector<TYPE> tmp = rw_table<FieldType, stage>::memory_lookup(
+                            id_lo[i],
+                            addr[i],
+                            rw_counter[i],
+                            is_write[i],// is_write
+                            bytes[i]
+                        );
+                        for( std::size_t i = 0; i < tmp.size(); i++) tmp[i] *= memory_selector;
                         lookup(tmp, "zkevm_rw");
                         tmp = {
                             TYPE(1) ,
