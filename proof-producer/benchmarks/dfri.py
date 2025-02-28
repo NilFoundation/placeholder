@@ -82,7 +82,7 @@ class DFRIPipeline:
                 else:
                     current_cmd.append(arg.get_value())
             result_commands.append({
-                "name" : f"{name} {circuit}",
+                "name" : f"{name}-{circuit}",
                 "args": current_cmd,
                 })
         return result_commands
@@ -113,11 +113,11 @@ class DFRIPipeline:
             self.updated_commitment_state
         ]
         trace_arg = ["--trace", self.trace_file]
-        return self.make_circuit_command("Partial proof", "fast-generate-partial-proof", partial_proof_args, init_options=trace_arg)
+        return self.make_circuit_command("partial-proof", "fast-generate-partial-proof", partial_proof_args, init_options=trace_arg)
 
     def make_aggregated_challenge_command(self):
         agg_challenge_args = [self.input_challenges_arg, self.agg_challenge_arg]
-        return self.make_aggregate_command("Aggregated challenge", "generate-aggregated-challenge", agg_challenge_args)
+        return self.make_aggregate_command("aggregated-challenge", "generate-aggregated-challenge", agg_challenge_args)
 
     def make_combined_q_commands(self):
         class StartingPowerArg:
@@ -144,7 +144,7 @@ class DFRIPipeline:
             self.q_poly_file_arg,
             StartingPowerArg(self.theta_power_arg)
         ]
-        return self.make_circuit_command("Combined Q", "compute-combined-Q", combined_q_args)
+        return self.make_circuit_command("combined-q", "compute-combined-Q", combined_q_args)
 
     def make_aggregate_fri_command(self):
         agg_fri_args = [
@@ -155,7 +155,7 @@ class DFRIPipeline:
             self.agg_fri_proof_arg
         ]
         unused_artifact = ["--proof-of-work-file", "/dev/null"]
-        return self.make_aggregate_command("Aggregate FRI", "aggregated-FRI", agg_fri_args, unused_artifact)
+        return self.make_aggregate_command("aggregate-fri", "aggregated-FRI", agg_fri_args, unused_artifact)
 
     def make_consistency_check_commands(self):
         lpc_challenge_args = [
@@ -164,7 +164,7 @@ class DFRIPipeline:
             self.consistency_check_arg,
             self.lpc_proof_arg
         ]
-        return self.make_circuit_command("Consistency check challenges", "consistency-checks", lpc_challenge_args)
+        return self.make_circuit_command("consistency-check-challenges", "consistency-checks", lpc_challenge_args)
 
     def make_merge_proof_command(self):
         merge_proof_args = [
@@ -173,7 +173,7 @@ class DFRIPipeline:
             self.agg_fri_proof,
             self.merged_proof_arg
         ]
-        return self.make_aggregate_command("Merge proofs", "merge-proofs", merge_proof_args)
+        return self.make_aggregate_command("merge-proofs", "merge-proofs", merge_proof_args)
 
     def get_first_stage_commands(self):
         return self.make_partial_proof_commands()

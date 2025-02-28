@@ -307,3 +307,5 @@
 
 # To make deb package with proof-producer:
 # nix bundle --bundler . .#proof-producer
+# To make deb package with proof-producer-benchmarks
+# nix bundle --bundler .#deb-benchmarks .#proof-producer
