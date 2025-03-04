@@ -101,6 +101,59 @@ namespace nil {
             std::size_t memory_expansion_cost(std::size_t new_memory_byte_size, std::size_t last_memory_byte_size) {
                 return memory_cost_util(new_memory_byte_size) - memory_cost_util(last_memory_byte_size);
             }
+
+            // We define constants using the smallest possible bitlengths from nil/crypto3/multiprecision/literals.hpp
+            // Maybe it would have been better to define more bitlenghts, but this will probably all disappear, once
+            // small fields are introduced.
+            static const unsigned int two_15 = 32768;
+            static const unsigned int two_16 = 65536;
+            static const nil::crypto3::multiprecision::big_uint<64> two_32 = 4294967296;
+            static const nil::crypto3::multiprecision::big_uint<64> two_48 = 281474976710656;
+            static const nil::crypto3::multiprecision::big_uint<92> two_64 = 0x10000000000000000_big_uint92;
+            static const nil::crypto3::multiprecision::big_uint<130> two_128 = 0x100000000000000000000000000000000_big_uint130;
+            static const nil::crypto3::multiprecision::big_uint<205>
+                two_192 = 0x1000000000000000000000000000000000000000000000000_big_uint205;
+
+            template<typename T, typename V = T>
+            T chunk_sum_64(const std::vector<V> &chunks, const unsigned char chunk_idx) {
+                BOOST_ASSERT(chunk_idx < 4);
+                return chunks[4 * chunk_idx] + chunks[4 * chunk_idx + 1] * two_16 +
+                       chunks[4 * chunk_idx + 2] * two_32 + chunks[4 * chunk_idx + 3] * two_48;
+            }
+
+            // computes 128-bit chunks of r*b + q - a
+            template<typename T>
+            T first_carryless_construct(const std::vector<T> &a_64_chunks,
+                                        const std::vector<T> &b_64_chunks,
+                                        const std::vector<T> &r_64_chunks,
+                                        const std::vector<T> &q_64_chunks) {
+                return r_64_chunks[0] * b_64_chunks[0] + q_64_chunks[0] +
+                       T(two_64) * (r_64_chunks[0] * b_64_chunks[1] +
+                                 r_64_chunks[1] * b_64_chunks[0] + q_64_chunks[1]) -
+                       a_64_chunks[0] - T(two_64) * a_64_chunks[1];
+            }
+
+            template<typename T>
+            T second_carryless_construct(const std::vector<T> &a_64_chunks,
+                                         const std::vector<T> &b_64_chunks,
+                                         const std::vector<T> &r_64_chunks,
+                                         const std::vector<T> &q_64_chunks) {
+                return (r_64_chunks[0] * b_64_chunks[2] + r_64_chunks[1] * b_64_chunks[1] +
+                        r_64_chunks[2] * b_64_chunks[0] + q_64_chunks[2] - a_64_chunks[2]) +
+                       T(two_64) *
+                           (r_64_chunks[0] * b_64_chunks[3] + r_64_chunks[1] * b_64_chunks[2] +
+                            r_64_chunks[2] * b_64_chunks[1] + r_64_chunks[3] * b_64_chunks[0] +
+                            q_64_chunks[3] - a_64_chunks[3]);
+            }
+
+            template<typename T>
+            T third_carryless_construct(const std::vector<T> &b_64_chunks,
+                                        const std::vector<T> &r_64_chunks) {
+                return (r_64_chunks[1] * b_64_chunks[3] + r_64_chunks[2] * b_64_chunks[2] +
+                        r_64_chunks[3] * b_64_chunks[1]) +
+                       T(two_64) *
+                           (r_64_chunks[2] * b_64_chunks[3] + r_64_chunks[3] * b_64_chunks[2]);
+            }
         }
     }
 }

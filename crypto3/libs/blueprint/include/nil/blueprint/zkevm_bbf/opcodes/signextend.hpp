@@ -48,14 +48,6 @@ namespace nil {
                 using value_type = typename FieldType::value_type;
 
                 constexpr static const std::size_t chunk_amount = 16;
-                constexpr static const value_type two_16 = 65536;
-                constexpr static const value_type two_32 = 4294967296;
-                constexpr static const value_type two_48 = 281474976710656;
-                constexpr static const value_type two_64 = 0x10000000000000000_big_uint254;
-                constexpr static const value_type two_128 =
-                    0x100000000000000000000000000000000_big_uint254;
-                constexpr static const value_type two_192 =
-                    0x1000000000000000000000000000000000000000000000000_big_uint254;
 
               public:
                 using typename generic_component<FieldType, stage>::TYPE;

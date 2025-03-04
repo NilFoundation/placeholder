@@ -48,34 +48,19 @@ namespace nil {
                 using value_type = typename FieldType::value_type;
 
                 constexpr static const std::size_t chunk_amount = 16;
-                constexpr static const value_type two_16 = 65536;
-                constexpr static const value_type two_32 = 4294967296;
-                constexpr static const value_type two_48 = 281474976710656;
-                constexpr static const value_type two_64 = 0x10000000000000000_big_uint254;
-                constexpr static const value_type two_128 =
-                    0x100000000000000000000000000000000_big_uint254;
-                constexpr static const value_type two_192 =
-                    0x1000000000000000000000000000000000000000000000000_big_uint254;
 
               public:
                 using typename generic_component<FieldType, stage>::TYPE;
                 using typename generic_component<FieldType, stage>::context_type;
-
-                template<typename T, typename V = T>
-                T chunk_sum_64(const std::vector<V> &chunks, const unsigned char chunk_idx) const {
-                    BOOST_ASSERT(chunk_idx < 4);
-                    return chunks[4 * chunk_idx] + chunks[4 * chunk_idx + 1] * two_16 +
-                           chunks[4 * chunk_idx + 2] * two_32 + chunks[4 * chunk_idx + 3] * two_48;
-                }
 
                 template<typename T>
                 T first_carryless_construct(const std::vector<T> &a_64_chunks,
                                              const std::vector<T> &b_64_chunks,
                                              const std::vector<T> &r_64_chunks) const {
                     return a_64_chunks[0] * b_64_chunks[0] +
-                           two_64 *
+                           T(two_64) *
                                (a_64_chunks[0] * b_64_chunks[1] + a_64_chunks[1] * b_64_chunks[0]) -
-                           r_64_chunks[0] - two_64 * r_64_chunks[1];
+                           r_64_chunks[0] - T(two_64) * r_64_chunks[1];
                 }
 
                 template<typename T>
@@ -84,7 +69,7 @@ namespace nil {
                                              const std::vector<T> &r_64_chunks) {
                     return (a_64_chunks[0] * b_64_chunks[2] + a_64_chunks[1] * b_64_chunks[1] +
                             a_64_chunks[2] * b_64_chunks[0] - r_64_chunks[2]) +
-                           two_64 *
+                           T(two_64) *
                                (a_64_chunks[0] * b_64_chunks[3] + a_64_chunks[1] * b_64_chunks[2] +
                                 a_64_chunks[2] * b_64_chunks[1] + a_64_chunks[3] * b_64_chunks[0] -
                                 r_64_chunks[3]);
@@ -176,23 +161,23 @@ namespace nil {
                         }
                     }
 
-                       
+
                     first_carryless =
                         first_carryless_construct<TYPE>(a_64_chunks, b_64_chunks, r_64_chunks);
                     second_carryless =
                             second_carryless_construct<TYPE>(a_64_chunks, b_64_chunks, r_64_chunks);
 
-                    if constexpr (stage == GenerationStage::ASSIGNMENT) { 
+                    if constexpr (stage == GenerationStage::ASSIGNMENT) {
                         // caluclate first row carries
                         auto first_row_carries = first_carryless.data.base() >> 128;
-                        c_1 = static_cast<value_type>(first_row_carries & (two_64 - 1).data.base());
+                        c_1 = static_cast<value_type>(first_row_carries & (two_64 - 1));
                         c_2 = static_cast<value_type>(first_row_carries >> 64);
                         c_1_chunks = chunk_64_to_16<FieldType>(c_1);
                         // no need for c_2 chunks as there is only a single chunk
-                        
+
                         auto second_row_carries =
                             (second_carryless + c_1 + c_2 * two_64) .data.base() >> 128;
-                        c_3 = static_cast<value_type>(second_row_carries & (two_64 - 1).data.base());
+                        c_3 = static_cast<value_type>(second_row_carries & (two_64 - 1));
                         c_4 = static_cast<value_type>(second_row_carries >> 64);
                         c_3_chunks = chunk_64_to_16<FieldType>(c_3);
 
