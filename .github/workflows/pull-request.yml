@@ -30,12 +30,13 @@ jobs:
       always() && !cancelled()
     secrets: inherit
 
-  verify-circuit-proof:
-    name: Verify Circuit Proof
-    uses: ./.github/workflows/verify-circuit-proof.yml
-    if: |
-      always() && !cancelled()
-    secrets: inherit
+# Temporarily disable this step until EVM verifier is updated.
+#  verify-circuit-proof:
+#    name: Verify Circuit Proof
+#    uses: ./.github/workflows/verify-circuit-proof.yml
+#    if: |
+#      always() && !cancelled()
+#    secrets: inherit
 
   verify-hardhat-proofs:
     name: Verify Hardhat Proofs

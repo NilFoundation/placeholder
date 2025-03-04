@@ -56,6 +56,7 @@ namespace nil {
 
                     using commitment_scheme_type = typename ParamsType::commitment_scheme_type;
                     using commitment_type = typename commitment_scheme_type::commitment_type;
+                    using eval_storage_type = commitments::eval_storage<FieldType>;
 
                     constexpr static const std::size_t gate_parts = 1;
                     constexpr static const std::size_t permutation_parts = 3;
@@ -99,18 +100,16 @@ namespace nil {
                             }
                         }
 
-                        if( _is_lookup_enabled || constraint_system.copy_constraints().size() > 0){
+                        if (_is_lookup_enabled || constraint_system.copy_constraints().size() > 0)
                             _commitment_scheme.append_eval_point(PERMUTATION_BATCH, challenge);
-                        }
 
-                        if( constraint_system.copy_constraints().size() > 0 )
+                        if (constraint_system.copy_constraints().size() > 0)
                             _commitment_scheme.append_eval_point(PERMUTATION_BATCH, 0 , challenge * _omega);
 
                         if (_is_lookup_enabled) {
+                            // For polynomail U, we need the shifted value as well.
                             _commitment_scheme.append_eval_point(PERMUTATION_BATCH, common_data.permutation_parts , challenge * _omega);
                             _commitment_scheme.append_eval_point(LOOKUP_BATCH, challenge);
-                            _commitment_scheme.append_eval_point(LOOKUP_BATCH, challenge * _omega);
-                            _commitment_scheme.append_eval_point(LOOKUP_BATCH, challenge * _omega.pow(common_data.desc.usable_rows_amount));
                         }
 
                         _commitment_scheme.append_eval_point(QUOTIENT_BATCH, challenge);
@@ -186,6 +185,53 @@ namespace nil {
                         return process(common_data, proof, table_description, constraint_system, commitment_scheme);
                     }
 
+                    // Takes out values of different polynomials at challenge point 'Y' from the evaluation proofs.
+                    // All arguments except 'Z' and 'constraint_system' are output arguments.
+                    static inline void prepare_verifier_inputs(
+                            const eval_storage_type& Z,
+                            const plonk_constraint_system<FieldType> &constraint_system,
+                            const typename public_preprocessor_type::preprocessed_data_type::common_data_type &common_data,
+                            std::vector<typename FieldType::value_type>& counts,
+                            typename FieldType::value_type& U_value,
+                            typename FieldType::value_type& U_shifted_value,
+                            std::vector<typename FieldType::value_type>& hs,
+                            std::vector<typename FieldType::value_type>& gs) {
+
+                        // Get lookup inputs and lookup values sizes from the constraint system.
+                        size_t lookup_inputs_count = 0;
+                        for (const auto& gate: constraint_system.lookup_gates()) {
+                            lookup_inputs_count += gate.constraints.size();
+                        }
+                        
+                        size_t lookup_values_count = 0;
+                        for (const auto& table: constraint_system.lookup_tables()) {
+                            lookup_values_count += table.lookup_options.size();
+                        }
+
+                        // LOOKUP_BATCH consists of evaluations of 'counts' polynomial only.
+                        BOOST_ASSERT(lookup_values_count == Z.get_batch_size(LOOKUP_BATCH));
+
+                        for (std::size_t i = 0; i < lookup_values_count; i++) {
+                            counts.push_back(Z.get(LOOKUP_BATCH, i, 0));
+                        }
+
+                        U_value = Z.get(PERMUTATION_BATCH, common_data.permutation_parts)[0];
+                        U_shifted_value = Z.get(PERMUTATION_BATCH, common_data.permutation_parts)[1];
+
+                        // On the next lines +1 stands for polynomial U.
+                        for (std::size_t i = common_data.permutation_parts + 1;
+                             i < common_data.permutation_parts + 1 + lookup_inputs_count;
+                             i++) {
+                            hs.push_back(Z.get(PERMUTATION_BATCH, i, 0));
+                        }
+
+                        for (std::size_t i = common_data.permutation_parts + 1 + lookup_inputs_count;
+                             i < common_data.permutation_parts + 1 + lookup_inputs_count + lookup_values_count;
+                             i++) {
+                            gs.push_back(Z.get(PERMUTATION_BATCH, i, 0));
+                        }
+                    }
+
                     static inline bool process(
                         const typename public_preprocessor_type::preprocessed_data_type::common_data_type &common_data,
                         const placeholder_proof<FieldType, ParamsType> &proof,
@@ -193,6 +239,7 @@ namespace nil {
                         const plonk_constraint_system<FieldType> &constraint_system,
                         commitment_scheme_type& commitment_scheme
                     ) {
+                        auto& Z = proof.eval_proof.eval_proof.z;
 
                         // We cannot add eval points unless everything is committed, so when verifying assume it's committed.
                         commitment_scheme.state_commited(FIXED_VALUES_BATCH);
@@ -222,14 +269,14 @@ namespace nil {
 
                         std::vector<typename FieldType::value_type> special_selector_values(3);
                         special_selector_values[0] = common_data.lagrange_0.evaluate(proof.eval_proof.challenge);
-                        special_selector_values[1] = proof.eval_proof.eval_proof.z.get(
+                        special_selector_values[1] = Z.get(
                             FIXED_VALUES_BATCH, 2*common_data.permuted_columns.size(), 0);
-                        special_selector_values[2] = proof.eval_proof.eval_proof.z.get(
+                        special_selector_values[2] = Z.get(
                             FIXED_VALUES_BATCH, 2*common_data.permuted_columns.size() + 1, 0);
 
                         // 4. prepare evaluaitons of the polynomials that are copy-constrained
                         std::array<typename FieldType::value_type, f_parts> F;
-                        std::size_t permutation_size = (proof.eval_proof.eval_proof.z.get_batch_size(FIXED_VALUES_BATCH) - 2 - constant_columns - selector_columns) / 2;
+                        std::size_t permutation_size = (Z.get_batch_size(FIXED_VALUES_BATCH) - 2 - constant_columns - selector_columns) / 2;
                         if (constraint_system.copy_constraints().size() > 0) {
                             // Permutation polys
                             std::vector<std::size_t> permuted_polys_global_indices = common_data.permuted_columns;
@@ -238,8 +285,8 @@ namespace nil {
                             std::vector<typename FieldType::value_type> S_sigma;
 
                             for (std::size_t perm_i = 0; perm_i < permutation_size; perm_i++) {
-                                S_id.push_back(proof.eval_proof.eval_proof.z.get(FIXED_VALUES_BATCH, perm_i, 0));
-                                S_sigma.push_back(proof.eval_proof.eval_proof.z.get(FIXED_VALUES_BATCH, permutation_size + perm_i, 0));
+                                S_id.push_back(Z.get(FIXED_VALUES_BATCH, perm_i, 0));
+                                S_sigma.push_back(Z.get(FIXED_VALUES_BATCH, permutation_size + perm_i, 0));
 
                                 std::size_t i = permuted_polys_global_indices[perm_i];
                                 std::size_t zero_index = 0;
@@ -250,25 +297,25 @@ namespace nil {
                                     zero_index++;
                                 }
                                 if (i < witness_columns + public_input_columns) {
-                                    f[perm_i] = proof.eval_proof.eval_proof.z.get(VARIABLE_VALUES_BATCH,i,zero_index);
+                                    f[perm_i] = Z.get(VARIABLE_VALUES_BATCH,i,zero_index);
                                 } else if (i >= witness_columns + public_input_columns ) {
                                     std::size_t idx = i - witness_columns - public_input_columns + permutation_size*2 + 2;
-                                    f[perm_i] = proof.eval_proof.eval_proof.z.get(FIXED_VALUES_BATCH,idx,zero_index);
+                                    f[perm_i] = Z.get(FIXED_VALUES_BATCH,idx,zero_index);
                                 }
                             }
 
                             // 5. permutation argument
                             std::vector<typename FieldType::value_type> perm_partitions;
                             for( std::size_t i = 1; i < common_data.permutation_parts; i++ ){
-                                perm_partitions.push_back(proof.eval_proof.eval_proof.z.get(PERMUTATION_BATCH, i, 0));
+                                perm_partitions.push_back(Z.get(PERMUTATION_BATCH, i, 0));
                             }
                             std::array<typename FieldType::value_type, permutation_parts> permutation_argument =
                                 placeholder_permutation_argument<FieldType, ParamsType>::verify_eval(
                                     common_data,
                                     S_id, S_sigma, special_selector_values,
                                     proof.eval_proof.challenge, f,
-                                    proof.eval_proof.eval_proof.z.get(PERMUTATION_BATCH, 0, 0),
-                                    proof.eval_proof.eval_proof.z.get(PERMUTATION_BATCH, 0, 1),
+                                    Z.get(PERMUTATION_BATCH, 0, 0),
+                                    Z.get(PERMUTATION_BATCH, 0, 1),
                                     perm_partitions,
                                     transcript
                                 );
@@ -286,7 +333,7 @@ namespace nil {
                                     i,
                                     rotation,
                                     plonk_variable<typename FieldType::value_type>::column_type::witness);
-                                columns_at_y[key] = proof.eval_proof.eval_proof.z.get(VARIABLE_VALUES_BATCH, i, j);
+                                columns_at_y[key] = Z.get(VARIABLE_VALUES_BATCH, i, j);
                                 ++j;
                             }
                         }
@@ -300,7 +347,7 @@ namespace nil {
                                     i,
                                     rotation,
                                     plonk_variable<typename FieldType::value_type>::column_type::public_input);
-                                columns_at_y[key] = proof.eval_proof.eval_proof.z.get(VARIABLE_VALUES_BATCH, witness_columns + i, j);
+                                columns_at_y[key] = Z.get(VARIABLE_VALUES_BATCH, witness_columns + i, j);
                                 ++j;
                             }
                         }
@@ -313,7 +360,7 @@ namespace nil {
                                     i,
                                     rotation,
                                     plonk_variable<typename FieldType::value_type>::column_type::constant);
-                                columns_at_y[key] = proof.eval_proof.eval_proof.z.get(FIXED_VALUES_BATCH, i + permutation_size*2 + 2, j);
+                                columns_at_y[key] = Z.get(FIXED_VALUES_BATCH, i + permutation_size*2 + 2, j);
                                 ++j;
                             }
                         }
@@ -326,17 +373,17 @@ namespace nil {
                                     i,
                                     rotation,
                                     plonk_variable<typename FieldType::value_type>::column_type::selector);
-                                columns_at_y[key] = proof.eval_proof.eval_proof.z.get(FIXED_VALUES_BATCH, i + permutation_size*2 + 2 + constant_columns, j);
+                                columns_at_y[key] = Z.get(FIXED_VALUES_BATCH, i + permutation_size*2 + 2 + constant_columns, j);
                                 ++j;
                             }
                         }
 
                         typename FieldType::value_type mask_value = FieldType::value_type::one() -
-                            proof.eval_proof.eval_proof.z.get(FIXED_VALUES_BATCH, common_data.permuted_columns.size() * 2, 0) -
-                            proof.eval_proof.eval_proof.z.get(FIXED_VALUES_BATCH, common_data.permuted_columns.size() * 2 + 1, 0);
+                            Z.get(FIXED_VALUES_BATCH, common_data.permuted_columns.size() * 2, 0) -
+                            Z.get(FIXED_VALUES_BATCH, common_data.permuted_columns.size() * 2 + 1, 0);
                         typename FieldType::value_type shifted_mask_value = FieldType::value_type::one() -
-                            proof.eval_proof.eval_proof.z.get(FIXED_VALUES_BATCH, common_data.permuted_columns.size() * 2, 1) -
-                            proof.eval_proof.eval_proof.z.get(FIXED_VALUES_BATCH, common_data.permuted_columns.size() * 2 + 1, 1);
+                            Z.get(FIXED_VALUES_BATCH, common_data.permuted_columns.size() * 2, 1) -
+                            Z.get(FIXED_VALUES_BATCH, common_data.permuted_columns.size() * 2 + 1, 1);
 
                         // All rows selector
                         {
@@ -373,29 +420,32 @@ namespace nil {
                         bool is_lookup_enabled = (constraint_system.lookup_gates().size() > 0);
                         std::array<typename FieldType::value_type, lookup_parts> lookup_argument;
                         if (is_lookup_enabled) {
-                            std::vector<typename FieldType::value_type> special_selector_values_shifted(2);
-                            special_selector_values_shifted[0] = proof.eval_proof.eval_proof.z.get(FIXED_VALUES_BATCH, 2*common_data.permuted_columns.size(), 1);
-                            special_selector_values_shifted[1] = proof.eval_proof.eval_proof.z.get(FIXED_VALUES_BATCH, 2*common_data.permuted_columns.size() + 1, 1);
+                            // Prepare values of different polynomials required for lookup argument verification. 
+                            std::vector<typename FieldType::value_type> counts;
+                            typename FieldType::value_type U_value;
+                            typename FieldType::value_type U_shifted_value;
+                            std::vector<typename FieldType::value_type> hs;
+                            std::vector<typename FieldType::value_type> gs;
 
-                            std::vector<typename FieldType::value_type> lookup_parts_values;
-                            for( std::size_t i = common_data.permutation_parts + 1;
-                                i < common_data.permutation_parts + common_data.lookup_parts;
-                                i++
-                            ) lookup_parts_values.push_back(proof.eval_proof.eval_proof.z.get(PERMUTATION_BATCH, i, 0));
+                            prepare_verifier_inputs(Z, constraint_system, common_data, counts, U_value, U_shifted_value, hs, gs);
 
                             placeholder_lookup_argument_verifier<FieldType, commitment_scheme_type, ParamsType> lookup_argument_verifier;
                             lookup_argument = lookup_argument_verifier.verify_eval(
                                 common_data,
-                                special_selector_values, special_selector_values_shifted,
+                                special_selector_values,
                                 constraint_system,
-                                proof.eval_proof.challenge, columns_at_y,
-                                proof.eval_proof.eval_proof.z.get(LOOKUP_BATCH),
-                                proof.eval_proof.eval_proof.z.get(PERMUTATION_BATCH, common_data.permutation_parts),
-                                lookup_parts_values,
-                                proof.commitments.at(LOOKUP_BATCH), transcript
+                                proof.eval_proof.challenge,
+                                columns_at_y,
+                                counts,
+                                U_value,
+                                U_shifted_value,
+                                hs,
+                                gs,
+                                proof.commitments.at(LOOKUP_BATCH),
+                                transcript
                             );
                         }
-                        if( constraint_system.copy_constraints().size() > 0 || constraint_system.lookup_gates().size() > 0){
+                        if (constraint_system.copy_constraints().size() > 0 || constraint_system.lookup_gates().size() > 0) {
                             transcript(proof.commitments.at(PERMUTATION_BATCH));
                         }
 
@@ -417,20 +467,20 @@ namespace nil {
                         BOOST_ASSERT(challenge == proof.eval_proof.challenge);
 
                         commitment_scheme.set_batch_size(VARIABLE_VALUES_BATCH,
-                            proof.eval_proof.eval_proof.z.get_batch_size(VARIABLE_VALUES_BATCH));
+                            Z.get_batch_size(VARIABLE_VALUES_BATCH));
                         commitment_scheme.set_batch_size(FIXED_VALUES_BATCH,
-                            proof.eval_proof.eval_proof.z.get_batch_size(FIXED_VALUES_BATCH));
+                            Z.get_batch_size(FIXED_VALUES_BATCH));
 
                         if (is_lookup_enabled || constraint_system.copy_constraints().size())
                             commitment_scheme.set_batch_size(PERMUTATION_BATCH,
-                                proof.eval_proof.eval_proof.z.get_batch_size(PERMUTATION_BATCH));
+                                Z.get_batch_size(PERMUTATION_BATCH));
 
                         commitment_scheme.set_batch_size(QUOTIENT_BATCH,
-                            proof.eval_proof.eval_proof.z.get_batch_size(QUOTIENT_BATCH));
+                            Z.get_batch_size(QUOTIENT_BATCH));
 
                         if (is_lookup_enabled)
                             commitment_scheme.set_batch_size(LOOKUP_BATCH,
-                                proof.eval_proof.eval_proof.z.get_batch_size(LOOKUP_BATCH));
+                                Z.get_batch_size(LOOKUP_BATCH));
 
                         generate_evaluation_points(commitment_scheme, common_data, constraint_system,
                                                    table_description, challenge, is_lookup_enabled);
@@ -455,8 +505,8 @@ namespace nil {
                         }
 
                         typename FieldType::value_type T_consolidated = FieldType::value_type::zero();
-                        for (std::size_t i = 0; i < proof.eval_proof.eval_proof.z.get_batch_size(QUOTIENT_BATCH); i++) {
-                            T_consolidated += proof.eval_proof.eval_proof.z.get(QUOTIENT_BATCH, i, 0) *
+                        for (std::size_t i = 0; i < Z.get_batch_size(QUOTIENT_BATCH); i++) {
+                            T_consolidated += Z.get(QUOTIENT_BATCH, i, 0) *
                                 challenge.pow((common_data.desc.rows_amount) * i);
                         }
 

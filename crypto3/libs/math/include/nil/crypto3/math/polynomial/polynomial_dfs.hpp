@@ -605,6 +605,23 @@ namespace nil {
                     return polynomial_dfs(new_s - 1, r);
                 }
 
+                /* Inverses the values in polynomial using Montgomery trick.
+                 * Calls inverse on a group element just once, so it's much faster than inverting each element separately.
+                 */
+                void element_wise_inverse() {
+                    container_type result(this->val.size());
+                    result[0] = value_type::one(); 
+                    for (size_t i = 1; i < val.size(); ++i) {
+                        result[i] = result[i - 1] * this->val[i - 1];
+                    }
+                    FieldValueType inv = (result.back() * this->val.back()).inversed();
+                    for (int i = val.size() - 1; i >= 0; --i) {
+                        result[i] *= inv;
+                        inv *= this->val[i];
+                    }
+                    this->val = result;
+                }
+
                 template<typename ContainerType>
                 void from_coefficients(const ContainerType &tmp) {
                     typedef typename value_type::field_type FieldType;
