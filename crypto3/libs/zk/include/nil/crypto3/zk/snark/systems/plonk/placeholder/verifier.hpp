@@ -155,37 +155,20 @@ namespace nil {
                         commitment_scheme_type& commitment_scheme,
                         const std::vector<std::vector<typename FieldType::value_type>> &public_input
                     ) {
-                        // TODO: process rotations for public input.
-                        auto omega = common_data.basic_domain->get_domain_element(1);
-                        auto challenge = proof.eval_proof.challenge;
-                        auto numerator = challenge.pow(table_description.rows_amount) - FieldType::value_type::one();
-                        numerator *= typename FieldType::value_type(table_description.rows_amount).inversed();
+                        transcript::fiat_shamir_heuristic_sequential<transcript_hash_type> transcript(std::vector<std::uint8_t>({}));
+                        typename FieldType::value_type F_consolidated;
+                        typename FieldType::value_type evaluation_challenge;
 
-                        // If public input sizes are set, all of them should be set.
-                        if (constraint_system.public_input_sizes_num() != 0 &&
-                            constraint_system.public_input_sizes_num() != table_description.public_input_columns) {
-                            BOOST_LOG_TRIVIAL(info) << "Verification failed: If public input sizes are set, all of them should be set.";
+                        if (!verify_partial_proof(
+                                common_data, proof, table_description, constraint_system, 
+                                commitment_scheme, public_input, transcript, F_consolidated, evaluation_challenge)) 
+                        {
+                            BOOST_LOG_TRIVIAL(info) << "Verification failed: partial proof failed.";
                             return false;
                         }
-
-                        for (std::size_t i = 0; i < public_input.size(); ++i) {
-                            typename FieldType::value_type value = FieldType::value_type::zero();
-                            std::size_t max_size = public_input[i].size();
-                            if (constraint_system.public_input_sizes_num() != 0)
-                                max_size = std::min(max_size, constraint_system.public_input_size(i));
-                            auto omega_pow = FieldType::value_type::one();
-                            for( std::size_t j = 0; j < max_size; ++j ){
-                                value += (public_input[i][j] * omega_pow) * (challenge - omega_pow).inversed();
-                                omega_pow = omega_pow * omega;
-                            }
-                            value *= numerator;
-                            if (value != proof.eval_proof.eval_proof.z.get(VARIABLE_VALUES_BATCH, table_description.witness_columns + i, 0) )
-                            {
-                                BOOST_LOG_TRIVIAL(info) << "Verification failed: evaluation proof failed.";
-                                return false;
-                            }
-                        }
-                        return process(common_data, proof, table_description, constraint_system, commitment_scheme);
+                        return verify_consolidated_poly_and_commitment_scheme(
+                            common_data, proof, table_description, constraint_system, commitment_scheme,
+                            transcript, F_consolidated, evaluation_challenge);
                     }
 
                     static inline bool process(
@@ -197,16 +180,33 @@ namespace nil {
                     ) {
                         transcript::fiat_shamir_heuristic_sequential<transcript_hash_type> transcript(std::vector<std::uint8_t>({}));
                         typename FieldType::value_type F_consolidated;
+                        typename FieldType::value_type evaluation_challenge;
 
                         if (!verify_partial_proof(
                                 common_data, proof, table_description, constraint_system, 
-                                commitment_scheme, transcript, F_consolidated)) 
+                                commitment_scheme, transcript, F_consolidated, evaluation_challenge)) 
                         {
                             BOOST_LOG_TRIVIAL(info) << "Verification failed: partial proof failed.";
                             return false;
                         }
+                        return verify_consolidated_poly_and_commitment_scheme(
+                            common_data, proof, table_description, constraint_system, commitment_scheme,
+                            transcript, F_consolidated, evaluation_challenge);
+                    }
 
-                        verify_consolidated_polynomial(common_data, proof, F_consolidated, transcript);
+                    static inline bool verify_consolidated_poly_and_commitment_scheme(
+                        const typename public_preprocessor_type::preprocessed_data_type::common_data_type &common_data,
+                        const proof_type &proof,
+                        const plonk_table_description<FieldType> &table_description,
+                        const plonk_constraint_system<FieldType> &constraint_system,
+                        commitment_scheme_type& commitment_scheme,
+                        transcript::fiat_shamir_heuristic_sequential<transcript_hash_type>& transcript,
+                        const typename FieldType::value_type& F_consolidated,
+                        const typename FieldType::value_type& evaluation_challenge
+                    ) {
+                        if (!verify_consolidated_polynomial(common_data, proof, F_consolidated, evaluation_challenge))
+                            return false;
+
                         prepare_polynomials(proof.eval_proof, common_data, table_description, constraint_system, commitment_scheme);
                         
                         std::map<std::size_t, typename commitment_scheme_type::commitment_type> commitments = proof.commitments;
@@ -231,17 +231,24 @@ namespace nil {
                     ) {
                         // TODO: process rotations for public input.
                         
-                        auto omega = common_data.basic_domain->get_domain_element(1);
-                        auto challenge = proof.eval_proof.challenge;
-                        auto numerator = challenge.pow(table_description.rows_amount) - FieldType::value_type::one();
-                        numerator *= typename FieldType::value_type(table_description.rows_amount).inversed();
-
                         // If public input sizes are set, all of them should be set.
                         if (constraint_system.public_input_sizes_num() != 0 &&
                             constraint_system.public_input_sizes_num() != table_description.public_input_columns) {
                             BOOST_LOG_TRIVIAL(info) << "Verification failed: If public input sizes are set, all of them should be set.";
                             return false;
                         }
+
+                        // Previously proof.eval_proof.challenge was used here, but we cannot use it any more.
+                        typename FieldType::value_type evaluation_challenge;
+
+                        if (!verify_partial_proof(
+                            common_data, proof, table_description, constraint_system,
+                            commitment_scheme, transcript, F_consolidated_out, evaluation_challenge))
+                            return false;
+
+                        auto omega = common_data.basic_domain->get_domain_element(1);
+                        auto numerator = evaluation_challenge.pow(table_description.rows_amount) - FieldType::value_type::one();
+                        numerator *= typename FieldType::value_type(table_description.rows_amount).inversed();
 
                         for (std::size_t i = 0; i < public_input.size(); ++i) {
                             typename FieldType::value_type value = FieldType::value_type::zero();
@@ -250,7 +257,7 @@ namespace nil {
                                 max_size = std::min(max_size, constraint_system.public_input_size(i));
                             auto omega_pow = FieldType::value_type::one();
                             for( std::size_t j = 0; j < max_size; ++j ){
-                                value += (public_input[i][j] * omega_pow) * (challenge - omega_pow).inversed();
+                                value += (public_input[i][j] * omega_pow) * (evaluation_challenge - omega_pow).inversed();
                                 omega_pow = omega_pow * omega;
                             }
                             value *= numerator;
@@ -260,16 +267,14 @@ namespace nil {
                                 return false;
                             }
                         }
-
-                        return verify_partial_proof(
-                            common_data, proof, table_description, constraint_system,
-                            commitment_scheme, transcript, F_consolidated_out);
+                        return true;
                     }
 
                     /** Even though this function accepts the full proof, it does only partial verifications.
                      *  FRI proof and evaluation proofs will be checked separately.
                      *  \param[out] F_consolidated_out - F Consolidated polynomial output argument, will be used to check
                      *                                   evaluation proofs in a given challenge point later.
+                     *  \param[out] evaluation_challenge - The last challenge used by partial proof, the evaluation point challenge.
                      *  \returns true if partial proof passes, false otherwise.
                      */
                     static inline bool verify_partial_proof(
@@ -279,7 +284,8 @@ namespace nil {
                         const plonk_constraint_system<FieldType> &constraint_system,
                         commitment_scheme_type& commitment_scheme,
                         transcript_type &transcript,
-                        typename FieldType::value_type& F_consolidated_out
+                        typename FieldType::value_type& F_consolidated_out,
+                        typename FieldType::value_type& evaluation_challenge
                     ) {
                         // We cannot add eval points unless everything is committed, so when verifying assume it's committed.
                         commitment_scheme.state_commited(FIXED_VALUES_BATCH);
@@ -308,9 +314,9 @@ namespace nil {
                         std::vector<typename FieldType::value_type> special_selector_values(3);
                         special_selector_values[0] = common_data.lagrange_0.evaluate(proof.eval_proof.challenge);
                         special_selector_values[1] = proof.eval_proof.eval_proof.z.get(
-                            FIXED_VALUES_BATCH, 2*common_data.permuted_columns.size(), 0);
+                            FIXED_VALUES_BATCH, 2 * common_data.permuted_columns.size(), 0);
                         special_selector_values[2] = proof.eval_proof.eval_proof.z.get(
-                            FIXED_VALUES_BATCH, 2*common_data.permuted_columns.size() + 1, 0);
+                            FIXED_VALUES_BATCH, 2 * common_data.permuted_columns.size() + 1, 0);
 
                         // 4. prepare evaluaitons of the polynomials that are copy-constrained
                         std::array<typename FieldType::value_type, f_parts> F;
@@ -519,15 +525,8 @@ namespace nil {
                         const typename public_preprocessor_type::preprocessed_data_type::common_data_type &common_data,
                         const proof_type &proof,
                         const typename FieldType::value_type& F_consolidated,
-                        transcript_type &transcript)
+                        const typename FieldType::value_type& challenge)
                     { 
-                        auto challenge = transcript.template challenge<FieldType>();
-
-                        // TODO: We should probably stop storing the challenge with the proof.
-                        if (challenge != proof.eval_proof.challenge) {
-                            BOOST_LOG_TRIVIAL(info) << "Verification failed: evaluation proof challenge mismatch.";
-                            return false;
-                        }
                         typename FieldType::value_type T_consolidated = FieldType::value_type::zero();
                         for (std::size_t i = 0; i < proof.eval_proof.eval_proof.z.get_batch_size(QUOTIENT_BATCH); i++) {
                             T_consolidated += proof.eval_proof.eval_proof.z.get(QUOTIENT_BATCH, i, 0) *

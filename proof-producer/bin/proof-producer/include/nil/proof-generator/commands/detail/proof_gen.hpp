@@ -243,12 +243,13 @@ namespace nil {
                         BOOST_LOG_TRIVIAL(error) << "Failed to write challenge to file.";
                     }
 
-                    this->lpc_scheme_->state_commited(crypto3::zk::snark::FIXED_VALUES_BATCH);
-                    this->lpc_scheme_->state_commited(crypto3::zk::snark::VARIABLE_VALUES_BATCH);
-                    this->lpc_scheme_->state_commited(crypto3::zk::snark::PERMUTATION_BATCH);
-                    this->lpc_scheme_->state_commited(crypto3::zk::snark::QUOTIENT_BATCH);
-                    this->lpc_scheme_->state_commited(crypto3::zk::snark::LOOKUP_BATCH);
-                    this->lpc_scheme_->mark_batch_as_fixed(crypto3::zk::snark::FIXED_VALUES_BATCH);
+                    // Looks like we don't need the following lines.
+                    //this->lpc_scheme_->state_commited(crypto3::zk::snark::FIXED_VALUES_BATCH);
+                    //this->lpc_scheme_->state_commited(crypto3::zk::snark::VARIABLE_VALUES_BATCH);
+                    //this->lpc_scheme_->state_commited(crypto3::zk::snark::PERMUTATION_BATCH);
+                    //this->lpc_scheme_->state_commited(crypto3::zk::snark::QUOTIENT_BATCH);
+                    //this->lpc_scheme_->state_commited(crypto3::zk::snark::LOOKUP_BATCH);
+                    //this->lpc_scheme_->mark_batch_as_fixed(crypto3::zk::snark::FIXED_VALUES_BATCH);
                     this->lpc_scheme_->set_fixed_polys_values(this->public_preprocessed_data_->common_data->commitment_scheme_data);
 
                     std::size_t theta_power = this->lpc_scheme_->compute_theta_power_for_combined_Q();

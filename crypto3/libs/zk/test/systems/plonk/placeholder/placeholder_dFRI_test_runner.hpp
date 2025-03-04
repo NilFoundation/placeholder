@@ -152,23 +152,10 @@ struct placeholder_dFRI_test_runner {
         aggregated_transcript(aggregated_challenge);
 
         // Set the batches as fixed and states as committed, take the values of theta powers used.
-        lpc_scheme1.state_commited(snark::FIXED_VALUES_BATCH);
-        lpc_scheme1.state_commited(snark::VARIABLE_VALUES_BATCH);
-        lpc_scheme1.state_commited(snark::PERMUTATION_BATCH);
-        lpc_scheme1.state_commited(snark::QUOTIENT_BATCH);
-        lpc_scheme1.state_commited(snark::LOOKUP_BATCH);
-        lpc_scheme1.mark_batch_as_fixed(snark::FIXED_VALUES_BATCH);
-        lpc_scheme1.set_fixed_polys_values(preprocessed_public_data1.common_data->commitment_scheme_data);
+        // lpc_scheme1.set_fixed_polys_values(preprocessed_public_data1.common_data->commitment_scheme_data);
+        // lpc_scheme2.set_fixed_polys_values(preprocessed_public_data2.common_data->commitment_scheme_data);
 
         std::size_t theta_power1 = lpc_scheme1.compute_theta_power_for_combined_Q();
-
-        lpc_scheme2.state_commited(snark::FIXED_VALUES_BATCH);
-        lpc_scheme2.state_commited(snark::VARIABLE_VALUES_BATCH);
-        lpc_scheme2.state_commited(snark::PERMUTATION_BATCH);
-        lpc_scheme2.state_commited(snark::QUOTIENT_BATCH);
-        lpc_scheme2.state_commited(snark::LOOKUP_BATCH);
-        lpc_scheme2.mark_batch_as_fixed(snark::FIXED_VALUES_BATCH);
-        lpc_scheme2.set_fixed_polys_values(preprocessed_public_data2.common_data->commitment_scheme_data);
 
         // We don't use the 'theta_power2' here, but let's keep this code.
         std::size_t theta_power2 = lpc_scheme2.compute_theta_power_for_combined_Q();
@@ -177,13 +164,14 @@ struct placeholder_dFRI_test_runner {
         auto challenge_from_aggregated_transcript = aggregated_transcript.template challenge<field_type>();
         polynomial_type combined_Q1 = lpc_scheme1.prepare_combined_Q(
                     challenge_from_aggregated_transcript, 0);
-        polynomial_type combined_Q2 = lpc_scheme1.prepare_combined_Q(
+        polynomial_type combined_Q2 = lpc_scheme2.prepare_combined_Q(
                     challenge_from_aggregated_transcript, theta_power1);
 
         polynomial_type sum_poly = combined_Q1 + combined_Q2;
 
-        // It does not matter which 'lpc_scheme1/2' we use here.
-        auto [fri_proof, consistency_checks_challenges] = lpc_scheme1.proof_eval_FRI_proof(sum_poly, aggregated_transcript);
+        
+        lpc_scheme_type lpc_scheme_for_FRI(fri_params);
+        auto [fri_proof, consistency_checks_challenges] = lpc_scheme_for_FRI.proof_eval_FRI_proof(sum_poly, aggregated_transcript);
         proof_of_work_type proof_of_work = nil::crypto3::zk::algorithms::run_grinding<fri_type>(
             lpc_scheme1.get_fri_params(), aggregated_transcript);
 

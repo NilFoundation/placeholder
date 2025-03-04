@@ -70,21 +70,22 @@ namespace nil {
                         std::vector<transcript::fiat_shamir_heuristic_sequential<transcript_hash_type>> transcripts(N, std::vector<std::uint8_t>({}));
 
                         std::vector<placeholder_proof<FieldType, ParamsType>> proofs;
-                        std::vector<typename FieldType::value_type> F_consolidated;
+                        std::vector<typename FieldType::value_type> F_consolidated(N);
                         // Verify partial proofs.
                         for (size_t i = 0; i < N; i++) {
                             // Create a proof from aggregated_proof.
                             typename placeholder_proof<FieldType, ParamsType>::evaluation_proof eval_proof;
-                            // eval_proof.challenge = XXX; // Do we want to set the challenge to something??????
                             eval_proof.eval_proof.z = agg_proof.aggregated_proof.initial_proofs_per_prover[i].z;
+
                             const auto& initial_fri_proofs = agg_proof.aggregated_proof.initial_proofs_per_prover[i].initial_fri_proofs.initial_proofs;
                             eval_proof.eval_proof.fri_proof.query_proofs.resize(initial_fri_proofs.size()); 
-                            for (size_t j = 0; i < initial_fri_proofs.size(); ++j) {
+                            for (size_t j = 0; j < initial_fri_proofs.size(); ++j) {
                                 eval_proof.eval_proof.fri_proof.query_proofs[j].initial_proof = initial_fri_proofs[j];
                             }
 
                             proofs.push_back(placeholder_proof<FieldType, ParamsType>(agg_proof.partial_proofs[i], eval_proof));
                             
+                            // F_consolidated[i] is an out parameter here.
                             if (!verifier_type::verify_partial_proof(
                                     common_datas[i], proofs[i], table_descriptions[i], constraint_systems[i], commitment_schemes[i],
                                     public_inputs[i], transcripts[i], F_consolidated[i])) 
@@ -111,10 +112,9 @@ namespace nil {
 
                         std::vector<std::size_t> starting_indexes(N);
 
+                        typename FieldType::value_type theta = aggregated_transcript.template challenge<FieldType>();
                         for (size_t i = 0; i < N; i++) {
-                            // We need a fresh copy of this transcript for each prover.
-                            transcript_type aggregated_transcript_copy = aggregated_transcript;
-                            if (!verifier_type::verify_consolidated_polynomial(common_datas[i], proofs[i], F_consolidated[i], aggregated_transcript_copy))
+                            if (!verifier_type::verify_consolidated_polynomial(common_datas[i], proofs[i], F_consolidated[i], theta))
                                 return false;
 
                             verifier_type::prepare_polynomials(
@@ -135,7 +135,6 @@ namespace nil {
                         // List of involved polynomials for each eval point [batch_id, poly_id, point_id]
                         typename std::vector<std::vector<std::tuple<std::size_t, std::size_t>>> poly_map_expected;
 
-                        typename FieldType::value_type theta = aggregated_transcript.template challenge<FieldType>();
                         for (size_t i = 0; i < N; i++) {
                             size_t total_points = commitment_schemes[i].get_total_points();
                             typename std::vector<typename FieldType::value_type> U(total_points);

@@ -1032,10 +1032,10 @@ namespace nil {
                             ++x_index;
                         }
 
-                        std::map<std::size_t, typename FRI::initial_proof_type>
-                            initial_proof = build_initial_proof<FRI, PolynomialType>(
-                                    precommitments,
-                                    fri_params, g, g_coeffs, x_index);
+                        std::map<std::size_t, typename FRI::initial_proof_type> initial_proof =
+                            build_initial_proof<FRI, PolynomialType>(
+                                precommitments,
+                                fri_params, g, g_coeffs, x_index);
 
                         proof.initial_proofs.emplace_back(std::move(initial_proof));
                     }
