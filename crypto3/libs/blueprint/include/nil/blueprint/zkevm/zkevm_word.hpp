@@ -56,6 +56,20 @@ namespace nil {
         }
 
         template<typename BlueprintFieldType>
+        std::vector<typename BlueprintFieldType::value_type> zkevm_word_to_field_element_flexible(
+            const zkevm_word_type &word, const std::size_t num_chunks, const std::size_t chunk_size = 16) {
+            using value_type = typename BlueprintFieldType::value_type;
+            std::vector<value_type> chunks;
+            const zkevm_word_type mask = (zkevm_word_type(1) << chunk_size) - 1;
+            zkevm_word_type word_copy = word;
+            for (std::size_t i = 0; i < num_chunks; ++i) {
+                chunks.push_back(word_copy & mask);
+                word_copy >>= chunk_size;
+            }
+            return chunks;
+        }
+
+        template<typename BlueprintFieldType>
         std::vector<typename BlueprintFieldType::value_type> chunk_64_to_16(
             const typename BlueprintFieldType::value_type &value
         ) {
