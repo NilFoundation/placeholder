@@ -268,8 +268,8 @@ namespace nil::crypto3::multiprecision {
 
         // Data
 
-        modular_ops_storage_t m_modular_ops_storage;
         base_type m_raw_base{};
+        [[no_unique_address]] modular_ops_storage_t m_modular_ops_storage;
 
         // Friends
 
