@@ -86,18 +86,6 @@ namespace nil {
                             AND[i] = and_chunks[i];
                             XOR[i] = xor_chunks[i];
                         }
-
-                        // combine 8-bit chunks to make 128-bit chunks
-                        // auto A_128 = chunks8_to_chunks128(A); 
-                        // auto B_128 = chunks8_to_chunks128(B);
-                        // auto AND_128 = chunks8_to_chunks128(AND);
-                        // auto XOR_128 = chunks8_to_chunks128(XOR);
-                        // auto OR_128 = std::make_pair(AND_128.first + XOR_128.first,AND_128.second + XOR_128.second); // a|b = a&b + a^b
-                        // A0 = A_128.first; A1 = A_128.second;
-                        // B0 = B_128.first; B1 = B_128.second;
-                        // AND0 = AND_128.first; AND1 = AND_128.second;
-                        // XOR0 = XOR_128.first; XOR1 = XOR_128.second;
-                        // OR0 = OR_128.first; OR1 = OR_128.second;
                     }
 
                     /* Layout:          range_checked_opcode_area                                                              
