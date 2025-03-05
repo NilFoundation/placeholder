@@ -26,9 +26,9 @@
 
 #include <boost/test/unit_test.hpp>
 
+#include <nil/crypto3/algebra/fields/arithmetic_params/goldilocks.hpp>
+#include <nil/crypto3/algebra/fields/goldilocks.hpp>
 #include <nil/crypto3/algebra/fields/pallas/base_field.hpp>
-#include <nil/crypto3/algebra/fields/goldilocks64/base_field.hpp>
-#include <nil/crypto3/algebra/fields/arithmetic_params/goldilocks64.hpp>
 
 #include <nil/crypto3/algebra/curves/pallas.hpp>
 #include <nil/crypto3/algebra/fields/arithmetic_params/pallas.hpp>
@@ -40,8 +40,9 @@ using namespace nil::blueprint;
 
 BOOST_AUTO_TEST_SUITE(blueprint_zkevm_word_utils_test_suite)
 
-BOOST_AUTO_TEST_CASE(blueprint_zkevm_word_goldilocks64_test, * boost::unit_test::disabled()) {
-    using field_type = crypto3::algebra::fields::goldilocks64;
+BOOST_AUTO_TEST_CASE(blueprint_zkevm_word_goldilocks_test,
+                     *boost::unit_test::disabled()) {
+    using field_type = crypto3::algebra::fields::goldilocks;
     using value_type = field_type::value_type;
     using word_type = zkevm_word_type;
 

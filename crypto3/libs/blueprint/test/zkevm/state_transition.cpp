@@ -26,7 +26,7 @@
 
 #include <boost/test/unit_test.hpp>
 
-#include <nil/crypto3/algebra/fields/arithmetic_params/goldilocks64.hpp>
+#include <nil/crypto3/algebra/fields/arithmetic_params/goldilocks.hpp>
 
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
@@ -64,7 +64,7 @@ void fill_empty_state(zkevm_state<BlueprintFieldType>& state) {
 BOOST_AUTO_TEST_SUITE(zkevm_state_transition_test_suite)
 
 BOOST_AUTO_TEST_CASE(zkevm_state_transition_basic_test) {
-    using field_type = fields::goldilocks64;
+    using field_type = fields::goldilocks;
     using arithmentization_type = nil::crypto3::zk::snark::plonk_constraint_system<field_type>;
     using assignment_type = assignment<arithmentization_type>;
     using circuit_type = circuit<arithmentization_type>;
@@ -90,7 +90,7 @@ BOOST_AUTO_TEST_CASE(zkevm_state_transition_basic_test) {
 }
 
 BOOST_AUTO_TEST_CASE(zkevm_state_transition_other_test) {
-    using field_type = fields::goldilocks64;
+    using field_type = fields::goldilocks;
     using arithmentization_type = nil::crypto3::zk::snark::plonk_constraint_system<field_type>;
     using assignment_type = assignment<arithmentization_type>;
     using circuit_type = circuit<arithmentization_type>;

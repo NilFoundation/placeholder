@@ -43,7 +43,7 @@ Module supports following family of elliptic curves:
 
 Module supports variety of modular fields with highly optimized implementation.
 Base fields and scalar groups for each curve are supported.
-There is also an implementation of [Goldilocks64](https://2π.com/22/goldilocks/) field.
+There is also an implementation of [Goldilocks](https://2π.com/22/goldilocks/) field.
 
 To support pairings on particular curves the module provides support for
 extension fields, such as $F_{p^2}$, $F_{p^3}$, $F_{p^4}$, $F_{p^6}$ and $F_{p^{12}}$.

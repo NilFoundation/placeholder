@@ -64,6 +64,8 @@ struct ModularArithmeticSample {
     static base_type parse_number(const std::string &s) {
         if constexpr (std::is_same_v<base_type, std::uint64_t>) {
             return std::stoull(s, nullptr, 16);
+        } else if constexpr (std::is_same_v<base_type, std::uint32_t>) {
+            return std::stoul(s, nullptr, 16);
         } else {
             return s;
         }
@@ -149,7 +151,6 @@ BOOST_DATA_TEST_CASE(
     base_operations_test(sample);
 }
 
-// This one tests 64-bit numbers used in Goldilock fields.
 BOOST_DATA_TEST_CASE(
     goldilocks_montgomery,
     (test_dataset<ModularArithmeticSample<montgomery_big_mod_rt<64>>>("goldilocks"))) {
@@ -160,6 +161,43 @@ BOOST_DATA_TEST_CASE(
     goldilocks,
     (test_dataset<ModularArithmeticSample<goldilocks_mod, /*fixed_mod=*/true>>(
         "goldilocks"))) {
+    base_operations_test(sample);
+}
+
+BOOST_DATA_TEST_CASE(
+    mersenne31_montgomery,
+    (test_dataset<ModularArithmeticSample<montgomery_big_mod_rt<31>>>("mersenne31"))) {
+    base_operations_test(sample);
+}
+
+BOOST_DATA_TEST_CASE(
+    mersenne31,
+    (test_dataset<ModularArithmeticSample<mersenne31_mod, /*fixed_mod=*/true>>(
+        "mersenne31"))) {
+    base_operations_test(sample);
+}
+
+BOOST_DATA_TEST_CASE(
+    koalabear_montgomery,
+    (test_dataset<ModularArithmeticSample<montgomery_big_mod_rt<31>>>("koalabear"))) {
+    base_operations_test(sample);
+}
+
+BOOST_DATA_TEST_CASE(
+    koalabear, (test_dataset<ModularArithmeticSample<koalabear_mod, /*fixed_mod=*/true>>(
+                   "koalabear"))) {
+    base_operations_test(sample);
+}
+
+BOOST_DATA_TEST_CASE(
+    babybear_montgomery,
+    (test_dataset<ModularArithmeticSample<montgomery_big_mod_rt<31>>>("babybear"))) {
+    base_operations_test(sample);
+}
+
+BOOST_DATA_TEST_CASE(
+    babybear, (test_dataset<ModularArithmeticSample<babybear_mod, /*fixed_mod=*/true>>(
+                  "babybear"))) {
     base_operations_test(sample);
 }
 

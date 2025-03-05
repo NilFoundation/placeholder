@@ -12,6 +12,7 @@
 #pragma once
 
 #include <climits>
+#include <cstddef>
 #include <limits>
 #include <type_traits>
 
@@ -27,6 +28,7 @@ namespace nil::crypto3::multiprecision::detail {
       public:
         using base_type = base_type_;
         using pow_unsigned_intermediate_type = base_type;
+        static constexpr std::size_t Bits = sizeof(base_type) * CHAR_BIT;
 
         static_assert(is_integral_v<base_type>);
 

@@ -1,7 +1,7 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2024 Martun Karapetyan <martun@nil.foundation>
 // Copyright (c) 2024 Vasiliy Olekhov <vasiliy.olekhov@nil.foundation>
-// Copyright (c) 2024 Andrey Nefedov <ioxid@nil.foundation>
+// Copyright (c) 2024-2025 Andrey Nefedov <ioxid@nil.foundation>
 //
 // Distributed under the Boost Software License, Version 1.0
 // See accompanying file LICENSE_1_0.txt or copy at
@@ -29,6 +29,8 @@
 
 using namespace nil::crypto3::multiprecision;
 using namespace nil::crypto3::bench;
+using nil::crypto3::multiprecision::detail::get_raw_base;
+using nil::crypto3::multiprecision::detail::pow_unsigned;
 
 constexpr auto modulus_256 =
     0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f_big_uint256;
@@ -90,57 +92,108 @@ struct GoldilocksCustom {
     static constexpr auto name = "[    custom][  goldilocks]";
 };
 
-using cases = std::tuple<MontgomeryCompileTimeCase, MontgomeryRuntimeCase,
-                         BarrettCompileTimeCase, BarrettRuntimeCase, GoldilocksMontgomery,
-                         GoldilocksBarrett, GoldilocksCustom>;
+constexpr std::uint64_t x_31 = 0xaf6f977ULL;
+constexpr std::uint64_t y_31 = 0x9f93335ULL;
+constexpr big_uint<31> babybear_modulus_big_uint = 0x78000001_big_uint31;
+
+struct BabyBearMontgomery {
+    using big_mod_t = montgomery_big_mod<babybear_modulus_big_uint>;
+    static constexpr big_mod_t x{x_31};
+    static constexpr big_mod_t y{y_31};
+    static constexpr auto name = "[montgomery][    babybear]";
+};
+
+struct BabyBearBarrett {
+    using big_mod_t = big_mod<babybear_modulus_big_uint>;
+    static constexpr big_mod_t x{x_31};
+    static constexpr big_mod_t y{y_31};
+    static constexpr auto name = "[   barrett][    babybear]";
+};
+
+struct BabyBearCustom {
+    using big_mod_t = babybear_mod;
+    static constexpr big_mod_t x{x_31};
+    static constexpr big_mod_t y{y_31};
+    static constexpr auto name = "[    custom][    babybear]";
+};
+
+constexpr big_uint<31> mersenne31_modulus_big_uint = 0x7fffffff_big_uint31;
+
+struct Mersenne31Montgomery {
+    using big_mod_t = montgomery_big_mod<mersenne31_modulus_big_uint>;
+    static constexpr big_mod_t x{x_31};
+    static constexpr big_mod_t y{y_31};
+    static constexpr auto name = "[montgomery][  mersenne31]";
+};
+
+struct Mersenne31Barrett {
+    using big_mod_t = big_mod<mersenne31_modulus_big_uint>;
+    static constexpr big_mod_t x{x_31};
+    static constexpr big_mod_t y{y_31};
+    static constexpr auto name = "[   barrett][  mersenne31]";
+};
+
+struct Mersenne31Custom {
+    using big_mod_t = mersenne31_mod;
+    static constexpr big_mod_t x{x_31};
+    static constexpr big_mod_t y{y_31};
+    static constexpr auto name = "[    custom][  mersenne31]";
+};
+
+using cases =
+    std::tuple<MontgomeryCompileTimeCase, MontgomeryRuntimeCase, BarrettCompileTimeCase,
+               BarrettRuntimeCase, GoldilocksMontgomery, GoldilocksBarrett,
+               GoldilocksCustom, BabyBearMontgomery, BabyBearBarrett, BabyBearCustom,
+               Mersenne31Montgomery, Mersenne31Barrett, Mersenne31Custom>;
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(direct_mul_perf, Case, cases) {
-    auto raw_base = detail::get_raw_base(Case::x);
-    const auto &mod_ops = Case::x.ops_storage().ops();
+    auto x_raw_base = get_raw_base(Case::x);
+    const auto y_raw_base = get_raw_base(Case::y);
+    const auto &ops = Case::x.ops_storage().ops();
     run_benchmark<>(std::string(Case::name) + " direct mul", [&]() {
-        mod_ops.mul(raw_base, detail::get_raw_base(Case::y));
-        return raw_base;
+        ops.mul(x_raw_base, y_raw_base);
+        return x_raw_base;
     });
 }
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(mul_perf, Case, cases) {
-    auto x_modular = Case::x;
+    auto x = Case::x;
     run_benchmark<>(std::string(Case::name) + "        mul", [&]() {
-        x_modular *= Case::y;
-        return x_modular;
+        x *= Case::y;
+        return x;
     });
 }
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(add_perf, Case, cases) {
-    auto x_modular = Case::x;
+    auto x = Case::x;
     run_benchmark<>(std::string(Case::name) + "        add", [&]() {
-        x_modular += Case::y;
-        return x_modular;
+        x += Case::y;
+        return x;
     });
 }
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(sub_perf, Case, cases) {
-    auto x_modular = Case::x;
+    auto x = Case::x;
     run_benchmark<>(std::string(Case::name) + "        sub", [&]() {
-        x_modular -= Case::y;
-        return x_modular;
+        x -= Case::y;
+        return x;
     });
 }
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(inverse_perf, Case, cases) {
-    auto x_modular = Case::x;
+    auto x = Case::x;
     run_benchmark<>(std::string(Case::name) + "    inverse", [&]() {
-        x_modular = inverse(x_modular);
-        ++x_modular;
-        return x_modular;
+        x = inverse(x);
+        ++x;
+        return x;
     });
 }
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(pow_perf, Case, cases) {
-    auto raw_base = detail::get_raw_base(Case::x);
-    const auto &mod_ops = Case::x.ops_storage().ops();
+    auto x_raw_base = get_raw_base(Case::x);
+    const auto &ops = Case::x.ops_storage().ops();
     run_benchmark<>(std::string(Case::name) + " direct pow", [&]() {
-        detail::pow_unsigned(raw_base, raw_base, 0xf309d588016520ddULL, mod_ops);
-        return raw_base;
+        pow_unsigned(x_raw_base, x_raw_base, 0xf309d588016520ddULL, ops);
+        return x_raw_base;
     });
 }

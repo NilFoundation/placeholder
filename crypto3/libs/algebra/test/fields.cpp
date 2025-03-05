@@ -55,12 +55,12 @@
 #include <nil/crypto3/algebra/fields/secp/secp_r1/base_field.hpp>
 #include <nil/crypto3/algebra/fields/secp/secp_r1/scalar_field.hpp>
 
-#include <nil/crypto3/algebra/fields/babybear/base_field.hpp>
+#include <nil/crypto3/algebra/fields/babybear.hpp>
 #include <nil/crypto3/algebra/fields/curve25519/base_field.hpp>
 #include <nil/crypto3/algebra/fields/curve25519/scalar_field.hpp>
-#include <nil/crypto3/algebra/fields/goldilocks64/base_field.hpp>
-#include <nil/crypto3/algebra/fields/koalabear/base_field.hpp>
-#include <nil/crypto3/algebra/fields/mersenne31/base_field.hpp>
+#include <nil/crypto3/algebra/fields/goldilocks.hpp>
+#include <nil/crypto3/algebra/fields/koalabear.hpp>
+#include <nil/crypto3/algebra/fields/mersenne31.hpp>
 
 #include <nil/crypto3/algebra/fields/detail/element/fp.hpp>
 #include <nil/crypto3/algebra/fields/detail/element/fp2.hpp>
@@ -351,8 +351,30 @@ void field_not_square_test(const TestSet &test_set) {
 
 BOOST_AUTO_TEST_SUITE(fields_manual_tests)
 
-BOOST_DATA_TEST_CASE(field_operation_test_goldilocks64_fq, string_data("field_operation_test_goldilocks64_fq"), data_set) {
-    using policy_type = fields::goldilocks64_fq;
+BOOST_DATA_TEST_CASE(field_operation_test_goldilocks,
+                     string_data("field_operation_test_goldilocks"), data_set) {
+    using policy_type = fields::goldilocks;
+
+    field_operation_test<policy_type>(data_set);
+}
+
+BOOST_DATA_TEST_CASE(field_operation_test_mersenne31,
+                     string_data("field_operation_test_mersenne31"), data_set) {
+    using policy_type = fields::mersenne31;
+
+    field_operation_test<policy_type>(data_set);
+}
+
+BOOST_DATA_TEST_CASE(field_operation_test_koalabear,
+                     string_data("field_operation_test_koalabear"), data_set) {
+    using policy_type = fields::koalabear;
+
+    field_operation_test<policy_type>(data_set);
+}
+
+BOOST_DATA_TEST_CASE(field_operation_test_babybear,
+                     string_data("field_operation_test_babybear"), data_set) {
+    using policy_type = fields::babybear;
 
     field_operation_test<policy_type>(data_set);
 }
@@ -469,7 +491,7 @@ BOOST_DATA_TEST_CASE(field_operation_test_secp256r1_fq, string_data("field_opera
  * pallas_base_field
  * vesta_base_field
 
- * goldilocks64
+ * goldilocks
  * mersenne31
  * koalabear
  * babybear
@@ -567,9 +589,32 @@ BOOST_DATA_TEST_CASE(field_not_square_test_vesta_scalar_field, string_data("fiel
     field_not_square_test<policy_type>(data_set);
 }
 
+BOOST_DATA_TEST_CASE(field_not_square_test_goldilocks,
+                     string_data("field_not_square_test_goldilocks"), data_set) {
+    using policy_type = typename fields::goldilocks;
 
-BOOST_DATA_TEST_CASE(field_not_square_test_goldilocks64_base_field, string_data("field_not_square_test_goldilocks64_base_field"), data_set) {
-    using policy_type = typename fields::goldilocks64_base_field;
+    field_not_square_test<policy_type>(data_set);
+}
+
+BOOST_DATA_TEST_CASE(field_not_square_test_mersenne31,
+                     string_data("field_not_square_test_mersenne31"),
+                     data_set) {
+    using policy_type = typename fields::mersenne31;
+
+    field_not_square_test<policy_type>(data_set);
+}
+
+BOOST_DATA_TEST_CASE(field_not_square_test_koalabear,
+                     string_data("field_not_square_test_koalabear"),
+                     data_set) {
+    using policy_type = typename fields::koalabear;
+
+    field_not_square_test<policy_type>(data_set);
+}
+
+BOOST_DATA_TEST_CASE(field_not_square_test_babybear,
+                     string_data("field_not_square_test_babybear"), data_set) {
+    using policy_type = typename fields::babybear;
 
     field_not_square_test<policy_type>(data_set);
 }

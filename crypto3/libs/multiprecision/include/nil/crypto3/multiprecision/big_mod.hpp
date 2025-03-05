@@ -23,8 +23,11 @@
 #include <boost/assert.hpp>
 #include <boost/functional/hash.hpp>
 
+#include "nil/crypto3/multiprecision/detail/big_mod/modular_ops/babybear.hpp"  // IWYU pragma: export
 #include "nil/crypto3/multiprecision/detail/big_mod/modular_ops/barrett.hpp"
 #include "nil/crypto3/multiprecision/detail/big_mod/modular_ops/goldilocks.hpp"  // IWYU pragma: export
+#include "nil/crypto3/multiprecision/detail/big_mod/modular_ops/koalabear.hpp"  // IWYU pragma: export
+#include "nil/crypto3/multiprecision/detail/big_mod/modular_ops/mersenne31.hpp"  // IWYU pragma: export
 #include "nil/crypto3/multiprecision/detail/big_mod/modular_ops/montgomery.hpp"
 #include "nil/crypto3/multiprecision/detail/big_mod/modular_ops_storage.hpp"
 #include "nil/crypto3/multiprecision/detail/integer_ops_base.hpp"  // IWYU pragma: keep (used for is_zero)
@@ -39,6 +42,7 @@ namespace nil::crypto3::multiprecision {
         using modular_ops_storage_t = modular_ops_storage_t_;
         using modular_ops_t = typename modular_ops_storage_t::modular_ops_t;
         using base_type = typename modular_ops_t::base_type;
+        static constexpr std::size_t Bits = modular_ops_t::Bits;
 
         // Constructors
 
@@ -86,9 +90,15 @@ namespace nil::crypto3::multiprecision {
         }
 
       public:
-        constexpr auto base() const { return detail::as_big_uint(internal_base()); }
+        constexpr auto base() const { return big_uint<Bits>(internal_base()); }
 
-        constexpr decltype(auto) mod() const { return detail::as_big_uint(ops().mod()); }
+        constexpr decltype(auto) mod() const {
+            if constexpr (is_big_uint_v<base_type>) {
+                return ops().mod();
+            } else {
+                return big_uint<Bits>(ops().mod());
+            }
+        }
 
         explicit constexpr operator auto() const { return base(); }
 
@@ -170,7 +180,8 @@ namespace nil::crypto3::multiprecision {
 
       private:
         template<typename S, std::enable_if_t<is_integral_v<S>, int> = 0>
-        static constexpr base_type convert_to_raw_base(const S& s, const modular_ops_t& ops) {
+        static constexpr base_type convert_to_raw_base(const S& s,
+                                                       const modular_ops_t& ops) {
             if (nil::crypto3::multiprecision::is_zero(s)) {
                 return base_type{};
             }
@@ -257,8 +268,8 @@ namespace nil::crypto3::multiprecision {
 
         // Data
 
-        modular_ops_storage_t m_modular_ops_storage;
         base_type m_raw_base{};
+        [[no_unique_address]] modular_ops_storage_t m_modular_ops_storage;
 
         // Friends
 
@@ -301,8 +312,17 @@ namespace nil::crypto3::multiprecision {
     template<std::size_t Bits>
     using big_mod_rt = big_mod_rt_impl<Bits, detail::barrett_modular_ops>;
 
-    // Goldilocks modular type, not optimized atm
+    // Goldilocks modular type with optimizations
     using goldilocks_mod = big_mod_impl<detail::goldilocks_modular_ops_storage>;
+
+    // Mersenne31 modular type, without optimizations for now
+    using mersenne31_mod = big_mod_impl<detail::mersenne31_modular_ops_storage>;
+
+    // KoalaBear modular type, without optimizations for now
+    using koalabear_mod = big_mod_impl<detail::koalabear_modular_ops_storage>;
+
+    // BabyBear modular type, without optimizations for now
+    using babybear_mod = big_mod_impl<detail::babybear_modular_ops_storage>;
 
     // Modular big integer type with compile-time modulus, which automatically uses
     // montomery form whenever possible (i.e. for odd moduli). Modulus should be a static
@@ -310,8 +330,14 @@ namespace nil::crypto3::multiprecision {
     template<const auto& Modulus>
     using auto_big_mod = std::conditional_t<
         Modulus == goldilocks_modulus, goldilocks_mod,
-        std::conditional_t<detail::modulus_supports_montgomery(Modulus),
-                           montgomery_big_mod<Modulus>, big_mod<Modulus>>>;
+        std::conditional_t<
+            Modulus == mersenne31_modulus, mersenne31_mod,
+            std::conditional_t<
+                Modulus == koalabear_modulus, koalabear_mod,
+                std::conditional_t<
+                    Modulus == babybear_modulus, babybear_mod,
+                    std::conditional_t<detail::modulus_supports_montgomery(Modulus),
+                                       montgomery_big_mod<Modulus>, big_mod<Modulus>>>>>>;
 }  // namespace nil::crypto3::multiprecision
 
 // std::hash specializations
@@ -343,5 +369,29 @@ struct std::hash<nil::crypto3::multiprecision::goldilocks_mod> {
     std::size_t operator()(
         const nil::crypto3::multiprecision::goldilocks_mod& a) const noexcept {
         return boost::hash<nil::crypto3::multiprecision::goldilocks_mod>{}(a);
+    }
+};
+
+template<>
+struct std::hash<nil::crypto3::multiprecision::mersenne31_mod> {
+    std::size_t operator()(
+        const nil::crypto3::multiprecision::mersenne31_mod& a) const noexcept {
+        return boost::hash<nil::crypto3::multiprecision::mersenne31_mod>{}(a);
+    }
+};
+
+template<>
+struct std::hash<nil::crypto3::multiprecision::koalabear_mod> {
+    std::size_t operator()(
+        const nil::crypto3::multiprecision::koalabear_mod& a) const noexcept {
+        return boost::hash<nil::crypto3::multiprecision::koalabear_mod>{}(a);
+    }
+};
+
+template<>
+struct std::hash<nil::crypto3::multiprecision::babybear_mod> {
+    std::size_t operator()(
+        const nil::crypto3::multiprecision::babybear_mod& a) const noexcept {
+        return boost::hash<nil::crypto3::multiprecision::babybear_mod>{}(a);
     }
 };

@@ -32,9 +32,11 @@
 #include <boost/test/unit_test.hpp>
 
 #include <nil/crypto3/algebra/curves/pallas.hpp>
-#include <nil/crypto3/algebra/fields/arithmetic_params/pallas.hpp>
 #include <nil/crypto3/algebra/curves/vesta.hpp>
+#include <nil/crypto3/algebra/fields/arithmetic_params/babybear.hpp>
+#include <nil/crypto3/algebra/fields/arithmetic_params/pallas.hpp>
 #include <nil/crypto3/algebra/fields/arithmetic_params/vesta.hpp>
+#include <nil/crypto3/algebra/fields/babybear.hpp>
 #include <nil/crypto3/algebra/random_element.hpp>
 
 #include <nil/crypto3/hash/algorithm/hash.hpp>
@@ -54,6 +56,7 @@
 
 #include <nil/blueprint/zkevm_bbf/zkevm.hpp>
 #include <nil/blueprint/zkevm_bbf/rw.hpp>
+#include <nil/blueprint/zkevm_bbf/rw_small_field.hpp>
 #include <nil/blueprint/zkevm_bbf/copy.hpp>
 #include <nil/blueprint/zkevm_bbf/bytecode.hpp>
 #include <nil/blueprint/zkevm_bbf/keccak.hpp>
@@ -211,6 +214,14 @@ public:
 
             // Max_rw, Max_mpt
             result = test_bbf_component<field_type, nil::blueprint::bbf::rw>(
+                rw_circuit,
+                {}, rw_assignment_input, max_rw, max_mpt
+            );
+            BOOST_ASSERT(result);
+
+            using small_field_type = typename algebra::fields::babybear;
+            // Max_rw, Max_mpt
+            result = test_bbf_component<small_field_type, nil::blueprint::bbf::rw_small_field>(
                 rw_circuit,
                 {}, rw_assignment_input, max_rw, max_mpt
             );

@@ -26,7 +26,7 @@
 
 #include <boost/test/unit_test.hpp>
 
-//#include <nil/crypto3/algebra/fields/arithmetic_params/goldilocks64.hpp>
+// #include <nil/crypto3/algebra/fields/arithmetic_params/goldilocks.hpp>
 #include "nil/crypto3/algebra/fields/pallas/base_field.hpp"
 
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
@@ -216,7 +216,7 @@ void test_zkevm(std::string path){
     std::vector<uint8_t> bytecode0 = hex_string_to_bytes(std::string(bytecode_json.get_child("bytecode").data().c_str()));
     ss.close();
 
-    // using field_type = fields::goldilocks64;
+    // using field_type = fields::goldilocks;
     using field_type = BlueprintFieldType;
     using arithmetization_type = nil::crypto3::zk::snark::plonk_constraint_system<field_type>;
     using assignment_type = assignment<arithmetization_type>;

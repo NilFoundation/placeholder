@@ -29,11 +29,11 @@
 
 #include <nil/crypto3/algebra/fields/params.hpp>
 
-#include <nil/crypto3/algebra/fields/babybear/base_field.hpp>
+#include <nil/crypto3/algebra/fields/babybear.hpp>
 
 namespace nil::crypto3::algebra::fields {
     template<>
-    struct arithmetic_params<babybear_base_field> : public params<babybear_base_field> {
+    struct arithmetic_params<babybear> : public params<babybear> {
         constexpr static std::size_t two_adicity = 27;
         constexpr static integral_type arithmetic_generator = 1u;
         constexpr static integral_type geometric_generator = 0x02;

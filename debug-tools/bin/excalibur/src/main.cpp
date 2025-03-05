@@ -37,15 +37,15 @@
 #include <nil/crypto3/algebra/fields/arithmetic_params/pallas.hpp>
 #include <nil/crypto3/algebra/curves/pallas.hpp>
 
-#include <nil/crypto3/algebra/fields/mnt4/base_field.hpp>
-#include <nil/crypto3/algebra/fields/mnt6/base_field.hpp>
-#include <nil/crypto3/algebra/fields/goldilocks64/base_field.hpp>
-#include <nil/crypto3/algebra/fields/mersenne31/base_field.hpp>
-#include <nil/crypto3/algebra/fields/koalabear/base_field.hpp>
-#include <nil/crypto3/algebra/fields/babybear/base_field.hpp>
 #include <nil/crypto3/algebra/curves/alt_bn128.hpp>
 #include <nil/crypto3/algebra/fields/alt_bn128/scalar_field.hpp>
+#include <nil/crypto3/algebra/fields/babybear.hpp>
 #include <nil/crypto3/algebra/fields/bls12/scalar_field.hpp>
+#include <nil/crypto3/algebra/fields/goldilocks.hpp>
+#include <nil/crypto3/algebra/fields/koalabear.hpp>
+#include <nil/crypto3/algebra/fields/mersenne31.hpp>
+#include <nil/crypto3/algebra/fields/mnt4/base_field.hpp>
+#include <nil/crypto3/algebra/fields/mnt6/base_field.hpp>
 
 #include "table.hpp"
 
@@ -58,7 +58,7 @@ int main(int argc, char* argv[]) {
     using bls12_fq_381_curve_type = nil::crypto3::algebra::fields::bls12_fq<381>;
     using mnt4_curve_type = nil::crypto3::algebra::fields::mnt4_fq<298>;
     using mnt6_curve_type = nil::crypto3::algebra::fields::mnt6_fq<298>;
-    using goldilocks64_field_type = nil::crypto3::algebra::fields::goldilocks64;
+    using goldilocks_field_type = nil::crypto3::algebra::fields::goldilocks;
     using mersenne31_field_type = nil::crypto3::algebra::fields::mersenne31;
     using koalabear_field_type = nil::crypto3::algebra::fields::koalabear;
     using babybear_field_type = nil::crypto3::algebra::fields::babybear;
@@ -69,10 +69,10 @@ int main(int argc, char* argv[]) {
     Glib::OptionGroup main_group("curves", "Curves", "Curve used in the program");
 
     bool vesta = false, pallas = false, bls12_fr_381 = false, bls12_fq_381 = false,
-         mnt4 = false, mnt6 = false, goldilocks64 = false, mersenne31 = false,
+         mnt4 = false, mnt6 = false, goldilocks = false, mersenne31 = false,
          koalabear = false, babybear = false, bn_base = false, bn_scalar = false;
     Glib::OptionEntry vesta_entry, pallas_entry, bls12_fr_381_entry, bls12_fq_381_entry,
-                      mnt4_entry, mnt6_entry, goldilocks64_entry, bn_entry;
+        mnt4_entry, mnt6_entry, goldilocks_entry, bn_entry;
 
     vesta_entry.set_long_name("vesta");
     vesta_entry.set_short_name('v');
@@ -104,10 +104,10 @@ int main(int argc, char* argv[]) {
     mnt6_entry.set_description("Use mnt6 curve");
     main_group.add_entry(mnt6_entry, mnt6);
 
-    goldilocks64_entry.set_long_name("goldilocks64");
-    goldilocks64_entry.set_short_name('g');
-    goldilocks64_entry.set_description("Use Goldilocks64 field");
-    main_group.add_entry(goldilocks64_entry, goldilocks64);
+    goldilocks_entry.set_long_name("goldilocks");
+    goldilocks_entry.set_short_name('g');
+    goldilocks_entry.set_description("Use Goldilocks field");
+    main_group.add_entry(goldilocks_entry, goldilocks);
 
     mersenne31_entry.set_long_name("mersenne31");
     mersenne31_entry.set_short_name('g');
@@ -143,8 +143,8 @@ int main(int argc, char* argv[]) {
 
     // check that only a single curve is selected
     std::vector<bool> curve_selections = {
-        vesta,        pallas,     bls12_fr_381, bls12_fq_381,     mnt4,     mnt6,
-        goldilocks64, mersenne31, koalabear,    babybear bn_base, bn_scalar};
+        vesta,      pallas,     bls12_fr_381, bls12_fq_381,     mnt4,     mnt6,
+        goldilocks, mersenne31, koalabear,    babybear bn_base, bn_scalar};
     uint8_t curve_count = std::accumulate(curve_selections.begin(), curve_selections.end(), 0);
     if (curve_count > 1) {
         std::cerr << "Error: only one curve can be used at a time." << std::endl;
@@ -154,7 +154,7 @@ int main(int argc, char* argv[]) {
     if (curve_count == 0) {
         std::cerr << "Error: no curve selected. Use --vesta or --pallas or "
                      "--bls12_fr_381 or --bls12_fq_381"
-                  << " or --mnt4 or --mnt6 or --goldilocks64 or --mersenne31 or "
+                  << " or --mnt4 or --mnt6 or --goldilocks or --mersenne31 or "
                      "--koalabear or --babybear or --bn or --bn_scalar."
                   << std::endl;
         return 1;
@@ -178,8 +178,9 @@ int main(int argc, char* argv[]) {
     if (mnt6) {
         return app->make_window_and_run<ExcaliburWindow<mnt6_curve_type>>(argc, argv);
     }
-    if (goldilocks64) {
-        return app->make_window_and_run<ExcaliburWindow<goldilocks64_field_type>>(argc, argv);
+    if (goldilocks) {
+        return app->make_window_and_run<ExcaliburWindow<goldilocks_field_type>>(argc,
+                                                                                argv);
     }
     if (mersenne31) {
         return app->make_window_and_run<ExcaliburWindow<mersenne31_field_type>>(argc,
