@@ -84,7 +84,8 @@
 #include <nil/blueprint/zkevm_bbf/opcodes/gas.hpp>
 #include <nil/blueprint/zkevm_bbf/opcodes/pc.hpp>
 #include <nil/blueprint/zkevm_bbf/opcodes/msize.hpp>
-#include "nil/blueprint/zkevm_bbf/opcodes/logx.hpp"
+#include <nil/blueprint/zkevm_bbf/opcodes/logx.hpp>
+#include <nil/blueprint/zkevm_bbf/opcodes/address.hpp>
 
 namespace nil {
     namespace blueprint {
@@ -700,13 +701,14 @@ namespace nil {
                 opcodes[zkevm_opcode::CODECOPY] = std::make_shared<zkevm_codecopy_operation<BlueprintFieldType>>();
                 opcodes[zkevm_opcode::MCOPY] = std::make_shared<zkevm_mcopy_operation<BlueprintFieldType>>();
                 opcodes[zkevm_opcode::RETURNDATACOPY] = std::make_shared<zkevm_returndatacopy_operation<BlueprintFieldType>>();
-                
+
                 // not implemented yet opcodes
-                
+
                 opcodes[zkevm_opcode::RETURNDATASIZE] = std::make_shared<zkevm_returndatasize_operation<BlueprintFieldType>>();
                 opcodes[zkevm_opcode::CALL] = std::make_shared<zkevm_call_operation<BlueprintFieldType>>();
                 opcodes[zkevm_opcode::GAS] = std::make_shared<zkevm_gas_operation<BlueprintFieldType>>();
                 opcodes[zkevm_opcode::STATICCALL] = std::make_shared<zkevm_staticcall_operation<BlueprintFieldType>>();
+                opcodes[zkevm_opcode::ADDRESS] = std::make_shared<zkevm_address_operation<BlueprintFieldType>>();
 
                 // // DUP
                 opcodes[zkevm_opcode::DUP1] = std::make_shared<zkevm_dupx_operation<BlueprintFieldType>>(1);
