@@ -64,22 +64,28 @@ in stdenv.mkDerivation rec {
     test_suite = "zkevm_bbf_hardhat";
 
     test_runs = {
+
       # test case name
       keccak = [
         "copy" # circuit name (leave empty to run all circuits)
+        "keccak"
+        "exp"
+        "rw"
+        "bytecode"
+        "zkevm"
       ];
 
-      calldatacopy = [ "copy" ];
+      calldatacopy = [ "copy" "rw" "bytecode" "zkevm" "exp" "keccak"];
 
-      exp = [ "copy" "rw" ];
+      exp = [ "copy" "rw" "bytecode" "zkevm" "exp" "keccak"];
 
-      # add these, when proof verification start working:
-      # "zkevm_bbf_hardhat/minimal_math zkevm"
-      # "zkevm_bbf_hardhat/minimal_math rw"
-      # "zkevm_bbf_hardhat/minimal_math bytecode"
-      minimal_math = [ "copy" ];
+      logger = [ "copy" "rw" "bytecode" "zkevm" "exp" "keccak"];
 
-      modular_operations = [ "copy" ];
+      returndatacopy = [ "copy" "rw" "bytecode" "zkevm" "exp" "keccak" ];
+
+      mstore8 = [ "copy" "rw" "bytecode" "zkevm" "exp" "keccak"];
+
+      modular_operations = [ "copy" "rw" "bytecode" "zkevm" "exp" "keccak"];
     };
   };
 
