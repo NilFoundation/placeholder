@@ -149,6 +149,69 @@ INSTANTIATE_TEST_SUITE_P(ExponentiationOverflowZkevm, ProverTests, ::testing::Va
 INSTANTIATE_TEST_SUITE_P(ExponentiationOverflowExp, ProverTests, ::testing::Values(Input{ExponentiationOverflow, EXP}));
 INSTANTIATE_TEST_SUITE_P(ExponentiationOverflowKeccak, ProverTests, ::testing::Values(Input{ExponentiationOverflow, KECCAK}));
 
+
+// MEMORY EXPANSTION TESTS
+
+const std::string MemExpandCalldataCopy = "memory_expansion/calldatacopy/mem_expand_calldatacopy";
+INSTANTIATE_TEST_SUITE_P(MemExpandCalldataCopyRw, ProverTests, ::testing::Values(Input{MemExpandCalldataCopy, RW}));
+INSTANTIATE_TEST_SUITE_P(MemExpandCalldataCopyBytecode, ProverTests, :: testing::Values(Input{MemExpandCalldataCopy, BYTECODE}));
+INSTANTIATE_TEST_SUITE_P(MemExpandCalldataCopyCopy, ProverTests, ::testing::Values(Input{MemExpandCalldataCopy, COPY}));
+INSTANTIATE_TEST_SUITE_P(MemExpandCalldataCopyZkevm, ProverTests, ::testing::Values(Input{MemExpandCalldataCopy, ZKEVM}));
+INSTANTIATE_TEST_SUITE_P(MemExpandCalldataCopyExp, ProverTests, ::testing::Values(Input{MemExpandCalldataCopy, EXP}));
+INSTANTIATE_TEST_SUITE_P(MemExpandCalldataCopyKeccak, ProverTests, ::testing::Values(Input{MemExpandCalldataCopy, KECCAK}));
+
+
+const std::string MemExpandCodeCopy = "memory_expansion/codecopy/mem_expand_codecopy";
+INSTANTIATE_TEST_SUITE_P(MemExpandCodeCopyRw, ProverTests, ::testing::Values(Input{MemExpandCodeCopy, RW}));
+INSTANTIATE_TEST_SUITE_P(MemExpandCodeCopyBytecode, ProverTests, :: testing::Values(Input{MemExpandCodeCopy, BYTECODE}));
+INSTANTIATE_TEST_SUITE_P(MemExpandCodeCopyCopy, ProverTests, ::testing::Values(Input{MemExpandCodeCopy, COPY}));
+INSTANTIATE_TEST_SUITE_P(MemExpandCodeCopyZkevm, ProverTests, ::testing::Values(Input{MemExpandCodeCopy, ZKEVM}));
+INSTANTIATE_TEST_SUITE_P(MemExpandCodeCopyExp, ProverTests, ::testing::Values(Input{MemExpandCodeCopy, EXP}));
+INSTANTIATE_TEST_SUITE_P(MemExpandCodeCopyKeccak, ProverTests, ::testing::Values(Input{MemExpandCodeCopy, KECCAK}));
+
+const std::string MemExpandMload = "memory_expansion/mload/mem_expand_mload";
+INSTANTIATE_TEST_SUITE_P(MemExpandMloadRw, ProverTests, ::testing::Values(Input{MemExpandMload, RW}));
+INSTANTIATE_TEST_SUITE_P(MemExpandMloadBytecode, ProverTests, :: testing::Values(Input{MemExpandMload, BYTECODE}));
+INSTANTIATE_TEST_SUITE_P(MemExpandMloadCopy, ProverTests, ::testing::Values(Input{MemExpandMload, COPY}));
+INSTANTIATE_TEST_SUITE_P(MemExpandMloadZkevm, ProverTests, ::testing::Values(Input{MemExpandMload, ZKEVM}));
+INSTANTIATE_TEST_SUITE_P(MemExpandMloadExp, ProverTests, ::testing::Values(Input{MemExpandMload, EXP}));
+INSTANTIATE_TEST_SUITE_P(MemExpandMloadKeccak, ProverTests, ::testing::Values(Input{MemExpandMload, KECCAK}));
+
+const std::string MemExpandMstore = "memory_expansion/mstore/mem_expand_mstore";
+INSTANTIATE_TEST_SUITE_P(MemExpandMstoreRw, ProverTests, ::testing::Values(Input{MemExpandMstore, RW}));
+INSTANTIATE_TEST_SUITE_P(MemExpandMstoreBytecode, ProverTests, :: testing::Values(Input{MemExpandMstore, BYTECODE}));
+INSTANTIATE_TEST_SUITE_P(MemExpandMstoreCopy, ProverTests, ::testing::Values(Input{MemExpandMstore, COPY}));
+INSTANTIATE_TEST_SUITE_P(MemExpandMstoreZkevm, ProverTests, ::testing::Values(Input{MemExpandMstore, ZKEVM}));
+INSTANTIATE_TEST_SUITE_P(MemExpandMstoreExp, ProverTests, ::testing::Values(Input{MemExpandMstore, EXP}));
+INSTANTIATE_TEST_SUITE_P(MemExpandMstoreKeccak, ProverTests, ::testing::Values(Input{MemExpandMstore, KECCAK}));
+
+const std::string MemExpandMstore8 = "memory_expansion/mstore/mem_expand_mstore8";
+INSTANTIATE_TEST_SUITE_P(MemExpandMstore8Rw, ProverTests, ::testing::Values(Input{MemExpandMstore8, RW}));
+INSTANTIATE_TEST_SUITE_P(MemExpandMstore8Bytecode, ProverTests, :: testing::Values(Input{MemExpandMstore8, BYTECODE}));
+INSTANTIATE_TEST_SUITE_P(MemExpandMstore8Copy, ProverTests, ::testing::Values(Input{MemExpandMstore8, COPY}));
+INSTANTIATE_TEST_SUITE_P(MemExpandMstore8Zkevm, ProverTests, ::testing::Values(Input{MemExpandMstore8, ZKEVM}));
+INSTANTIATE_TEST_SUITE_P(MemExpandMstore8Exp, ProverTests, ::testing::Values(Input{MemExpandMstore8, EXP}));
+INSTANTIATE_TEST_SUITE_P(MemExpandMstore8Keccak, ProverTests, ::testing::Values(Input{MemExpandMstore8, KECCAK}));
+
+const std::string MemMcopy = "memory_expansion/mcopy/mem_expand_mcopy";
+INSTANTIATE_TEST_SUITE_P(MemMcopyRw, ProverTests, ::testing::Values(Input{MemMcopy, RW}));
+INSTANTIATE_TEST_SUITE_P(MemMcopyBytecode, ProverTests, :: testing::Values(Input{MemMcopy, BYTECODE}));
+INSTANTIATE_TEST_SUITE_P(MemMcopyCopy, ProverTests, ::testing::Values(Input{MemMcopy, COPY}));
+INSTANTIATE_TEST_SUITE_P(MemMcopyZkevm, ProverTests, ::testing::Values(Input{MemMcopy, ZKEVM}));
+INSTANTIATE_TEST_SUITE_P(MemMcopyExp, ProverTests, ::testing::Values(Input{MemMcopy, EXP}));
+INSTANTIATE_TEST_SUITE_P(MemMcopyKeccak, ProverTests, ::testing::Values(Input{MemMcopy, KECCAK}));
+
+const std::string MemExpandReturndatacopy = "memory_expansion/returndatacopy/mem_expand_returndatacopy";
+
+// TODO(oclaw): RW circuit now fails to validate memory operations done inside CALL subcontext
+INSTANTIATE_TEST_SUITE_P(MemExpandReturndatacopyRw, ProverTests, ::testing::Values(Input{MemExpandReturndatacopy, RW, true}));
+
+INSTANTIATE_TEST_SUITE_P(MemExpandReturndatacopyBytecode, ProverTests, :: testing::Values(Input{MemExpandReturndatacopy, BYTECODE}));
+INSTANTIATE_TEST_SUITE_P(MemExpandReturndatacopyCopy, ProverTests, ::testing::Values(Input{MemExpandReturndatacopy, COPY}));
+INSTANTIATE_TEST_SUITE_P(MemExpandReturndatacopyZkevm, ProverTests, ::testing::Values(Input{MemExpandReturndatacopy, ZKEVM}));
+INSTANTIATE_TEST_SUITE_P(MemExpandReturndatacopyExp, ProverTests, ::testing::Values(Input{MemExpandReturndatacopy, EXP}));
+INSTANTIATE_TEST_SUITE_P(MemExpandReturndatacopyKeccak, ProverTests, ::testing::Values(Input{MemExpandReturndatacopy, KECCAK}));
+
 // RW trace is picked from another trace set and has different trace_idx
 TEST(ProverTest, TraceIndexMismatch) {
     const std::string trace_base_path = std::string(TEST_DATA_DIR) + "/broken_index/increment_simple";

@@ -127,6 +127,86 @@ nild run --http-port 8529 # should be run in another terminal (or with &) and st
 prover trace corner_cases/division_by_zero/div_by_zero 1 $block_hash
 ```
 
+
+### Memory expansion tests
+
+#### CALLDATACOPY
+```bash
+solc -o . --bin --abi contracts/tracer_data.sol --overwrite --no-cbor-metadata --metadata-hash none
+nil_block_generator init
+nil_block_generator add-contract --contract-name MemoryGasTest --contract-path MemoryGasTest
+nil_block_generator call-contract --contract-name MemoryGasTest --method testCalldatacopy --count 1 --args "600 0 32"
+nil_block_generator get-block
+nild run --http-port 8529 # should be run in another terminal (or with &) and stopped after collecting the traces with prover
+prover trace memory_expansion/calldatacopy/mem_expand_calldatacopy 1 $block_hash
+```
+
+#### CODECOPY
+```bash
+solc -o . --bin --abi contracts/tracer_data.sol --overwrite --no-cbor-metadata --metadata-hash none
+nil_block_generator init
+nil_block_generator add-contract --contract-name MemoryGasTest --contract-path MemoryGasTest
+nil_block_generator call-contract --contract-name MemoryGasTest --method testCodecopy --count 1 --args "700 0 32"
+nil_block_generator get-block
+nild run --http-port 8529 # should be run in another terminal (or with &) and stopped after collecting the traces with prover
+prover trace memory_expansion/codecopy/mem_expand_codecopy 1 $block_hash
+```
+
+#### MLOAD
+```bash
+solc -o . --bin --abi contracts/tracer_data.sol --overwrite --no-cbor-metadata --metadata-hash none
+nil_block_generator init
+nil_block_generator add-contract --contract-name MemoryGasTest --contract-path MemoryGasTest
+nil_block_generator call-contract --contract-name MemoryGasTest --method testMload --count 1 --args "1000 128"
+nil_block_generator get-block
+nild run --http-port 8529 # should be run in another terminal (or with &) and stopped after collecting the traces with prover
+prover trace memory_expansion/mload/mem_expand_mload 1 $block_hash
+```
+
+#### MSTORE
+```bash
+solc -o . --bin --abi contracts/tracer_data.sol --overwrite --no-cbor-metadata --metadata-hash none
+nil_block_generator init
+nil_block_generator add-contract --contract-name MemoryGasTest --contract-path MemoryGasTest
+nil_block_generator call-contract --contract-name MemoryGasTest --method testMstore --count 1 --args "1100 160 999"
+nil_block_generator get-block
+nild run --http-port 8529 # should be run in another terminal (or with &) and stopped after collecting the traces with prover
+prover trace memory_expansion/mstore/mem_expand_mstore 1 $block_hash
+```
+
+#### MSTORE8
+```bash
+solc -o . --bin --abi contracts/tracer_data.sol --overwrite --no-cbor-metadata --metadata-hash none
+nil_block_generator init
+nil_block_generator add-contract --contract-name MemoryGasTest --contract-path MemoryGasTest
+nil_block_generator call-contract --contract-name MemoryGasTest --method testMstore8 --count 1 --args "1200 192 255"
+nil_block_generator get-block
+nild run --http-port 8529 # should be run in another terminal (or with &) and stopped after collecting the traces with prover
+prover trace memory_expansion/mstore8/mem_expand_mstore8 1 $block_hash
+```
+
+#### RETURNDATACOPY
+```bash
+solc -o . --bin --abi contracts/tracer_data.sol --overwrite --no-cbor-metadata --metadata-hash none
+nil_block_generator init
+nil_block_generator add-contract --contract-name MemoryGasTest --contract-path MemoryGasTest
+nil_block_generator call-contract --contract-name MemoryGasTest --method testReturndatacopy --count 1 --args "900 0 32"
+nil_block_generator get-block
+nild run --http-port 8529 # should be run in another terminal (or with &) and stopped after collecting the traces with prover
+prover trace memory_expansion/returndatacopy/mem_expand_returndatacopy 1 $block_hash
+```
+
+#### MCOPY
+```bash
+solc -o . --bin --abi contracts/tracer_data.sol --overwrite --no-cbor-metadata --metadata-hash none
+nil_block_generator init
+nil_block_generator add-contract --contract-name MemoryGasTest --contract-path MemoryGasTest
+nil_block_generator call-contract --contract-name MemoryGasTest --method testMemCopy --count 1 --args "900 0 20"
+nil_block_generator get-block
+nild run --http-port 8529 # should be run in another terminal (or with &) and stopped after collecting the traces with prover
+prover trace memory_expansion/mcopy/mcopy 1 $block_hash
+```
+
 ### broken index
 ```bash
 solc -o . --bin --abi contracts/tracer_data.sol --overwrite --no-cbor-metadata --metadata-hash none
