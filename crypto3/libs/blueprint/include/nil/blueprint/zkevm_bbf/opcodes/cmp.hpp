@@ -38,6 +38,10 @@ class opcode_abstract;
 
 enum cmp_type { C_LT, C_GT };
 
+// 0x10 LT, 0x11 GT: Less-than / greater-than comparison
+// Gas: 3
+// Stack Input: a, b
+// Stack Output: a < b / a > b
 template<typename Field, GenerationStage stage>
 class zkevm_cmp_bbf : generic_component<Field, stage> {
  public:
