@@ -49,16 +49,30 @@ namespace nil {
             public:
                 using typename generic_component<FieldType,stage>::TYPE;
 
+                /*
+                *  Opcode: 0x16 AND; 0x17 OR; 0x18 XOR
+                *  Description: Bitwise operations (AND; OR; XOR)
+                *  GAS: 3
+                *  PC: +1
+                *  Memory: Unchanged
+                *  Stack Input: a, b
+                *  Stack Output: a & b; a | b; a ^ b  
+                *  Stack Read  Lookup: a, b
+                *  Stack Write Lookup: a & b; a | b; a ^ b
+                *  rw_counter: +3
+                */
+
                 zkevm_bitwise_bbf(context_type &context_object, const opcode_input_type<FieldType, stage> &current_state, bitwise_type bitwise_operation):
                     generic_component<FieldType,stage>(context_object, false)
                 {
-                    std::vector<TYPE> A(32);
-                    std::vector<TYPE> B(32);
-                    std::vector<TYPE> AND(32);
-                    std::vector<TYPE> XOR(32);
-                    TYPE A0, A1, B0, B1, AND0, AND1, XOR0, XOR1, OR0, OR1;
+                    std::vector<TYPE> A(32); // 8-bit chunks of a (stack top)
+                    std::vector<TYPE> B(32); // 8-bit chunks of b (stack second top)
+                    std::vector<TYPE> AND(32); // 8-bit chunks of result a & b
+                    std::vector<TYPE> XOR(32); // 8-bit chunks of result a ^ b
+                    TYPE OR0, OR1;
 
                     if constexpr( stage == GenerationStage::ASSIGNMENT ){
+                        // split a and b into 8-bit chunks
                         zkevm_word_type a_word = current_state.stack_top();
                         zkevm_word_type b_word = current_state.stack_top(1);
                         auto a = w_to_8(a_word);
@@ -73,48 +87,78 @@ namespace nil {
                             XOR[i] = xor_chunks[i];
                         }
 
-                        auto A_128 = chunks8_to_chunks128(A);
-                        auto B_128 = chunks8_to_chunks128(B);
-                        auto AND_128 = chunks8_to_chunks128(AND);
-                        auto XOR_128 = chunks8_to_chunks128(XOR);
-                        auto OR_128 = std::make_pair(AND_128.first + XOR_128.first,AND_128.second + XOR_128.second);
-                        A0 = A_128.first; A1 = A_128.second;
-                        B0 = B_128.first; B1 = B_128.second;
-                        AND0 = AND_128.first; AND1 = AND_128.second;
-                        XOR0 = XOR_128.first; XOR1 = XOR_128.second;
-                        OR0 = OR_128.first; OR1 = OR_128.second;
+                        // combine 8-bit chunks to make 128-bit chunks
+                        // auto A_128 = chunks8_to_chunks128(A); 
+                        // auto B_128 = chunks8_to_chunks128(B);
+                        // auto AND_128 = chunks8_to_chunks128(AND);
+                        // auto XOR_128 = chunks8_to_chunks128(XOR);
+                        // auto OR_128 = std::make_pair(AND_128.first + XOR_128.first,AND_128.second + XOR_128.second); // a|b = a&b + a^b
+                        // A0 = A_128.first; A1 = A_128.second;
+                        // B0 = B_128.first; B1 = B_128.second;
+                        // AND0 = AND_128.first; AND1 = AND_128.second;
+                        // XOR0 = XOR_128.first; XOR1 = XOR_128.second;
+                        // OR0 = OR_128.first; OR1 = OR_128.second;
                     }
+
+                    /* Layout:          range_checked_opcode_area                                                              
+                            0     ...    7      8      ...    15     16      ...    23     24       ...    31      
+                        +------+------+------+------+------+------+-------+------+------+--------+------+-------+--
+                        | A[0] |  ... | A[7] | B[0] |  ... | B[7] |AND[0] |  ... |AND[7] |XOR[0] |  ... |XOR[7] |  
+                        +------+------+------+------+------+------+-------+------+-------+-------+------+-------+--
+                        | A[8] |  ... | A[15]| B[8] |  ... | B[15]|AND[8] |  ... |AND[15]|XOR[8] |  ... |XOR[15]|  
+                        +------+------+------+------+------+------+-------+------+-------+-------+------+-------+--
+                        | A[16]|  ... | A[23]| B[16]|  ... | B[23]|AND[16]|  ... |AND[23]|XOR[16]|  ... |XOR[23]|  
+                        +------+------+------+------+------+------+-------+------+-------+-------+------+-------+--
+                        | A[24]|  ... | A[31]| B[24]|  ... | B[31]|AND[24]|  ... |AND[31]|XOR[24]|  ... |XOR[31]|  
+                        +------+------+------+------+------+------+-------+------+-------+-------+------+-------+--
+
+                                        not_range_checked_opcode_area
+                                   32           33             34              35         36    ...   47
+                        ----+-------------+-------------+---------------+---------------+-----+-----+-----+
+                            | A_128.first | B_128.first | AND_128.first | XOR_128.first | OR0 |     |     |
+                        ----+-------------+-------------+---------------+---------------+-----+-----+-----+
+                            |             |             |               |               |     |     |     |
+                        ----+-------------+-------------+---------------+---------------+-----+-----+-----+
+                            | A_128.second| B_128.second| AND_128.second| XOR_128.second| OR1 |     |     |
+                        ----+-------------+-------------+---------------+---------------+-----+-----+-----+
+                            |             |             |               |               |     |     |     |
+                        ----+-------------+-------------+---------------+---------------+-----+-----+-----+
+
+                    */
                     for(std::size_t i = 0; i < 32; i++){
                         allocate(A[i], i%8, i/8);
                         allocate(B[i], i%8 + 8, i/8);
                         allocate(AND[i], i%8 + 16, i/8);
                         allocate(XOR[i], i%8 + 24, i/8);
                     }
-                    allocate(A0, 32, 0); allocate(A1, 32, 2);
-                    allocate(B0, 33, 0); allocate(B1, 33, 2);
-                    allocate(AND0, 34, 0); allocate(AND1, 34, 2);
-                    allocate(XOR0, 35, 0); allocate(XOR1, 35, 2);
-                    allocate(OR0, 36, 0); allocate(OR1, 36, 2);
 
                     std::vector<TYPE> tmp;
                     for(std::size_t i = 0; i < 32; i++){
-                        tmp = {
+                        lookup({
                             A[i],
                             B[i],
                             AND[i],
                             XOR[i]
-                        };
-                        lookup(tmp, "byte_and_xor_table/full");
+                        }, "byte_and_xor_table/full");
                     }
-                    auto A_128 = chunks8_to_chunks128(A);
-                    auto B_128 = chunks8_to_chunks128(B);
-                    auto AND_128 = chunks8_to_chunks128(AND);
-                    auto XOR_128 = chunks8_to_chunks128(XOR);
-                    constrain(A0 - A_128.first); constrain(A1 - A_128.second);
-                    constrain(B0 - B_128.first); constrain(B1 - B_128.second);
-                    constrain(AND0 - AND_128.first); constrain(AND1 - AND_128.second);
-                    constrain(XOR0 - XOR_128.first); constrain(XOR1 - XOR_128.second);
-                    constrain(XOR0 + AND0 - OR0); constrain(XOR1 + AND1 - OR1);
+
+                    // combine 8-bit chunks to make 128-bit chunks
+                    auto A_128 = chunks8_to_chunks128(A); // 128-bit chunks of a
+                    auto B_128 = chunks8_to_chunks128(B); // 128-bit chunks of b
+                    auto AND_128 = chunks8_to_chunks128(AND); // 128-bit chunks of a&b
+                    auto XOR_128 = chunks8_to_chunks128(XOR); // 128-bit chunks of a^b
+
+                    allocate(A_128.first, 32, 0); allocate(A_128.second, 32, 2);
+                    allocate(B_128.first, 33, 0); allocate(B_128.second, 33, 2);
+                    allocate(AND_128.first, 34, 0); allocate(AND_128.second, 34, 2);
+                    allocate(XOR_128.first, 35, 0); allocate(XOR_128.second, 35, 2);
+
+                    OR0 = AND_128.first + XOR_128.first;  // 128-bit chunks of a|b 
+                    OR1 = AND_128.second + XOR_128.second; // 128-bit chuns of a|b
+
+                    allocate(OR0, 36, 0); // implicit constraint OR0 - (AND_128.first + XOR_128.first)
+                    allocate(OR1, 36, 2); // implicit constraint OR1 - (AND_128.second + XOR_128.second)
+
                     // std::cout << "\tA = "<< std::hex << A0 << " " << A1 << std::endl;
                     // std::cout << "\tB = "<< std::hex << B0 << " " << B1 << std::endl;
                     // std::cout << "\tAND = "<< std::hex << AND0 << " " << AND1 << std::endl;
@@ -126,7 +170,8 @@ namespace nil {
                         constrain(current_state.stack_size(3) - current_state.stack_size_next() - 1);   // stack_size transition
                         constrain(current_state.memory_size(3) - current_state.memory_size_next());     // memory_size transition
                         constrain(current_state.rw_counter_next() - current_state.rw_counter(3) - 3);   // rw_counter transition
-                        tmp = {
+
+                        lookup({
                             TYPE(rw_op_to_num(rw_operation_type::stack)),
                             current_state.call_id(1),
                             current_state.stack_size(1) - 1,
@@ -135,11 +180,11 @@ namespace nil {
                             TYPE(0),// field
                             current_state.rw_counter(1),
                             TYPE(0),// is_write
-                            A0,
-                            A1
-                        };
-                        lookup(tmp, "zkevm_rw");
-                        tmp = {
+                            A_128.first,// high bits of a
+                            A_128.second// low bits of a
+                        }, "zkevm_rw");
+
+                        lookup({
                             TYPE(rw_op_to_num(rw_operation_type::stack)),
                             current_state.call_id(1),
                             current_state.stack_size(1) - 2,
@@ -148,10 +193,10 @@ namespace nil {
                             TYPE(0),// field
                             current_state.rw_counter(1) + 1,
                             TYPE(0),// is_write
-                            B0,
-                            B1
-                        };
-                        lookup(tmp, "zkevm_rw");
+                            B_128.first,// high bits of b
+                            B_128.second// low bits of b
+                        }, "zkevm_rw");
+
                         tmp = {
                             TYPE(rw_op_to_num(rw_operation_type::stack)),
                             current_state.call_id(1),
@@ -164,16 +209,16 @@ namespace nil {
                         };
                         switch(bitwise_operation){
                         case B_AND:
-                            tmp.push_back(AND0);
-                            tmp.push_back(AND1);
+                            tmp.push_back(AND_128.first);// high bits of a&b
+                            tmp.push_back(AND_128.second);// low bits of a&b
                             break;
                         case B_OR:
-                            tmp.push_back(OR0);
-                            tmp.push_back(OR1);
+                            tmp.push_back(OR0);// high bits of a|b
+                            tmp.push_back(OR1);// low bits of a|b 
                             break;
                         case B_XOR:
-                            tmp.push_back(XOR0);
-                            tmp.push_back(XOR1);
+                            tmp.push_back(XOR_128.first);// high bits of a^b
+                            tmp.push_back(XOR_128.second);// low bits of a^b
                             break;
                         }
                         lookup(tmp, "zkevm_rw");
