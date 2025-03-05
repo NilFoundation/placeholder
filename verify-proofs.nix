@@ -79,7 +79,11 @@ in stdenv.mkDerivation rec {
 
       exp = [ "copy" "rw" "bytecode" "zkevm" "exp" "keccak"];
 
-      minimal_math = [ "copy" "rw" "bytecode" "zkevm" "exp" "keccak"];
+      logger = [ "copy" "rw" "bytecode" "zkevm" "exp" "keccak"];
+
+      returndatacopy = [ "copy" "rw" "bytecode" "zkevm" "exp" "keccak" ];
+
+      mstore8 = [ "copy" "rw" "bytecode" "zkevm" "exp" "keccak"];
 
       modular_operations = [ "copy" "rw" "bytecode" "zkevm" "exp" "keccak"];
     };
