@@ -348,13 +348,13 @@ BOOST_AUTO_TEST_CASE(logger) {
     auto [bytecodes, pts] = load_hardhat_input("logger/");
     l1_size_restrictions max_sizes;
 
-    max_sizes.max_keccak_blocks = 50;
+    max_sizes.max_keccak_blocks = 25;
     max_sizes.max_bytecode = 300;
     max_sizes.max_mpt = 0;
     max_sizes.max_rw = 500;
-    max_sizes.max_copy = 500;
+    max_sizes.max_copy = 200;
     max_sizes.max_zkevm_rows = 500;
-    max_sizes.max_exponentiations = 50;
+    max_sizes.max_exponentiations = 25;
     max_sizes.max_exp_rows = 500;
 
     complex_test<field_type>(bytecodes, pts, max_sizes);
@@ -383,15 +383,15 @@ BOOST_AUTO_TEST_CASE(returndatacopy) {
     auto [bytecodes, pts] = load_hardhat_input("returndatacopy/");
     l1_size_restrictions max_sizes;
 
-    max_sizes.max_keccak_blocks = 50;
+    max_sizes.max_keccak_blocks = 25;
     max_sizes.max_bytecode = 1000;
     max_sizes.max_mpt = 0;
     max_sizes.max_rw = 5000;
-    max_sizes.max_copy = 2500;
+    max_sizes.max_copy = 500;
     max_sizes.max_zkevm_rows = 2500;
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
-    
+
 
     complex_test<field_type>(bytecodes, pts, max_sizes);
 }
