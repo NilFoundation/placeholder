@@ -340,58 +340,14 @@ namespace nil::crypto3::multiprecision {
                                        montgomery_big_mod<Modulus>, big_mod<Modulus>>>>>>;
 }  // namespace nil::crypto3::multiprecision
 
-// std::hash specializations
+// std::hash specialization
 
-template<const auto& modulus_, template<std::size_t> typename modular_ops_template>
-struct std::hash<
-    nil::crypto3::multiprecision::big_mod_ct_impl<modulus_, modular_ops_template>> {
-    std::size_t operator()(const nil::crypto3::multiprecision::big_mod_ct_impl<
-                           modulus_, modular_ops_template>& a) const noexcept {
-        return boost::hash<nil::crypto3::multiprecision::big_mod_ct_impl<
-            modulus_, modular_ops_template>>{}(a);
-    }
-};
-
-template<std::size_t Bits, template<std::size_t> typename modular_ops_template>
-struct std::hash<
-    nil::crypto3::multiprecision::big_mod_rt_impl<Bits, modular_ops_template>> {
+template<typename modular_ops_storage_t>
+struct std::hash<nil::crypto3::multiprecision::big_mod_impl<modular_ops_storage_t>> {
     std::size_t operator()(
-        const nil::crypto3::multiprecision::big_mod_rt_impl<Bits, modular_ops_template>&
-            a) const noexcept {
+        const nil::crypto3::multiprecision::big_mod_impl<modular_ops_storage_t>& a)
+        const noexcept {
         return boost::hash<
-            nil::crypto3::multiprecision::big_mod_rt_impl<Bits, modular_ops_template>>{}(
-            a);
-    }
-};
-
-template<>
-struct std::hash<nil::crypto3::multiprecision::goldilocks_mod> {
-    std::size_t operator()(
-        const nil::crypto3::multiprecision::goldilocks_mod& a) const noexcept {
-        return boost::hash<nil::crypto3::multiprecision::goldilocks_mod>{}(a);
-    }
-};
-
-template<>
-struct std::hash<nil::crypto3::multiprecision::mersenne31_mod> {
-    std::size_t operator()(
-        const nil::crypto3::multiprecision::mersenne31_mod& a) const noexcept {
-        return boost::hash<nil::crypto3::multiprecision::mersenne31_mod>{}(a);
-    }
-};
-
-template<>
-struct std::hash<nil::crypto3::multiprecision::koalabear_mod> {
-    std::size_t operator()(
-        const nil::crypto3::multiprecision::koalabear_mod& a) const noexcept {
-        return boost::hash<nil::crypto3::multiprecision::koalabear_mod>{}(a);
-    }
-};
-
-template<>
-struct std::hash<nil::crypto3::multiprecision::babybear_mod> {
-    std::size_t operator()(
-        const nil::crypto3::multiprecision::babybear_mod& a) const noexcept {
-        return boost::hash<nil::crypto3::multiprecision::babybear_mod>{}(a);
+            nil::crypto3::multiprecision::big_mod_impl<modular_ops_storage_t>>{}(a);
     }
 };
