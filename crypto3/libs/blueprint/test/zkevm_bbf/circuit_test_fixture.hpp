@@ -207,7 +207,7 @@ class CircuitTestFixture {
             });
         }
         // It's debug mode. Prover from non-satisfied circuit will throw asserts
-        if (result && generate_proof) {
+        if (generate_proof) {
             result = result & check_proof(bp, assignment, desc);
         }
         std::cout << std::endl;
