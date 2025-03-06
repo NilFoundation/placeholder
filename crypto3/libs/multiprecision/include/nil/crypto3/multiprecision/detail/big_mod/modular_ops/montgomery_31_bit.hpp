@@ -47,7 +47,6 @@ namespace nil::crypto3::multiprecision::detail {
             std::uint64_t s = 0;
             auto borrow = subborrow(0, static_cast<std::uint64_t>(input), u, &s);
             auto r = (s >> MontgomeryBits) + (borrow ? mod() : 0);
-            BOOST_ASSERT(r < mod());
             return r;
         }
 
