@@ -47,7 +47,7 @@ class BenchmarkRunner:
         # TODO: maybe add number of repetitions
         results = []
         for cmd in commands:
-            print(f"Running command: {" ".join(cmd["args"])}")
+            print(f"Running command: {' '.join(cmd['args'])}")
             run_time = self.executor(cmd)
             results.append(run_time)
         return results

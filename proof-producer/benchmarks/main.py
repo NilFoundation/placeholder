@@ -32,7 +32,7 @@ def print_results(result_set):
     for result in result_set:
         time_str = "Time {:.2f} s".format(result["time"])
         memory_str = "Memory {} KB".format(result["memory"]) if result["memory"] is not None else ""
-        print(f"{result["name"]}: {time_str} {memory_str}")
+        print(f"{result['name']}: {time_str} {memory_str}")
 
         total_time += result["time"]
 
@@ -64,7 +64,7 @@ if __name__ == "__main__":
     # Single circuits
     if args.scenario != "dfri":
         single_circuits = SingleCircuitMeasure(args.proof_producer_binary, args.trace, out_dir)
-        if args.scenario == "single_circuits":
+        if args.scenario == "single_circuits" or args.scenario == "full":
             single_circuit_results = runner.run_set(single_circuits.make_all_commands())
         else:
             single_circuit_results = runner.run_set(single_circuits.make_circuit_command(args.scenario))
