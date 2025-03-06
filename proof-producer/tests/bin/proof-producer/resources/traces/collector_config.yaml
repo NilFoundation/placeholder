@@ -1,0 +1,165 @@
+nil_config:
+
+  # path to the directory with built nil (https://github.com/NilFoundation/nil) binaries
+  # set it to your local path
+  root: "/path/to/your/nil/directory"
+
+  # $NIL_ROOT will be replaced with the value of the root field if it is present
+  # otherwise you can provide absolute or relative paths to the each binary
+  nild_path: "$NIL_ROOT/nild"
+  prover_path: "$NIL_ROOT/prover"
+  nil_block_generator_path: "$NIL_ROOT/nil_block_generator"
+  faucet_path: "$NIL_ROOT/faucet"
+
+solc_path: "solc"
+
+need_json_traces: false
+keep_artifacts: true # If true, keeps compiled artifacts and temporary files instead of deleting them at the end.
+
+# leave empty to use console logger
+log_file: "./trace_collector.log"
+
+# Global list of Solidity files to compile at the start (via solc).
+# Each file may contain multiple contracts (e.g. SimpleStorage, Uint256CornerCaseTests, MemoryGasTest).
+contracts:
+  - "contracts/tracer_data.sol"
+
+invocations:
+  - name: "simple-increment"
+    description: "Single increment call test"
+    contract_name: SimpleStorage
+    traces_output_path: "simple/simple_inc_and_keccak"
+    calls:
+      - method: increment
+        count: 1
+        args: ""
+
+  - name: "increment-multi-tx"
+    description: "Multiple increment calls in a single block"
+    contract_name: SimpleStorage
+    traces_output_path: "multi_tx/increment_multi_tx"
+    calls:
+      - method: increment
+        count: 2
+        args: ""
+
+  - name: "exponential"
+    description: "Single exponentiation call"
+    contract_name: SimpleStorage
+    traces_output_path: "exp/exp"
+    calls:
+      - method: exponentiate
+        count: 1
+        args: ""
+
+  # Arithmetic corner cases
+
+  - name: "add-overflow"
+    description: "Tests addAsm for overflow behavior on Uint256CornerCaseTests"
+    contract_name: Uint256CornerCaseTests
+    traces_output_path: "corner_cases/addition_overflow/addition_overflow"
+    calls:
+      - method: addAsm
+        count: 1
+        args: "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF 0x2"
+
+  - name: "mul-overflow"
+    description: "Tests mulAsm for overflow behavior on Uint256CornerCaseTests"
+    contract_name: Uint256CornerCaseTests
+    traces_output_path: "corner_cases/multiplication_overflow/mul_overflow"
+    calls:
+      - method: mulAsm
+        count: 1
+        args: "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFE 0xFF"
+
+  - name: "exp-overflow"
+    description: "Tests expAsm for overflow behavior on Uint256CornerCaseTests"
+    contract_name: Uint256CornerCaseTests
+    traces_output_path: "corner_cases/exponentiation_overflow/exp_overflow"
+    calls:
+      - method: expAsm
+        count: 1
+        args: "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFE 0xFF"
+
+  - name: "sub-underflow"
+    description: "Tests subAsm for underflow behavior on Uint256CornerCaseTests"
+    contract_name: Uint256CornerCaseTests
+    traces_output_path: "corner_cases/substraction_underflow/substraction_underflow"
+    calls:
+      - method: subAsm
+        count: 1
+        args: "0x1 0x2"
+
+  - name: "div-by-zero"
+    description: "Tests divAsm for divide-by-zero behavior on Uint256CornerCaseTests"
+    contract_name: Uint256CornerCaseTests
+    traces_output_path: "corner_cases/division_by_zero/div_by_zero"
+    calls:
+      - method: divAsm
+        count: 1
+        args: "0x11 0x0"
+
+  # Memory expansion tests
+
+  - name: "mem-expand-calldatacopy"
+    description: "Tests memory expansion with CALLDATACOPY"
+    contract_name: MemoryGasTest
+    traces_output_path: "memory_expansion/calldatacopy/mem_expand_calldatacopy"
+    calls:
+      - method: testCalldatacopy
+        count: 1
+        args: "600 0 32"
+
+  - name: "mem-expand-codecopy"
+    description: "Tests memory expansion with CODECOPY"
+    contract_name: MemoryGasTest
+    traces_output_path: "memory_expansion/codecopy/mem_expand_codecopy"
+    calls:
+      - method: testCodecopy
+        count: 1
+        args: "700 0 32"
+
+  - name: "mem-expand-mload"
+    description: "Tests memory expansion with MLOAD"
+    contract_name: MemoryGasTest
+    traces_output_path: "memory_expansion/mload/mem_expand_mload"
+    calls:
+      - method: testMload
+        count: 1
+        args: "1000 128"
+
+  - name: "mem-expand-mstore"
+    description: "Tests memory expansion with MSTORE"
+    contract_name: MemoryGasTest
+    traces_output_path: "memory_expansion/mstore/mem_expand_mstore"
+    calls:
+      - method: testMstore
+        count: 1
+        args: "1100 160 999"
+
+  - name: "mem-expand-mstore8"
+    description: "Tests memory expansion with MSTORE8"
+    contract_name: MemoryGasTest
+    traces_output_path: "memory_expansion/mstore/mem_expand_mstore8"
+    calls:
+      - method: testMstore8
+        count: 1
+        args: "1200 192 255"
+
+  - name: "mem-expand-returndatacopy"
+    description: "Tests memory expansion with RETURNDATACOPY"
+    contract_name: MemoryGasTest
+    traces_output_path: "memory_expansion/returndatacopy/mem_expand_returndatacopy"
+    calls:
+      - method: testReturndatacopy
+        count: 1
+        args: "900 0 32"
+
+  - name: "mem-expand-mcopy"
+    description: "Tests memory expansion with a custom memory copy function"
+    contract_name: MemoryGasTest
+    traces_output_path: "memory_expansion/mcopy/mcopy"
+    calls:
+      - method: testMemCopy
+        count: 1
+        args: "900 0 20"
