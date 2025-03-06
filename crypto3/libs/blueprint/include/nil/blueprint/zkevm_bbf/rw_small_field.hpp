@@ -169,36 +169,34 @@ namespace nil {
                             }
                             std::size_t cur_chunk = 0;
                             // id
+                            mask = 0xffff0000;
+                            chunks[i][cur_chunk++] = (mask & integral_type(rw_trace[i].call_id)) >> 16;
                             mask = 0xffff;
-                            for (std::size_t j = 0; j < id_chunks_amount; j++) {
-                                chunks[i][cur_chunk++] =
-                                    ((mask & integral_type(rw_trace[i].call_id)) >> (16 * j));
-                                mask <<= 16;
-                            }
+                            chunks[i][cur_chunk++] = (mask & integral_type(rw_trace[i].call_id));
+
 
                             // address
                             mask = 0xffff;
-                            for (std::size_t j = 0; j < address_chunks_amount; j++) {
-                                chunks[i][cur_chunk++] =
-                                    ((mask & integral_type(rw_trace[i].address)) >> (16 * j));
-                                mask <<= 16;
+                            mask <<= (16 * 9);
+                            for( std::size_t j = 0; j < address_chunks_amount; j++){
+                                chunks[i][cur_chunk++] = (((mask & integral_type(rw_trace[i].address)) >> (16 * (9-j))));
+                                mask >>= 16;
                             }
 
                             // storage_key
-                            mask = 0xffff; 
-                            for (std::size_t j = 0; j < storage_key_chunks_amount; j++) {
-                                chunks[i][cur_chunk++] =
-                                    ((mask & integral_type(rw_trace[i].storage_key)) >> (16 * j));
-                                mask <<= 16;
+                            mask = 0xffff;
+                            mask <<= (16 * 15);
+                            for( std::size_t j = 0; j < storage_key_chunks_amount; j++){
+                                chunks[i][cur_chunk++] = (((mask & integral_type(rw_trace[i].storage_key)) >> (16 * (15-j))));
+                                mask >>= 16;
                             }
 
                             // rw_id
                             mask = 0xffff;
-                            for (std::size_t j = 0; j < rw_id_chunks_amount; j++) {
-                                chunks[i][cur_chunk++] =
-                                    ((mask & integral_type(rw_trace[i].rw_counter)) >> (16 * j));
-                                mask <<= 16;
-                            }
+                            mask <<= 16;
+                            chunks[i][cur_chunk++] = (mask & rw_trace[i].rw_counter) >> 16;
+                            mask >>= 16;
+                            chunks[i][cur_chunk++] = (mask & rw_trace[i].rw_counter);
 
                             sorted_prev = sorted;
                             sorted = {op[i]};
@@ -259,7 +257,7 @@ namespace nil {
                         for (std::size_t j = 0; j < 16; j++) {
                             allocate(value_before[i][j], ++cur_column, i);
                         }
-                        allocate(diff[i], ++cur_column, i);
+                        allocate(diff[i], ++cur_column, i);                      
                         lookup(diff[i], "chunk_16_bits/full");
                         allocate(inv_diff[i], ++cur_column, i);
                         allocate(is_first[i], ++cur_column, i);
@@ -270,7 +268,7 @@ namespace nil {
                         for (std::size_t j = 0; j < 16; j++) {
                             allocate(state_root_before[i][j], ++cur_column, i);
                         }
-                    }
+                    }                   
                     std::cout << std::endl;
                     if constexpr (stage == GenerationStage::CONSTRAINTS) {
                         std::vector<TYPE> every_row_constraints;
@@ -298,25 +296,25 @@ namespace nil {
                         std::vector<TYPE> id_composition(id_chunks_amount);
                         for (std::size_t j = 0; j < id_chunks_amount; j++) {
                             id_composition[j] = chunks[1][cur_chunk++];
-                            every_row_constraints.push_back(context_object.relativize(id[1][j] - id_composition[j], -1));
+                            every_row_constraints.push_back(context_object.relativize(id[1][id_chunks_amount - j - 1] - id_composition[j], -1));
                         }
 
                         std::vector<TYPE> addr_composition(address_chunks_amount);
                         for (std::size_t j = 0; j < address_chunks_amount; j++) {
                             addr_composition[j] = chunks[1][cur_chunk++];
-                            every_row_constraints.push_back(context_object.relativize(address[1][j] - addr_composition[j], -1));
+                            every_row_constraints.push_back(context_object.relativize(address[1][address_chunks_amount - j - 1] - addr_composition[j], -1));
                         }
 
                         std::vector<TYPE> storage_key_comp(storage_key_chunks_amount);
                         for (std::size_t j = 0; j < storage_key_chunks_amount; j++) {
                             storage_key_comp[j] = chunks[1][cur_chunk++];
-                            every_row_constraints.push_back(context_object.relativize(storage_key[1][j] - storage_key_comp[j], -1));
+                            every_row_constraints.push_back(context_object.relativize(storage_key[1][storage_key_chunks_amount - j - 1] - storage_key_comp[j], -1));
                         }
 
                         std::vector<TYPE> rw_id_composition(rw_id_chunks_amount);
                         for (std::size_t j = 0; j < rw_id_chunks_amount; j++) {
                             rw_id_composition[j] = chunks[1][cur_chunk++];
-                            every_row_constraints.push_back(context_object.relativize(rw_id[1][j] - rw_id_composition[j], -1));
+                            every_row_constraints.push_back(context_object.relativize(rw_id[1][rw_id_chunks_amount - j - 1] - rw_id_composition[j], -1));
                         }
 
                         sorted_prev = {op[0]};
