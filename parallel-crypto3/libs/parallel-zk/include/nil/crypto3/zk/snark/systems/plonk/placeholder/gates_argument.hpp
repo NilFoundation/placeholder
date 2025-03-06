@@ -60,6 +60,7 @@
 
 #include <nil/actor/core/thread_pool.hpp>
 #include <nil/actor/core/parallelization_utils.hpp>
+#include "nil/crypto3/multiprecision/detail/big_mod/modular_ops/common.hpp"
 
 namespace nil {
     namespace crypto3 {
@@ -91,6 +92,7 @@ namespace nil {
                         const polynomial_dfs_type &mask_polynomial,
                         const polynomial_dfs_type &lagrange_0
                     ) {
+                        PROFILE_SCOPE("Gate argument build variable value map");
 
                         std::unordered_map<variable_type, size_t> variable_counts;
                         std::vector<variable_type> variables;
@@ -112,6 +114,9 @@ namespace nil {
 
                         std::shared_ptr<math::evaluation_domain<FieldType>> extended_domain =
                             math::make_evaluation_domain<FieldType>(extended_domain_size);
+
+                        nil::crypto3::multiprecision::detail::ScopedOpsCounter
+                            ops_counter;
 
                         parallel_for(0, variables.size(),
                             [&variables, &variable_values_out, &assignments, &domain, &extended_domain, extended_domain_size, &mask_polynomial, &lagrange_0](std::size_t i) {
@@ -146,17 +151,14 @@ namespace nil {
                         const polynomial_dfs_type &lagrange_0,
                         transcript_type& transcript
                     ) {
-                        PROFILE_SCOPE("gate_argument_time");
+                        PROFILE_SCOPE("Gate argument prove eval");
 
                         // max_gates_degree that comes from the outside does not take into account multiplication
                         // by selector.
                         ++max_gates_degree;
+                        // std::cout << "Max gates degree: " << max_gates_degree
+                        //           << std::endl;
                         typename FieldType::value_type theta = transcript.template challenge<FieldType>();
-
-                        auto value_type_to_polynomial_dfs = [](
-                            const typename variable_type::assignment_type& coeff) {
-                                return polynomial_dfs_type(0, 1, coeff);
-                            };
 
                         std::vector<std::uint32_t> extended_domain_sizes;
                         std::vector<std::uint32_t> degree_limits;
@@ -174,28 +176,37 @@ namespace nil {
                         math::expression_max_degree_visitor<variable_type> visitor;
 
                         const auto& gates = constraint_system.gates();
+                        {
+                            PROFILE_SCOPE("Gate argument build expression");
+                            for (const auto& gate : gates) {
+                                std::vector<math::expression<variable_type>> gate_results(
+                                    extended_domain_sizes.size());
+                                for (const auto& constraint : gate.constraints) {
+                                    auto next_term = constraint * theta_acc;
 
-                        for (const auto& gate: gates) {
-                            std::vector<math::expression<variable_type>> gate_results(extended_domain_sizes.size());
-                            for (std::size_t constraint_idx = 0; constraint_idx < gate.constraints.size(); ++constraint_idx) {
-                                const auto& constraint = gate.constraints[constraint_idx];
-                                auto next_term = constraint * theta_acc;
-
-                                theta_acc *= theta;
-                                // +1 stands for the selector multiplication.
-                                size_t constraint_degree = visitor.compute_max_degree(constraint) + 1;
-                                for (int i = extended_domain_sizes.size() - 1; i >= 0; --i) {
-                                    // Whatever the degree of term is, add it to the maximal degree expression.
-                                    if (degree_limits[i] >= constraint_degree || i == 0) {
-                                        gate_results[i] += next_term;
-                                        break;
+                                    theta_acc *= theta;
+                                    // +1 stands for the selector multiplication.
+                                    size_t constraint_degree =
+                                        visitor.compute_max_degree(constraint) + 1;
+                                    for (int i = extended_domain_sizes.size() - 1; i >= 0;
+                                         --i) {
+                                        // Whatever the degree of term is, add it to the
+                                        // maximal degree expression.
+                                        if (degree_limits[i] >= constraint_degree ||
+                                            i == 0) {
+                                            gate_results[i] += next_term;
+                                            break;
+                                        }
                                     }
                                 }
-                            }
-                            variable_type selector(gate.selector_index, 0, false, variable_type::column_type::selector);
-                            for (size_t i = 0; i < extended_domain_sizes.size(); ++i) {
-                                gate_results[i] *= selector;
-                                expressions[i] += gate_results[i];
+                                variable_type selector(
+                                    gate.selector_index, 0, false,
+                                    variable_type::column_type::selector);
+                                for (size_t i = 0; i < extended_domain_sizes.size();
+                                     ++i) {
+                                    gate_results[i] *= selector;
+                                    expressions[i] += gate_results[i];
+                                }
                             }
                         }
 
@@ -211,23 +222,48 @@ namespace nil {
                                 mask_polynomial, lagrange_0
                             );
 
-                            polynomial_dfs_type result(extended_domain_sizes[i] - 1, extended_domain_sizes[i]);
-                            wait_for_all(parallel_run_in_chunks<void>(
-                                extended_domain_sizes[i],
-                                [&variable_values, &extended_domain_sizes, &result, &expressions, i]
-                                (std::size_t begin, std::size_t end) {
-                                    for (std::size_t j = begin; j < end; ++j) {
-                                        // Don't use cache here. In practice it's slower to maintain the cache
-                                        // than to re-compute the subexpression value when value type is field element.
-                                        math::expression_evaluator<variable_type> evaluator(
-                                            expressions[i],
-                                            [&assignments=variable_values, j]
-                                                (const variable_type &var) -> const typename FieldType::value_type& {
-                                                    return assignments[var][j];
-                                            });
-                                        result[j] = evaluator.evaluate();
-                                    }
-                            }, ThreadPool::PoolLevel::HIGH));
+                            PROFILE_SCOPE("Gate argument evaluation");
+
+                            polynomial_dfs_type result(extended_domain_sizes[i] - 1,
+                                                       extended_domain_sizes[i]);
+
+                            {
+                                nil::crypto3::multiprecision::detail::ScopedOpsCounter
+                                    ops_counter;
+
+                                wait_for_all(parallel_run_in_chunks<void>(
+                                    extended_domain_sizes[i],
+                                    [&variable_values, &extended_domain_sizes, &result,
+                                     &expressions,
+                                     i](std::size_t begin, std::size_t end) {
+                                        auto start =
+                                            std::chrono::high_resolution_clock::now();
+                                        for (std::size_t j = begin; j < end; ++j) {
+                                            // Don't use cache here. In practice it's
+                                            // slower to maintain the cache than to
+                                            // re-compute the subexpression value when
+                                            // value type is field element.
+                                            math::expression_evaluator<variable_type>
+                                            evaluator(
+                                                expressions[i],
+                                                [&assignments = variable_values,
+                                                 j](const variable_type& var)
+                                                    -> const typename FieldType::
+                                                        value_type& {
+                                                            return assignments[var][j];
+                                                        });
+                                            result[j] = evaluator.evaluate();
+                                        }
+                                        auto elapsed = std::chrono::duration_cast<
+                                            std::chrono::milliseconds>(
+                                            std::chrono::high_resolution_clock::now() -
+                                            start);
+                                        bench::scoped_log(std::format(
+                                            "Gate argument evaluation {}-{}: {} ms",
+                                            begin, end - 1, elapsed.count()));
+                                    },
+                                    ThreadPool::PoolLevel::HIGH));
+                            }
 
                             F[0] += result;
                         };

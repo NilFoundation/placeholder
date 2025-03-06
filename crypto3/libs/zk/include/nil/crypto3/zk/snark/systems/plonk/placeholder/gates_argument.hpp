@@ -53,6 +53,7 @@
 #include <nil/crypto3/zk/math/expression_visitors.hpp>
 
 #include <nil/crypto3/bench/scoped_profiler.hpp>
+#include "nil/crypto3/multiprecision/detail/big_mod/modular_ops/common.hpp"
 
 namespace nil {
     namespace crypto3 {
@@ -84,6 +85,7 @@ namespace nil {
                         const polynomial_dfs_type &mask_polynomial,
                         const polynomial_dfs_type &lagrange_0
                     ) {
+                        PROFILE_SCOPE("Gate argument build variable value map");
 
                         std::unordered_map<polynomial_dfs_variable_type, size_t> variable_counts;
 
@@ -95,6 +97,9 @@ namespace nil {
                             math::make_evaluation_domain<FieldType>(extended_domain_size);
 
                         visitor.visit(expr);
+
+                        nil::crypto3::multiprecision::detail::ScopedOpsCounter
+                            ops_counter;
 
                         for (const auto& [var, count]: variable_counts) {
                             if (variable_values_out.find(var) != variable_values_out.end())
@@ -125,11 +130,13 @@ namespace nil {
                         const polynomial_dfs_type &lagrange_0,
                         transcript_type& transcript
                     ) {
-                        PROFILE_SCOPE("gate_argument_time");
+                        PROFILE_SCOPE("Gate argument prove eval");
 
                         // max_gates_degree that comes from the outside does not take into account multiplication
                         // by selector.
                         ++max_gates_degree;
+                        // std::cout << "Max gates degree: " << max_gates_degree
+                        //           << std::endl;
                         typename FieldType::value_type theta = transcript.template challenge<FieldType>();
 
                         auto value_type_to_polynomial_dfs = [](
@@ -160,31 +167,45 @@ namespace nil {
                         math::expression_max_degree_visitor<variable_type> visitor;
 
                         const auto& gates = constraint_system.gates();
+                        {
+                            PROFILE_SCOPE("Gate argument build expression");
+                            for (const auto& gate : gates) {
+                                std::vector<
+                                    math::expression<polynomial_dfs_variable_type>>
+                                    gate_results(extended_domain_sizes.size());
 
-                        for (const auto& gate: gates) {
-                            std::vector<math::expression<polynomial_dfs_variable_type>> gate_results(extended_domain_sizes.size());
+                                for (const auto& constraint : gate.constraints) {
+                                    auto next_term =
+                                        converter.convert(constraint) *
+                                        value_type_to_polynomial_dfs(theta_acc);
 
-                            for (const auto& constraint : gate.constraints) {
-                                auto next_term = converter.convert(constraint) * value_type_to_polynomial_dfs(theta_acc);
-
-                                theta_acc *= theta;
-                                // +1 stands for the selector multiplication.
-                                size_t constraint_degree = visitor.compute_max_degree(constraint) + 1;
-                                for (int i = extended_domain_sizes.size() - 1; i >= 0; --i) {
-                                    // Whatever the degree of term is, add it to the maximal degree expression.
-                                    if (degree_limits[i] >= constraint_degree || i == 0) {
-                                        gate_results[i] += next_term;
-                                        break;
+                                    theta_acc *= theta;
+                                    // +1 stands for the selector multiplication.
+                                    size_t constraint_degree =
+                                        visitor.compute_max_degree(constraint) + 1;
+                                    for (int i = extended_domain_sizes.size() - 1; i >= 0;
+                                         --i) {
+                                        // Whatever the degree of term is, add it to the
+                                        // maximal degree expression.
+                                        if (degree_limits[i] >= constraint_degree ||
+                                            i == 0) {
+                                            gate_results[i] += next_term;
+                                            break;
+                                        }
                                     }
                                 }
-                            }
 
-                            polynomial_dfs_variable_type selector = polynomial_dfs_variable_type(
-                                    gate.selector_index, 0, false, polynomial_dfs_variable_type::column_type::selector);
+                                polynomial_dfs_variable_type selector =
+                                    polynomial_dfs_variable_type(
+                                        gate.selector_index, 0, false,
+                                        polynomial_dfs_variable_type::column_type::
+                                            selector);
 
-                            for (size_t i = 0; i < extended_domain_sizes.size(); ++i) {
-                                gate_results[i] *= selector;
-                                expressions[i] += gate_results[i];
+                                for (size_t i = 0; i < extended_domain_sizes.size();
+                                     ++i) {
+                                    gate_results[i] *= selector;
+                                    expressions[i] += gate_results[i];
+                                }
                             }
                         }
 
@@ -192,6 +213,8 @@ namespace nil {
                         std::array<polynomial_dfs_type, argument_size> F;
 
                         for (size_t i = 0; i < extended_domain_sizes.size(); ++i) {
+                            // std::cout << std::endl << "Domain number " << i <<
+                            // std::endl;
                             if (i != 0 && extended_domain_sizes[i] != extended_domain_sizes[i-1]) {
                                 variable_values.clear();
                             }
@@ -201,12 +224,17 @@ namespace nil {
                                 mask_polynomial, lagrange_0
                             );
 
+                            PROFILE_SCOPE("Gate argument evaluation");
+
                             math::cached_expression_evaluator<polynomial_dfs_variable_type> evaluator(
                                 expressions[i], [&assignments=variable_values, domain_size=extended_domain_sizes[i]]
                                 (const polynomial_dfs_variable_type &var) -> const polynomial_dfs_type& {
                                     return assignments[var];
                                 }
                             );
+
+                            nil::crypto3::multiprecision::detail::ScopedOpsCounter
+                                ops_counter;
 
                             F[0] += evaluator.evaluate();
                         }
