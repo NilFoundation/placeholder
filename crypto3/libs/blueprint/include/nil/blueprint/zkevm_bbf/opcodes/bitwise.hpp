@@ -68,7 +68,6 @@ class zkevm_bitwise_bbf : generic_component<FieldType, stage> {
     std::vector<TYPE> B(32); // 8-bit chunks of b (stack second top)
     std::vector<TYPE> AND(32); // 8-bit chunks of result a & b
     std::vector<TYPE> XOR(32); // 8-bit chunks of result a ^ b
-    TYPE OR0, OR1;
 
     if constexpr( stage == GenerationStage::ASSIGNMENT ) {
       // split a and b into 8-bit chunks
@@ -111,6 +110,10 @@ class zkevm_bitwise_bbf : generic_component<FieldType, stage> {
             |             |             |               |               |     |     |     |
         ----+-------------+-------------+---------------+---------------+-----+-----+-----+
 
+
+        Note: This layout is not compatible with small field rw_table. In that case we need to arrange chunks of A, B
+              AND, XOR, in closer proximity (currently spans 4 rows, but needs to be at most 3). Also, we should use 8-bit chunks
+              of OR instead of 128. Placing chunks in consequent rows won't help either due to byte_and_xor_table lookups.
     */
     for(std::size_t i = 0; i < 32; i++){
       allocate(A[i], i%8, i/8);
@@ -140,8 +143,8 @@ class zkevm_bitwise_bbf : generic_component<FieldType, stage> {
     allocate(AND_128.first, 34, 0); allocate(AND_128.second, 34, 2);
     allocate(XOR_128.first, 35, 0); allocate(XOR_128.second, 35, 2);
 
-    OR0 = AND_128.first + XOR_128.first;  // 128-bit chunks of a|b 
-    OR1 = AND_128.second + XOR_128.second; // 128-bit chuns of a|b
+    TYPE OR0 = AND_128.first + XOR_128.first;  // 128-bit chunks of a|b 
+    TYPE OR1 = AND_128.second + XOR_128.second; // 128-bit chuns of a|b
 
     allocate(OR0, 36, 0); // implicit constraint OR0 - (AND_128.first + XOR_128.first)
     allocate(OR1, 36, 2); // implicit constraint OR1 - (AND_128.second + XOR_128.second)
