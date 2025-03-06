@@ -62,6 +62,7 @@
 
 #include <nil/actor/core/thread_pool.hpp>
 #include <nil/actor/core/parallelization_utils.hpp>
+#include "nil/crypto3/multiprecision/detail/big_mod/modular_ops/common.hpp"
 
 namespace nil {
     namespace crypto3 {
