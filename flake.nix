@@ -154,6 +154,7 @@
 
         devShells = {
           proof-producer-benchmarks = (staticPkgs.callPackage ./proof-producer.nix {
+            python3 = pkgs.python3.withPackages (ps: [ps.pip]);
             proof_producer_benchmarks = true;
           });
         };

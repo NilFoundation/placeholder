@@ -10,6 +10,6 @@ systemd-run --scope --slice=benchexec -p Delegate=yes \
     python3 $BENCHMARKS_DIR/main.py \
         --proof-producer-binary /usr/bin/proof-producer-multi-threaded \
         --trace $BENCHMARKS_DIR/traces/hundred_plus_hundred_trace \
-        --execution_mode benchexec \
+        --execution_mode subprocess \
         --scenario full \
         --post-results
