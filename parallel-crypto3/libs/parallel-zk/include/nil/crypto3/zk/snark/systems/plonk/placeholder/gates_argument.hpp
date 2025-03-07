@@ -93,21 +93,16 @@ namespace nil {
                         const polynomial_dfs_type &lagrange_0
                     ) {
 
-                        std::unordered_map<variable_type, size_t> variable_counts;
                         std::vector<variable_type> variables;
 
                         math::expression_for_each_variable_visitor<variable_type> visitor(
-                            [&variable_counts, &variables, &variable_values_out](const variable_type& var) {
-                                // Create the structure of the map so we can change the values later.
-                                if (variable_counts[var] == 0) {
+                            [&variables, &variable_values_out](const variable_type& var) {
+                                // Create the structure of the map, so its values can be filled in parallel.
+                                if (variable_values_out.find(var) == variable_values_out.end()) {
                                     variables.push_back(var);
-                                    // Create the structure of the map, so its values can be filled in parallel.
-                                    if (variable_values_out.find(var) == variable_values_out.end()) {
-                                        variable_values_out[var] = polynomial_dfs_type::zero();
-                                    }
+                                    variable_values_out[var] = polynomial_dfs_type::zero();
                                 }
-                                variable_counts[var]++;
-                        });
+                            });
 
                         visitor.visit(expr);
 
@@ -199,7 +194,6 @@ namespace nil {
                         }
 
                         std::array<polynomial_dfs_type, argument_size> F;
-
                         F[0] = polynomial_dfs_type::zero();
                         for (std::size_t i = 0; i < extended_domain_sizes.size(); ++i) {
                             std::unordered_map<variable_type, polynomial_dfs_type> variable_values;
