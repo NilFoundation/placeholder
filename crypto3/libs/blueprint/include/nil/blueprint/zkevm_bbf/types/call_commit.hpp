@@ -29,21 +29,15 @@
 #include <nil/blueprint/components/hashes/keccak/util.hpp> //Move needed utils to bbf
 #include <nil/blueprint/bbf/generic.hpp>
 
-#include <nil/blueprint/zkevm_bbf/types/zkevm_state.hpp>
+#include <nil/blueprint/zkevm_bbf/types/rw_operation.hpp>
 
 namespace nil {
     namespace blueprint {
         namespace bbf {
-            struct zkevm_call_context{
-                zkevm_state state;            // State from parent CALL before CALL
-                std::size_t call_id;          // Current CALL id
-                std::size_t returndataoffset; // CALL opcode parameters
-                std::size_t returndatalength; // CALL opcode parameters
-                std::map<std::tuple<rw_operation_type, zkevm_word_type, std::size_t, zkevm_word_type>, rw_operation> cold_access_list; // For REVERT proving. First state access rw_operation in the given CALL
-                std::map<std::tuple<rw_operation_type, zkevm_word_type, std::size_t, zkevm_word_type>, rw_operation> cold_write_list;
-
-                std::set<std::tuple<zkevm_word_type, std::size_t, zkevm_word_type>> was_accessed; // For SLOAD, SSTORE gas proving
-                std::set<std::tuple<zkevm_word_type, std::size_t, zkevm_word_type>> was_written;
+            struct zkevm_call_commit{
+                std::size_t call_id;
+                std::size_t parent_id;
+                std::vector<rw_operation> items;
             };
         } // namespace bbf
     } // namespace blueprint

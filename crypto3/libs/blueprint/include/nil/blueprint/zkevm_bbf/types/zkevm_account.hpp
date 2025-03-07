@@ -49,6 +49,11 @@ namespace nil {
 
                 std::map<zkevm_word_type, zkevm_word_type> storage; // Optional
                 std::vector<std::uint8_t> bytecode;                 // Optional
+
+                void set(std::size_t field_type, zkevm_word_type storage_key, zkevm_word_type value){
+                    BOOST_ASSERT(field_type == 0);  // Other field types not implemented yet
+                    storage[storage_key] = value;
+                }
             };
             std::ostream &operator<<(std::ostream &os, const zkevm_account &obj){
                 os << "\tAddress = 0x" << obj.address << std::dec << std::endl;

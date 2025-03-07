@@ -77,6 +77,7 @@ public:
         std::size_t max_rw = max_sizes.max_rw;
         std::size_t max_copy = max_sizes.max_copy;
         std::size_t max_zkevm_rows = max_sizes.max_zkevm_rows;
+        std::size_t max_call_commits = max_sizes.max_call_commits;
 
         typename nil::blueprint::bbf::copy<field_type,nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type copy_assignment_input;
         typename nil::blueprint::bbf::copy<field_type,nil::blueprint::bbf::GenerationStage::CONSTRAINTS>::input_type copy_constraint_input;
@@ -85,9 +86,10 @@ public:
         copy_assignment_input.keccak_buffers = circuit_inputs.keccaks();
         copy_assignment_input.rw_operations = circuit_inputs.rw_operations();
         copy_assignment_input.copy_events = circuit_inputs.copy_events();
+        copy_assignment_input.call_commits = circuit_inputs.call_commits();
 
         bool result = test_bbf_component<field_type, nil::blueprint::bbf::copy>(
-            "copy", {7}, copy_assignment_input, copy_constraint_input, max_copy, max_rw, max_keccak_blocks, max_bytecode
+            "copy", {7}, copy_assignment_input, copy_constraint_input, max_copy, max_rw, max_keccak_blocks, max_bytecode, max_call_commits
         );
         BOOST_ASSERT(result == expected_result);
     }
@@ -110,8 +112,26 @@ BOOST_AUTO_TEST_CASE(minimal_math){
     max_sizes.max_rw = 500;
     max_sizes.max_copy = 500;
     max_sizes.max_zkevm_rows = 500;
+    max_sizes.max_call_commits = 500;
 
     test_zkevm_copy<field_type>("minimal_math.json", max_sizes);
+}
+
+BOOST_AUTO_TEST_CASE(try_catch) {
+    using field_type = typename algebra::curves::pallas::base_field_type;
+    l1_size_restrictions max_sizes;
+
+    max_sizes.max_keccak_blocks = 20;
+    max_sizes.max_bytecode = 3000;
+    max_sizes.max_mpt = 0;
+    max_sizes.max_rw = 6000;
+    max_sizes.max_copy = 500;
+    max_sizes.max_zkevm_rows = 3000;
+    max_sizes.max_exponentiations = 50;
+    max_sizes.max_exp_rows = 500;
+    max_sizes.max_call_commits = 500;
+
+    test_zkevm_copy<field_type>("try_catch.json", max_sizes);
 }
 
 BOOST_AUTO_TEST_CASE(try_catch2) {
@@ -126,8 +146,26 @@ BOOST_AUTO_TEST_CASE(try_catch2) {
     max_sizes.max_zkevm_rows = 3000;
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
+    max_sizes.max_call_commits = 500;
 
     test_zkevm_copy<field_type>("try_catch2.json", max_sizes);
+}
+
+BOOST_AUTO_TEST_CASE(try_catch_cold) {
+    using field_type = typename algebra::curves::pallas::base_field_type;
+    l1_size_restrictions max_sizes;
+
+    max_sizes.max_keccak_blocks = 20;
+    max_sizes.max_bytecode = 3000;
+    max_sizes.max_mpt = 0;
+    max_sizes.max_rw = 6000;
+    max_sizes.max_copy = 500;
+    max_sizes.max_zkevm_rows = 3000;
+    max_sizes.max_exponentiations = 50;
+    max_sizes.max_exp_rows = 500;
+    max_sizes.max_call_commits = 500;
+
+    test_zkevm_copy<field_type>("try_catch_cold.json", max_sizes);
 }
 /*
 BOOST_AUTO_TEST_CASE(mstore8_contract){

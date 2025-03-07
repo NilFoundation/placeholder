@@ -61,17 +61,20 @@ public:
     template <typename field_type>
     void test_zkevm_rw(
         std::string path,
-        std::size_t max_rw_size
+        std::size_t max_rw_size,
+        std::size_t max_call_commits
     ){
         auto trace = load_hardhat_input(path);
         nil::blueprint::bbf::zkevm_hardhat_input_generator circuit_inputs(trace);
 
-        typename nil::blueprint::bbf::rw<field_type,nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type rw_assignment_input = circuit_inputs.rw_operations();
+        typename nil::blueprint::bbf::rw<field_type,nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type rw_assignment_input;
+        rw_assignment_input.rw_operations = circuit_inputs.rw_operations();
+        rw_assignment_input.call_commits = circuit_inputs.call_commits();
         typename nil::blueprint::bbf::rw<field_type,nil::blueprint::bbf::GenerationStage::CONSTRAINTS>::input_type rw_constraint_input;
 
-        std::cout << "rw_trace size = " <<  rw_assignment_input.size() << std::endl;
+        std::cout << "rw_trace size = " <<  rw_assignment_input.rw_operations.size() << std::endl;
         bool result = test_bbf_component<field_type, nil::blueprint::bbf::rw>(
-            "rw", {}, rw_assignment_input, rw_constraint_input, max_rw_size, 0
+            "rw", {}, rw_assignment_input, rw_constraint_input, max_rw_size, max_call_commits, 0
         );
         BOOST_ASSERT(result); // Max_rw, Max_mpt
     }
@@ -82,25 +85,28 @@ BOOST_FIXTURE_TEST_SUITE(zkevm_bbf_rw, zkEVMRWTestFixture)
     using integral_type = typename field_type::integral_type;
     using value_type = typename field_type::value_type;
 BOOST_AUTO_TEST_CASE(minimal_math){
-    test_zkevm_rw<field_type>({"minimal_math.json"}, 500);
+    test_zkevm_rw<field_type>({"minimal_math.json"}, 500, 500);
 }
 BOOST_AUTO_TEST_CASE(counter){
-    test_zkevm_rw<field_type>({"counter.json"}, 3000);
+    test_zkevm_rw<field_type>({"counter.json"}, 3000, 500);
 }
 BOOST_AUTO_TEST_CASE(call_counter){
-    test_zkevm_rw<field_type>({"call_counter.json"}, 3000);
+    test_zkevm_rw<field_type>({"call_counter.json"}, 3000, 500);
 }
 BOOST_AUTO_TEST_CASE(delegatecall_counter){
-    test_zkevm_rw<field_type>({"delegatecall.json"}, 3000);
+    test_zkevm_rw<field_type>({"delegatecall.json"}, 3000, 500);
 }
 BOOST_AUTO_TEST_CASE(cold_sstore){
-    test_zkevm_rw<field_type>({"cold_sstore.json"}, 3000);
+    test_zkevm_rw<field_type>({"cold_sstore.json"}, 3000, 500);
 }
 BOOST_AUTO_TEST_CASE(try_catch){
-    test_zkevm_rw<field_type>({"try_catch.json"}, 6000);
+    test_zkevm_rw<field_type>({"try_catch.json"}, 6000, 500);
 }
 BOOST_AUTO_TEST_CASE(try_catch2){
-    test_zkevm_rw<field_type>({"try_catch2.json"}, 6000);
+    test_zkevm_rw<field_type>({"try_catch2.json"}, 6000, 500);
+}
+BOOST_AUTO_TEST_CASE(try_catch_cold){
+    test_zkevm_rw<field_type>({"try_catch_cold.json"}, 6000, 500);
 }
 /*
 BOOST_AUTO_TEST_CASE(small_storage){

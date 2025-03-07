@@ -59,14 +59,8 @@ namespace nil {
                     TYPE call_context_address_lo;
                     TYPE block_id;
                     TYPE tx_id;
-                    TYPE rw_counter_before;
-                    TYPE w_counter_before;
-                    TYPE r_diff_0;
-                    TYPE r_diff_1;
-                    TYPE is_cold;   // Not accessed during the transaction
-                    TYPE w_diff_0;
-                    TYPE w_diff_1;
-                    TYPE is_clean;  // Not changed during the transaction
+                    TYPE is_hot;       // Not accessed during the transaction (should be reverted after revert)
+                    TYPE is_dirty;     // Not changed during the transaction (should be reverted after revert)
                     TYPE U_sum_inv;
                     TYPE V_sum_inv;
                     TYPE is_U_zero;
@@ -76,13 +70,19 @@ namespace nil {
                     TYPE is_equal;
                     TYPE R_hi_inv;
                     TYPE R_lo_inv;
+                    TYPE state_w_id_before;
+                    TYPE access_w_id_before;
+
 
                     if constexpr( stage == GenerationStage::ASSIGNMENT ){
-                        K_hi = w_hi<FieldType>(current_state.stack_top());
-                        K_lo = w_lo<FieldType>(current_state.stack_top());
-                        std::cout << "\tKey = " << current_state.stack_top() << "=[" <<K_hi << "," << K_lo << "] value = " << current_state.stack_top(1) << std::endl;
+                        auto storage_key = current_state.stack_top();
+                        K_hi = w_hi<FieldType>(storage_key);
+                        K_lo = w_lo<FieldType>(storage_key);
+                        std::cout << "\tKey = " << current_state.stack_top() << "=[" <<storage_key << "] value = " << current_state.stack_top(1) << std::endl;
                         auto u = w_to_16(current_state.storage(current_state.stack_top()));
                         auto v = w_to_16(current_state.stack_top(1));
+                        state_w_id_before = current_state.last_write(rw_operation_type::state, current_state.call_context_address, 0, storage_key);
+                        access_w_id_before = current_state.last_write(rw_operation_type::access_list, current_state.call_context_address, 0, storage_key);
 
                         TYPE U_hi = w_hi<FieldType>(current_state.storage(current_state.stack_top()));
                         TYPE U_lo = w_lo<FieldType>(current_state.storage(current_state.stack_top()));
@@ -101,33 +101,12 @@ namespace nil {
 
                         block_id = current_state.block_id;
                         tx_id = current_state.tx_id;
-                        std::size_t rw_counter_before_num = current_state.last_access(
-                            current_state.call_context_address, 0, current_state.stack_top()
-                        );
-                        rw_counter_before = TYPE(rw_counter_before_num);
-                        std::size_t w_counter_before_num = current_state.last_write(
-                            current_state.call_context_address, 0, current_state.stack_top()
-                        );
-                        w_counter_before = TYPE(w_counter_before_num);
 
                         call_context_address_hi = w_hi<FieldType>(current_state.call_context_address);
                         call_context_address_lo = w_lo<FieldType>(current_state.call_context_address);
 
-                        std::size_t r_diff =
-                            rw_counter_before_num > current_state.tx_id ?
-                            rw_counter_before_num - current_state.tx_id :
-                            current_state.tx_id - rw_counter_before_num;
-                        r_diff_0 = ((r_diff & 0xFFFF0000) >> 16);
-                        r_diff_1 = (r_diff & 0xFFFF);
-                        is_cold = (rw_counter_before_num <  current_state.tx_id);
-
-                        std::size_t w_diff =
-                            w_counter_before_num > current_state.tx_id ?
-                            w_counter_before_num - current_state.tx_id :
-                            current_state.tx_id - w_counter_before_num;
-                        w_diff_0 = ((w_diff & 0xFFFF0000) >> 16);
-                        w_diff_1 = (w_diff & 0xFFFF);
-                        is_clean = (w_counter_before_num <  current_state.tx_id);
+                        is_hot = current_state.was_accessed(current_state.call_context_address, 0, storage_key);
+                        is_dirty = current_state.was_written(current_state.call_context_address, 0, storage_key);
 
                         is_equal_hi = (U_hi == V_hi);
                         is_equal_lo = (U_lo == V_lo);
@@ -140,10 +119,8 @@ namespace nil {
                         std::cout << "\tK = " << std::hex << K_hi << " " << K_lo << std::dec << std::endl;
                         std::cout << "\tu = " << std::hex << current_state.storage(current_state.stack_top()) << std::dec << std::endl;
                         std::cout << "\tv = " << std::hex << current_state.stack_top(1) << std::dec << std::endl;
-                        std::cout << "\trw_counter_before = " << rw_counter_before << std::endl;
-                        std::cout << "\tw_counter_before = " << w_counter_before << std::endl;
-                        std::cout << "\tis_cold = " << is_cold << std::endl;
-                        std::cout << "\tis_clean = " << is_clean << std::endl;
+                        std::cout << "\tis_cold = " << 1-is_hot << std::endl;
+                        std::cout << "\tis_clean = " << 1-is_dirty << std::endl;
                         std::cout << "\tis_equal = " << is_equal << std::endl;
                         std::cout << "\tblock_id = " << block_id << std::endl;
                         std::cout << "\ttx_id = " << tx_id << std::endl;
@@ -155,12 +132,8 @@ namespace nil {
                         U_sum_expr += U[i];
                         V_sum_expr += V[i];
                     }
-                    allocate(r_diff_0, 16, 0);
-                    allocate(r_diff_1, 17, 0);
-                    allocate(w_diff_0, 18, 0);
-                    allocate(w_diff_1, 19, 0);
-                    allocate(is_cold, 20, 0);
-                    allocate(is_clean, 21, 0);
+                    allocate(is_hot, 20, 0);
+                    allocate(is_dirty, 21, 0);
                     allocate(is_U_zero, 22, 0);
                     allocate(is_V_zero, 23, 0);
                     allocate(is_equal_hi, 24, 0);
@@ -173,18 +146,21 @@ namespace nil {
                     allocate(K_lo, 35, 0);
                     allocate(block_id, 36, 0);
                     allocate(tx_id, 37, 0);
-                    allocate(rw_counter_before, 38, 0);
-                    allocate(w_counter_before, 39, 0);
                     allocate(U_sum_inv, 40, 0);
                     allocate(V_sum_inv, 41, 0);
                     allocate(R_hi_inv, 42, 0);
                     allocate(R_lo_inv, 43, 0);
+                    allocate(state_w_id_before, 44, 0);
+                    allocate(access_w_id_before, 45, 0);
+
+                    TYPE is_cold = 1 - is_hot;
+                    TYPE is_clean = 1 - is_dirty;
 
                     auto V_128 = chunks16_to_chunks128<TYPE>(V);
                     auto U_128 = chunks16_to_chunks128<TYPE>(U);
 
-                    constrain(is_cold * (1 - is_cold));
-                    constrain(is_cold * (tx_id - rw_counter_before - r_diff_0 * 0x10000 - r_diff_1) + (1 - is_cold) * (rw_counter_before - tx_id - r_diff_0 * 0x10000 - r_diff_1));
+                    constrain(is_hot * (1 - is_hot));
+                    constrain(is_dirty * (1 - is_dirty));
                     constrain(U_sum_expr * (U_sum_expr * U_sum_inv - 1));
                     constrain(U_sum_inv * (U_sum_expr * U_sum_inv - 1));
                     constrain(V_sum_expr * (V_sum_expr * V_sum_inv - 1));
@@ -215,10 +191,10 @@ namespace nil {
                     // TODO: Append refunds
                     if constexpr( stage == GenerationStage::CONSTRAINTS ){
                         constrain(current_state.pc_next() - current_state.pc(0) - 1);                   // PC transition
-                        //constrain(current_state.gas(0) - current_state.gas_next() - gas_cost);               // GAS transition
+                        constrain(current_state.gas(0) - current_state.gas_next() - gas_cost);               // GAS transition
                         constrain(current_state.stack_size(0) - current_state.stack_size_next() - 2);   // stack_size transition
                         constrain(current_state.memory_size(0) - current_state.memory_size_next());     // memory_size transition
-                        constrain(current_state.rw_counter_next() - current_state.rw_counter(0) - 3);   // rw_counter transition
+                        constrain(current_state.rw_counter_next() - current_state.rw_counter(0) - 4);   // rw_counter transition
 
                         std::vector<TYPE> tmp;
                         // Prove block_id correctness
@@ -265,6 +241,24 @@ namespace nil {
                             V_128.second
                         );
                         lookup(tmp, "zkevm_rw");
+
+                        tmp = {
+                            TYPE(rw_op_to_num(rw_operation_type::access_list)),
+                            tx_id,                                              // All state changes are grouped by block
+                            call_context_address_hi * two_128 + call_context_address_lo,
+                            TYPE(0),                                               // field
+                            K_hi,                                                  // storage_key_hi
+                            K_lo,                                                  // storage_key_lo
+                            current_state.rw_counter(0)+2,
+                            TYPE(1),                                               // is_write
+                            TYPE(0),                                               // value_hi
+                            TYPE(2),                                               // value_lo
+                            TYPE(0),                                               // value_before_hi
+                            is_hot + is_dirty,                                     // value_before_lo
+                            current_state.call_id(0),
+                            access_w_id_before
+                        };
+                        lookup(tmp, "zkevm_rw");
                         // 3. Write new value to storage
                         tmp = {
                             TYPE(rw_op_to_num(rw_operation_type::state)),
@@ -273,17 +267,16 @@ namespace nil {
                             TYPE(0),                                            // field
                             K_hi,                                               // storage_key_hi
                             K_lo,                                               // storage_key_lo
-                            current_state.rw_counter(0)+2,
+                            current_state.rw_counter(0)+3,
                             TYPE(1),                                            // is_write
                             V_128.first,
                             V_128.second,
-                            rw_counter_before,                                  // rw_counter_before
-                            w_counter_before,                                   // w_counter_before
-                            current_state.call_id(0),                           // helper_id
                             U_128.first,
-                            U_128.second
+                            U_128.second,
+                            current_state.call_id(0),
+                            state_w_id_before
                         };
-                        lookup(tmp, "zkevm_rw_ext");
+                        lookup(tmp, "zkevm_rw");
                     }
                 }
             };

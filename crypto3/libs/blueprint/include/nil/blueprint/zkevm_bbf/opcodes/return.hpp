@@ -79,28 +79,28 @@ namespace nil {
                         );
                         lookup(tmp, "zkevm_rw");
 
-                        tmp = {
-                            TYPE(1),                     // is_first
-                            TYPE(0),                     // source_id_hi
-                            current_state.call_id(0),    // source_id_lo
-                            TYPE(copy_op_to_num(copy_operand_type::memory)),                     // cp_type
-                            offset,
-                            length,
-                            TYPE(0),  // is_write
-                            current_state.rw_counter(0) + 2    // addr is smaller than maximum contract size
-                        };
-                        lookup(tmp, "zkevm_copy");
-                        tmp = {
-                            TYPE(1),                     // is_first
-                            TYPE(0),                     // dst_id_hi
-                            current_state.call_id(0),    // dst_id_lo
-                            TYPE(copy_op_to_num(copy_operand_type::returndata)),                     // cp_type
-                            0,
-                            length,
-                            TYPE(1),     // is_write
-                            current_state.rw_counter(0) + 2 + length    // addr is smaller than maximum contract size
-                        };
-                        lookup(tmp, "zkevm_copy");
+                        // tmp = {
+                        //     TYPE(1),                     // is_first
+                        //     TYPE(0),                     // source_id_hi
+                        //     current_state.call_id(0),    // source_id_lo
+                        //     TYPE(copy_op_to_num(copy_operand_type::memory)),                     // cp_type
+                        //     offset,
+                        //     length,
+                        //     TYPE(0),  // is_write
+                        //     current_state.rw_counter(0) + 2    // addr is smaller than maximum contract size
+                        // };
+                        // lookup(tmp, "zkevm_copy");
+                        // tmp = {
+                        //     TYPE(1),                     // is_first
+                        //     TYPE(0),                     // dst_id_hi
+                        //     current_state.call_id(0),    // dst_id_lo
+                        //     TYPE(copy_op_to_num(copy_operand_type::returndata)),                     // cp_type
+                        //     0,
+                        //     length,
+                        //     TYPE(1),     // is_write
+                        //     current_state.rw_counter(0) + 2 + length    // addr is smaller than maximum contract size
+                        // };
+                        // lookup(tmp, "zkevm_copy");
                         // constrain(current_state.pc_next() - current_state.pc(0) - 1);                   // PC transition
                         // constrain(current_state.gas(0) - current_state.gas_next() - 1);                 // GAS transition
                         // constrain(current_state.stack_size(0) - current_state.stack_size_next());       // stack_size transition

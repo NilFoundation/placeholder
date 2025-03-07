@@ -177,7 +177,10 @@ namespace nil {
                             zkevm_opcode current_opcode = opcode_from_number(current_state.opcode);
 
                             if( opcode_impls.find(current_opcode) == opcode_impls.end() ){
-                                std::cout << "Opcode not found " << current_opcode << " skip it" << std::endl;
+                                std::cout
+                                    << "Opcode not found " << current_opcode
+                                    << " with numbeer 0x" << std::hex << current_state.opcode << std::dec
+                                    << " skip it" << std::endl;
                                 BOOST_ASSERT(false);
                                 continue;
                             }

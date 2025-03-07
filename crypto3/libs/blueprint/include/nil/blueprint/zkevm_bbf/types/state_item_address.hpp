@@ -29,21 +29,21 @@
 #include <nil/blueprint/components/hashes/keccak/util.hpp> //Move needed utils to bbf
 #include <nil/blueprint/bbf/generic.hpp>
 
-#include <nil/blueprint/zkevm_bbf/types/zkevm_state.hpp>
+#include <nil/blueprint/zkevm_bbf/types/zkevm_word.hpp>
 
 namespace nil {
     namespace blueprint {
         namespace bbf {
-            struct zkevm_call_context{
-                zkevm_state state;            // State from parent CALL before CALL
-                std::size_t call_id;          // Current CALL id
-                std::size_t returndataoffset; // CALL opcode parameters
-                std::size_t returndatalength; // CALL opcode parameters
-                std::map<std::tuple<rw_operation_type, zkevm_word_type, std::size_t, zkevm_word_type>, rw_operation> cold_access_list; // For REVERT proving. First state access rw_operation in the given CALL
-                std::map<std::tuple<rw_operation_type, zkevm_word_type, std::size_t, zkevm_word_type>, rw_operation> cold_write_list;
-
-                std::set<std::tuple<zkevm_word_type, std::size_t, zkevm_word_type>> was_accessed; // For SLOAD, SSTORE gas proving
-                std::set<std::tuple<zkevm_word_type, std::size_t, zkevm_word_type>> was_written;
+            enum class zkevm_state_field_type: std::uint8_t {
+                storage = 0,
+                initialized = 1,
+                balance = 2,
+                currency = 3,
+                code_hash = 4,
+                async_context = 5,
+                seq_no = 6,
+                ext_seq_no = 7,
+                request_id = 8
             };
         } // namespace bbf
     } // namespace blueprint

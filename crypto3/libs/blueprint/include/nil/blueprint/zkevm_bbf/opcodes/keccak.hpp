@@ -96,27 +96,25 @@ namespace nil {
                         );
                         lookup(tmp, "zkevm_rw");
                         tmp = {
-                            TYPE(1),                     // is_first
-                            TYPE(0),                     // source_id_hi
-                            current_state.call_id(0),    // source_id_lo
-                            TYPE(copy_op_to_num(copy_operand_type::memory)),                     // cp_type
-                            offset,
-                            length,
-                            TYPE(0),  // is_write
-                            current_state.rw_counter(0) + 2,
-                            TYPE(0),// rw_counter_before
-                            TYPE(0) // helper_id
+                            TYPE(1),                                            // is_first
+                            TYPE(0),                                            // is_write
+                            TYPE(copy_op_to_num(copy_operand_type::memory)),    // cp_type
+                            TYPE(0),                                            // id_hi
+                            current_state.call_id(0),                           // id_lo
+                            offset,                                             // counter_1
+                            current_state.rw_counter(0) + 2,                    // counter_2
+                            length
                         };
                         lookup(tmp, "zkevm_copy");
                         tmp = {
-                            TYPE(1),                     // is_first
-                            hash_hi,                     // source_id_hi
-                            hash_lo,    // source_id_lo
-                            TYPE(copy_op_to_num(copy_operand_type::keccak)),                     // cp_type
-                            0,
-                            length,
-                            TYPE(1),  // is_write
-                            current_state.rw_counter(0) + 2 + length   // addr is smaller than maximum contract size
+                            TYPE(1),                                            // is_first
+                            TYPE(1),                                            // is_write
+                            TYPE(copy_op_to_num(copy_operand_type::keccak)),    // cp_type
+                            hash_hi,                                            // id_hi
+                            hash_lo,                                            // id_lo
+                            TYPE(0),                                            // counter_1
+                            TYPE(0),                                            // counter_2
+                            length
                         };
                         lookup(tmp, "zkevm_copy");
                         tmp = rw_table<FieldType, stage>::stack_lookup(

@@ -92,6 +92,7 @@
 #include <nil/blueprint/zkevm_bbf/opcodes/end_call.hpp>
 #include <nil/blueprint/zkevm_bbf/opcodes/end_transaction.hpp>
 #include <nil/blueprint/zkevm_bbf/opcodes/end_block.hpp>
+#include <nil/blueprint/zkevm_bbf/opcodes/extcodesize.hpp>
 
 namespace nil {
     namespace blueprint {
@@ -728,6 +729,7 @@ namespace nil {
                 opcodes[zkevm_opcode::DELEGATECALL] = std::make_shared<zkevm_delegatecall_operation<BlueprintFieldType>>();
                 opcodes[zkevm_opcode::GAS] = std::make_shared<zkevm_gas_operation<BlueprintFieldType>>();
                 opcodes[zkevm_opcode::STATICCALL] = std::make_shared<zkevm_staticcall_operation<BlueprintFieldType>>();
+                opcodes[zkevm_opcode::EXTCODESIZE] = std::make_shared<zkevm_extcodesize_operation<BlueprintFieldType>>();
 
                 // // DUP
                 opcodes[zkevm_opcode::DUP1] = std::make_shared<zkevm_dupx_operation<BlueprintFieldType>>(1);

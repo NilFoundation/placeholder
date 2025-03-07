@@ -39,21 +39,16 @@ namespace nil {
                 start = 0,
                 stack = 1,
                 memory = 2,
+                call_context = 3,       // Grouped by call
 
-                state = 3,              // Grouped by block, includes STORAGE and ACCOUNT operations
-                transient_storage = 4,  // Grouped by transaction
-                call_context = 5,       // Grouped by call
+                // May be reverted
+                state = 4,              // Grouped by block, includes STORAGE and ACCOUNT operations
+                transient_storage = 5,  // Grouped by transaction
+                access_list = 6,
 
-                tx_refund =6,
-                tx_log = 7,             // Do we really need it? Maybe look strait to reciept hash?
-                tx_receipt = 8,
-
-                cold_access = 9,         // STATE operations grouped by call for REVERT proving
-                // call_transient_state -- may be latez
-
-                padding = 10
+                padding = 7
             };
-            static constexpr std::size_t rw_operation_types_amount = 11;
+            static constexpr std::size_t rw_operation_types_amount = 8;
 
             std::size_t rw_op_to_num(rw_operation_type rw_op){
                 return std::size_t(rw_op);
@@ -71,10 +66,13 @@ namespace nil {
                     rw_counter(0),
                     is_write(false),
                     value(0),
+                    value_before(0),
                     initial_value(0),
-                    helper_id(0),
+                    w_id_before(0),
                     root(0),
-                    initial_root(0) {};
+                    initial_root(0),
+                    call_id(0)
+                    {};
 
                 rw_operation_type op;           // operation type
                 std::size_t       id;
@@ -85,18 +83,34 @@ namespace nil {
                 bool              is_write;
                 zkevm_word_type   value;
 
+                std::size_t       call_id;
                 zkevm_word_type   initial_value; // for stack, memory ,it’s zero, Storage item value before transaction for storage operation
-                std::size_t       helper_id;
-
-                zkevm_word_type   root;                 // used only for state and transient_storage.
-                zkevm_word_type   initial_root;         // used only for state and transient_storage.
-                // For cold_access proving
-                std::size_t       parent_id;
-                std::size_t       call_id_helper;
-                std::size_t       rw_counter_helper;
-                std::size_t       rw_id_before;
-                std::size_t       write_id_before;
+                zkevm_word_type   initial_root;         // used for state, OutMessages, InMessages
+                zkevm_word_type   root;                 // used for state, OutMessages, InMessages
                 zkevm_word_type   value_before;
+                std::size_t       w_id_before;      // Important helpers for call_commit proving
+
+                rw_operation(
+                    rw_operation_type _op,
+                    std::size_t       _id,
+                    zkevm_word_type   _address,
+                    std::uint8_t      _field,
+                    zkevm_word_type    _storage_key,
+                    std::size_t       _rw_counter,
+                    bool              _is_write,
+                    zkevm_word_type   _value,
+                    zkevm_word_type   _value_before,
+                    zkevm_word_type   _w_id_before,
+                    std::size_t       _call_id,
+                    zkevm_word_type   _initial_value,
+                    zkevm_word_type   _initial_root,
+                    zkevm_word_type   _root
+                ): op(_op), id(_id), address(_address), field(_field),
+                    storage_key(_storage_key), rw_counter(_rw_counter),
+                    is_write(_is_write), value(_value), call_id(_call_id),
+                    initial_value(_initial_value), initial_root(_initial_root),
+                    root(_root), value_before(_value_before), w_id_before(_w_id_before)
+                {}
 
                 bool operator< (const rw_operation &other) const {
                     if( op != other.op ) return op < other.op;                                      // 16 bits
@@ -114,20 +128,23 @@ namespace nil {
                 if(obj.op == rw_operation_type::start )                           os << "START               : ";
                 if(obj.op == rw_operation_type::stack )                           os << "STACK               : ";
                 if(obj.op == rw_operation_type::memory )                          os << "MEMORY              : ";
+                if(obj.op == rw_operation_type::call_context )                    os << "CALL_CONTEXT_OP     : ";
+
                 if(obj.op == rw_operation_type::state )                           os << "STATE               : ";
                 if(obj.op == rw_operation_type::transient_storage )               os << "TRANSIENT_STORAGE   : ";
-                if(obj.op == rw_operation_type::call_context )                    os << "CALL_CONTEXT_OP     : ";
-                if(obj.op == rw_operation_type::tx_refund )                       os << "TX_REFUND_OP        : ";
-                if(obj.op == rw_operation_type::tx_log )                          os << "TX_LOG_OP           : ";
-                if(obj.op == rw_operation_type::tx_receipt )                      os << "TX_RECEIPT_OP       : ";
-                if(obj.op == rw_operation_type::cold_access )                     os << "COLD_ACCESS         : ";
+                if(obj.op == rw_operation_type::access_list )                     os << "ACCESS_LIST         : ";
+
                 if(obj.op == rw_operation_type::padding )                         os << "PADDING             : ";
-                os << "rw_id = " << obj.rw_counter << " id = " << obj.id << ", addr =" << std::hex << obj.address << std::dec;
+
+                os  << " id = " << obj.id
+                    << " call_id = " << obj.call_id
+                    << " rw_id = " << obj.rw_counter
+                    << " addr = " << std::hex
+                    << obj.address << std::dec;
                 if( obj.op == rw_operation_type::state ||
                     obj.op == rw_operation_type::transient_storage ||
-                    obj.op == rw_operation_type::cold_access
-                )
-                    os << " storage_key = " << obj.storage_key;
+                    obj.op == rw_operation_type::access_list
+                )   os << " storage_key = " << obj.storage_key;
                 if( obj.op == rw_operation_type::call_context){
                     std::cout << " field = ";
                     if(obj.field == 0) os << "parent_id";
@@ -138,13 +155,9 @@ namespace nil {
                     if(obj.field == 5) os << "to";
                     if(obj.field == 6) os << "call_context_address";
                 }
-                if(obj.op == rw_operation_type::cold_access){
-                    os << " parent_id = " << obj.parent_id;
-                    os << " call_id_helper = " << obj.call_id_helper;
-                    os << " rw_counter_helper = " << obj.rw_counter_helper;
-                }
                 if(obj.is_write) os << " W "; else os << " R ";
                 os << "[" << std::hex << obj.initial_value << std::dec <<"] => ";
+                os << "[" << std::hex << obj.value_before << std::dec <<"] => ";
                 os << "[" << std::hex << obj.value << std::dec <<"]";
                 return os;
             }
@@ -198,8 +211,7 @@ namespace nil {
                 zkevm_word_type value,
                 zkevm_word_type initial_value,
                 std::size_t     call_id,
-                std::size_t     rw_id_before,
-                std::size_t     write_id_before,
+                std::size_t     w_id_before,
                 zkevm_word_type value_before,
                 zkevm_word_type root = zkevm_word_type(0),
                 zkevm_word_type initial_root = zkevm_word_type(0)
@@ -214,9 +226,8 @@ namespace nil {
                 r.is_write = is_write;
                 r.initial_value = initial_value;
                 r.value = value;
-                r.helper_id = call_id;
-                r.rw_id_before = rw_id_before;
-                r.write_id_before = write_id_before;
+                r.call_id = call_id;
+                r.w_id_before = w_id_before;
                 r.value_before = value_before;
                 return r;
             }
@@ -231,8 +242,7 @@ namespace nil {
                 zkevm_word_type value,
                 zkevm_word_type initial_value,
                 std::size_t     call_id,
-                std::size_t     rw_id_before,
-                std::size_t     write_id_before,
+                std::size_t     w_id_before,
                 zkevm_word_type value_before,
                 zkevm_word_type root = zkevm_word_type(0),
                 zkevm_word_type initial_root = zkevm_word_type(0)
@@ -247,49 +257,43 @@ namespace nil {
                 r.is_write = is_write;
                 r.initial_value = initial_value;
                 r.value = value;
-                r.helper_id = call_id;
-                r.rw_id_before = rw_id_before;
-                r.write_id_before = write_id_before;
+                r.call_id = call_id;
+                r.w_id_before = w_id_before;
                 r.value_before = value_before;
                 return r;
             }
 
-            rw_operation cold_access_rw_operation(
-                const std::size_t   call_id,
-                const std::size_t   counter,
-                const std::size_t   parent_id,
-                const rw_operation& state_op
+            rw_operation access_list_rw_operation(
+                std::size_t     tx_id,
+                zkevm_word_type address,
+                std::size_t     field_tag,
+                zkevm_word_type storage_key,
+                std::size_t     rw_id,
+                bool            is_write,
+                zkevm_word_type value,
+                std::size_t     call_id,
+                zkevm_word_type value_before,
+                std::size_t     w_id_before
             ){
-                BOOST_ASSERT(state_op.op == rw_operation_type::state);
                 rw_operation r;
-                r.op = rw_operation_type::cold_access;
-                r.id = call_id;
-                r.address = state_op.address;
-                r.field = state_op.field;
-                r.storage_key = state_op.storage_key;
-                r.rw_counter = counter;
-                r.is_write = state_op.is_write;
-                r.value = state_op.value_before;
-                r.initial_value = state_op.initial_value;
-                r.helper_id = state_op.id; // Block_id
-                r.parent_id = parent_id;
-                r.call_id_helper = state_op.helper_id;
-                r.rw_counter_helper = state_op.rw_counter;
-                r.initial_value = state_op.value;
-                r.rw_id_before = state_op.rw_id_before;
-                r.write_id_before = state_op.write_id_before;
-                r.value_before = state_op.value;
-                std::cout << "Flush access list " << call_id
-                    << " rw_id_before " << r.rw_id_before
-                    << " write_id_before " << r.write_id_before
-                    << std::endl;
-
+                r.op = rw_operation_type::access_list;
+                r.id = tx_id;
+                r.address = address;
+                r.field = field_tag;
+                r.storage_key = storage_key;
+                r.rw_counter = rw_id;
+                r.is_write = is_write;
+                r.value = value;
+                r.call_id = call_id;
+                r.value_before = value_before;
+                r.w_id_before = w_id_before;
                 return r;
             }
 
             // TODO: define flag correctly
             rw_operation account_code_hash_rw_operation(
-                std::size_t id,
+                std::size_t block_id,
+                std::size_t call_id,
                 zkevm_word_type address,
                 std::size_t rw_id,
                 bool is_write,
@@ -299,7 +303,8 @@ namespace nil {
             ){
                 rw_operation r;
                 r.op = rw_operation_type::state;
-                r.id = id;
+                r.op = rw_operation_type::state;
+                r.id = block_id;
                 r.address = address;
                 r.storage_key = 0;
                 r.field = 1;
@@ -307,6 +312,7 @@ namespace nil {
                 r.is_write = is_write;
                 r.value = value;
                 r.initial_value = value_prev;
+                r.call_id = call_id;
                 return r;
             }
 

@@ -41,7 +41,7 @@ namespace nil {
                 using input_type = typename std::conditional<stage==GenerationStage::ASSIGNMENT, rw_operations_vector, std::nullptr_t>::type;
                 using integral_type =  nil::crypto3::multiprecision::big_uint<257>;
             public:
-                // For connection with upper-level circuits
+                // rw_table
                 std::vector<TYPE> op;
                 std::vector<TYPE> id;
                 std::vector<TYPE> address;
@@ -52,14 +52,12 @@ namespace nil {
                 std::vector<TYPE> is_write;
                 std::vector<TYPE> value_hi;
                 std::vector<TYPE> value_lo;
-                std::vector<TYPE> rw_id_before;       // For hot/cold access proving
-                std::vector<TYPE> write_id_before;    // For clean/dirty access proving
-                std::vector<TYPE> helper_id;          // For call access list supporting
-
-                std::vector<TYPE> value_before_hi;    // For storage gas calculation
+                std::vector<TYPE> value_before_hi;    // For storage gas calculation, access_lists
                 std::vector<TYPE> value_before_lo;
-
-                static std::size_t get_witness_amount(){ return 15; }
+                std::vector<TYPE> call_id;
+                std::vector<TYPE> w_id_before;    // For call_commit proving
+\
+                static std::size_t get_witness_amount(){ return 14; }
 
                 static std::vector<TYPE> call_context_lookup(
                     TYPE call_id,
@@ -77,7 +75,11 @@ namespace nil {
                         call_id + field,                                                      // rw_counter
                         TYPE(0),                                                              // is_write
                         value_hi,
-                        value_lo
+                        value_lo,
+                        TYPE(0),                                               // value_before_hi
+                        TYPE(0),                                               // value_before_lo
+                        TYPE(0),                                               // call_id
+                        TYPE(0)                                                // w_id_before
                     };
                 }
 
@@ -110,7 +112,11 @@ namespace nil {
                         rw_counter,
                         is_write,
                         value_hi,
-                        value_lo
+                        value_lo,
+                        TYPE(0),                                               // value_before_hi
+                        TYPE(0),                                               // value_before_lo
+                        TYPE(0),                                               // call_id
+                        TYPE(0)                                                // w_id_before
                     };
                 }
 
@@ -131,19 +137,30 @@ namespace nil {
                         rw_counter,
                         is_write,
                         TYPE(0),              // hi bytes are 0
-                        value_lo
+                        value_lo,
+                        TYPE(0),              // value_before_hi
+                        TYPE(0),              // value_before_lo
+                        TYPE(0),              // call_id
+                        TYPE(0)               // w_id_before
                     };
                 }
 
                 rw_table(context_type &context_object, const input_type &input, std::size_t max_rw_size, bool register_dynamic_lookup)
                     :generic_component<FieldType,stage>(context_object),
-                    op(max_rw_size), id(max_rw_size), address(max_rw_size),
-                    storage_key_hi(max_rw_size), storage_key_lo(max_rw_size),
-                    field_type(max_rw_size), is_write(max_rw_size),
-                    rw_id(max_rw_size), value_hi(max_rw_size), value_lo(max_rw_size),
-                    value_before_hi(max_rw_size), value_before_lo(max_rw_size), rw_id_before(max_rw_size),
-                    helper_id(max_rw_size),
-                    write_id_before(max_rw_size)
+                    op(max_rw_size),
+                    id(max_rw_size),
+                    address(max_rw_size),
+                    field_type(max_rw_size),
+                    storage_key_hi(max_rw_size),
+                    storage_key_lo(max_rw_size),
+                    rw_id(max_rw_size),
+                    is_write(max_rw_size),
+                    value_hi(max_rw_size),
+                    value_lo(max_rw_size),
+                    value_before_hi(max_rw_size),
+                    value_before_lo(max_rw_size),
+                    call_id(max_rw_size),
+                    w_id_before(max_rw_size)
                 {
                     if constexpr  (stage == GenerationStage::ASSIGNMENT) {
                         auto rw_trace = input;
@@ -164,7 +181,7 @@ namespace nil {
                             rw_id[i] = rw_trace[i].rw_counter;
                             value_hi[i] = w_hi<FieldType>(rw_trace[i].value);
                             value_lo[i] = w_lo<FieldType>(rw_trace[i].value);
-                            helper_id[i] = rw_trace[i].helper_id;
+                            call_id[i] = rw_trace[i].call_id;
 
                             if( i == 0 ) continue;
                             bool is_first =
@@ -175,28 +192,12 @@ namespace nil {
                                 storage_key_lo[i-1] != storage_key_lo[i] ||
                                 field_type[i-1] != field_type[i];
 
-                            if( rw_trace[i].op == rw_operation_type::state ) {
-                                if( is_first  )   {
-                                    value_before_hi[i] = w_hi<FieldType>(rw_trace[i].initial_value);
-                                    value_before_lo[i] = w_lo<FieldType>(rw_trace[i].initial_value);
-                                } else {
-                                    value_before_hi[i] = value_hi[i-1];
-                                    value_before_lo[i] = value_lo[i-1];
-                                    rw_id_before[i] = rw_id[i-1];
-                                    if (is_write[i-1] != 0)
-                                        write_id_before[i] = rw_id[i-1];
-                                    else
-                                        write_id_before[i] = write_id_before[i-1];
-                                }
-                                state_value_before[rw_trace[i].rw_counter] = std::make_pair(value_before_hi[i], value_before_lo[i]);
-                            }
-                            if( rw_trace[i].op == rw_operation_type::cold_access ) {
-                                // rw_operation_type::cold_access > rw_operation_type::state
-                                // So, state_value_before is fully prepared
+                            if( rw_trace[i].op == rw_operation_type::state ||
+                                rw_trace[i].op == rw_operation_type::access_list
+                            ) {
                                 value_before_hi[i] = w_hi<FieldType>(rw_trace[i].value_before);
                                 value_before_lo[i] = w_lo<FieldType>(rw_trace[i].value_before);
-                                rw_id_before[i] = rw_trace[i].rw_id_before;
-                                write_id_before[i] = rw_trace[i].write_id_before;
+                                w_id_before[i] = rw_trace[i].w_id_before;
                             }
                         }
                         for( std::size_t i = rw_trace.size(); i < max_rw_size; i++ ){
@@ -214,15 +215,13 @@ namespace nil {
                         allocate(is_write[i], 7, i);
                         allocate(value_hi[i], 8, i);
                         allocate(value_lo[i], 9, i);
-                        allocate(rw_id_before[i], 10, i);
-                        allocate(write_id_before[i], 11, i);
-                        allocate(helper_id[i], 12, i);
-                        allocate(value_before_hi[i], 13, i);
-                        allocate(value_before_lo[i], 14, i);
+                        allocate(value_before_hi[i], 10, i);
+                        allocate(value_before_lo[i], 11, i);
+                        allocate(call_id[i], 12, i);
+                        allocate(w_id_before[i], 13, i);
                     }
-                    lookup_table("zkevm_rw_items",std::vector<std::size_t>({0,1,2,3,4,5}),0,max_rw_size);
-                    lookup_table("zkevm_rw",std::vector<std::size_t>({0,1,2,3,4,5,6,7,8,9}),0,max_rw_size);
-                    lookup_table("zkevm_rw_ext",std::vector<std::size_t>({0,1,2,3,4,5,6,7,8,9,10,11,12,13,14}),0,max_rw_size);
+                    lookup_table("zkevm_rw",std::vector<std::size_t>({0,1,2,3,4,5,6,7,8,9,10,11,12,13}),0,max_rw_size);
+                    lookup_table("zkevm_rw_short",std::vector<std::size_t>({0,1,2,3,4,5,6,7,8,9}),0,max_rw_size);
                 }
             };
          }
