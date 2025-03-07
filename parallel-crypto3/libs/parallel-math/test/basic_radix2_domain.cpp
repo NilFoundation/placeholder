@@ -22,7 +22,7 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE basic_radix2_domain_test
+#define BOOST_TEST_MODULE parallel_basic_radix2_domain_test
 
 #include <vector>
 #include <cstdint>

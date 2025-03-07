@@ -140,8 +140,8 @@ namespace nil {
                     TYPE N_sum;
                     TYPE c_1_64;
                     TYPE first_carryless;
-                    TYPE second_row_carries;
-                    TYPE third_row_carries;
+                    TYPE second_carryless;
+                    TYPE third_carryless;
                     TYPE two_192_cell;
                     TYPE two_128_cell;
                     TYPE two_64_cell;
@@ -193,24 +193,23 @@ namespace nil {
                             r_64_chunks.push_back(chunk_sum_64<value_type>(r_chunks, i));
                             q_64_chunks.push_back(chunk_sum_64<value_type>(q_chunks, i));
                         }
+                    }
+                    first_carryless = first_carryless_construct<TYPE>(s_64_chunks, N_64_chunks,
+                                                                        r_64_chunks, q_64_chunks);
+                    second_carryless = second_carryless_construct<TYPE>(s_64_chunks, N_64_chunks,
+                                                                        r_64_chunks, q_64_chunks);
+                    third_carryless = third_carryless_construct<TYPE>(N_64_chunks, r_64_chunks);
+
+                    if constexpr (stage == GenerationStage::ASSIGNMENT) {
                         // caluclate first row carries
-                        first_carryless = first_carryless_construct<TYPE>(s_64_chunks, N_64_chunks,
-                                                                          r_64_chunks, q_64_chunks);
-                        auto first_row_carries = first_carryless_construct(s_64_chunks, N_64_chunks,
-                                                                           r_64_chunks, q_64_chunks)
-                                                     .data.base() >>
-                                                 128;
-                        value_type c_1 =
+                        auto first_row_carries =first_carryless.data.base()>>128;
+                        value_type c_1 = 
                             static_cast<value_type>(first_row_carries & (two_64 - 1).data.base());
                         c_2 = static_cast<value_type>(first_row_carries >> 64);
                         c_1_chunks = chunk_64_to_16<FieldType>(c_1);
                         // no need for c_2 chunks as there is only a single chunk
                         auto second_row_carries =
-                            (second_carryless_construct(s_64_chunks, N_64_chunks, r_64_chunks,
-                                                        q_64_chunks) +
-                             c_1 + c_2 * two_64)
-                                .data.base() >>
-                            128;
+                            (second_carryless + c_1 + c_2 * two_64).data.base() >> 128;
                         c_3 = static_cast<value_type>(second_row_carries);
                         std::vector<value_type> c_3_chunks = chunk_64_to_16<FieldType>(c_3);
                         value_type N_sum =
@@ -220,8 +219,7 @@ namespace nil {
                         // value_type
                         c_1_64 = chunk_sum_64<TYPE>(c_1_chunks, 0);
 
-                        auto third_row_carries =
-                            third_carryless_construct(N_64_chunks, r_64_chunks).data.base() >> 128;
+                        auto third_row_carries = third_carryless.data.base() >> 128;
 
                         carry[0][0] = 0;
                         carry[1][0] = 0;
@@ -350,20 +348,20 @@ namespace nil {
                     allocate(first_carryless, 32, 0);
                     allocate(c_1_64, 33, 0);
                     allocate(c_2, 34, 0);
-                    constrain((first_carryless - c_1_64 * two_128 - c_2 * two_192));
+                    constrain(first_carryless - c_1_64 * two_128 - c_2 * two_192);
 
-                    allocate(second_row_carries, 32, 1);
+                    allocate(second_carryless, 32, 1);
                     allocate(c_3, 33, 1);
-                    constrain((second_row_carries + c_1_64 + c_2 * two_64 - c_3 * two_128));
+                    constrain(second_carryless + c_1_64 + c_2 * two_64 - c_3 * two_128);
 
                     allocate(N_64_chunks[0], 31, 2);
-                    allocate(third_row_carries, 32, 2);
+                    allocate(third_carryless, 32, 2);
                     allocate(r_overflow, 33, 2);
                     allocate(s_overflow, 34, 2);
                     allocate(N_sum, 35, 2);
                     allocate(N_sum_inverse, 36, 2);
-                    constrain((third_row_carries + r_overflow * N_64_chunks[0] + c_3 -
-                               s_overflow * N_sum * N_sum_inverse));
+                    constrain(third_carryless + r_overflow * N_64_chunks[0] + c_3 -
+                               s_overflow * N_sum * N_sum_inverse);
 
                     allocate(N_64_chunks[3], 30, 1);
                     allocate(r_64_chunks[3], 31, 1);

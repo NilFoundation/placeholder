@@ -28,25 +28,13 @@
 #ifndef CRYPTO3_BLUEPRINT_PLONK_BBF_CHOICE_FUNCTION_COMPONENT_HPP
 #define CRYPTO3_BLUEPRINT_PLONK_BBF_CHOICE_FUNCTION_COMPONENT_HPP
 
-#include <functional>
 #include <nil/blueprint/bbf/generic.hpp>
-#include <nil/blueprint/blueprint/plonk/assignment.hpp>
-#include <nil/blueprint/blueprint/plonk/circuit.hpp>
-#include <nil/blueprint/component.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/constraint_system.hpp>
+#include <nil/blueprint/bbf/components/detail/allocate_public_input_chunks.hpp>
 
 namespace nil {
     namespace blueprint {
         namespace bbf {
             namespace components {
-
-                template<typename FieldType>
-                struct choice_function_raw_input {
-                    using TYPE = typename FieldType::value_type;
-                    TYPE q;
-                    std::vector<TYPE> x;
-                    std::vector<TYPE> y;
-                };
 
                 template<typename FieldType, GenerationStage stage>
                 class choice_function : public generic_component<FieldType, stage> {
@@ -58,10 +46,12 @@ namespace nil {
                     using typename generic_component<FieldType, stage>::TYPE;
                     using typename generic_component<FieldType, stage>::context_type;
                     using typename generic_component<FieldType, stage>::table_params;
-                    using raw_input_type =
-                        typename std::conditional<stage == GenerationStage::ASSIGNMENT,
-                                                  choice_function_raw_input<FieldType>,
-                                                  std::tuple<>>::type;
+
+                    struct input_type {
+                      TYPE q;
+                      std::vector<TYPE> x;
+                      std::vector<TYPE> y;
+                    };
 
                   public:
                     std::vector<TYPE> r;
@@ -74,40 +64,27 @@ namespace nil {
                         return {witness, public_inputs, constants, rows};
                     }
 
-                    static std::tuple<TYPE, std::vector<TYPE>, std::vector<TYPE>>
-                    form_input(context_type &context_object, raw_input_type raw_input,
-                               std::size_t num_chunks) {
-                        TYPE input_q;
-                        std::vector<TYPE> input_x(num_chunks);
-                        std::vector<TYPE> input_y(num_chunks);
-                        if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                            for (std::size_t i = 0; i < num_chunks; ++i) {
-                                input_q = raw_input.q;
-                                input_x[i] = raw_input.x[i];
-                                input_y[i] = raw_input.y[i];
-                            }
-                        }
-                        context_object.allocate(input_q, 0, 0, column_type::public_input);
-                        for (std::size_t i = 0; i < num_chunks; ++i) {
-                            context_object.allocate(input_x[i], 0, i + 1,
-                                                    column_type::public_input);
-                            context_object.allocate(input_y[i], 0, i + num_chunks + 1,
-                                                    column_type::public_input);
-                        }
-                        return std::make_tuple(input_q, input_x, input_y);
+                    static void allocate_public_inputs(
+                            context_type& ctx, input_type& input,
+                            std::size_t num_chunks) {
+                        AllocatePublicInputChunks allocate_chunks(ctx, num_chunks);
+
+                        std::size_t row = 0;
+                        ctx.allocate(input.q, 0, row++, column_type::public_input);
+                        allocate_chunks(input.x, 0, &row);
+                        allocate_chunks(input.y, 0, &row);
                     }
 
-                    choice_function(context_type &context_object, TYPE input_q,
-                                    std::vector<TYPE> input_x, std::vector<TYPE> input_y,
+                    choice_function(context_type &context_object, const input_type &input,
                                     std::size_t num_chunks, bool make_links = true)
                         : generic_component<FieldType, stage>(context_object) {
                         TYPE Q, X[num_chunks], Y[num_chunks], R[num_chunks];
 
                         if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                            Q = input_q;
+                            Q = input.q;
                             for (std::size_t i = 0; i < num_chunks; i++) {
-                                X[i] = input_x[i];
-                                Y[i] = input_y[i];
+                                X[i] = input.x[i];
+                                Y[i] = input.y[i];
                             }
                         }
 
@@ -121,10 +98,10 @@ namespace nil {
                         }
 
                         if (make_links) {
-                            copy_constrain(Q, input_q);
+                            copy_constrain(Q, input.q);
                             for (std::size_t i = 0; i < num_chunks; i++) {
-                                copy_constrain(X[i], input_x[i]);
-                                copy_constrain(Y[i], input_y[i]);
+                                copy_constrain(X[i], input.x[i]);
+                                copy_constrain(Y[i], input.y[i]);
                             }
                         }
 

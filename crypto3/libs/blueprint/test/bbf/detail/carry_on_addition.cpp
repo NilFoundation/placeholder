@@ -45,14 +45,14 @@ void test_carry_on_addition(
     using TYPE = typename FieldType::value_type;
 
     typename bbf::components::carry_on_addition<
-        FieldType, bbf::GenerationStage::ASSIGNMENT>::raw_input_type raw_input;
-    raw_input.x =
+        FieldType, bbf::GenerationStage::ASSIGNMENT>::input_type input;
+    input.x =
         std::vector<TYPE>(public_input.begin(), public_input.begin() + num_chunks);
-    raw_input.y =
+    input.y =
         std::vector<TYPE>(public_input.begin() + num_chunks, public_input.end());
     auto B = bbf::circuit_builder<FieldType, bbf::components::carry_on_addition,
                                   std::size_t, std::size_t>(num_chunks, bit_size_chunk);
-    auto [at, A, desc] = B.assign(raw_input);
+    auto [at, A, desc] = B.assign(input);
     bool pass = B.is_satisfied(at);
     std::cout << "Is_satisfied = " << pass << std::endl;
 

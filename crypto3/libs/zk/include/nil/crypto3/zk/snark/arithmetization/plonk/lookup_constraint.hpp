@@ -89,7 +89,7 @@ namespace nil {
                                 std::is_same<typename Container::value_type, expression_type>::value ||
                                 std::is_same<typename Container::value_type, constraint_type>::value),
                             lookup_input_constraints>
-                    operator*(const Container& other) {
+                    operator*(const Container& other) const {
                         lookup_input_constraints result = *this;
                         result *= other;
                         return result;
@@ -119,7 +119,7 @@ namespace nil {
                                 std::is_same<typename Container::value_type, expression_type>::value ||
                                 std::is_same<typename Container::value_type, constraint_type>::value),
                             lookup_input_constraints>
-                    operator+(const Container& other) {
+                    operator+(const Container& other) const {
                         lookup_input_constraints result = *this;
                         result += other;
                         return result;
@@ -149,7 +149,7 @@ namespace nil {
                                 std::is_same<typename Container::value_type, expression_type>::value ||
                                 std::is_same<typename Container::value_type, constraint_type>::value),
                             lookup_input_constraints>
-                    operator-(const Container& other) {
+                    operator-(const Container& other) const {
                         lookup_input_constraints result = *this;
                         result -= other;
                         return result;

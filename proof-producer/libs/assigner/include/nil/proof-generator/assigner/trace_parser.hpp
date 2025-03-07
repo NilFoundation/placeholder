@@ -213,7 +213,6 @@ namespace nil {
         using CopyEvents = std::vector<blueprint::bbf::copy_event>;
         using ExpTraces = std::vector<exp_input>;
 
-        // TODO(oclaw): replace with struct from bbf when available
         struct keccak_input {
             std::vector<uint8_t> buffer;
             blueprint::zkevm_word_type hash;

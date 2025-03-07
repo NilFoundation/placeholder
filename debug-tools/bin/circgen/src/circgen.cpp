@@ -41,7 +41,10 @@
 #include <nil/crypto3/algebra/curves/mnt4.hpp>
 #include <nil/crypto3/algebra/curves/mnt6.hpp>
 
-#include <nil/crypto3/algebra/fields/goldilocks64/base_field.hpp>
+#include <nil/crypto3/algebra/fields/babybear.hpp>
+#include <nil/crypto3/algebra/fields/goldilocks.hpp>
+#include <nil/crypto3/algebra/fields/koalabear.hpp>
+#include <nil/crypto3/algebra/fields/mersenne31.hpp>
 
 #include <nil/marshalling/endianness.hpp>
 #include <nil/marshalling/field_type.hpp>
@@ -371,7 +374,16 @@ int main(int argc, char *argv[])
         using circuit_field = typename curve_type::base_field_type;
         return run_main<circuit_field>(opts);
     } else if (opts.field == "goldilocks") {
-        using circuit_field = nil::crypto3::algebra::fields::goldilocks64_base_field;
+        using circuit_field = nil::crypto3::algebra::fields::goldilocks;
+        return run_main<circuit_field>(opts);
+    } else if (opts.field == "mersenne31") {
+        using circuit_field = nil::crypto3::algebra::fields::mersenne31;
+        return run_main<circuit_field>(opts);
+    } else if (opts.field == "koalabear") {
+        using circuit_field = nil::crypto3::algebra::fields::koalabear;
+        return run_main<circuit_field>(opts);
+    } else if (opts.field == "babybear") {
+        using circuit_field = nil::crypto3::algebra::fields::babybear;
         return run_main<circuit_field>(opts);
     } else {
         std::cout << "Unknown field: '" << opts.field << "'. Use --help to get list of fields." << std::endl;

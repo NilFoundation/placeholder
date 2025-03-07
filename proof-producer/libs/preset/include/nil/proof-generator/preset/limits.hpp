@@ -8,7 +8,7 @@ namespace nil {
 
             const std::size_t max_copy_rows = 30000;
             const std::size_t max_rw_rows = 60000;
-            const std::size_t max_keccak_blocks = 500;
+            const std::size_t max_keccak_blocks = 25;
             const std::size_t max_bytecode_rows = 20000;
             const std::size_t max_total_rows = 150000;
             const std::size_t max_mpt_rows = 30;

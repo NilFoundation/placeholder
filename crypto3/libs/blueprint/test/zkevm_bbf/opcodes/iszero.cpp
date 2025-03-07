@@ -22,7 +22,7 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE blueprint_plonk_opcodes_test
+#define BOOST_TEST_MODULE blueprint_plonk_opcodes_test_iszero
 
 #include <boost/assert.hpp>
 #include <boost/test/unit_test.hpp>
@@ -46,7 +46,6 @@
 
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
-#include <nil/blueprint/bbf/l1_wrapper.hpp>
 #include <nil/blueprint/zkevm_bbf/zkevm.hpp>
 #include <nil/blueprint/zkevm_bbf/rw.hpp>
 #include <nil/blueprint/zkevm_bbf/copy.hpp>

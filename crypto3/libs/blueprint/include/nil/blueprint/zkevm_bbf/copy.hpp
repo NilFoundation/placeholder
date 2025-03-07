@@ -40,22 +40,7 @@ namespace nil {
                 using generic_component<FieldType, stage>::constrain;
                 using generic_component<FieldType, stage>::lookup;
                 using generic_component<FieldType, stage>::lookup_table;
-            public:
-                using typename generic_component<FieldType,stage>::TYPE;
-                using integral_type =  nil::crypto3::multiprecision::big_uint<257>;
 
-                struct input_type{
-                    TYPE rlc_challenge;
-
-                    template<typename T>
-                    using enable_for_assignment_t = typename std::conditional_t<stage == GenerationStage::ASSIGNMENT, T, std::nullptr_t>;
-
-                    enable_for_assignment_t<zkevm_keccak_buffers> bytecodes;
-                    enable_for_assignment_t<zkevm_keccak_buffers> keccak_buffers;
-                    enable_for_assignment_t<rw_operations_vector> rw_operations;
-                    enable_for_assignment_t<std::vector<copy_event>> copy_events;
-                    enable_for_assignment_t<std::map<std::size_t, zkevm_call_commit>> call_commits;
-                };
             public:
                 using BytecodeTable = bytecode_table<FieldType, stage>;
                 using RWTable = rw_table<FieldType, stage>;
@@ -63,24 +48,57 @@ namespace nil {
                 using CopyTable = copy_table<FieldType, stage>;
                 using CallCommitTable = call_commit_table<FieldType, stage>;
 
-                static constexpr std::size_t copy_advice_amount = 18;
+                using typename generic_component<FieldType, stage>::table_params;
+                using typename generic_component<FieldType,stage>::TYPE;
+                using integral_type =  nil::crypto3::multiprecision::big_uint<257>;
 
-                static nil::crypto3::zk::snark::plonk_table_description<FieldType> get_table_description(
+                struct input_type {
+                    TYPE rlc_challenge;
+
+                    BytecodeTable::input_type bytecodes;
+                    KeccakTable::private_input_type keccak_buffers;
+                    RWTable::input_type rw_operations;
+                    CopyTable::input_type copy_events;
+                    CallCommitTable::input_type call_commits;
+                };
+
+                static constexpr std::size_t copy_advice_amount = 20;
+
+                static table_params get_minimal_requirements(
                     std::size_t max_copy,
                     std::size_t max_rw,
                     std::size_t max_keccak_blocks,
                     std::size_t max_bytecode,
                     std::size_t max_call_commits
-                ){
-                    std::size_t witness_amount = copy_advice_amount;
-                    witness_amount += BytecodeTable::get_witness_amount();
-                    witness_amount += RWTable::get_witness_amount();
-                    witness_amount += KeccakTable::get_witness_amount();
-                    witness_amount += CopyTable::get_witness_amount();
-                    witness_amount += CallCommitTable::get_witness_amount();
-                    nil::crypto3::zk::snark::plonk_table_description<FieldType> desc(witness_amount, 1, 3, 15);
-                    desc.usable_rows_amount = std::max( max_call_commits, std::max(std::max(max_copy, max_rw + 1), std::max(max_keccak_blocks + 1, max_bytecode + 1)));
-                    return desc;
+                ) {
+                    return {
+                        .witnesses = copy_advice_amount
+                                   + BytecodeTable::get_witness_amount()
+                                   + RWTable::get_witness_amount()
+                                   + KeccakTable::get_witness_amount()
+                                   + CopyTable::get_witness_amount()
+                                   + CallCommitTable::get_witness_amount(),
+                        .public_inputs = 1,
+                        .constants = 3,
+                        .rows = std::max(
+                            max_call_commits,
+                            std::max(
+                                std::max(max_copy, max_rw + 1),
+                                std::max(max_keccak_blocks + 1, max_bytecode + 1)
+                            )
+                        )
+                    };
+                }
+
+                static void allocate_public_inputs(
+                    context_type &context, input_type &input,
+                    std::size_t max_copy,
+                    std::size_t max_rw,
+                    std::size_t max_keccak_blocks,
+                    std::size_t max_bytecode,
+                    std::size_t max_call_commits
+                ) {
+                    context.allocate(input.rlc_challenge, 0, 0, column_type::public_input);
                 }
 
                 copy(context_type &context_object,
@@ -124,9 +142,9 @@ namespace nil {
                     }
 
                     // Dynamic lookups shouldn't be placed on 0 row.
-                    context_type bytecode_ct = context_object.subcontext(bytecode_lookup_area,1,max_bytecode + 1);
-                    context_type keccak_ct = context_object.subcontext( keccak_lookup_area, 1, max_keccak_blocks + 1);
-                    context_type rw_ct = context_object.subcontext(rw_lookup_area, 1, max_rw + 1);
+                    context_type bytecode_ct = context_object.subcontext(bytecode_lookup_area,0,max_bytecode);
+                    context_type keccak_ct = context_object.subcontext( keccak_lookup_area, 0, max_keccak_blocks);
+                    context_type rw_ct = context_object.subcontext(rw_lookup_area, 0, max_rw);
                     context_type copy_ct = context_object.subcontext( copy_lookup_area, 0, max_copy);
                     context_type call_commit_ct = context_object.subcontext( call_commit_lookup_area, 0, max_call_commits);
 
@@ -227,6 +245,7 @@ namespace nil {
                         allocate(rlc[i],current_column++, i);
                         allocate(rlc_challenge[i],current_column++, i);
                         allocate(is_last[i], current_column++, i);
+
                     }
                     if constexpr( stage == GenerationStage::CONSTRAINTS ){
                         std::vector<TYPE> even;

@@ -99,18 +99,20 @@ namespace nil {
                         for (const auto& [var, count]: variable_counts) {
                             if (variable_values_out.find(var) != variable_values_out.end())
                                 continue;
-                            // We may have variable values in required sizes in some cases.
-                            if( var.index == PLONK_SPECIAL_SELECTOR_ALL_USABLE_ROWS_SELECTED && var.type == polynomial_dfs_variable_type::column_type::selector ) {
-                                variable_values_out[var] = mask_polynomial;
+
+                            polynomial_dfs_type assignment;
+
+                            if (var.index == PLONK_SPECIAL_SELECTOR_ALL_USABLE_ROWS_SELECTED && var.type == polynomial_dfs_variable_type::column_type::selector) {
+                                assignment = mask_polynomial;
                             } else if (var.index ==  PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED && var.type == polynomial_dfs_variable_type::column_type::selector){
-                                variable_values_out[var] = mask_polynomial - lagrange_0;
+                                assignment = mask_polynomial - lagrange_0;
                             } else {
-                                polynomial_dfs_type assignment = assignments.get_variable_value(var, domain);
-                                if (count > 1) {
-                                    assignment.resize(extended_domain_size, domain, extended_domain);
-                                }
-                                variable_values_out[var] = assignment;
+                                assignment = assignments.get_variable_value(var, domain);
                             }
+                            if (count > 1) {
+                                assignment.resize(extended_domain_size, domain, extended_domain);
+                            }
+                            variable_values_out[var] = assignment;
                         }
                     }
 

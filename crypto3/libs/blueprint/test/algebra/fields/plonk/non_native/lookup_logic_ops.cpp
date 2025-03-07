@@ -22,7 +22,7 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE blueprint_plonk_non_native_logic_test
+#define BOOST_TEST_MODULE blueprint_plonk_non_native_lookup_logic_test
 
 #include <boost/test/unit_test.hpp>
 

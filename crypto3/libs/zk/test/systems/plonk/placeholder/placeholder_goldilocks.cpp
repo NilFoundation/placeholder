@@ -35,8 +35,8 @@
 #include <boost/test/unit_test.hpp>
 #include <boost/test/data/test_case.hpp>
 
-#include <nil/crypto3/algebra/fields/goldilocks64/base_field.hpp>
-#include <nil/crypto3/algebra/fields/arithmetic_params/goldilocks64.hpp>
+#include <nil/crypto3/algebra/fields/arithmetic_params/goldilocks.hpp>
+#include <nil/crypto3/algebra/fields/goldilocks.hpp>
 
 #include <nil/crypto3/hash/keccak.hpp>
 #include <nil/crypto3/test_tools/random_test_initializer.hpp>
@@ -50,7 +50,7 @@ using namespace nil::crypto3::zk::snark;
 
 BOOST_AUTO_TEST_SUITE(placeholder_goldilocks)
 
-using field_type = typename algebra::fields::goldilocks64;
+using field_type = typename algebra::fields::goldilocks;
 using hash_type = hashes::keccak_1600<256>;
 using test_runner_type = placeholder_test_runner<field_type, hash_type, hash_type>;
 

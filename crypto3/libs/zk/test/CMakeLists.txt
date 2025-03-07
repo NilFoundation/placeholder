@@ -61,6 +61,11 @@ set(TESTS_NAMES
     "systems/plonk/type_traits"
     "systems/plonk/placeholder/placeholder_circuits"
     "systems/plonk/placeholder/placeholder_goldilocks"
+    # TODO(ioxid): fails with "std::invalid_argument: expected logn <= arithmetic_params<FieldType>::two_adicity"
+    # so Mersenne31 is unsupported for now.
+    # "systems/plonk/placeholder/placeholder_mersenne31"
+    "systems/plonk/placeholder/placeholder_koalabear"
+    "systems/plonk/placeholder/placeholder_babybear"
     "systems/plonk/placeholder/placeholder_lookup_argument"
     "systems/plonk/placeholder/placeholder_gate_argument"
     "systems/plonk/placeholder/placeholder_permutation_argument"

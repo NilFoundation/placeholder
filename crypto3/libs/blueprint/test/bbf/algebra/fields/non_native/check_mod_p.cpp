@@ -28,8 +28,6 @@
 #include <boost/test/unit_test.hpp>
 #include <nil/blueprint/bbf/circuit_builder.hpp>
 #include <nil/blueprint/bbf/components/algebra/fields/non_native/check_mod_p.hpp>
-#include <nil/blueprint/blueprint/plonk/assignment.hpp>
-#include <nil/blueprint/blueprint/plonk/circuit.hpp>
 #include <nil/crypto3/algebra/curves/pallas.hpp>
 #include <nil/crypto3/algebra/curves/vesta.hpp>
 #include <nil/crypto3/random/algebraic_engine.hpp>
@@ -44,16 +42,16 @@ void test_mod_p_check(
     using FieldType = BlueprintFieldType;
     using TYPE = typename FieldType::value_type;
     typename bbf::components::check_mod_p<
-        FieldType, bbf::GenerationStage::ASSIGNMENT>::raw_input_type raw_input;
-    raw_input.x =
+        FieldType, bbf::GenerationStage::ASSIGNMENT>::input_type input;
+    input.x =
         std::vector<TYPE>(public_input.begin(), public_input.begin() + num_chunks);
-    raw_input.pp = std::vector<TYPE>(public_input.begin() + num_chunks,
+    input.pp = std::vector<TYPE>(public_input.begin() + num_chunks,
                                      public_input.begin() + 2 * num_chunks);
-    raw_input.zero = TYPE(0);
+    input.zero = TYPE(0);
     auto B = bbf::circuit_builder<FieldType, bbf::components::check_mod_p, std::size_t,
                                   std::size_t, bool>(num_chunks, bit_size_chunk,
                                                      expect_output);
-    auto [at, A, desc] = B.assign(raw_input);
+    auto [at, A, desc] = B.assign(input);
     bool pass = B.is_satisfied(at);
     std::cout << "Is_satisfied = " << pass << std::endl;
 
@@ -115,7 +113,7 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_bbf_check_mod_p_test) {
     using pallas_field_type = typename crypto3::algebra::curves::pallas::base_field_type;
     using vesta_field_type = typename crypto3::algebra::curves::vesta::base_field_type;
 
-    mod_p_check_tests<pallas_field_type, 8, 32, random_tests_amount>();
+    mod_p_check_tests<pallas_field_type, 3, 96, random_tests_amount>();
     mod_p_check_tests<pallas_field_type, 4, 65, random_tests_amount>();
     mod_p_check_tests<pallas_field_type, 5, 63, random_tests_amount>();
 

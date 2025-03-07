@@ -29,42 +29,30 @@
 #ifndef CRYPTO3_BBF_COMPONENTS_CARRY_ON_ADDITION_HPP
 #define CRYPTO3_BBF_COMPONENTS_CARRY_ON_ADDITION_HPP
 
-#include <functional>
 #include <nil/blueprint/bbf/generic.hpp>
-#include <nil/blueprint/blueprint/plonk/assignment.hpp>
-#include <nil/blueprint/blueprint/plonk/circuit.hpp>
-#include <nil/blueprint/component.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/constraint_system.hpp>
+#include <nil/blueprint/bbf/components/detail/allocate_public_input_chunks.hpp>
 
 namespace nil {
     namespace blueprint {
         namespace bbf {
             namespace components {
 
-                template<typename FieldType>
-                struct carry_on_addition_raw_input {
-                    using TYPE = typename FieldType::value_type;
-                    std::vector<TYPE> x;
-                    std::vector<TYPE> y;
-                };
-
                 template<typename FieldType, GenerationStage stage>
                 class carry_on_addition : public generic_component<FieldType, stage> {
                     using generic_component<FieldType, stage>::allocate;
                     using generic_component<FieldType, stage>::copy_constrain;
                     using generic_component<FieldType, stage>::constrain;
-                    using generic_component<FieldType, stage>::lookup;
 
                   public:
                     using typename generic_component<FieldType, stage>::TYPE;
                     using typename generic_component<FieldType, stage>::context_type;
                     using typename generic_component<FieldType, stage>::table_params;
-                    using raw_input_type =
-                        typename std::conditional<stage == GenerationStage::ASSIGNMENT,
-                                                  carry_on_addition_raw_input<FieldType>,
-                                                  std::tuple<>>::type;
 
-                  public:
+                    struct input_type {
+                      std::vector<TYPE> x;
+                      std::vector<TYPE> y;
+                    };
+
                     std::vector<TYPE> r;
                     TYPE c;
 
@@ -77,30 +65,19 @@ namespace nil {
                         return {witness, public_inputs, constants, rows};
                     }
 
-                    static std::tuple<std::vector<TYPE>, std::vector<TYPE>> form_input(
-                        context_type &context_object, raw_input_type raw_input,
-                        std::size_t num_chunks, std::size_t bit_size_chunk) {
-                        std::vector<TYPE> input_x(num_chunks);
-                        std::vector<TYPE> input_y(num_chunks);
-                        if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                            for (std::size_t i = 0; i < num_chunks; ++i) {
-                                input_x[i] = raw_input.x[i];
-                                input_y[i] = raw_input.y[i];
-                            }
-                        }
-                        for (std::size_t i = 0; i < num_chunks; ++i) {
-                            context_object.allocate(input_x[i], 0, i,
-                                                    column_type::public_input);
-                            context_object.allocate(input_y[i], 0, i + num_chunks,
-                                                    column_type::public_input);
-                        }
-                        return std::make_tuple(input_x, input_y);
+                    static void allocate_public_inputs(
+                            context_type &ctx, input_type &input,
+                            std::size_t num_chunks, std::size_t bit_size_chunk) {
+                        AllocatePublicInputChunks allocate_chunks(ctx, num_chunks);
+
+                        std::size_t row = 0;
+                        allocate_chunks(input.x, 0, &row);
+                        allocate_chunks(input.y, 0, &row);
                     }
 
-                    carry_on_addition(context_type &context_object,
-                                      std::vector<TYPE> input_x,
-                                      std::vector<TYPE> input_y, std::size_t num_chunks,
-                                      std::size_t bit_size_chunk, bool make_links = true)
+                    carry_on_addition(context_type &context_object, const input_type &input,
+                                      std::size_t num_chunks, std::size_t bit_size_chunk,
+                                      bool make_links = true)
                         : generic_component<FieldType, stage>(context_object) {
                         using integral_type = typename FieldType::integral_type;
 
@@ -109,8 +86,8 @@ namespace nil {
 
                         if constexpr (stage == GenerationStage::ASSIGNMENT) {
                             for (std::size_t i = 0; i < num_chunks; i++) {
-                                X[i] = input_x[i];
-                                Y[i] = input_y[i];
+                                X[i] = input.x[i];
+                                Y[i] = input.y[i];
                             }
                         }
 
@@ -118,8 +95,8 @@ namespace nil {
                             allocate(X[i]);
                             allocate(Y[i]);
                             if (make_links) {
-                                copy_constrain(X[i], input_x[i]);
-                                copy_constrain(Y[i], input_y[i]);
+                                copy_constrain(X[i], input.x[i]);
+                                copy_constrain(Y[i], input.y[i]);
                             }
                             R[i] = X[i] + Y[i];
                             if (i > 0) {

@@ -22,7 +22,7 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE blueprint_plonk_bytecode_test
+#define BOOST_TEST_MODULE blueprint_bbf_opcode_poc
 
 #include <boost/test/unit_test.hpp>
 
@@ -41,7 +41,6 @@
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
 #include <nil/blueprint/bbf/circuit_builder.hpp>
-#include <nil/blueprint/bbf/l1_wrapper.hpp>
 #include <nil/blueprint/bbf/opcode_poc.hpp>
 
 using namespace nil::crypto3;
@@ -52,12 +51,9 @@ void test_opcode_poc(
     std::vector<std::uint8_t> blocks,
     std::size_t max_rows
 ){
-    typename opcode_poc<field_type, GenerationStage::ASSIGNMENT>::raw_input_type raw_input;
-    raw_input.B = blocks;
-
     std::cout << "input_size = " <<  blocks.size() << std::endl;
     auto B = circuit_builder<field_type,opcode_poc,std::size_t>(max_rows);
-    auto [at, A, desc] = B.assign(raw_input);
+    auto [at, A, desc] = B.assign(blocks);
     BOOST_TEST(B.is_satisfied(at), "constraints are not satisfied");
 }
 

@@ -30,18 +30,11 @@
 #ifndef CRYPTO3_BBF_COMPONENTS_FLEXIBLE_MULTIPLICATION_HPP
 #define CRYPTO3_BBF_COMPONENTS_FLEXIBLE_MULTIPLICATION_HPP
 
-#include <functional>
-#include <nil/blueprint/bbf/generic.hpp>
-#include <nil/blueprint/blueprint/plonk/assignment.hpp>
-#include <nil/blueprint/blueprint/plonk/circuit.hpp>
-#include <nil/blueprint/component.hpp>
-#include <nil/crypto3/algebra/curves/pallas.hpp>
-#include <nil/crypto3/algebra/curves/vesta.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/constraint_system.hpp>
-
 #include <nil/blueprint/bbf/components/algebra/fields/non_native/check_mod_p.hpp>
 #include <nil/blueprint/bbf/components/detail/range_check_multi.hpp>
-#include <stdexcept>
+#include <nil/blueprint/bbf/generic.hpp>
+#include <nil/crypto3/algebra/curves/pallas.hpp>
+#include <nil/crypto3/algebra/curves/vesta.hpp>
 
 namespace nil {
     namespace blueprint {
@@ -55,16 +48,6 @@ namespace nil {
                 // (expects zero constant as input) 
                 // Output: r[0],..., r[k-1]
 
-                template<typename FieldType>
-                struct flexible_multiplication_raw_input {
-                    using TYPE = typename FieldType::value_type;
-                    std::vector<TYPE> x;
-                    std::vector<TYPE> y;
-                    std::vector<TYPE> p;
-                    std::vector<TYPE> pp;
-                    TYPE zero;
-                };
-
                 template<typename FieldType, GenerationStage stage,
                          typename NonNativeFieldType>
                 class flexible_multiplication
@@ -72,16 +55,19 @@ namespace nil {
                     using generic_component<FieldType, stage>::allocate;
                     using generic_component<FieldType, stage>::copy_constrain;
                     using generic_component<FieldType, stage>::constrain;
-                    using generic_component<FieldType, stage>::lookup;
-                    using component_type = generic_component<FieldType, stage>;
 
                   public:
                     using typename generic_component<FieldType, stage>::TYPE;
                     using typename generic_component<FieldType, stage>::context_type;
                     using typename generic_component<FieldType, stage>::table_params;
-                    using raw_input_type = typename std::conditional<
-                        stage == GenerationStage::ASSIGNMENT,
-                        flexible_multiplication_raw_input<FieldType>, std::tuple<>>::type;
+
+                    struct input_type {
+                      std::vector<TYPE> x;
+                      std::vector<TYPE> y;
+                      std::vector<TYPE> p;
+                      std::vector<TYPE> pp;
+                      TYPE zero;
+                    };
 
                   public:
                     std::vector<TYPE> r;
@@ -99,46 +85,21 @@ namespace nil {
                         return {witness, public_inputs, constants, rows};
                     }
 
-                    static std::tuple<std::vector<TYPE>, std::vector<TYPE>,
-                                      std::vector<TYPE>, std::vector<TYPE>, TYPE>
-                    form_input(context_type &context_object, raw_input_type raw_input,
-                               std::size_t num_chunks, std::size_t bit_size_chunk) {
-                        std::vector<TYPE> input_x(num_chunks);
-                        std::vector<TYPE> input_y(num_chunks);
-                        std::vector<TYPE> input_p(num_chunks);
-                        std::vector<TYPE> input_pp(num_chunks);
-                        TYPE input_zero;
+                    static void allocate_public_inputs(
+                            context_type &ctx, input_type &input,
+                            std::size_t num_chunks, std::size_t bit_size_chunk) {
+                        AllocatePublicInputChunks allocate_chunks(ctx, num_chunks);
 
-                        if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                            for (std::size_t i = 0; i < num_chunks; i++) {
-                                input_x[i] = raw_input.x[i];
-                                input_y[i] = raw_input.y[i];
-                                input_p[i] = raw_input.p[i];
-                                input_pp[i] = raw_input.pp[i];
-                            }
-                            input_zero = raw_input.zero;
-                        }
-                        for (std::size_t i = 0; i < num_chunks; i++) {
-                            context_object.allocate(input_x[i], 0, i,
-                                                    column_type::public_input);
-                            context_object.allocate(input_y[i], 0, i + num_chunks,
-                                                    column_type::public_input);
-                            context_object.allocate(input_p[i], 0, i + 2 * num_chunks,
-                                                    column_type::public_input);
-                            context_object.allocate(input_pp[i], 0, i + 3 * num_chunks,
-                                                    column_type::public_input);
-                        }
-                        context_object.allocate(input_zero, 0, 4 * num_chunks,
-                                                column_type::public_input);
-                        return std::make_tuple(input_x, input_y, input_p, input_pp,
-                                               input_zero);
+                        std::size_t row = 0;
+                        allocate_chunks(input.x, 0, &row);
+                        allocate_chunks(input.y, 0, &row);
+                        allocate_chunks(input.p, 0, &row);
+                        allocate_chunks(input.pp, 0, &row);
+                        ctx.allocate(input.zero, 0, row++, column_type::public_input);
                     }
 
                     flexible_multiplication(context_type &context_object,
-                                            std::vector<TYPE> input_x,
-                                            std::vector<TYPE> input_y,
-                                            std::vector<TYPE> input_p,
-                                            std::vector<TYPE> input_pp, TYPE input_zero,
+                                            const input_type &input,
                                             std::size_t num_chunks,
                                             std::size_t bit_size_chunk,
                                             bool make_links = true)
@@ -174,10 +135,10 @@ namespace nil {
 
                         if constexpr (stage == GenerationStage::ASSIGNMENT) {
                             for (std::size_t i = 0; i < num_chunks; ++i) {
-                                X[i] = input_x[i];
-                                Y[i] = input_y[i];
-                                P[i] = input_p[i];
-                                PP[i] = input_pp[i];
+                                X[i] = input.x[i];
+                                Y[i] = input.y[i];
+                                P[i] = input.p[i];
+                                PP[i] = input.pp[i];
                             }
                             extended_integral_type foreign_p = 0, foreign_x = 0,
                                                    foreign_y = 0, pow = 1;
@@ -241,10 +202,11 @@ namespace nil {
                         // + [q_0, q_1, q_2, q_3] ⋅ [pp_0, pp_1, pp_2, pp_3]
                         //    z_0 = x_0 ⋅ y_0 + q_0 ⋅ pp_0
                         //    z_1 = x_0 ⋅ y_1 + x_1 ⋅ y_0 + q_0 ⋅ pp_1 + q_1 ⋅ pp_0
-                        //    z_2 = x_0 ⋅ y_2 + x_1 ⋅ y_1 + x_2 ⋅ y_0 + q_0 ⋅ pp_2 + q_1 ⋅
-                        //    pp_1 + q_2 ⋅ pp_0 z_3 = x_0 ⋅ y_3 + x_1 ⋅ y_2 + x_2 ⋅ y_1 +
-                        //    x_3 ⋅ y_0 + q_0 ⋅ pp_3 + q_1 ⋅ pp_2 + q_2 ⋅ pp_1 + q_3 ⋅
-                        //    pp_0
+                        //    z_2 = x_0 ⋅ y_2 + x_1 ⋅ y_1 + x_2 ⋅ y_0 + q_0 ⋅ pp_2 + 
+                        //          q_1 ⋅ pp_1 + q_2 ⋅ pp_0 
+                        //    z_3 = x_0 ⋅ y_3 + x_1 ⋅ y_2 + x_2 ⋅ y_1 +
+                        //      x_3 ⋅ y_0 + q_0 ⋅ pp_3 + q_1 ⋅ pp_2 + q_2 ⋅ pp_1 + 
+                        //      q_3 ⋅ pp_0
                         //   Result = z_0 ⋅ 2^{0b} + z_1 ⋅ 2^{1b} + z_2 ⋅ 2^{2b} + z_3 ⋅
                         //   2^{3b}
                         for (std::size_t i = 0; i < num_chunks; ++i) {
@@ -310,11 +272,11 @@ namespace nil {
                         Range_Check rc2 =
                             Range_Check(context_object, Q, num_chunks, bit_size_chunk);
                         Range_Check rc3 =
-                            Range_Check(context_object, B, num_chunks, bit_size_chunk);
+                            Range_Check(context_object, B, 2 * (num_chunks - 2), bit_size_chunk);
 
-                        Check_Mod_P c1 = Check_Mod_P(context_object, R, PP, input_zero,
+                        Check_Mod_P c1 = Check_Mod_P(context_object, {R, PP, input.zero},
                                                      num_chunks, bit_size_chunk, false);
-                        Check_Mod_P c2 = Check_Mod_P(context_object, Q, PP, input_zero,
+                        Check_Mod_P c2 = Check_Mod_P(context_object, {Q, PP, input.zero},
                                                      num_chunks, bit_size_chunk, false);
 
                         // Starting b\n
@@ -339,10 +301,10 @@ namespace nil {
 
                         if (make_links) {
                             for (std::size_t i = 0; i < num_chunks; ++i) {
-                                copy_constrain(X[i], input_x[i]);
-                                copy_constrain(Y[i], input_y[i]);
-                                copy_constrain(P[i], input_p[i]);
-                                copy_constrain(PP[i], input_pp[i]);
+                                copy_constrain(X[i], input.x[i]);
+                                copy_constrain(Y[i], input.y[i]);
+                                copy_constrain(P[i], input.p[i]);
+                                copy_constrain(PP[i], input.pp[i]);
                             }
                         }
 

@@ -21,6 +21,7 @@
 
 #include "nil/crypto3/multiprecision/big_uint.hpp"
 #include "nil/crypto3/multiprecision/detail/big_mod/modular_ops/barrett.hpp"
+#include "nil/crypto3/multiprecision/detail/big_mod/modular_ops/montgomery_utils.hpp"
 #include "nil/crypto3/multiprecision/detail/big_uint/storage.hpp"
 #include "nil/crypto3/multiprecision/detail/integer_ops_base.hpp"
 
@@ -49,7 +50,8 @@ namespace nil::crypto3::multiprecision::detail {
                 throw std::invalid_argument("module not usable with montgomery");
             }
 
-            m_montgomery_p_dash = monty_inverse(this->mod().limbs()[0]);
+            // This is negation modulo 2^limb_bits
+            m_montgomery_p_dash = -montgomery_inverse(this->mod().limbs()[0]);
 
             big_uint<2 * limb_count * limb_bits + 1> r;
             r.bit_set(2 * limb_count * limb_bits);
@@ -66,33 +68,6 @@ namespace nil::crypto3::multiprecision::detail {
         }
 
       private:
-        /*
-         * Compute -input^-1 mod 2^limb_bits. Throws an exception if input
-         * is even. If input is odd, then input and 2^n are relatively prime
-         * and an inverse exists.
-         */
-        static constexpr limb_type monty_inverse(const limb_type &a) {
-            if (a % 2 == 0) {
-                throw std::invalid_argument("inverse does not exist");
-            }
-            limb_type b = 1;
-            limb_type r = 0;
-
-            for (std::size_t i = 0; i != limb_bits; ++i) {
-                const limb_type bi = b % 2;
-                r >>= 1;
-                r += bi << (limb_bits - 1);
-
-                b -= a * bi;
-                b >>= 1;
-            }
-
-            // Now invert in addition space
-            r = (~static_cast<limb_type>(0u) - r) + 1;
-
-            return r;
-        }
-
         template<std::size_t Bits2,
                  // result should fit in the output parameter
                  std::enable_if_t<Bits2 >= Bits, int> = 0>

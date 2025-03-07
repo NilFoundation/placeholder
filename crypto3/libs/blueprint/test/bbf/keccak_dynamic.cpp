@@ -23,7 +23,7 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE plonk_keccak_test
+#define BOOST_TEST_MODULE plonk_keccak_dyncamic_test
 
 #include <array>
 #include <boost/test/unit_test.hpp>
@@ -49,9 +49,11 @@ void test_keccaks(
 ){
     std::cout << "Test keccak with " << input.size() << " messages, max_blocks = " << max_blocks << std::endl;
 
-    typename bbf::keccak_dynamic<BlueprintFieldType, bbf::GenerationStage::ASSIGNMENT>::raw_input_type raw_input = {rnd.alg_random_engines.template get_alg_engine<BlueprintFieldType>()(), input};
     auto B = bbf::circuit_builder<BlueprintFieldType, bbf::keccak_dynamic, std::size_t>(max_blocks);
-    auto [at, A, desc] = B.assign(raw_input);
+    auto [at, A, desc] = B.assign({
+        rnd.alg_random_engines.template get_alg_engine<BlueprintFieldType>()(),
+        input
+    });
     bool is_satisfied = B.is_satisfied(at);
     std::cout << "Is_satisfied = " << is_satisfied << std::endl;
     assert(is_satisfied);

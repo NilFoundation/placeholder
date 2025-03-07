@@ -22,7 +22,7 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE blueprint_plonk_opcodes_test
+#define BOOST_TEST_MODULE blueprint_plonk_opcodes_test_byte_ops
 
 #include <boost/assert.hpp>
 #include <boost/test/unit_test.hpp>
@@ -46,7 +46,6 @@
 
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
-#include <nil/blueprint/bbf/l1_wrapper.hpp>
 #include <nil/blueprint/zkevm_bbf/zkevm.hpp>
 #include <nil/blueprint/zkevm_bbf/rw.hpp>
 #include <nil/blueprint/zkevm_bbf/copy.hpp>
@@ -323,7 +322,7 @@ BOOST_AUTO_TEST_CASE(byte_ops) {
     opcode_tester.push_opcode(zkevm_opcode::SHL);
     opcode_tester.push_opcode(zkevm_opcode::STOP);
 
-    max_sizes.max_keccak_blocks = 400;
+    max_sizes.max_keccak_blocks = 30;
     max_sizes.max_bytecode = 5000;
     max_sizes.max_mpt = 0;
     max_sizes.max_rw = 3000;

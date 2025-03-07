@@ -42,12 +42,9 @@ template<typename BlueprintFieldType, std::size_t num_chunks, std::size_t bit_si
 void test_range_check(
     const std::vector<typename BlueprintFieldType::value_type> &public_input) {
     using FieldType = BlueprintFieldType;
-    typename bbf::components::range_check_multi<
-        FieldType, bbf::GenerationStage::ASSIGNMENT>::raw_input_type raw_input;
-    raw_input.state = public_input;
     auto B = bbf::circuit_builder<FieldType, bbf::components::range_check_multi,
                                   std::size_t, std::size_t>(num_chunks, bit_size_chunk);
-    auto [at, A, desc] = B.assign(raw_input);
+    auto [at, A, desc] = B.assign(public_input);
     bool pass = B.is_satisfied(at);
     std::cout << "Is_satisfied = " << pass << std::endl;
 
@@ -111,7 +108,7 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_bbf_range_check_multi_test) {
     using pallas_field_type = typename crypto3::algebra::curves::pallas::base_field_type;
     using vesta_field_type = typename crypto3::algebra::curves::vesta::base_field_type;
 
-    range_check_tests<pallas_field_type, 8, 32, random_tests_amount>();
+    range_check_tests<pallas_field_type, 3, 96, random_tests_amount>();
     range_check_tests<pallas_field_type, 8, 65, random_tests_amount>();
     range_check_tests<pallas_field_type, 4, 63, random_tests_amount>();
 

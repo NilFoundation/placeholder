@@ -24,7 +24,7 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE polynomial_dfs_test
+#define BOOST_TEST_MODULE parallel_polynomial_dfs_test
 
 #include <vector>
 #include <cstdint>
@@ -1227,6 +1227,25 @@ BOOST_AUTO_TEST_CASE(polynomial_dfs_mul_constant) {
     BOOST_CHECK_EQUAL(c_res, c1);
     BOOST_CHECK_EQUAL(c_res, c2);
     BOOST_CHECK_EQUAL(c_res, a);
+}
+
+BOOST_AUTO_TEST_CASE(polynomial_dfs_inverse_test) {
+    using poly_type = polynomial_dfs<typename FieldType::value_type>;
+    poly_type a = {
+        5,
+        {0x13_big_uint, 0x515afe1189d5ef4dbc50a127ce5e634034a28d0005e1fafd70aeef634654d2e0_big_uint,
+         0x73eda753299d7d4193643e5a817d9e3a4399a3e577da5bfefff3ffff00000006_big_uint,
+         0x519843b006c2b71461725846c0416002ece7f29b47582f326bdcdd22024de904_big_uint,
+         0x73eda753299d7d483339d80809a1d80553bda402fffe5bfefffffffefffffff8_big_uint,
+         0x2292a9419fc78dfa76e936e03b4374c51f1b1702fa1c61018f51109bb9ab2d2b_big_uint,
+         0x69fd599ad882439cb1024001d88240000000c000000000005_big_uint,
+         0x225563a322dac633d1c77fc14960780266d5b167b8a62ccc942322dcfdb21707_big_uint}};
+
+    poly_type a_inv = a;
+    a_inv.element_wise_inverse();
+    for (size_t i = 0; i < a.size(); ++i) {
+        BOOST_CHECK_EQUAL(a[i] * a_inv[i], FieldType::value_type::one());
+    }
 }
 BOOST_AUTO_TEST_SUITE_END()
 

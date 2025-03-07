@@ -83,9 +83,7 @@
 #include <nil/blueprint/zkevm_bbf/opcodes/delegatecall.hpp>
 #include <nil/blueprint/zkevm_bbf/opcodes/staticcall.hpp>
 #include <nil/blueprint/zkevm_bbf/opcodes/gas.hpp>
-#include "nil/blueprint/zkevm_bbf/opcodes/logx.hpp"
 #include "nil/blueprint/zkevm_bbf/opcodes/revert.hpp"
-
 #include <nil/blueprint/zkevm_bbf/opcodes/start_block.hpp>
 #include <nil/blueprint/zkevm_bbf/opcodes/start_transaction.hpp>
 #include <nil/blueprint/zkevm_bbf/opcodes/start_call.hpp>
@@ -93,6 +91,10 @@
 #include <nil/blueprint/zkevm_bbf/opcodes/end_transaction.hpp>
 #include <nil/blueprint/zkevm_bbf/opcodes/end_block.hpp>
 #include <nil/blueprint/zkevm_bbf/opcodes/extcodesize.hpp>
+#include <nil/blueprint/zkevm_bbf/opcodes/pc.hpp>
+#include <nil/blueprint/zkevm_bbf/opcodes/msize.hpp>
+#include <nil/blueprint/zkevm_bbf/opcodes/logx.hpp>
+#include <nil/blueprint/zkevm_bbf/opcodes/address.hpp>
 
 namespace nil {
     namespace blueprint {
@@ -667,6 +669,7 @@ namespace nil {
                 opcodes[zkevm_opcode::MSTORE] = std::make_shared<zkevm_mstore_operation<BlueprintFieldType>>();
                 opcodes[zkevm_opcode::MSTORE8] = std::make_shared<zkevm_mstore8_operation<BlueprintFieldType>>();
                 opcodes[zkevm_opcode::MLOAD] = std::make_shared<zkevm_mload_operation<BlueprintFieldType>>();
+                opcodes[zkevm_opcode::MSIZE] = std::make_shared<zkevm_msize_operation<BlueprintFieldType>>();
 
                 // // Storage operations
                 opcodes[zkevm_opcode::SLOAD] = std::make_shared<zkevm_sload_operation<BlueprintFieldType>>();
@@ -682,6 +685,7 @@ namespace nil {
                 // // PC operations
                 opcodes[zkevm_opcode::JUMPI] = std::make_shared<zkevm_jumpi_operation<BlueprintFieldType>>();
                 opcodes[zkevm_opcode::JUMP] = std::make_shared<zkevm_jump_operation<BlueprintFieldType>>();
+                opcodes[zkevm_opcode::PC] = std::make_shared<zkevm_pc_operation<BlueprintFieldType>>();
                 opcodes[zkevm_opcode::JUMPDEST] = std::make_shared<zkevm_jumpdest_operation<BlueprintFieldType>>();
 
                 opcodes[zkevm_opcode::PUSH0] = std::make_shared<zkevm_pushx_operation<BlueprintFieldType>>(0);
@@ -721,15 +725,20 @@ namespace nil {
                 opcodes[zkevm_opcode::POP] = std::make_shared<zkevm_pop_operation<BlueprintFieldType>>();
                 opcodes[zkevm_opcode::RETURN] = std::make_shared<zkevm_return_operation<BlueprintFieldType>>();
 
-                // not implemented yet opcodes
+                // MEMORY EXPANSION
+                opcodes[zkevm_opcode::CODECOPY] = std::make_shared<zkevm_codecopy_operation<BlueprintFieldType>>();
                 opcodes[zkevm_opcode::MCOPY] = std::make_shared<zkevm_mcopy_operation<BlueprintFieldType>>();
-                opcodes[zkevm_opcode::RETURNDATASIZE] = std::make_shared<zkevm_returndatasize_operation<BlueprintFieldType>>();
                 opcodes[zkevm_opcode::RETURNDATACOPY] = std::make_shared<zkevm_returndatacopy_operation<BlueprintFieldType>>();
+
+                // not implemented yet opcodes
+
+                opcodes[zkevm_opcode::RETURNDATASIZE] = std::make_shared<zkevm_returndatasize_operation<BlueprintFieldType>>();
                 opcodes[zkevm_opcode::CALL] = std::make_shared<zkevm_call_operation<BlueprintFieldType>>();
                 opcodes[zkevm_opcode::DELEGATECALL] = std::make_shared<zkevm_delegatecall_operation<BlueprintFieldType>>();
                 opcodes[zkevm_opcode::GAS] = std::make_shared<zkevm_gas_operation<BlueprintFieldType>>();
                 opcodes[zkevm_opcode::STATICCALL] = std::make_shared<zkevm_staticcall_operation<BlueprintFieldType>>();
                 opcodes[zkevm_opcode::EXTCODESIZE] = std::make_shared<zkevm_extcodesize_operation<BlueprintFieldType>>();
+                opcodes[zkevm_opcode::ADDRESS] = std::make_shared<zkevm_address_operation<BlueprintFieldType>>();
 
                 // // DUP
                 opcodes[zkevm_opcode::DUP1] = std::make_shared<zkevm_dupx_operation<BlueprintFieldType>>(1);
@@ -767,11 +776,11 @@ namespace nil {
                 opcodes[zkevm_opcode::SWAP16] = std::make_shared<zkevm_swapx_operation<BlueprintFieldType>>(16);
 
                 // // LOG
-                opcodes[zkevm_opcode::LOG0] = std::make_shared<zkevm_logx_operation<BlueprintFieldType>>();
-                opcodes[zkevm_opcode::LOG1] = std::make_shared<zkevm_logx_operation<BlueprintFieldType>>();
-                opcodes[zkevm_opcode::LOG2] = std::make_shared<zkevm_logx_operation<BlueprintFieldType>>();
-                opcodes[zkevm_opcode::LOG3] = std::make_shared<zkevm_logx_operation<BlueprintFieldType>>();
-                opcodes[zkevm_opcode::LOG4] = std::make_shared<zkevm_logx_operation<BlueprintFieldType>>();
+                opcodes[zkevm_opcode::LOG0] = std::make_shared<zkevm_logx_operation<BlueprintFieldType>>(0);
+                opcodes[zkevm_opcode::LOG1] = std::make_shared<zkevm_logx_operation<BlueprintFieldType>>(1);
+                opcodes[zkevm_opcode::LOG2] = std::make_shared<zkevm_logx_operation<BlueprintFieldType>>(2);
+                opcodes[zkevm_opcode::LOG3] = std::make_shared<zkevm_logx_operation<BlueprintFieldType>>(3);
+                opcodes[zkevm_opcode::LOG4] = std::make_shared<zkevm_logx_operation<BlueprintFieldType>>(4);
 
                 opcodes[zkevm_opcode::REVERT] = std::make_shared<zkevm_revert_operation<BlueprintFieldType>>();
 

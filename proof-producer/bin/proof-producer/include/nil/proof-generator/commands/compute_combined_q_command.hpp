@@ -6,6 +6,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/assert.hpp>
 #include <boost/log/trivial.hpp>
+#include <boost/program_options.hpp>
 
 #include <nil/proof-generator/types/type_system.hpp>
 #include <nil/proof-generator/resources.hpp>
@@ -95,6 +96,21 @@ namespace nil {
                 boost::filesystem::path in_aggregated_challenge_file;
                 std::size_t             combined_Q_starting_power;
                 boost::filesystem::path out_combined_Q_polynomial_file;
+
+                Args(boost::program_options::options_description& desc) {
+
+                    namespace po = boost::program_options;
+
+                    desc.add_options()
+                        ("commitment-state-file", po::value(&in_lpc_scheme_file)->required(),
+                        "Commitment state data input file")
+                        ("aggregated-challenge-file", po::value(&in_aggregated_challenge_file)->required(),
+                            "Aggregated challenge input file")
+                        ("combined-Q-starting-power", po::value<std::size_t>(&combined_Q_starting_power)->required(),
+                        "The starting power for combined-Q polynomial for the current prover")
+                        ("combined-Q-polynomial-file", po::value<boost::filesystem::path>(&out_combined_Q_polynomial_file),
+                    "File containing the polynomial combined-Q, generated on a single prover");
+                }
             };
 
             CombinedQGeneratorCommand(const Args& args) {

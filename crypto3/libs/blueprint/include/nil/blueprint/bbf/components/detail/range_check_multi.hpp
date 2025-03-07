@@ -29,12 +29,8 @@
 #ifndef CRYPTO3_BBF_COMPONENTS_RANGE_CHECK_MULTI_HPP
 #define CRYPTO3_BBF_COMPONENTS_RANGE_CHECK_MULTI_HPP
 
-#include <functional>
 #include <nil/blueprint/bbf/generic.hpp>
-#include <nil/blueprint/blueprint/plonk/assignment.hpp>
-#include <nil/blueprint/blueprint/plonk/circuit.hpp>
-#include <nil/blueprint/component.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/constraint_system.hpp>
+#include <nil/blueprint/bbf/components/detail/allocate_public_input_chunks.hpp>
 
 namespace nil {
     namespace blueprint {
@@ -45,28 +41,20 @@ namespace nil {
                 // Input: x
                 // Output: none
 
-                template<typename FieldType>
-                struct range_check_multi_raw_input {
-                    using TYPE = typename FieldType::value_type;
-                    std::vector<TYPE> state;
-                };
-
                 template<typename FieldType, GenerationStage stage>
                 class range_check_multi : public generic_component<FieldType, stage> {
                     using generic_component<FieldType, stage>::allocate;
                     using generic_component<FieldType, stage>::copy_constrain;
                     using generic_component<FieldType, stage>::constrain;
                     using generic_component<FieldType, stage>::lookup;
-                    using component_type = generic_component<FieldType, stage>;
 
                   public:
                     using typename generic_component<FieldType, stage>::TYPE;
                     using typename generic_component<FieldType, stage>::context_type;
                     using typename generic_component<FieldType, stage>::table_params;
-                    using raw_input_type =
-                        typename std::conditional<stage == GenerationStage::ASSIGNMENT,
-                                                  range_check_multi_raw_input<FieldType>,
-                                                  std::tuple<>>::type;
+
+                    using input_type = std::vector<TYPE>;
+
                     static const std::size_t bit_size_rc = 16;
 
                   public:
@@ -83,23 +71,20 @@ namespace nil {
                         return {witness, public_inputs, constants, rows};
                     }
 
-                    static std::tuple<std::vector<TYPE>> form_input(
-                        context_type &context_object, raw_input_type raw_input,
-                        std::size_t num_chunks, std::size_t bit_size_chunk) {
-                        std::vector<TYPE> X(num_chunks);
-                        for (std::size_t i = 0; i < num_chunks; i++) {
-                            if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                                X[i] = raw_input.state[i];
-                            }
-                            context_object.allocate(X[i], 0, i,
-                                                    column_type::public_input);
-                        }
-                        return std::make_tuple(X);
+                    static void allocate_public_inputs(
+                            context_type& ctx, input_type& input,
+                            std::size_t num_chunks, std::size_t bit_size_chunk) {
+                        AllocatePublicInputChunks allocate_chunks(ctx, num_chunks);
+
+                        std::size_t row = 0;
+                        allocate_chunks(input, 0, &row);
                     }
 
                     range_check_multi(context_type &context_object,
-                                      std::vector<TYPE> input_x, std::size_t num_chunks,
-                                      std::size_t bit_size_chunk, bool make_links = true)
+                                      const std::vector<TYPE> &input_x,
+                                      std::size_t num_chunks,
+                                      std::size_t bit_size_chunk,
+                                      bool make_links = true)
                         : generic_component<FieldType, stage>(context_object) {
                         using integral_type = typename FieldType::integral_type;
                         std::size_t num_rc_chunks = (bit_size_chunk / bit_size_rc) +

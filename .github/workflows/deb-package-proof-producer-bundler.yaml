@@ -22,6 +22,11 @@ jobs:
           nix bundle --bundler . .#proof-producer
           ls -l ./deb-package-proof-producer/proof-producer_*_amd64.deb
 
+      - name: Build proof-producer-benchmarks deb package
+        run: |
+          nix bundle --bundler .#deb-benchmarks .#proof-producer
+          ls -l ./deb-package-proof-producer-benchmarks/proof-producer-benchmarks_*_amd64.deb
+
       - name: upload packages to s3
         if: (github.event_name == 'push' && github.ref == 'refs/heads/master') || github.event_name == 'workflow_dispatch'
         env:
@@ -34,4 +39,5 @@ jobs:
           sudo yum install -y awscli python3-pip
           pip3 install -U mkrepo
           aws s3 cp "deb-package-proof-producer/`ls deb-package-proof-producer`" s3://nil-deb-repo/ubuntu/pool/main/p/proof-producer/
+          aws s3 cp "deb-package-proof-producer-benchmarks/`ls deb-package-proof-producer-benchmarks`" s3://nil-deb-repo/ubuntu/pool/main/p/proof-producer-benchmarks/
           mkrepo s3://nil-deb-repo/ubuntu

@@ -38,246 +38,91 @@
 #include <nil/proof-generator/commands/aggregated_fri_proof_command.hpp>
 #include <nil/proof-generator/commands/gen_consistency_check_command.hpp>
 #include "nil/proof-generator/command_step.hpp"
+#include "nil/proof-generator/output_artifacts/output_artifacts.hpp"
+
+
+#include <concepts>
+#include <unordered_map>
 
 using namespace nil::proof_producer;
 
+template <typename T>
+concept ProofProducerStage =
+    std::is_base_of_v<command_step, T> && // it is a command
+    requires {
+        typename T::Args; // it has Args
+    } &&
+    std::constructible_from<typename T::Args, boost::program_options::options_description&> && // Args can be parsed from boost program options
+    std::constructible_from<T, const typename T::Args&>;  // command accepts Args
+
+
+template <
+    template <typename CurveType, typename HashType> typename Command,
+    typename CurveType, typename HashType
+> requires ProofProducerStage<Command<CurveType, HashType>>
+CommandResult run_command(const ProverOptions& opts) {
+    namespace po = boost::program_options;
+
+    using CommandType = Command<CurveType, HashType>;
+
+    po::options_description desc("Command options");
+
+    typename CommandType::Args args(desc);
+
+    if (opts.help_mode) {
+        std::cout << desc << std::endl;
+        return CommandResult::Ok();
+    }
+
+    po::variables_map vm;
+
+    auto parsed =
+        po::command_line_parser(opts.stage_args)
+            .options(desc)
+            .run();
+
+    po::store(parsed, vm);
+    po::notify(vm);
+
+    CommandType cmd(args);
+    return cmd.execute();
+}
+
+
 template<typename CurveType, typename HashType>
 int run_prover(const nil::proof_producer::ProverOptions& prover_options) {
+
+    using ProverStage = nil::proof_producer::detail::ProverStage;
+    using StageMap = std::unordered_map<ProverStage, std::function<CommandResult(const ProverOptions&)>>;
+
+    static const StageMap stage_map = {
+        {ProverStage::ALL, run_command<AllCommand, CurveType, HashType>},
+        {ProverStage::PRESET, run_command<PresetCommand, CurveType, HashType>},
+        {ProverStage::ASSIGNMENT, run_command<FillAssignmentCommand, CurveType, HashType>},
+        {ProverStage::PREPROCESS, run_command<PreprocessCommand, CurveType, HashType>},
+        {ProverStage::PROVE, run_command<ProveCommand, CurveType, HashType>},
+        {ProverStage::GENERATE_PARTIAL_PROOF, run_command<PartialProofCommand, CurveType, HashType>},
+        {ProverStage::FAST_GENERATE_PARTIAL_PROOF, run_command<FastPartialProofCommand, CurveType, HashType>},
+        {ProverStage::VERIFY, run_command<VerifyCommand, CurveType, HashType>},
+        {ProverStage::GENERATE_AGGREGATED_CHALLENGE, run_command<AggregatedChallengeCommand, CurveType, HashType>},
+        {ProverStage::MERGE_PROOFS, run_command<MergeProofsCommand, CurveType, HashType>},
+        {ProverStage::COMPUTE_COMBINED_Q, run_command<CombinedQGeneratorCommand, CurveType, HashType>},
+        {ProverStage::GENERATE_AGGREGATED_FRI_PROOF, run_command<AggregatedFriProofCommand, CurveType, HashType>},
+        {ProverStage::GENERATE_CONSISTENCY_CHECKS_PROOF, run_command<GenerateConsistencyCheckCommand, CurveType, HashType>}
+    };
+
     auto prover_task = [&] {
         CommandResult prover_result = CommandResult::Ok();
         try {
-            // TODO parse args individually
-            switch (nil::proof_producer::detail::prover_stage_from_string(prover_options.stage)) {
-                case nil::proof_producer::detail::ProverStage::ALL:
-                {
-                    using Command = AllCommand<CurveType, HashType>;
-                    using Args = typename Command::Args;
-                    Command cmd(Args{
-                        .config = PlaceholderConfig{
-                            .max_quotient_chunks = prover_options.max_quotient_chunks,
-                            .expand_factor = prover_options.expand_factor,
-                            .lambda = prover_options.lambda,
-                            .grind = prover_options.grind
-                        },
-                        .in_circuit_file_path = prover_options.circuit_file_path,
-                        .in_assignment_table_file_path = prover_options.assignment_table_file_path,
-                        .out_assignment_debug_opts = prover_options.output_artifacts,
-                        .out_public_preprocessed_data_file_path = prover_options.preprocessed_public_data_path,
-                        .out_common_data_file_path = prover_options.preprocessed_common_data_path,
-                        .out_lpc_scheme_file_path = prover_options.commitment_scheme_state_path,
-                        .out_evm_verifier_dir_path = prover_options.evm_verifier_path,
-                        .out_proof_file_path = prover_options.proof_file_path,
-                        .out_json_proof_file_path = prover_options.json_file_path
-                    });
-                    prover_result = cmd.execute();
-                    break;
-                }
-                case nil::proof_producer::detail::ProverStage::PRESET:
-                {
-                    using Command = PresetCommand<CurveType, HashType>;
-                    using Args = typename Command::Args;
-                    Command cmd(Args{
-                        .circuit_name = prover_options.circuit_name,
-                        .out_circuit_file_path = prover_options.circuit_file_path,
-                        .out_assignment_table_file_path = prover_options.assignment_table_file_path,
-                        .output_artifacts = prover_options.output_artifacts,
-                        .circuit_limits = prover_options.circuits_limits
-                    });
-                    prover_result = cmd.execute();
-                    break;
-                }
-                case nil::proof_producer::detail::ProverStage::ASSIGNMENT:
-                {
-                    using Command = FillAssignmentCommand<CurveType, HashType>;
-                    using Args = typename Command::Args;
-                    Command cmd(Args{
-                        .circuit_name = prover_options.circuit_name,
-                        .in_trace_file_path = prover_options.trace_base_path,
-                        .out_circuit_file_path = prover_options.circuit_file_path,
-                        .out_assignment_table_file_path = prover_options.assignment_table_file_path,
-                        .out_assignment_description_file_path = prover_options.assignment_description_file_path,
-                        .output_artifacts = prover_options.output_artifacts,
-                        .circuit_limits = prover_options.circuits_limits
-                    });
-                    prover_result = cmd.execute();
-                    break;
-                }
-                case nil::proof_producer::detail::ProverStage::PREPROCESS:
-                {
-                    using Command = PreprocessCommand<CurveType, HashType>;
-                    using Args = typename Command::Args;
-                    Command cmd(Args{
-                        .in_circuit_file_path = prover_options.circuit_file_path,
-                        .in_assignment_table_file_path = prover_options.assignment_table_file_path,
-                        .out_assignment_desc_file_path = prover_options.assignment_description_file_path,
-                        .out_public_preprocessed_data_file_path = prover_options.preprocessed_public_data_path,
-                        .out_common_data_file_path = prover_options.preprocessed_common_data_path,
-                        .out_lpc_scheme_file_path = prover_options.commitment_scheme_state_path,
-                        .out_evm_verifier_dir_path = prover_options.evm_verifier_path, // TODO check what is wrong
-                        .assignment_debug_opts = prover_options.output_artifacts,
-                        .placeholder_config = PlaceholderConfig{
-                            .max_quotient_chunks = prover_options.max_quotient_chunks,
-                            .expand_factor = prover_options.expand_factor,
-                            .lambda = prover_options.lambda,
-                            .grind = prover_options.grind
-                        }
-                    });
-                    prover_result = cmd.execute();
-                    break;
-                }
-                case nil::proof_producer::detail::ProverStage::PROVE:
-                {
-                    using Command = ProveCommand<CurveType, HashType>;
-                    using Args = typename Command::Args;
-                    Command cmd(Args{
-                        .in_circuit_file_path = prover_options.circuit_file_path,
-                        .in_assignment_table_file_path = prover_options.assignment_table_file_path,
-                        .in_public_preprocessed_data_file_path = prover_options.preprocessed_public_data_path,
-                        .in_lpc_scheme_file_path = prover_options.commitment_scheme_state_path,
-                        .out_assignment_debug_opts = prover_options.output_artifacts,
-                        .out_evm_verifier_dir_path = prover_options.evm_verifier_path,
-                        .out_assignment_desc_file_path = prover_options.assignment_description_file_path,
-                        .out_proof_file_path = prover_options.proof_file_path,
-                        .out_proof_json_file_path = prover_options.json_file_path
-                    });
-                    prover_result = cmd.execute();
-                    break;
-                }
-                case nil::proof_producer::detail::ProverStage::GENERATE_PARTIAL_PROOF:
-                {
-                    using Command = PartialProofCommand<CurveType, HashType>;
-                    using Args = typename Command::Args;
-                    Command cmd(Args{
-                        .in_circuit_file_path = prover_options.circuit_file_path,
-                        .in_assignment_table_file_path = prover_options.assignment_table_file_path,
-                        .in_public_preprocessed_data_file_path = prover_options.preprocessed_public_data_path,
-                        .in_lpc_scheme_file_path = prover_options.commitment_scheme_state_path,
-                        .out_assignment_debug_opts = prover_options.output_artifacts,
-                        .out_evm_verifier_dir_path = prover_options.evm_verifier_path,
-                        .out_assignment_desc_file_path = prover_options.assignment_description_file_path,
-                        .out_proof_file_path = prover_options.proof_file_path,
-                        .out_challenge_file_path = prover_options.challenge_file_path,
-                        .out_theta_power_file_path = prover_options.theta_power_file_path,
-                        .out_updated_lpc_scheme_file_path = prover_options.updated_commitment_scheme_state_path
-                    });
-                    prover_result = cmd.execute();
-                    break;
-                }
-                case nil::proof_producer::detail::ProverStage::FAST_GENERATE_PARTIAL_PROOF:
-                {
-                    using Command = FastPartialProofCommand<CurveType, HashType>;
-                    using Args = typename Command::Args;
-                    Command cmd(Args{
-                        .config = PlaceholderConfig{
-                            .max_quotient_chunks = prover_options.max_quotient_chunks,
-                            .expand_factor = prover_options.expand_factor,
-                            .lambda = prover_options.lambda,
-                            .grind = prover_options.grind
-                        },
-                        .circuit_name = prover_options.circuit_name,
-                        .circuit_limits = prover_options.circuits_limits,
-                        .in_trace_file_path = prover_options.trace_base_path,
-                        .out_proof_file_path = prover_options.proof_file_path,
-                        .out_challenge_file_path = prover_options.challenge_file_path,
-                        .out_theta_power_file_path = prover_options.theta_power_file_path,
-                        .out_updated_lpc_scheme_file_path = prover_options.updated_commitment_scheme_state_path,
-                        .out_common_data_file_path = prover_options.preprocessed_common_data_path,
-                        .out_assignment_desc_file_path = prover_options.assignment_description_file_path
-                    });
-                    prover_result = cmd.execute();
-                    break;
-                }
-                case nil::proof_producer::detail::ProverStage::VERIFY:
-                {
-                    using Command = VerifyCommand<CurveType, HashType>;
-                    using Args = typename Command::Args;
-                    Command cmd(Args{
-                        .in_circuit_file_path = prover_options.circuit_file_path,
-                        .in_assignment_description_file_path  = prover_options.assignment_description_file_path,
-                        .in_common_data_file_path = prover_options.preprocessed_common_data_path,
-                        .in_proof_file_path = prover_options.proof_file_path
-                    });
-                    prover_result = cmd.execute();
-                    break;
-                }
-                case nil::proof_producer::detail::ProverStage::GENERATE_AGGREGATED_CHALLENGE:
-                {
-                    using Command = AggregatedChallengeCommand<CurveType, HashType>;
-                    using Args = typename Command::Args;
-                    Command cmd(Args{
-                        .in_aggregate_files = prover_options.input_challenge_files,
-                        .out_aggregated_challenge_file = prover_options.aggregated_challenge_file
-                    });
-                    prover_result = cmd.execute();
-                    break;
-                }
-                case nil::proof_producer::detail::ProverStage::MERGE_PROOFS:
-                {
-                    using Command = MergeProofsCommand<CurveType, HashType>;
-                    using Args = typename Command::Args;
-                    Command cmd(Args{
-                        .in_partial_proof_files = prover_options.partial_proof_files,
-                        .in_initial_proof_files = prover_options.initial_proof_files,
-                        .in_aggregated_FRI_proof_file = prover_options.aggregated_FRI_proof_file,
-                        .out_merged_proof_file = prover_options.proof_file_path
-                    });
-                    prover_result = cmd.execute();
-                    break;
-                }
-                case nil::proof_producer::detail::ProverStage::COMPUTE_COMBINED_Q:
-                {
-                    using Command = CombinedQGeneratorCommand<CurveType, HashType>;
-                    using Args = typename Command::Args;
-                    Command cmd(Args{
-                        .in_lpc_scheme_file = prover_options.commitment_scheme_state_path,
-                        .in_aggregated_challenge_file = prover_options.aggregated_challenge_file,
-                        .combined_Q_starting_power = prover_options.combined_Q_starting_power,
-                        .out_combined_Q_polynomial_file = prover_options.combined_Q_polynomial_file
-                    });
-                    prover_result = cmd.execute();
-                    break;
-                }
-                case nil::proof_producer::detail::ProverStage::GENERATE_AGGREGATED_FRI_PROOF:
-                {
-                    using Command = AggregatedFriProofCommand<CurveType, HashType>;
-                    using Args = typename Command::Args;
-                    Command cmd(Args{
-                        .config = PlaceholderConfig{
-                            .max_quotient_chunks = prover_options.max_quotient_chunks,
-                            .expand_factor = prover_options.expand_factor,
-                            .lambda = prover_options.lambda,
-                            .grind = prover_options.grind
-                        },
-                        .in_table_description_file = prover_options.assignment_description_file_path,
-                        .in_aggregated_challenge_file = prover_options.aggregated_challenge_file,
-                        .in_combined_Q_polynomial_files = prover_options.input_combined_Q_polynomial_files,
-                        .out_aggregated_fri_proof_file = prover_options.proof_file_path,
-                        .out_proof_of_work_file = prover_options.proof_of_work_output_file,
-                        .out_consistency_checks_challenges_file = prover_options.consistency_checks_challenges_file
-                    });
-                    prover_result = cmd.execute();
-                    break;
-                }
-                case nil::proof_producer::detail::ProverStage::GENERATE_CONSISTENCY_CHECKS_PROOF:
-                {
-                    using Command = GenerateConsistencyCheckCommand<CurveType, HashType>;
-                    using Args = typename Command::Args;
-                    Command cmd(Args{
-                        .in_lpc_scheme_file = prover_options.commitment_scheme_state_path,
-                        .in_combined_Q_file = prover_options.combined_Q_polynomial_file,
-                        .out_consistency_checks_challenges_file = prover_options.consistency_checks_challenges_file,
-                        .out_proof_file = prover_options.proof_file_path
-                    });
-                    prover_result = cmd.execute();
-                    break;
-                }
-            }
+            auto const stage = nil::proof_producer::detail::prover_stage_from_string(prover_options.stage);
+            prover_result = stage_map.at(stage)(prover_options);
         } catch (const std::exception& e) {
             BOOST_LOG_TRIVIAL(error) << "Unhandled exception: " << e.what();
             return static_cast<int>(ResultCode::UnknownError);
         }
         return static_cast<int>(prover_result.result_code());
     };
+
     return prover_task();
 }
 

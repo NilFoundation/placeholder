@@ -48,7 +48,7 @@ namespace nil {
                     typedef typename policy_type::modular_type modular_type;
                     typedef typename policy_type::integral_type integral_type;
 
-                    constexpr static const std::size_t s = 0x20;
+                    constexpr static const std::size_t two_adicity = 0x20;
                     constexpr static const integral_type arithmetic_generator = 0x01;
                     constexpr static const integral_type geometric_generator = 0x02;
                     constexpr static const integral_type multiplicative_generator = 0x05;
@@ -57,7 +57,8 @@ namespace nil {
                     constexpr static const integral_type nqr = 0x05;
                 };
 
-                constexpr std::size_t const arithmetic_params<pallas_base_field>::s;
+                constexpr std::size_t const
+                    arithmetic_params<pallas_base_field>::two_adicity;
 
                 constexpr typename arithmetic_params<pallas_base_field>::integral_type const
                     arithmetic_params<pallas_base_field>::root_of_unity;

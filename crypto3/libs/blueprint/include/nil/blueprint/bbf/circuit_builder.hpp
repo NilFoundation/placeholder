@@ -28,6 +28,7 @@
 #ifndef CRYPTO3_BLUEPRINT_PLONK_BBF_CIRCUIT_BUILDER_HPP
 #define CRYPTO3_BLUEPRINT_PLONK_BBF_CIRCUIT_BUILDER_HPP
 
+#include <cstddef>
 #include <functional>
 #include <algorithm>
 
@@ -36,6 +37,7 @@
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
 #include <nil/blueprint/component.hpp>
+#include <nil/blueprint/utils/satisfiability_check.hpp>
 
 #include <nil/blueprint/bbf/gate_optimizer.hpp>
 #include <nil/blueprint/bbf/generic.hpp>
@@ -80,6 +82,7 @@ namespace nil {
                                                std::max(min_params.public_inputs,std::size_t(1)), // assure at least 1 PI column is present
                                                min_params.constants,
                                                min_params.rows);
+
                 }
 
                 private:
@@ -147,24 +150,24 @@ namespace nil {
                     using value_type = typename FieldType::value_type;
                     using var = crypto3::zk::snark::plonk_variable<value_type>;
                     using TYPE = typename generator::TYPE;
-                    using raw_input_type = typename generator::raw_input_type;
 
                     using plonk_lookup_table = nil::crypto3::zk::snark::plonk_lookup_table<FieldType>;
 
-                    context_type ct = context_type(
+                    context_type ctx{
                         crypto3::zk::snark::plonk_table_description<FieldType>(
-                            witnesses_amount, public_inputs_amount, constants_amount, 0, rows_amount,
-                            std::pow(2, std::ceil(std::log2(rows_amount)))),
-                            rows_amount, 0 // use all rows, start from 0
-                        );
+                                witnesses_amount, public_inputs_amount, constants_amount, 0, rows_amount,
+                                std::pow(2, std::ceil(std::log2(rows_amount)))),
+                        rows_amount, 0 // use all rows, start from 0
+                    };
 
-                    raw_input_type raw_input = {};
-                    auto a = std::apply(generator::form_input, std::tuple_cat(std::make_tuple(std::ref(ct)),std::make_tuple(raw_input),static_info_args_storage));
-                    auto v = std::tuple_cat(std::make_tuple(std::ref(ct)), a,static_info_args_storage);
-                    std::make_from_tuple<generator>(v);
+                    typename generator::input_type input;
+                    std::apply(generator::allocate_public_inputs, std::tuple_cat(
+                            std::make_tuple(std::ref(ctx), std::ref(input)), static_info_args_storage));
+                    std::make_from_tuple<generator>(std::tuple_cat(
+                            std::make_tuple(std::ref(ctx), std::cref(input)), static_info_args_storage));
 
                     // constants
-                    auto c_list = ct.get_constants();
+                    auto c_list = ctx.get_constants();
                     // std::cout << "const list size = " << c_list.size() << "\n";
                     for(std::size_t i = 0; i < c_list.size(); i++) { // columns
                         // std::cout << "column size = " << c_list[i].size() << "\n";
@@ -174,15 +177,15 @@ namespace nil {
                     }
 
                     // assure minimum inflation after padding
-                    size_t usable_rows = std::pow(2, std::ceil(std::log2(rows_amount))) - 1; 
+                    size_t usable_rows = std::pow(2, std::ceil(std::log2(rows_amount))) - 1;
 
-                    //////////////////////////  Don't use 'ct' below this line, we just moved it!!! /////////////////////////////
-                    gates_optimizer<FieldType> optimizer(std::move(ct));
+                    //////////////////////////  Don't use 'ctx' below this line, we just moved it!!! /////////////////////////////
+                    gates_optimizer<FieldType> optimizer(std::move(ctx));
                     optimized_gates<FieldType> gates = optimizer.optimize_gates();
 
                     // TODO: replace with PLONK_SPECIAL_SELECTOR_ALL_USABLE_ROWS_SELECTED.
                     row_selector selector_column(usable_rows);
-                    for (std::size_t i = 0; i < usable_rows; i++)
+                    for (std::size_t i = 1; i < usable_rows; i++)
                         selector_column.set_row(i);
                     size_t full_selector_id = gates.add_selector(selector_column);
 
@@ -201,7 +204,7 @@ namespace nil {
                             names.push_back(d.second);
                         }
                         bp.add_gate(selector_id, constraints);
-                        constraint_names.insert({selector_id, names});
+                        constraint_names.insert({selector_id, std::move(names)});
                         //std::cout << "\n";
                     }
 
@@ -239,7 +242,7 @@ namespace nil {
                             merged_lookup_gate.push_back({table_index, merged_lookup_input});
                             bp.add_lookup_gate(full_selector_id, merged_lookup_gate);
                         }
-                    } 
+                    }
 
                     // compatibility layer: dynamic lookup tables - continued
                     for(const auto& [name, area] : gates.dynamic_lookup_tables) {
@@ -304,9 +307,9 @@ namespace nil {
                             for(std::size_t i = start_constant_column; i < start_constant_column + prev_columns_number; i++)
                                 presets.constant(i, usable_rows - 1) = 0;
 
-                            
-
+                            // TODO: shouldn't we do it before we calculate prev_columns_number?
                             if (table_rows_number % usable_rows == 0) options_number--;
+
                             std::size_t cur = 0;
                             for(std::size_t i = 0; i < options_number; i++) {
                                 for(std::size_t local_start_row = 1; local_start_row < usable_rows; local_start_row++, cur++) {
@@ -385,7 +388,6 @@ namespace nil {
                                     // the columns present in the table
                                     std::size_t column_index = (table->subtables.size() > 1) ? subtable.column_indices[k] : k;
                                     option.emplace_back( nil::crypto3::zk::snark::plonk_variable<typename FieldType::value_type>(
-                                    // TODO! The following line was missing start_constant_column term
                                         start_constant_column + column_index, 0, false,
                                         nil::crypto3::zk::snark::plonk_variable<typename FieldType::value_type>::column_type::constant
                                     ) );
@@ -409,7 +411,6 @@ namespace nil {
                             std::vector<nil::crypto3::zk::snark::plonk_variable<typename FieldType::value_type>> option;
                             for(const auto &column_index : subtable.column_indices) {
                                 option.emplace_back(nil::crypto3::zk::snark::plonk_variable<typename FieldType::value_type>(
-                                // TODO: check, why the following line did not have the start_constant_column term!
                                     start_constant_column + column_index, 0, false,
                                     nil::crypto3::zk::snark::plonk_variable<typename FieldType::value_type>::column_type::constant
                                 ) );
@@ -443,57 +444,24 @@ namespace nil {
                    // std::cout << "Lookup gates amount = " << bp.num_lookup_gates() << "\n";
                 }
 
-                std::set<std::vector<typename FieldType::value_type>>
-                load_dynamic_lookup(const crypto3::zk::snark::plonk_assignment_table<FieldType> &assignments, std::size_t table_id) {
-                    std::set<std::vector<typename FieldType::value_type>> result;
-                    auto &table = bp.lookup_tables()[table_id-1];
-
-                    crypto3::zk::snark::plonk_column<FieldType> selector = assignments.selector(table.tag_index);
-
-                    for( std::size_t selector_row = 0; selector_row < rows_amount; selector_row++ ){
-                        if( selector_row < selector.size() && !selector[selector_row].is_zero() ){
-                            for( std::size_t op = 0; op < table.lookup_options.size(); op++){
-                                std::vector<typename FieldType::value_type> item(table.lookup_options[op].size());
-                                for( std::size_t i = 0; i < table.lookup_options[op].size(); i++){
-                                    crypto3::zk::snark::plonk_constraint<FieldType> expr = table.lookup_options[op][i];;
-                                    item[i] = expr.evaluate(selector_row, assignments);
-                                }
-                                result.insert(item);
-                            }
-                        }
-                    }
-                    return result;
-                }
-
                 public:
                 std::tuple<
                     crypto3::zk::snark::plonk_assignment_table<FieldType>,
                     Component<FieldType, GenerationStage::ASSIGNMENT>,
                     crypto3::zk::snark::plonk_table_description<FieldType>
                 >
-                assign(typename Component<FieldType, GenerationStage::ASSIGNMENT>::raw_input_type raw_input) {
+                assign(typename Component<FieldType, GenerationStage::ASSIGNMENT>::input_type input) {
                     using generator = Component<FieldType,GenerationStage::ASSIGNMENT>;
-                    using assignment_type = crypto3::zk::snark::plonk_assignment_table<FieldType>;
                     using context_type = typename nil::blueprint::bbf::context<FieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT>;
 
-                    // actually we should use presets to chose the right size and partly fill it
-                    assignment_type at = assignment_type(witnesses_amount, public_inputs_amount,
-                        presets.constants_amount(), presets.selectors_amount());
+                    auto at = get_presets();
+                    context_type ctx = context_type(at, rows_amount, 0); // use all rows, start from 0
 
-                    // copy preset constants
-                    for(std::size_t i = 0; i < presets.constants_amount(); i++) {
-                        at.fill_constant(i, presets.constant(i));
-                    }
-                    // copy preset selectors
-                    for(std::size_t i = 0; i < presets.selectors_amount(); i++) {
-                        at.fill_selector(i, presets.selector(i));
-                    }
+                    std::apply(generator::allocate_public_inputs, std::tuple_cat(
+                            std::make_tuple(std::ref(ctx), std::ref(input)), static_info_args_storage));
 
-                    context_type ct = context_type(at, rows_amount, 0); // use all rows, start from 0
-
-                    auto a = std::apply(generator::form_input, std::tuple_cat(std::make_tuple(std::ref(ct)),std::make_tuple(raw_input),static_info_args_storage));
-                    auto v = std::tuple_cat(std::make_tuple(std::ref(ct)), a,static_info_args_storage);
-                    auto o = std::make_from_tuple<generator>(v);
+                    auto component = std::make_from_tuple<generator>(std::tuple_cat(
+                            std::make_tuple(std::ref(ctx), std::cref(input)), static_info_args_storage));
 
                     crypto3::zk::snark::plonk_table_description<FieldType> desc = at.get_description();
                     std::cout << "Rows amount = " << at.rows_amount() << std::endl;
@@ -502,167 +470,36 @@ namespace nil {
                     std::cout << "Rows amount after padding = " << at.rows_amount() << std::endl;
                     desc.rows_amount = at.rows_amount();
 
-                    return std::make_tuple(at,o,desc);
+                    return {at, component, desc};
                 }
 
-                bool is_satisfied(const crypto3::zk::snark::plonk_assignment_table<FieldType> &assignments) {
-                    std::set<uint32_t> used_gates;
-                    for (std::uint32_t i = 0; i < bp.gates().size(); i++) {
-                         used_gates.insert(i);
+                bool is_satisfied(const crypto3::zk::snark::plonk_assignment_table<FieldType> &assignments,
+                                  const satisfiability_check_options &options = {}) {
+
+                    if (!constraint_names.empty() && !options.constraint_names) {
+                        auto opts_copy = options;
+                        opts_copy.constraint_names = &constraint_names;
+                        return satisfiability_checker<FieldType>::is_satisfied(bp, assignments, opts_copy);
                     }
-
-                    std::set<uint32_t> used_lookup_gates;
-                    for (std::uint32_t i = 0; i < bp.lookup_gates().size(); i++) {
-                         used_lookup_gates.insert(i);
-                    }
-
-                    std::set<uint32_t> used_copy_constraints;
-                    for (std::uint32_t i = 0; i < bp.copy_constraints().size(); i++) {
-                         used_copy_constraints.insert(i);
-                    }
-
-                    std::set<uint32_t> selector_rows;
-                    for (std::uint32_t i = 0; i < rows_amount; i++) {
-                         selector_rows.insert(i);
-                    }
-
-                    const auto &gates = bp.gates();
-                    const auto &copy_constraints = bp.copy_constraints();
-                    const auto &lookup_gates = bp.lookup_gates();
-
-                    std::map<std::string, std::set<std::vector<typename FieldType::value_type>>> used_dynamic_tables;
-
-                    for (const auto& i : used_gates) {
-                        crypto3::zk::snark::plonk_column<FieldType> selector = assignments.selector(gates[i].selector_index);
-
-                        for (const auto& selector_row : selector_rows) {
-                            if (selector_row < selector.size() && !selector[selector_row].is_zero()) {
-                                for (std::size_t j = 0; j < gates[i].constraints.size(); j++) {
-
-                                    typename FieldType::value_type constraint_result =
-                                        gates[i].constraints[j].evaluate(selector_row, assignments);
-
-                                    if (!constraint_result.is_zero()) {
-                                        std::cout << "Constraint " << j << " from gate " << i << " on row " << selector_row
-                                            << " is not satisfied." << std::endl;
-                                        std::cout << "Constraint result: " << constraint_result << std::endl;
-                                        std::cout << "Offending constraint name: " << constraint_names.at(gates[i].selector_index).at(j) << std::endl;
-                                        std::cout << "Offending contraint: " << gates[i].constraints[j] << std::endl;
-                                        return false;
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    for (const auto& i : used_lookup_gates) {
-                        crypto3::zk::snark::plonk_column<FieldType> selector = assignments.selector(lookup_gates[i].tag_index);
-                        for (const auto& selector_row : selector_rows) {
-                            if (selector_row < selector.size() && !selector[selector_row].is_zero()) {
-                                for (std::size_t j = 0; j < lookup_gates[i].constraints.size(); j++) {
-                                    std::vector<typename FieldType::value_type> input_values;
-                                    input_values.reserve(lookup_gates[i].constraints[j].lookup_input.size());
-                                    for (std::size_t k = 0; k < lookup_gates[i].constraints[j].lookup_input.size(); k++) {
-                                        input_values.emplace_back(lookup_gates[i].constraints[j].lookup_input[k].evaluate(
-                                            selector_row, assignments));
-                                    }
-                                    const auto table_name =
-                                        bp.get_reserved_indices_right().at(lookup_gates[i].constraints[j].table_id);
-                                    try {
-                                        if( bp.get_reserved_dynamic_tables().find(table_name) != bp.get_reserved_dynamic_tables().end() ) {
-                                            if( used_dynamic_tables.find(table_name) == used_dynamic_tables.end()) {
-                                                used_dynamic_tables[table_name] =
-                                                    load_dynamic_lookup(assignments, lookup_gates[i].constraints[j].table_id);
-                                            }
-                                            if(used_dynamic_tables[table_name].find(input_values) == used_dynamic_tables[table_name].end()) {
-                                                for (std::size_t k = 0; k < input_values.size(); k++) {
-                                                    std::cout << input_values[k] << " ";
-                                                }
-                                                std::cout << std::endl;
-                                                std::cout << "Constraint " << j << " from lookup gate " << i << " from table "
-                                                    << table_name << " on row " << selector_row << " is not satisfied."
-                                                    << std::endl;
-                                                std::cout << "Offending Lookup Gate: " << std::endl;
-                                                for (const auto &constraint : lookup_gates[i].constraints) {
-                                                    std::cout << "Table id: " << constraint.table_id << std::endl;
-                                                    for (auto &lookup_input : constraint.lookup_input) {
-                                                        std::cout << lookup_input << std::endl;
-                                                    }
-                                                }
-                                                return false;
-                                            }
-                                            continue;
-                                        }
-                                        std::string main_table_name = table_name.substr(0, table_name.find("/"));
-                                        std::string subtable_name = table_name.substr(table_name.find("/") + 1, table_name.size() - 1);
-
-                                        const auto &table = bp.get_reserved_tables().at(main_table_name)->get_table();
-                                        const auto &subtable = bp.get_reserved_tables().at(main_table_name)->subtables.at(subtable_name);
-
-                                        std::size_t columns_number = subtable.column_indices.size();
-
-                                        // Search the table for the input values
-                                        // We can cache it with sorting, or use KMP, but I need a simple solution first
-                                        bool found = false;
-                                        BOOST_ASSERT(columns_number == input_values.size());
-                                        for (std::size_t k = 0; k < table[0].size(); k++) {
-                                            bool match = true;
-                                            for (std::size_t l = 0; l < columns_number; l++) {
-                                                if (table[subtable.column_indices[l]][k] != input_values[l]) {
-                                                    match = false;
-                                                    break;
-                                                }
-                                            }
-                                            if (match) {
-                                                found = true;
-                                                break;
-                                            }
-                                        }
-                                        if (!found) {
-                                            std::cout << "Input values:";
-                                            for (std::size_t k = 0; k < input_values.size(); k++) {
-                                                std::cout << input_values[k] << " ";
-                                            }
-                                            std::cout << std::endl;
-                                            std::cout << "Constraint " << j << " from lookup gate " << i << " from table "
-                                                << table_name << " on row " << selector_row << " is not satisfied."
-                                                << std::endl;
-                                            std::cout << "Offending Lookup Gate: " << std::endl;
-                                            for (const auto &constraint : lookup_gates[i].constraints) {
-                                                std::cout << "Table id: " << constraint.table_id << std::endl;
-                                                for (auto &lookup_input : constraint.lookup_input) {
-                                                    std::cout << lookup_input << std::endl;
-                                                }
-                                            }
-                                            return false;
-                                        }
-                                    } catch (std::out_of_range &e) {
-                                        std::cout << "Lookup table " << table_name << " not found." << std::endl;
-                                        std::cout << "Table_id = " << lookup_gates[i].constraints[j].table_id << " table_name "
-                                                  << table_name << std::endl;
-                                        return false;
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    for (const auto& i : used_copy_constraints) {
-                        if (var_value(assignments, copy_constraints[i].first) !=
-                            var_value(assignments, copy_constraints[i].second)) {
-                            std::cout << "Copy constraint number " << i << " is not satisfied."
-                                      << " First variable: " << copy_constraints[i].first
-                                      << " second variable: " << copy_constraints[i].second << std::endl;
-                            std::cout << var_value(assignments, copy_constraints[i].first) << " != "
-                                      << var_value(assignments, copy_constraints[i].second) << std::endl;
-                            return false;
-                        }
-                    }
-                    return true;
+                    return satisfiability_checker<FieldType>::is_satisfied(bp, assignments, options);
                 }
 
-                circuit<crypto3::zk::snark::plonk_constraint_system<FieldType>>& get_circuit() {
+                const circuit<crypto3::zk::snark::plonk_constraint_system<FieldType>>& get_circuit() {
                     return bp;
+                }
+
+                crypto3::zk::snark::plonk_assignment_table<FieldType> get_presets() {
+                    // actually we should use presets to chose the right size and partly fill it
+                    crypto3::zk::snark::plonk_assignment_table<FieldType> at(
+                        witnesses_amount, public_inputs_amount,
+                        presets.constants_amount(), presets.selectors_amount());
+
+                    for (std::size_t i = 0; i < presets.constants_amount(); ++i)
+                        at.fill_constant(i, presets.constant(i));
+                    for (std::size_t i = 0; i < presets.selectors_amount(); ++i)
+                        at.fill_selector(i, presets.selector(i));
+
+                    return at;
                 }
 
                 private:

@@ -98,6 +98,18 @@ namespace nil {
                 }
                 return result;
             }
+
+            std::size_t memory_size_word_util(std::size_t memory_byte_size){
+                return (memory_byte_size + 31) / 32;
+            }
+
+            std::size_t memory_cost_util(std::size_t memory_byte_size){
+                return (memory_size_word_util(memory_byte_size) * memory_size_word_util(memory_byte_size)) / 512 + (3 * memory_size_word_util(memory_byte_size));
+            }
+
+            std::size_t memory_expansion_cost(std::size_t new_memory_byte_size, std::size_t last_memory_byte_size) {
+                return memory_cost_util(new_memory_byte_size) - memory_cost_util(last_memory_byte_size);
+            }
         }
     }
 }

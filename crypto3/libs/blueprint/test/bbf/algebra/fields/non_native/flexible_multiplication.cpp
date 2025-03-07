@@ -29,8 +29,6 @@
 #include <boost/test/unit_test.hpp>
 #include <nil/blueprint/bbf/circuit_builder.hpp>
 #include <nil/blueprint/bbf/components/algebra/fields/non_native/flexible_multiplication.hpp>
-#include <nil/blueprint/blueprint/plonk/assignment.hpp>
-#include <nil/blueprint/blueprint/plonk/circuit.hpp>
 #include <nil/crypto3/algebra/curves/pallas.hpp>
 #include <nil/crypto3/algebra/curves/vesta.hpp>
 #include <nil/crypto3/random/algebraic_engine.hpp>
@@ -62,18 +60,18 @@ void test_mult(const std::vector<typename BlueprintFieldType::value_type> &publi
 
     extended_integral_type r = x * y % p;
 
-    auto assign_and_check = [&](auto &B, auto &raw_input) {
-        raw_input.x =
+    auto assign_and_check = [&](auto &B, auto &input) {
+        input.x =
             std::vector<TYPE>(public_input.begin(), public_input.begin() + num_chunks);
-        raw_input.y = std::vector<TYPE>(public_input.begin() + num_chunks,
+        input.y = std::vector<TYPE>(public_input.begin() + num_chunks,
                                         public_input.begin() + 2 * num_chunks);
-        raw_input.p = std::vector<TYPE>(public_input.begin() + 2 * num_chunks,
+        input.p = std::vector<TYPE>(public_input.begin() + 2 * num_chunks,
                                         public_input.begin() + 3 * num_chunks);
-        raw_input.pp = std::vector<TYPE>(public_input.begin() + 3 * num_chunks,
+        input.pp = std::vector<TYPE>(public_input.begin() + 3 * num_chunks,
                                          public_input.begin() + 4 * num_chunks);
-        raw_input.zero = public_input[4 * num_chunks];
+        input.zero = public_input[4 * num_chunks];
 
-        auto [at, A, desc] = B.assign(raw_input);
+        auto [at, A, desc] = B.assign(input);
         bool pass = B.is_satisfied(at);
         std::cout << "Is_satisfied = " << pass << std::endl;
 
@@ -99,26 +97,26 @@ void test_mult(const std::vector<typename BlueprintFieldType::value_type> &publi
     if constexpr (std::is_same_v<NonNativeFieldType,
                                  crypto3::algebra::curves::pallas::base_field_type>) {
         typename bbf::components::pallas_flexible_multiplication<
-            FieldType, bbf::GenerationStage::ASSIGNMENT>::raw_input_type raw_input;
+            FieldType, bbf::GenerationStage::ASSIGNMENT>::input_type input;
 
         auto B =
             bbf::circuit_builder<FieldType,
                                  bbf::components::pallas_flexible_multiplication,
                                  std::size_t, std::size_t>(num_chunks, bit_size_chunk);
 
-        assign_and_check(B, raw_input);
+        assign_and_check(B, input);
     } else if constexpr (std::is_same_v<
                              NonNativeFieldType,
                              crypto3::algebra::curves::vesta::base_field_type>) {
         typename bbf::components::vesta_flexible_multiplication<
-            FieldType, bbf::GenerationStage::ASSIGNMENT>::raw_input_type raw_input;
+            FieldType, bbf::GenerationStage::ASSIGNMENT>::input_type input;
 
         auto B =
             bbf::circuit_builder<FieldType,
                                  bbf::components::vesta_flexible_multiplication,
                                  std::size_t, std::size_t>(num_chunks, bit_size_chunk);
 
-        assign_and_check(B, raw_input);
+        assign_and_check(B, input);
     }
 }
 
@@ -229,7 +227,7 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_bbf_flexible_multiplication_test) {
     using vesta_field_type = typename crypto3::algebra::curves::vesta::base_field_type;
 
     std::cout << "Scenario 1\n";
-    mult_tests<pallas_field_type, vesta_field_type, 4, 64, random_tests_amount>();
+    mult_tests<pallas_field_type, vesta_field_type, 3, 96, random_tests_amount>();
 
     std::cout << "Scenario 2\n";
     mult_tests<pallas_field_type, vesta_field_type, 5, 64, random_tests_amount>();

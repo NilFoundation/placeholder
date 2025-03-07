@@ -40,7 +40,10 @@ namespace nil::crypto3::multiprecision::literals {
     }
 
 // This is a comprehensive list of all bitlengths we use in algebra.
-// Custom ones can be defined using this macro in every place where they are used.
+// Custom ones can be defined using this macro when needed. Notice that this can only be
+// done reliably in .cpp files because definitions in headers are prone to accedental
+// conflicts. If you need to use a custom literal in a header, add it to the list
+// below instead.
 NIL_CO3_MP_DEFINE_BIG_UINT_LITERAL(4)
 NIL_CO3_MP_DEFINE_BIG_UINT_LITERAL(7)
 NIL_CO3_MP_DEFINE_BIG_UINT_LITERAL(8)
@@ -49,6 +52,7 @@ NIL_CO3_MP_DEFINE_BIG_UINT_LITERAL(15)
 NIL_CO3_MP_DEFINE_BIG_UINT_LITERAL(16)
 NIL_CO3_MP_DEFINE_BIG_UINT_LITERAL(17)
 NIL_CO3_MP_DEFINE_BIG_UINT_LITERAL(18)
+NIL_CO3_MP_DEFINE_BIG_UINT_LITERAL(31)
 NIL_CO3_MP_DEFINE_BIG_UINT_LITERAL(64)
 NIL_CO3_MP_DEFINE_BIG_UINT_LITERAL(92)
 NIL_CO3_MP_DEFINE_BIG_UINT_LITERAL(94)

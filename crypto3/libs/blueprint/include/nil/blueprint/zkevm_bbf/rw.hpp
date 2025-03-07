@@ -45,10 +45,14 @@ namespace nil {
                 using generic_component<FieldType, stage>::constrain;
                 using generic_component<FieldType, stage>::lookup;
                 using generic_component<FieldType, stage>::lookup_table;
+
             public:
+                using typename generic_component<FieldType, stage>::table_params;
                 using typename generic_component<FieldType,stage>::TYPE;
+
                 using rw_table_type = rw_table<FieldType, stage>;
                 using call_commit_table_type = call_commit_table<FieldType, stage>;
+
                 struct input_type{
                     template<typename T>
                     using enable_for_assignment_t = typename std::conditional_t<stage == GenerationStage::ASSIGNMENT, T, std::nullptr_t>;
@@ -60,7 +64,7 @@ namespace nil {
 
                 using value = typename FieldType::value_type;
                 using integral_type = nil::crypto3::multiprecision::big_uint<257>;
-            public:
+
                 static constexpr std::size_t op_bits_amount = 4;
                 static constexpr std::size_t diff_index_bits_amount = 5;
 
@@ -70,16 +74,23 @@ namespace nil {
                 static constexpr std::size_t rw_id_chunks_amount = 2;
                 static constexpr std::size_t chunks_amount = 30;
 
-                static nil::crypto3::zk::snark::plonk_table_description<FieldType> get_table_description(
-                    std::size_t max_rw_size, std::size_t max_call_commits, std::size_t max_mpt_size
-                ){
-                    nil::crypto3::zk::snark::plonk_table_description<FieldType> desc(
-                        call_commit_table_type::get_witness_amount() +
-                        rw_table_type::get_witness_amount() + 61, 0, 2, 9
-                    );
-                    desc.usable_rows_amount = max_rw_size + max_mpt_size;
-                    return desc;
+                static table_params get_minimal_requirements(
+                    std::size_t max_rw_size,
+                    std::size_t max_mpt_size,
+                    std::size_t max_call_commits
+                ) {
+                    return {
+                        .witnesses = rw_table_type::get_witness_amount() + call_commit_table_type::get_witness_amount() + 50,
+                        .public_inputs = 0,
+                        .constants = 2,
+                        .rows = max_rw_size + max_mpt_size
+                    };
                 }
+
+                static void allocate_public_inputs(
+                    context_type &context, input_type &input,
+                    std::size_t max_rw_size, std::size_t max_mpt_size, std::size_t max_call_commits
+                ) {}
 
                 template<std::size_t n>
                 TYPE bit_tag_selector(std::array<TYPE, n> bits, std::size_t k){
@@ -102,8 +113,8 @@ namespace nil {
 
                 rw(context_type &context_object, const input_type &input,
                     std::size_t max_rw_size,
-                    std::size_t max_call_commits,
-                    std::size_t max_mpt_size
+                    std::size_t max_mpt_size,
+                    std::size_t max_call_commits
                 ) :generic_component<FieldType,stage>(context_object) {
                     std::size_t START_OP = rw_op_to_num(rw_operation_type::start);
                     std::size_t STACK_OP = rw_op_to_num(rw_operation_type::stack);

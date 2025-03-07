@@ -28,9 +28,11 @@
 #include <boost/test/unit_test.hpp>
 
 #include <nil/crypto3/algebra/curves/pallas.hpp>
-#include <nil/crypto3/algebra/fields/arithmetic_params/pallas.hpp>
 #include <nil/crypto3/algebra/curves/vesta.hpp>
+#include <nil/crypto3/algebra/fields/arithmetic_params/babybear.hpp>
+#include <nil/crypto3/algebra/fields/arithmetic_params/pallas.hpp>
 #include <nil/crypto3/algebra/fields/arithmetic_params/vesta.hpp>
+#include <nil/crypto3/algebra/fields/babybear.hpp>
 #include <nil/crypto3/algebra/random_element.hpp>
 
 #include <nil/crypto3/hash/algorithm/hash.hpp>
@@ -41,23 +43,18 @@
 
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
-#include <nil/blueprint/bbf/l1_wrapper.hpp>
 #include <nil/blueprint/zkevm_bbf/rw.hpp>
-#include <nil/blueprint/zkevm_bbf/copy.hpp>
-#include <nil/blueprint/zkevm_bbf/zkevm.hpp>
-#include <nil/blueprint/zkevm_bbf/bytecode.hpp>
-#include <nil/blueprint/zkevm_bbf/keccak.hpp>
+//#include <nil/blueprint/zkevm_bbf/rw_small_field.hpp>
 #include <nil/blueprint/zkevm_bbf/input_generators/hardhat_input_generator.hpp>
 
-#include "./test_l1_wrapper.hpp"
+#include "./circuit_test_fixture.hpp"
 
 using namespace nil::crypto3;
 using namespace nil::blueprint;
+using namespace nil::blueprint::bbf;
 
-class zkEVMRWTestFixture: public BBFTestFixture {
+class zkEVMRWTestFixture: public CircuitTestFixture {
 public:
-    zkEVMRWTestFixture():BBFTestFixture(){}
-
     template <typename field_type>
     void test_zkevm_rw(
         std::string path,
@@ -67,14 +64,13 @@ public:
         auto trace = load_hardhat_input(path);
         nil::blueprint::bbf::zkevm_hardhat_input_generator circuit_inputs(trace);
 
-        typename nil::blueprint::bbf::rw<field_type,nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type rw_assignment_input;
+        typename nil::blueprint::bbf::rw<field_type, GenerationStage::ASSIGNMENT>::input_type rw_assignment_input;
         rw_assignment_input.rw_operations = circuit_inputs.rw_operations();
         rw_assignment_input.call_commits = circuit_inputs.call_commits();
-        typename nil::blueprint::bbf::rw<field_type,nil::blueprint::bbf::GenerationStage::CONSTRAINTS>::input_type rw_constraint_input;
 
         std::cout << "rw_trace size = " <<  rw_assignment_input.rw_operations.size() << std::endl;
         bool result = test_bbf_component<field_type, nil::blueprint::bbf::rw>(
-            "rw", {}, rw_assignment_input, rw_constraint_input, max_rw_size, max_call_commits, 0
+            "rw", {}, rw_assignment_input, max_rw_size, 0, max_call_commits
         );
         BOOST_ASSERT(result); // Max_rw, Max_mpt
     }

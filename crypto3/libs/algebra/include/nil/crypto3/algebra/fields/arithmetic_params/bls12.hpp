@@ -50,7 +50,7 @@ namespace nil {
                     typedef typename policy_type::modular_type modular_type;
                     typedef typename policy_type::integral_type integral_type;
 
-                    constexpr static const std::size_t s = 0x01;
+                    constexpr static const std::size_t two_adicity = 0x01;
                     constexpr static const integral_type t =
                         0xD0088F51CBFF34D258DD3DB21A5D66BB23BA5C279C2895FB39869507B587B120F55FFFF58A9FFFFDCFF7FFFFFFFD555_big_uint380;
                     constexpr static const integral_type t_minus_1_over_2 =
@@ -84,7 +84,7 @@ namespace nil {
 
                     using extended_integral_type = nil::crypto3::multiprecision::big_uint<2 * policy_type::modulus_bits>;
 
-                    constexpr static const std::size_t s = 0x03;
+                    constexpr static const std::size_t two_adicity = 0x03;
                     constexpr static const extended_integral_type t =
                         0x5486F497186BF8E97A4F1D5445E4BD3C5B921CA1CE08D68CDCB3C92693D17A0A14C59FA2DBB94DDEA62926612F1DE023AD0C3390C30B8F6525D0B50E1234092CD7F23DA7CE36E862C586706C42279FAF9DAD63AEC705D564D54000038E31C7_big_uint759;
                     constexpr static const extended_integral_type t_minus_1_over_2 =
@@ -108,7 +108,7 @@ namespace nil {
                     typedef typename policy_type::modular_type modular_type;
                     typedef typename policy_type::integral_type integral_type;
 
-                    constexpr static const std::size_t s = 0x20;
+                    constexpr static const std::size_t two_adicity = 0x20;
                     constexpr static const integral_type t =
                         0x73EDA753299D7D483339D80809A1D80553BDA402FFFE5BFEFFFFFFFF_big_uint223;
                     constexpr static const integral_type t_minus_1_over_2 =
@@ -142,7 +142,7 @@ namespace nil {
                     typedef typename policy_type::modular_type modular_type;
                     typedef typename policy_type::integral_type integral_type;
 
-                    constexpr static const std::size_t s = 0x2E;
+                    constexpr static const std::size_t two_adicity = 0x2E;
                     constexpr static const integral_type t =
                         0x6B8E9185F1443AB18EC1701B28524EC688B67CC03D44E3C7BCD88BEE82520005C2D7510C00000021423_big_uint331;
                     constexpr static const integral_type t_minus_1_over_2 =
@@ -176,7 +176,7 @@ namespace nil {
 
                     using extended_integral_type = nil::crypto3::multiprecision::big_uint<2 * policy_type::modulus_bits>;
 
-                    constexpr static const std::size_t s = 0x2F;
+                    constexpr static const std::size_t two_adicity = 0x2F;
                     constexpr static const extended_integral_type t =
                         0x5A60FA1775FF644AD227766C24C78977170FB495DD27E3EBCE2827BB49AB813A0315F720CC19B8029CE24A0549AD88C155555176E15C063064972B0C7193AD797F7A46BE3813495B44D1E5C37B000E671A4A9E00000021423_big_uint707;
                     constexpr static const extended_integral_type t_minus_1_over_2 =
@@ -200,7 +200,7 @@ namespace nil {
                     typedef typename policy_type::modular_type modular_type;
                     typedef typename policy_type::integral_type integral_type;
 
-                    constexpr static const std::size_t s = 0x2F;
+                    constexpr static const std::size_t two_adicity = 0x2F;
                     constexpr static const integral_type t =
                         0x2556CABD34594AACC1689A3CB86F6002B354EDFDA00000021423_big_uint206;
                     constexpr static const integral_type t_minus_1_over_2 =
@@ -225,9 +225,12 @@ namespace nil {
 
                 /************************* BLS12-381 definitions ***********************************/
 
-                constexpr std::size_t const arithmetic_params<bls12_base_field<381>>::s;
-                constexpr std::size_t const arithmetic_params<fp2<bls12_base_field<381>>>::s;
-                constexpr std::size_t const arithmetic_params<bls12_scalar_field<381>>::s;
+                constexpr std::size_t const
+                    arithmetic_params<bls12_base_field<381>>::two_adicity;
+                constexpr std::size_t const
+                    arithmetic_params<fp2<bls12_base_field<381>>>::two_adicity;
+                constexpr std::size_t const
+                    arithmetic_params<bls12_scalar_field<381>>::two_adicity;
 
                 constexpr typename arithmetic_params<bls12_base_field<381>>::integral_type const
                     arithmetic_params<bls12_base_field<381>>::t;
@@ -303,9 +306,12 @@ namespace nil {
 
                 /************************* BLS12-377 definitions ***********************************/
 
-                constexpr std::size_t const arithmetic_params<bls12_base_field<377>>::s;
-                constexpr std::size_t const arithmetic_params<fp2<bls12_base_field<377>>>::s;
-                constexpr std::size_t const arithmetic_params<bls12_scalar_field<377>>::s;
+                constexpr std::size_t const
+                    arithmetic_params<bls12_base_field<377>>::two_adicity;
+                constexpr std::size_t const
+                    arithmetic_params<fp2<bls12_base_field<377>>>::two_adicity;
+                constexpr std::size_t const
+                    arithmetic_params<bls12_scalar_field<377>>::two_adicity;
 
                 constexpr typename arithmetic_params<bls12_base_field<377>>::integral_type const
                     arithmetic_params<bls12_base_field<377>>::t;
