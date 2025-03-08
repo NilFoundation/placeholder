@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------//
-// Copyright (c) 2024 Elena Tatuzova <e.tatuzova@nil.foundation>
+// Copyright (c) 2025 Elena Tatuzova <e.tatuzova@nil.foundation>
 //
 // MIT License
 //
@@ -75,9 +75,7 @@ namespace nil {
 
                         std::size_t row = 0;
                         for( auto &[ind,call_commit]: call_commits){
-                            std::cout << "CALL COMMIT " << ind << std::endl;
                             for( std::size_t i = 0; i < call_commit.items.size(); i++, row++ ){
-                                std::cout << "\t" << i+1 << " " << call_commit.items[i] << std::endl;
                                 BOOST_ASSERT(row < max_call_commit_size);
                                 BOOST_ASSERT(ind == call_commit.call_id);
                                 call_id[row] = ind;

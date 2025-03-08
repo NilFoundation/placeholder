@@ -61,6 +61,7 @@
 #include <nil/blueprint/zkevm_bbf/bytecode.hpp>
 #include <nil/blueprint/zkevm_bbf/keccak.hpp>
 #include <nil/blueprint/zkevm_bbf/exp.hpp>
+#include <nil/blueprint/zkevm_bbf/call_commit.hpp>
 
 #include "./circuit_test_fixture.hpp"
 
@@ -112,6 +113,10 @@ public:
         typename nil::blueprint::bbf::rw<field_type,nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type rw_assignment_input;
         rw_assignment_input.rw_operations = circuit_inputs.rw_operations();
         rw_assignment_input.call_commits = circuit_inputs.call_commits();
+
+        typename nil::blueprint::bbf::call_commit<field_type,nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type call_commit_assignment_input;
+        call_commit_assignment_input.rw_operations = circuit_inputs.rw_operations();
+        call_commit_assignment_input.call_commits = circuit_inputs.call_commits();
 
         typename zkevm_keccak<field_type,GenerationStage::ASSIGNMENT>::input_type keccak_assignment_input;
         keccak_assignment_input.rlc_challenge = 7;
@@ -213,6 +218,19 @@ public:
             //     {}, rw_assignment_input, max_rw, max_mpt
             // );
             // BOOST_ASSERT(result);
+            std::cout << std::endl;
+        }
+
+        const std::string call_commit_circuit = "call_commit";
+        if (should_run_circuit(call_commit_circuit)) {
+            std::cout << "circuit '" << call_commit_circuit << "'" << std::endl;
+
+            // Max_rw, Max_mpt
+            result = test_bbf_component<field_type, nil::blueprint::bbf::call_commit>(
+                call_commit_circuit,
+                {}, call_commit_assignment_input, max_rw, max_call_commits
+            );
+            BOOST_ASSERT(result);
             std::cout << std::endl;
         }
     }

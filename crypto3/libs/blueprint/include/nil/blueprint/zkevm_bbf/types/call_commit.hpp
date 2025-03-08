@@ -37,6 +37,8 @@ namespace nil {
             struct zkevm_call_commit{
                 std::size_t call_id;
                 std::size_t parent_id;
+                std::size_t depth;  // 0 for block, 1 for transaction e t.c.
+                std::size_t call_end;
                 std::vector<rw_operation> items;
             };
         } // namespace bbf

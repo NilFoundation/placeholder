@@ -221,7 +221,7 @@ namespace nil {
                                     auto dynamic_table = fetch_dynamic_table(bp, assignments, table_name, lookup_gates[gate_idx].constraints[j].table_id);
                                     if (dynamic_table.find(input_values) == dynamic_table.end()) {
                                         for (std::size_t k = 0; k < input_values.size(); k++) {
-                                            std::cout << input_values[k] << " ";
+                                            std::cout << std::hex <<  input_values[k] << std::dec << " ";
                                         }
                                         this->failed_lookup_table_name = table_name;
                                         std::cout << std::endl;
@@ -267,7 +267,7 @@ namespace nil {
                                 if (!found) {
                                     std::cout << "Input values:";
                                     for (std::size_t k = 0; k < input_values.size(); k++) {
-                                        std::cout << input_values[k] << " ";
+                                        std::cout << std::hex << input_values[k] << std::dec << " ";
                                     }
                                     std::cout << std::endl;
                                     std::cout << "Constraint " << j << " from lookup gate " << gate_idx << " from table "

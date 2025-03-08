@@ -113,6 +113,10 @@ namespace nil {
                             _rw_operations.push_back(call_context_rw_operation(
                                 block_id, call_context_field::parent_id, 0
                             ));
+                            _rw_operations.push_back(call_context_rw_operation(
+                                block_id, call_context_field::depth, 0
+                            ));
+                            rw_counter += block_context_field_amount;
                         }
                         for( auto &tt: pt.second.get_child("transactions")){
                             tx_id = rw_counter;
@@ -146,6 +150,9 @@ namespace nil {
 
                                 _rw_operations.push_back(call_context_rw_operation(
                                     tx_id, call_context_field::parent_id, block_id
+                                ));
+                                _rw_operations.push_back(call_context_rw_operation(
+                                    tx_id, call_context_field::depth, 1
                                 ));
                                 _rw_operations.push_back(call_context_rw_operation(
                                     tx_id, call_context_field::block_id, block_id
@@ -230,6 +237,14 @@ namespace nil {
                                 memory_size_before = memory.size();
                                 if(opcode == "STOP") {
                                     // 0x00 -- no RW operations
+                                    _call_stack.back().end = rw_counter - 1;
+                                    _rw_operations.push_back(
+                                        call_context_rw_operation(
+                                            call_id,
+                                            call_context_field::end,
+                                            rw_counter - 1
+                                        )
+                                    );
                                 } else if(opcode == "ADD") {
                                     // 0x01
                                     _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-1, rw_counter++, false, stack[stack.size()-1]));
@@ -677,7 +692,7 @@ namespace nil {
                                     _rw_operations.push_back(stack_rw_operation(call_id,  stack_next.size()-1, rw_counter++, true, stack_next[stack_next.size()-1]));
                                     // TODO: here should be previous value
                                 } else if(opcode == "SSTORE") {
-                                    // 0x55call_context_rw_operation
+                                    // 0x55
                                     auto storage_key = stack[stack.size() - 1];
                                     _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-1, rw_counter++, false, storage_key));
                                     std::cout << _rw_operations[_rw_operations.size()-1] << std::endl;
@@ -1090,6 +1105,14 @@ namespace nil {
 
                                 } else if(opcode == "RETURN") {
                                     // 0xf3
+                                    _call_stack.back().end = rw_counter - 1;
+                                    _rw_operations.push_back(
+                                        call_context_rw_operation(
+                                            call_id,
+                                            call_context_field::end,
+                                            rw_counter - 1
+                                        )
+                                    );
                                     std::cout << "RETURN " << "\tAdd copy event for RETURN" << std::endl;
                                     _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-1, rw_counter++, false, stack[stack.size()-1]));
                                     _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-2, rw_counter++, false, stack[stack.size()-2]));
@@ -1150,6 +1173,14 @@ namespace nil {
                                     _rw_operations.push_back(stack_rw_operation(call_id,  stack_next.size()-1, rw_counter++, true, stack_next[stack_next.size()-1]));
                                 } else if(opcode == "REVERT") {
                                     // 0xfd
+                                    _call_stack.back().end = rw_counter - 1;
+                                    _rw_operations.push_back(
+                                        call_context_rw_operation(
+                                            call_id,
+                                            call_context_field::end,
+                                            rw_counter - 1
+                                        )
+                                    );
                                     _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-1, rw_counter++, false, stack[stack.size()-1]));
                                     _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-2, rw_counter++, false, stack[stack.size()-2]));
                                     auto length = _call_stack.back().cold_write_list.size();
@@ -1260,6 +1291,9 @@ namespace nil {
                                         call_id, call_context_field::parent_id, parent_id
                                     ));
                                     _rw_operations.push_back(call_context_rw_operation(
+                                        call_id, call_context_field::depth, _call_stack.size() - 1
+                                    ));
+                                    _rw_operations.push_back(call_context_rw_operation(
                                         call_id, call_context_field::block_id, block_id
                                     ));
                                     _rw_operations.push_back(call_context_rw_operation(
@@ -1283,6 +1317,7 @@ namespace nil {
                                 if( opcode == "STOP" ){
                                     auto returned_call = _call_stack[_call_stack.size() - 1];
                                     append_modified_items_rw_operations();
+                                    // fill end of call
                                     std::cout << "Appended" << std::endl;
                                     _call_stack.pop_back();
                                     if( _call_stack.size() != 1){
@@ -1314,6 +1349,7 @@ namespace nil {
                                 if( opcode == "RETURN"){
                                     std::size_t offset = std::size_t(stack[stack.size()-1]); // Real value
                                     std::size_t length = std::size_t(stack[stack.size()-2]); // Real value
+
                                     append_modified_items_rw_operations();
                                     auto returned_call = _call_stack[_call_stack.size() - 1];
                                     _call_stack.pop_back();
@@ -1424,6 +1460,13 @@ namespace nil {
                         }
                         std::cout << "END BLOCK " << block_id << std::endl;
                         {
+                            _rw_operations.push_back(
+                                call_context_rw_operation(
+                                    block_id,
+                                    call_context_field::end,
+                                    rw_counter - 1
+                                )
+                            );
                             zkevm_state state;
                             state.block_id = block_id;
                             state.tx_id = 0;
@@ -1493,8 +1536,10 @@ namespace nil {
                         )
                     );
                     _call_commits[call_context.call_id] = {
-                        call_context.call_id,
-                        _call_stack[_call_stack.size() - 2].call_id
+                        call_context.call_id,                           // call_id
+                        _call_stack[_call_stack.size() - 2].call_id,    // parent_id
+                        _call_stack.size() - 1,                         // depth
+                        call_context.end
                     };
                     for( auto &[k,v]: _call_stack.back().cold_write_list){
                         _call_commits[call_context.call_id].items.push_back(v);

@@ -50,6 +50,24 @@ namespace nil {
             };
             static constexpr std::size_t rw_operation_types_amount = 8;
 
+            enum class call_context_field: std::uint8_t {
+                // For block, transaction and call
+                parent_id = 0,              // For RETURN correctness
+                modified_items = 1,
+                depth = 2,                  // For rw_table STATE operation
+                end = 3,
+
+                // For transaction and call only
+                block_id = 4,               // For rw_table STATE operation
+                tx_id = 5,                  // For cold/hot access detection and for TRANIENT_STORAGE
+                from = 6,                   // caller
+                to = 7,                     // callee
+                call_context_address = 8    // depends on CALL/DELEGATECALL opcodes
+            };
+            static constexpr std::size_t call_context_field_amount = 9;
+            static constexpr std::size_t block_context_field_amount = 4;
+
+
             std::size_t rw_op_to_num(rw_operation_type rw_op){
                 return std::size_t(rw_op);
             }
@@ -129,7 +147,6 @@ namespace nil {
                 if(obj.op == rw_operation_type::stack )                           os << "STACK               : ";
                 if(obj.op == rw_operation_type::memory )                          os << "MEMORY              : ";
                 if(obj.op == rw_operation_type::call_context )                    os << "CALL_CONTEXT_OP     : ";
-
                 if(obj.op == rw_operation_type::state )                           os << "STATE               : ";
                 if(obj.op == rw_operation_type::transient_storage )               os << "TRANSIENT_STORAGE   : ";
                 if(obj.op == rw_operation_type::access_list )                     os << "ACCESS_LIST         : ";
@@ -147,13 +164,15 @@ namespace nil {
                 )   os << " storage_key = " << obj.storage_key;
                 if( obj.op == rw_operation_type::call_context){
                     std::cout << " field = ";
-                    if(obj.field == 0) os << "parent_id";
-                    if(obj.field == 1) os << "modified_items";
-                    if(obj.field == 2) os << "block_id";
-                    if(obj.field == 3) os << "tx_id";
-                    if(obj.field == 4) os << "from";
-                    if(obj.field == 5) os << "to";
-                    if(obj.field == 6) os << "call_context_address";
+                    if(obj.field == std::size_t(call_context_field::parent_id)) os << "parent_id";
+                    if(obj.field == std::size_t(call_context_field::modified_items)) os << "modified_items";
+                    if(obj.field == std::size_t(call_context_field::depth)) os << "depth";
+                    if(obj.field == std::size_t(call_context_field::end)) os << "end";
+                    if(obj.field == std::size_t(call_context_field::block_id)) os << "block_id";
+                    if(obj.field == std::size_t(call_context_field::tx_id)) os << "tx_id";
+                    if(obj.field == std::size_t(call_context_field::from)) os << "from";
+                    if(obj.field == std::size_t(call_context_field::to)) os << "to";
+                    if(obj.field == std::size_t(call_context_field::call_context_address)) os << "call_context_address";
                 }
                 if(obj.is_write) os << " W "; else os << " R ";
                 os << "[" << std::hex << obj.initial_value << std::dec <<"] => ";
@@ -315,21 +334,6 @@ namespace nil {
                 r.call_id = call_id;
                 return r;
             }
-
-            enum class call_context_field: std::uint8_t {
-                // For block, transaction and call
-                parent_id = 0,              // For RETURN correctness
-                modified_items = 1,
-
-                // For transaction and call only
-                block_id = 2,               // For rw_table STATE operation
-                tx_id = 3,                  // For cold/hot access detection and for TRANIENT_STORAGE
-                from = 4,                   // caller
-                to = 5,                     // callee
-                call_context_address = 6    // depends on CALL/DELEGATECALL opcodes
-            };
-            static constexpr std::size_t call_context_field_amount = 7;
-
 
             rw_operation call_context_rw_operation(
                 std::size_t call_id,

@@ -110,12 +110,6 @@ namespace nil {
                     std::size_t max_call_commits
                 ) :generic_component<FieldType,stage>(context_object) {
                     auto zerohash = zkevm_keccak_hash({});
-                    if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                        std::cout << "Copy assign " << input.copy_events.size() << std::endl;
-                    } else {
-                        std::cout << "Copy circuit" << std::endl;
-                    }
-
                     std::cout << "Copy assignment and circuit construction" << std::endl;
 
                     // Allocate places for dynamic lookups
@@ -141,7 +135,6 @@ namespace nil {
                         call_commit_lookup_area.push_back(current_column++);
                     }
 
-                    // Dynamic lookups shouldn't be placed on 0 row.
                     context_type bytecode_ct = context_object.subcontext(bytecode_lookup_area,0,max_bytecode);
                     context_type keccak_ct = context_object.subcontext( keccak_lookup_area, 0, max_keccak_blocks);
                     context_type rw_ct = context_object.subcontext(rw_lookup_area, 0, max_rw);

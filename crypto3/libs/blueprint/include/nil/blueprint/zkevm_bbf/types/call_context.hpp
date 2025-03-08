@@ -44,6 +44,8 @@ namespace nil {
 
                 std::set<std::tuple<zkevm_word_type, std::size_t, zkevm_word_type>> was_accessed; // For SLOAD, SSTORE gas proving
                 std::set<std::tuple<zkevm_word_type, std::size_t, zkevm_word_type>> was_written;
+
+                std::size_t end; // rw_counter before opcode that finishes CALL -- REVERT, STOP, RETURN
             };
         } // namespace bbf
     } // namespace blueprint
