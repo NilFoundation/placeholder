@@ -445,6 +445,14 @@ namespace nil {
                     }
                     this->_d = std::max(this->_d, other._d);
 
+                    if (other._d == 0) {
+                        const auto& value = other.val[0];
+                        parallel_for(0, this->size(), [this, &value](std::size_t i) {
+                            this->val[i] += value;
+                        });
+                        return *this;
+                    }
+
                     if (this->size() > other.size()) {
                         polynomial_dfs tmp(other);
                         tmp.resize(this->size());
@@ -499,6 +507,14 @@ namespace nil {
                     }
                     this->_d = std::max(this->_d, other._d);
 
+                    if (other._d == 0) {
+                        const auto& value = other.val[0];
+                        parallel_for(0, this->size(), [this, &value](std::size_t i) {
+                            this->val[i] -= value;
+                        });
+                        return *this;
+                    }
+
                     if (this->size() > other.size()) {
                         polynomial_dfs tmp(other);
                         tmp.resize(this->size());
@@ -538,6 +554,13 @@ namespace nil {
                  * and stores result in polynomial A.
                  */
                 polynomial_dfs& operator*=(const polynomial_dfs& other) {
+                    if (other._d == 0) {
+                        const auto& value = other.val[0];
+                        parallel_for(0, this->size(), [this, &value](std::size_t i) {
+                            this->val[i] *= value;
+                        });
+                        return *this;
+                    }
                     return cached_multiplication(other);
                 }
 
@@ -556,7 +579,6 @@ namespace nil {
                     if (this->size() < polynomial_s) {
                         this->resize(polynomial_s, domain, new_domain);
                     }
-
 
                     // Change the degree only here, after a possible resize, otherwise we have a polynomial
                     // with a high degree but small size, which sometimes segfaults.
