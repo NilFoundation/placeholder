@@ -34,6 +34,12 @@
 #include <functional>
 #include <set>
 #include <iostream>
+#include <fstream>
+#include <string>
+#include <sstream>
+
+#include <boost/spirit/include/qi.hpp>
+#include <boost/spirit/include/phoenix.hpp>
 
 #include <nil/crypto3/zk/math/expression.hpp>
 #include <nil/crypto3/math/polynomial/polynomial_dfs.hpp>
@@ -83,7 +89,7 @@ namespace nil {
                 enum class NodeType { Variable, Multiplication, Addition, Negation, Constant, Root };
 
                 virtual NodeType get_type() const = 0;
-
+                virtual void export_expression(std::ostream &os) const = 0;
                 bool type_less(const arena_node &other) const {
                     return this->get_type() < other.get_type();
                 }
@@ -144,6 +150,10 @@ namespace nil {
 
                 virtual void clear_cache() override {}
 
+                virtual void export_expression(std::ostream &os) const override {
+                    os << var;
+                }
+
                 virtual assignment_type evaluate(
                     std::function<assignment_type(const VariableType&)> &evaluation_map
                 ) override {
@@ -190,6 +200,10 @@ namespace nil {
 
                 virtual void clear_cache() override {}
 
+                virtual void export_expression(std::ostream &os) const override {
+                    os << value.data;
+                }
+
                 virtual assignment_type evaluate(
                     std::function<assignment_type(const VariableType&)> &evaluation_map
                 ) override {
@@ -233,6 +247,35 @@ namespace nil {
             }
 
             template<typename VariableType>
+            std::size_t count_map_size_with_reps(
+                const typename arena_node<VariableType>::map_type &count_map
+            ) {
+                std::size_t size = 0;
+                for (const auto& [key, value] : count_map) {
+                    size += value;
+                }
+                return size;
+            }
+
+            template<typename VariableType>
+            bool count_map_more_than_one_child_with_reps(
+                const typename arena_node<VariableType>::map_type &count_map
+            ) {
+                if (count_map.size() > 1) {
+                    return true;
+                }
+                for (const auto& [key, value] : count_map) {
+                    if (value > 1) {
+                        return true;
+                    }
+                    // note that we only have a single element in the map
+                    // this break is a hint to the compiler
+                    break;
+                }
+                return false;
+            }
+
+            template<typename VariableType>
             int count_map_cmp(
                 const std::map<std::shared_ptr<arena_node<VariableType>>,
                         size_t, arena_node_ptr_comparator<arena_node<VariableType>>
@@ -260,6 +303,7 @@ namespace nil {
                 using assignment_type = typename VariableType::assignment_type;
                 using base_type = arena_node<VariableType>;
                 using map_type = typename base_type::map_type;
+                using NodeType = typename base_type::NodeType;
                 map_type children_map;
                 std::optional<assignment_type> result;
 
@@ -284,6 +328,26 @@ namespace nil {
                     result = std::nullopt;
                 }
 
+                virtual void export_expression(std::ostream &os) const override {
+                    os << "(";
+                    switch (this->get_type()) {
+                        case NodeType::Addition:
+                            os << "+";
+                            break;
+                        case NodeType::Multiplication:
+                            os << "*";
+                            break;
+                        default:
+                            __builtin_unreachable();
+                            os << "Unknown";
+                            break;
+                    }
+                    for (const auto& child : this->children()) {
+                        os << " ";
+                        child.first->export_expression(os);
+                    }
+                    os << ")";
+                }
                 ~arena_op() = default;
             };
 
@@ -410,6 +474,9 @@ namespace nil {
                     auto it = base_type::children_map.begin();
                     auto first_child_res = it->first->evaluate(evaluation_map);
                     this->result = first_child_res;
+                    if (first_child_res == assignment_type::zero()) { // short-circuiting here if zero
+                        return first_child_res;
+                    }
                     power(this->result, first_child_res, it->second - 1);
                     for (++it; it != base_type::children_map.end(); ++it) {
                         auto child_res = it->first->evaluate(evaluation_map);
@@ -447,6 +514,12 @@ namespace nil {
 
                 virtual base_type::NodeType get_type() const override {
                     return base_type::NodeType::Negation;
+                }
+
+                virtual void export_expression(std::ostream &os) const override {
+                    os << "(- ";
+                    child->export_expression(os);
+                    os << ")";
                 }
 
                 virtual assignment_type evaluate(
@@ -496,6 +569,10 @@ namespace nil {
 
                 virtual base_type::NodeType get_type() const override {
                     return base_type::NodeType::Root;
+                }
+
+                virtual void export_expression(std::ostream &os) const override {
+                    child->export_expression(os);
                 }
 
                 virtual assignment_type evaluate(
@@ -600,6 +677,22 @@ namespace nil {
                         std::cout << "Unique " << print_node_type<VariableType>(type)
                                   << " ops: " << unique_ops[type] << std::endl;
                     }
+                }
+
+                void export_expression(std::ostream &os) const {
+                    for (const auto& root_node : root_nodes) {
+                        root_node->export_expression(os);
+                        os << std::endl;
+                    }
+                }
+
+                void export_expression_to_file(const std::string &filename) const {
+                    std::ofstream file(filename);
+                    if (!file.is_open()) {
+                        throw std::runtime_error("Failed to open file: " + filename);
+                    }
+                    export_expression(file);
+                    file.close();
                 }
 
                 void visit_const(const std::function<void(std::shared_ptr<arena_node<VariableType>>)> &func) const {
@@ -851,8 +944,7 @@ namespace nil {
 
                 std::shared_ptr<arena_node<VariableType>> add_expression_rec(const math_expression_type &expr) {
                     auto type_num = expr.get_expr().which();
-                    if (type_num == 0) {
-                        // term
+                    if (type_num == 0) { // term
                         const auto& term = boost::get<term_type>(expr.get_expr());
                         map_type children;
                         // first insert coefficient
@@ -872,7 +964,8 @@ namespace nil {
                             );
                             count_map_insert(children, var_it);
                         }
-                        if (children.size() > 1) {
+                        // note that we may have a single element in the map, but with a count greater than one
+                        if (count_map_more_than_one_child_with_reps<VariableType>(children)) {
                             auto mul = make_arena_node<VariableType>(
                             arena_mul<VariableType>(children)
                             );
@@ -881,11 +974,9 @@ namespace nil {
                         } else {
                             return children.begin()->first;
                         }
-                    } else if (type_num == 1) {
-                        // pow
+                    } else if (type_num == 1) { // pow
                         throw std::runtime_error("pow operation currently not supported");
-                    } else if (type_num == 2) {
-                        // binary arithmetic operation
+                    } else if (type_num == 2) { // binary arithmetic operation
                         const auto& binary_op = boost::get<binary_arithmetic_operation_type>(expr.get_expr());
                         const auto& left = binary_op.get_expr_left();
                         auto left_node = add_expression_rec(left);
@@ -903,6 +994,13 @@ namespace nil {
                             auto add_it = insert_op(add);
                             return add_it;
                         } else if (op == operation_type::SUB) {
+                            // here somehow it happens that right_node can be zero
+                            // and we get (- 0); this should not happen, but it does (???)
+                            // handle this case separately; note that this does not fix the problem completely (???)
+                            auto right_type = right.get_expr().which();
+                            if (right_type == 0 && boost::get<term_type>(right.get_expr()).get_coeff() == assignment_type::zero()) {
+                                return left_node;
+                            }
                             auto neg = make_arena_node<VariableType>(
                                 arena_negate<VariableType>(right_node)
                             );
