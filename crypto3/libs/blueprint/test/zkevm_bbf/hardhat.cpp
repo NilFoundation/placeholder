@@ -329,6 +329,24 @@ BOOST_AUTO_TEST_CASE(counter) {
     complex_test<field_type>(pt, max_sizes);
 }
 
+BOOST_AUTO_TEST_CASE(keccak) {
+    using field_type = typename algebra::curves::pallas::base_field_type;
+    auto pt = load_hardhat_input("keccak.json");
+    l1_size_restrictions max_sizes;
+
+    max_sizes.max_keccak_blocks = 10;
+    max_sizes.max_bytecode = 3000;
+    max_sizes.max_mpt = 0;
+    max_sizes.max_rw = 5000;
+    max_sizes.max_copy = 500;
+    max_sizes.max_zkevm_rows = 2000;
+    max_sizes.max_exponentiations = 50;
+    max_sizes.max_exp_rows = 500;
+    max_sizes.max_call_commits = 500;
+
+    complex_test<field_type>(pt, max_sizes);
+}
+
 BOOST_AUTO_TEST_CASE(indexed_log) {
     using field_type = typename algebra::curves::pallas::base_field_type;
     auto pt = load_hardhat_input("indexed_log.json");

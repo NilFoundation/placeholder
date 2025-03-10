@@ -203,7 +203,7 @@ namespace nil {
                                 type_selector[current_row][copy_op_to_num(cp.source_type) - 1] = 1;
                                 type_selector[current_row + 1][copy_op_to_num(cp.destination_type) - 1] = 1;
 
-                                std::cout << "\t\t"
+                                std::cout << "\t\t" << current_row << ". "
                                     << std::hex
                                     << cp.source_id << " " << counter_1[current_row] << " " << counter_2[current_row] << "    "
                                     << cp.destination_id << " " << counter_1[current_row+1] << " " << counter_2[current_row+1] << "    "
@@ -211,7 +211,8 @@ namespace nil {
                                     << cp.get_address(i) << " "
                                     << cp.get_field_type(i) << " "
                                     << cp.get_key(i) <<  " => "
-                                    << cp.get_value(i) << std::dec << std::endl;
+                                    << cp.get_value(i) << std::dec
+                                    << " length " << length[current_row] << " " << length[current_row + 1] << std::endl;
                                 current_row += 2;
                             }
                             is_last[current_row - 1] = 1;
@@ -251,7 +252,7 @@ namespace nil {
                         every.push_back(is_last[1]  * (is_last[1] - 1));
                         TYPE type_selector_sum;
                         TYPE cp_type_constraint;
-                        for(std::size_t j = 0; j < 6; j++){
+                        for(std::size_t j = 0; j < copy_operand_types_amount; j++){
                             type_selector_sum += type_selector[1][j];
                             cp_type_constraint += (j+1) * type_selector[1][j];
                             every.push_back(type_selector[1][j]  * (type_selector[1][j] - 1));

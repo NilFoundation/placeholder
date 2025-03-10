@@ -86,6 +86,9 @@ BOOST_AUTO_TEST_CASE(minimal_math){
 BOOST_AUTO_TEST_CASE(counter){
     test_zkevm_rw<field_type>({"counter.json"}, 3000, 500);
 }
+BOOST_AUTO_TEST_CASE(keccak){
+    test_zkevm_rw<field_type>({"counter.json"}, 3000, 500);
+}
 BOOST_AUTO_TEST_CASE(call_counter){
     test_zkevm_rw<field_type>({"call_counter.json"}, 3000, 500);
 }

@@ -160,6 +160,24 @@ BOOST_AUTO_TEST_CASE(try_catch_cold) {
 
     test_zkevm_copy<field_type>("try_catch_cold.json", max_sizes);
 }
+
+BOOST_AUTO_TEST_CASE(keccak){
+    using field_type = typename algebra::curves::pallas::base_field_type;
+    l1_size_restrictions max_sizes;
+
+    max_sizes.max_keccak_blocks = 50;
+    max_sizes.max_bytecode = 3000;
+    max_sizes.max_mpt = 0;
+    max_sizes.max_rw = 30000;
+    max_sizes.max_copy = 3000;
+    max_sizes.max_zkevm_rows = 4500;
+    max_sizes.max_exponentiations = 50;
+    max_sizes.max_exp_rows = 500;
+    max_sizes.max_call_commits = 500;
+
+    test_zkevm_copy<field_type>("keccak.json", max_sizes);
+}
+
 /*
 BOOST_AUTO_TEST_CASE(mstore8_contract){
     using field_type = typename algebra::curves::pallas::base_field_type;
@@ -190,34 +208,5 @@ BOOST_AUTO_TEST_CASE(meminit_contract){
 
     test_zkevm_copy<field_type>(bytecodes, pts, max_sizes);
 }
-
-BOOST_AUTO_TEST_CASE(calldatacopy_contract){
-    using field_type = typename algebra::curves::pallas::base_field_type;
-    auto [bytecodes, pts] = load_hardhat_input("calldatacopy/");
-    l1_size_restrictions max_sizes;
-
-    max_sizes.max_keccak_blocks = 50;
-    max_sizes.max_bytecode = 3000;
-    max_sizes.max_mpt = 0;
-    max_sizes.max_rw = 10000;
-    max_sizes.max_copy = 3000;
-    max_sizes.max_zkevm_rows = 4500;
-
-    test_zkevm_copy<field_type>(bytecodes, pts, max_sizes);
-}
-
-BOOST_AUTO_TEST_CASE(keccak_contract){
-    using field_type = typename algebra::curves::pallas::base_field_type;
-    auto [bytecodes, pts] = load_hardhat_input("keccak/");
-    l1_size_restrictions max_sizes;
-
-    max_sizes.max_keccak_blocks = 50;
-    max_sizes.max_bytecode = 3000;
-    max_sizes.max_mpt = 0;
-    max_sizes.max_rw = 10000;
-    max_sizes.max_copy = 3000;
-    max_sizes.max_zkevm_rows = 4500;
-
-    test_zkevm_copy<field_type>(bytecodes, pts, max_sizes);
-}*/
+*/
 BOOST_AUTO_TEST_SUITE_END()

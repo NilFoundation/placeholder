@@ -51,12 +51,15 @@ namespace nil {
                     std::cout << "ZKEVM HARDHAT INPUT GENERATOR loaded" << std::endl;
                     // 1. Load eth_accounts
                     for( auto &account: tree.get_child("eth_accounts")){
+                        std::cout  << "Account " << account.first.data() << std::endl;
                         zkevm_account acc;
                         acc.address = zkevm_word_from_string(account.second.get_child("address").data());
                         acc.balance = zkevm_word_from_string(account.second.get_child("balance").data());
                         acc.seq_no = acc.ext_seq_no = std::size_t(zkevm_word_from_string(account.second.get_child("nonce").data()));
                         _accounts_initial_state[acc.address] = acc;
+                        std::cout << "Loaded" << std::endl;
                     }
+                    std::cout << "Eth accounts loaded" << std::endl;
                     // 2. Load accounts
                     for( auto &account: tree.get_child("accounts")){
                         zkevm_account acc;
@@ -73,6 +76,7 @@ namespace nil {
 
                         _accounts_initial_state[acc.address] = acc;
                     }
+                    std::cout << "Accounts loaded" << std::endl;
                     for( auto &[k,v]: _accounts_initial_state){
                         std::cout << "0x" << std::hex << k << " => " << v << std::dec<< std::endl;
                     }
@@ -451,23 +455,26 @@ namespace nil {
                                     std::size_t length = std::size_t(stack[stack.size()-3]);
                                     std::size_t src = std::size_t(stack[stack.size()-2]);
                                     std::size_t dst = std::size_t(stack[stack.size()-1]);
-                                    // std::cout << "Length = " << length << std::endl;
                                     // std::cout << "Memory_size " << memory.size() << "=>" << memory_next.size() << std::endl;
 
                                     std::cout << "\tAdd copy event for CALLDATACOPY length = " << length << std::endl;
+                                    std::cout << "Length = " << length << std::endl;
+                                    std::cout << "Src = " << std::hex << src << std::dec << std::endl;
+                                    std::cout << "Dst = " << std::hex << dst << std::dec << std::endl;
                                     copy_event cpy = calldatacopy_copy_event(
-                                        tx_id,
-                                        src,
                                         call_id,
+                                        src,
                                         dst,
                                         rw_counter,
                                         length
                                     );
 
-                                    // TODO: add read operations on calldata after calldata final design
+                                    for( std::size_t i = 0; i < length; i++){
+                                        _rw_operations.push_back(calldata_rw_operation(call_id, src+i, rw_counter++, memory_next[dst+i]));
+                                    }
                                     for( std::size_t i = 0; i < length; i++){
                                         _rw_operations.push_back(memory_rw_operation(call_id, dst+i, rw_counter++, true, memory_next[dst+i]));
-                                        cpy.push_byte(memory_next[dst+i]); //TODO: change it on calldata
+                                        cpy.push_byte(memory_next[dst+i]);
                                     }
                                     _copy_events.push_back(cpy);
                                     memory_size_before = memory_next.size();

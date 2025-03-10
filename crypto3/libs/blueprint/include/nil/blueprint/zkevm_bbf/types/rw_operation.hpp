@@ -72,7 +72,7 @@ namespace nil {
                 returndata_size = 12,     // RETURNDATA length for given CALL
 
                 // Fixed-length may be rewritten
-                last_subcall_id = 13
+                last_subcall_id = 14
             };
             static constexpr std::size_t call_context_field_amount = 14;
             static constexpr std::size_t call_context_readonly_field_amount = 13;

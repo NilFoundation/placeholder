@@ -52,14 +52,17 @@ namespace nil {
                 zkevm_keccak_bbf(context_type &context_object,
                                  const opcode_input_type<FieldType, stage> &current_state)
                     : generic_component<FieldType, stage>(context_object, false) {
+                    auto zerohash = zkevm_keccak_hash({});
+
                     using Word_Size = typename bbf::word_size<FieldType, stage>;
                     using Memory_Cost = typename bbf::memory_cost<FieldType, stage>;
                     TYPE hash_hi, hash_lo, offset, length, current_mem, next_mem,
-                        memory_expansion_size, memory_expansion_cost, S;
-                    ;
+                        memory_expansion_size, memory_expansion_cost, S, length_inv;
+
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
                         offset = w_lo<FieldType>(current_state.stack_top());
                         length = w_lo<FieldType>(current_state.stack_top(1));
+                        length_inv = length == 0? 0 :length.inversed();
                         std::size_t start_offset = std::size_t(current_state.stack_top());
                         std::size_t l = std::size_t(current_state.stack_top(1));
                         std::vector<std::uint8_t> buffer;
@@ -84,6 +87,14 @@ namespace nil {
                     allocate(current_mem, 36, 0);
                     allocate(next_mem, 37, 0);
                     allocate(S, 38, 0);
+                    allocate(length_inv, 39, 0);
+
+                    // length_inv is correct
+                    constrain(length * (length*length_inv -1));
+                    constrain(length_inv * (length*length_inv -1));
+                    // if length = 0 then result = zerohash
+                    constrain((length * length_inv - 1) * (hash_hi - w_hi<FieldType>(zerohash)));
+                    constrain((length * length_inv - 1) * (hash_lo - w_lo<FieldType>(zerohash)));
 
                     constrain(S * (S - 1));
                     constrain(S * (next_mem - offset - length) +
@@ -146,28 +157,31 @@ namespace nil {
                             length
                         );
                         lookup(tmp, "zkevm_rw");
+
+                        // Lookup to copy table only if length != 0
                         tmp = {
-                            TYPE(1),                                            // is_first
+                            length * length_inv,                                            // is_first
                             TYPE(0),                                            // is_write
-                            TYPE(copy_op_to_num(copy_operand_type::memory)),    // cp_type
+                            length * length_inv * TYPE(copy_op_to_num(copy_operand_type::memory)),    // cp_type
                             TYPE(0),                                            // id_hi
-                            current_state.call_id(0),                           // id_lo
-                            offset,                                             // counter_1
-                            current_state.rw_counter(0) + 2,                    // counter_2
+                            length * length_inv * current_state.call_id(0),                           // id_lo
+                            length * length_inv * offset,                                             // counter_1
+                            length * length_inv * (current_state.rw_counter(0) + 2),                    // counter_2
                             length
                         };
                         lookup(tmp, "zkevm_copy");
                         tmp = {
-                            TYPE(1),                                            // is_first
-                            TYPE(1),                                            // is_write
-                            TYPE(copy_op_to_num(copy_operand_type::keccak)),    // cp_type
-                            hash_hi,                                            // id_hi
-                            hash_lo,                                            // id_lo
+                            length * length_inv,                                // is_first
+                            length * length_inv,                                // is_write
+                            length * length_inv * TYPE(copy_op_to_num(copy_operand_type::keccak)),    // cp_type
+                            length * length_inv * hash_hi,                                            // id_hi
+                            length * length_inv * hash_lo,                                            // id_lo
                             TYPE(0),                                            // counter_1
                             TYPE(0),                                            // counter_2
                             length
                         };
                         lookup(tmp, "zkevm_copy");
+
                         tmp = rw_table<FieldType, stage>::stack_lookup(
                             current_state.call_id(0),
                             current_state.stack_size(0) - 2,

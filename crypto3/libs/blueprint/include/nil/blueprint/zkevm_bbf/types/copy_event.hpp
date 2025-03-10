@@ -187,9 +187,8 @@ namespace nil {
             }
 
             copy_event calldatacopy_copy_event(
-                std::size_t tx_id,
-                std::size_t src_address,
                 std::size_t call_id,
+                std::size_t src_address,
                 std::size_t dst_address,
                 std::size_t rw_counter,
                 std::size_t length
@@ -197,13 +196,13 @@ namespace nil {
                 copy_event cpy;
 
                 cpy.source_type = copy_operand_type::calldata;
-                cpy.source_id = tx_id;
+                cpy.source_id = call_id;
                 cpy.src_counter_1 = src_address; // Before copy reading
-                cpy.src_counter_2 = src_address;
+                cpy.src_counter_2 = rw_counter;
                 cpy.destination_type = copy_operand_type::memory;
                 cpy.destination_id = call_id;
                 cpy.dst_counter_1 = dst_address; // Before copy writing
-                cpy.dst_counter_2 = rw_counter;
+                cpy.dst_counter_2 = rw_counter + length;
                 cpy.length = length;
 
                 return cpy;
