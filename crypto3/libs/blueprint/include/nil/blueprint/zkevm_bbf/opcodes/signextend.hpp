@@ -136,14 +136,14 @@ class zkevm_signextend_bbf : public generic_component<FieldType, stage> {
             }
         }
 
-        /* Layout:                    range_checked_opcode_area                              |        non-range-checked area
-             0  ...  15 16 17   18    19  20     21     22     23    24  25  26     27    ...       33      ... 42 43 44 45 46 47
-            +----------+--+--+------+---+----+--------+----+--------+--+---+----+--------+---+-------------+---+--+--+--+--+--+--+
-          0 | b_chunks |                     x_chunks                                        |               indic               |
-            +----------+--+--+------+---+----+--------+----+--------+--+---+----+--------+---+-------------+---+--+--+--+--+--+--+
-          1 | y_chunks | n|b0|parity|2*n|xn_u|256*xn_u|xn_l|256*xn_l|sb|sgn|saux|256*saux|...|b_sum_inverse|...|B0|B1|X0|X1|Y0|Y1|
-            +----------+--+--+------+---+----+--------+----+--------+--+---+----+--------+---+-------------+---+--+--+--+--+--+--+
-             0  ...  15 16 17   18    19  20     21     22     23    24  25  26     27    ...       33      ... 42 43 44 45 46 47
+        /* Layout:                    range_checked_opcode_area                                 |non-range-checked area
+             0  ...  15 16 17   18    19  20     21     22     23    24  25  26     27   ...  31         32      ... 47
+            +----------+--+--+------+---+----+--------+----+--------+--+---+----+------------+--+---------------+---+--+
+          0 | b_chunks |                     x_chunks                                           |         indic        |
+            +----------+--+--+------+---+----+--------+----+--------+--+---+----+--------+---+--+---------------+------+
+          1 | y_chunks | n|b0|parity|2*n|xn_u|256*xn_u|xn_l|256*xn_l|sb|sgn|saux|256*saux|...   | b_sum_inverse |  ... |
+            +----------+--+--+------+---+----+--------+----+--------+--+---+----+--------+---+--+---------------+------+
+             0  ...  15 16 17   18    19  20     21     22     23    24  25  26     27   ...  31         32      ... 47
         */
 
         // we need n allocated to create valid constraints on indic chunks
@@ -169,7 +169,7 @@ class zkevm_signextend_bbf : public generic_component<FieldType, stage> {
         if constexpr (stage == GenerationStage::ASSIGNMENT) {
             b_sum_inverse = b_sum.is_zero() ? 0 : b_sum.inversed();
         }
-        allocate(b_sum_inverse, 33, 1); // allocated to non-range-cheked area
+        allocate(b_sum_inverse, 32, 1); // allocated to non-range-cheked area
         constrain(b_sum * (1 - b_sum_inverse * b_sum));
         // now we have (1 - b_sum_invers * b_sum) = [b < 2^16]
 
