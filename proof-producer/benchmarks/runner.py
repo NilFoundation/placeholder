@@ -25,9 +25,9 @@ class BenchmarkRunner:
             stdout_file = base_log_name + ".stdout"
             stderr_file = base_log_name + ".stderr"
             run_result = self.runexec.execute_run(args, stdout_file, error_filename=stderr_file)
-            if run_result["returnvalue"] != 0:
+            if run_result["exitcode"]:
                 with open(stderr_file) as error:
-                    raise RuntimeError("Command failed, stderr: {}".format(error.read()))
+                    raise RuntimeError("Command failed with code {}, stderr: {}".format(str(run_result["exitcode"]), error.read()))
             return {
                 "name" : cmd["name"],
                 "time": run_result["walltime"],
@@ -47,7 +47,7 @@ class BenchmarkRunner:
         # TODO: maybe add number of repetitions
         results = []
         for cmd in commands:
-            print(f"Running command: {" ".join(cmd["args"])}")
+            print(f"Running command: {' '.join(cmd['args'])}")
             run_time = self.executor(cmd)
             results.append(run_time)
         return results

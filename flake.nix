@@ -154,6 +154,7 @@
 
         devShells = {
           proof-producer-benchmarks = (staticPkgs.callPackage ./proof-producer.nix {
+            python3 = pkgs.python3.withPackages (ps: [ps.pip]);
             proof_producer_benchmarks = true;
           });
         };
@@ -307,3 +308,5 @@
 
 # To make deb package with proof-producer:
 # nix bundle --bundler . .#proof-producer
+# To make deb package with proof-producer-benchmarks
+# nix bundle --bundler .#deb-benchmarks .#proof-producer
