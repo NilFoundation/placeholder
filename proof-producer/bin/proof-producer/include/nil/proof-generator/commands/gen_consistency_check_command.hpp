@@ -32,11 +32,9 @@ namespace nil {
 
             ConsistencyChecksGenerator(
                 resources::resource_provider<LpcScheme>& lpc_scheme_provider,
-                const boost::filesystem::path& combined_Q_file,
                 const boost::filesystem::path& consistency_checks_challenges_output_file,
                 const boost::filesystem::path& output_proof_file
-            ): combined_Q_file_(combined_Q_file),
-                consistency_checks_challenges_output_file_(consistency_checks_challenges_output_file),
+            ) : consistency_checks_challenges_output_file_(consistency_checks_challenges_output_file),
                 output_proof_file_(output_proof_file)
             {
                 resources::subscribe_value<LpcScheme>(lpc_scheme_provider, lpc_scheme_);
@@ -46,7 +44,6 @@ namespace nil {
                 BOOST_ASSERT(lpc_scheme_);
                 return generate_consistency_checks_to_file(
                     lpc_scheme_,
-                    combined_Q_file_,
                     consistency_checks_challenges_output_file_,
                     output_proof_file_
                 );
@@ -72,7 +69,6 @@ namespace nil {
 
             static CommandResult generate_consistency_checks_to_file(
                 std::shared_ptr<LpcScheme> lpc_scheme,
-                const boost::filesystem::path& combined_Q_file,
                 const boost::filesystem::path& consistency_checks_challenges_output_file,
                 const boost::filesystem::path& output_proof_file)
            {
@@ -85,11 +81,7 @@ namespace nil {
                 if (!challenges)
                     return CommandResult::Error(ResultCode::IOError, "Failed to read challenges from {}", consistency_checks_challenges_output_file.string());
 
-                std::optional<polynomial_type> combined_Q = PolynomialIO::read_poly_from_file(combined_Q_file);
-                if (!combined_Q)
-                    return CommandResult::Error(ResultCode::IOError, "Failed to read combined Q from {}", combined_Q_file.string());
-
-                LpcProofType proof = lpc_scheme->proof_eval_lpc_proof(combined_Q.value(), challenges.value());
+                LpcProofType proof = lpc_scheme->proof_eval_lpc_proof(challenges.value());
 
                 auto const res = save_lpc_consistency_proof_to_file(proof, output_proof_file);
                 if (!res)
@@ -101,7 +93,6 @@ namespace nil {
         private:
             std::shared_ptr<LpcScheme> lpc_scheme_;
 
-            boost::filesystem::path combined_Q_file_;
             boost::filesystem::path consistency_checks_challenges_output_file_;
             boost::filesystem::path output_proof_file_;
         };
@@ -111,7 +102,6 @@ namespace nil {
         struct GenerateConsistencyCheckCommand: public command_chain {
             struct Args {
                 boost::filesystem::path in_lpc_scheme_file;
-                boost::filesystem::path in_combined_Q_file;
                 boost::filesystem::path out_consistency_checks_challenges_file;
                 boost::filesystem::path out_proof_file;
 
@@ -121,8 +111,6 @@ namespace nil {
                     desc.add_options()
                         ("commitment-state-file", po::value(&in_lpc_scheme_file)->required(),
                             "Commitment state data input file")
-                        ("combined-Q-polynomial-file", po::value(&in_combined_Q_file),
-                            "File containing the polynomial combined-Q, generated on a single prover")
                         ("consistency-checks-challenges-file", po::value(&out_consistency_checks_challenges_file),
                         "A file containing 'lambda' challenges")
                         ("proof", po::value(&out_proof_file)->required(), "Proof output file");
@@ -136,7 +124,6 @@ namespace nil {
                 auto& lpc_scheme_reader = add_step<LpcSchemeReader>(args.in_lpc_scheme_file);
                 add_step<Generator>(
                     lpc_scheme_reader,
-                    args.in_combined_Q_file,
                     args.out_consistency_checks_challenges_file,
                     args.out_proof_file
                 );

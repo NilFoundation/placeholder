@@ -47,7 +47,7 @@ namespace nil {
                     resources::resource_provider<TableDescription>& desc_provider,
                     resources::resource_provider<CommonData>& common_data_provider,
                     resources::resource_provider<Proof>& proof_provider
-                ): commitment_scheme_fac_(config)
+                ) : commitment_scheme_fac_(config)
                 {
                     using resources::subscribe_value;
                     subscribe_value<ConstraintSystem>(constraint_system_provider, constraint_system_);

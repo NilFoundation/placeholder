@@ -36,7 +36,7 @@ namespace nil {
                 output_filename_ (output_filename)
                 {
                     resources::subscribe_value<AssignmentTable>(table_provider, assignment_table_);
-                    resources::subscribe_value<TableDescription>(description_provider, table_description_);
+                   resources::subscribe_value<TableDescription>(description_provider, table_description_);
                 }
 
                 CommandResult execute() override {

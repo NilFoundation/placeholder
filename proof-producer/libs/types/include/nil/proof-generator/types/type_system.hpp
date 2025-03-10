@@ -70,6 +70,8 @@ namespace nil {
             using CircuitParams = nil::crypto3::zk::snark::placeholder_circuit_params<BlueprintField>;
             using PlaceholderParams = nil::crypto3::zk::snark::placeholder_params<CircuitParams, LpcScheme>;
             using Proof = nil::crypto3::zk::snark::placeholder_proof<BlueprintField, PlaceholderParams>;
+            using AggregatedProof = nil::crypto3::zk::snark::placeholder_aggregated_proof<BlueprintField, PlaceholderParams>;
+
             using PublicPreprocessedData = typename nil::crypto3::zk::snark::
                 placeholder_public_preprocessor<BlueprintField, PlaceholderParams>::preprocessed_data_type;
             using CommonData = typename PublicPreprocessedData::common_data_type;
