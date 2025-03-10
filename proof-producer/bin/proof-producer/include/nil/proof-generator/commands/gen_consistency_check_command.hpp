@@ -111,8 +111,6 @@ namespace nil {
                     desc.add_options()
                         ("commitment-state-file", po::value(&in_lpc_scheme_file)->required(),
                             "Commitment state data input file")
-                        ("combined-Q-polynomial-file", po::value(&in_combined_Q_file),
-                            "File containing the polynomial combined-Q, generated on a single prover")
                         ("consistency-checks-challenges-file", po::value(&out_consistency_checks_challenges_file),
                         "A file containing 'lambda' challenges")
                         ("proof", po::value(&out_proof_file)->required(), "Proof output file");

@@ -21,172 +21,182 @@
 #include <nil/proof-generator/commands/gen_proof_command.hpp>
 #include <nil/proof-generator/output_artifacts/output_artifacts.hpp>
 
-
+#include <nil/crypto3/zk/snark/systems/plonk/placeholder/dFRI_verifier.hpp>
 
 namespace nil {
     namespace proof_producer {
 
         template<typename CurveType, typename HashType>
-        struct VerifyStep {
+        struct VerifyAggregatedStep {
             using Types                   = TypeSystem<CurveType, HashType>;
             using BlueprintField          = typename Types::BlueprintField;
+            using Endianness              = typename Types::Endianness;
             using PlaceholderParams       = typename Types::PlaceholderParams;
             using ConstraintSystem        = typename Types::ConstraintSystem;
             using TableDescription        = typename Types::TableDescription;
             using PublicPreprocessedData  = typename Types::PublicPreprocessedData;
             using CommonData              = typename Types::CommonData;
             using LpcScheme               = typename Types::LpcScheme;
-            using Proof                   = typename Types::Proof;
-            using CommitmentSchemeFac = CommitmentSchemeFactory<CurveType, HashType>;
+            using AggregatedProof         = typename Types::AggregatedProof;
+            using CommitmentSchemeFac     = CommitmentSchemeFactory<CurveType, HashType>;
 
-            struct Verifier: public command_step
+            struct AggregatedProofReader:
+                public command_step,
+                public resources::resource_provider<AggregatedProof>
+            {
+                AggregatedProofReader(const boost::filesystem::path& proof_file): proof_file_(proof_file) {}
+
+                CommandResult execute() override {
+                    using resources::notify;
+
+                    using ProofMarshalling = nil::crypto3::marshalling::types::
+                        placeholder_aggregated_proof_type<nil::crypto3::marshalling::field_type<Endianness>, AggregatedProof>;
+
+                    BOOST_LOG_TRIVIAL(info) << "Reading dFRI proof from file " << proof_file_;
+                    auto marshalled_proof = detail::decode_marshalling_from_file<ProofMarshalling>(proof_file_, true);
+                    if (!marshalled_proof) {
+                        return CommandResult::Error(ResultCode::IOError, "Failed to read dFRI proof from {}", proof_file_.string());
+                    }
+
+                    notify<AggregatedProof>(*this, std::make_shared<AggregatedProof>(
+                        nil::crypto3::marshalling::types::make_placeholder_aggregated_proof<Endianness, AggregatedProof>(
+                            *marshalled_proof
+                        )
+                    ));
+
+                    return CommandResult::Ok();
+                }
+
+            private:
+                boost::filesystem::path proof_file_;
+            };
+
+            struct AggregatedFRIVerifier: public command_step
             {
                 AggregatedFRIVerifier(
                     PlaceholderConfig config,
-                    resources::resource_provider<ConstraintSystem>& constraint_system_provider,
-                    resources::resource_provider<TableDescription>& desc_provider,
-                    resources::resource_provider<CommonData>& common_data_provider,
-                    resources::resource_provider<Proof>& fri_proof_provider
-                    resources::resource_provider<Proof>& partial_proofs_provider
-                ): commitment_scheme_fac_(config)
+                    std::vector<resources::resource_provider<ConstraintSystem>*>& constraint_system_providers,
+                    std::vector<resources::resource_provider<TableDescription>*>& desc_providers,
+                    std::vector<resources::resource_provider<CommonData>*>& common_data_providers,
+                    resources::resource_provider<AggregatedProof>& aggregated_proof_provider
+                ) : commitment_scheme_fac_(config)
+                  , N(constraint_system_providers.size())
                 {
                     using resources::subscribe_value;
-                    subscribe_value<ConstraintSystem>(constraint_system_provider, constraint_system_);
-                    subscribe_value<TableDescription>(desc_provider, table_description_);
-                    subscribe_value<CommonData>(common_data_provider, common_data_);
-                    subscribe_value<Proof>(proof_provider, fri_proof_);
-                    subscribe_value<std::vector<Proof>>(partial_proofs_provider, partial_proofs_);
+                    for (size_t i = 0; i < N; ++i) {
+                        subscribe_value<ConstraintSystem>(*constraint_system_providers[i], constraint_systems_[i]);
+                        subscribe_value<TableDescription>(*desc_providers[i], table_descriptions_[i]);
+                        subscribe_value<CommonData>(*common_data_providers[i], common_datas_[i]);
+                    }
+                    subscribe_value<AggregatedProof>(aggregated_proof_provider, agg_proof_);
                 }
 
                 CommandResult execute() override {
-                    BOOST_ASSERT(fri_proof_);
-                    BOOST_ASSERT(partial_proofs_);
-                    BOOST_ASSERT(common_data_);
-                    BOOST_ASSERT(constraint_system_);
-                    BOOST_ASSERT(table_description_);
+                    BOOST_ASSERT(agg_proof_);
+                    for (size_t i = 0; i < N; ++i) { 
+                        BOOST_ASSERT(common_datas_[i]);
+                        BOOST_ASSERT(constraint_systems_[i]);
+                        BOOST_ASSERT(table_descriptions_[i]);
+                    }
 
-                    BOOST_LOG_TRIVIAL(info) << "Verifying aggregated proof...";
-                    // A type casting is required to perform on the output of aggregated FRI proof (x)
-                        // fri_proof.final_polynomial = x.fri_commitments_proof_part.final_polynomial
-                        // fri_proof.fri_roots = x.fri_commitments_proof_part.fri_roots
-                        // fri_proof.round_proofs = x.fri_round_proof
-                        // TODO
-                        // fri_proof.proof_of_work = (is it in the merged proof?)
-                    size_t proof_size = partial_proofs_.size()
-                    std::vector<FieldType> challenges();
-                    std::vector<std::vector<initial_proof_type>> initial_proofs(proof_size);
-                    std::vector<LpcScheme> lpc_schemes(proof_size);
-                    // TODO check the size of all the vectors are the same
-                    using transcript_hash_type = typename PlaceholderParams::transcript_hash_type;
-                    using transcript_type = crypto3::zk::transcript::fiat_shamir_heuristic_sequential<transcript_hash_type>;
-                    transcript_type aggregated_challenge_transcript;
-                    size_t total_points = 0;
-                    std::vector<std::size_t> starting_indexes(proof_size);
+                    BOOST_LOG_TRIVIAL(info) << "Verifying aggreated dFRI proof...";
 
-                    for (size_t i = 0; i < partial_proofs_[i].size; i++) {
-                        read_circuit(circuit_file_paths[i]);
-                        read_preprocessed_common_data_from_file(preprocessed_common_data_paths[i]);
-                        read_assignment_description(assignment_description_file_paths[i]);
-                        lpc_schemes[i] = commitment_scheme_fac_.make_lpc_scheme(table_description_->rows_amount);
+                    std::vector<std::shared_ptr<LpcScheme>> lpc_schemes;
+                    for (size_t i = 0; i < N; ++i) {
+                        BOOST_ASSERT(table_descriptions_[i]->rows_amount == table_descriptions_[0]->rows_amount);
 
-                        transcript_type transcript(std::vector<std::uint8_t>({}));
-                        auto common_data = public_preprocessed_data_.has_value() ? public_preprocessed_data_->common_data : *common_data_,
-                        bool verification_result = 
-                        nil::crypto3::zk::snark::placeholder_verifier<BlueprintField, PlaceholderParams>::verify_partial_proof(
-                            common_data,
-                            partial_proofs_[i],
-                            *table_description_,
-                            *constraint_system_,
-                            *lpc_schemes[i],
-                            *transcript
-                            // TODO take care of public inputs
+                        auto lpc_scheme = commitment_scheme_fac_.make_lpc_scheme(table_descriptions_[i]->rows_amount);
+                        lpc_schemes.push_back(lpc_scheme);
+                    }
+                    bool verification_result = nil::crypto3::zk::snark::placeholder_DFRI_verifier<BlueprintField, PlaceholderParams>::process(
+                            common_datas_,
+                            *agg_proof_,
+                            table_descriptions_,
+                            constraint_systems_,
+                            lpc_schemes
                         );
-                        if (!verification_result) {
-                            BOOST_LOG_TRIVIAL(error) << "Partial proof verification failed.";
-                            return verification_result;
-                        }
-                        nil::crypto3::zk::snark::placeholder_verifier<BlueprintField, PlaceholderParams>::prepare_polynomials(
-                            partial_proofs_[i],
-                            &common_data,
-                            &constraint_system_,
-                            &lpc_schemes[i]
-                        )
-                        starting_indexes[i] = total_points;
-                        // read challenges from input files and add them to the transcript
-                        aggregated_challenge_transcript(partial_proofs_[i].eval_proof.challenge);
-                        total_points += commitments[i].get_total_points();
-                    }
-                    typename std::vector<typename field_type::value_type> U(total_points);
-                    // V is product of (x - eval_point) polynomial for each eval_point
-                    typename std::vector<math::polynomial<value_type>> V(total_points);
-                    // List of involved polynomials for each eval point [batch_id, poly_id, point_id]
-                    typename std::vector<std::vector<std::tuple<std::size_t, std::size_t>>> poly_map(total_points);
 
-                    value_type theta = aggregated_challenge_transcript.template challenge<field_type>();
-                    value_type theta_acc = value_type::one();
-                    size_t starting_index = 0;
-                    for (size_t i = 0; i < lpc_schemes.size(); i++) {
-                        lpc_schemes[i].generate_U_V_polymap(U, V, poly_map, *partial_proofs_i[i].z, theta, *theta_acc, starting_indexes[i]);
-                    }
-                    
-                    // TODO is below needed?
-                    // produce the aggregated challenge
-                    transcript_type transcript1;
-                    transcript1(aggregated_challenge_transcript.value())
-                    if (!nil::crypto3::zk::algorithms::verify_eval<fri_type>(
-                        proof.fri_proof,
-                        fri_params,
-                        fri_proof.commitments, // TODO or fri_proof.fri_roots instead? which one's which?
-                        theta,
-                        poly_map,
-                        U,
-                        V,
-                        transcript
-                    )) {
+                    if (verification_result) {
                         BOOST_LOG_TRIVIAL(info) << "Proof is verified";
                         return CommandResult::Ok();
                     }
-                    return CommandResult::UnknownError("Proof verification failed");
+                    return CommandResult::Error(ResultCode::ProverError, "dFRI Proof verification failed");
                 }
 
             private:
                 CommitmentSchemeFac commitment_scheme_fac_;
+                // number of provers.
+                size_t N;
 
-                std::shared_ptr<ConstraintSystem> constraint_system_;
-                std::shared_ptr<TableDescription> table_description_;
-                std::shared_ptr<CommonData> common_data_;
-                std::shared_ptr<Proof> proof_;
-                std::shared_ptr<Proof> partial_proofs_;
+                std::vector<std::shared_ptr<ConstraintSystem>> constraint_systems_;
+                std::vector<std::shared_ptr<TableDescription>> table_descriptions_;
+                std::vector<std::shared_ptr<CommonData>> common_datas_;
+                std::shared_ptr<AggregatedProof> agg_proof_;
             };
         };
 
         template<typename CurveType, typename HashType>
-        class VerifyCommand: public command_chain {
+        class AggregatedFRIVerifyCommand: public command_chain {
         public:
             struct Args {
                 PlaceholderConfig config;
-                boost::filesystem::path in_circuit_file_path;
-                boost::filesystem::path in_assignment_description_file_path;
-                boost::filesystem::path in_common_data_file_path;
+                std::vector<boost::filesystem::path> in_circuit_file_paths;
+                std::vector<boost::filesystem::path> in_assignment_description_file_paths;
+                std::vector<boost::filesystem::path> in_common_data_file_paths;
                 boost::filesystem::path in_proof_file_path;
+
+                Args(boost::program_options::options_description& config) {
+                    namespace po = boost::program_options;
+
+                    config.add_options()
+                        ("circuits",
+                         po::value<std::vector<boost::filesystem::path>>(&in_circuit_file_paths)->multitoken()->required(),
+                         "Circuit input files")
+                        ("assignment-description-files",
+                         po::value<std::vector<boost::filesystem::path>>(&in_assignment_description_file_paths)->multitoken()->required(),
+                         "Assignment description input files")
+                        ("common-datas",
+                         po::value<std::vector<boost::filesystem::path>>(&in_common_data_file_paths)->multitoken()->required(),
+                         "Common data input file")
+                        ("agg-proof",
+                         po::value(&in_proof_file_path)->required(),
+                         "Aggregated dFRI Proof input file");
+                } 
             };
 
             AggregatedFRIVerifyCommand(const Args& args) {
+                size_t N = args.in_circuit_file_paths.size();
+
+                using Types                   = TypeSystem<CurveType, HashType>;
+                using ConstraintSystem        = typename Types::ConstraintSystem;
+                using TableDescription        = typename Types::TableDescription;
+                using PublicPreprocessedData  = typename Types::PublicPreprocessedData;
+                using CommonData              = typename Types::CommonData;
+                using LpcScheme               = typename Types::LpcScheme;
+                using AggregatedProof         = typename Types::AggregatedProof;
+
                 using CircuitReader                = CircuitIO<CurveType, HashType>::Reader;
                 using AssignmentDescriptionReader  = AssignmentTableIO<CurveType, HashType>::DescriptionReader;
                 using CommonDataReader             = PreprocessedPublicDataIO<CurveType, HashType>::CommonDataReader;
-                using ProofReader                  = ProveStep<CurveType, HashType>::ProofReader;
-                using Verifier                     = VerifyStep<CurveType, HashType>::Verifier;
+                using Verifier                     = VerifyAggregatedStep<CurveType, HashType>::AggregatedFRIVerifier;
+                using AggregatedProofReader        = VerifyAggregatedStep<CurveType, HashType>::AggregatedProofReader;
 
-                auto& circuit_reader           = add_step<CircuitReader>(args.in_circuit_file_path);
-                auto& table_description_reader = add_step<AssignmentDescriptionReader>(args.in_assignment_description_file_path);
-                auto& common_data_reader       = add_step<CommonDataReader>(args.in_common_data_file_path);
-                auto& proof_reader             = add_step<ProofReader>(args.in_proof_file_path);
+                std::vector<resources::resource_provider<ConstraintSystem>*> circuit_readers;
+                std::vector<resources::resource_provider<TableDescription>*> table_description_readers;
+                std::vector<resources::resource_provider<CommonData>*> common_data_readers;
+
+                for (size_t i = 0; i < N; ++i) {
+                    circuit_readers.push_back(&add_step<CircuitReader>(args.in_circuit_file_paths[i]));
+                    table_description_readers.push_back(&add_step<AssignmentDescriptionReader>(args.in_assignment_description_file_paths[i]));
+                    common_data_readers.push_back(&add_step<CommonDataReader>(args.in_common_data_file_paths[i]));
+                }
+                auto& proof_reader = add_step<AggregatedProofReader>(args.in_proof_file_path);
+
                 add_step<Verifier>(
                     args.config,
-                    circuit_reader,
-                    table_description_reader,
-                    common_data_reader,
+                    circuit_readers,
+                    table_description_readers,
+                    common_data_readers,
                     proof_reader
                 );
             }

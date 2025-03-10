@@ -146,8 +146,6 @@ struct placeholder_dFRI_test_runner {
         // produce the aggregated challenge
         auto aggregated_challenge = transcript_for_aggregation.template challenge<field_type>();
 
-std::cout << "Prover aggregated_challenge = " << aggregated_challenge << std::endl;
-
         // This the transcript that our provers will use, it's not the same as 'transcript_for_aggregation', it's the transcript that
         // you get after injesting the aggregated challenge.
         transcript_type aggregated_transcript;
@@ -164,7 +162,6 @@ std::cout << "Prover aggregated_challenge = " << aggregated_challenge << std::en
 
         // Calculate combined Q values.
         auto challenge_from_aggregated_transcript = aggregated_transcript.template challenge<field_type>();
-std::cout << "First challenge from agg transcript for combined Q is " << challenge_from_aggregated_transcript << std::endl;
 
         polynomial_type combined_Q1 = lpc_scheme1.prepare_combined_Q(
                     challenge_from_aggregated_transcript, 0);
@@ -182,8 +179,6 @@ std::cout << "First challenge from agg transcript for combined Q is " << challen
             sum_poly, fri_proof, consistency_checks_challenges, proof_of_work,
             aggregated_transcript);
 
-std::cout << "Prover: consistency_checks_challenges[0] = " << consistency_checks_challenges[0] << std::endl;
-        
         // Generate consistency check proofs.
         lpc_proof_type initial_proof1 = lpc_scheme1.proof_eval_lpc_proof(consistency_checks_challenges);
         lpc_proof_type initial_proof2 = lpc_scheme2.proof_eval_lpc_proof(consistency_checks_challenges);
@@ -201,12 +196,21 @@ std::cout << "Prover: consistency_checks_challenges[0] = " << consistency_checks
         lpc_scheme_type verifier_lpc_scheme1(fri_params);
         lpc_scheme_type verifier_lpc_scheme2(fri_params);
 
-        std::vector<common_data_type> common_datas = {
-            *preprocessed_public_data1.common_data, *preprocessed_public_data2.common_data};
-        std::vector<plonk_table_description<field_type>> table_descriptions = {desc1, desc2};
-        std::vector<plonk_constraint_system<field_type>> constraint_systems = {constraint_system1, constraint_system2};
-        std::vector<lpc_scheme_type> commitment_schemes = {verifier_lpc_scheme1, verifier_lpc_scheme2};
-        std::vector<public_input_type> public_inputs = {assignments1.public_inputs(), assignments2.public_inputs()};
+        std::vector<std::shared_ptr<common_data_type>> common_datas = {
+            std::make_shared<common_data_type>(*preprocessed_public_data1.common_data),
+            std::make_shared<common_data_type>(*preprocessed_public_data2.common_data)};
+        std::vector<std::shared_ptr<plonk_table_description<field_type>>> table_descriptions = {
+            std::make_shared<plonk_table_description<field_type>>(desc1),
+            std::make_shared<plonk_table_description<field_type>>(desc2)};
+        std::vector<std::shared_ptr<plonk_constraint_system<field_type>>> constraint_systems = {
+            std::make_shared<plonk_constraint_system<field_type>>(constraint_system1),
+            std::make_shared<plonk_constraint_system<field_type>>(constraint_system2)};
+        std::vector<std::shared_ptr<lpc_scheme_type>> commitment_schemes = {
+            std::make_shared<lpc_scheme_type>(verifier_lpc_scheme1),
+            std::make_shared<lpc_scheme_type>(verifier_lpc_scheme2)};
+        std::vector<std::shared_ptr<public_input_type>> public_inputs = {
+            std::make_shared<public_input_type>(assignments1.public_inputs()),
+            std::make_shared<public_input_type>(assignments1.public_inputs())};
 
         bool verifier_res = placeholder_DFRI_verifier<field_type, lpc_placeholder_params_type>::process(
                 common_datas, agg_proof, table_descriptions, constraint_systems, commitment_schemes, public_inputs);

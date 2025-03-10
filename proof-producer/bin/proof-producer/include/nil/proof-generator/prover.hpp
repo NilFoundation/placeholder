@@ -41,7 +41,8 @@ namespace nil {
                 COMPUTE_COMBINED_Q = 9,
                 GENERATE_AGGREGATED_FRI_PROOF = 10,
                 GENERATE_CONSISTENCY_CHECKS_PROOF = 11,
-                MERGE_PROOFS = 12
+                MERGE_PROOFS = 12,
+                AGGREGATED_VERIFY = 13
             };
 
             ProverStage prover_stage_from_string(const std::string& stage) {
@@ -58,7 +59,8 @@ namespace nil {
                     {"compute-combined-Q", ProverStage::COMPUTE_COMBINED_Q},
                     {"merge-proofs", ProverStage::MERGE_PROOFS},
                     {"aggregated-FRI", ProverStage::GENERATE_AGGREGATED_FRI_PROOF},
-                    {"consistency-checks", ProverStage::GENERATE_CONSISTENCY_CHECKS_PROOF}
+                    {"consistency-checks", ProverStage::GENERATE_CONSISTENCY_CHECKS_PROOF},
+                    {"aggregated-verify", ProverStage::AGGREGATED_VERIFY}
                 };
                 auto it = stage_map.find(stage);
                 if (it == stage_map.end()) {

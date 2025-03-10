@@ -60,19 +60,20 @@ namespace nil {
 
                 public:
 
-                   static inline bool process(
-                            const std::vector<common_data_type> &common_datas,
-                            const placeholder_aggregated_proof<FieldType, ParamsType> &agg_proof,
-                            const std::vector<plonk_table_description<FieldType>> &table_descriptions,
-                            const std::vector<plonk_constraint_system<FieldType>> &constraint_systems,
-                            std::vector<commitment_scheme_type>& commitment_schemes,
-                            const std::vector<public_input_type> &public_inputs
-                   ) {
+                    // We shall accept shared pointers here to help proof-producer with its resource providers. 
+                    static inline bool process(
+                             const std::vector<std::shared_ptr<common_data_type>> &common_datas,
+                             const placeholder_aggregated_proof<FieldType, ParamsType> &agg_proof,
+                             const std::vector<std::shared_ptr<plonk_table_description<FieldType>>> &table_descriptions,
+                             const std::vector<std::shared_ptr<plonk_constraint_system<FieldType>>> &constraint_systems,
+                             std::vector<std::shared_ptr<commitment_scheme_type>>& commitment_schemes,
+                             const std::vector<std::shared_ptr<public_input_type>> &public_inputs
+                    ) {
                         const size_t N = agg_proof.partial_proofs.size();
 
                         // fri params must be the same for all provers.
                         // TODO: add a check that they are the same!!
-                        auto fri_params = commitment_schemes[0].get_fri_params();
+                        auto fri_params = commitment_schemes[0]->get_fri_params();
                         std::size_t domain_size = fri_params.D[0]->size();
                         std::size_t coset_size = 1 << fri_params.step_list[0];
 
@@ -99,12 +100,12 @@ namespace nil {
                             value_type evaluation_challenge;
                             std::queue<value_type> queue;
                             verifier_type::fill_challenge_queue(
-                                common_datas[i], proofs[i], constraint_systems[i], commitment_schemes[i], transcript_copy, queue, evaluation_challenge);
+                                *common_datas[i], proofs[i], *constraint_systems[i], *commitment_schemes[i], transcript_copy, queue, evaluation_challenge);
 
                             // F_consolidated[i] is an out parameter here.
                             if (!verifier_type::verify_partial_proof(
-                                    common_datas[i], proofs[i], table_descriptions[i], constraint_systems[i], commitment_schemes[i],
-                                    public_inputs[i], transcripts[i], F_consolidated[i], evaluation_challenge)) 
+                                    *common_datas[i], proofs[i], *table_descriptions[i], *constraint_systems[i], *commitment_schemes[i],
+                                    *public_inputs[i], transcripts[i], F_consolidated[i], evaluation_challenge)) 
                             {
                                 BOOST_LOG_TRIVIAL(info) << "dFRI Verification failed: partial proof #" << i << " failed.";
                                 return false;
@@ -116,11 +117,11 @@ namespace nil {
                         std::vector<std::map<std::size_t, typename commitment_scheme_type::commitment_type>> commitments(N);
                         for (size_t i = 0; i < N; i++) {
                             commitments[i] = agg_proof.partial_proofs[i].commitments;
-                            commitments[i][FIXED_VALUES_BATCH] = common_datas[i].commitments.fixed_values;
+                            commitments[i][FIXED_VALUES_BATCH] = common_datas[i]->commitments.fixed_values;
                         }
 
                         for (size_t i = 0; i < N; i++) {
-                            commitment_schemes[i]._z = proofs[i].eval_proof.eval_proof.z;
+                            commitment_schemes[i]->_z = proofs[i].eval_proof.eval_proof.z;
                             // This is similar to 'eval_polys_and_add_roots_to_transcipt' call in partial proof from prover.
                             for (auto const &it: commitments[i]) {
                                 transcripts[i](commitments[i].at(it.first));
@@ -129,7 +130,7 @@ namespace nil {
 
                         std::vector<std::size_t> starting_indexes(N);
                         for (size_t i = 1; i < N; i++) {
-                            starting_indexes[i] = starting_indexes[i-1] + commitment_schemes[i-1].compute_theta_power_for_combined_Q();
+                            starting_indexes[i] = starting_indexes[i-1] + commitment_schemes[i-1]->compute_theta_power_for_combined_Q();
                         }
 
                         // Create the aggregated challenge point.
@@ -167,13 +168,13 @@ namespace nil {
                         std::vector<std::vector<std::vector<std::tuple<std::size_t, std::size_t>>>> poly_maps(N);
 
                         for (size_t i = 0; i < N; i++) {
-                            size_t total_points = commitment_schemes[i].get_total_points();
+                            size_t total_points = commitment_schemes[i]->get_total_points();
                             Us[i].resize(total_points);
                             Vs[i].resize(total_points);
                             poly_maps[i].resize(total_points);
 
                             value_type theta_acc = theta.pow(starting_indexes[i]);
-                            commitment_schemes[i].generate_U_V_polymap(
+                            commitment_schemes[i]->generate_U_V_polymap(
                                 Us[i], Vs[i], poly_maps[i], proofs[i].eval_proof.eval_proof.z, theta, theta_acc, total_points);
                         }
 
