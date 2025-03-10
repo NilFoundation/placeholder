@@ -81,8 +81,7 @@ namespace nil {
                 virtual bool operator<(const arena_node &other) const = 0;
                 virtual void clear_cache() = 0;
                 // variables < multiplications < additions < negations < constants
-                // the fact that constants are last is crucial for optimization
-                // as we do not have to resize memory in that case
+                // variables being first means that we can short-circuit more often if selector is 0
                 enum class NodeType { Variable, Multiplication, Addition, Negation, Constant, Root };
 
                 virtual NodeType get_type() const = 0;
