@@ -39,6 +39,8 @@ namespace nil {
                 std::size_t call_id;          // Current CALL id
                 std::size_t returndataoffset; // CALL opcode parameters
                 std::size_t returndatalength; // CALL opcode parameters
+                std::vector<std::uint8_t> calldata; // For CALLDATA proving
+
                 std::map<std::tuple<rw_operation_type, zkevm_word_type, std::size_t, zkevm_word_type>, rw_operation> cold_access_list; // For REVERT proving. First state access rw_operation in the given CALL
                 std::map<std::tuple<rw_operation_type, zkevm_word_type, std::size_t, zkevm_word_type>, rw_operation> cold_write_list;
 

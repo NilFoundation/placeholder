@@ -36,35 +36,46 @@ namespace nil {
     namespace blueprint {
         namespace bbf {
             enum class rw_operation_type: std::uint8_t {
+                // Grouped by call, no revertions
                 start = 0,
                 stack = 1,
                 memory = 2,
-                call_context = 3,       // Grouped by call
+                call_context = 3,
+                calldata = 4,
+                returndata = 5,
 
                 // May be reverted
-                state = 4,              // Grouped by block, includes STORAGE and ACCOUNT operations
-                transient_storage = 5,  // Grouped by transaction
-                access_list = 6,
+                state = 6,              // Grouped by block, includes STORAGE and ACCOUNT operations
+                transient_storage = 7,  // Grouped by transaction
+                access_list = 8,
 
-                padding = 7
+                padding = 9
             };
-            static constexpr std::size_t rw_operation_types_amount = 8;
+            static constexpr std::size_t rw_operation_types_amount = 10;
 
             enum class call_context_field: std::uint8_t {
-                // For block, transaction and call
+                // For block, transaction and call -- read-only
                 parent_id = 0,              // For RETURN correctness
-                modified_items = 1,
-                depth = 2,                  // For rw_table STATE operation
-                end = 3,
+                depth = 1,                  // For rw_table STATE operation
+                end = 2,
+                hash = 3,
 
-                // For transaction and call only
-                block_id = 4,               // For rw_table STATE operation
-                tx_id = 5,                  // For cold/hot access detection and for TRANIENT_STORAGE
-                from = 6,                   // caller
-                to = 7,                     // callee
-                call_context_address = 8    // depends on CALL/DELEGATECALL opcodes
+                // For transaction and call only but fixed length -- readonly
+                modified_items = 4,         // Do we need it for block?
+                block_id = 5,               // For rw_table STATE operation
+                tx_id = 6,                  // For cold/hot access detection and for TRANIENT_STORAGE
+                is_static = 7,
+                from = 8,                   // caller
+                to = 9,                     // callee
+                call_context_address = 10,  // depends on CALL/DELEGATECALL opcodes
+                calldata_size = 11,
+                returndata_size = 12,     // RETURNDATA length for given CALL
+
+                // Fixed-length may be rewritten
+                last_subcall_id = 13
             };
-            static constexpr std::size_t call_context_field_amount = 9;
+            static constexpr std::size_t call_context_field_amount = 14;
+            static constexpr std::size_t call_context_readonly_field_amount = 13;
             static constexpr std::size_t block_context_field_amount = 4;
 
 
@@ -150,6 +161,8 @@ namespace nil {
                 if(obj.op == rw_operation_type::state )                           os << "STATE               : ";
                 if(obj.op == rw_operation_type::transient_storage )               os << "TRANSIENT_STORAGE   : ";
                 if(obj.op == rw_operation_type::access_list )                     os << "ACCESS_LIST         : ";
+                if(obj.op == rw_operation_type::calldata )                        os << "CALLDATA            : ";
+                if(obj.op == rw_operation_type::returndata )                      os << "RETURNDATA          : ";
 
                 if(obj.op == rw_operation_type::padding )                         os << "PADDING             : ";
 
@@ -173,6 +186,11 @@ namespace nil {
                     if(obj.field == std::size_t(call_context_field::from)) os << "from";
                     if(obj.field == std::size_t(call_context_field::to)) os << "to";
                     if(obj.field == std::size_t(call_context_field::call_context_address)) os << "call_context_address";
+                    if(obj.field == std::size_t(call_context_field::calldata_size)) os << "calldata_size";
+                    if(obj.field == std::size_t(call_context_field::returndata_size)) os << "returndata_size";
+                    if(obj.field == std::size_t(call_context_field::last_subcall_id)) os << "last_subcall_id";
+                    if(obj.field == std::size_t(call_context_field::hash)) os << "hash";
+                    if(obj.field == std::size_t(call_context_field::is_static)) os << "is_static";
                 }
                 if(obj.is_write) os << " W "; else os << " R ";
                 os << "[" << std::hex << obj.initial_value << std::dec <<"] => ";
@@ -209,14 +227,35 @@ namespace nil {
                 return r;
             }
 
-            rw_operation memory_rw_operation(std::size_t id, zkevm_word_type address, std::size_t rw_id, bool is_write, zkevm_word_type value){
-                BOOST_ASSERT(id < ( 1 << 28)); // Maximum calls amount(?)
+            rw_operation memory_rw_operation(
+                std::size_t id,
+                zkevm_word_type address,
+                std::size_t rw_id,
+                bool is_write,
+                zkevm_word_type value
+            ){
                 rw_operation r;
                 r.op = rw_operation_type::memory;
                 r.id = id;
                 r.address = address;
                 r.rw_counter = rw_id;
                 r.is_write = is_write;
+                r.value = value;
+                return r;
+            }
+
+            rw_operation calldata_rw_operation(
+                std::size_t id,
+                zkevm_word_type address,
+                std::size_t rw_id,
+                zkevm_word_type value
+            ){
+                rw_operation r;
+                r.op = rw_operation_type::calldata;
+                r.id = id;
+                r.address = address;
+                r.rw_counter = rw_id;
+                r.is_write = false; // calldata is read-only
                 r.value = value;
                 return r;
             }

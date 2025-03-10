@@ -37,7 +37,7 @@ namespace nil {
     namespace blueprint {
         namespace bbf {
             enum class copy_operand_type {
-                padding, memory, bytecode, calldata, log, keccak, reverted
+                padding, memory, bytecode, calldata, log, keccak, reverted, returndata
             };
             std::size_t copy_op_to_num(copy_operand_type copy_op){
                 switch(copy_op){
@@ -48,11 +48,12 @@ namespace nil {
                 case copy_operand_type::keccak:        return 4;
                 case copy_operand_type::reverted:      return 5;
                 case copy_operand_type::calldata:      return 6;
+                case copy_operand_type::returndata:    return 7;
                 }
                 BOOST_ASSERT(false);
                 return 0;
             }
-            static constexpr std::size_t copy_operand_types_amount = 7;
+            static constexpr std::size_t copy_operand_types_amount = 8;
 
 
             struct copied_data_item{
@@ -205,6 +206,26 @@ namespace nil {
                 cpy.dst_counter_2 = rw_counter;
                 cpy.length = length;
 
+                return cpy;
+            }
+
+            // May be used for all types of CALL-s
+            copy_event call_copy_event(
+                std::size_t caller_id,
+                std::size_t callee_id,
+                std::size_t args_offset,
+                std::size_t args_length
+            ){
+                copy_event cpy;
+                cpy.source_type = copy_operand_type::memory;
+                cpy.source_id = caller_id;
+                cpy.src_counter_1 = args_offset; // Before copy reading
+                cpy.src_counter_2 = callee_id - args_length;
+                cpy.destination_type = copy_operand_type::calldata;
+                cpy.destination_id = callee_id;
+                cpy.dst_counter_1 = 0; // Before copy writing
+                cpy.dst_counter_2 = callee_id + call_context_readonly_field_amount + 1;
+                cpy.length = args_length;
                 return cpy;
             }
 

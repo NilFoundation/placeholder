@@ -69,6 +69,17 @@ namespace nil {
                         return storage_slice.at(key);
                 }
 
+                zkevm_word_type calldata(std::size_t addr) const{
+                    if( addr < calldata_slice.size() )
+                        return calldata_slice[addr];
+                    else
+                        return 0;
+                }
+
+                std::size_t calldatasize() const{
+                    return calldata_slice.size();
+                }
+
                 // std::size_t last_access(zkevm_word_type address, std::size_t field, zkevm_word_type key) const{
                 //     if( last_access_rw_counter.find(std::make_tuple(address, field, key)) == last_access_rw_counter.end() )
                 //         return 0;
@@ -100,6 +111,7 @@ namespace nil {
                 std::vector<zkevm_word_type>                stack_slice; // BEFORE opcode
                 std::map<std::size_t, std::uint8_t>         memory_slice; // BEFORE opcode
                 std::map<zkevm_word_type, zkevm_word_type>  storage_slice; // BEFORE opcode
+                std::vector<std::uint8_t>                   calldata_slice; // BEFORE opcode
                 // RW counter for last access to STATE item BEFORE opcode
                 std::map<std::tuple<rw_operation_type, zkevm_word_type, std::size_t, zkevm_word_type>, std::size_t>  last_access_rw_counter; // BEFORE opcode
                 std::map<std::tuple<rw_operation_type, zkevm_word_type, std::size_t, zkevm_word_type>, std::size_t>  last_write_rw_counter; // BEFORE opcode

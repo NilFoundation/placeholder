@@ -81,7 +81,7 @@ BOOST_FIXTURE_TEST_SUITE(zkevm_bbf_rw, zkEVMRWTestFixture)
     using integral_type = typename field_type::integral_type;
     using value_type = typename field_type::value_type;
 BOOST_AUTO_TEST_CASE(minimal_math){
-    test_zkevm_rw<field_type>({"minimal_math.json"}, 500, 500);
+    test_zkevm_rw<field_type>({"minimal_math.json"}, 1000, 500);
 }
 BOOST_AUTO_TEST_CASE(counter){
     test_zkevm_rw<field_type>({"counter.json"}, 3000, 500);

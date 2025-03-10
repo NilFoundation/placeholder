@@ -116,7 +116,10 @@ namespace nil {
                             _rw_operations.push_back(call_context_rw_operation(
                                 block_id, call_context_field::depth, 0
                             ));
-                            rw_counter += block_context_field_amount;
+                            _rw_operations.push_back(call_context_rw_operation(
+                                block_id, call_context_field::hash, zkevm_word_from_string(pt.first)
+                            ));
+                            rw_counter += block_context_field_amount - 1;
                         }
                         for( auto &tt: pt.second.get_child("transactions")){
                             tx_id = rw_counter;
@@ -127,6 +130,7 @@ namespace nil {
                             zkevm_word_type call_context_address = tx_to;
                             std::cout << "START TRANSACTION " << tx_id << " to " << std::hex << tx_to << std::dec << std::endl;
                             {
+                                std::vector<std::uint8_t> calldata = byte_vector_from_hex_string(tt.second.get_child("tx").get_child("data").data(), 2);
                                 zkevm_state state;
                                 state.block_id = block_id;
                                 state.tx_id = rw_counter;
@@ -141,11 +145,12 @@ namespace nil {
                                 state.memory_size = 0;
                                 state.memory_slice = {};
                                 state.stack_slice = {};
+                                state.calldata_slice = calldata;
                                 state.call_context_address = call_context_address;
                                 state.last_write_rw_counter = last_write_rw_counter;
                                 state.modified_items = _call_stack.back().cold_write_list.size();
 
-                                _call_stack.push_back({state, call_id, 0, 0});
+                                _call_stack.push_back({state, call_id, 0, 0, calldata});
                                 _zkevm_states.push_back(state);
 
                                 _rw_operations.push_back(call_context_rw_operation(
@@ -169,7 +174,18 @@ namespace nil {
                                 _rw_operations.push_back(call_context_rw_operation(
                                     tx_id, call_context_field::call_context_address, call_context_address
                                 ));
-                                rw_counter += call_context_field_amount;
+                                _rw_operations.push_back(call_context_rw_operation(
+                                    tx_id, call_context_field::hash, zkevm_word_from_string(tt.first)
+                                ));
+                                _rw_operations.push_back(call_context_rw_operation(
+                                    tx_id, call_context_field::calldata_size, calldata.size()
+                                ));
+                                rw_counter += call_context_readonly_field_amount;
+                                for( std::size_t i = 0; i < calldata.size(); i++){
+                                    _rw_operations.push_back(calldata_rw_operation(
+                                        tx_id, i, rw_counter++, calldata[i]
+                                    ));
+                                }
                             }
                             // Initialize transaction
                             //      stack -- empty
@@ -194,22 +210,6 @@ namespace nil {
                                 if(std::distance(it, ptrace.end()) != 1){
                                     stack_next = zkevm_word_vector_from_ptree(std::next(it)->second.get_child("stack"));
                                     memory_next = byte_vector_from_ptree(std::next(it)->second.get_child("memory"));
-                                    // storage_next = key_value_storage_from_ptree(it->second.get_child("storage"));
-                                    // for(
-                                    //     auto it2 = _accounts_initial_state[call_context_address].storage.begin();
-                                    //     it2 != _accounts_initial_state[call_context_address].storage.end(); it2++
-                                    // ){
-                                    //     if( !storage_next.count(it2->first) )
-                                    //         storage_next[it2->first] = _accounts_initial_state[call_context_address].storage[it2->first];
-                                    // }
-                                    // std::cout << "\t\t\tStorage:" << std::endl;
-                                    // for( auto &[k,v]: storage){
-                                    //     std::cout << "\t\t\t\t" << std::hex << k << " -> " << v << std::dec<< std::endl;
-                                    // }
-                                    // std::cout << "\t\t\tStorageNext:" << std::endl;
-                                    // for( auto &[k,v]: storage_next){
-                                    //     std::cout << "\t\t\t\t" << std::hex << k << " -> " << v << std::dec<< std::endl;
-                                    // }
                                 }
                                 zkevm_state state;
                                 state.block_id = block_id;
@@ -229,6 +229,7 @@ namespace nil {
                                 state.modified_items = _call_stack.back().cold_write_list.size();
                                 state._was_accessed = _call_stack.back().was_accessed;
                                 state._was_written = _call_stack.back().was_written;
+                                state.calldata_slice = _call_stack.back().calldata;
 
                                 for( std::size_t i = 0; i < memory.size(); i++){
                                     state.memory_slice[i] = memory[i];
@@ -426,15 +427,20 @@ namespace nil {
 
                                 } else if(opcode == "CALLDATALOAD") {
                                     // 0x35
-                                    _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-1, rw_counter++, false, stack[stack.size()-1]));
-
-                                    // TODO: add 32 read operations to calldata
+                                    std::size_t offset = std::size_t(stack[stack.size()-1]);
+                                    _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-1, rw_counter++, false, offset));
+                                    for( std::size_t i = 0; i < 32; i++){
+                                        auto byte = offset+i < _call_stack.back().calldata.size()? std::size_t(_call_stack.back().calldata[offset+i]) : 0;
+                                        _rw_operations.push_back(calldata_rw_operation(
+                                            call_id, offset + i, rw_counter++, byte
+                                        ));
+                                    }
+                                    std::cout << std::endl;
                                     _rw_operations.push_back(stack_rw_operation(call_id,  stack_next.size()-1, rw_counter++, true, stack_next[stack_next.size()-1]));
-
                                 } else if(opcode == "CALLDATASIZE") {
                                     // 0x36
                                     // TODO: get real call data size
-                                    _rw_operations.push_back(stack_rw_operation(call_id,  stack_next.size()-1, rw_counter++, true, stack_next[stack_next.size()-1]));
+                                    _rw_operations.push_back(stack_rw_operation(call_id,  stack_next.size()-1, rw_counter++, true, _call_stack.back().calldata.size()));
 
                                 } else if(opcode == "CALLDATACOPY") {
                                     // 0x37
@@ -639,7 +645,7 @@ namespace nil {
                                     // std::cout << "\t\t Address = 0x" << std::hex << addr << std::dec << " memory size " << memory.size() << std::endl;
                                     auto bytes = w_to_8(stack[stack.size() - 2]);
                                     for( std::size_t i = 0; i < 32; i++){
-                                    _rw_operations.push_back(memory_rw_operation(call_id, addr + i, rw_counter++, true, bytes[i]));
+                                       _rw_operations.push_back(memory_rw_operation(call_id, addr + i, rw_counter++, true, bytes[i]));
                                     }
                                     memory_size_before = memory_next.size();
                                 } else if(opcode == "MSTORE8") {
@@ -1089,9 +1095,6 @@ namespace nil {
                                     _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-6, rw_counter++, false, stack[stack.size()-6]));
                                     _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-7, rw_counter++, false, stack[stack.size()-7]));
                                     call_context_address = stack[stack.size()-2];
-                                    // MOVED to END_CALL operation
-                                    // _rw_operations.push_back(stack_rw_operation(call_id,  stack_next.size()-1, rw_counter++, true, stack_next[stack_next.size()-1]));
-                                    //exit(2);
                                 } else if(opcode == "CALLCODE") {
                                     // 0xf2
                                     _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-7, rw_counter++, false, stack[stack.size()-1]));
@@ -1256,21 +1259,55 @@ namespace nil {
                                 }
                                 _zkevm_states.push_back(state);
                                 if( opcode == "CALL" || opcode == "DELEGATECALL" ){
-                                    std::size_t parent_id = call_id;
-                                    call_id = rw_counter;
                                     zkevm_word_type call_to = stack[stack.size()-2];
                                     std::cout << "START CALL " << call_id << std::endl;
+                                    std::size_t args_offset;
+                                    std::size_t args_length;
+                                    std::size_t returndataoffset;
+                                    std::size_t returndatalength;
+                                    std::vector<std::uint8_t> calldata;
 
-                                    if( opcode == "CALL" )
-                                        _call_stack.push_back({
-                                            state, call_id, std::size_t(stack[stack.size()-6]), std::size_t(stack[stack.size()-7]),
-                                            {}, {}, _call_stack.back().was_accessed, _call_stack.back().was_written
-                                        });
-                                    else if( opcode == "DELEGATECALL" )
-                                        _call_stack.push_back({
-                                            state, call_id, std::size_t(stack[stack.size()-5]), std::size_t(stack[stack.size()-6]),
-                                            {}, {}, _call_stack.back().was_accessed, _call_stack.back().was_written
-                                        });
+                                    if( opcode == "CALL" ){
+                                        returndataoffset = std::size_t(stack[stack.size() - 6]);
+                                        returndatalength = std::size_t(stack[stack.size() - 7]);
+                                        args_offset = std::size_t(stack[stack.size() - 4]);
+                                        args_length = std::size_t(stack[stack.size() - 5]);
+                                        std::cout
+                                            << "Args offset " << args_offset
+                                            << " Args length " << args_length
+                                            << " Memory size =" << memory.size() << std::endl;
+                                        std::cout << "Calldata:";
+                                        for( std::size_t i = 0; i < args_length; i++){
+                                            calldata.push_back(args_offset + i < memory.size() ? memory[args_offset + i]: 0);
+                                            std::cout << " " << std::hex << std::size_t(calldata.back()) << std::dec;
+                                        }
+                                        std::cout << std::endl;
+                                    }
+                                    else if( opcode == "DELEGATECALL" ){
+                                        returndataoffset = std::size_t(stack[stack.size() - 5]);
+                                        returndatalength = std::size_t(stack[stack.size() - 6]);
+                                        args_offset = std::size_t(stack[stack.size() - 3]);
+                                        args_length = std::size_t(stack[stack.size() - 4]);
+                                        for( std::size_t i = 0; i < args_length; i++){
+                                            calldata.push_back(memory.size() < args_offset + i ? memory[args_offset + i]: 0);
+                                            std::cout << " " << std::hex << std::size_t(calldata.back()) << std::dec;
+                                        }
+                                        std::cout << std::endl;
+                                    }
+
+                                    std::cout << "Read memory from " << call_id << " memory_size = " << memory.size() << std::endl;
+                                    for( std::size_t i = 0; i < calldata.size(); i++){
+                                        _rw_operations.push_back(memory_rw_operation(
+                                            call_id, args_offset + i, rw_counter++, false, calldata[i]
+                                        ));
+                                    }
+                                    std::size_t parent_id = call_id;
+                                    call_id = rw_counter;
+                                    _call_stack.push_back({
+                                        state, call_id, std::size_t(stack[stack.size()-6]), std::size_t(stack[stack.size()-7]), calldata,
+                                        {}, {}, _call_stack.back().was_accessed, _call_stack.back().was_written
+                                    });
+
                                     zkevm_state start_call_state;
                                     start_call_state.block_id = block_id;
                                     start_call_state.tx_id = tx_id;
@@ -1285,6 +1322,7 @@ namespace nil {
                                     start_call_state.memory_size = 0;
                                     start_call_state.memory_slice = {};
                                     start_call_state.stack_slice = {};
+                                    start_call_state.calldata_slice = calldata;
                                     _zkevm_states.push_back(start_call_state);
 
                                     _rw_operations.push_back(call_context_rw_operation(
@@ -1308,7 +1346,25 @@ namespace nil {
                                     _rw_operations.push_back(call_context_rw_operation(
                                         call_id, call_context_field::call_context_address, call_context_address
                                     ));
+                                    _rw_operations.push_back(call_context_rw_operation(
+                                        call_id, call_context_field::calldata_size, calldata.size()
+                                    ));
+
                                     rw_counter += call_context_field_amount;
+
+                                    copy_event cpy = call_copy_event(
+                                        parent_id,
+                                        call_id,
+                                        args_offset,
+                                        calldata.size()
+                                    );
+                                    for( std::size_t i = 0; i < calldata.size(); i++){
+                                        _rw_operations.push_back(
+                                            calldata_rw_operation(start_call_state.call_id, i, rw_counter++, calldata[i])
+                                        );
+                                        cpy.push_byte(calldata[i]);
+                                    }
+                                    _copy_events.push_back(cpy);
 
                                     call_id = start_call_state.call_id;
                                     memory_size_before = memory_next.size();
@@ -1526,8 +1582,9 @@ namespace nil {
                 }
 
                 void append_modified_items_rw_operations(){
-                    std::cout << "Append cold access RW operations depth = " << _call_stack.size();
                     auto &call_context = _call_stack[_call_stack.size()-1];
+                    std::cout << "Append cold access RW operations depth = " << _call_stack.size()
+                        << " call_id = " << call_context.call_id << std::endl;;
                     _rw_operations.push_back(
                         call_context_rw_operation(
                             call_context.call_id,
@@ -1535,6 +1592,7 @@ namespace nil {
                             call_context.cold_write_list.size()
                         )
                     );
+                    std::cout << _rw_operations.back() << std::endl;
                     _call_commits[call_context.call_id] = {
                         call_context.call_id,                           // call_id
                         _call_stack[_call_stack.size() - 2].call_id,    // parent_id

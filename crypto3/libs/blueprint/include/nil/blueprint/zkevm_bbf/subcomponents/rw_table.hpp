@@ -145,6 +145,30 @@ namespace nil {
                     };
                 }
 
+                static std::vector<TYPE> calldata_lookup(
+                    TYPE call_id,
+                    TYPE calldata_address,
+                    TYPE rw_counter,
+                    TYPE value_lo
+                ){
+                    return {
+                        TYPE(rw_op_to_num(rw_operation_type::calldata)),
+                        call_id,
+                        calldata_address,
+                        TYPE(0),              // storage_key_hi
+                        TYPE(0),              // storage_key_lo
+                        TYPE(0),              // field
+                        rw_counter,
+                        TYPE(0),              // calldata is readonly
+                        TYPE(0),              // hi bytes are 0
+                        value_lo,
+                        TYPE(0),              // value_before_hi
+                        TYPE(0),              // value_before_lo
+                        TYPE(0),              // call_id
+                        TYPE(0)               // w_id_before
+                    };
+                }
+
                 rw_table(context_type &context_object, const input_type &input, std::size_t max_rw_size, bool register_dynamic_lookup)
                     :generic_component<FieldType,stage>(context_object),
                     op(max_rw_size),

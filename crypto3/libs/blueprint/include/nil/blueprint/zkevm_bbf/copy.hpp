@@ -62,7 +62,7 @@ namespace nil {
                     CallCommitTable::input_type call_commits;
                 };
 
-                static constexpr std::size_t copy_advice_amount = 20;
+                static constexpr std::size_t copy_advice_amount = 25;
 
                 static table_params get_minimal_requirements(
                     std::size_t max_copy,
@@ -165,7 +165,7 @@ namespace nil {
                     std::vector<TYPE>                   storage_key_lo(max_copy);
                     std::vector<TYPE>                   value_hi(max_copy);
                     std::vector<TYPE>                   value_lo(max_copy);
-                    std::vector<std::array<TYPE, 6>>    type_selector(max_copy);
+                    std::vector<std::array<TYPE, copy_operand_types_amount>>    type_selector(max_copy);
                     std::vector<TYPE>                   rlc(max_copy);
                     std::vector<TYPE>                   rlc_challenge(max_copy);
                     std::vector<TYPE>                   is_last(max_copy);
@@ -204,9 +204,9 @@ namespace nil {
                                 type_selector[current_row + 1][copy_op_to_num(cp.destination_type) - 1] = 1;
 
                                 std::cout << "\t\t"
+                                    << std::hex
                                     << cp.source_id << " " << counter_1[current_row] << " " << counter_2[current_row] << "    "
                                     << cp.destination_id << " " << counter_1[current_row+1] << " " << counter_2[current_row+1] << "    "
-                                    << std::hex
                                     << cp.get_op(i) << " "
                                     << cp.get_address(i) << " "
                                     << cp.get_field_type(i) << " "
@@ -246,60 +246,61 @@ namespace nil {
                         std::vector<TYPE> every;
                         std::vector<TYPE> non_first;
 
-                        every.push_back(context_object.relativize(is_write[1]  * (is_write[1] - 1), -1));
-                        every.push_back(context_object.relativize(is_first[1]  * (is_first[1] - 1), -1));
-                        every.push_back(context_object.relativize(is_last[1]  * (is_last[1] - 1), -1));
+                        every.push_back(is_write[1]  * (is_write[1] - 1));
+                        every.push_back(is_first[1]  * (is_first[1] - 1));
+                        every.push_back(is_last[1]  * (is_last[1] - 1));
                         TYPE type_selector_sum;
                         TYPE cp_type_constraint;
                         for(std::size_t j = 0; j < 6; j++){
                             type_selector_sum += type_selector[1][j];
                             cp_type_constraint += (j+1) * type_selector[1][j];
-                            every.push_back(context_object.relativize(type_selector[1][j]  * (type_selector[1][j] - 1), -1));
+                            every.push_back(type_selector[1][j]  * (type_selector[1][j] - 1));
                         }
-                        every.push_back(context_object.relativize(type_selector_sum  * (type_selector_sum - 1), -1));
-                        every.push_back(context_object.relativize(cp_type_constraint - cp_type[1], -1));
-                        every.push_back(context_object.relativize((type_selector_sum - 1)* is_last[1], -1));
-                        every.push_back(context_object.relativize((type_selector_sum - 1)* is_first[1], -1));
+                        every.push_back(type_selector_sum  * (type_selector_sum - 1));
+                        every.push_back(cp_type_constraint - cp_type[1]);
+                        every.push_back((type_selector_sum - 1)* is_last[1]);
+                        every.push_back((type_selector_sum - 1)* is_first[1]);
 
-                        non_first.push_back(context_object.relativize(type_selector_sum * (rlc_challenge[1] - rlc_challenge[0]), -1));
+                        non_first.push_back(type_selector_sum * (rlc_challenge[1] - rlc_challenge[0]));
 
-                        even.push_back(context_object.relativize(is_write[1], -1));
-                        even.push_back(context_object.relativize(is_last[1], -1));
-                        even.push_back(context_object.relativize(type_selector_sum * (1 - is_first[1]) * (id_hi[0] - id_hi[2]),-1));
-                        even.push_back(context_object.relativize(type_selector_sum * (1 - is_first[1]) * (id_lo[0] - id_lo[2]),-1));
-                        even.push_back(context_object.relativize(type_selector_sum * (1 - is_first[1]) * (cp_type[0] - cp_type[2]),-1));
+                        even.push_back(is_write[1]);
+                        even.push_back(is_last[1]);
+                        even.push_back(type_selector_sum * (1 - is_first[1]) * (id_hi[0] - id_hi[2]));
+                        even.push_back(type_selector_sum * (1 - is_first[1]) * (id_lo[0] - id_lo[2]));
+                        even.push_back(type_selector_sum * (1 - is_first[1]) * (cp_type[0] - cp_type[2]));
 
-                        even.push_back(context_object.relativize(type_selector_sum * (1 - is_first[1]) * (counter_1[0] - counter_1[2] + 1),-1));
-                        even.push_back(context_object.relativize(type_selector_sum * (1 - is_first[1]) * (counter_2[0] - counter_2[2] + 1),-1));
+                        even.push_back(type_selector_sum * (1 - is_first[1]) * (counter_1[0] - counter_1[2] + 1));
+                        even.push_back(type_selector_sum * (1 - is_first[1]) * (counter_2[0] - counter_2[2] + 1));
 
-                        even.push_back(context_object.relativize((1 - is_first[1]) * type_selector_sum * (length[0] - length[2] - 1),-1));
-                        even.push_back(context_object.relativize(is_first[1] *(rlc[1] - length[1] * rlc_challenge[1]),-1));
-                        even.push_back(context_object.relativize((1 - is_first[1]) * type_selector_sum * (rlc[1] - rlc[0] * rlc_challenge[1]),-1));
+                        even.push_back((1 - is_first[1]) * type_selector_sum * (length[0] - length[2] - 1));
+                        even.push_back(is_first[1] *(rlc[1] - length[1] * rlc_challenge[1]));
+                        even.push_back((1 - is_first[1]) * type_selector_sum * (rlc[1] - rlc[0] * rlc_challenge[1]));
 
-                        odd.push_back(context_object.relativize(1 - is_write[1], -1));
-                        odd.push_back(context_object.relativize(addr[1] - addr[0], -1));
-                        odd.push_back(context_object.relativize(field_type[1] - field_type[0], -1));
-                        odd.push_back(context_object.relativize(storage_key_hi[1] - storage_key_hi[0], -1));
-                        odd.push_back(context_object.relativize(storage_key_lo[1] - storage_key_lo[0], -1));
-                        odd.push_back(context_object.relativize(value_hi[1] - value_hi[0], -1));
-                        odd.push_back(context_object.relativize(value_lo[1] - value_lo[0], -1));
-                        odd.push_back(context_object.relativize(is_first[1] - is_first[0], -1));
-                        odd.push_back(context_object.relativize(length[1] - length[0], -1));
+                        odd.push_back(1 - is_write[1]);
+                        odd.push_back(addr[1] - addr[0]);
+                        odd.push_back(field_type[1] - field_type[0]);
+                        odd.push_back(storage_key_hi[1] - storage_key_hi[0]);
+                        odd.push_back(storage_key_lo[1] - storage_key_lo[0]);
+                        odd.push_back(value_hi[1] - value_hi[0]);
+                        odd.push_back(value_lo[1] - value_lo[0]);
+                        odd.push_back(is_first[1] - is_first[0]);
+                        odd.push_back(length[1] - length[0]);
 
-                        odd.push_back(context_object.relativize(type_selector_sum * (1 - is_last[1]) * (id_hi[0] - id_hi[2]),-1));
-                        odd.push_back(context_object.relativize(type_selector_sum * (1 - is_last[1]) * (id_lo[0] - id_lo[2]),-1));
-                        odd.push_back(context_object.relativize(type_selector_sum * (1 - is_last[1]) * (cp_type[0] - cp_type[2]),-1));
-                        odd.push_back(context_object.relativize(type_selector_sum * (1 - is_last[1]) * (counter_1[0] - counter_1[2] + 1),-1));
-                        odd.push_back(context_object.relativize(type_selector_sum * (1 - is_last[1]) * (counter_2[0] - counter_2[2] + 1),-1));
-                        odd.push_back(context_object.relativize(type_selector_sum * (rlc[1] - rlc[0] - value_lo[1]),-1));
-                        odd.push_back(context_object.relativize((1 - is_last[1]) * type_selector_sum * (length[0] - length[2] - 1),-1));
-                        odd.push_back(context_object.relativize((1 - is_last[1]) * type_selector_sum * (counter_1[0] - counter_1[2] + 1),-1));
-                        odd.push_back(context_object.relativize((1 - is_last[1]) * type_selector_sum * (counter_2[0] - counter_2[2] + 1),-1));
-                        odd.push_back(context_object.relativize(is_last[1] * (length[1] - 1), -1));
+                        odd.push_back(type_selector_sum * (1 - is_last[1]) * (id_hi[0] - id_hi[2]));
+                        odd.push_back(type_selector_sum * (1 - is_last[1]) * (id_lo[0] - id_lo[2]));
+                        odd.push_back(type_selector_sum * (1 - is_last[1]) * (cp_type[0] - cp_type[2]));
+                        odd.push_back(type_selector_sum * (1 - is_last[1]) * (counter_1[0] - counter_1[2] + 1));
+                        odd.push_back(type_selector_sum * (1 - is_last[1]) * (counter_2[0] - counter_2[2] + 1));
+                        odd.push_back(type_selector_sum * (rlc[1] - rlc[0] - value_lo[1]));
+                        odd.push_back((1 - is_last[1]) * type_selector_sum * (length[0] - length[2] - 1));
+                        odd.push_back((1 - is_last[1]) * type_selector_sum * (counter_1[0] - counter_1[2] + 1));
+                        odd.push_back((1 - is_last[1]) * type_selector_sum * (counter_2[0] - counter_2[2] + 1));
+                        odd.push_back(is_last[1] * (length[1] - 1));
 
                         TYPE memory_selector = type_selector[1][copy_op_to_num(copy_operand_type::memory) - 1];
                         TYPE keccak_selector = type_selector[1][copy_op_to_num(copy_operand_type::keccak) - 1];
                         TYPE reverted_selector = type_selector[1][copy_op_to_num(copy_operand_type::reverted) - 1];
+                        TYPE calldata_selector = type_selector[1][copy_op_to_num(copy_operand_type::calldata) - 1];
 
                         std::vector<TYPE> tmp = rw_table<FieldType, stage>::memory_lookup(
                             id_lo[1],
@@ -333,7 +334,8 @@ namespace nil {
                             value_hi[1],
                             value_lo[1]
                         };
-                        for( std::size_t i = 0; i < tmp.size(); i++) tmp[i] = context_object.relativize(reverted_selector*(1 - is_write[1])*tmp[i], -1);
+                        for( std::size_t i = 0; i < tmp.size(); i++)
+                            tmp[i] = context_object.relativize(reverted_selector*(1 - is_write[1])*tmp[i], -1);
                         context_object.relative_lookup(tmp, "zkevm_call_commit_table",  0, max_copy - 1);
 
                         tmp = {
@@ -348,24 +350,36 @@ namespace nil {
                             value_hi[1],
                             value_lo[1]
                         };
-                        for( std::size_t i = 0; i < tmp.size(); i++) tmp[i] = context_object.relativize(reverted_selector*is_write[1]*tmp[i], -1);
-                         context_object.relative_lookup(tmp, "zkevm_rw_short", 0, max_copy - 1);
+                        for( std::size_t i = 0; i < tmp.size(); i++)
+                            tmp[i] = context_object.relativize(reverted_selector*is_write[1]*tmp[i], -1);
+                        context_object.relative_lookup(tmp, "zkevm_rw_short", 0, max_copy - 1);
+
+                        // Used both for CALLx calldata writing and CALLDATACOPY calldata reading
+                        tmp = rw_table<FieldType, stage>::calldata_lookup(
+                            id_lo[1],
+                            counter_1[1], // address
+                            counter_2[1], // rw_counter
+                            value_lo[1]
+                        );
+                        std::cout << "Calldata_lookup size " << tmp.size() << std::endl;
+                        for( std::size_t i = 0; i < tmp.size(); i++) tmp[i] = context_object.relativize(calldata_selector*tmp[i], -1);
+                        context_object.relative_lookup(tmp, "zkevm_rw", 0, max_copy - 1);
 
                         for( std::size_t i = 0; i < even.size(); i++ ){
                             for( std::size_t j = 0; j < max_copy-1; j+=2 ){
-                                context_object.relative_constrain(even[i], j);
+                                context_object.relative_constrain(context_object.relativize(even[i], -1), j);
                             }
                         }
                         for( std::size_t i = 0; i < odd.size(); i++ ){
                             for( std::size_t j = 1; j <= max_copy-1; j+=2 ){
-                                context_object.relative_constrain(odd[i], j);
+                                context_object.relative_constrain(context_object.relativize(odd[i], -1), j);
                             }
                         }
                         for( std::size_t i = 0; i < every.size(); i++ ){
-                            context_object.relative_constrain(every[i], 0, max_copy-1);
+                            context_object.relative_constrain(context_object.relativize(every[i], -1), 0, max_copy-1);
                         }
                         for( std::size_t i = 0; i < non_first.size(); i++ ){
-                            context_object.relative_constrain(non_first[i], 1, max_copy-1);
+                            context_object.relative_constrain(context_object.relativize(non_first[i], -1), 1, max_copy-1);
                         }
                     }
                 }
