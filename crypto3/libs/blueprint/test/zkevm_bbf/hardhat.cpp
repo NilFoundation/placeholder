@@ -409,8 +409,8 @@ BOOST_AUTO_TEST_CASE(try_catch) {
     max_sizes.max_keccak_blocks = 20;
     max_sizes.max_bytecode = 3000;
     max_sizes.max_mpt = 0;
-    max_sizes.max_rw = 6000;
-    max_sizes.max_copy = 1000;
+    max_sizes.max_rw = 8000;
+    max_sizes.max_copy = 1500;
     max_sizes.max_zkevm_rows = 3000;
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
@@ -427,9 +427,9 @@ BOOST_AUTO_TEST_CASE(try_catch2) {
     max_sizes.max_keccak_blocks = 20;
     max_sizes.max_bytecode = 3000;
     max_sizes.max_mpt = 0;
-    max_sizes.max_rw = 6000;
-    max_sizes.max_copy = 1000;
-    max_sizes.max_zkevm_rows = 3000;
+    max_sizes.max_rw = 7000;
+    max_sizes.max_copy = 1500;
+    max_sizes.max_zkevm_rows = 5000;
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
     max_sizes.max_call_commits = 500;

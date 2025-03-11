@@ -112,7 +112,7 @@ namespace nil {
                             current_state.memory_size(0) - memory_expansion_size);  // memory_size transition
                         constrain(current_state.rw_counter_next() -
                                   current_state.rw_counter(0) -
-                                  3 - length);  // rw_counter transition
+                                  4 - 2 * length);  // rw_counter transition
                         std::vector<TYPE> tmp;
                         tmp = rw_table<FieldType, stage>::stack_lookup(
                             current_state.call_id(0),

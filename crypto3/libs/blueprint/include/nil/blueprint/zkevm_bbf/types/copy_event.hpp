@@ -257,8 +257,24 @@ namespace nil {
                 return cpy;
             }
 
-            copy_event returndatacopy_copy_event(){
+            copy_event returndatacopy_copy_event(
+                std::size_t lastcall_id,
+                std::size_t offset,
+                std::size_t caller_id,
+                std::size_t dest_offset,
+                std::size_t rw_counter,
+                std::size_t length
+            ){
                 copy_event cpy;
+                cpy.source_type = copy_operand_type::returndata;
+                cpy.source_id = lastcall_id;
+                cpy.src_counter_1 = offset; // Before copy reading
+                cpy.src_counter_2 = rw_counter;
+                cpy.destination_type = copy_operand_type::memory;
+                cpy.destination_id = caller_id;
+                cpy.dst_counter_1 = dest_offset; // Before copy writing
+                cpy.dst_counter_2 = rw_counter + length;
+                cpy.length = length;
                 return cpy;
             }
 

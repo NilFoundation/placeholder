@@ -250,6 +250,7 @@ namespace nil {
                                 if(opcode == "STOP") {
                                     // 0x00 -- no RW operations
                                     _call_stack.back().end = rw_counter - 1;
+                                    _call_stack.back().returndata = {};
                                     _rw_operations.push_back(
                                         call_context_rw_operation(
                                             call_id,
@@ -257,6 +258,9 @@ namespace nil {
                                             rw_counter - 1
                                         )
                                     );
+                                    _rw_operations.push_back(call_context_w_operation(call_id, call_context_field::lastcall_returndata_offset, rw_counter++, 0));
+                                    _rw_operations.push_back(call_context_w_operation(call_id, call_context_field::lastcall_returndata_length, rw_counter++, 0));
+                                    _rw_operations.push_back(call_context_w_operation(call_id, call_context_field::lastcall_id, rw_counter++, rw_counter + 1));
                                 } else if(opcode == "ADD") {
                                     // 0x01
                                     _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-1, rw_counter++, false, stack[stack.size()-1]));
@@ -541,14 +545,31 @@ namespace nil {
                                 } else if(opcode == "RETURNDATACOPY") {
                                     // 0x3e
                                     // std::cout << "Test me, please!" << std::endl;
-                                    auto dest_offset = stack[stack.size()-1];
-                                    auto offset = stack[stack.size()-2];
-                                    auto length = stack[stack.size()-3];
+                                    auto dest_offset = std::size_t(stack[stack.size()-1]);
+                                    auto offset = std::size_t(stack[stack.size()-2]);
+                                    auto length = std::size_t(stack[stack.size()-3]);
+                                    auto lastcall_id = std::size_t(_call_stack.back().lastcall_id);
                                     _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-1, rw_counter++, false, dest_offset));
                                     _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-2, rw_counter++, false, offset));
                                     _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-3, rw_counter++, false, length));
 
-                                    // TODO: add length read operations from last return data
+                                    _rw_operations.push_back(
+                                        call_context_r_operation(
+                                            call_id, call_context_field::lastcall_id, rw_counter++, lastcall_id
+                                        )
+                                    );
+                                    copy_event cpy = returndatacopy_copy_event(
+                                        lastcall_id, offset, call_id, dest_offset, rw_counter, length
+                                    );
+                                    for( std::size_t ind = 0; ind < length; ind++){
+                                        _rw_operations.push_back(
+                                            returndata_rw_operation(
+                                                lastcall_id, offset+ind, rw_counter++,
+                                                offset+ind < _call_stack.back().returndata.size()? _call_stack.back().returndata[offset+ind] : 0
+                                            )
+                                        );
+                                        cpy.push_byte(offset+ind < _call_stack.back().returndata.size()? _call_stack.back().returndata[offset+ind] : 0);
+                                    }
                                     for( std::size_t ind = 0; ind < length; ind++){
                                         _rw_operations.push_back(
                                             memory_rw_operation(
@@ -556,6 +577,7 @@ namespace nil {
                                             )
                                         );
                                     }
+                                    _copy_events.push_back(cpy);
                                     memory_size_before = memory_next.size();
                                     // Where will consistency check be done?
                                 } else if(opcode == "EXTCODEHASH") {
@@ -1433,6 +1455,7 @@ namespace nil {
                                     // fill end of call
                                     std::cout << "Appended" << std::endl;
                                     _call_stack.pop_back();
+                                    _call_stack.back().returndata = {};
                                     if( _call_stack.size() != 1){
                                         _call_stack.back().was_accessed.insert(returned_call.was_accessed.begin(),returned_call.was_accessed.end());
                                         _call_stack.back().was_written.insert(returned_call.was_written.begin(),returned_call.was_written.end());
@@ -1463,20 +1486,19 @@ namespace nil {
                                     bytecode_hash = end_call_state.bytecode_hash;
                                     call_context_address = end_call_state.call_context_address;
                                     memory_size_before = memory_next.size();
-                                    _rw_operations.push_back(stack_rw_operation(call_id,  stack_next.size()-1, rw_counter++, true, stack_next[stack_next.size()-1]));
 
                                     if( _call_stack.size() > 1 ){
                                         _rw_operations.push_back(call_context_r_operation(
                                             call_id,
                                             call_context_field::lastcall_returndata_length,
                                             rw_counter++,
-                                            0
+                                            _call_stack.back().lastcall_returndatalength
                                         ));
                                         _rw_operations.push_back(call_context_r_operation(
                                             call_id,
                                             call_context_field::lastcall_returndata_offset,
                                             rw_counter++,
-                                            0
+                                            _call_stack.back().lastcall_returndataoffset
                                         ));
                                         _rw_operations.push_back(call_context_r_operation(
                                             call_id,
@@ -1485,6 +1507,7 @@ namespace nil {
                                             returned_call.call_id
                                         ));
                                     }
+                                    _rw_operations.push_back(stack_rw_operation(call_id,  stack_next.size()-1, rw_counter++, true, stack_next[stack_next.size()-1]));
                                 }
                                 if( opcode == "RETURN"){
                                     std::size_t offset = std::size_t(stack[stack.size()-1]); // Real value
