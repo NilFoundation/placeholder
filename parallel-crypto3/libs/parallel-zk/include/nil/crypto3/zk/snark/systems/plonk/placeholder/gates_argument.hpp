@@ -93,6 +93,7 @@ namespace nil {
                         const polynomial_dfs_type &mask_polynomial,
                         const polynomial_dfs_type &lagrange_0
                     ) {
+                        PROFILE_SCOPE("Gate argument build variable value map");
 
                         std::vector<variable_type> variables;
 
@@ -134,6 +135,9 @@ namespace nil {
                                 assignment.resize(extended_domain_size, domain, extended_domain);
                                 variable_values_out[var] = std::move(assignment);
                             }, ThreadPool::PoolLevel::HIGH);
+
+                        bench::scoped_log(std::format("Variables count: {}",
+                                                      variable_values_out.size()));
                     }
 
                     static inline std::array<polynomial_dfs_type, argument_size> prove_eval(
@@ -146,7 +150,7 @@ namespace nil {
                         transcript_type& transcript
                     ) {
                         using value_type = typename FieldType::value_type;
-                        PROFILE_SCOPE("gate_argument_time");
+                        PROFILE_SCOPE("Gate argument prove eval");
 
                         // max_gates_degree that comes from the outside does not take into account multiplication
                         // by selector.
@@ -158,6 +162,11 @@ namespace nil {
                         std::uint32_t max_degree = std::pow(2, ceil(std::log2(max_gates_degree)));
                         std::uint32_t max_domain_size = original_domain->m * max_degree;
 
+                        bench::scoped_log(
+                            std::format("Gate argument max degree: {}, small domain max "
+                                        "degree: {}, original domain size: {}",
+                                        max_degree, max_degree / 2, original_domain->m));
+
                         degree_limits.push_back(max_degree);
                         extended_domain_sizes.push_back(max_domain_size);
                         degree_limits.push_back(max_degree / 2);
@@ -168,7 +177,17 @@ namespace nil {
 
                         math::expression_max_degree_visitor<variable_type> visitor;
 
+                        std::vector<std::size_t> constraint_counts(
+                            extended_domain_sizes.size());
+
                         const auto& gates = constraint_system.gates();
+                        {
+                            PROFILE_SCOPE("Gate argument build expression");
+                            for (const auto& gate : gates) {
+                                std::vector<math::expression<variable_type>> gate_results(
+                                    extended_domain_sizes.size());
+                                for (const auto& constraint : gate.constraints) {
+                                    auto next_term = constraint * theta_acc;
 
                         for (const auto& gate: gates) {
                             std::vector<math::expression<variable_type>> gate_results(extended_domain_sizes.size());
@@ -183,20 +202,28 @@ namespace nil {
                                     // Whatever the degree of term is, add it to the maximal degree expression.
                                     if (degree_limits[i] >= constraint_degree || i == 0) {
                                         gate_results[i] += next_term;
+                                        ++constraint_counts[i];
                                         break;
                                     }
                                 }
-                            }
-                            variable_type selector(gate.selector_index, 0, false, variable_type::column_type::selector);
-                            for (size_t i = 0; i < extended_domain_sizes.size(); ++i) {
-                                gate_results[i] *= selector;
-                                expressions[i] += gate_results[i];
+                                variable_type selector(
+                                    gate.selector_index, 0, false,
+                                    variable_type::column_type::selector);
+                                for (size_t i = 0; i < extended_domain_sizes.size();
+                                     ++i) {
+                                    gate_results[i] *= selector;
+                                    expressions[i] += gate_results[i];
+                                }
                             }
                         }
 
                         std::array<polynomial_dfs_type, argument_size> F;
                         F[0] = polynomial_dfs_type::zero();
                         for (std::size_t i = 0; i < extended_domain_sizes.size(); ++i) {
+                            PROFILE_SCOPE(std::format(
+                                "Gate argument evaluation on domain #{}", i + 1));
+                            bench::scoped_log(std::format("Constraint count: {}",
+                                                          constraint_counts[i]));
                             std::unordered_map<variable_type, polynomial_dfs_type> variable_values;
 
                             build_variable_value_map(
@@ -206,21 +233,34 @@ namespace nil {
                             );
 
                             math::dag_expression<variable_type> dag_expr(expressions[i]);
-                            polynomial_dfs_type result(extended_domain_sizes[i] - 1, extended_domain_sizes[i]);
-                            wait_for_all(parallel_run_in_chunks<void>(
-                                extended_domain_sizes[i],
-                                [&variable_values, &extended_domain_sizes, &result, &expressions, i, &dag_expr]
-                                (std::size_t begin, std::size_t end) {
-                                    auto dag_expr_copy = dag_expr;
-                                    for (std::size_t j = begin; j < end; ++j) {
-                                        std::function<value_type(const variable_type &)> eval_map =
-                                            [&variable_values, j](const variable_type &var) -> value_type {
+
+                            polynomial_dfs_type result(extended_domain_sizes[i] - 1,
+                                                       extended_domain_sizes[i]);
+
+                            {
+                                PROFILE_SCOPE("Gate argument expression evaluation");
+
+                                wait_for_all(parallel_run_in_chunks<void>(
+                                    extended_domain_sizes[i],
+                                    [&variable_values, &extended_domain_sizes, &result,
+                                    &expressions, i,
+                                    &dag_expr](std::size_t begin, std::size_t end) {
+                                        auto dag_expr_copy = dag_expr;
+                                        for (std::size_t j = begin; j < end; ++j) {
+                                            std::function<value_type(const variable_type &)>
+                                                eval_map = [&variable_values,
+                                                            j](const variable_type &var)
+                                                -> value_type {
                                                 return variable_values[var][j];
                                             };
-                                        result[j] = dag_expr_copy.evaluate(eval_map)[0];
-                                        dag_expr_copy.clear_cache();
-                                    }
-                            }, ThreadPool::PoolLevel::HIGH));
+                                            result[j] = dag_expr_copy.evaluate(eval_map)[0];
+                                            dag_expr_copy.clear_cache();
+                                        }
+                                }, ThreadPool::PoolLevel::HIGH));
+                            }
+
+                            PROFILE_SCOPE("Gate argument add to result");
+
                             F[0] += result;
                         };
                         return F;

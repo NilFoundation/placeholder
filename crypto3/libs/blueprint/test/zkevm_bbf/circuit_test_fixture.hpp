@@ -120,17 +120,17 @@ bool check_proof(
     typename lpc_type::fri_type::params_type fri_params(1, std::ceil(log2(assignment.rows_amount())), Lambda, 2);
     lpc_scheme_type lpc_scheme(fri_params);
 
-    std::cout << "Public preprocessor" << std::endl;
+    // std::cout << "Public preprocessor" << std::endl;
     typename nil::crypto3::zk::snark::placeholder_public_preprocessor<BlueprintFieldType, lpc_placeholder_params_type>::preprocessed_data_type
             lpc_preprocessed_public_data = nil::crypto3::zk::snark::placeholder_public_preprocessor<BlueprintFieldType, lpc_placeholder_params_type>::process(
             bp, assignment.public_table(), desc, lpc_scheme, 10);
 
-    std::cout << "Private preprocessor" << std::endl;
+    // std::cout << "Private preprocessor" << std::endl;
     typename nil::crypto3::zk::snark::placeholder_private_preprocessor<BlueprintFieldType, lpc_placeholder_params_type>::preprocessed_data_type
             lpc_preprocessed_private_data = nil::crypto3::zk::snark::placeholder_private_preprocessor<BlueprintFieldType, lpc_placeholder_params_type>::process(
             bp, assignment.private_table(), desc);
 
-    std::cout << "Prover" << std::endl;
+    // std::cout << "Prover" << std::endl;
     auto lpc_proof = nil::crypto3::zk::snark::placeholder_prover<BlueprintFieldType, lpc_placeholder_params_type>::process(
             lpc_preprocessed_public_data, std::move(lpc_preprocessed_private_data), desc, bp,
             lpc_scheme);
@@ -138,7 +138,7 @@ bool check_proof(
     // We must not use the same instance of lpc_scheme.
     lpc_scheme_type verifier_lpc_scheme(fri_params);
 
-    std::cout << "Verifier" << std::endl;
+    // std::cout << "Verifier" << std::endl;
     bool verifier_res = nil::crypto3::zk::snark::placeholder_verifier<BlueprintFieldType, lpc_placeholder_params_type>::process(
             *lpc_preprocessed_public_data.common_data, lpc_proof, desc, bp, verifier_lpc_scheme);
     return verifier_res;

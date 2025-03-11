@@ -110,7 +110,7 @@ namespace nil {
                     }
 
                     prover_lookup_result prove_eval() {
-                        PROFILE_SCOPE("Lookup argument prove eval time");
+                        PROFILE_SCOPE("Lookup argument prove eval");
 
                         const auto& assignment_desc = preprocessed_data.common_data->desc;
 
@@ -168,6 +168,8 @@ namespace nil {
                         reduced_input_ptr.reset(nullptr);
                         reduced_value_ptr.reset(nullptr);
 
+                        PROFILE_SCOPE("Lookup argument work on h and g");
+
                         // Compute polynomial U: U(wX) - U(X) = Sum(hs) + Sum(gs).
                         polynomial_dfs_type sum_H_G = polynomial_sum<FieldType>(hs) + polynomial_sum<FieldType>(gs);
                         polynomial_dfs_type U(basic_domain->m - 1, basic_domain->m, FieldType::value_type::zero());
@@ -194,9 +196,20 @@ namespace nil {
                         }
 
                         std::vector<polynomial_dfs_type> h_constraint_parts(hs.size());
-                        parallel_for(0, hs.size(), [&hs, &h_constraint_parts, &h_challenges, &alpha, &lookup_input, &one](std::size_t i) {
-                            h_constraint_parts[i] = h_challenges[i] * (hs[i] * (alpha - lookup_input[i]) + one);
-                        }, ThreadPool::PoolLevel::HIGH);
+                        {
+                            PROFILE_SCOPE(std::format(
+                                "Lookup argument compute h constraint parts of size {}",
+                                hs.size()));
+                            parallel_for(
+                                0, hs.size(),
+                                [&hs, &h_constraint_parts, &h_challenges, &alpha,
+                                 &lookup_input, &one](std::size_t i) {
+                                    h_constraint_parts[i] =
+                                        h_challenges[i] *
+                                        (hs[i] * (alpha - lookup_input[i]) + one);
+                                },
+                                ThreadPool::PoolLevel::HIGH);
+                        }
 
                         F_dfs[0] = polynomial_sum<FieldType>(std::move(h_constraint_parts));
 
@@ -210,21 +223,49 @@ namespace nil {
 
                         std::vector<polynomial_dfs_type> g_constraint_parts(gs.size());
 
-                        parallel_for(0, gs.size(), [&gs, &g_constraint_parts, &g_challenges, &alpha, &lookup_value, &counts](std::size_t i) {
-                            g_constraint_parts[i] = g_challenges[i] * (gs[i] * (alpha - lookup_value[i]) - counts[i]);
-                        }, ThreadPool::PoolLevel::HIGH);
+                        {
+                            PROFILE_SCOPE(std::format(
+                                "Lookup argument compute g constraint parts of size {}",
+                                gs.size()));
+                            parallel_for(
+                                0, gs.size(),
+                                [&gs, &g_constraint_parts, &g_challenges, &alpha,
+                                 &lookup_value, &counts](std::size_t i) {
+                                    g_constraint_parts[i] =
+                                        g_challenges[i] *
+                                        (gs[i] * (alpha - lookup_value[i]) - counts[i]);
+                                },
+                                ThreadPool::PoolLevel::HIGH);
+                        }
 
-                        F_dfs[0] += polynomial_sum<FieldType>(std::move(g_constraint_parts));
+                        {
+                            PROFILE_SCOPE("Lookup argument compute F_dfs[0]");
+                            F_dfs[0] +=
+                                polynomial_sum<FieldType>(std::move(g_constraint_parts));
+                        }
 
-                        // Check that U[0] == 0.
-                        F_dfs[1] = preprocessed_data.common_data->lagrange_0 * U;
+                        {
+                            PROFILE_SCOPE("Lookup argument compute F_dfs[1]");
+                            // Check that U[0] == 0.
+                            F_dfs[1] = preprocessed_data.common_data->lagrange_0 * U;
+                        }
 
-                        // Check that U[Nu] == 0.
-                        F_dfs[2] =  preprocessed_data.q_last * U;
+                        {
+                            PROFILE_SCOPE("Lookup argument compute F_dfs[2]");
+                            // Check that U[Nu] == 0.
+                            F_dfs[2] = preprocessed_data.q_last * U;
+                        }
 
-                        // Check that Mask(X) * (U(wX) - U(X) - Sum(hs) - Sum(gs)) == 0.
-                        F_dfs[3] = math::polynomial_shift(U, 1, basic_domain->m) - U - sum_H_G;
-                        F_dfs[3] *= (preprocessed_data.q_last + preprocessed_data.q_blind) - one_polynomial;
+                        {
+                            PROFILE_SCOPE("Lookup argument compute F_dfs[3]");
+                            // Check that Mask(X) * (U(wX) - U(X) - Sum(hs) - Sum(gs)) ==
+                            // 0.
+                            F_dfs[3] = math::polynomial_shift(U, 1, basic_domain->m) - U -
+                                       sum_H_G;
+                            F_dfs[3] *=
+                                (preprocessed_data.q_last + preprocessed_data.q_blind) -
+                                one_polynomial;
+                        }
 
                         return {
                             std::move(F_dfs),
@@ -317,6 +358,7 @@ namespace nil {
                         const polynomial_dfs_type &mask_polynomial,
                         const polynomial_dfs_type &lagrange_0
                     ) {
+                        PROFILE_SCOPE("Lookup argument build variable value map");
                         // Get out all the variables used and maximal degree of any expression in all possible lookup inputs
                         std::vector<variable_type> variables;
                         size_t max_expr_degree = 0;
@@ -364,6 +406,9 @@ namespace nil {
                                 assignment.resize(extended_domain_size_out, domain, extended_domain);
                                 variable_values_out[var] = std::move(assignment);
                             }, ThreadPool::PoolLevel::HIGH);
+
+                        bench::scoped_log(
+                            std::format("Variables count: {}", variable_values_out.size()));
                     }
 
                     // Run over all the lookup inputs, and collect a vector of expressions that will need to be evaluated.
@@ -431,6 +476,9 @@ namespace nil {
                                     polynomial_dfs_type(extended_domain_size - 1, extended_domain_size);
                             }
                         );
+
+                        PROFILE_SCOPE("Lookup argument expression evaluation");
+
                         wait_for_all(parallel_run_in_chunks<void>(extended_domain_size,
                             [&variable_values, &extended_domain_size, &expressions, &lookup_input_ptr, &dag_expr]
                             (std::size_t begin, std::size_t end) {
@@ -479,7 +527,7 @@ namespace nil {
                         std::size_t domain_size,
                         std::size_t usable_rows_amount
                     ) {
-                        PROFILE_SCOPE("Count Lookup input counts in lookup tables");
+                        PROFILE_SCOPE("Count lookup input counts in lookup tables");
 
                         std::unordered_map<typename FieldType::value_type, std::size_t> counts_map;
                         for (std::size_t i = 0; i < reduced_input.size(); i++) {
