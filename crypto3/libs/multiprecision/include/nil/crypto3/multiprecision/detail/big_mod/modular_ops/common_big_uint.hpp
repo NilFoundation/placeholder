@@ -35,6 +35,7 @@ namespace nil::crypto3::multiprecision::detail {
                  // result should fit in the output parameter
                  std::enable_if_t<Bits2 >= Bits3, int> = 0>
         constexpr void add(big_uint<Bits2> &result, const big_uint<Bits3> &y) const {
+            register_add();
             BOOST_ASSERT(result < this->mod() && y < this->mod());
 
             bool carry = overflowing_add_assign(result, y);

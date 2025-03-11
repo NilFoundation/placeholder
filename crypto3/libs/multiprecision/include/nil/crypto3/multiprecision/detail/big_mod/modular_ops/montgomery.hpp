@@ -299,6 +299,7 @@ namespace nil::crypto3::multiprecision::detail {
         // Delegates Montgomery multiplication to one of corresponding algorithms.
         template<std::size_t Bits2>
         constexpr void mul(big_uint<Bits2> &result, const big_uint<Bits2> &y) const {
+            register_mul();
             if (m_no_carry_montgomery_mul_allowed) {
                 montgomery_mul_no_carry_impl(result, y);
             } else {
