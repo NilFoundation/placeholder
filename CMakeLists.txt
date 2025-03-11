@@ -21,6 +21,11 @@ if(${SANITIZE})
   add_link_options(-fsanitize=undefined,address,leak)
 endif()
 
+option(ARITHMETIC_COUNTERS "Build with arithmetic counters" FALSE)
+if (${ARITHMETIC_COUNTERS})
+  add_compile_definitions(NIL_CO3_MP_ENABLE_ARITHMETIC_COUNTERS NIL_CO3_PROFILE_COUNT_ARITHMETIC_OPS)
+endif()
+
 option(PROFILING_ENABLED "Build with profiling enabled" FALSE)
 if (${PROFILING_ENABLED})
   add_compile_definitions(PROFILING_ENABLED)

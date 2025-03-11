@@ -11,18 +11,78 @@
 
 #pragma once
 
+#include <atomic>
 #include <climits>
 #include <cstddef>
+#include <format>
+#include <iostream>
 #include <limits>
+#include <ostream>
 #include <type_traits>
 
 #include <boost/assert.hpp>
+
+#define PROFILING_ENABLED
+#include "nil/crypto3/bench/scoped_profiler.hpp"
 
 #include "nil/crypto3/multiprecision/detail/integer_ops_base.hpp"
 #include "nil/crypto3/multiprecision/type_traits.hpp"
 #include "nil/crypto3/multiprecision/unsigned_utils.hpp"
 
 namespace nil::crypto3::multiprecision::detail {
+    inline std::atomic_size_t mul_counter;
+    inline std::atomic_size_t add_counter;
+    inline std::atomic_size_t sub_counter;
+
+    inline constexpr void register_mul() {
+        if (!std::is_constant_evaluated()) {
+#ifdef NIL_CO3_MP_ENABLE_COUNTERS
+            mul_counter++;
+#endif
+        }
+    }
+
+    inline constexpr void register_add() {
+        if (!std::is_constant_evaluated()) {
+#ifdef NIL_CO3_MP_ENABLE_COUNTERS
+            add_counter++;
+#endif
+        }
+    }
+
+    inline constexpr void register_sub() {
+        if (!std::is_constant_evaluated()) {
+#ifdef NIL_CO3_MP_ENABLE_COUNTERS
+            sub_counter++;
+#endif
+        }
+    }
+
+    inline constexpr void print_counts() {
+        if (!std::is_constant_evaluated()) {
+#ifdef NIL_CO3_MP_ENABLE_COUNTERS
+            bench::scoped_log(std::format("mul count: {}, add count: {}, sub count: {}",
+                                          mul_counter.load(), add_counter.load(),
+                                          sub_counter.load()));
+#endif
+        }
+    }
+    inline constexpr void reset_counts() {
+        if (!std::is_constant_evaluated()) {
+#ifdef NIL_CO3_MP_ENABLE_COUNTERS
+            mul_counter = 0;
+            add_counter = 0;
+            sub_counter = 0;
+#endif
+        }
+    }
+
+    struct ScopedOpsCounter {
+        ScopedOpsCounter() { reset_counts(); }
+
+        ~ScopedOpsCounter() { print_counts(); }
+    };
+
     template<typename base_type_>
     class common_modular_ops {
       public:
@@ -47,6 +107,7 @@ namespace nil::crypto3::multiprecision::detail {
         }
 
         constexpr void sub(base_type &a, const base_type &b) const {
+            register_sub();
             if (a < b) {
                 auto v = mod();
                 v -= b;
