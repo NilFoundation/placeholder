@@ -92,17 +92,17 @@ namespace nil {
                         std::map<std::tuple<rw_operation_type, zkevm_word_type, std::size_t, zkevm_word_type>, std::size_t>  last_write_rw_counter;
 
                         std::cout << "Block with hash " << pt.first.data() << std::endl;
-                        block_id = rw_counter;
+                        block_id = rw_counter++;
                         std::cout << "START BLOCK " << block_id << std::endl;
                         {
                             zkevm_state state;
-                            state.block_id = rw_counter++;
+                            state.block_id = block_id;
                             state.tx_id = 0;
-                            state.call_id = 0;
+                            state.call_id = block_id;
                             state.opcode = opcode_number_from_str("start_block");
                             state.gas = 0;
                             state.pc = 0;
-                            state.rw_counter = rw_counter;
+                            state.rw_counter = block_id;
                             state.bytecode_hash = 0;
                             state.additional_input = 0;
                             state.stack_size = 0;

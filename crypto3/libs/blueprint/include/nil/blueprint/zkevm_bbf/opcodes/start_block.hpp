@@ -30,6 +30,7 @@ namespace nil {
                         // constrain(current_state.memory_size(0) - current_state.memory_size_next());     // memory_size transition
                         // constrain(current_state.rw_counter_next() - current_state.rw_counter(0));   // rw_counter transition
                         // constrain(current_state.opcode_next() - next_opcode); // Next opcode restrictions
+                        constrain(current_state.rw_counter(0) - current_state.call_id(0));
                         constrain(
                             (current_state.opcode_next() - TYPE(std::size_t(opcode_to_number(zkevm_opcode::start_transaction)))) *
                             (current_state.opcode_next() - TYPE(std::size_t(opcode_to_number(zkevm_opcode::end_block))))
