@@ -419,6 +419,7 @@ namespace nil {
                 precommit(const math::polynomial_dfs<typename FRI::field_type::value_type> &f,
                           std::shared_ptr<math::evaluation_domain<typename FRI::field_type>> D,
                           const std::size_t fri_step) {
+                    PROFILE_SCOPE("FRI precommit dfs");
                     if (f.size() != D->size()) {
                         throw std::runtime_error("Polynomial size does not match the domain size in FRI precommit.");
                     }
@@ -477,6 +478,7 @@ namespace nil {
                           std::shared_ptr<math::evaluation_domain<typename FRI::field_type>>
                           D,
                           const std::size_t fri_step) {
+                    PROFILE_SCOPE("FRI precommit");
 
                     math::polynomial_dfs<typename FRI::field_type::value_type> f_dfs;
                     f_dfs.from_coefficients(f);
@@ -504,7 +506,7 @@ namespace nil {
                           std::shared_ptr<math::evaluation_domain<typename FRI::field_type>> D,
                           const std::size_t fri_step
                 ) {
-                    PROFILE_SCOPE("Basic FRI Precommit time");
+                    PROFILE_SCOPE("Basic FRI Precommit");
 
                     // Resize uses low level thread pool, so we need to use the high level one here.
                     parallel_for(0, poly.size(), [&poly, &D](std::size_t i) {
@@ -1003,12 +1005,16 @@ namespace nil {
                     const math::polynomial<typename FRI::field_type::value_type> &final_polynomial,
                     const std::vector<typename FRI::field_type::value_type>& challenges)
                 {
+                    PROFILE_SCOPE("FRI query phase round proofs");
                     typename FRI::round_proofs_batch_type proof;
 
                     for (std::size_t query_id = 0; query_id < fri_params.lambda; query_id++) {
                         std::size_t domain_size = fri_params.D[0]->size();
                         typename FRI::field_type::value_type x = challenges[query_id];
-                        x = x.pow((FRI::field_type::modulus - 1) / domain_size);
+                        {
+                            PROFILE_SCOPE("FRI query phase round proofs pow");
+                            x = x.pow((FRI::field_type::modulus - 1) / domain_size);
+                        }
 
                         std::uint64_t x_index = 0;
 
@@ -1033,6 +1039,7 @@ namespace nil {
                     const std::map<std::size_t, std::vector<PolynomialType>> &g,
                     const std::vector<typename FRI::field_type::value_type>& challenges)
                 {
+                    PROFILE_SCOPE("FRI query phase initial proofs");
                     typename FRI::initial_proofs_batch_type proof;
                     proof.initial_proofs.resize(fri_params.lambda);
 
@@ -1151,7 +1158,7 @@ namespace nil {
                     const typename FRI::params_type &fri_params,
                     typename FRI::transcript_type &transcript
                 ) {
-                    PROFILE_SCOPE("Basic FRI proof_eval time");
+                    PROFILE_SCOPE("Basic FRI proof eval time");
                     typename FRI::proof_type proof;
 
                     BOOST_ASSERT(check_step_list<FRI>(fri_params));

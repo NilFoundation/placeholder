@@ -695,6 +695,7 @@ namespace nil {
                         std::shared_ptr<private_assignment_type> private_assignment,
                         const plonk_table_description<FieldType>  &table_description
                     ) {
+                        PROFILE_SCOPE("Placeholder private preprocessor");
                         std::size_t N_rows = table_description.rows_amount;
 
                         std::shared_ptr<math::evaluation_domain<FieldType>> basic_domain =

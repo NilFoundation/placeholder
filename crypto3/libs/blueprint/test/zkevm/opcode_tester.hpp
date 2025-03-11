@@ -191,7 +191,9 @@ namespace nil {
                 push_opcode(opcode, additional_input);
             }
             void push_opcode(const zkevm_opcode opcode, const std::vector<std::uint8_t> &additional_input = {}){
-                std::cout << "PC opcode map[" << bytecode.size() << "] = " << opcodes.size() << " opcode = " << opcode_to_string(opcode) << std::endl;
+                // std::cout << "PC opcode map[" << bytecode.size() << "] = " <<
+                // opcodes.size() << " opcode = " << opcode_to_string(opcode) <<
+                // std::endl;
                 pc_opcode_map[bytecode.size()] = opcodes.size();
                 opcodes.push_back({opcode, additional_input});
                 bytecode.push_back(opcodes_info_instance.get_opcode_value(opcode));

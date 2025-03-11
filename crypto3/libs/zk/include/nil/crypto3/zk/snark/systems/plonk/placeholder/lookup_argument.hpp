@@ -100,7 +100,7 @@ namespace nil {
                     }
 
                     prover_lookup_result prove_eval() {
-                        PROFILE_SCOPE("Lookup argument prove eval time");
+                        PROFILE_SCOPE("Lookup argument prove eval");
 
                         typename FieldType::value_type one = FieldType::value_type::one();
 
@@ -294,6 +294,7 @@ namespace nil {
                         const polynomial_dfs_type &mask_polynomial,
                         const polynomial_dfs_type &lagrange_0
                     ) {
+                        PROFILE_SCOPE("Lookup argument build variable value map");
 
                         std::unordered_map<variable_type, size_t> variable_counts;
                         std::vector<variable_type> variables;
@@ -390,6 +391,8 @@ namespace nil {
                             } else {
                                 lookup_selector = plonk_columns.selector(gate.tag_index);
                             }
+
+                            PROFILE_SCOPE("Lookup argument evaluation");
 
                             for (const auto &constraint : gate.constraints) {
                                 polynomial_dfs_type l = lookup_selector * (typename FieldType::value_type(constraint.table_id));

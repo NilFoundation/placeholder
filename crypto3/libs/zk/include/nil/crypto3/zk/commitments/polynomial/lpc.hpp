@@ -149,7 +149,7 @@ namespace nil {
                     }
 
                     proof_type proof_eval(transcript_type &transcript) {
-                        PROFILE_SCOPE("LPC proof_eval");
+                        PROFILE_SCOPE("LPC proof eval");
 
                         eval_polys_and_add_roots_to_transcipt(transcript);
 
@@ -162,6 +162,7 @@ namespace nil {
                     }
 
                     void eval_polys_and_add_roots_to_transcipt(transcript_type &transcript) {
+                        PROFILE_SCOPE("LPC eval polys and add roots to transcript");
                         this->eval_polys();
 
                         BOOST_ASSERT(this->_points.size() == this->_polys.size());
@@ -275,6 +276,7 @@ namespace nil {
                     polynomial_type prepare_combined_Q(
                             const typename field_type::value_type& theta,
                             std::size_t starting_power = 0) {
+                        PROFILE_SCOPE("LPC prepare combined Q");
                         this->build_points_map();
 
                         typename field_type::value_type theta_acc = theta.pow(starting_power);

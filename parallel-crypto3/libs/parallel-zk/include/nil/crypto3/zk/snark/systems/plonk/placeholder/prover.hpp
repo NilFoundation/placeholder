@@ -61,7 +61,7 @@ namespace nil {
                     static inline std::vector<math::polynomial<typename FieldType::value_type>>
                         split_polynomial(const math::polynomial<typename FieldType::value_type> &f,
                                          std::size_t max_degree) {
-                        PROFILE_SCOPE("split_polynomial_time");
+                        PROFILE_SCOPE("Split polynomial");
 
                         std::vector<math::polynomial<typename FieldType::value_type>> f_splitted;
 
@@ -140,14 +140,14 @@ namespace nil {
                     }
 
                     placeholder_proof<FieldType, ParamsType> process() {
-                        PROFILE_SCOPE("Placeholder prover, total time");
-                        BOOST_LOG_TRIVIAL(info) << "running mutithreaded mode";
+                        PROFILE_SCOPE("Placeholder prover");
+                        // BOOST_LOG_TRIVIAL(info) << "running mutithreaded mode";
 
                         // 2. Commit witness columns and public_input columns
                         _commitment_scheme.append_to_batch(VARIABLE_VALUES_BATCH, _polynomial_table->witnesses());
                         _commitment_scheme.append_to_batch(VARIABLE_VALUES_BATCH, _polynomial_table->public_inputs());
                         {
-                            PROFILE_SCOPE("variable_values_precommit_time");
+                            PROFILE_SCOPE("Variable values precommit");
                             _proof.commitments[VARIABLE_VALUES_BATCH] = _commitment_scheme.commit(VARIABLE_VALUES_BATCH);
                         }
                         transcript(_proof.commitments[VARIABLE_VALUES_BATCH]);
@@ -237,7 +237,7 @@ namespace nil {
 
                 private:
                     std::vector<polynomial_dfs_type> quotient_polynomial_split_dfs() {
-                        PROFILE_SCOPE("quotient_polynomial_split_dfs");
+                        PROFILE_SCOPE("Quotient polynomial split dfs");
 
                         const auto& assignment_desc = preprocessed_public_data.common_data->desc;
 
@@ -283,7 +283,7 @@ namespace nil {
                     }
 
                     polynomial_type quotient_polynomial() {
-                        PROFILE_SCOPE("quotient_polynomial_time");
+                        PROFILE_SCOPE("Quotient polynomial");
 
                         // 7.1. Get $\alpha_0, \dots, \alpha_8 \in \mathbb{F}$ from $hash(\text{transcript})$
                         std::array<typename FieldType::value_type, f_parts> alphas =
@@ -312,7 +312,7 @@ namespace nil {
 
                     typename placeholder_lookup_argument_prover<FieldType, commitment_scheme_type, ParamsType>::prover_lookup_result
                     lookup_argument() {
-                        PROFILE_SCOPE("lookup_argument_time");
+                        PROFILE_SCOPE("Lookup argument");
 
                         typename placeholder_lookup_argument_prover<
                             FieldType,
@@ -340,7 +340,7 @@ namespace nil {
                     }
 
                     commitment_type T_commit(const std::vector<polynomial_dfs_type>& T_splitted_dfs) {
-                        PROFILE_SCOPE("T_split_precommit_time");
+                        PROFILE_SCOPE("T split precommit");
                         _commitment_scheme.append_to_batch(QUOTIENT_BATCH, T_splitted_dfs);
                         return _commitment_scheme.commit(QUOTIENT_BATCH);
                     }
@@ -372,7 +372,7 @@ namespace nil {
                     }
 
                     void generate_evaluation_points() {
-                        PROFILE_SCOPE("evaluation_points_generated_time");
+                        PROFILE_SCOPE("Generate evaluation points");
                         const auto& assignment_desc = preprocessed_public_data.common_data->desc;
 
                         _omega = preprocessed_public_data.common_data->basic_domain->get_domain_element(1);

@@ -78,7 +78,7 @@ namespace nil {
                         typename FieldType::value_type challenge,
                         bool _is_lookup_enabled
                     ) {
-                        PROFILE_SCOPE("evaluation_points_generated_time");
+                        PROFILE_SCOPE("Generate evaluation points");
 
                         const std::size_t witness_columns = table_description.witness_columns;
                         const std::size_t public_input_columns = table_description.public_input_columns;
@@ -156,6 +156,7 @@ namespace nil {
                         commitment_scheme_type& commitment_scheme,
                         const std::vector<std::vector<typename FieldType::value_type>> &public_input
                     ){
+                        PROFILE_SCOPE("Verifier with public input");
                         // TODO: process rotations for public input.
                         auto omega = common_data.basic_domain->get_domain_element(1);
                         auto challenge = proof.eval_proof.challenge;
@@ -243,6 +244,7 @@ namespace nil {
                         const plonk_constraint_system<FieldType> &constraint_system,
                         commitment_scheme_type& commitment_scheme
                     ) {
+                        PROFILE_SCOPE("Verifier");
                         auto& Z = proof.eval_proof.eval_proof.z;
 
                         // We cannot add eval points unless everything is committed, so when verifying assume it's committed.

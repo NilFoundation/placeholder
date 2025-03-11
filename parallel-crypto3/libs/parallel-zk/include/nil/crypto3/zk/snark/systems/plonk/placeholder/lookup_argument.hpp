@@ -107,7 +107,7 @@ namespace nil {
                     }
 
                     prover_lookup_result prove_eval() {
-                        PROFILE_SCOPE("Lookup argument prove eval time");
+                        PROFILE_SCOPE("Lookup argument prove eval");
 
                         const auto& assignment_desc = preprocessed_data.common_data->desc;
 
@@ -314,6 +314,7 @@ namespace nil {
                         const polynomial_dfs_type &mask_polynomial,
                         const polynomial_dfs_type &lagrange_0
                     ) {
+                        PROFILE_SCOPE("Lookup argument build variable value map");
                         // Get out all the variables used and maximal degree of any expression in all possible lookup inputs.
                         std::unordered_map<variable_type, size_t> variable_counts;
                         std::vector<variable_type> variables;
@@ -417,6 +418,8 @@ namespace nil {
                             // Increase the size to fit the next table values.
                             std::size_t lookup_inputs_used = lookup_input_ptr->size();
                             lookup_input_ptr->resize(lookup_inputs_used + gate.constraints.size());
+
+                            PROFILE_SCOPE("Lookup argument evaluation");
 
                             // Do NOT capture converter by reference.
                             parallel_for(0, gate.constraints.size(),
