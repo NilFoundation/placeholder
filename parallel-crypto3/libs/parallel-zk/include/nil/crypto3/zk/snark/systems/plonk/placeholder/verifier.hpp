@@ -81,8 +81,6 @@ namespace nil {
                         const typename FieldType::value_type& challenge,
                         bool _is_lookup_enabled
                     ) {
-                        PROFILE_SCOPE("evaluation_points_generated_time");
-
                         const std::size_t witness_columns = table_description.witness_columns;
                         const std::size_t public_input_columns = table_description.public_input_columns;
                         const std::size_t constant_columns = table_description.constant_columns;
@@ -159,6 +157,7 @@ namespace nil {
                         commitment_scheme_type& commitment_scheme,
                         const std::vector<std::vector<typename FieldType::value_type>> &public_input
                     ) {
+                        PROFILE_SCOPE("Verifier with public input");
                         transcript::fiat_shamir_heuristic_sequential<transcript_hash_type> transcript(std::vector<std::uint8_t>({}));
                         typename FieldType::value_type F_consolidated;
 
@@ -238,6 +237,7 @@ namespace nil {
                         const plonk_constraint_system<FieldType> &constraint_system,
                         commitment_scheme_type& commitment_scheme
                     ) {
+                        PROFILE_SCOPE("Verifier");
                         auto& Z = proof.eval_proof.eval_proof.z;
                         transcript::fiat_shamir_heuristic_sequential<transcript_hash_type> transcript(std::vector<std::uint8_t>({}));
                         typename FieldType::value_type F_consolidated;
@@ -424,7 +424,10 @@ namespace nil {
                         transcript(proof.commitments.at(VARIABLE_VALUES_BATCH));
 
                         std::vector<typename FieldType::value_type> special_selector_values(3);
-                        special_selector_values[0] = common_data.lagrange_0.evaluate(evaluation_challenge);
+                        {
+                            PROFILE_SCOPE("Evaluate lagrange_0 at challenge");
+                            special_selector_values[0] = common_data.lagrange_0.evaluate(evaluation_challenge);
+                        }
                         special_selector_values[1] = Z.get(
                             FIXED_VALUES_BATCH, 2*common_data.permuted_columns.size(), 0);
                         special_selector_values[2] = Z.get(
@@ -562,6 +565,7 @@ namespace nil {
                                 PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED, 0,
                                 plonk_variable<typename FieldType::value_type>::column_type::selector
                             );
+                            PROFILE_SCOPE("Evaluate lagrange_0 for selectors 0");
                             columns_at_y[key] = mask_value - common_data.lagrange_0.evaluate(evaluation_challenge);
                         }
                         {
@@ -569,6 +573,7 @@ namespace nil {
                                 PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED, 1,
                                 plonk_variable<typename FieldType::value_type>::column_type::selector
                             );
+                            PROFILE_SCOPE("Evaluate lagrange_0 for selectors 1");
                             columns_at_y[key] = shifted_mask_value - common_data.lagrange_0.evaluate(
                                 evaluation_challenge * common_data.basic_domain->get_domain_element(1));
                         }
@@ -654,6 +659,8 @@ namespace nil {
                             T_consolidated += proof.eval_proof.eval_proof.z.get(QUOTIENT_BATCH, i, 0) *
                                 challenge.pow((common_data.desc.rows_amount) * i);
                         }
+
+                        PROFILE_SCOPE("Final check");
 
                         // Z is polynomial -1, 0 ...., 0, 1
                         typename FieldType::value_type Z_at_challenge = common_data.Z.evaluate(challenge);
