@@ -29,6 +29,7 @@
 #include <nil/crypto3/algebra/fields/detail/element/fp2.hpp>
 #include <nil/crypto3/algebra/fields/detail/extension_params/alt_bn128/fp2.hpp>
 #include <nil/crypto3/algebra/fields/detail/extension_params/bls12/fp2.hpp>
+#include <nil/crypto3/algebra/fields/detail/extension_params/goldilocks/fp2.hpp>
 #include <nil/crypto3/algebra/fields/detail/extension_params/mnt4/fp2.hpp>
 
 #include <nil/crypto3/algebra/fields/params.hpp>

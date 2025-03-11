@@ -55,6 +55,8 @@
 #include <nil/crypto3/algebra/fields/mnt6/base_field.hpp>
 #include <nil/crypto3/algebra/fields/pallas/base_field.hpp>
 
+#include "nil/crypto3/algebra/fields/fp2.hpp"
+
 #include <nil/crypto3/bench/benchmark.hpp>
 
 using namespace nil::crypto3::algebra;
@@ -108,8 +110,10 @@ void run_perf_test(std::string const& field_name) {
 
 using field_types = std::tuple<
     nil::crypto3::algebra::fields::alt_bn128_scalar_field<254u>,
-    nil::crypto3::algebra::fields::goldilocks, nil::crypto3::algebra::fields::mersenne31,
-    nil::crypto3::algebra::fields::koalabear, nil::crypto3::algebra::fields::babybear,
+    nil::crypto3::algebra::fields::goldilocks,
+    nil::crypto3::algebra::fields::fp2<nil::crypto3::algebra::fields::goldilocks>,
+    nil::crypto3::algebra::fields::mersenne31, nil::crypto3::algebra::fields::koalabear,
+    nil::crypto3::algebra::fields::babybear,
     nil::crypto3::algebra::fields::pallas_base_field,
     nil::crypto3::algebra::fields::mnt4_base_field<298>,
     nil::crypto3::algebra::fields::mnt6_base_field<298>,
