@@ -63,7 +63,9 @@ namespace nil {
                 }
 
                 void push_opcode(const zkevm_opcode opcode, zkevm_word_type additional_input){
-                    std::cout << "PC opcode map[" << bytecode.size() << "] = " << opcodes.size() << " opcode = " << opcode_to_string(opcode) << std::endl;
+                    // std::cout << "PC opcode map[" << bytecode.size() << "] = " <<
+                    // opcodes.size() << " opcode = " << opcode_to_string(opcode) <<
+                    // std::endl;
                     std::uint8_t opcode_number = opcode_to_number(opcode);
                     std::uint8_t x = 0;
                     bool is_push = (opcode_number >= 0x60) && (opcode_number <= 0x7f);

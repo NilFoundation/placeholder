@@ -120,7 +120,7 @@ namespace nil {
                         rw_op_to_num(rw_operation_type::tx_receipt);
                     std::size_t PADDING_OP = rw_op_to_num(rw_operation_type::padding);
 
-                    PROFILE_SCOPE("Rw circuit constructor, total time");
+                    PROFILE_SCOPE("RW circuit constructor");
                     std::vector<std::size_t> rw_table_area;
                     for (std::size_t i = 0; i < rw_table_type::get_witness_amount(); i++)
                         rw_table_area.push_back(i);
@@ -157,7 +157,8 @@ namespace nil {
 
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
                         auto rw_trace = input;
-                        std::cout << "RW trace.size = " << rw_trace.size() << std::endl;
+                        // std::cout << "RW trace.size = " << rw_trace.size() <<
+                        // std::endl;
                         for (std::size_t i = 0; i < rw_trace.size(); i++) {
                             integral_type mask = (1 << op_bits_amount);
                             for (std::size_t j = 0; j < op_bits_amount; j++) {
@@ -241,8 +242,8 @@ namespace nil {
                         }
                     }
                     for (std::size_t i = 0; i < max_rw_size; i++) {
-                        if (i % 20 == 0) std::cout << ".";
-                        std::cout.flush();
+                        // if (i % 20 == 0) std::cout << ".";
+                        // std::cout.flush();
                         std::size_t cur_column = rw_table_type::get_witness_amount();
                         for (std::size_t j = 0; j < op_bits_amount; j++) {
                             allocate(op_bits[i][j], ++cur_column, i);
@@ -268,8 +269,8 @@ namespace nil {
                         for (std::size_t j = 0; j < 16; j++) {
                             allocate(state_root_before[i][j], ++cur_column, i);
                         }
-                    }                   
-                    std::cout << std::endl;
+                    }
+                    // std::cout << std::endl;
                     if constexpr (stage == GenerationStage::CONSTRAINTS) {
                         std::vector<TYPE> every_row_constraints;
                         std::vector<TYPE> non_first_row_constraints;
@@ -620,7 +621,7 @@ namespace nil {
                             }
                         }
                     }
-                    std::cout << std::endl;
+                    // std::cout << std::endl;
                 }
             };
         }  // namespace bbf
