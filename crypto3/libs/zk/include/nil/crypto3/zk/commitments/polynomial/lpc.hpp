@@ -156,7 +156,7 @@ namespace nil {
                     }
 
                     proof_type proof_eval(transcript_type &transcript) {
-                        PROFILE_SCOPE("LPC proof_eval");
+                        PROFILE_SCOPE("LPC proof eval");
 
                         eval_polys_and_add_roots_to_transcipt(transcript);
 
@@ -169,10 +169,16 @@ namespace nil {
                     }
 
                     void eval_polys_and_add_roots_to_transcipt(transcript_type &transcript) {
-                        this->eval_polys();
+                        PROFILE_SCOPE("LPC eval polys and add roots to transcript");
+                        {
+                            PROFILE_SCOPE("LPC eval polys");
+                            this->eval_polys();
+                        }
 
                         BOOST_ASSERT(this->_points.size() == this->_polys.size());
                         BOOST_ASSERT(this->_points.size() == this->_z.get_batches_num());
+
+                        PROFILE_SCOPE("LPC add roots to transcript");
 
                         // For each batch we have a merkle tree.
                         for (auto const& it: this->_trees) {
@@ -284,6 +290,7 @@ namespace nil {
                     polynomial_type prepare_combined_Q(
                             const typename field_type::value_type& theta,
                             std::size_t starting_power = 0) {
+                        PROFILE_SCOPE("LPC prepare combined Q");
                         this->build_points_map();
 
                         typename field_type::value_type theta_acc = theta.pow(starting_power);
@@ -442,6 +449,7 @@ namespace nil {
                         const std::map<std::size_t, commitment_type> &commitments,
                         transcript_type &transcript
                     ) {
+                        PROFILE_SCOPE("LPC verify eval");
                         this->_z = proof.z;
                         for (auto const &it: commitments) {
                             transcript(commitments.at(it.first));

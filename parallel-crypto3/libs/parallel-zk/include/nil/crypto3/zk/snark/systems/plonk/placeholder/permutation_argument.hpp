@@ -86,7 +86,7 @@ namespace nil {
                         typename ParamsType::commitment_scheme_type& commitment_scheme,
                         transcript_type& transcript
                     ) {
-                        PROFILE_SCOPE("permutation_argument_prove_eval_time");
+                        PROFILE_SCOPE("Permutation argument prove eval");
 
                         const std::vector<math::polynomial_dfs<typename FieldType::value_type>> &S_sigma =
                             preprocessed_data.permutation_polynomials;
