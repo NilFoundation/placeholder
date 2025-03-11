@@ -41,6 +41,7 @@ namespace nil::crypto3::multiprecision {
                 : common_modular_ops<std::uint64_t>(goldilocks_modulus) {}
 
             static constexpr void add(base_type &result, const base_type &y) {
+                register_add();
                 BOOST_ASSERT(result < goldilocks_modulus && y < goldilocks_modulus);
                 detail::uint128_t sum = static_cast<detail::uint128_t>(result) +
                                         static_cast<detail::uint128_t>(y);
@@ -93,6 +94,7 @@ Goldilocks::new(t2)
 
           public:
             static constexpr void mul(base_type &result, const base_type &y) {
+                register_mul();
                 BOOST_ASSERT(result < goldilocks_modulus && y < goldilocks_modulus);
                 detail::uint128_t prod = static_cast<detail::uint128_t>(result) *
                                          static_cast<detail::uint128_t>(y);
