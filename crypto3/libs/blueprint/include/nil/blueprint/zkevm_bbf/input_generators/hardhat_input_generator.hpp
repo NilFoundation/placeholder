@@ -110,6 +110,7 @@ namespace nil {
                             state.stack_slice = {};
                             state.memory_size = 0;
                             state.last_write_rw_counter = last_write_rw_counter;
+                            state.call_depth = 0;
                             _zkevm_states.push_back(state);
                             _call_stack.push_back({state, block_id, 0, 0});
                             state.modified_items = _call_stack.back().cold_write_list.size();
@@ -153,8 +154,9 @@ namespace nil {
                                 state.call_context_address = call_context_address;
                                 state.last_write_rw_counter = last_write_rw_counter;
                                 state.modified_items = _call_stack.back().cold_write_list.size();
+                                state.call_depth = 1;
 
-                                _call_stack.push_back({state, call_id, 0, 0, calldata});
+                                _call_stack.push_back({state, call_id, 0, 0, 0, calldata});
                                 _zkevm_states.push_back(state);
 
                                 _rw_operations.push_back(call_context_rw_operation(
@@ -234,6 +236,11 @@ namespace nil {
                                 state._was_accessed = _call_stack.back().was_accessed;
                                 state._was_written = _call_stack.back().was_written;
                                 state.calldata_slice = _call_stack.back().calldata;
+                                state.lastcall_id = _call_stack.back().lastcall_id;
+                                state.lastcall_returndataoffset = _call_stack.back().lastcall_returndataoffset;
+                                state.lastcall_returndatalength = _call_stack.back().lastcall_returndatalength;
+                                state.lastcall_returndata_slice = _call_stack.back().returndata;
+                                state.call_depth = _call_stack.size();
 
                                 for( std::size_t i = 0; i < memory.size(); i++){
                                     state.memory_slice[i] = memory[i];
@@ -457,10 +464,6 @@ namespace nil {
                                     std::size_t dst = std::size_t(stack[stack.size()-1]);
                                     // std::cout << "Memory_size " << memory.size() << "=>" << memory_next.size() << std::endl;
 
-                                    std::cout << "\tAdd copy event for CALLDATACOPY length = " << length << std::endl;
-                                    std::cout << "Length = " << length << std::endl;
-                                    std::cout << "Src = " << std::hex << src << std::dec << std::endl;
-                                    std::cout << "Dst = " << std::hex << dst << std::dec << std::endl;
                                     copy_event cpy = calldatacopy_copy_event(
                                         call_id,
                                         src,
@@ -532,6 +535,7 @@ namespace nil {
                                     // 0x3d
                                     // std::cout << "Test me, please!" << std::endl;
                                     // std::cout << "RETURNDATASIZE not implemented" << std::endl;
+                                    _rw_operations.push_back(call_context_r_operation(call_id, call_context_field::lastcall_id, rw_counter++, _call_stack.back().lastcall_id));
                                     _rw_operations.push_back(stack_rw_operation(call_id,  stack_next.size()-1, rw_counter++, true, stack_next[stack_next.size()-1]));
 
                                 } else if(opcode == "RETURNDATACOPY") {
@@ -1094,14 +1098,35 @@ namespace nil {
                                     _rw_operations.push_back(stack_rw_operation(call_id,  stack_next.size()-1, rw_counter++, true, stack_next[stack_next.size()-1]));
                                 } else if(opcode == "CALL") {
                                     // 0xf1
+                                    std::size_t args_offset = std::size_t(stack[stack.size() - 4]);
+                                    std::size_t args_length = std::size_t(stack[stack.size() - 5]);
+                                    std::size_t returndataoffset = std::size_t(stack[stack.size()-6]);
+                                    std::size_t returndatalength = std::size_t(stack[stack.size()-7]);
+                                    _call_stack.back().lastcall_returndataoffset = returndataoffset;
+                                    _call_stack.back().lastcall_returndatalength = returndatalength;
+                                    _call_stack.back().args_offset = args_offset;
+                                    _call_stack.back().args_length = args_length;
+                                    std::cout << "\treturndataoffset = " << std::hex << returndataoffset;
+                                    std::cout << "\treturndataoffset = " << std::hex << returndatalength;
                                     _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-1, rw_counter++, false, stack[stack.size()-1]));
                                     _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-2, rw_counter++, false, stack[stack.size()-2]));
                                     _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-3, rw_counter++, false, stack[stack.size()-3]));
-                                    _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-4, rw_counter++, false, stack[stack.size()-4]));
-                                    _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-5, rw_counter++, false, stack[stack.size()-5]));
-                                    _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-6, rw_counter++, false, stack[stack.size()-6]));
-                                    _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-7, rw_counter++, false, stack[stack.size()-7]));
+                                    _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-4, rw_counter++, false, args_offset));
+                                    _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-5, rw_counter++, false, args_length));
+                                    _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-6, rw_counter++, false, returndataoffset));
+                                    _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-7, rw_counter++, false, returndatalength));
+                                    _rw_operations.push_back(call_context_w_operation(call_id, call_context_field::lastcall_returndata_offset, rw_counter++, returndataoffset));
+                                    _rw_operations.push_back(call_context_w_operation(call_id, call_context_field::lastcall_returndata_length, rw_counter++, returndatalength));
                                     call_context_address = stack[stack.size()-2];
+                                    for( std::size_t i = 0; i < args_length; i++){
+                                        _rw_operations.push_back(memory_rw_operation(
+                                            call_id, args_offset + i, rw_counter++, false,
+                                            args_offset + i < memory.size() ? memory[args_offset + i]: 0
+                                        ));
+                                    }
+                                    std::cout << "\tsubcallid = " << std::hex << rw_counter + 1 << std::dec << std::endl;
+                                    _rw_operations.push_back(call_context_w_operation(call_id, call_context_field::lastcall_id, rw_counter++, rw_counter + 1));
+                                    _call_stack.back().lastcall_id = rw_counter;
                                 } else if(opcode == "CALLCODE") {
                                     // 0xf2
                                     _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-7, rw_counter++, false, stack[stack.size()-1]));
@@ -1124,47 +1149,66 @@ namespace nil {
                                         )
                                     );
                                     std::cout << "RETURN " << "\tAdd copy event for RETURN" << std::endl;
-                                    _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-1, rw_counter++, false, stack[stack.size()-1]));
-                                    _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-2, rw_counter++, false, stack[stack.size()-2]));
-                                    std::cout
-                                        << "\tOffset " << stack[stack.size()-1]
-                                        << "\tLength " << stack[stack.size()-2]
-                                        << std::endl;
                                     std::size_t offset = std::size_t(stack[stack.size()-1]);
                                     std::size_t length = std::size_t(stack[stack.size()-2]);
-                                    // copy_event cpy = return_copy_event(
-                                    //     caller_id,
-                                    //     offset,
-                                    //     rw_counter,
-                                    //     callee_id,
-                                    //     length
-                                    // );
-                                    // cpy.source_id = call_id;
-                                    // cpy.source_type = copy_operand_type::memory;
-                                    // cpy.src_address = offset;
-                                    // cpy.destination_id = call_id;
-                                    // cpy.destination_type = copy_operand_type::returndata;
-                                    // cpy.dst_address = 0;
-                                    // cpy.length = length;
-                                    // cpy.initial_rw_counter = rw_counter;
-                                    // cpy.bytes = {};
-
+                                    _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-1, rw_counter++, false, offset));
+                                    _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-2, rw_counter++, false, length));
+                                    _rw_operations.push_back(
+                                        call_context_rw_operation(
+                                            call_id,
+                                            call_context_field::returndata_size,
+                                            length
+                                        )
+                                    );
+                                    copy_event cpy = return_copy_event(
+                                        call_id,
+                                        offset,
+                                        rw_counter,
+                                        length
+                                    );
                                     std::cout << "\tRETURN length = " << length << " memory size = " << memory.size() << " offset = " << offset << std::endl;
                                     std::cout << "\tInitial RW counter = " << std::hex << rw_counter << std::dec << std::endl;
+                                    std::vector<std::uint8_t> returndata;
                                     for(std::size_t i = 0; i < length; i++){
-                                        _rw_operations.push_back(memory_rw_operation(call_id, offset+i, rw_counter++, false, offset+i < memory.size() ? memory[offset+i]: 0));
-                                        // cpy.push_byte(offset+i < memory.size() ? memory[offset+i]: 0);
+                                        returndata.push_back(offset+i < memory.size() ? memory[offset+i]: 0);
                                     }
-                                    std::cout << std::endl;
-                                    // _copy_events.push_back(cpy);
+                                    _call_stack.back().returndata = returndata;
+                                    for(std::size_t i = 0; i < length; i++){
+                                        _rw_operations.push_back(memory_rw_operation(call_id, offset+i, rw_counter++, false, returndata[i]));
+                                    }
+                                    for(std::size_t i = 0; i < length; i++){
+                                        _rw_operations.push_back(returndata_rw_operation(call_id, i, rw_counter++, returndata[i]));
+                                        cpy.push_byte(returndata[i]);
+                                    }
+                                    _copy_events.push_back(cpy);
                                 } else if(opcode == "DELEGATECALL") {
                                     // 0xf4
+                                    std::size_t args_offset = std::size_t(stack[stack.size() - 3]);
+                                    std::size_t args_length = std::size_t(stack[stack.size() - 4]);
+                                    std::size_t returndataoffset = std::size_t(stack[stack.size()-5]);
+                                    std::size_t returndatalength = std::size_t(stack[stack.size()-6]);
+
+                                    _call_stack.back().lastcall_returndataoffset = returndataoffset;
+                                    _call_stack.back().lastcall_returndatalength = returndatalength;
+                                    _call_stack.back().args_offset = args_offset;
+                                    _call_stack.back().args_length = args_length;
                                     _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-1, rw_counter++, false, stack[stack.size()-1]));
                                     _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-2, rw_counter++, false, stack[stack.size()-2]));
-                                    _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-3, rw_counter++, false, stack[stack.size()-3]));
-                                    _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-4, rw_counter++, false, stack[stack.size()-4]));
-                                    _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-5, rw_counter++, false, stack[stack.size()-5]));
-                                    _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-6, rw_counter++, false, stack[stack.size()-6]));
+                                    _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-3, rw_counter++, false, args_offset));
+                                    _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-4, rw_counter++, false, args_length));
+                                    _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-5, rw_counter++, false, returndataoffset));
+                                    _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-6, rw_counter++, false, returndatalength));
+                                    _rw_operations.push_back(call_context_w_operation(call_id, call_context_field::lastcall_returndata_offset, rw_counter++, returndataoffset));
+                                    _rw_operations.push_back(call_context_w_operation(call_id, call_context_field::lastcall_returndata_length, rw_counter++, returndatalength));
+                                    for( std::size_t i = 0; i < args_length; i++){
+                                        _rw_operations.push_back(memory_rw_operation(
+                                            call_id, args_offset + i, rw_counter++, false,
+                                            args_offset + i < memory.size()? memory[args_offset + i]: 0
+                                        ));
+                                    }
+                                    std::cout << "\tsubcallid = " << std::hex << rw_counter + 1 << std::dec << std::endl;
+                                    _rw_operations.push_back(call_context_w_operation(call_id, call_context_field::lastcall_id, rw_counter++, rw_counter + 1));
+                                    _call_stack.back().lastcall_id = rw_counter;
                                 } else if(opcode == "CREATE2") {
                                     // 0xf5
                                     _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-1, rw_counter++, false, stack[stack.size()-1]));
@@ -1183,6 +1227,9 @@ namespace nil {
                                     _rw_operations.push_back(stack_rw_operation(call_id,  stack_next.size()-1, rw_counter++, true, stack_next[stack_next.size()-1]));
                                 } else if(opcode == "REVERT") {
                                     // 0xfd
+                                    std::size_t offset = std::size_t(stack[stack.size()-1]);    // Offset for returned data
+                                    std::size_t length = std::size_t(stack[stack.size()-2]);    // Length for returned data
+
                                     _call_stack.back().end = rw_counter - 1;
                                     _rw_operations.push_back(
                                         call_context_rw_operation(
@@ -1191,14 +1238,16 @@ namespace nil {
                                             rw_counter - 1
                                         )
                                     );
-                                    _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-1, rw_counter++, false, stack[stack.size()-1]));
-                                    _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-2, rw_counter++, false, stack[stack.size()-2]));
-                                    auto length = _call_stack.back().cold_write_list.size();
+                                    _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-1, rw_counter++, false, offset));
+                                    _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-2, rw_counter++, false, length));
+
+                                    // Append copy event for reverted items
+                                    auto rev_length = _call_stack.back().cold_write_list.size();
                                     auto cpy = revert_copy_event(
                                         call_id,
                                         block_id,
                                         rw_counter,
-                                        length
+                                        rev_length
                                     );
                                     for( auto &modified_items : _call_stack.back().cold_write_list){
                                         if( modified_items.second.op == rw_operation_type::state ){
@@ -1254,7 +1303,36 @@ namespace nil {
                                             modified_items.second.value_before
                                         });
                                         last_write_rw_counter[modified_items.first] = rw_counter-1;;
-                                        std::cout << "REVERT " <<  _rw_operations.back() << std::endl;
+                                    }
+                                    _copy_events.push_back(cpy);
+
+                                    // Append copy event from memory to call's returndata
+                                    _rw_operations.push_back(
+                                        call_context_rw_operation(
+                                            call_id,
+                                            call_context_field::returndata_size,
+                                            length
+                                        )
+                                    );
+                                    cpy = return_copy_event(
+                                        call_id,
+                                        offset,
+                                        rw_counter,
+                                        length
+                                    );
+                                    std::cout << "\tRevert return length = " << length << " memory size = " << memory.size() << " offset = " << offset << std::endl;
+                                    std::cout << "\tInitial RW counter = " << std::hex << rw_counter << std::dec << std::endl;
+                                    std::vector<std::uint8_t> returndata;
+                                    for(std::size_t i = 0; i < length; i++){
+                                        returndata.push_back(offset+i < memory.size() ? memory[offset+i]: 0);
+                                    }
+                                    _call_stack.back().returndata = returndata;
+                                    for(std::size_t i = 0; i < length; i++){
+                                        _rw_operations.push_back(memory_rw_operation(call_id, offset+i, rw_counter++, false, returndata[i]));
+                                    }
+                                    for(std::size_t i = 0; i < length; i++){
+                                        _rw_operations.push_back(returndata_rw_operation(call_id, i, rw_counter++, returndata[i]));
+                                        cpy.push_byte(returndata[i]);
                                     }
                                     _copy_events.push_back(cpy);
                                 } else if(opcode == "SELFDESTRUCT") {
@@ -1266,59 +1344,31 @@ namespace nil {
                                 }
                                 _zkevm_states.push_back(state);
                                 if( opcode == "CALL" || opcode == "DELEGATECALL" ){
-                                    zkevm_word_type call_to = stack[stack.size()-2];
-                                    std::cout << "START CALL " << call_id << std::endl;
-                                    std::size_t args_offset;
-                                    std::size_t args_length;
-                                    std::size_t returndataoffset;
-                                    std::size_t returndatalength;
-                                    std::vector<std::uint8_t> calldata;
-
-                                    if( opcode == "CALL" ){
-                                        returndataoffset = std::size_t(stack[stack.size() - 6]);
-                                        returndatalength = std::size_t(stack[stack.size() - 7]);
-                                        args_offset = std::size_t(stack[stack.size() - 4]);
-                                        args_length = std::size_t(stack[stack.size() - 5]);
-                                        std::cout
-                                            << "Args offset " << args_offset
-                                            << " Args length " << args_length
-                                            << " Memory size =" << memory.size() << std::endl;
-                                        std::cout << "Calldata:";
-                                        for( std::size_t i = 0; i < args_length; i++){
-                                            calldata.push_back(args_offset + i < memory.size() ? memory[args_offset + i]: 0);
-                                            std::cout << " " << std::hex << std::size_t(calldata.back()) << std::dec;
-                                        }
-                                        std::cout << std::endl;
-                                    }
-                                    else if( opcode == "DELEGATECALL" ){
-                                        returndataoffset = std::size_t(stack[stack.size() - 5]);
-                                        returndatalength = std::size_t(stack[stack.size() - 6]);
-                                        args_offset = std::size_t(stack[stack.size() - 3]);
-                                        args_length = std::size_t(stack[stack.size() - 4]);
-                                        for( std::size_t i = 0; i < args_length; i++){
-                                            calldata.push_back(memory.size() < args_offset + i ? memory[args_offset + i]: 0);
-                                            std::cout << " " << std::hex << std::size_t(calldata.back()) << std::dec;
-                                        }
-                                        std::cout << std::endl;
-                                    }
-
-                                    std::cout << "Read memory from " << call_id << " memory_size = " << memory.size() << std::endl;
-                                    for( std::size_t i = 0; i < calldata.size(); i++){
-                                        _rw_operations.push_back(memory_rw_operation(
-                                            call_id, args_offset + i, rw_counter++, false, calldata[i]
-                                        ));
-                                    }
                                     std::size_t parent_id = call_id;
                                     call_id = rw_counter;
+                                    zkevm_word_type call_to = stack[stack.size()-2];
+                                    std::cout << "START CALL " << call_id << std::endl;
+                                    std::size_t args_offset = _call_stack.back().args_offset;
+                                    std::size_t args_length = _call_stack.back().args_length;
+                                    std::size_t returndataoffset = _call_stack.back().lastcall_returndataoffset;
+                                    std::size_t returndatalength = _call_stack.back().lastcall_returndatalength;
+
+                                    std::vector<std::uint8_t> calldata;
+                                    for( std::size_t i = 0; i < args_length; i++){
+                                        calldata.push_back(args_offset + i < memory.size() ? memory[args_offset + i]: 0);
+                                        std::cout << " " << std::hex << std::size_t(calldata.back()) << std::dec;
+                                    }
+                                    std::cout << std::endl;
+
                                     _call_stack.push_back({
-                                        state, call_id, std::size_t(stack[stack.size()-6]), std::size_t(stack[stack.size()-7]), calldata,
-                                        {}, {}, _call_stack.back().was_accessed, _call_stack.back().was_written
+                                        state, call_id, 0, 0, 0, calldata,
+                                        {}, {}, {}, _call_stack.back().was_accessed, _call_stack.back().was_written
                                     });
 
                                     zkevm_state start_call_state;
                                     start_call_state.block_id = block_id;
                                     start_call_state.tx_id = tx_id;
-                                    start_call_state.call_id = rw_counter;
+                                    start_call_state.call_id = call_id;
                                     start_call_state.opcode = opcode_number_from_str("start_call");
                                     start_call_state.gas = 0;
                                     start_call_state.pc = 0;
@@ -1357,7 +1407,7 @@ namespace nil {
                                         call_id, call_context_field::calldata_size, calldata.size()
                                     ));
 
-                                    rw_counter += call_context_field_amount;
+                                    rw_counter += call_context_readonly_field_amount;
 
                                     copy_event cpy = call_copy_event(
                                         parent_id,
@@ -1402,12 +1452,39 @@ namespace nil {
                                     end_call_state.last_write_rw_counter = last_write_rw_counter;
                                     end_call_state._was_accessed = _call_stack.back().was_accessed;
                                     end_call_state._was_written = _call_stack.back().was_written;
+                                    end_call_state.lastcall_id = _call_stack.back().lastcall_id;
+                                    end_call_state.lastcall_returndataoffset = _call_stack.back().lastcall_returndataoffset;
+                                    end_call_state.lastcall_returndatalength = _call_stack.back().lastcall_returndatalength;
+                                    end_call_state.lastcall_returndata_slice = _call_stack.back().returndata;
+                                    end_call_state.rw_counter = rw_counter;
+
                                     _zkevm_states.push_back(end_call_state);
                                     call_id = end_call_state.call_id;
                                     bytecode_hash = end_call_state.bytecode_hash;
                                     call_context_address = end_call_state.call_context_address;
                                     memory_size_before = memory_next.size();
                                     _rw_operations.push_back(stack_rw_operation(call_id,  stack_next.size()-1, rw_counter++, true, stack_next[stack_next.size()-1]));
+
+                                    if( _call_stack.size() > 1 ){
+                                        _rw_operations.push_back(call_context_r_operation(
+                                            call_id,
+                                            call_context_field::lastcall_returndata_length,
+                                            rw_counter++,
+                                            0
+                                        ));
+                                        _rw_operations.push_back(call_context_r_operation(
+                                            call_id,
+                                            call_context_field::lastcall_returndata_offset,
+                                            rw_counter++,
+                                            0
+                                        ));
+                                        _rw_operations.push_back(call_context_r_operation(
+                                            call_id,
+                                            call_context_field::lastcall_id,
+                                            rw_counter++,
+                                            returned_call.call_id
+                                        ));
+                                    }
                                 }
                                 if( opcode == "RETURN"){
                                     std::size_t offset = std::size_t(stack[stack.size()-1]); // Real value
@@ -1417,9 +1494,15 @@ namespace nil {
                                     auto returned_call = _call_stack[_call_stack.size() - 1];
                                     _call_stack.pop_back();
                                     zkevm_state end_call_state = returned_call.state;
-                                    std::size_t returndataoffset = returned_call.returndataoffset; // caller CALL opcode parameters
-                                    std::size_t returndatalength = returned_call.returndatalength; // caller CALL opcode parameters
-                                    std::cout << "Appended!" << std::endl;
+                                    std::size_t returndataoffset = _call_stack.back().lastcall_returndataoffset; // caller CALL opcode parameters
+                                    std::size_t returndatalength = _call_stack.back().lastcall_returndatalength; // caller CALL opcode parameters
+                                    std::size_t subcall_id = call_id;
+
+                                    std::cout << "end_call";
+                                    std::cout << "\treturndataoffset = " << std::hex << returndataoffset;
+                                    std::cout << "\treturndataoffset = " << std::hex << returndatalength;
+                                    std::cout << "\tsubcall_id = " << std::hex << subcall_id << std::endl;
+                                    std::cout << std::dec <<std::endl;
 
                                     if( _call_stack.size() != 1){
                                         _call_stack.back().was_accessed.insert(returned_call.was_accessed.begin(), returned_call.was_accessed.end());
@@ -1449,21 +1532,62 @@ namespace nil {
                                     end_call_state.last_write_rw_counter = last_write_rw_counter;
                                     end_call_state._was_accessed = _call_stack.back().was_accessed;
                                     end_call_state._was_written = _call_stack.back().was_written;
+                                    end_call_state.rw_counter = rw_counter;
+                                    end_call_state.lastcall_returndataoffset = returndataoffset;
+                                    end_call_state.lastcall_returndatalength = returndatalength;
+                                    end_call_state.lastcall_id = returned_call.call_id;
                                     _zkevm_states.push_back(end_call_state);
                                     call_id = end_call_state.call_id;
                                     memory_size_before = memory_next.size();
                                     bytecode_hash = end_call_state.bytecode_hash;
                                     call_context_address = end_call_state.call_context_address;
-                                    if( call_id != 0 ){
+                                    // If it is not transaction, move callee's returndata to callers memory
+                                    if( _call_stack.size() > 1 ){
+                                        _rw_operations.push_back(call_context_r_operation(
+                                            call_id,
+                                            call_context_field::lastcall_returndata_length,
+                                            rw_counter++,
+                                            returndatalength
+                                        ));
+                                        _rw_operations.push_back(call_context_r_operation(
+                                            call_id,
+                                            call_context_field::lastcall_returndata_offset,
+                                            rw_counter++,
+                                            returndataoffset
+                                        ));
+                                        _rw_operations.push_back(call_context_r_operation(
+                                            call_id,
+                                            call_context_field::lastcall_id,
+                                            rw_counter++,
+                                            subcall_id
+                                        ));
+                                        copy_event cpy = end_call_copy_event(
+                                            call_id,
+                                            returndataoffset,
+                                            subcall_id,
+                                            rw_counter,
+                                            returndatalength
+                                        );
+                                        for(std::size_t i = 0; i < returndatalength; i++){
+                                            _rw_operations.push_back(returndata_rw_operation(
+                                                subcall_id,
+                                                i,
+                                                rw_counter++,
+                                                i < returned_call.returndata.size()? returned_call.returndata[i]: 0
+                                            ));
+                                        }
                                         for(std::size_t i = 0; i < returndatalength; i++){
                                             _rw_operations.push_back(memory_rw_operation(
                                                 call_id,
                                                 returndataoffset+i,
                                                 rw_counter++,
                                                 true,
-                                                offset+i < state.memory_size? state.memory(offset+i): 0
+                                                i < returned_call.returndata.size()? returned_call.returndata[i]: 0
                                             ));
+                                            cpy.push_byte(std::size_t(i <returned_call.returndata.size()? returned_call.returndata[i]: 0));
                                         }
+                                        _call_stack.back().returndata = returned_call.returndata;
+                                        _copy_events.push_back(cpy);
                                     }
                                     // Push CALL status to stack
                                     _rw_operations.push_back(stack_rw_operation(call_id,  stack_next.size()-1, rw_counter++, true, stack_next[stack_next.size()-1]));
@@ -1471,9 +1595,9 @@ namespace nil {
                                 if( opcode == "REVERT"){
                                     std::size_t offset = std::size_t(stack[stack.size()-1]); // Real value
                                     std::size_t length = std::size_t(stack[stack.size()-2]); // Real value
-                                    zkevm_state end_call_state = _call_stack[_call_stack.size() - 1].state;
-                                    std::size_t returndataoffset = _call_stack[_call_stack.size() - 1].returndataoffset; // caller CALL opcode parameters
-                                    std::size_t returndatalength = _call_stack[_call_stack.size() - 1].returndatalength; // caller CALL opcode parameters
+                                    zkevm_state end_call_state = _call_stack.back().state;
+                                    std::size_t returndataoffset = _call_stack.back().lastcall_returndataoffset; // caller CALL opcode parameters
+                                    std::size_t returndatalength = _call_stack.back().lastcall_returndatalength; // caller CALL opcode parameters
                                     append_modified_items_rw_operations();
                                     auto returned_call = _call_stack.back();
                                     _call_stack.pop_back();
@@ -1498,21 +1622,66 @@ namespace nil {
                                     // end_call_state.memory_size = {};
                                     // end_call_state.stack_slice = {};
                                     end_call_state.last_write_rw_counter = last_write_rw_counter;
+                                    end_call_state.rw_counter = rw_counter;
+                                    end_call_state.lastcall_returndataoffset = returndataoffset;
+                                    end_call_state.lastcall_returndatalength = returndatalength;
+                                    end_call_state.lastcall_id = returned_call.call_id;
                                     _zkevm_states.push_back(end_call_state);
                                     call_id = end_call_state.call_id;
                                     memory_size_before = memory_next.size();
                                     bytecode_hash = end_call_state.bytecode_hash;
                                     call_context_address = end_call_state.call_context_address;
-                                    if( call_id != 0 ){
+                                    call_id = end_call_state.call_id;
+                                    memory_size_before = memory_next.size();
+                                    bytecode_hash = end_call_state.bytecode_hash;
+                                    call_context_address = end_call_state.call_context_address;
+                                    // If it is not transaction, move callee's returndata to callers memory
+                                    if( _call_stack.size() > 1 ){
+                                        _rw_operations.push_back(call_context_r_operation(
+                                            call_id,
+                                            call_context_field::lastcall_returndata_length,
+                                            rw_counter++,
+                                            returndatalength
+                                        ));
+                                        _rw_operations.push_back(call_context_r_operation(
+                                            call_id,
+                                            call_context_field::lastcall_returndata_offset,
+                                            rw_counter++,
+                                            returndataoffset
+                                        ));
+                                        _rw_operations.push_back(call_context_r_operation(
+                                            call_id,
+                                            call_context_field::lastcall_id,
+                                            rw_counter++,
+                                            returned_call.call_id
+                                        ));
+                                        copy_event cpy = end_call_copy_event(
+                                            call_id,
+                                            returndataoffset,
+                                            returned_call.call_id,
+                                            rw_counter,
+                                            returndatalength
+                                        );
+                                        for(std::size_t i = 0; i < returndatalength; i++){
+                                            _rw_operations.push_back(returndata_rw_operation(
+                                                returned_call.call_id,
+                                                i,
+                                                rw_counter++,
+                                                i < returned_call.returndata.size()? returned_call.returndata[i]: 0
+                                            ));
+                                        }
                                         for(std::size_t i = 0; i < returndatalength; i++){
                                             _rw_operations.push_back(memory_rw_operation(
                                                 call_id,
                                                 returndataoffset+i,
                                                 rw_counter++,
                                                 true,
-                                                offset+i < state.memory_size? state.memory(offset+i): 0
+                                                i < returned_call.returndata.size()? returned_call.returndata[i]: 0
                                             ));
+                                            cpy.push_byte(std::size_t(i <returned_call.returndata.size()? returned_call.returndata[i]: 0));
                                         }
+                                        _call_stack.back().returndata = returned_call.returndata;
+                                        _copy_events.push_back(cpy);
                                     }
                                     // Push CALL status to stack
                                     _rw_operations.push_back(stack_rw_operation(call_id,  stack_next.size()-1, rw_counter++, true, stack_next[stack_next.size()-1]));

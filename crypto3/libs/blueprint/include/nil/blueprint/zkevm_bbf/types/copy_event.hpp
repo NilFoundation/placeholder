@@ -183,6 +183,35 @@ namespace nil {
                 std::size_t length
             ){
                 copy_event cpy;
+                cpy.source_type = copy_operand_type::memory;
+                cpy.source_id = call_id;
+                cpy.src_counter_1 = offset;
+                cpy.src_counter_2 = rw_counter;
+                cpy.destination_type = copy_operand_type::returndata;
+                cpy.destination_id = call_id;
+                cpy.dst_counter_1 = 0;
+                cpy.dst_counter_2 = rw_counter + length;
+                cpy.length = length;
+                return cpy;
+            }
+
+            copy_event end_call_copy_event(
+                std::size_t caller_id,
+                std::size_t offset,
+                std::size_t callee_id,
+                std::size_t rw_counter,
+                std::size_t length
+            ){
+                copy_event cpy;
+                cpy.source_type = copy_operand_type::returndata;
+                cpy.source_id = callee_id;
+                cpy.src_counter_1 = 0;
+                cpy.src_counter_2 = rw_counter;
+                cpy.destination_type = copy_operand_type::memory;
+                cpy.destination_id = caller_id;
+                cpy.dst_counter_1 = offset;
+                cpy.dst_counter_2 = rw_counter + length;
+                cpy.length = length;
                 return cpy;
             }
 
@@ -219,11 +248,11 @@ namespace nil {
                 cpy.source_type = copy_operand_type::memory;
                 cpy.source_id = caller_id;
                 cpy.src_counter_1 = args_offset; // Before copy reading
-                cpy.src_counter_2 = callee_id - args_length;
+                cpy.src_counter_2 = callee_id - args_length - 1;
                 cpy.destination_type = copy_operand_type::calldata;
                 cpy.destination_id = callee_id;
                 cpy.dst_counter_1 = 0; // Before copy writing
-                cpy.dst_counter_2 = callee_id + call_context_readonly_field_amount + 1;
+                cpy.dst_counter_2 = callee_id + call_context_readonly_field_amount;
                 cpy.length = args_length;
                 return cpy;
             }

@@ -218,7 +218,7 @@ namespace nil {
                             std::size_t opcode_id = (std::find(implemented_opcodes.begin(), implemented_opcodes.end(), current_opcode) - implemented_opcodes.begin());
                             std::cout  << std::dec << current_opcode
                                 << " op = " << opcode_id
-                                //<< " assigned as " << std::hex << current_state.opcode << std::dec
+                                << " assigned as " << std::hex << current_state.opcode << std::dec
                                 << " on row " << current_row
                                 << " uses " << current_opcode_rows_amount << " rows"
                                 << " call = " << current_state.call_id
@@ -320,6 +320,7 @@ namespace nil {
                         }
                         //std::cout << "Cur_column = " << cur_column << std::endl;
                     }
+                    constrain(all_states[0].opcode - opcode_to_number(zkevm_opcode::start_block), "First opcode is start_block");
                     constrain(all_states[0].is_even - 1);
                     if constexpr (stage == GenerationStage::CONSTRAINTS) {
                         std::vector<TYPE> tmp;

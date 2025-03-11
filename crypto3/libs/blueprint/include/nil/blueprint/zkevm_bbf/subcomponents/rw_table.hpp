@@ -83,6 +83,32 @@ namespace nil {
                     };
                 }
 
+                static std::vector<TYPE> call_context_editable_lookup(
+                    TYPE call_id,
+                    std::size_t field,
+                    TYPE rw_counter,
+                    TYPE is_write,
+                    TYPE value_hi,
+                    TYPE value_lo
+                ){
+                    return {
+                        TYPE(rw_op_to_num(rw_operation_type::call_context)),
+                        call_id,
+                        TYPE(0),
+                        TYPE(field),                                                          // field
+                        TYPE(0),                                                              // storage_key_hi
+                        TYPE(0),                                                              // storage_key_lo
+                        rw_counter,                                                      // rw_counter
+                        is_write,                                                              // is_write
+                        value_hi,
+                        value_lo,
+                        TYPE(0),                                               // value_before_hi
+                        TYPE(0),                                               // value_before_lo
+                        TYPE(0),                                               // call_id
+                        TYPE(0)                                                // w_id_before
+                    };
+                }
+
                 static std::vector<TYPE> rw_item_lookup(
                     TYPE op,
                     TYPE id,
@@ -155,6 +181,30 @@ namespace nil {
                         TYPE(rw_op_to_num(rw_operation_type::calldata)),
                         call_id,
                         calldata_address,
+                        TYPE(0),              // storage_key_hi
+                        TYPE(0),              // storage_key_lo
+                        TYPE(0),              // field
+                        rw_counter,
+                        TYPE(0),              // calldata is readonly
+                        TYPE(0),              // hi bytes are 0
+                        value_lo,
+                        TYPE(0),              // value_before_hi
+                        TYPE(0),              // value_before_lo
+                        TYPE(0),              // call_id
+                        TYPE(0)               // w_id_before
+                    };
+                }
+
+                static std::vector<TYPE> returndata_lookup(
+                    TYPE call_id,
+                    TYPE returndata_address,
+                    TYPE rw_counter,
+                    TYPE value_lo
+                ){
+                    return {
+                        TYPE(rw_op_to_num(rw_operation_type::returndata)),
+                        call_id,
+                        returndata_address,
                         TYPE(0),              // storage_key_hi
                         TYPE(0),              // storage_key_lo
                         TYPE(0),              // field

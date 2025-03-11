@@ -302,6 +302,7 @@ namespace nil {
                         TYPE keccak_selector = type_selector[1][copy_op_to_num(copy_operand_type::keccak) - 1];
                         TYPE reverted_selector = type_selector[1][copy_op_to_num(copy_operand_type::reverted) - 1];
                         TYPE calldata_selector = type_selector[1][copy_op_to_num(copy_operand_type::calldata) - 1];
+                        TYPE returndata_selector = type_selector[1][copy_op_to_num(copy_operand_type::returndata) - 1];
 
                         std::vector<TYPE> tmp = rw_table<FieldType, stage>::memory_lookup(
                             id_lo[1],
@@ -364,6 +365,17 @@ namespace nil {
                         );
                         std::cout << "Calldata_lookup size " << tmp.size() << std::endl;
                         for( std::size_t i = 0; i < tmp.size(); i++) tmp[i] = context_object.relativize(calldata_selector*tmp[i], -1);
+                        context_object.relative_lookup(tmp, "zkevm_rw", 0, max_copy - 1);
+
+                        // Used both for RETURN, REVERT calldata writing and CALLDATACOPY calldata reading
+                        tmp = rw_table<FieldType, stage>::returndata_lookup(
+                            id_lo[1],
+                            counter_1[1], // address
+                            counter_2[1], // rw_counter
+                            value_lo[1]
+                        );
+                        std::cout << "Returndata_lookup size " << tmp.size() << std::endl;
+                        for( std::size_t i = 0; i < tmp.size(); i++) tmp[i] = context_object.relativize(returndata_selector*tmp[i], -1);
                         context_object.relative_lookup(tmp, "zkevm_rw", 0, max_copy - 1);
 
                         for( std::size_t i = 0; i < even.size(); i++ ){

@@ -37,9 +37,11 @@ namespace nil {
             struct zkevm_call_context{
                 zkevm_state state;            // State from parent CALL before CALL
                 std::size_t call_id;          // Current CALL id
-                std::size_t returndataoffset; // CALL opcode parameters
-                std::size_t returndatalength; // CALL opcode parameters
+                std::size_t lastcall_returndataoffset; // CALL opcode parameters
+                std::size_t lastcall_returndatalength; // CALL opcode parameters
+                std::size_t lastcall_id;
                 std::vector<std::uint8_t> calldata; // For CALLDATA proving
+                std::vector<std::uint8_t> returndata;
 
                 std::map<std::tuple<rw_operation_type, zkevm_word_type, std::size_t, zkevm_word_type>, rw_operation> cold_access_list; // For REVERT proving. First state access rw_operation in the given CALL
                 std::map<std::tuple<rw_operation_type, zkevm_word_type, std::size_t, zkevm_word_type>, rw_operation> cold_write_list;
@@ -48,6 +50,8 @@ namespace nil {
                 std::set<std::tuple<zkevm_word_type, std::size_t, zkevm_word_type>> was_written;
 
                 std::size_t end; // rw_counter before opcode that finishes CALL -- REVERT, STOP, RETURN
+                std::size_t args_offset;
+                std::size_t args_length;
             };
         } // namespace bbf
     } // namespace blueprint

@@ -49,6 +49,10 @@ namespace nil {
                 std::size_t     memory_size;            // BEFORE opcode
                 zkevm_word_type call_context_address;   // tx_to for transaction depends on CALL/DELEGATECALL opcodes
                 std::size_t     modified_items;
+                std::size_t     lastcall_returndataoffset;
+                std::size_t     lastcall_returndatalength;
+                std::size_t     lastcall_id;
+                std::size_t     call_depth;
 
                 zkevm_word_type stack_top(std::size_t depth = 0) const{
                     BOOST_ASSERT(depth < stack_slice.size());
@@ -76,8 +80,27 @@ namespace nil {
                         return 0;
                 }
 
+                zkevm_word_type returndata(std::size_t addr) const{
+                    if( addr < lastcall_returndata_slice.size() )
+                        return lastcall_returndata_slice[addr];
+                    else
+                        return 0;
+                }
+
                 std::size_t calldatasize() const{
                     return calldata_slice.size();
+                }
+
+                std::size_t lastcall_returndata_offset() const{
+                    return lastcall_returndataoffset;
+                }
+
+                std::size_t lastcall_returndata_length() const{
+                    return lastcall_returndatalength;
+                }
+
+                std::size_t returndatasize() const{
+                    return lastcall_returndata_slice.size();
                 }
 
                 // std::size_t last_access(zkevm_word_type address, std::size_t field, zkevm_word_type key) const{
@@ -106,12 +129,21 @@ namespace nil {
                     return _was_written.contains(std::make_tuple(address, field, key));
                 }
 
+                std::size_t lastsubcall_id() const{
+                    return lastcall_id;
+                }
+
+                std::size_t depth() const{
+                    return call_depth;
+                }
+
                 zkevm_state(){}
             public:
                 std::vector<zkevm_word_type>                stack_slice; // BEFORE opcode
                 std::map<std::size_t, std::uint8_t>         memory_slice; // BEFORE opcode
                 std::map<zkevm_word_type, zkevm_word_type>  storage_slice; // BEFORE opcode
                 std::vector<std::uint8_t>                   calldata_slice; // BEFORE opcode
+                std::vector<std::uint8_t>                   lastcall_returndata_slice; // BEFORE opcode
                 // RW counter for last access to STATE item BEFORE opcode
                 std::map<std::tuple<rw_operation_type, zkevm_word_type, std::size_t, zkevm_word_type>, std::size_t>  last_access_rw_counter; // BEFORE opcode
                 std::map<std::tuple<rw_operation_type, zkevm_word_type, std::size_t, zkevm_word_type>, std::size_t>  last_write_rw_counter; // BEFORE opcode

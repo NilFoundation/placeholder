@@ -171,7 +171,6 @@ namespace nil {
                             length * length_inv * (current_state.rw_counter(0) + length + 3),        // counter_2
                             length
                         }, "zkevm_copy");
-
                     } else {
                         std::cout << "\tSTATE transition implemented" << std::endl;
                     }

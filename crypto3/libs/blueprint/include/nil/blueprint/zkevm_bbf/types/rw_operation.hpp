@@ -69,12 +69,14 @@ namespace nil {
                 to = 9,                     // callee
                 call_context_address = 10,  // depends on CALL/DELEGATECALL opcodes
                 calldata_size = 11,
-                returndata_size = 12,     // RETURNDATA length for given CALL
+                returndata_size = 12,     // real RETURNDATA length (not requested by CALL) for given CALL
 
                 // Fixed-length may be rewritten
-                last_subcall_id = 14
+                lastcall_id = 14,
+                lastcall_returndata_offset = 15,
+                lastcall_returndata_length = 16
             };
-            static constexpr std::size_t call_context_field_amount = 14;
+            static constexpr std::size_t call_context_field_amount = 17;
             static constexpr std::size_t call_context_readonly_field_amount = 13;
             static constexpr std::size_t block_context_field_amount = 4;
 
@@ -188,9 +190,11 @@ namespace nil {
                     if(obj.field == std::size_t(call_context_field::call_context_address)) os << "call_context_address";
                     if(obj.field == std::size_t(call_context_field::calldata_size)) os << "calldata_size";
                     if(obj.field == std::size_t(call_context_field::returndata_size)) os << "returndata_size";
-                    if(obj.field == std::size_t(call_context_field::last_subcall_id)) os << "last_subcall_id";
+                    if(obj.field == std::size_t(call_context_field::lastcall_id)) os << "lastcall_id";
                     if(obj.field == std::size_t(call_context_field::hash)) os << "hash";
                     if(obj.field == std::size_t(call_context_field::is_static)) os << "is_static";
+                    if(obj.field == std::size_t(call_context_field::lastcall_returndata_length)) os << "lastcall_returndata_length";
+                    if(obj.field == std::size_t(call_context_field::lastcall_returndata_offset)) os << "lastcall_returndata_offset";
                 }
                 if(obj.is_write) os << " W "; else os << " R ";
                 os << "[" << std::hex << obj.initial_value << std::dec <<"] => ";
@@ -256,6 +260,22 @@ namespace nil {
                 r.address = address;
                 r.rw_counter = rw_id;
                 r.is_write = false; // calldata is read-only
+                r.value = value;
+                return r;
+            }
+
+            rw_operation returndata_rw_operation(
+                std::size_t id,
+                zkevm_word_type address,
+                std::size_t rw_id,
+                zkevm_word_type value
+            ){
+                rw_operation r;
+                r.op = rw_operation_type::returndata;
+                r.id = id;
+                r.address = address;
+                r.rw_counter = rw_id;
+                r.is_write = false; // returndata is read-only
                 r.value = value;
                 return r;
             }
@@ -384,6 +404,48 @@ namespace nil {
                 r.id = call_id;
                 r.field = std::uint8_t(field);
                 r.rw_counter = call_id + std::uint8_t(field);
+                r.value = value;
+                return r;
+            }
+
+            rw_operation call_context_w_operation(
+                std::size_t call_id,
+                call_context_field field,
+                std::size_t rw_counter,
+                zkevm_word_type value
+            ){
+                BOOST_ASSERT(
+                    field == call_context_field::lastcall_id
+                    || field == call_context_field::lastcall_returndata_offset
+                    || field == call_context_field::lastcall_returndata_length
+                );
+                rw_operation r;
+                r.op = rw_operation_type::call_context;
+                r.id = call_id;
+                r.field = std::uint8_t(field);
+                r.is_write = true;
+                r.rw_counter = rw_counter;
+                r.value = value;
+                return r;
+            }
+
+            rw_operation call_context_r_operation(
+                std::size_t call_id,
+                call_context_field field,
+                std::size_t rw_counter,
+                zkevm_word_type value
+            ){
+                BOOST_ASSERT(
+                    field == call_context_field::lastcall_id
+                    || field == call_context_field::lastcall_returndata_offset
+                    || field == call_context_field::lastcall_returndata_length
+                );
+                rw_operation r;
+                r.op = rw_operation_type::call_context;
+                r.id = call_id;
+                r.field = std::uint8_t(field);
+                r.is_write = false;
+                r.rw_counter = rw_counter;
                 r.value = value;
                 return r;
             }

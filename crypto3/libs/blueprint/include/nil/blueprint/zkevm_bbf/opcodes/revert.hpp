@@ -73,6 +73,12 @@ namespace nil {
                         // constrain(current_state.memory_size(0) - current_state.memory_size_next());     // memory_size transition
                         // constrain(current_state.rw_counter_next() - current_state.rw_counter(0) - 3);   // rw_counter transition
 
+                        // TODO: If we should process reverting transactions, append end_transaction option for next opcode.
+                        // Now only CALL revert-s supported
+                        constrain(
+                            (current_state.opcode_next() - TYPE(std::size_t(opcode_to_number(zkevm_opcode::end_call))))
+                        );
+
                         lookup(rw_table<FieldType, stage>::stack_lookup(
                             current_state.call_id(0),
                             current_state.stack_size(0) - 1,
