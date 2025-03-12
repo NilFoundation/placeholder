@@ -77,22 +77,22 @@ namespace nil {
                     constexpr static const std::size_t argument_size = 1;
 
                     static inline void build_variable_value_map(
-                        const math::expression<polynomial_dfs_variable_type>& expr,
+                        const math::expression<variable_type>& expr,
                         const plonk_polynomial_dfs_table<FieldType>& assignments,
                         std::shared_ptr<math::evaluation_domain<FieldType>> domain,
                         std::size_t extended_domain_size,
-                        std::unordered_map<polynomial_dfs_variable_type, polynomial_dfs_type>& variable_values_out,
-                        const polynomial_dfs_type &mask_polynomial,
-                        const polynomial_dfs_type &lagrange_0
-                    ) {
+                        std::unordered_map<variable_type, polynomial_dfs_type>&
+                            variable_values_out,
+                        const polynomial_dfs_type& mask_polynomial,
+                        const polynomial_dfs_type& lagrange_0) {
                         PROFILE_SCOPE("Gate argument build variable value map");
 
-                        std::unordered_map<polynomial_dfs_variable_type, size_t> variable_counts;
+                        std::unordered_map<variable_type, size_t> variable_counts;
 
-                        math::expression_for_each_variable_visitor<polynomial_dfs_variable_type> visitor(
-                            [&variable_counts](const polynomial_dfs_variable_type& var) {
+                        math::expression_for_each_variable_visitor<variable_type> visitor(
+                            [&variable_counts](const variable_type& var) {
                                 variable_counts[var]++;
-                        });
+                            });
                         std::shared_ptr<math::evaluation_domain<FieldType>> extended_domain =
                             math::make_evaluation_domain<FieldType>(extended_domain_size);
 
@@ -105,19 +105,32 @@ namespace nil {
                             if (variable_values_out.find(var) != variable_values_out.end())
                                 continue;
 
+                            // Convert the variable to polynomial_dfs variable type.
+                            polynomial_dfs_variable_type var_dfs(
+                                var.index, var.rotation, var.relative,
+                                static_cast<
+                                    typename polynomial_dfs_variable_type::column_type>(
+                                    static_cast<std::uint8_t>(var.type)));
+
                             polynomial_dfs_type assignment;
 
-                            if (var.index == PLONK_SPECIAL_SELECTOR_ALL_USABLE_ROWS_SELECTED && var.type == polynomial_dfs_variable_type::column_type::selector) {
+                            if (var.index ==
+                                    PLONK_SPECIAL_SELECTOR_ALL_USABLE_ROWS_SELECTED &&
+                                var.type == variable_type::column_type::selector) {
                                 assignment = mask_polynomial;
-                            } else if (var.index ==  PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED && var.type == polynomial_dfs_variable_type::column_type::selector){
+                            } else if (
+                                var.index ==
+                                    PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED &&
+                                var.type == variable_type::column_type::selector) {
                                 assignment = mask_polynomial - lagrange_0;
                             } else {
-                                assignment = assignments.get_variable_value(var, domain);
+                                assignment =
+                                    assignments.get_variable_value(var_dfs, domain);
                             }
                             if (count > 1) {
                                 assignment.resize(extended_domain_size, domain, extended_domain);
                             }
-                            variable_values_out[var] = assignment;
+                            variable_values_out[var] = std::move(assignment);
                         }
                     }
 
@@ -139,11 +152,6 @@ namespace nil {
                         //           << std::endl;
                         typename FieldType::value_type theta = transcript.template challenge<FieldType>();
 
-                        auto value_type_to_polynomial_dfs = [](
-                            const typename variable_type::assignment_type& coeff) {
-                                return polynomial_dfs_type(0, 1, coeff);
-                            };
-
                         std::vector<std::uint32_t> extended_domain_sizes;
                         std::vector<std::uint32_t> degree_limits;
                         std::uint32_t max_degree = std::pow(2, ceil(std::log2(max_gates_degree)));
@@ -154,15 +162,18 @@ namespace nil {
                         degree_limits.push_back(max_degree / 2);
                         extended_domain_sizes.push_back(max_domain_size / 2);
 
-                        std::vector<math::expression<polynomial_dfs_variable_type>> expressions(extended_domain_sizes.size());
+                        std::vector<math::expression<variable_type>> expressions(
+                            extended_domain_sizes.size());
 
                         auto theta_acc = FieldType::value_type::one();
 
-                        // Every constraint has variable type 'variable_type', but we want it to use
-                        // 'polynomial_dfs_variable_type' instead. The only difference is the coefficient type
-                        // inside a term. We want the coefficients to be dfs polynomials here.
-                        math::expression_variable_type_converter<variable_type, polynomial_dfs_variable_type> converter(
-                            value_type_to_polynomial_dfs);
+                        // Every constraint has variable type 'variable_type', but we want
+                        // it to use 'polynomial_dfs_variable_type' instead. The only
+                        // difference is the coefficient type inside a term. We want the
+                        // coefficients to be dfs polynomials here.
+                        // math::expression_variable_type_converter<variable_type,
+                        // polynomial_dfs_variable_type> converter(
+                        //     value_type_to_polynomial_dfs);
 
                         math::expression_max_degree_visitor<variable_type> visitor;
 
@@ -170,14 +181,10 @@ namespace nil {
                         {
                             PROFILE_SCOPE("Gate argument build expression");
                             for (const auto& gate : gates) {
-                                std::vector<
-                                    math::expression<polynomial_dfs_variable_type>>
-                                    gate_results(extended_domain_sizes.size());
-
+                                std::vector<math::expression<variable_type>> gate_results(
+                                    extended_domain_sizes.size());
                                 for (const auto& constraint : gate.constraints) {
-                                    auto next_term =
-                                        converter.convert(constraint) *
-                                        value_type_to_polynomial_dfs(theta_acc);
+                                    auto next_term = constraint * theta_acc;
 
                                     theta_acc *= theta;
                                     // +1 stands for the selector multiplication.
@@ -195,11 +202,9 @@ namespace nil {
                                     }
                                 }
 
-                                polynomial_dfs_variable_type selector =
-                                    polynomial_dfs_variable_type(
-                                        gate.selector_index, 0, false,
-                                        polynomial_dfs_variable_type::column_type::
-                                            selector);
+                                variable_type selector =
+                                    variable_type(gate.selector_index, 0, false,
+                                                  variable_type::column_type::selector);
 
                                 for (size_t i = 0; i < extended_domain_sizes.size();
                                      ++i) {
@@ -209,34 +214,42 @@ namespace nil {
                             }
                         }
 
-                        std::unordered_map<polynomial_dfs_variable_type, polynomial_dfs_type> variable_values;
                         std::array<polynomial_dfs_type, argument_size> F;
 
+                        F[0] = polynomial_dfs_type::zero();
                         for (size_t i = 0; i < extended_domain_sizes.size(); ++i) {
-                            // std::cout << std::endl << "Domain number " << i <<
-                            // std::endl;
-                            if (i != 0 && extended_domain_sizes[i] != extended_domain_sizes[i-1]) {
-                                variable_values.clear();
-                            }
+                            std::unordered_map<variable_type, polynomial_dfs_type>
+                                variable_values;
+
                             build_variable_value_map(
                                 expressions[i], column_polynomials, original_domain,
                                 extended_domain_sizes[i], variable_values,
                                 mask_polynomial, lagrange_0
                             );
 
+                            polynomial_dfs_type result(extended_domain_sizes[i] - 1,
+                                                       extended_domain_sizes[i]);
+
                             PROFILE_SCOPE("Gate argument evaluation");
 
-                            math::cached_expression_evaluator<polynomial_dfs_variable_type> evaluator(
-                                expressions[i], [&assignments=variable_values, domain_size=extended_domain_sizes[i]]
-                                (const polynomial_dfs_variable_type &var) -> const polynomial_dfs_type& {
-                                    return assignments[var];
+                            {
+                                nil::crypto3::multiprecision::detail::ScopedOpsCounter
+                                    ops_counter;
+
+                                for (std::size_t j = 0; j < extended_domain_sizes[i];
+                                     ++j) {
+                                    math::expression_evaluator<variable_type> evaluator(
+                                        expressions[i],
+                                        [&assignments =
+                                                variable_values, j](const variable_type& var)
+                                            -> const typename FieldType::value_type& {
+                                            return assignments[var][j];
+                                        });
+                                    result[j] = evaluator.evaluate();
                                 }
-                            );
+                            }
 
-                            nil::crypto3::multiprecision::detail::ScopedOpsCounter
-                                ops_counter;
-
-                            F[0] += evaluator.evaluate();
+                            F[0] += result;
                         }
 
                         return F;
