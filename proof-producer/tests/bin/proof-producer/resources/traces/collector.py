@@ -147,7 +147,6 @@ def main():
             "--abi",
             contract_source_path,
             "--overwrite",
-            "--no-cbor-metadata",
             "--metadata-hash", "none"
         ]
         run_command(solc_cmd, log_file=log_file)
