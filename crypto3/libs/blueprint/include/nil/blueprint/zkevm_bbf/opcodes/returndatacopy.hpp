@@ -54,8 +54,10 @@ namespace nil {
                     using Word_Size = typename bbf::word_size<FieldType, stage>;
                     using Memory_Cost = typename bbf::memory_cost<FieldType, stage>;
 
-                    TYPE destOffset, offset, length, current_mem, next_mem,
+                    TYPE destOffset, offset, length, length_inv;
+                    TYPE current_mem, next_mem,
                         memory_expansion_cost, memory_expansion_size, S;
+                    TYPE lastcall_id;
 
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
                         destOffset = w_lo<FieldType>(current_state.stack_top());
@@ -64,6 +66,8 @@ namespace nil {
                         current_mem = current_state.memory_size;
                         next_mem = length.is_zero()? current_mem: std::max(destOffset + length, current_mem);
                         S = next_mem > current_mem;
+                        length_inv = length == 0 ? 0: length.inversed();
+                        lastcall_id = current_state.lastsubcall_id();
                     }
                     allocate(destOffset, 32, 0);
                     allocate(offset, 33, 0);
@@ -71,6 +75,12 @@ namespace nil {
                     allocate(current_mem, 35, 0);
                     allocate(next_mem, 36, 0);
                     allocate(S, 37, 0);
+                    allocate(length_inv, 38, 0);
+                    allocate(lastcall_id, 39, 0);
+
+                    // length_inv is correct
+                    constrain(length * (length * length_inv - 1));
+                    constrain(length_inv * (length * length_inv - 1));
 
                     constrain(S * (S - 1));
                     constrain(S * (next_mem - destOffset - length) +
@@ -113,36 +123,58 @@ namespace nil {
                         constrain(current_state.rw_counter_next() -
                                   current_state.rw_counter(0) -
                                   4 - 2 * length);  // rw_counter transition
-                        std::vector<TYPE> tmp;
-                        tmp = rw_table<FieldType, stage>::stack_lookup(
+                        lookup(rw_table<FieldType, stage>::stack_lookup(
                             current_state.call_id(0),
                             current_state.stack_size(0) - 1,
                             current_state.rw_counter(0),
                             TYPE(0),  // is_write
                             TYPE(0),
                             destOffset
-                        );
-                        lookup(tmp, "zkevm_rw");
-                        tmp = rw_table<FieldType, stage>::stack_lookup(
+                        ), "zkevm_rw");
+                        lookup(rw_table<FieldType, stage>::stack_lookup(
                             current_state.call_id(0),
                             current_state.stack_size(0) - 2,
                             current_state.rw_counter(0) + 1,
                             TYPE(0),  // is_write
                             TYPE(0),
                             offset
-                        );
-                        lookup(tmp, "zkevm_rw");
-                        tmp = rw_table<FieldType, stage>::stack_lookup(
+                        ), "zkevm_rw");
+                        lookup(rw_table<FieldType, stage>::stack_lookup(
                             current_state.call_id(0),
                             current_state.stack_size(0) - 3,
                             current_state.rw_counter(0) + 2,
                             TYPE(0),  // is_write
                             TYPE(0),
                             length
-                        );
-                        lookup(tmp, "zkevm_rw");
-                    } else {
-                        std::cout << "\tSTATE transition implemented" << std::endl;
+                        ), "zkevm_rw");
+                        lookup(rw_table<FieldType, stage>::call_context_editable_lookup(
+                            current_state.call_id(0),
+                            std::size_t(call_context_field::lastcall_id),
+                            current_state.rw_counter(0) + 3,
+                            TYPE(0),    // is_write
+                            TYPE(0),
+                            lastcall_id
+                        ), "zkevm_rw");
+                        lookup({
+                            length * length_inv,                                                         // is_first
+                            TYPE(0),                                                                     // is_write
+                            length * length_inv * TYPE(copy_op_to_num(copy_operand_type::returndata)),   // cp_type
+                            TYPE(0),                                                                     // id_hi
+                            length * length_inv * lastcall_id,                              // id_lo
+                            length * length_inv * offset,                                   // counter_1
+                            length * length_inv * (current_state.rw_counter(0) + 4),        // counter_2
+                            length
+                        }, "zkevm_copy");
+                        lookup({
+                            length * length_inv,                                                      // is_first
+                            length * length_inv,                                                      // is_write
+                            length * length_inv * TYPE(copy_op_to_num(copy_operand_type::memory)),    // cp_type
+                            TYPE(0),                                                                  // id_hi
+                            length * length_inv * current_state.call_id(0),                           // id_lo
+                            length * length_inv * destOffset,                                             // counter_1
+                            length * length_inv * (current_state.rw_counter(0) + 4 + length),         // counter_2
+                            length
+                        }, "zkevm_copy");
                     }
                 }
             };
