@@ -36,6 +36,7 @@
 #include <tuple>
 #include <vector>
 #include <set>
+#include <queue>
 #include <type_traits>
 
 #include <boost/assert.hpp>
@@ -655,6 +656,7 @@ namespace nil {
                     using curve_type = typename CommitmentSchemeType::curve_type;
                     using field_type = typename CommitmentSchemeType::field_type;
                     using params_type = typename CommitmentSchemeType::params_type;
+                    using value_type = typename field_type::value_type;
 
                     // This should be marshallable and transcriptable type
                     using commitment_type = typename CommitmentSchemeType::commitment_type;
@@ -771,6 +773,10 @@ namespace nil {
                     }
 
                     void setup(transcript_type &transcript, preprocessed_data_type b = true) {
+                        // Nothing to be done here.
+                    }
+
+                    void fill_challenge_queue_for_setup(transcript_type& transcript, std::queue<value_type>& queue) {
                         // Nothing to be done here.
                     }
 

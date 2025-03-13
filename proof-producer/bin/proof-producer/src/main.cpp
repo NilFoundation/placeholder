@@ -37,6 +37,7 @@
 #include <nil/proof-generator/commands/compute_combined_q_command.hpp>
 #include <nil/proof-generator/commands/aggregated_fri_proof_command.hpp>
 #include <nil/proof-generator/commands/gen_consistency_check_command.hpp>
+#include <nil/proof-generator/commands/verify_aggregated_command.hpp>
 #include "nil/proof-generator/command_step.hpp"
 #include "nil/proof-generator/output_artifacts/output_artifacts.hpp"
 
@@ -108,7 +109,8 @@ int run_prover(const nil::proof_producer::ProverOptions& prover_options) {
         {ProverStage::MERGE_PROOFS, run_command<MergeProofsCommand, CurveType, HashType>},
         {ProverStage::COMPUTE_COMBINED_Q, run_command<CombinedQGeneratorCommand, CurveType, HashType>},
         {ProverStage::GENERATE_AGGREGATED_FRI_PROOF, run_command<AggregatedFriProofCommand, CurveType, HashType>},
-        {ProverStage::GENERATE_CONSISTENCY_CHECKS_PROOF, run_command<GenerateConsistencyCheckCommand, CurveType, HashType>}
+        {ProverStage::GENERATE_CONSISTENCY_CHECKS_PROOF, run_command<GenerateConsistencyCheckCommand, CurveType, HashType>},
+        {ProverStage::AGGREGATED_VERIFY, run_command<AggregatedFRIVerifyCommand, CurveType, HashType>}
     };
 
     auto prover_task = [&] {

@@ -191,7 +191,6 @@ Compute LPC consistency check proofs for polynomial combined_Q, done on each pro
 ./result/bin/proof-producer-single-threaded \
     --stage="consistency-checks" \
     --commitment-state-file="$CIRCUIT-commitment_scheme_state.dat" \
-    --combined-Q-polynomial-file="$CIRCUIT-combined-Q.dat" \
     --consistency-checks-challenges-file="challenges.dat" \
     --proof="$CIRCUIT-LPC_consistency_check_proof.bin"
 ```
@@ -205,6 +204,19 @@ bin/proof-producer/proof-producer-single-threaded \
     --partial-proof $CIRCUIT2-proof.dat \
     --initial-proof $CIRCUIT1-LPC_consistency_check_proof.bin \
     --initial-proof $CIRCUIT2-LPC_consistency_check_proof.bin \
+    --proof-of-work POW.dat \
     --aggregated-FRI-proof aggregated_FRI_proof.bin \
     --proof final-proof.dat
 ```
+
+Verify the final proof:
+```bash
+
+bin/proof-producer/proof-producer-single-threaded \
+    --stage aggregated-verify  \
+    --circuits $CIRCUIT1.crct $CIRCUIT2.crct\
+    --assignment-description-files $CIRCUIT1-assignment-description.dat $CIRCUIT2-assignment-description2.dat \
+    --common-datas $CIRCUIT1-common_data.dat $CIRCUIT2-common_data.dat \
+    --agg-proof final-proof.dat
+```
+

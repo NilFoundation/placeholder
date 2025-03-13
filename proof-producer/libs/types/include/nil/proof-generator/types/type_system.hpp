@@ -55,6 +55,7 @@ namespace nil {
         template <typename BlueprintField>
         struct PresetTypes {
             using ConstraintSystem = nil::blueprint::circuit<nil::crypto3::zk::snark::plonk_constraint_system<BlueprintField>>;
+            using ConstraintSystemNoCircuit = crypto3::zk::snark::plonk_constraint_system<BlueprintField>;
             using AssignmentTable  = nil::crypto3::zk::snark::plonk_assignment_table<BlueprintField>;
             using TableDescription = nil::crypto3::zk::snark::plonk_table_description<BlueprintField>;
         };
@@ -70,12 +71,15 @@ namespace nil {
             using CircuitParams = nil::crypto3::zk::snark::placeholder_circuit_params<BlueprintField>;
             using PlaceholderParams = nil::crypto3::zk::snark::placeholder_params<CircuitParams, LpcScheme>;
             using Proof = nil::crypto3::zk::snark::placeholder_proof<BlueprintField, PlaceholderParams>;
+            using AggregatedProof = nil::crypto3::zk::snark::placeholder_aggregated_proof<BlueprintField, PlaceholderParams>;
+
             using PublicPreprocessedData = typename nil::crypto3::zk::snark::
                 placeholder_public_preprocessor<BlueprintField, PlaceholderParams>::preprocessed_data_type;
             using CommonData = typename PublicPreprocessedData::common_data_type;
             using PrivatePreprocessedData = typename nil::crypto3::zk::snark::
                 placeholder_private_preprocessor<BlueprintField, PlaceholderParams>::preprocessed_data_type;
             using ConstraintSystem = typename PresetTypes<BlueprintField>::ConstraintSystem;
+            using ConstraintSystemNoCircuit = typename PresetTypes<BlueprintField>::ConstraintSystemNoCircuit;
             using TableDescription = typename PresetTypes<BlueprintField>::TableDescription;
             using Endianness = nil::crypto3::marshalling::option::big_endian;
             using FriType = typename Lpc::fri_type;

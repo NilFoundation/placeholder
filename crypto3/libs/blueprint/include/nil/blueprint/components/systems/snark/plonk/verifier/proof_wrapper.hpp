@@ -69,7 +69,8 @@ namespace nil {
                             _proof_field_vector.push_back(proof.commitments.at(4));
                         }
 
-                        _proof_field_vector.push_back(proof.eval_proof.challenge);
+                        // TODO(martun): we don't have the challenge stored with proof any more, fix this later.
+                        // _proof_field_vector.push_back(proof.eval_proof.challenge);
 
                         // TODO: Commitment scheme may be different
                         auto eval_proof = proof.eval_proof.eval_proof;
