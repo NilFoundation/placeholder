@@ -58,6 +58,7 @@ set(TESTS_NAMES
     "commitment/proof_of_work"
 
     "math/expression"
+    "math/dag_expression"
 
 #    "routing_algorithms/test_routing_algorithms"
 

@@ -58,6 +58,8 @@
 #include <nil/actor/core/thread_pool.hpp>
 #include <nil/actor/core/parallelization_utils.hpp>
 
+#include <nil/crypto3/zk/math/dag_expression.hpp>
+
 namespace nil {
     namespace crypto3 {
         namespace zk {
@@ -234,7 +236,7 @@ namespace nil {
                             const std::vector<polynomial_dfs_type>& lookup_input,
                             const typename FieldType::value_type& alpha) {
                         PROFILE_SCOPE("Lookup argument computing polynomials H_i");
-                    
+
                         std::vector<polynomial_dfs_type> Hs = lookup_input;
                         parallel_for(0, Hs.size(), [&Hs, &alpha](std::size_t i) {
                              Hs[i] -= alpha;
@@ -243,14 +245,14 @@ namespace nil {
 
                         return Hs;
                     }
-                    
+
                     // Computes the helper polynomials G_i(X) = m_i(X) / (alpha - t_i(X)) over the domain.
                     std::vector<polynomial_dfs_type> compute_g_polys(
                             const std::vector<polynomial_dfs_type>& lookup_value,
                             const std::vector<polynomial_dfs_type>& counts,
                             const typename FieldType::value_type& alpha) {
                         PROFILE_SCOPE("Lookup argument computing polynomials G_i");
-                    
+
                         std::vector<polynomial_dfs_type> Gs = lookup_value;
                         parallel_for(0, Gs.size(), [&Gs, &alpha, &counts](std::size_t i) {
                             auto& g = Gs[i];
@@ -258,7 +260,7 @@ namespace nil {
                                 g[j] = alpha - g[j];
                             }
                             g.element_wise_inverse();
-                    
+
                             // Don't multiply as polynomials here, they will resize.
                             for (size_t j = 0; j < g.size(); ++j) {
                                 g[j] *= counts[i][j];
@@ -314,30 +316,24 @@ namespace nil {
                         const polynomial_dfs_type &mask_polynomial,
                         const polynomial_dfs_type &lagrange_0
                     ) {
-                        // Get out all the variables used and maximal degree of any expression in all possible lookup inputs.
-                        std::unordered_map<variable_type, size_t> variable_counts;
+                        // Get out all the variables used and maximal degree of any expression in all possible lookup inputs
                         std::vector<variable_type> variables;
-
                         size_t max_expr_degree = 0;
                         math::expression_max_degree_visitor<variable_type> max_degree_visitor;
 
                         for (const auto& expr: exprs) {
                             math::expression_for_each_variable_visitor<variable_type> visitor(
-                                [&variable_counts, &variables, &variable_values_out](const variable_type& var) {
-                                    // Create the structure of the map so we can change the values later.
-                                    if (variable_counts[var] == 0) {
+                                [&variables, &variable_values_out](const variable_type& var) {
+                                    // Create the structure of the map, so its values can be filled in parallel.
+                                    if (variable_values_out.find(var) == variable_values_out.end()) {
+                                        variable_values_out[var] = polynomial_dfs_type();
                                         variables.push_back(var);
-                                        // Create the structure of the map, so its values can be filled in parallel.
-                                        if (variable_values_out.find(var) == variable_values_out.end()) {
-                                            variable_values_out[var] = polynomial_dfs_type();
-                                        }
                                     }
-                                    variable_counts[var]++;
-                            });
+                                });
 
                             visitor.visit(expr);
                             size_t degree = max_degree_visitor.compute_max_degree(expr);
-                            max_expr_degree = std::max(max_expr_degree, degree); 
+                            max_expr_degree = std::max(max_expr_degree, degree);
                         }
 
                         // We need to +1 on the next line, because we will multiply with selector.
@@ -347,8 +343,8 @@ namespace nil {
                         std::shared_ptr<math::evaluation_domain<FieldType>> extended_domain =
                             math::make_evaluation_domain<FieldType>(extended_domain_size_out);
 
-                        parallel_for(0, variables.size(),
-                            [&variables, &variable_values_out, &assignments, &domain, &extended_domain, extended_domain_size_out, &mask_polynomial, &lagrange_0](std::size_t i) {
+                        parallel_for(0, variable_values_out.size(),
+                            [&variables,&variable_values_out, &assignments, &domain, &extended_domain, extended_domain_size_out, &mask_polynomial, &lagrange_0](std::size_t i) {
                                 const variable_type& var = variables[i];
 
                                 // Convert the variable to polynomial_dfs variable type.
@@ -380,7 +376,7 @@ namespace nil {
                             for (const auto &constraint : gate.constraints) {
                                 for(std::size_t k = 0; k < constraint.lookup_input.size(); k++){
                                     exprs.push_back(constraint.lookup_input[k]);
-                                }        
+                                }
                             }
                         }
 
@@ -392,72 +388,64 @@ namespace nil {
                         const polynomial_dfs_type &lagrange0
                     ) {
                         PROFILE_SCOPE("Lookup argument preparing lookup input");
-
-                        std::vector<math::expression<variable_type>> exprs = prepare_lookup_input_expressions();
+                        using value_type = typename FieldType::value_type;
 
                         std::unordered_map<variable_type, polynomial_dfs_type> variable_values;
                         size_t extended_domain_size;
 
-                        build_variable_value_map(
-                            exprs, plonk_columns, basic_domain,
-                            variable_values, extended_domain_size, mask_assignment, lagrange0
-                        );
-
                         auto lookup_input_ptr = std::make_unique<std::vector<polynomial_dfs_type>>();
-                        for (const auto &gate : lookup_gates) {
-                            polynomial_dfs_type lookup_selector;
-                            if (gate.tag_index == PLONK_SPECIAL_SELECTOR_ALL_USABLE_ROWS_SELECTED) {
-                                lookup_selector = mask_assignment;
-                            } else if (gate.tag_index == PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED) {
-                                lookup_selector = mask_assignment - lagrange0;
-                            } else {
-                                lookup_selector = plonk_columns.selector(gate.tag_index);
-                            }
+                        std::vector<expression<variable_type>> expressions;
 
+                        for (const auto &gate : lookup_gates) {
                             // Increase the size to fit the next table values.
                             std::size_t lookup_inputs_used = lookup_input_ptr->size();
                             lookup_input_ptr->resize(lookup_inputs_used + gate.constraints.size());
 
-                            // Do NOT capture converter by reference.
-                            parallel_for(0, gate.constraints.size(),
-                                [&lookup_input_ptr, this, &gate, &lookup_selector, lookup_inputs_used, extended_domain_size, &variable_values]
-                                (std::size_t index) {
-                                    const auto& constraint = gate.constraints[index];
-                                    polynomial_dfs_type l = lookup_selector * (typename FieldType::value_type(constraint.table_id));
-
-                                    typename FieldType::value_type theta_acc = this->theta;
-                                    for (std::size_t k = 0; k < constraint.lookup_input.size(); k++){
-                                         const math::expression<variable_type>& expr = constraint.lookup_input[k];
-
-                                        {
-                                            nil::crypto3::bench::detail::scoped_aggregate_profiler prof("Lookup evaluating expressions ==================");
-
-                                            polynomial_dfs_type result(extended_domain_size - 1, extended_domain_size);
-                                            wait_for_all(parallel_run_in_chunks<void>(
-                                                extended_domain_size,
-                                                [&variable_values, &result, &expr]
-                                                (std::size_t begin, std::size_t end) {
-                                                    for (std::size_t j = begin; j < end; ++j) {
-                                                        // Don't use cache here. In practice it's slower to maintain the cache
-                                                        // than to re-compute the subexpression value when value type is field element.
-                                                        math::expression_evaluator<variable_type> evaluator(
-                                                            expr,
-                                                            [&variable_values, j]
-                                                                (const variable_type &var) -> const typename FieldType::value_type& {
-                                                                    return variable_values[var][j];
-                                                            });
-                                                        result[j] = evaluator.evaluate();
-                                                    }
-                                            }, ThreadPool::PoolLevel::HIGH));
-
-                                            l += theta_acc * lookup_selector * result;
-                                        }
-
-                                        theta_acc *= this->theta;
-                                    }
-                                    (*lookup_input_ptr)[lookup_inputs_used + index] = l;
-                                }, ThreadPool::PoolLevel::LASTPOOL);
+                            // Build all expressions
+                            for (const auto& constraint : gate.constraints) {
+                                expression<variable_type> l = value_type(constraint.table_id);
+                                value_type theta_acc = this->theta;
+                                for (const auto& expr : constraint.lookup_input) {
+                                    l += theta_acc * expr;
+                                    theta_acc *= this->theta;
+                                }
+                                l *= variable_type(gate.tag_index, 0, false, variable_type::column_type::selector);
+                                expressions.push_back(std::move(l));
+                            }
                         }
+
+                        build_variable_value_map(
+                            expressions, plonk_columns, basic_domain,
+                            variable_values, extended_domain_size, mask_assignment, lagrange0
+                        );
+                        dag_expression<variable_type> dag_expr;
+                        for (const auto &expr : expressions) {
+                            dag_expr.add_expression(expr);
+                        }
+                        // pre-fill lookup_input_ptr
+                        parallel_for(0, lookup_input_ptr->size(),
+                            [&lookup_input_ptr, &extended_domain_size]
+                            (std::size_t idx) {
+                                (*lookup_input_ptr)[idx] =
+                                    polynomial_dfs_type(extended_domain_size - 1, extended_domain_size);
+                            }
+                        );
+                        wait_for_all(parallel_run_in_chunks<void>(extended_domain_size,
+                            [&variable_values, &extended_domain_size, &expressions, &lookup_input_ptr, &dag_expr]
+                            (std::size_t begin, std::size_t end) {
+                                auto dag_expr_copy = dag_expr;
+                                for (std::size_t j = begin; j < end; ++j) {
+                                    std::function<value_type(const variable_type &)> eval_map =
+                                        [&variable_values, j](const variable_type &var) -> value_type {
+                                            return variable_values[var][j];
+                                        };
+                                    const auto result_vector = dag_expr_copy.evaluate(eval_map);
+                                    for (std::size_t idx = 0; idx < result_vector.size(); ++idx) {
+                                        (*lookup_input_ptr)[idx][j] = result_vector[idx];
+                                    }
+                                    dag_expr_copy.clear_cache();
+                                }
+                        }, ThreadPool::PoolLevel::HIGH));
                         return std::move(lookup_input_ptr);
                     }
 
@@ -477,12 +465,12 @@ namespace nil {
                         for (std::size_t i = 0; i < new_domain_size; i++) {
                             reduced[i] = polynomial[i * step];
                         }
-                        
+
                         return reduced;
                     }
 
                     // Counts how many times each values in 'reduced_value' appears in any 'reduced_input'.
-                    // Returns a vector of polynomials, but inside are integers which are normally 
+                    // Returns a vector of polynomials, but inside are integers which are normally
                     // significantly smaller than the field size.
                     std::vector<polynomial_dfs_type> count_lookup_input_appearances(
                         const std::vector<polynomial_dfs_type>& reduced_input,
@@ -541,10 +529,10 @@ namespace nil {
                 public:
                     /**
                      * \param[in] challenge - The value of random challenge point 'Y'.
-                     * \param[in] evaluations - A map containing evaluations of all the required variables and rotations, I.E. values of 
+                     * \param[in] evaluations - A map containing evaluations of all the required variables and rotations, I.E. values of
                                                 all the columns at points 'Y' and 'Y*omega' and other points depending on the rotations used.
                      * \param[in] counts - A vector containing the evaluation of polynomails "counts" at point 'T' for each lookup value.
-                                           Each polynomial 'counts' shows the number of times each value appears in the lookup inputs. 
+                                           Each polynomial 'counts' shows the number of times each value appears in the lookup inputs.
                      * \returns Nullopt if the verification has failed, or a list of lookup argument values that are used as a part of
                      *          the final zero-check pprotocol.
                      */
@@ -651,7 +639,7 @@ namespace nil {
 
                         // Check that U[Nu] == 0.
                         F[2] = special_selector_values[1] * U_value;
-                        
+
                         // Check that Mask(X) * (U(wX) - U(X) - Sum(hs) - Sum(gs)) == 0.
                         F[3] = U_shifted_value - U_value - sum_H_G;
                         F[3] *= (special_selector_values[1] + special_selector_values[2]) - one;
