@@ -77,9 +77,6 @@ TEST_P(ProverTests, FillAssignmentAndCheck) {
 
 using namespace nil::proof_producer::circuits;
 
-// !! note that due to https://github.com/NilFoundation/placeholder/issues/196
-// contracts for these traces were compiled with --no-cbor-metadata flag
-
 // Single call of SimpleStorage contract increment + keccakHash functions
 const std::string SimpleIncAndKeccak = "simple/simple_inc_and_keccak";
 INSTANTIATE_TEST_SUITE_P(SimpleRw, ProverTests, ::testing::Values(Input{SimpleIncAndKeccak,  RW}));
