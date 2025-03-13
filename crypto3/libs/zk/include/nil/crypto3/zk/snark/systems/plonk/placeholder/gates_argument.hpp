@@ -28,29 +28,29 @@
 #ifndef CRYPTO3_ZK_PLONK_PLACEHOLDER_GATES_ARGUMENT_HPP
 #define CRYPTO3_ZK_PLONK_PLACEHOLDER_GATES_ARGUMENT_HPP
 
-#include <unordered_map>
 #include <iostream>
 #include <memory>
+#include <unordered_map>
 
+#include <nil/crypto3/math/algorithms/make_evaluation_domain.hpp>
+#include <nil/crypto3/math/domains/evaluation_domain.hpp>
 #include <nil/crypto3/math/polynomial/polynomial.hpp>
 #include <nil/crypto3/math/polynomial/shift.hpp>
-#include <nil/crypto3/math/domains/evaluation_domain.hpp>
-#include <nil/crypto3/math/algorithms/make_evaluation_domain.hpp>
 #include <nil/crypto3/zk/snark/arithmetization/plonk/assignment.hpp>
 
 #include <nil/crypto3/hash/sha2.hpp>
 
 #include <nil/crypto3/container/merkle/tree.hpp>
 
-#include <nil/crypto3/zk/transcript/fiat_shamir.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/gate.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/constraint_system.hpp>
-#include <nil/crypto3/zk/snark/systems/plonk/placeholder/params.hpp>
-#include <nil/crypto3/zk/snark/systems/plonk/placeholder/detail/placeholder_policy.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/constraint.hpp>
 #include <nil/crypto3/zk/math/expression.hpp>
 #include <nil/crypto3/zk/math/expression_evaluator.hpp>
 #include <nil/crypto3/zk/math/expression_visitors.hpp>
+#include <nil/crypto3/zk/snark/arithmetization/plonk/constraint.hpp>
+#include <nil/crypto3/zk/snark/arithmetization/plonk/constraint_system.hpp>
+#include <nil/crypto3/zk/snark/arithmetization/plonk/gate.hpp>
+#include <nil/crypto3/zk/snark/systems/plonk/placeholder/detail/placeholder_policy.hpp>
+#include <nil/crypto3/zk/snark/systems/plonk/placeholder/params.hpp>
+#include <nil/crypto3/zk/transcript/fiat_shamir.hpp>
 
 #include <nil/crypto3/bench/scoped_profiler.hpp>
 #include "nil/crypto3/multiprecision/detail/big_mod/modular_ops/common.hpp"
@@ -60,17 +60,21 @@ namespace nil {
         namespace zk {
             namespace snark {
 
-                template<typename FieldType, typename ParamsType, std::size_t ArgumentSize = 1>
+                template<typename FieldType, typename ParamsType,
+                         std::size_t ArgumentSize = 1>
                 struct placeholder_gates_argument;
 
                 template<typename FieldType, typename ParamsType>
                 struct placeholder_gates_argument<FieldType, ParamsType, 1> {
-
-                    typedef typename ParamsType::transcript_hash_type transcript_hash_type;
-                    using transcript_type = transcript::fiat_shamir_heuristic_sequential<transcript_hash_type>;
-                    using polynomial_dfs_type = math::polynomial_dfs<typename FieldType::value_type>;
+                    typedef
+                        typename ParamsType::transcript_hash_type transcript_hash_type;
+                    using transcript_type = transcript::fiat_shamir_heuristic_sequential<
+                        transcript_hash_type>;
+                    using polynomial_dfs_type =
+                        math::polynomial_dfs<typename FieldType::value_type>;
                     using variable_type = plonk_variable<typename FieldType::value_type>;
-                    using polynomial_dfs_variable_type = plonk_variable<polynomial_dfs_type>;
+                    using polynomial_dfs_variable_type =
+                        plonk_variable<polynomial_dfs_type>;
 
                     typedef detail::placeholder_policy<FieldType, ParamsType> policy_type;
 
@@ -93,68 +97,74 @@ namespace nil {
                             [&variable_counts](const variable_type& var) {
                                 variable_counts[var]++;
                             });
-                        std::shared_ptr<math::evaluation_domain<FieldType>> extended_domain =
-                            math::make_evaluation_domain<FieldType>(extended_domain_size);
+                        std::shared_ptr<math::evaluation_domain<FieldType>>
+                            extended_domain = math::make_evaluation_domain<FieldType>(
+                                extended_domain_size);
 
                         visitor.visit(expr);
 
                         nil::crypto3::multiprecision::detail::ScopedOpsCounter
                             ops_counter;
 
-                        for (const auto& [var, count]: variable_counts) {
-                            if (variable_values_out.find(var) != variable_values_out.end())
+                        for (const auto& [var, count] : variable_counts) {
+                            if (variable_values_out.find(var) !=
+                                variable_values_out.end())
                                 continue;
 
-                            // Convert the variable to polynomial_dfs variable type.
-                            polynomial_dfs_variable_type var_dfs(
-                                var.index, var.rotation, var.relative,
-                                static_cast<
-                                    typename polynomial_dfs_variable_type::column_type>(
-                                    static_cast<std::uint8_t>(var.type)));
+                                // Convert the variable to polynomial_dfs variable type.
+                                polynomial_dfs_variable_type var_dfs(
+                                    var.index, var.rotation, var.relative,
+                                    static_cast<
+                                        typename polynomial_dfs_variable_type::column_type>(
+                                        static_cast<std::uint8_t>(var.type)));
 
-                            polynomial_dfs_type assignment;
-
-                            if (var.index ==
-                                    PLONK_SPECIAL_SELECTOR_ALL_USABLE_ROWS_SELECTED &&
-                                var.type == variable_type::column_type::selector) {
-                                assignment = mask_polynomial;
-                            } else if (
-                                var.index ==
-                                    PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED &&
-                                var.type == variable_type::column_type::selector) {
-                                assignment = mask_polynomial - lagrange_0;
-                            } else {
-                                assignment =
-                                    assignments.get_variable_value(var_dfs, domain);
-                            }
-                            if (count > 1) {
-                                assignment.resize(extended_domain_size, domain, extended_domain);
-                            }
-                            variable_values_out[var] = std::move(assignment);
+                                polynomial_dfs_type assignment;
+                                if (var.index ==
+                                        PLONK_SPECIAL_SELECTOR_ALL_USABLE_ROWS_SELECTED &&
+                                    var.type == variable_type::column_type::selector) {
+                                    assignment = mask_polynomial;
+                                } else if (
+                                    var.index ==
+                                        PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED &&
+                                    var.type == variable_type::column_type::selector) {
+                                    assignment = mask_polynomial - lagrange_0;
+                                } else {
+                                    assignment =
+                                        assignments.get_variable_value(var_dfs, domain);
+                                }
+                                // if (count > 1) {
+                                assignment.resize(extended_domain_size, domain,
+                                                  extended_domain);
+                                // }
+                                variable_values_out[var] = std::move(assignment);
                         }
                     }
 
-                    static inline std::array<polynomial_dfs_type, argument_size> prove_eval(
-                        const typename policy_type::constraint_system_type &constraint_system,
+                    static inline std::array<polynomial_dfs_type, argument_size>
+                    prove_eval(
+                        const typename policy_type::constraint_system_type&
+                            constraint_system,
                         const plonk_polynomial_dfs_table<FieldType>& column_polynomials,
-                        std::shared_ptr<math::evaluation_domain<FieldType>> original_domain,
+                        std::shared_ptr<math::evaluation_domain<FieldType>>
+                            original_domain,
                         std::uint32_t max_gates_degree,
-                        const polynomial_dfs_type &mask_polynomial,
-                        const polynomial_dfs_type &lagrange_0,
-                        transcript_type& transcript
-                    ) {
+                        const polynomial_dfs_type& mask_polynomial,
+                        const polynomial_dfs_type& lagrange_0,
+                        transcript_type& transcript) {
                         PROFILE_SCOPE("Gate argument prove eval");
 
-                        // max_gates_degree that comes from the outside does not take into account multiplication
-                        // by selector.
+                        // max_gates_degree that comes from the outside does not take into
+                        // account multiplication by selector.
                         ++max_gates_degree;
                         // std::cout << "Max gates degree: " << max_gates_degree
                         //           << std::endl;
-                        typename FieldType::value_type theta = transcript.template challenge<FieldType>();
+                        typename FieldType::value_type theta =
+                            transcript.template challenge<FieldType>();
 
                         std::vector<std::uint32_t> extended_domain_sizes;
                         std::vector<std::uint32_t> degree_limits;
-                        std::uint32_t max_degree = std::pow(2, ceil(std::log2(max_gates_degree)));
+                        std::uint32_t max_degree =
+                            std::pow(2, ceil(std::log2(max_gates_degree)));
                         std::uint32_t max_domain_size = original_domain->m * max_degree;
 
                         degree_limits.push_back(max_degree);
@@ -202,9 +212,9 @@ namespace nil {
                                     }
                                 }
 
-                                variable_type selector =
-                                    variable_type(gate.selector_index, 0, false,
-                                                  variable_type::column_type::selector);
+                                variable_type selector(
+                                    gate.selector_index, 0, false,
+                                    variable_type::column_type::selector);
 
                                 for (size_t i = 0; i < extended_domain_sizes.size();
                                      ++i) {
@@ -217,15 +227,14 @@ namespace nil {
                         std::array<polynomial_dfs_type, argument_size> F;
 
                         F[0] = polynomial_dfs_type::zero();
-                        for (size_t i = 0; i < extended_domain_sizes.size(); ++i) {
+                        for (std::size_t i = 0; i < extended_domain_sizes.size(); ++i) {
                             std::unordered_map<variable_type, polynomial_dfs_type>
                                 variable_values;
 
                             build_variable_value_map(
                                 expressions[i], column_polynomials, original_domain,
                                 extended_domain_sizes[i], variable_values,
-                                mask_polynomial, lagrange_0
-                            );
+                                mask_polynomial, lagrange_0);
 
                             polynomial_dfs_type result(extended_domain_sizes[i] - 1,
                                                        extended_domain_sizes[i]);
@@ -240,8 +249,8 @@ namespace nil {
                                      ++j) {
                                     math::expression_evaluator<variable_type> evaluator(
                                         expressions[i],
-                                        [&assignments =
-                                                variable_values, j](const variable_type& var)
+                                        [&assignments = variable_values,
+                                         j](const variable_type& var)
                                             -> const typename FieldType::value_type& {
                                             return assignments[var][j];
                                         });
@@ -255,29 +264,40 @@ namespace nil {
                         return F;
                     }
 
-                    static inline std::array<typename FieldType::value_type, argument_size>
-                        verify_eval(const std::vector<plonk_gate<FieldType, plonk_constraint<FieldType>>> &gates,
-                                    typename policy_type::evaluation_map &evaluations,
-                                    const typename FieldType::value_type &challenge,
-                                    typename FieldType::value_type mask_value,
-                                    transcript_type &transcript) {
-                        typename FieldType::value_type theta = transcript.template challenge<FieldType>();
+                    static inline std::array<typename FieldType::value_type,
+                                             argument_size>
+                    verify_eval(
+                        const std::vector<
+                            plonk_gate<FieldType, plonk_constraint<FieldType>>>& gates,
+                        typename policy_type::evaluation_map& evaluations,
+                        const typename FieldType::value_type& challenge,
+                        typename FieldType::value_type mask_value,
+                        transcript_type& transcript) {
+                        typename FieldType::value_type theta =
+                            transcript.template challenge<FieldType>();
 
                         std::array<typename FieldType::value_type, argument_size> F;
 
-                        typename FieldType::value_type theta_acc = FieldType::value_type::one();
+                        typename FieldType::value_type theta_acc =
+                            FieldType::value_type::one();
 
-                        for (const auto& gate: gates) {
-                            typename FieldType::value_type gate_result = FieldType::value_type::zero();
+                        for (const auto& gate : gates) {
+                            typename FieldType::value_type gate_result =
+                                FieldType::value_type::zero();
 
                             for (const auto& constraint : gate.constraints) {
-                                gate_result += constraint.evaluate(evaluations) * theta_acc;
+                                gate_result +=
+                                    constraint.evaluate(evaluations) * theta_acc;
                                 theta_acc *= theta;
                             }
 
-                            std::tuple<std::size_t, int, typename plonk_variable<typename FieldType::value_type>::column_type> selector_key =
-                                std::make_tuple(gate.selector_index, 0,
-                                                plonk_variable<typename FieldType::value_type>::column_type::selector);
+                            std::tuple<std::size_t, int,
+                                       typename plonk_variable<
+                                           typename FieldType::value_type>::column_type>
+                                selector_key = std::make_tuple(
+                                    gate.selector_index, 0,
+                                    plonk_variable<typename FieldType::value_type>::
+                                        column_type::selector);
 
                             gate_result *= evaluations[selector_key];
 
@@ -287,9 +307,9 @@ namespace nil {
                         return F;
                     }
                 };
-            }    // namespace snark
-        }        // namespace zk
-    }            // namespace crypto3
-}    // namespace nil
+            }  // namespace snark
+        }  // namespace zk
+    }  // namespace crypto3
+}  // namespace nil
 
-#endif    // CRYPTO3_ZK_PLONK_PLACEHOLDER_GATES_ARGUMENT_HPP
+#endif  // CRYPTO3_ZK_PLONK_PLACEHOLDER_GATES_ARGUMENT_HPP
