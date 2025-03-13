@@ -195,7 +195,7 @@ namespace nil {
                 virtual void clear_cache() override {}
 
                 virtual void export_expression(std::ostream &os) const override {
-                    os << value.data;
+                    // os << value.data;
                 }
 
                 virtual assignment_type evaluate(
