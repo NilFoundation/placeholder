@@ -65,27 +65,24 @@ namespace nil {
                     std::vector<zkevm_word_type> stack;
                     zkevm_word_type bytecode_hash = _bytecodes.get_data()[current_buffer_id].second;
                     std::map<std::size_t, std::uint8_t> memory;
-                    const std::map<zkevm_word_type, zkevm_word_type> storage;
 
-                    while(true){
-                        auto [opcode,additional_input] = tester.get_opcode_by_pc(pc);
+                    while (true) {
+                        auto [opcode, additional_input] = tester.get_opcode_by_pc(pc);
 
-                        zkevm_state state;              // TODO:optimize
-                        state.tx_id = 0;              // * change it
-                        state.opcode = opcode_to_number(opcode);
-                        state.call_id = call_id;
-                        state.gas = gas;
-                        state.pc = pc;
-                        state.rw_counter = rw_counter;
-                        state.bytecode_hash = _bytecodes.get_data()[current_buffer_id].second;
-                        state.additional_input = additional_input;
-                        //state.tx_finish = (ind == tester.get_opcodes().size() - 1);
-                        state.stack_size = stack.size();
-                        state.memory_size = memory.size();
-                        state.stack_slice = stack;
-                        state.memory_slice = memory;
-                        state.storage_slice = storage;
-                        _zkevm_states.push_back(state);
+                        zkevm_state state{
+                            basic_zkevm_state_part{
+                                .call_id = call_id,
+                                .bytecode_hash = _bytecodes.get_data()[current_buffer_id].second,
+                                .opcode = opcode_to_number(opcode),
+                                .pc = pc,
+                                .stack_size = stack.size(),
+                                .memory_size = memory.size(),
+                                .rw_counter = rw_counter,
+                                .gas = gas,
+                                .stack_slice = stack,
+                            },
+                            memory
+                        };
 
                         if(opcode == zkevm_opcode::STOP){
                             break;
@@ -504,8 +501,8 @@ namespace nil {
                             }
 
                             std::size_t minimum_word_size = (length + 31) / 32;
-                            std::size_t next_mem = std::max(destOffset + length, state.memory_size);
-                            std::size_t memory_expansion = memory_expansion_cost(next_mem, state.memory_size);
+                            std::size_t next_mem = std::max(destOffset + length, state.memory_size());
+                            std::size_t memory_expansion = memory_expansion_cost(next_mem, state.memory_size());
                             std::size_t next_memory_size = (memory_size_word_util(next_mem))*32;
 
                             
@@ -871,8 +868,8 @@ namespace nil {
                                 _rw_operations.push_back(memory_rw_operation(call_id, stack.size(), rw_counter++, true, 0)); // placeholder
                             }
 
-                            std::size_t next_mem = std::max(offset + length, state.memory_size);
-                            std::size_t memory_expansion = memory_expansion_cost(next_mem, state.memory_size);
+                            std::size_t next_mem = std::max(offset + length, state.memory_size());
+                            std::size_t memory_expansion = memory_expansion_cost(next_mem, state.memory_size());
 
                             std::size_t next_memory_size = (memory_size_word_util(next_mem))*32;
                             
@@ -902,8 +899,8 @@ namespace nil {
                                 _rw_operations.push_back(memory_rw_operation(call_id, stack.size(), rw_counter++, true, 0)); // placeholder
                             }
                             
-                            std::size_t next_mem = std::max(offset + length, state.memory_size);
-                            std::size_t memory_expansion = memory_expansion_cost(next_mem, state.memory_size);
+                            std::size_t next_mem = std::max(offset + length, state.memory_size());
+                            std::size_t memory_expansion = memory_expansion_cost(next_mem, state.memory_size());
                             std::size_t next_memory_size = (memory_size_word_util(next_mem))*32;
                             //placeholder values to mimic memory expansion
                             for (std::size_t i = 0; i < next_memory_size; ++i) {
@@ -934,8 +931,8 @@ namespace nil {
                                 _rw_operations.push_back(memory_rw_operation(call_id, stack.size(), rw_counter++, true, 0)); // placeholder
                             }
                             
-                            std::size_t next_mem = std::max(offset + length, state.memory_size);
-                            std::size_t memory_expansion = memory_expansion_cost(next_mem, state.memory_size);
+                            std::size_t next_mem = std::max(offset + length, state.memory_size());
+                            std::size_t memory_expansion = memory_expansion_cost(next_mem, state.memory_size());
                             std::size_t next_memory_size = (memory_size_word_util(next_mem))*32;
                             //placeholder values to mimic memory expansion
                             for (std::size_t i = 0; i < next_memory_size; ++i) {
@@ -970,8 +967,8 @@ namespace nil {
                                 _rw_operations.push_back(memory_rw_operation(call_id, stack.size(), rw_counter++, true, 0)); // placeholder
                             }
                             
-                            std::size_t next_mem = std::max(offset + length, state.memory_size);
-                            std::size_t memory_expansion = memory_expansion_cost(next_mem, state.memory_size);
+                            std::size_t next_mem = std::max(offset + length, state.memory_size());
+                            std::size_t memory_expansion = memory_expansion_cost(next_mem, state.memory_size());
                             std::size_t next_memory_size = (memory_size_word_util(next_mem))*32;
                             //placeholder values to mimic memory expansion
                             for (std::size_t i = 0; i < next_memory_size; ++i) {
@@ -1010,8 +1007,8 @@ namespace nil {
                                 _rw_operations.push_back(memory_rw_operation(call_id, stack.size(), rw_counter++, true, 0)); // placeholder
                             }
                             
-                            std::size_t next_mem = std::max(offset + length, state.memory_size);
-                            std::size_t memory_expansion = memory_expansion_cost(next_mem, state.memory_size);
+                            std::size_t next_mem = std::max(offset + length, state.memory_size());
+                            std::size_t memory_expansion = memory_expansion_cost(next_mem, state.memory_size());
                             std::size_t next_memory_size = (memory_size_word_util(next_mem))*32;
                             //placeholder values to mimic memory expansion
                             for (std::size_t i = 0; i < next_memory_size; ++i) {
@@ -1024,6 +1021,8 @@ namespace nil {
                             std::cout << "Opcode tester machine doesn't contain " << opcode << " implementation" << std::endl;
                             BOOST_ASSERT(false);
                         }
+
+                        _zkevm_states.emplace_back(std::move(state));
                     }
 
                     std::sort(_rw_operations.begin(), _rw_operations.end(), [](rw_operation a, rw_operation b){
@@ -1034,6 +1033,7 @@ namespace nil {
                 virtual zkevm_keccak_buffers keccaks() override {return _keccaks;}
                 virtual zkevm_keccak_buffers bytecodes() override { return _bytecodes;}
                 virtual rw_operations_vector rw_operations() override {return _rw_operations;}
+                virtual std::map<std::size_t,zkevm_call_commit> call_commits() override { return {}; }
                 virtual std::vector<copy_event> copy_events() override { return _copy_events;}
                 virtual std::vector<zkevm_state> zkevm_states() override{ return _zkevm_states;}
                 virtual std::vector<std::pair<zkevm_word_type, zkevm_word_type>> exponentiations()override{return _exponentiations;}

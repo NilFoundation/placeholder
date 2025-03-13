@@ -38,18 +38,16 @@ namespace nil {
         namespace bbf {
             // zkevm_state that is used for all opcodes
             struct basic_zkevm_state_part {
-                std::size_t     call_id;                // RW counter on start_call
-                zkevm_word_type bytecode_hash;
-                std::size_t     opcode;
-                std::size_t     pc;
-                std::size_t     stack_size;             // BEFORE opcode
-                std::size_t     memory_size;            // BEFORE opcode
-                std::size_t     rw_counter;
-                std::size_t     gas;
+                std::size_t     call_id = 0;            // RW counter on start_call
+                zkevm_word_type bytecode_hash = 0;
+                std::size_t     opcode = 0;
+                std::size_t     pc = 0;
+                std::size_t     stack_size = 0;         // BEFORE opcode
+                std::size_t     memory_size = 0;        // BEFORE opcode
+                std::size_t     rw_counter = 0;
+                std::size_t     gas = 0;
 
                 std::vector<zkevm_word_type>            stack_slice; // BEFORE opcode
-
-                basic_zkevm_state_part():call_id(0), bytecode_hash(0), opcode(0), pc(0), stack_size(0), memory_size(0), rw_counter(0), gas(0){}
             };
 
             struct call_header_zkevm_state_part {
@@ -265,6 +263,15 @@ namespace nil {
                     needs_world_state_access(false),
                     needs_call_header_access(false),
                     needs_call_context_access(false) {}
+
+                zkevm_state(const basic_zkevm_state_part &_base, const std::map<size_t, std::uint8_t> &_memory):
+                    base(_base),
+                    is_push(false),
+                    needs_memory(true),
+                    needs_world_state_access(false),
+                    needs_call_header_access(false),
+                    needs_call_context_access(false),
+                    memory_slice(_memory) {}
 
                 zkevm_state(const basic_zkevm_state_part &_base, const std::vector<std::uint8_t> &_memory):
                     base(_base),
