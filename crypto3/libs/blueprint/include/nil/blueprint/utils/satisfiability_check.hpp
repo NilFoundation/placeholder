@@ -29,6 +29,11 @@
 #include <atomic>
 #include <functional>
 #include <mutex>
+
+#include <boost/asio/thread_pool.hpp>
+#include <boost/asio/post.hpp>
+#include <boost/thread/thread_only.hpp>
+
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
 #include <nil/crypto3/zk/snark/arithmetization/plonk/table_description.hpp>
 #include <nil/crypto3/zk/snark/arithmetization/plonk/constraint_system.hpp>
@@ -39,17 +44,12 @@
 #include <nil/crypto3/zk/snark/arithmetization/plonk/lookup_constraint.hpp>
 #include <nil/crypto3/zk/snark/arithmetization/plonk/variable.hpp>
 
-
-#include <thread>
-#include <boost/asio/thread_pool.hpp>
-#include <boost/asio/post.hpp>
-
 namespace nil {
     namespace blueprint {
 
         struct satisfiability_check_options {
             bool verbose{false};
-            size_t thread_pool_size{std::thread::hardware_concurrency()};
+            size_t thread_pool_size{2 * std::max(boost::thread::hardware_concurrency(), 1u)};
             size_t split_per_thread{16};
             const std::map<uint32_t, std::vector<std::string>>* constraint_names{nullptr}; // non-owning
         };
@@ -101,6 +101,11 @@ namespace nil {
                 const auto &lookup_gates = bp.lookup_gates();
                 const auto verbose = options_.verbose;
 
+                // On MacOS stack size for new threads is too small, so we
+                // have to manually specify it to be big enough.
+                boost::thread::attributes worker_attrs;
+                worker_attrs.set_stack_size(8 << 20);
+
                 const size_t selector_range_per_thread = std::max<size_t>(
                     100,
                     selector_rows.size() / options_.thread_pool_size / options_.split_per_thread // not every batch takes the same time to process, so making it smaller
@@ -148,7 +153,14 @@ namespace nil {
                 for (const auto& i : used_gates) {
                     Column selector = assignments.selector(gates[i].selector_index);
 
-                    boost::asio::thread_pool gate_pool(options_.thread_pool_size);
+                    // To use the attrs we have to create threads manually
+                    boost::asio::thread_pool gate_pool(0);
+                    std::vector<boost::thread> workers;
+                    for (size_t i = 0; i < options_.thread_pool_size; ++i) {
+                        workers.emplace_back(worker_attrs, [&gate_pool] () {
+                            gate_pool.attach();
+                        });
+                    }
 
                     if (verbose) {
                         std::cout << "\tCheck gate " << i << std::endl;
@@ -163,7 +175,9 @@ namespace nil {
                         });
                     }
 
-                    gate_pool.join();
+                    gate_pool.wait();
+                    for (auto &w : workers) w.join();
+
                     if (!check_state_.result) {
                         return check_state_.result;
                     }
@@ -184,7 +198,6 @@ namespace nil {
                     verbose,
                     this
                 ](size_t gate_idx, size_t start, size_t end) -> bool {
-
                     Column selector = assignments.selector(lookup_gates[gate_idx].tag_index);
                     end = std::min(end, selector.size());
 
@@ -284,10 +297,16 @@ namespace nil {
                 };
 
                 for (const auto& i : used_lookup_gates) {
-
                     Column selector = assignments.selector(lookup_gates[i].tag_index);
 
-                    boost::asio::thread_pool lookup_pool(options_.thread_pool_size);
+                    // To use the attrs we have to create threads manually
+                    boost::asio::thread_pool lookup_pool(0);
+                    std::vector<boost::thread> workers;
+                    for (size_t i = 0; i < options_.thread_pool_size; ++i) {
+                        workers.emplace_back(worker_attrs, [&lookup_pool] () {
+                            lookup_pool.attach();
+                        });
+                    }
 
                     if (verbose) {
                         std::cout << "\tLookup gate " << i << std::endl;
@@ -302,7 +321,9 @@ namespace nil {
                         });
                     }
 
-                    lookup_pool.join();
+                    lookup_pool.wait();
+                    for (auto &w : workers) w.join();
+
                     if (!check_state_.result) {
                         return check_state_.result;
                     }
