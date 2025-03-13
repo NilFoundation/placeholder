@@ -29,6 +29,11 @@
 #include <atomic>
 #include <functional>
 #include <mutex>
+
+#include <boost/asio/thread_pool.hpp>
+#include <boost/asio/post.hpp>
+#include <boost/thread/thread_only.hpp>
+
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
 #include <nil/crypto3/zk/snark/arithmetization/plonk/table_description.hpp>
 #include <nil/crypto3/zk/snark/arithmetization/plonk/constraint_system.hpp>
@@ -39,17 +44,12 @@
 #include <nil/crypto3/zk/snark/arithmetization/plonk/lookup_constraint.hpp>
 #include <nil/crypto3/zk/snark/arithmetization/plonk/variable.hpp>
 
-
-#include <thread>
-#include <boost/asio/thread_pool.hpp>
-#include <boost/asio/post.hpp>
-
 namespace nil {
     namespace blueprint {
 
         struct satisfiability_check_options {
             bool verbose{false};
-            size_t thread_pool_size{std::thread::hardware_concurrency()};
+            size_t thread_pool_size{2 * std::max(boost::thread::hardware_concurrency(), 1u)};
             size_t split_per_thread{16};
             const std::map<uint32_t, std::vector<std::string>>* constraint_names{nullptr}; // non-owning
         };
@@ -66,25 +66,11 @@ namespace nil {
                 const satisfiability_check_options &options = {}
             ) {
                 satisfiability_checker checker(options);
-                auto result = checker.check_assignments(bp, assignments);
-                if( options.verbose ) checker.print_lookup_failed_table();
-                return result;
+                return checker.check_assignments(bp, assignments);
             }
+
         private:
             satisfiability_checker(const satisfiability_check_options &options) : options_(options) {}
-
-            void print_lookup_failed_table(){
-                if( failed_lookup_table_name != "" ){
-                    auto dynamic_table = used_dynamic_tables_.find(failed_lookup_table_name)->second;
-                    std::cout << "Possible values from " << failed_lookup_table_name << ": " << std::endl;
-                    for( const auto& item : dynamic_table ){
-                        for( const auto& value : item ){
-                            std::cout << std::hex << value << std::dec << " ";
-                        }
-                        std::cout << std::endl;
-                    }
-                }
-            }
 
             bool check_assignments(
                 const circuit<crypto3::zk::snark::plonk_constraint_system<FieldType>>& bp,
@@ -114,6 +100,11 @@ namespace nil {
                 const auto &copy_constraints = bp.copy_constraints();
                 const auto &lookup_gates = bp.lookup_gates();
                 const auto verbose = options_.verbose;
+
+                // On MacOS stack size for new threads is too small, so we
+                // have to manually specify it to be big enough.
+                boost::thread::attributes worker_attrs;
+                worker_attrs.set_stack_size(8 << 20);
 
                 const size_t selector_range_per_thread = std::max<size_t>(
                     100,
@@ -162,7 +153,14 @@ namespace nil {
                 for (const auto& i : used_gates) {
                     Column selector = assignments.selector(gates[i].selector_index);
 
-                    boost::asio::thread_pool gate_pool(options_.thread_pool_size);
+                    // To use the attrs we have to create threads manually
+                    boost::asio::thread_pool gate_pool(0);
+                    std::vector<boost::thread> workers;
+                    for (size_t i = 0; i < options_.thread_pool_size; ++i) {
+                        workers.emplace_back(worker_attrs, [&gate_pool] () {
+                            gate_pool.attach();
+                        });
+                    }
 
                     if (verbose) {
                         std::cout << "\tCheck gate " << i << std::endl;
@@ -177,7 +175,9 @@ namespace nil {
                         });
                     }
 
-                    gate_pool.join();
+                    gate_pool.wait();
+                    for (auto &w : workers) w.join();
+
                     if (!check_state_.result) {
                         return check_state_.result;
                     }
@@ -198,7 +198,6 @@ namespace nil {
                     verbose,
                     this
                 ](size_t gate_idx, size_t start, size_t end) -> bool {
-
                     Column selector = assignments.selector(lookup_gates[gate_idx].tag_index);
                     end = std::min(end, selector.size());
 
@@ -221,9 +220,8 @@ namespace nil {
                                     auto dynamic_table = fetch_dynamic_table(bp, assignments, table_name, lookup_gates[gate_idx].constraints[j].table_id);
                                     if (dynamic_table.find(input_values) == dynamic_table.end()) {
                                         for (std::size_t k = 0; k < input_values.size(); k++) {
-                                            std::cout << std::hex <<  input_values[k] << std::dec << " ";
+                                            std::cout << input_values[k] << " ";
                                         }
-                                        this->failed_lookup_table_name = table_name;
                                         std::cout << std::endl;
                                         std::cout << "Constraint " << j << " from lookup gate " << gate_idx << " from table "
                                             << table_name << " on row " << row << " is not satisfied."
@@ -235,6 +233,7 @@ namespace nil {
                                                 std::cout << lookup_input << std::endl;
                                             }
                                         }
+
                                         return false;
                                     }
                                     continue;
@@ -267,13 +266,12 @@ namespace nil {
                                 if (!found) {
                                     std::cout << "Input values:";
                                     for (std::size_t k = 0; k < input_values.size(); k++) {
-                                        std::cout << std::hex << input_values[k] << std::dec << " ";
+                                        std::cout << input_values[k] << " ";
                                     }
                                     std::cout << std::endl;
                                     std::cout << "Constraint " << j << " from lookup gate " << gate_idx << " from table "
                                         << table_name << " on row " << row << " is not satisfied."
                                         << std::endl;
-                                    this->failed_lookup_table_name = table_name;
                                     std::cout << "Offending Lookup Gate: " << std::endl;
                                     for (const auto &constraint : lookup_gates[gate_idx].constraints) {
                                         std::cout << "Table id: " << constraint.table_id << std::endl;
@@ -299,10 +297,16 @@ namespace nil {
                 };
 
                 for (const auto& i : used_lookup_gates) {
-
                     Column selector = assignments.selector(lookup_gates[i].tag_index);
 
-                    boost::asio::thread_pool lookup_pool(options_.thread_pool_size);
+                    // To use the attrs we have to create threads manually
+                    boost::asio::thread_pool lookup_pool(0);
+                    std::vector<boost::thread> workers;
+                    for (size_t i = 0; i < options_.thread_pool_size; ++i) {
+                        workers.emplace_back(worker_attrs, [&lookup_pool] () {
+                            lookup_pool.attach();
+                        });
+                    }
 
                     if (verbose) {
                         std::cout << "\tLookup gate " << i << std::endl;
@@ -317,7 +321,9 @@ namespace nil {
                         });
                     }
 
-                    lookup_pool.join();
+                    lookup_pool.wait();
+                    for (auto &w : workers) w.join();
+
                     if (!check_state_.result) {
                         return check_state_.result;
                     }
@@ -446,7 +452,6 @@ namespace nil {
             const satisfiability_check_options& options_;
             std::mutex used_dynamic_tables_mutex_;
             std::map<std::string, std::set<std::vector<typename FieldType::value_type>>> used_dynamic_tables_;
-            std::string failed_lookup_table_name;
             progress_printer progress_printer_;
             check_state check_state_;
         };
