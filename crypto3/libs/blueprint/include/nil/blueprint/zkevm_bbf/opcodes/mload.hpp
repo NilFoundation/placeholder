@@ -62,7 +62,7 @@ namespace nil {
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
                         auto address = w_to_16(current_state.stack_top())[15];
                         offset = address;
-                        current_mem = current_state.memory_size;
+                        current_mem = current_state.memory_size();
                         next_mem = std::max(offset + length, current_mem);
                         S = next_mem > current_mem;
                         for (std::size_t i = 0; i < 32; i++) {

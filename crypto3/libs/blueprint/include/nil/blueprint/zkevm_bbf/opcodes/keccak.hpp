@@ -74,7 +74,7 @@ namespace nil {
                         hash_hi = w_hi<FieldType>(hash_value);
                         hash_lo = w_lo<FieldType>(hash_value);
 
-                        current_mem = current_state.memory_size;
+                        current_mem = current_state.memory_size();
                         next_mem = length.is_zero()
                                        ? current_mem
                                        : std::max(offset + length, current_mem);

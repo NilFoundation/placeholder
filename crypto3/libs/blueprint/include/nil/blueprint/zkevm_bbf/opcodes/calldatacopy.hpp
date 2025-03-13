@@ -61,7 +61,7 @@ namespace nil {
                         destOffset = w_lo<FieldType>(current_state.stack_top());
                         offset = w_lo<FieldType>(current_state.stack_top(1));
                         length = w_lo<FieldType>(current_state.stack_top(2));
-                        current_mem = current_state.memory_size;
+                        current_mem = current_state.memory_size();
                         next_mem = length.is_zero()
                                        ? current_mem
                                        : std::max(destOffset + length, current_mem);

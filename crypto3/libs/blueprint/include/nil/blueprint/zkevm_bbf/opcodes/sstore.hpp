@@ -76,13 +76,15 @@ namespace nil {
 
                     if constexpr( stage == GenerationStage::ASSIGNMENT ){
                         auto storage_key = current_state.stack_top();
+                        auto call_context_address = current_state.call_context_address();
+
                         K_hi = w_hi<FieldType>(storage_key);
                         K_lo = w_lo<FieldType>(storage_key);
                         std::cout << "\tKey = " << current_state.stack_top() << "=[" <<storage_key << "] value = " << current_state.stack_top(1) << std::endl;
                         auto u = w_to_16(current_state.storage(current_state.stack_top()));
                         auto v = w_to_16(current_state.stack_top(1));
-                        state_w_id_before = current_state.last_write(rw_operation_type::state, current_state.call_context_address, 0, storage_key);
-                        access_w_id_before = current_state.last_write(rw_operation_type::access_list, current_state.call_context_address, 0, storage_key);
+                        state_w_id_before = current_state.last_write(rw_operation_type::state, call_context_address, 0, storage_key);
+                        access_w_id_before = current_state.last_write(rw_operation_type::access_list, call_context_address, 0, storage_key);
 
                         TYPE U_hi = w_hi<FieldType>(current_state.storage(current_state.stack_top()));
                         TYPE U_lo = w_lo<FieldType>(current_state.storage(current_state.stack_top()));
@@ -99,14 +101,14 @@ namespace nil {
                         is_U_zero = (U_sum == 0);
                         is_V_zero = (V_sum == 0);
 
-                        block_id = current_state.block_id;
-                        tx_id = current_state.tx_id;
+                        block_id = current_state.block_id();
+                        tx_id = current_state.tx_id();
 
-                        call_context_address_hi = w_hi<FieldType>(current_state.call_context_address);
-                        call_context_address_lo = w_lo<FieldType>(current_state.call_context_address);
+                        call_context_address_hi = w_hi<FieldType>(call_context_address);
+                        call_context_address_lo = w_lo<FieldType>(call_context_address);
 
-                        is_hot = current_state.was_accessed(current_state.call_context_address, 0, storage_key);
-                        is_dirty = current_state.was_written(current_state.call_context_address, 0, storage_key);
+                        is_hot = current_state.was_accessed(call_context_address, 0, storage_key);
+                        is_dirty = current_state.was_written(call_context_address, 0, storage_key);
 
                         is_equal_hi = (U_hi == V_hi);
                         is_equal_lo = (U_lo == V_lo);

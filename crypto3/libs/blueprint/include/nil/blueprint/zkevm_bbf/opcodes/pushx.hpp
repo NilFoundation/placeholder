@@ -51,7 +51,7 @@ namespace nil {
                 {
                     std::vector<TYPE> A_bytes(32);
                     if constexpr( stage == GenerationStage::ASSIGNMENT ){
-                        auto bytes = nil::blueprint::w_to_8(current_state.additional_input);
+                        auto bytes = nil::blueprint::w_to_8(current_state.additional_input());
                         for( std::size_t i = 0; i < 32; i++ ){
                             A_bytes[i] = bytes[i];
                         }

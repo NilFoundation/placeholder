@@ -63,7 +63,7 @@ namespace nil {
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
                         offset = w_lo<FieldType>(current_state.stack_top());
                         length = w_lo<FieldType>(current_state.stack_top(1));
-                        current_mem = current_state.memory_size;
+                        current_mem = current_state.memory_size();
                         next_mem = length.is_zero()
                                        ? current_mem
                                        : std::max(offset + length, current_mem);

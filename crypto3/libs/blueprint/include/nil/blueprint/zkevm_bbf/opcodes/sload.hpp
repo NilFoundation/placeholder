@@ -65,17 +65,18 @@ namespace nil {
 
                     if constexpr( stage == GenerationStage::ASSIGNMENT ){
                         auto storage_key = current_state.stack_top();
+                        auto call_context_address = current_state.call_context_address();
                         K_hi = w_hi<FieldType>(storage_key);
                         K_lo = w_lo<FieldType>(storage_key);
-                        block_id = current_state.block_id;
-                        tx_id = current_state.tx_id;
-                        call_context_address_hi = w_hi<FieldType>(current_state.call_context_address);
-                        call_context_address_lo = w_lo<FieldType>(current_state.call_context_address);
-                        state_w_id_before = current_state.last_write(rw_operation_type::state, current_state.call_context_address, 0, storage_key);
-                        access_w_id_before = current_state.last_write(rw_operation_type::access_list, current_state.call_context_address, 0, storage_key);
+                        block_id = current_state.block_id();
+                        tx_id = current_state.tx_id();
+                        call_context_address_hi = w_hi<FieldType>(call_context_address);
+                        call_context_address_lo = w_lo<FieldType>(call_context_address);
+                        state_w_id_before = current_state.last_write(rw_operation_type::state, call_context_address, 0, storage_key);
+                        access_w_id_before = current_state.last_write(rw_operation_type::access_list, call_context_address, 0, storage_key);
 
-                        is_hot = current_state.was_accessed(current_state.call_context_address, 0, storage_key);
-                        is_dirty = current_state.was_written(current_state.call_context_address, 0, storage_key);
+                        is_hot = current_state.was_accessed(call_context_address, 0, storage_key);
+                        is_dirty = current_state.was_written(call_context_address, 0, storage_key);
 
                         auto v = w_to_16(current_state.storage(current_state.stack_top()));
                         std::cout << "\taddress = " << std::hex << call_context_address_hi << " " <<call_context_address_lo << std::dec << std::endl;
@@ -98,8 +99,6 @@ namespace nil {
                     allocate(tx_id, 37, 0);
                     allocate(state_w_id_before, 38, 0);
                     allocate(access_w_id_before, 39, 0);
-
-
 
                     auto V_128 = chunks16_to_chunks128<TYPE>(V);
                     if constexpr( stage == GenerationStage::CONSTRAINTS ){

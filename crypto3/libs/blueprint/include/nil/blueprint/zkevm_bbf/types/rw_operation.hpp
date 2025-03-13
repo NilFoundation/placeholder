@@ -215,6 +215,7 @@ namespace nil {
                 zkevm_word_type value
             ){
                 BOOST_ASSERT(id < ( 1 << 28)); // Maximum calls amount(?)
+                if( address >= 1024 ) std::cout << "address = " << std::hex << address  << std::dec << std::endl;
                 BOOST_ASSERT(address < 1024);
 
                 rw_operation r;

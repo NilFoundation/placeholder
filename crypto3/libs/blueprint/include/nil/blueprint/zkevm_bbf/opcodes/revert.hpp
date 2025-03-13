@@ -59,7 +59,7 @@ namespace nil {
                         offset = w_lo<FieldType>(current_state.stack_top());
                         length = w_lo<FieldType>(current_state.stack_top(1));
                         N = current_state.modified_items_amount();
-                        block_id = current_state.block_id;
+                        block_id = current_state.block_id();
                     }
                     allocate(block_id, 0, 0);
                     allocate(offset, 32, 0);

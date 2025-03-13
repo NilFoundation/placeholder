@@ -29,8 +29,7 @@ namespace nil {
                     using integral_type = typename FieldType::integral_type;
                     TYPE memory_words;
                     if constexpr( stage == GenerationStage::ASSIGNMENT ){
-                        std::cout << "\tASSIGNMENT implemented" << std::endl;
-                        memory_words = integral_type(current_state.memory_size) / 32;
+                        memory_words = integral_type(current_state.memory_size()) / 32;
                     }
                     allocate(memory_words, 0, 0);
 

@@ -301,7 +301,7 @@ BOOST_AUTO_TEST_CASE(delegatecall_counter) {
     max_sizes.max_keccak_blocks = 10;
     max_sizes.max_bytecode = 3000;
     max_sizes.max_mpt = 0;
-    max_sizes.max_rw = 3000;
+    max_sizes.max_rw = 4000;
     max_sizes.max_copy = 500;
     max_sizes.max_zkevm_rows = 1500;
     max_sizes.max_exponentiations = 50;

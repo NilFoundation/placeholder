@@ -63,7 +63,7 @@ namespace nil {
                         std::cout << "\tASSIGNMENT implemented" << std::endl;
                         auto offsetess = w_to_16(current_state.stack_top())[15];
                         offset = offsetess;
-                        current_mem = current_state.memory_size;
+                        current_mem = current_state.memory_size();
                         next_mem = std::max(offset + length, current_mem);
                         S = next_mem > current_mem;
                         auto bytes = w_to_8(current_state.stack_top(1));
