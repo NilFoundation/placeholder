@@ -1,221 +1,37 @@
 # Collect traces for tests
 Instruction how to update EVM traces for tests.
 
-## Dependency
+## Dependencies
 1. [solc](https://github.com/ethereum/solidity)
-2. [nild](https://github.com/NilFoundation/nil)
-3. [nil_block_generator](https://github.com/NilFoundation/nil)
-4. [prover](https://github.com/NilFoundation/nil)
+2. [nild, nil_block_generator, faucet, prover](https://github.com/NilFoundation/nil)
 
-## Common pipeline
-1. Compile contract
-```bash
-solc -o <OUTPUT PATH> --bin --abi <CONTRACT CODE> --overwrite --no-cbor-metadata --metadata-hash none
-```
-2. Generate block on nil node
-```bash
-# create smart account
-nil_block_generator init
-# deploy contract
-nil_block_generator add-contract --contract-name <ANY NAME> --contract-path <COMPILED CONTRACT>
-# add record to the config
-nil_block_generator call-contract --contract-name <ANY NAME> --args <CALL ARGS> --method <CONTRACT METHOD> --count <MUN CALLs>
-# execute all calls, all transaction should be in a single block
-nil_block_generator get-block
-```
-3. Collect traces
-```bash
-prover trace <OUPUT PATH> 1 <BLOCK HASH>
-```
-To collect traces by prover you need to run `nild` in another terminal from the same working directory as `nil_block_generator`
-```bash
-/nild run --http-port 8529
-```
+## Update traces
 
-## Update test data
+To recollect all regular test cases just run
 
-### simple increment
-```bash
-solc -o . --bin --abi contracts/tracer_data.sol --overwrite --no-cbor-metadata --metadata-hash none
-nil_block_generator init
-nil_block_generator add-contract --contract-name increment --contract-path SimpleStorage
-nil_block_generator call-contract --contract-name increment --args "" --method increment --count 1
-nil_block_generator get-block
-nild run --http-port 8529 # should be run in another terminal (or with &) and stopped after collecting the traces with prover
-prover trace simple/increment_simple 1 $block_hash
-```
+```collector.py --config=collector_config.yaml```
 
-### multi transactions
-```bash
-solc -o . --bin --abi contracts/tracer_data.sol --overwrite --no-cbor-metadata --metadata-hash none
-nil_block_generator init
-nil_block_generator add-contract --contract-name increment --contract-path SimpleStorage
-nil_block_generator call-contract --contract-name increment --args "" --method increment --count 2
-nil_block_generator get-block
-nild run --http-port 8529 # should be run in another terminal (or with &) and stopped after collecting the traces with prover
-prover trace multi_tx/increment_multi_tx 1 $block_hash
-```
+### Trace validity test cases
 
-### exponential
-```bash
-solc -o . --bin --abi contracts/tracer_data.sol --overwrite --no-cbor-metadata --metadata-hash none
-nil_block_generator init
-nil_block_generator add-contract --contract-name exp --contract-path SimpleStorage
-nil_block_generator call-contract --contract-name exp --args "" --method exponentiate --count 1
-nil_block_generator get-block
-nild run --http-port 8529 # should be run in another terminal (or with &) and stopped after collecting the traces with prover
-prover trace exp/exp 1 $block_hash
-```
+#### Hash mismatch test case
+After update of `traces.proto` file used in cluster just save any previously collected trace to `different_proto/increment_simple.pb....`
 
-### arithmetic corner cases
+#### Broken index test case
+- Run
 
-#### add overflow
-```bash
-solc -o . --bin --abi contracts/tracer_data.sol --overwrite --no-cbor-metadata --metadata-hash none
-nil_block_generator init
-nil_block_generator add-contract --contract-name Uint256CornerCaseTests --contract-path Uint256CornerCaseTests
-nil_block_generator call-contract --contract-name Uint256CornerCaseTests --method addAsm --count 1 --args "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF 0x2"
-
-nil_block_generator get-block
-nild run --http-port 8529 # should be run in another terminal (or with &) and stopped after collecting the traces with prover
-prover trace corner_cases/addition_overflow/addition_overflow 1 $block_hash
-```
-
-#### mul overflow
-```bash
-solc -o . --bin --abi contracts/tracer_data.sol --overwrite --no-cbor-metadata --metadata-hash none
-nil_block_generator init
-nil_block_generator add-contract --contract-name Uint256CornerCaseTests --contract-path Uint256CornerCaseTests
-nil_block_generator call-contract --contract-name Uint256CornerCaseTests --method mulAsm --count 1 --args "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFE 0xFF"
-
-nil_block_generator get-block
-nild run --http-port 8529 # should be run in another terminal (or with &) and stopped after collecting the traces with prover
-prover trace corner_cases/multiplication_overflow/mul_overflow 1 $block_hash
-```
-
-#### exp overflow
-```bash
-solc -o . --bin --abi contracts/tracer_data.sol --overwrite --no-cbor-metadata --metadata-hash none
-nil_block_generator init
-nil_block_generator add-contract --contract-name Uint256CornerCaseTests --contract-path Uint256CornerCaseTests
-nil_block_generator call-contract --contract-name Uint256CornerCaseTests --method expAsm --count 1 --args "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFE 0xFF"
-
-nil_block_generator get-block
-nild run --http-port 8529 # should be run in another terminal (or with &) and stopped after collecting the traces with prover
-prover trace corner_cases/exponentiation_overflow/exp_overflow 1 $block_hash
-```
-
-#### sub underflow
-```bash
-solc -o . --bin --abi contracts/tracer_data.sol --overwrite --no-cbor-metadata --metadata-hash none
-nil_block_generator init
-nil_block_generator add-contract --contract-name exp --contract-path Uint256CornerCaseTests
-nil_block_generator call-contract --contract-name Uint256CornerCaseTests --method subAsm --count 1 --args "0x1 0x2"
-nil_block_generator get-block
-nild run --http-port 8529 # should be run in another terminal (or with &) and stopped after collecting the traces with prover
-prover trace corner_cases/substraction_underflow/substraction_underflow 1 $block_hash
-```
-
-#### div by zero
-```bash
-solc -o . --bin --abi contracts/tracer_data.sol --overwrite --no-cbor-metadata --metadata-hash none
-nil_block_generator init
-nil_block_generator add-contract --contract-name Uint256CornerCaseTests --contract-path Uint256CornerCaseTests
-nil_block_generator call-contract --contract-name Uint256CornerCaseTests --method divAsm --count 1 --args "0x11 0x0"
-nil_block_generator get-block
-nild run --http-port 8529 # should be run in another terminal (or with &) and stopped after collecting the traces with prover
-prover trace corner_cases/division_by_zero/div_by_zero 1 $block_hash
-```
+  ```collector.py --config=collector_config.yaml --invocation=simple-increment```
+- Copy traces from `simple` subdirectory to `broken_index` one
+- Run collector again
+- Copy any single file from `simple` subdirectory to `broken_index` (replace the existing one)
 
 
-### Memory expansion tests
+## How to add new test case
+- Add Solidity code you want to test to `contracts/tracer_data.sol` (or define it in a separate file if needed)
+- Configure `collector_config.yaml`:
+  - Adjust paths for nil and solc binaries used in your system
+  - Define all Solitidy files you want to compile
+  - Prepare subdirectory for traces to be put (e.g. `my_test_case/trace_files`)
+  - Add invocations you want to test (contract name, method call sequence, directory for traces to be stored)
+- Run
 
-#### CALLDATACOPY
-```bash
-solc -o . --bin --abi contracts/tracer_data.sol --overwrite --no-cbor-metadata --metadata-hash none
-nil_block_generator init
-nil_block_generator add-contract --contract-name MemoryGasTest --contract-path MemoryGasTest
-nil_block_generator call-contract --contract-name MemoryGasTest --method testCalldatacopy --count 1 --args "600 0 32"
-nil_block_generator get-block
-nild run --http-port 8529 # should be run in another terminal (or with &) and stopped after collecting the traces with prover
-prover trace memory_expansion/calldatacopy/mem_expand_calldatacopy 1 $block_hash
-```
-
-#### CODECOPY
-```bash
-solc -o . --bin --abi contracts/tracer_data.sol --overwrite --no-cbor-metadata --metadata-hash none
-nil_block_generator init
-nil_block_generator add-contract --contract-name MemoryGasTest --contract-path MemoryGasTest
-nil_block_generator call-contract --contract-name MemoryGasTest --method testCodecopy --count 1 --args "700 0 32"
-nil_block_generator get-block
-nild run --http-port 8529 # should be run in another terminal (or with &) and stopped after collecting the traces with prover
-prover trace memory_expansion/codecopy/mem_expand_codecopy 1 $block_hash
-```
-
-#### MLOAD
-```bash
-solc -o . --bin --abi contracts/tracer_data.sol --overwrite --no-cbor-metadata --metadata-hash none
-nil_block_generator init
-nil_block_generator add-contract --contract-name MemoryGasTest --contract-path MemoryGasTest
-nil_block_generator call-contract --contract-name MemoryGasTest --method testMload --count 1 --args "1000 128"
-nil_block_generator get-block
-nild run --http-port 8529 # should be run in another terminal (or with &) and stopped after collecting the traces with prover
-prover trace memory_expansion/mload/mem_expand_mload 1 $block_hash
-```
-
-#### MSTORE
-```bash
-solc -o . --bin --abi contracts/tracer_data.sol --overwrite --no-cbor-metadata --metadata-hash none
-nil_block_generator init
-nil_block_generator add-contract --contract-name MemoryGasTest --contract-path MemoryGasTest
-nil_block_generator call-contract --contract-name MemoryGasTest --method testMstore --count 1 --args "1100 160 999"
-nil_block_generator get-block
-nild run --http-port 8529 # should be run in another terminal (or with &) and stopped after collecting the traces with prover
-prover trace memory_expansion/mstore/mem_expand_mstore 1 $block_hash
-```
-
-#### MSTORE8
-```bash
-solc -o . --bin --abi contracts/tracer_data.sol --overwrite --no-cbor-metadata --metadata-hash none
-nil_block_generator init
-nil_block_generator add-contract --contract-name MemoryGasTest --contract-path MemoryGasTest
-nil_block_generator call-contract --contract-name MemoryGasTest --method testMstore8 --count 1 --args "1200 192 255"
-nil_block_generator get-block
-nild run --http-port 8529 # should be run in another terminal (or with &) and stopped after collecting the traces with prover
-prover trace memory_expansion/mstore8/mem_expand_mstore8 1 $block_hash
-```
-
-#### RETURNDATACOPY
-```bash
-solc -o . --bin --abi contracts/tracer_data.sol --overwrite --no-cbor-metadata --metadata-hash none
-nil_block_generator init
-nil_block_generator add-contract --contract-name MemoryGasTest --contract-path MemoryGasTest
-nil_block_generator call-contract --contract-name MemoryGasTest --method testReturndatacopy --count 1 --args "900 0 32"
-nil_block_generator get-block
-nild run --http-port 8529 # should be run in another terminal (or with &) and stopped after collecting the traces with prover
-prover trace memory_expansion/returndatacopy/mem_expand_returndatacopy 1 $block_hash
-```
-
-#### MCOPY
-```bash
-solc -o . --bin --abi contracts/tracer_data.sol --overwrite --no-cbor-metadata --metadata-hash none
-nil_block_generator init
-nil_block_generator add-contract --contract-name MemoryGasTest --contract-path MemoryGasTest
-nil_block_generator call-contract --contract-name MemoryGasTest --method testMemCopy --count 1 --args "900 0 20"
-nil_block_generator get-block
-nild run --http-port 8529 # should be run in another terminal (or with &) and stopped after collecting the traces with prover
-prover trace memory_expansion/mcopy/mcopy 1 $block_hash
-```
-
-### broken index
-```bash
-solc -o . --bin --abi contracts/tracer_data.sol --overwrite --no-cbor-metadata --metadata-hash none
-nil_block_generator init
-nil_block_generator add-contract --contract-name increment --contract-path SimpleStorage
-nil_block_generator call-contract --contract-name increment --args "" --method increment --count 1
-nil_block_generator get-block
-nild run --http-port 8529 # should be run in another terminal (or with &) and stopped after collecting the traces with prover
-prover trace broken_index/increment_simple 1 $block_hash
-prover increment_simple 1 $block_hash
-# mix files
-```
+  ```collector.py --config=collector_config.yaml --invocation=<your_test_case_name_defined_in_yaml>```

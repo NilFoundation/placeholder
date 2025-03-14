@@ -55,6 +55,7 @@
 #include <nil/crypto3/zk/math/expression.hpp>
 #include <nil/crypto3/zk/math/expression_evaluator.hpp>
 #include <nil/crypto3/zk/math/expression_visitors.hpp>
+#include <nil/crypto3/zk/math/dag_expression.hpp>
 
 #include <nil/crypto3/bench/scoped_profiler.hpp>
 
@@ -87,26 +88,21 @@ namespace nil {
                         const plonk_polynomial_dfs_table<FieldType>& assignments,
                         std::shared_ptr<math::evaluation_domain<FieldType>> domain,
                         std::size_t extended_domain_size,
-                        std::unordered_map<variable_type, polynomial_dfs_type>& variable_values_out,
+                        std::unordered_map<variable_type, polynomial_dfs_type> &variable_values_out,
                         const polynomial_dfs_type &mask_polynomial,
                         const polynomial_dfs_type &lagrange_0
                     ) {
 
-                        std::unordered_map<variable_type, size_t> variable_counts;
                         std::vector<variable_type> variables;
 
                         math::expression_for_each_variable_visitor<variable_type> visitor(
-                            [&variable_counts, &variables, &variable_values_out](const variable_type& var) {
-                                // Create the structure of the map so we can change the values later.
-                                if (variable_counts[var] == 0) {
+                            [&variables, &variable_values_out](const variable_type& var) {
+                                // Create the structure of the map, so its values can be filled in parallel.
+                                if (variable_values_out.find(var) == variable_values_out.end()) {
                                     variables.push_back(var);
-                                    // Create the structure of the map, so its values can be filled in parallel.
-                                    if (variable_values_out.find(var) == variable_values_out.end()) {
-                                        variable_values_out[var] = polynomial_dfs_type();
-                                    }
+                                    variable_values_out[var] = polynomial_dfs_type::zero();
                                 }
-                                variable_counts[var]++;
-                        });
+                            });
 
                         visitor.visit(expr);
 
@@ -114,7 +110,8 @@ namespace nil {
                             math::make_evaluation_domain<FieldType>(extended_domain_size);
 
                         parallel_for(0, variables.size(),
-                            [&variables, &variable_values_out, &assignments, &domain, &extended_domain, extended_domain_size, &mask_polynomial, &lagrange_0](std::size_t i) {
+                            [&variables, &variable_values_out, &assignments, &domain, &extended_domain,
+                                  extended_domain_size, &mask_polynomial, &lagrange_0](std::size_t i) {
                                 const variable_type& var = variables[i];
 
                                 // Convert the variable to polynomial_dfs variable type.
@@ -127,8 +124,9 @@ namespace nil {
                                     assignment = mask_polynomial;
                                 } else if( var.index == PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED && var.type == variable_type::column_type::selector) {
                                     assignment = mask_polynomial - lagrange_0;
-                                } else
+                                } else {
                                     assignment = assignments.get_variable_value(var_dfs, domain);
+                                }
 
                                 // In parallel version we always resize the assignment poly, it's better for parallelization.
                                 // if (count > 1) {
@@ -146,17 +144,13 @@ namespace nil {
                         const polynomial_dfs_type &lagrange_0,
                         transcript_type& transcript
                     ) {
+                        using value_type = typename FieldType::value_type;
                         PROFILE_SCOPE("gate_argument_time");
 
                         // max_gates_degree that comes from the outside does not take into account multiplication
                         // by selector.
                         ++max_gates_degree;
-                        typename FieldType::value_type theta = transcript.template challenge<FieldType>();
-
-                        auto value_type_to_polynomial_dfs = [](
-                            const typename variable_type::assignment_type& coeff) {
-                                return polynomial_dfs_type(0, 1, coeff);
-                            };
+                        value_type theta = transcript.template challenge<FieldType>();
 
                         std::vector<std::uint32_t> extended_domain_sizes;
                         std::vector<std::uint32_t> degree_limits;
@@ -200,7 +194,6 @@ namespace nil {
                         }
 
                         std::array<polynomial_dfs_type, argument_size> F;
-
                         F[0] = polynomial_dfs_type::zero();
                         for (std::size_t i = 0; i < extended_domain_sizes.size(); ++i) {
                             std::unordered_map<variable_type, polynomial_dfs_type> variable_values;
@@ -211,24 +204,22 @@ namespace nil {
                                 mask_polynomial, lagrange_0
                             );
 
+                            math::dag_expression<variable_type> dag_expr(expressions[i]);
                             polynomial_dfs_type result(extended_domain_sizes[i] - 1, extended_domain_sizes[i]);
                             wait_for_all(parallel_run_in_chunks<void>(
                                 extended_domain_sizes[i],
-                                [&variable_values, &extended_domain_sizes, &result, &expressions, i]
+                                [&variable_values, &extended_domain_sizes, &result, &expressions, i, &dag_expr]
                                 (std::size_t begin, std::size_t end) {
+                                    auto dag_expr_copy = dag_expr;
                                     for (std::size_t j = begin; j < end; ++j) {
-                                        // Don't use cache here. In practice it's slower to maintain the cache
-                                        // than to re-compute the subexpression value when value type is field element.
-                                        math::expression_evaluator<variable_type> evaluator(
-                                            expressions[i],
-                                            [&assignments=variable_values, j]
-                                                (const variable_type &var) -> const typename FieldType::value_type& {
-                                                    return assignments[var][j];
-                                            });
-                                        result[j] = evaluator.evaluate();
+                                        std::function<value_type(const variable_type &)> eval_map =
+                                            [&variable_values, j](const variable_type &var) -> value_type {
+                                                return variable_values[var][j];
+                                            };
+                                        result[j] = dag_expr_copy.evaluate(eval_map)[0];
+                                        dag_expr_copy.clear_cache();
                                     }
                             }, ThreadPool::PoolLevel::HIGH));
-
                             F[0] += result;
                         };
                         return F;
