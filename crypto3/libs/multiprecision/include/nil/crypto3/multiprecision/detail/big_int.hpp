@@ -10,6 +10,7 @@
 
 #include <climits>
 #include <cmath>
+#include <compare>
 #include <cstring>
 #include <functional>
 #include <ios>
@@ -144,22 +145,23 @@ namespace nil::crypto3::multiprecision {
         // Comparison
 
         template<std::size_t Bits2>
-        constexpr int compare(const big_int<Bits2>& other) const noexcept {
+        constexpr std::strong_ordering operator<=>(
+            const big_int<Bits2>& other) const noexcept {
             if (negative() && !other.negative()) {
-                return -1;
+                return std::strong_ordering::less;
             }
             if (!negative() && other.negative()) {
-                return 1;
+                return std::strong_ordering::greater;
             }
             if (negative() && other.negative()) {
-                return other.m_abs.compare(this->m_abs);
+                return other.m_abs <=> this->m_abs;
             }
-            return this->m_abs.compare(other.m_abs);
+            return this->m_abs <=> other.m_abs;
         }
 
-#define NIL_CO3_MP_BIG_INT_IMPL_OPERATOR(op)                                         \
-    friend constexpr bool operator op(const big_int& a, const big_int& b) noexcept { \
-        return a.compare(b) op 0;                                                    \
+#define NIL_CO3_MP_BIG_INT_IMPL_OPERATOR(OP)                                         \
+    friend constexpr bool operator OP(const big_int& a, const big_int& b) noexcept { \
+        return (a <=> b) OP 0;                                                       \
     }
 
         NIL_CO3_MP_BIG_INT_IMPL_OPERATOR(<)
