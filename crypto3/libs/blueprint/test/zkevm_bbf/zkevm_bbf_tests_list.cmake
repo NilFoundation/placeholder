@@ -1,5 +1,6 @@
 set(ZKEVM_BBF_TESTS_FILES
     "${BLUEPRINT_TEST_ROOT}/zkevm_bbf/hardhat"
+    "${BLUEPRINT_TEST_ROOT}/zkevm_bbf/alchemy"
     "${BLUEPRINT_TEST_ROOT}/zkevm_bbf/rw"
     "${BLUEPRINT_TEST_ROOT}/zkevm_bbf/bytecode"
     "${BLUEPRINT_TEST_ROOT}/zkevm_bbf/copy"
