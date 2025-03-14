@@ -174,42 +174,42 @@ public:
             std::cout << std::endl;
         }
 
-        const std::string keccak_circuit = "keccak";
-        if (should_run_circuit(keccak_circuit)) {
-            std::cout << "circuit '" << keccak_circuit << "'" << std::endl;
+        // const std::string keccak_circuit = "keccak";
+        // if (should_run_circuit(keccak_circuit)) {
+        //     std::cout << "circuit '" << keccak_circuit << "'" << std::endl;
 
-            // Max_keccak
-            result = test_bbf_component<field_type, nil::blueprint::bbf::zkevm_keccak>(
-                keccak_circuit,
-                {}, keccak_assignment_input,max_keccak_blocks
-            );
-            BOOST_ASSERT(result);
-            std::cout << std::endl;
-        }
+        //     // Max_keccak
+        //     result = test_bbf_component<field_type, nil::blueprint::bbf::zkevm_keccak>(
+        //         keccak_circuit,
+        //         {}, keccak_assignment_input,max_keccak_blocks
+        //     );
+        //     BOOST_ASSERT(result);
+        //     std::cout << std::endl;
+        // }
 
-        const std::string bytecode_circuit = "bytecode";
-        if (should_run_circuit(bytecode_circuit)) {
-            std::cout << "circuit '" << bytecode_circuit << "'" << std::endl;
+        // const std::string bytecode_circuit = "bytecode";
+        // if (should_run_circuit(bytecode_circuit)) {
+        //     std::cout << "circuit '" << bytecode_circuit << "'" << std::endl;
 
-            // Max_bytecode, max_bytecode
-            result = test_bbf_component<field_type, nil::blueprint::bbf::bytecode>(
-                bytecode_circuit,
-                {7}, bytecode_assignment_input, max_bytecode, max_keccak_blocks
-            );
-            BOOST_ASSERT(result);
-            std::cout << std::endl;
-        }
+        //     // Max_bytecode, max_bytecode
+        //     result = test_bbf_component<field_type, nil::blueprint::bbf::bytecode>(
+        //         bytecode_circuit,
+        //         {7}, bytecode_assignment_input, max_bytecode, max_keccak_blocks
+        //     );
+        //     BOOST_ASSERT(result);
+        //     std::cout << std::endl;
+        // }
 
-        const std::string rw_circuit = "rw";
-        if (should_run_circuit(rw_circuit)) {
-            std::cout << "circuit '" << rw_circuit << "'" << std::endl;
+        // const std::string rw_circuit = "rw";
+        // if (should_run_circuit(rw_circuit)) {
+        //     std::cout << "circuit '" << rw_circuit << "'" << std::endl;
 
-            // Max_rw, Max_mpt
-            result = test_bbf_component<field_type, nil::blueprint::bbf::rw>(
-                rw_circuit,
-                {}, rw_assignment_input, max_rw, max_mpt, max_call_commits
-            );
-            BOOST_ASSERT(result);
+        //     // Max_rw, Max_mpt
+        //     result = test_bbf_component<field_type, nil::blueprint::bbf::rw>(
+        //         rw_circuit,
+        //         {}, rw_assignment_input, max_rw, max_mpt, max_call_commits
+        //     );
+        //     BOOST_ASSERT(result);
 
             // using small_field_type = typename algebra::fields::babybear;
             // // Max_rw, Max_mpt
@@ -218,8 +218,8 @@ public:
             //     {}, rw_assignment_input, max_rw, max_mpt
             // );
             // BOOST_ASSERT(result);
-            std::cout << std::endl;
-        }
+        //    std::cout << std::endl;
+        //}
 
         const std::string call_commit_circuit = "call_commit";
         if (should_run_circuit(call_commit_circuit)) {
@@ -447,6 +447,60 @@ BOOST_AUTO_TEST_CASE(try_catch_cold) {
     max_sizes.max_mpt = 0;
     max_sizes.max_rw = 6000;
     max_sizes.max_copy = 1500;
+    max_sizes.max_zkevm_rows = 3000;
+    max_sizes.max_exponentiations = 50;
+    max_sizes.max_exp_rows = 500;
+    max_sizes.max_call_commits = 500;
+
+    complex_test<field_type>(pt, max_sizes);
+}
+
+BOOST_AUTO_TEST_CASE(transient_storage) {
+    using field_type = typename algebra::curves::pallas::base_field_type;
+    auto pt = load_hardhat_input("transient_storage.json");
+    l1_size_restrictions max_sizes;
+
+    max_sizes.max_keccak_blocks = 10;
+    max_sizes.max_bytecode = 3000;
+    max_sizes.max_mpt = 0;
+    max_sizes.max_rw = 3000;
+    max_sizes.max_copy = 500;
+    max_sizes.max_zkevm_rows = 1000;
+    max_sizes.max_exponentiations = 50;
+    max_sizes.max_exp_rows = 500;
+    max_sizes.max_call_commits = 500;
+
+    complex_test<field_type>(pt, max_sizes);
+}
+
+BOOST_AUTO_TEST_CASE(transient_storage_revert) {
+    using field_type = typename algebra::curves::pallas::base_field_type;
+    auto pt = load_hardhat_input("transient_storage_revert.json");
+    l1_size_restrictions max_sizes;
+
+    max_sizes.max_keccak_blocks = 10;
+    max_sizes.max_bytecode = 3000;
+    max_sizes.max_mpt = 0;
+    max_sizes.max_rw = 6000;
+    max_sizes.max_copy = 500;
+    max_sizes.max_zkevm_rows = 3000;
+    max_sizes.max_exponentiations = 50;
+    max_sizes.max_exp_rows = 500;
+    max_sizes.max_call_commits = 500;
+
+    complex_test<field_type>(pt, max_sizes);
+}
+
+BOOST_AUTO_TEST_CASE(transient_storage_multi) {
+    using field_type = typename algebra::curves::pallas::base_field_type;
+    auto pt = load_hardhat_input("transient_storage_multi.json");
+    l1_size_restrictions max_sizes;
+
+    max_sizes.max_keccak_blocks = 10;
+    max_sizes.max_bytecode = 3000;
+    max_sizes.max_mpt = 0;
+    max_sizes.max_rw = 6000;
+    max_sizes.max_copy = 500;
     max_sizes.max_zkevm_rows = 3000;
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;

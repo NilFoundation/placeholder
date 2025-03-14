@@ -68,6 +68,8 @@
 #include <nil/blueprint/zkevm_bbf/opcodes/shr.hpp>
 #include <nil/blueprint/zkevm_bbf/opcodes/sar.hpp>
 #include <nil/blueprint/zkevm_bbf/opcodes/swapx.hpp>
+#include <nil/blueprint/zkevm_bbf/opcodes/tload.hpp>
+#include <nil/blueprint/zkevm_bbf/opcodes/tstore.hpp>
 #include <nil/blueprint/zkevm_bbf/opcodes/pop.hpp>
 #include <nil/blueprint/zkevm_bbf/opcodes/eq.hpp>
 #include <nil/blueprint/zkevm_bbf/opcodes/calldatacopy.hpp>
@@ -140,6 +142,10 @@ namespace nil {
                 // // Storage operations
                 opcodes[zkevm_opcode::SLOAD] = std::make_shared<zkevm_sload_operation<BlueprintFieldType>>();
                 opcodes[zkevm_opcode::SSTORE] = std::make_shared<zkevm_sstore_operation<BlueprintFieldType>>();
+
+                // // Transient Storage operations
+                opcodes[zkevm_opcode::TLOAD] = std::make_shared<zkevm_tload_operation<BlueprintFieldType>>();
+                opcodes[zkevm_opcode::TSTORE] = std::make_shared<zkevm_tstore_operation<BlueprintFieldType>>();
 
                 // // CALL operaitions
                 opcodes[zkevm_opcode::CALLVALUE] = std::make_shared<zkevm_callvalue_operation<BlueprintFieldType>>();
