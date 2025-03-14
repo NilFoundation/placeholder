@@ -13,6 +13,7 @@
 
 #include <algorithm>
 #include <climits>
+#include <compare>
 #include <cstddef>
 #include <cstring>
 #include <stdexcept>
@@ -346,7 +347,7 @@ namespace nil::crypto3::multiprecision {
                 big_uint<Bits2> tmp;
                 subtract_unsigned<OverflowPolicy>(tmp, a, b);
                 result = tmp.template truncate<Bits1>();
-                if (tmp.compare(result) != 0) {
+                if (tmp != result) {
                     subtract_overflow<OverflowPolicy>();
                 }
                 return;
@@ -373,8 +374,8 @@ namespace nil::crypto3::multiprecision {
                 if constexpr (GuaranteedGreater) {
                     BOOST_ASSERT(a > b);
                 } else {
-                    int c = a.compare(b);
-                    if (c < 0) {
+                    std::strong_ordering c = a <=> b;
+                    if (std::is_lt(c)) {
                         subtract_overflow<OverflowPolicy>();
                         if constexpr (OverflowPolicy == overflow_policy::wrap) {
                             if constexpr (Bits3 > Bits1) {
@@ -395,7 +396,7 @@ namespace nil::crypto3::multiprecision {
                         result.wrapping_neg_inplace();
                         return;
                     }
-                    if (c == 0) {
+                    if (std::is_eq(c)) {
                         result = static_cast<limb_type>(0u);
                         return;
                     }
