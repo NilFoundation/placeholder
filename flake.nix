@@ -124,7 +124,7 @@
             runTests = true;
             sanitize = true;
             crypto3_tests = true;
-            parallel_crypto3_tets = true;
+            parallel_crypto3_tests = true;
             crypto3_bechmarks = true;
             parallel_crypto3_bechmarks = true;
           });
@@ -136,7 +136,7 @@
             runTests = true;
             sanitize = true;
             crypto3_tests = true;
-            parallel_crypto3_tets = true;
+            parallel_crypto3_tests = true;
             crypto3_bechmarks = true;
             parallel_crypto3_bechmarks = true;
           });
