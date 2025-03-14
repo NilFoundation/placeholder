@@ -77,6 +77,7 @@ namespace nil {
                 zkevm_word_type tx_from;
                 zkevm_word_type tx_value;
                 zkevm_word_type tx_hash;
+                zkevm_word_type call_caller;
                 zkevm_word_type block_hash;
                 zkevm_word_type transaction_hash;
                 zkevm_word_type call_context_address;
@@ -211,6 +212,7 @@ namespace nil {
                     call_id = rw_counter;
                     tx_to = zkevm_word_from_string(tt.get_child("to").data());
                     tx_from = zkevm_word_from_string(tt.get_child("from").data());
+                    call_caller = zkevm_word_from_string(tt.get_child("from").data());
                     tx_value = zkevm_word_from_string(tt.get_child("value").data());
                     gas = std::size_t(zkevm_word_from_string(tt.get_child("gas").data()));
                     tx_hash = zkevm_word_from_string(_tx_hash);
@@ -342,6 +344,8 @@ namespace nil {
                         if( opcode_from_number(current_opcode) == zkevm_opcode::ORIGIN ) origin(); else
                         if( opcode_from_number(current_opcode) == zkevm_opcode::CALLVALUE ) callvalue(); else
                         if( opcode_from_number(current_opcode) == zkevm_opcode::CALLDATASIZE ) calldatasize(); else
+                        if( opcode_from_number(current_opcode) == zkevm_opcode::CALLER ) caller(); else
+                        if( opcode_from_number(current_opcode) == zkevm_opcode::ISZERO ) iszero(); else
                         {
                             _unknown_opcodes.insert(opcode_from_number(current_opcode));
                             std::cout << "Non-implemented opcode " << opcode_from_number(current_opcode) << std::endl;
@@ -473,6 +477,19 @@ namespace nil {
                     gas -= 3;
                 }
 
+                void iszero(){
+                    _zkevm_states.push_back(simple_zkevm_state(get_basic_zkevm_state_part()));
+                    _rw_operations.push_back(stack_rw_operation(call_id,  stack.size() - 1, rw_counter++, true, stack[stack.size() - 1]));
+                    zkevm_word_type a = stack.back();
+                    stack.pop_back();
+                    zkevm_word_type result = a == 0u? 1u: 0u;
+                    stack.push_back(result);
+                    _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, result));
+                    stack.push_back(calldata.size());
+                    pc++;
+                    gas -= 3;
+                }
+
                 void calldatasize(){
                     _zkevm_states.push_back(call_header_zkevm_state(get_basic_zkevm_state_part(), get_call_header_state_part()));
                     _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, calldata.size()));
@@ -485,6 +502,14 @@ namespace nil {
                     _zkevm_states.push_back(call_header_zkevm_state(get_basic_zkevm_state_part(), get_call_header_state_part()));
                     _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, tx_from));
                     stack.push_back(tx_from);
+                    pc++;
+                    gas -= 2;
+                }
+
+                void caller(){
+                    _zkevm_states.push_back(call_header_zkevm_state(get_basic_zkevm_state_part(), get_call_header_state_part()));
+                    _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, call_caller));
+                    stack.push_back(call_caller);
                     pc++;
                     gas -= 2;
                 }

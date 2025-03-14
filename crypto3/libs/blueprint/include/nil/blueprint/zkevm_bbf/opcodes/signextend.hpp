@@ -180,53 +180,9 @@ class zkevm_signextend_bbf : public generic_component<FieldType, stage> {
         range_check_n = 2 * n;
         allocate(range_check_n,19,1); // n < 32768 range check
 
-<<<<<<< HEAD
-                        constrain(current_state.pc_next() - current_state.pc(1) -
-                                  1);  // PC transition
-                        constrain(current_state.gas(1) - current_state.gas_next() -
-                                  5);  // GAS transition
-                        constrain(current_state.stack_size(1) - current_state.stack_size_next() -
-                                  1);  // stack_size transition
-                        constrain(current_state.memory_size(1) -
-                                  current_state.memory_size_next());  // memory_size transition
-                        constrain(current_state.rw_counter_next() - current_state.rw_counter(1) -
-                                  3);  // rw_counter transition
-                        std::vector<TYPE> tmp;
-                        tmp = rw_table<FieldType, stage>::stack_lookup(
-                            current_state.call_id(1),
-                            current_state.stack_size(1) - 1,
-                            current_state.rw_counter(1),
-                            TYPE(0),  // is_write
-                            B0,
-                            B1
-                        );
-                        lookup(tmp, "zkevm_rw");
-                        tmp = rw_table<FieldType, stage>::stack_lookup(
-                            current_state.call_id(1),
-                            current_state.stack_size(1) - 2,
-                            current_state.rw_counter(1) + 1,
-                            TYPE(0),  // is_write
-                            X0,
-                            X1
-                        );
-                        lookup(tmp, "zkevm_rw");
-                        tmp = rw_table<FieldType, stage>::stack_lookup(
-                            current_state.call_id(1),
-                            current_state.stack_size(1) - 2,
-                            current_state.rw_counter(1) + 2,
-                            TYPE(1),  // is_write
-                            Res0,
-                            Res1
-                        );
-                        lookup(tmp, "zkevm_rw");
-                    }
-                }
-            };
-=======
         // Below we check xn_u, xn_l and saux to be between 0 and 255
         // by allocating both the value and its product with 256 to 16-bit range-checked cells,
         // leveraging: t < 2^16, t*256 < 2^16 <=> t < 256
->>>>>>> 815e474a6f71e22c55f60c9818b523f00ac5d338
 
         allocate(xn_u, 20, 1);
         range_check_xn_u = xn_u * 256;
