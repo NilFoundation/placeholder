@@ -452,12 +452,9 @@ namespace nil {
                 void end_transaction(const boost::property_tree::ptree &tt){
                     append_modified_items_rw_operations();
                     std::cout << "END TRANSACTION " << tx_id << std::endl;
-                    basic_zkevm_state_part base;
-                    base.call_id = tx_id;                // RW counter on start_call
-                    base.bytecode_hash = bytecode_hash;
-                    base.opcode = opcode_to_number(zkevm_opcode::end_transaction);
-                    base.rw_counter = tx_id;
+                    current_opcode = opcode_to_number(zkevm_opcode::end_transaction);
 
+                    auto base = get_basic_zkevm_state_part();
                     auto call_context = get_call_header_state_part();
                     auto returned_call = _call_stack.back();
                     _call_stack.pop_back();
