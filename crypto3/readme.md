@@ -13,7 +13,7 @@ Developed and supported by [=nil; Foundation](https://nil.foundation).
 ## Contents
 1. [Structure](#structure)
 2. [Build & test](#build_&_test)
-3. [Usage](#uage)
+3. [Usage](#usage)
 
 ## Structure
 This folder contains the whole suite. Single-purposed libraries (e.g. [algebra
