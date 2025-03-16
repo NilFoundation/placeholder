@@ -91,12 +91,32 @@ namespace nil {
                             return *this == one();
                         }
 
+                        constexpr auto operator<=>(const element_fp &B) const {
+                            return data.base() <=> B.data.base();
+                        }
+
                         constexpr bool operator==(const element_fp &B) const {
                             return data == B.data;
                         }
 
                         constexpr bool operator!=(const element_fp &B) const {
                             return data != B.data;
+                        }
+
+                        constexpr bool operator<(const element_fp &B) const {
+                            return data.base() < B.data.base();
+                        }
+
+                        constexpr bool operator>(const element_fp &B) const {
+                            return data.base() > B.data.base();
+                        }
+
+                        constexpr bool operator<=(const element_fp &B) const {
+                            return data.base() <= B.data.base();
+                        }
+
+                        constexpr bool operator>=(const element_fp &B) const {
+                            return data.base() >= B.data.base();
                         }
 
                         constexpr element_fp &operator=(const element_fp &B) {
@@ -151,22 +171,6 @@ namespace nil {
 
                         constexpr element_fp operator*(const element_fp &B) const {
                             return element_fp(data * B.data);
-                        }
-
-                        constexpr bool operator<(const element_fp &B) const {
-                            return data.base() < B.data.base();
-                        }
-
-                        constexpr bool operator>(const element_fp &B) const {
-                            return data.base() > B.data.base();
-                        }
-
-                        constexpr bool operator<=(const element_fp &B) const {
-                            return data.base() <= B.data.base();
-                        }
-
-                        constexpr bool operator>=(const element_fp &B) const {
-                            return data.base() >= B.data.base();
                         }
 
                         constexpr element_fp &operator++() {
