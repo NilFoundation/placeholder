@@ -551,12 +551,6 @@ namespace nil {
                 ~dag_negate() = default;
             };
 
-            template<typename VariableType, typename DagNodeType>
-            std::shared_ptr<dag_node<VariableType>> make_dag_node(const DagNodeType &node) {
-                DagNodeType *ptr = new DagNodeType(node);
-                return std::shared_ptr<dag_node<VariableType>>(ptr);
-            }
-
             template<typename VariableType>
             struct dag_expression {
                 using assignment_type = typename VariableType::assignment_type;
@@ -714,9 +708,8 @@ namespace nil {
                     }
                     auto const_try = std::dynamic_pointer_cast<dag_constant<VariableType>>(node);
                     if (const_try != nullptr) {
-                        return make_dag_node<NewVariableType>(
-                            dag_constant<NewVariableType>(convert_const(const_try->value))
-                        );
+                        return std::make_shared<dag_constant<NewVariableType>>(
+                            convert_const(const_try->value));
                     }
                     using new_map_type = dag_node<NewVariableType>::map_type;
                     auto add_try = std::dynamic_pointer_cast<dag_add<VariableType>>(node);
@@ -727,7 +720,7 @@ namespace nil {
                             auto converted = convert_to_rec<NewVariableType>(child, convert_var, convert_const);
                             count_map_insert(children, converted, amount);
                         }
-                        return make_dag_node<NewVariableType>(dag_add<NewVariableType>(children));
+                        return std::make_shared<dag_add<NewVariableType>>(children);
                     }
                     auto mul_try = std::dynamic_pointer_cast<dag_mul<VariableType>>(node);
                     if (mul_try != nullptr) {
@@ -737,18 +730,17 @@ namespace nil {
                             auto converted = convert_to_rec<NewVariableType>(child, convert_var, convert_const);
                             count_map_insert(children, converted, amount);
                         }
-                        return make_dag_node<NewVariableType>(dag_mul<NewVariableType>(children));
+                        return std::make_shared<dag_mul<NewVariableType>>(children);
                     }
                     auto neg_try = std::dynamic_pointer_cast<dag_negate<VariableType>>(node);
                     if (neg_try != nullptr) {
                         auto converted = convert_to_rec<NewVariableType>(neg_try->child, convert_var, convert_const);
-                        return make_dag_node<NewVariableType>(dag_negate<NewVariableType>(converted));
+                        return std::make_shared<dag_negate<NewVariableType>>(converted);
                     }
                     auto var_try = std::dynamic_pointer_cast<dag_variable<VariableType>>(node);
                     if (var_try != nullptr) {
-                        return make_dag_node<NewVariableType>(
-                            dag_variable<NewVariableType>(convert_var(var_try->var))
-                        );
+                        return std::make_shared<dag_variable<NewVariableType>>(
+                            convert_var(var_try->var));
                     }
                     return nullptr;
                 }
@@ -877,17 +869,14 @@ namespace nil {
                         // then insert variables
                         for (const auto& variable : term.get_vars()) {
                             auto var_it = insert_op(
-                                make_dag_node<VariableType>(
-                                    dag_variable<VariableType>(variable)
-                                )
+                                std::make_shared<dag_variable<VariableType>>(variable)
+
                             );
                             count_map_insert(children, var_it);
                         }
                         // note that we may have a single element in the map, but with a count greater than one
                         if (count_map_more_than_one_child_with_reps<VariableType>(children)) {
-                            auto mul = make_dag_node<VariableType>(
-                            dag_mul<VariableType>(children)
-                            );
+                            auto mul = std::make_shared<dag_mul<VariableType>>(children);
                             auto mul_it = insert_op(mul);
                             return mul_it;
                         } else {
@@ -905,11 +894,9 @@ namespace nil {
                         using operation_type = binary_arithmetic_operation_type::ArithmeticOperatorType;
                         const auto& op = binary_op.get_op();
                         if (op == operation_type::ADD) {
-                            auto add = make_dag_node<VariableType>(
-                                dag_add<VariableType>(
-                                    std::vector<std::shared_ptr<dag_node<VariableType>>>({left_node, right_node})
-                                )
-                            );
+                            auto add = std::make_shared<dag_add<VariableType>>(
+                                std::vector<std::shared_ptr<dag_node<VariableType>>>(
+                                    {left_node, right_node}));
                             auto add_it = insert_op(add);
                             return add_it;
                         } else if (op == operation_type::SUB) {
@@ -925,36 +912,30 @@ namespace nil {
                                     // this means that we have to neagate the non-zero constant and add it to the left node
                                     auto coeff = right_term.get_coeff();
                                     auto neg_coeff = -coeff;
-                                    auto negated_right_node = make_dag_node<VariableType>(
-                                        dag_constant<VariableType>(neg_coeff)
-                                    );
+                                    auto negated_right_node =
+                                        std::make_shared<dag_constant<VariableType>>(
+                                            neg_coeff);
                                     auto negated_right_it = insert_op(negated_right_node);
-                                    auto add = make_dag_node<VariableType>(
-                                        dag_add<VariableType>(
-                                            std::vector<std::shared_ptr<dag_node<VariableType>>>({left_node, negated_right_it})
-                                        )
-                                    );
+                                    auto add = std::make_shared<dag_add<VariableType>>(
+                                        std::vector<
+                                            std::shared_ptr<dag_node<VariableType>>>(
+                                            {left_node, negated_right_it}));
                                     auto add_it = insert_op(add);
                                     return add_it;
                                 }
                             }
-                            auto neg = make_dag_node<VariableType>(
-                                dag_negate<VariableType>(right_node)
-                            );
+                            auto neg =
+                                std::make_shared<dag_negate<VariableType>>(right_node);
                             auto neg_it = insert_op(neg);
-                            auto add = make_dag_node<VariableType>(
-                                dag_add<VariableType>(
-                                    std::vector<std::shared_ptr<dag_node<VariableType>>>({left_node, neg_it})
-                                )
-                            );
+                            auto add = std::make_shared<dag_add<VariableType>>(
+                                std::vector<std::shared_ptr<dag_node<VariableType>>>(
+                                    {left_node, neg_it}));
                             auto add_it = insert_op(add);
                             return add_it;
                         } else if (op == operation_type::MULT) {
-                            auto mul = make_dag_node<VariableType>(
-                                dag_mul<VariableType>(
-                                    std::vector<std::shared_ptr<dag_node<VariableType>>>({left_node, right_node})
-                                )
-                            );
+                            auto mul = std::make_shared<dag_mul<VariableType>>(
+                                std::vector<std::shared_ptr<dag_node<VariableType>>>(
+                                    {left_node, right_node}));
                             auto mul_it = insert_op(mul);
                             return mul_it;
                         }
