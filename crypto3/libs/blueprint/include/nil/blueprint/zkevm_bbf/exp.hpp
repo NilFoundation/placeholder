@@ -310,6 +310,9 @@ namespace nil {
                             allocate(r_chunks[block_idx][j], 3*num_chunks + j + 2, block_start_row);
                             allocate(b_chunks[block_idx][j], 3*num_chunks + j + 2, block_start_row + 1);
                             allocate(a_chunks[block_idx][j], 3*num_chunks + j + 2, block_start_row + 2);
+                            lookup(r_chunks[block_idx][j], "chunk_16_bits/full");
+                            lookup(b_chunks[block_idx][j], "chunk_16_bits/full");
+                            lookup(a_chunks[block_idx][j], "chunk_16_bits/full");
                         }
                         for(std::size_t j = 0; j < 4; j++){
                             allocate(c_1_chunks[block_idx][j], 3*num_chunks + j + 18, block_start_row);
@@ -415,7 +418,7 @@ namespace nil {
                         TYPE second_carryless = second_carryless_construct<TYPE>(a_64_chunks, b_64_chunks, r_64_chunks);
                         constrain(second_carryless + c_1_64 + c_2[i] * two_64 - c_3_64 * two128 - c_4[i] * two192);
                         constrain(c_2[i] * (c_2[i] - 1));
-                        constrain(c_4[i] * (c_4[i] - 1) * (c_4[i] - 2) * (c_4[i] - 3));
+                        lookup(16384*c_4[i], "chunk_16_bits/full"); // => c_4[i] = 0,1,2 or 3
                     }
                     lookup_table("exp_prover", {0,1,2,3,4,5,6}, start_row ,max_working_rows);
                     for( std::size_t i = start_row; i < max_exponentiations; i++){
