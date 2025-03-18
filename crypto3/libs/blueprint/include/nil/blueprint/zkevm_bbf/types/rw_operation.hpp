@@ -311,6 +311,36 @@ namespace nil {
                 return r;
             }
 
+            rw_operation transient_storage_rw_operation(
+                std::size_t     tx_id,
+                zkevm_word_type address,
+                zkevm_word_type storage_key,
+                std::size_t     rw_id,
+                bool            is_write,
+                zkevm_word_type value,
+                zkevm_word_type initial_value,
+                std::size_t     call_id,
+                std::size_t     w_id_before,
+                zkevm_word_type value_before,
+                zkevm_word_type root = zkevm_word_type(0),
+                zkevm_word_type initial_root = zkevm_word_type(0)
+            ){
+                rw_operation r;
+                r.op = rw_operation_type::transient_storage;
+                r.id = tx_id;
+                r.address = address;
+                r.storage_key = storage_key;
+                r.field = 0;
+                r.rw_counter = rw_id;
+                r.is_write = is_write;
+                r.initial_value = initial_value;
+                r.value = value;
+                r.call_id = call_id;
+                r.w_id_before = w_id_before;
+                r.value_before = value_before;
+                return r;
+            }
+
             rw_operation state_rw_operation(
                 std::size_t     block_id,
                 zkevm_word_type address,

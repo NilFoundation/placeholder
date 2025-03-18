@@ -129,6 +129,7 @@ namespace nil {
                 world_state_zkevm_state_part get_world_state_state_part(){
                     world_state_zkevm_state_part result;
                     result.storage_slice = _accounts_current_state[call_context_address].storage;
+                    result.transient_storage_slice = _accounts_current_state[call_context_address].transient_storage;
                     result.modified_items = _call_stack.back().cold_write_list.size();;
                     result.last_write_rw_counter = last_write_rw_counter;
                     result.was_accessed = _call_stack.back().was_accessed;
@@ -201,7 +202,7 @@ namespace nil {
                 void start_block(zkevm_word_type _block_hash, const boost::property_tree::ptree &pt){
                     last_write_rw_counter.clear();
                     block_id = rw_counter++;
-                    block_hash = block_hash;
+                    block_hash = _block_hash;
                     tx_id = 0;
                     depth = 1;
                     tx_hash = 0;
@@ -361,6 +362,8 @@ namespace nil {
                         else if( opcode == "RETURNDATASIZE" ) returndatasize();
                         else if( opcode == "RETURNDATACOPY" ) returndatacopy();
                         else if( opcode == "EXTCODESIZE" ) extcodesize();
+                        else if( opcode == "TSTORE" ) tstore();
+                        else if( opcode == "TLOAD" ) tload();
                         else if(
                             opcode == "EXTCODESIZE" ||
                             opcode == "EXTCODECOPY" ||
@@ -376,8 +379,6 @@ namespace nil {
                             opcode == "BASEFEE" ||
                             opcode == "BLOBHASH" ||
                             opcode == "BLOBBASEFEE" ||
-                            opcode == "TLOAD" ||
-                            opcode == "TSTORE" ||
                             opcode == "MCOPY" ||
                             opcode == "CREATE" ||
                             opcode == "CREATE2" ||
@@ -842,6 +843,29 @@ namespace nil {
 
                 }
 
+                void tload(){
+                    _zkevm_states.push_back(storage_zkevm_state(get_basic_zkevm_state_part(), get_call_header_state_part(), get_world_state_state_part()));
+                    _rw_operations.push_back(stack_rw_operation(call_id,  stack_next.size()-1, rw_counter++, false, stack[stack.size()-1]));
+                    auto storage_key = stack[stack.size() - 1];
+
+                    _rw_operations.push_back(transient_storage_rw_operation(
+                        tx_id,
+                        call_context_address,
+                        storage_key, //Storage key
+                        rw_counter++,
+                        false,
+                        _accounts_current_state[call_context_address].transient_storage[storage_key],
+                        _accounts_initial_state[call_context_address].transient_storage[storage_key],
+                        call_id,
+                        last_write_rw_counter.count(std::make_tuple(rw_operation_type::transient_storage, call_context_address, 0, storage_key)) == 0 ? 0 : last_write_rw_counter[std::make_tuple(rw_operation_type::transient_storage, call_context_address, 0, storage_key)],
+                        _accounts_current_state[call_context_address].transient_storage[storage_key]
+                    ));
+                    std::cout << _rw_operations[_rw_operations.size()-1] << std::endl;
+                    update_modified_items_list(rw_operation_type::transient_storage, call_context_address,0, storage_key, _rw_operations[_rw_operations.size()-1]);
+                    _rw_operations.push_back(stack_rw_operation(call_id,  stack_next.size()-1, rw_counter++, true, stack_next[stack_next.size()-1]));
+
+                }
+
                 void sstore(){
                     _zkevm_states.push_back(storage_zkevm_state(get_basic_zkevm_state_part(), get_call_header_state_part(), get_world_state_state_part()));
                     auto storage_key = stack[stack.size() - 1];
@@ -887,6 +911,34 @@ namespace nil {
                     std::cout << _rw_operations[_rw_operations.size()-1] << std::endl;
                     update_modified_items_list(rw_operation_type::state, call_context_address,0, storage_key, _rw_operations[_rw_operations.size()-1]);
                 }
+
+                void tstore(){
+                    _zkevm_states.push_back(storage_zkevm_state(get_basic_zkevm_state_part(), get_call_header_state_part(), get_world_state_state_part()));
+                    auto storage_key = stack[stack.size() - 1];
+                    _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-1, rw_counter++, false, storage_key));
+                    std::cout << _rw_operations[_rw_operations.size()-1] << std::endl;
+                    _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-2, rw_counter++, false, stack[stack.size()-2]));
+                    auto value = stack[stack.size() - 2];
+                    std::cout << "Value_after = " << value << std::endl;
+
+                    _rw_operations.push_back(transient_storage_rw_operation(
+                        tx_id,
+                        call_context_address,
+                        storage_key,
+                        rw_counter++,
+                        true,
+                        value,
+                        _accounts_initial_state[call_context_address].transient_storage[storage_key], // initial value
+                        call_id,                                                            // For REVERT correctness
+                        last_write_rw_counter.count(std::make_tuple(rw_operation_type::transient_storage, call_context_address, 0, storage_key)) == 0 ? 0 : last_write_rw_counter[std::make_tuple(rw_operation_type::transient_storage, call_context_address, 0, storage_key)],
+                        _accounts_current_state[call_context_address].transient_storage[storage_key]
+                    ));
+                    last_write_rw_counter[std::make_tuple(rw_operation_type::transient_storage, call_context_address, 0, storage_key)] = rw_counter-1;
+                    _accounts_current_state[call_context_address].transient_storage[storage_key] = value;
+                    std::cout << _rw_operations[_rw_operations.size()-1] << std::endl;
+                    update_modified_items_list(rw_operation_type::transient_storage, call_context_address,0, storage_key, _rw_operations[_rw_operations.size()-1]);
+                }
+                
                 void jump(){
                     _zkevm_states.push_back(simple_zkevm_state(get_basic_zkevm_state_part()));
                     _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-1, rw_counter++, false, stack[stack.size()-1]));
@@ -1114,6 +1166,29 @@ namespace nil {
                                     0, // root_before
                                     0  // root_after
                                 )
+                            );
+                        }
+                        else if( modified_items.second.op == rw_operation_type::transient_storage ){
+                            _rw_operations.push_back(
+                                rw_operation(
+                                    modified_items.second.op,
+                                    modified_items.second.id,
+                                    modified_items.second.address,
+                                    modified_items.second.field,
+                                    modified_items.second.storage_key,
+                                    rw_counter++,
+                                    true,
+                                    modified_items.second.value_before,
+                                    _accounts_current_state[modified_items.second.address].transient_storage[modified_items.second.storage_key],
+                                    last_write_rw_counter[modified_items.first],
+                                    call_id,
+                                    modified_items.second.initial_value,
+                                    0, // root_before
+                                    0  // root_after
+                                )
+                            );
+                            _accounts_current_state[modified_items.second.address].set(
+                                modified_items.second.field, modified_items.second.storage_key, modified_items.second.value_before
                             );
                         }
                         // Change state on other kind of changes

@@ -267,7 +267,8 @@ namespace nil {
                                 field_type[i-1] != field_type[i];
 
                             if( rw_trace[i].op == rw_operation_type::state ||
-                                rw_trace[i].op == rw_operation_type::access_list
+                                rw_trace[i].op == rw_operation_type::access_list ||
+                                rw_trace[i].op == rw_operation_type::transient_storage
                             ) {
                                 value_before_hi[i] = w_hi<FieldType>(rw_trace[i].value_before);
                                 value_before_lo[i] = w_lo<FieldType>(rw_trace[i].value_before);

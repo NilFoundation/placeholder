@@ -47,8 +47,9 @@ namespace nil {
                 std::size_t     ext_seq_no;
                 std::size_t     request_id;
 
-                std::map<zkevm_word_type, zkevm_word_type> storage; // Optional
-                std::vector<std::uint8_t> bytecode;                 // Optional
+                std::map<zkevm_word_type, zkevm_word_type> storage;             // Optional
+                std::map<zkevm_word_type, zkevm_word_type> transient_storage;   // Optional
+                std::vector<std::uint8_t> bytecode;                             // Optional
 
                 void set(std::size_t field_type, zkevm_word_type storage_key, zkevm_word_type value){
                     BOOST_ASSERT(field_type == 0);  // Other field types not implemented yet

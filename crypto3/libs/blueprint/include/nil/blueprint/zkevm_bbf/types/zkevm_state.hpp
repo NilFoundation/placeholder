@@ -70,6 +70,7 @@ namespace nil {
 
             struct world_state_zkevm_state_part{
                 std::map<zkevm_word_type, zkevm_word_type>  storage_slice; // BEFORE opcode
+                std::map<zkevm_word_type, zkevm_word_type>  transient_storage_slice; // BEFORE opcode
                 std::size_t     modified_items;
                 std::map<std::tuple<rw_operation_type, zkevm_word_type, std::size_t, zkevm_word_type>, std::size_t>  last_write_rw_counter; // BEFORE opcode
                 std::set<std::tuple<zkevm_word_type, std::size_t, zkevm_word_type>> was_accessed; // For SLOAD, SSTORE gas proving
@@ -113,6 +114,14 @@ namespace nil {
                         return 0;
                     else
                         return world_state.storage_slice.at(key);
+                }
+
+                zkevm_word_type transient_storage(zkevm_word_type key) const{
+                    BOOST_ASSERT(needs_world_state_access);
+                    if( world_state.transient_storage_slice.find(key) == world_state.transient_storage_slice.end() )
+                        return 0;
+                    else
+                        return world_state.transient_storage_slice.at(key);
                 }
 
                 zkevm_word_type calldata(std::size_t addr) const{
