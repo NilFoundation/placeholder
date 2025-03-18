@@ -310,7 +310,6 @@ namespace nil {
                                             };
                                             auto chunk_result =
                                                 dag_expr_copy.evaluate(eval_map)[0];
-                                            dag_expr_copy.clear_cache();
                                             math::set_chunk(result, begin, j,
                                                             chunk_result);
                                         }
