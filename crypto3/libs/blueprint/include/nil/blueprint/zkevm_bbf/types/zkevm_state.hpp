@@ -404,6 +404,7 @@ namespace nil {
                 TYPE is_even;
 
                 static std::size_t get_items_amout(){ return 15; }
+                static std::size_t get_wide_circuit_items_amout(){ return 10; }
             };
 
             template <typename FieldType>

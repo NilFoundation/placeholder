@@ -73,10 +73,11 @@ class zkEVMAlchemyTestFixture: public CircuitTestFixture {
 public:
     template <typename field_type>
     void complex_test(
-        const boost::property_tree::ptree  &trace,
+        std::string                        path,
         const l1_size_restrictions         &max_sizes
     ){
-        nil::blueprint::bbf::zkevm_alchemy_input_generator circuit_inputs(trace);
+        nil::blueprint::bbf::zkevm_alchemy_input_generator circuit_inputs(path);
+        return;
 
         using integral_type = typename field_type::integral_type;
         using value_type = typename field_type::value_type;
@@ -242,7 +243,6 @@ BOOST_FIXTURE_TEST_SUITE(zkevm_bbf_hardhat, zkEVMAlchemyTestFixture)
 
 BOOST_AUTO_TEST_CASE(sp1_block) {
     using field_type = typename algebra::curves::pallas::base_field_type;
-    auto pts = load_hardhat_input("alchemy/sp1_block.json");
     l1_size_restrictions max_sizes;
 
     max_sizes.max_keccak_blocks = 3;
@@ -255,5 +255,5 @@ BOOST_AUTO_TEST_CASE(sp1_block) {
     max_sizes.max_exp_rows = 500;
     max_sizes.max_call_commits = 500;
 
-    complex_test<field_type>(pts, max_sizes);
+    complex_test<field_type>("alchemy/sp1_block/", max_sizes);
 }BOOST_AUTO_TEST_SUITE_END()

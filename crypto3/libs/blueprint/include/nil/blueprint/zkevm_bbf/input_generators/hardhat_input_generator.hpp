@@ -1177,7 +1177,7 @@ namespace nil {
 
                     _zkevm_states.push_back(call_header_zkevm_state(get_basic_zkevm_state_part(), get_call_header_state_part()));
                     _call_stack.push_back({
-                        _zkevm_states.back(), call_id, 0, 0, 0, calldata,
+                        _zkevm_states.back(), call_id, 0, 0, 0, calldata, {},
                         {}, {}, {}, _call_stack.back().was_accessed, _call_stack.back().was_written
                     });
 

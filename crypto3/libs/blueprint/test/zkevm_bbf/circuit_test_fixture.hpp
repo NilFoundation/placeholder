@@ -187,7 +187,13 @@ class CircuitTestFixture {
     ) {
         // Max_copy, Max_rw, Max_keccak, Max_bytecode
         circuit_builder<field_type, BBFType, ComponentStaticInfoArgs...> builder(component_static_info_args...);
+
         auto &bp = builder.get_circuit();
+        std::size_t max_gates_degree  = bp.max_gates_degree();
+        std::size_t max_lookup_degree  = bp.max_lookup_gates_degree();
+        std::cout << "Max gates degree " << max_gates_degree << std::endl;
+        std::cout << "Max lookup degree " << max_lookup_degree << std::endl;
+
         auto [assignment, component, desc] = builder.assign(assignment_input);
         if (print_to_file) {
             print_zk_circuit_and_table_to_file(output_file + "_" + circuit_name, bp, desc, assignment);
