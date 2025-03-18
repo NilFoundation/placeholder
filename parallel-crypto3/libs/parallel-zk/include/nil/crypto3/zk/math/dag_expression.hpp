@@ -70,6 +70,9 @@ namespace nil {
                     size_t,
                     dag_node_ptr_comparator<dag_node<VariableType>>
                 >;
+
+                assignment_type *result = nullptr;
+                bool is_evaluated = false;
                 virtual assignment_type evaluate(
                     std::function<assignment_type(const VariableType&)> &evaluation_map
                 ) = 0;
@@ -79,7 +82,6 @@ namespace nil {
                     return !(*this == other);
                 }
                 virtual bool operator<(const dag_node &other) const = 0;
-                virtual void clear_cache() = 0;
                 // variables < multiplications < additions < negations < constants
                 // variables being first means that we can short-circuit more often if selector is 0
                 enum class NodeType { Variable, Multiplication, Addition, Negation, Constant };
@@ -142,8 +144,6 @@ namespace nil {
                     return map_type();
                 }
 
-                virtual void clear_cache() override {}
-
                 virtual void export_expression(std::ostream &os) const override {
                     os << var;
                 }
@@ -191,8 +191,6 @@ namespace nil {
                 virtual base_type::NodeType get_type() const override {
                     return base_type::NodeType::Constant;
                 }
-
-                virtual void clear_cache() override {}
 
                 virtual void export_expression(std::ostream &os) const override {
                     os << value.data;
@@ -299,7 +297,7 @@ namespace nil {
                 using map_type = typename base_type::map_type;
                 using NodeType = typename base_type::NodeType;
                 map_type children_map;
-                std::optional<assignment_type> result;
+                assignment_type* result = nullptr;
 
                 dag_op() = default;
 
@@ -315,11 +313,7 @@ namespace nil {
 
                 void add_child(std::shared_ptr<dag_node<VariableType>> child) {
                     count_map_insert(children_map, child);
-                    result = std::nullopt;
-                }
-
-                virtual void clear_cache() override {
-                    result = std::nullopt;
+                    result = nullptr;
                 }
 
                 virtual void export_expression(std::ostream &os) const override {
@@ -360,7 +354,7 @@ namespace nil {
                         // set the result to nullptr to remove cache if we have cache
                         auto mb_op = std::dynamic_pointer_cast<dag_op<VariableType>>(it->first);
                         if (mb_op != nullptr) {
-                            mb_op->result = std::nullopt;
+                            mb_op->result = nullptr;
                         }
                         count_map.erase(it);
                     }
@@ -387,30 +381,31 @@ namespace nil {
                 }
 
                 void power(
-                    std::optional<assignment_type> &result,
+                    assignment_type* result,
                     const assignment_type &operand,
                     std::size_t power
                 ) const {
                     for (std::size_t i = 0; i < power; ++i) {
-                        result = result.value() + operand;
+                        *result = *result + operand;
                     }
                 }
 
                 virtual assignment_type evaluate(
                     std::function<assignment_type(const VariableType&)> &evaluation_map
                 ) override {
-                    if (this->result != std::nullopt) {
-                        return this->result.value();
+                    if (this->is_evaluated) { [[likely]]
+                        return *(this->result);
                     }
+                    this->is_evaluated = true;
                     auto it = base_type::children_map.begin();
                     auto first_child_res = it->first->evaluate(evaluation_map);
-                    this->result = first_child_res;
+                    *(this->result) = first_child_res;
                     power(this->result, first_child_res, it->second - 1);
                     for (++it; it != base_type::children_map.end(); ++it) {
                         auto child_res = it->first->evaluate(evaluation_map);
                         power(this->result, child_res, it->second);
                     }
-                    return this->result.value();
+                    return *(this->result);
                 }
 
                 bool operator==(const dag_node<VariableType> &other) const override {
@@ -450,24 +445,25 @@ namespace nil {
                 }
 
                 void power(
-                    std::optional<assignment_type> &result,
+                    assignment_type* result,
                     const assignment_type &operand,
                     std::size_t power
                 ) const {
                     for (std::size_t i = 0; i < power; ++i) {
-                        result = result.value() * operand;
+                        *result = *result * operand;
                     }
                 }
 
                 virtual assignment_type evaluate(
                     std::function<assignment_type(const VariableType&)> &evaluation_map
                 ) override {
-                    if (this->result != std::nullopt) {
-                        return this->result.value();
+                    if (this->is_evaluated) { [[likely]]
+                        return *(this->result);
                     }
+                    this->is_evaluated = true;
                     auto it = base_type::children_map.begin();
                     auto first_child_res = it->first->evaluate(evaluation_map);
-                    this->result = first_child_res;
+                    *(this->result) = first_child_res;
                     if (first_child_res == assignment_type::zero()) { // short-circuiting here if zero
                         return first_child_res;
                     }
@@ -476,7 +472,7 @@ namespace nil {
                         auto child_res = it->first->evaluate(evaluation_map);
                         power(this->result, child_res, it->second);
                     }
-                    return this->result.value();
+                    return *(this->result);
                 }
 
                 bool operator==(const dag_node<VariableType> &other) const override {
@@ -501,7 +497,7 @@ namespace nil {
                 using assignment_type = typename VariableType::assignment_type;
                 using base_type = dag_node<VariableType>;
                 using map_type = typename base_type::map_type;
-                std::optional<assignment_type> result;
+                assignment_type* result = nullptr;
                 std::shared_ptr<dag_node<VariableType>> child;
                 dag_negate(const std::shared_ptr<dag_node<VariableType>> _child) :
                     child(_child) {}
@@ -519,19 +515,16 @@ namespace nil {
                 virtual assignment_type evaluate(
                     std::function<assignment_type(const VariableType&)> &evaluation_map
                 ) override {
-                    if (this->result != std::nullopt) {
-                        return this->result.value();
+                    if (this->is_evaluated) { [[likely]]
+                        return *(this->result);
                     }
-                    this->result = -(child->evaluate(evaluation_map));
-                    return this->result.value();
+                    this->is_evaluated = true;
+                    *(this->result) = -(child->evaluate(evaluation_map));
+                    return *(this->result);
                 }
 
                 map_type children() const override {
                     return map_type({{child, 1}});
-                }
-
-                virtual void clear_cache() override {
-                    result = std::nullopt;
                 }
 
                 bool operator==(const dag_node<VariableType> &other) const override {
@@ -570,6 +563,7 @@ namespace nil {
 
                 map_type ops;
                 std::vector<std::shared_ptr<node_type>> root_nodes;
+                std::vector<std::pair<std::shared_ptr<node_type>, assignment_type>> cached_values;
 
                 dag_expression() = default;
                 dag_expression(math_expression_type expr) {
@@ -584,6 +578,10 @@ namespace nil {
 
                 bool operator==(const dag_expression<VariableType> &other) const {
                     return root_nodes == other.root_nodes;
+                }
+
+                void build_cached_values() {
+                    toposort();
                 }
 
                 std::size_t calc_degree() const {
@@ -650,15 +648,18 @@ namespace nil {
                     return result;
                 }
 
-                virtual std::vector<assignment_type> evaluate(
+                std::vector<assignment_type> evaluate(
                     std::function<assignment_type(const VariableType&)> &evaluation_map
                 ) {
+                    // perform toposort on the expression, and fill the result pointer with pointers to the cached values
+                    if (cached_values.empty()) { [[unlikely]]
+                        toposort();
+                    }
+                    for (auto& [node, _] : cached_values) {
+                        node->evaluate(evaluation_map);
+                    }
                     std::vector<assignment_type> result;
-                    // originally i thought about clearing the ops map after evaluation,
-                    // but it's slower that way
-                    //map_type mem_map_copy = ops;
                     for (const auto& root_node : root_nodes) {
-                        //result.push_back(evaluate_rec(root_node->child, mem_map_copy, evaluation_map));
                         result.push_back(root_node->evaluate(evaluation_map));
                     }
                     return result;
@@ -670,6 +671,9 @@ namespace nil {
                     for (const auto& root_node : other.root_nodes) {
                         auto copied_root = deep_copy_node(root_node, node_map);
                         root_nodes.push_back(copied_root);
+                    }
+                    if (other.cached_values.size() > 0) {
+                        toposort();
                     }
                 }
 
@@ -684,11 +688,91 @@ namespace nil {
                 }
 
                 void clear_cache() {
-                    for (const auto& [key, value] : ops) {
-                        key->clear_cache();
+                    for (auto& [op, _] : ops) {
+                        op->is_evaluated = false;
+                    }
+                }
+
+                void toposort() {
+                    using NodeType = typename dag_node<VariableType>::NodeType;
+                    std::map<std::shared_ptr<dag_node<VariableType>>, std::size_t> heights;
+
+                    for (auto& root : root_nodes) {
+                        toposort_rec(root, heights);
+                    }
+                    std::vector<std::shared_ptr<dag_node<VariableType>>> sorted_nodes;
+                    for (const auto& [node, _] : heights) {
+                        sorted_nodes.push_back(node);
+                    }
+                    // lowest height first
+                    std::sort(sorted_nodes.begin(), sorted_nodes.end(), [&](const auto& a, const auto& b) {
+                        return heights[a] < heights[b];
+                    });
+                    // note that this a little overreserved as we include constants/variables
+                    // this reserve is vital, as any further resize might induce reallocations,
+                    // thus invalidating all of the node pointers in cached_values
+                    cached_values.reserve(ops.size());
+                    auto zero = assignment_type::zero();
+                    for (const auto& node : sorted_nodes) {
+                        auto node_type = node->get_type();
+                        if (node_type == NodeType::Constant || node_type == NodeType::Variable) {
+                            continue;
+                        }
+                        cached_values.push_back({node, zero});
+                        auto &result = cached_values.back().second;
+                        if (node_type == NodeType::Addition) {
+                            auto add_node = std::dynamic_pointer_cast<dag_add<VariableType>>(node);
+                            add_node->result = &result;
+                        } else if (node_type == NodeType::Multiplication) {
+                            auto mul_node = std::dynamic_pointer_cast<dag_mul<VariableType>>(node);
+                            mul_node->result = &result;
+                        } else if (node_type == NodeType::Negation) {
+                            auto neg_node = std::dynamic_pointer_cast<dag_negate<VariableType>>(node);
+                            neg_node->result = &result;
+                        }
                     }
                 }
             private:
+                std::size_t toposort_rec(
+                    std::shared_ptr<dag_node<VariableType>> node,
+                    std::map<std::shared_ptr<dag_node<VariableType>>, std::size_t> &heights
+                ) {
+                    using NodeType = typename dag_node<VariableType>::NodeType;
+                    if (node == nullptr || heights.find(node) != heights.end()) {
+                        return 0;
+                    }
+                    auto cur_node_type = node->get_type();
+                    if (cur_node_type == NodeType::Constant || cur_node_type == NodeType::Variable) {
+                        heights[node] = 0;
+                        return 0;
+                    }
+                    if (cur_node_type == NodeType::Addition) {
+                        auto add_node = std::dynamic_pointer_cast<dag_add<VariableType>>(node);
+                        std::size_t max_height = 0;
+                        for (const auto& [child, _] : add_node->children()) {
+                            max_height = std::max(max_height, toposort_rec(child, heights));
+                        }
+                        heights[node] = max_height + 1;
+                        return max_height + 1;
+                    }
+                    if (cur_node_type == NodeType::Multiplication) {
+                        auto mul_node = std::dynamic_pointer_cast<dag_mul<VariableType>>(node);
+                        std::size_t max_height = 0;
+                        for (const auto& [child, _] : mul_node->children()) {
+                            max_height = std::max(max_height, toposort_rec(child, heights));
+                        }
+                        heights[node] = max_height + 1;
+                        return max_height + 1;
+                    }
+                    if (cur_node_type == NodeType::Negation) {
+                        auto neg_node = std::dynamic_pointer_cast<dag_negate<VariableType>>(node);
+                        std::size_t max_height = toposort_rec(neg_node->child, heights);
+                        heights[node] = max_height + 1;
+                        return max_height + 1;
+                    }
+                    __builtin_unreachable();
+                }
+
                 void visit_const_rec(
                     std::shared_ptr<dag_node<VariableType>> node,
                     const std::function<void(std::shared_ptr<dag_node<VariableType>>)> &func
@@ -804,19 +888,6 @@ namespace nil {
                     insert_op(new_node);
 
                     return new_node;
-                }
-
-                std::shared_ptr<assignment_type> evaluate_rec(
-                    std::shared_ptr<dag_node<VariableType>> node,
-                    map_type &mem_map_copy,
-                    std::function<std::shared_ptr<assignment_type>(const VariableType&)> &evaluation_map
-                ) const {
-                    for (const auto& [child, _] : node->children()) {
-                        evaluate_rec(child, mem_map_copy, evaluation_map);
-                    }
-                    auto result = node->evaluate(evaluation_map);
-                    //count_map_remove(mem_map_copy, node);
-                    return result;
                 }
 
                 std::size_t calc_degree_rec(std::shared_ptr<dag_node<VariableType>> node) const {
