@@ -276,7 +276,7 @@ namespace nil {
 
                     first_carryless =
                         first_carryless_construct<TYPE>(Nr_64_chunks, N_64_chunks, r_64_chunks);
-                    second_carryless = 
+                    second_carryless =
                         second_carryless_construct<TYPE>(Nr_64_chunks, N_64_chunks, r_64_chunks);
                     third_carryless =
                         third_carryless_construct<TYPE>(Nr_64_chunks, N_64_chunks, r_64_chunks);
@@ -291,15 +291,15 @@ namespace nil {
                         s_c_2 = static_cast<value_type>(s_first_row_carries >> 64);
                         s_c_1_chunks = chunk_64_to_16<FieldType>(s_c_1);
                         // no need for c_2 chunks as there is only a single chunk
-                        
-                        auto s_second_row_carries = 
+
+                        auto s_second_row_carries =
                             (s_second_carryless + s_c_1 + s_c_2 * two_64).data.base() >> 128;
                         // computation of s = a*b product
 
                         value_type s_c_3 =
                             static_cast<value_type>(s_second_row_carries & (two_64 - 1).data.base());
                         s_c_4 = static_cast<value_type>(s_second_row_carries >> 64);
-                        s_c_3_chunks = chunk_64_to_16<FieldType>(s_c_3); 
+                        s_c_3_chunks = chunk_64_to_16<FieldType>(s_c_3);
                         auto s_third_row_carries = s_third_carryless.data.base() >> 128;
 
                         value_type s_c_5 =
@@ -315,7 +315,7 @@ namespace nil {
                         c_2 = static_cast<value_type>(first_row_carries >> 64);
                         c_1_chunks = chunk_64_to_16<FieldType>(c_1);
                         // no need for c_2 chunks as there is only a single chunk
-                        auto second_row_carries = 
+                        auto second_row_carries =
                             (second_carryless + c_1 + c_2 * two_64) .data.base() >> 128;
                         value_type c_3 =
                             static_cast<value_type>(second_row_carries & (two_64 - 1).data.base());
@@ -421,7 +421,9 @@ namespace nil {
                     // add constraints for s_c_2/s_c_4/s_c_6: s_c_2 is 0/1, s_c_4 is 0/1/2/3,s_c_6
                     // is 0/1
                     constrain(s_c_2 * (s_c_2 - 1));
-                    constrain(s_c_4 * (s_c_4 - 1) * (s_c_4 - 2) * (s_c_4 - 3));
+                    // constrain(s_c_4 * (s_c_4 - 1) * (s_c_4 - 2) * (s_c_4 - 3));
+                    TYPE s_c_4_check = s_c_4 * 16384;
+                    allocate(s_c_4_check, 31, 1);
                     constrain(s_c_6 * (s_c_6 - 1));
 
                     constrain(s_third_carryless + s_c_3_64 + s_c_4 * two_64 - s_c_5_64 * two128 -
@@ -505,8 +507,18 @@ namespace nil {
                     allocate(c_2, 37, 1);
                     allocate(c_3_64, 38, 1);
                     allocate(c_4, 39, 1);
+                    TYPE c_4_copy1 = c_4;
+                    allocate(c_4_copy1, 39, 3);
+                    TYPE c_4_copy2 = c_4_copy1;
+                    allocate(c_4_copy2, 39, 5);
+
+
                     allocate(c_5_64, 40, 1);
                     allocate(c_6, 41, 1);
+                    TYPE c_6_copy1 = c_6;
+                    allocate(c_6_copy1, 41, 3);
+                    TYPE c_6_copy2 = c_6_copy1;
+                    allocate(c_6_copy2, 41, 5);
 
                     constrain((first_carryless - c_1_64 * two128 - c_2 * two192));
                     constrain((second_carryless + c_1_64 + c_2 * two_64 - c_3_64 * two128 -
@@ -514,8 +526,12 @@ namespace nil {
 
                     // add constraints for c_2/c_4/c_6: c_2 is 0/1, c_4, c_6 is 0/1/2/3
                     constrain(c_2 * (c_2 - 1));
-                    constrain(c_4 * (c_4 - 1) * (c_4 - 2) * (c_4 - 3));
-                    constrain(c_6 * (c_6 - 1) * (c_6 - 2) * (c_6 - 3));
+                    // constrain(c_4 * (c_4 - 1) * (c_4 - 2) * (c_4 - 3));
+                    TYPE c_4_check = c_4_copy2 * 16384;
+                    allocate(c_4_check, 30, 6);
+                    // constrain(c_6 * (c_6 - 1) * (c_6 - 2) * (c_6 - 3));
+                    TYPE c_6_check = c_6_copy2 * 16384;
+                    allocate(c_6_check, 31, 6);
 
                     constrain(
                         (third_carryless + c_3_64 + c_4 * two_64 - c_5_64 * two128 - c_6 * two192));

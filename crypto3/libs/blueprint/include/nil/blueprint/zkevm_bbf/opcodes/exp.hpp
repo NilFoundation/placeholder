@@ -125,7 +125,8 @@ namespace nil {
                     // If d != 0, d_first_inv has a non-zero element
                     constrain(d_sum * (1 - d_first_nonzero_sum));
                     // else, the sum is 0 so it's a [D != 0] too
-                    auto &d_ne_0 = d_first_nonzero_sum;
+                    TYPE d_ne_0 = d_first_nonzero_sum;
+                    allocate(d_ne_0, 37, 2);
 
                     TYPE d_len;
                     for (std::size_t i = 0; i < 16; ++i) {
@@ -143,10 +144,13 @@ namespace nil {
                     allocate(d_is_1_w, 33, 2);
                     constrain((D[15] - 1) * (1 - (D[15] - 1) * d_is_1_w));
 
-                    TYPE d_is_1 = (1 - (D[15] - 1) * d_is_1_w) * D[15] * D_first_inv[15];
-                    allocate(d_is_1, 34, 2);
+                    TYPE d_is_1_aux = D[15] * D_first_inv[15];
+                    allocate(d_is_1_aux, 34, 2);
+                    // TYPE d_is_1 = (1 - (D[15] - 1) * d_is_1_w) * D[15] * D_first_inv[15];
+                    TYPE d_is_1 = (1 - (D[15] - 1) * d_is_1_w) * d_is_1_aux;
+                    allocate(d_is_1, 35, 2);
 
-                    allocate(s, 35, 2);
+                    allocate(s, 36, 2);
                     constrain(s * (s-1));
 
                     // s == 0 => d == 0 || d == 1

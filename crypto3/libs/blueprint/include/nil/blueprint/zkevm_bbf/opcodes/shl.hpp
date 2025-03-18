@@ -176,20 +176,20 @@ namespace nil {
                         }
                     }
 
-                       
+
                     first_carryless =
                         first_carryless_construct<TYPE>(a_64_chunks, b_64_chunks, r_64_chunks);
                     second_carryless =
                             second_carryless_construct<TYPE>(a_64_chunks, b_64_chunks, r_64_chunks);
 
-                    if constexpr (stage == GenerationStage::ASSIGNMENT) { 
+                    if constexpr (stage == GenerationStage::ASSIGNMENT) {
                         // caluclate first row carries
                         auto first_row_carries = first_carryless.data.base() >> 128;
                         c_1 = static_cast<value_type>(first_row_carries & (two_64 - 1).data.base());
                         c_2 = static_cast<value_type>(first_row_carries >> 64);
                         c_1_chunks = chunk_64_to_16<FieldType>(c_1);
                         // no need for c_2 chunks as there is only a single chunk
-                        
+
                         auto second_row_carries =
                             (second_carryless + c_1 + c_2 * two_64) .data.base() >> 128;
                         c_3 = static_cast<value_type>(second_row_carries & (two_64 - 1).data.base());
@@ -253,8 +253,10 @@ namespace nil {
                     constrain(input_b_chunks[0] - b0p - 16 * b0pp - 256 * b0ppp);
                     constrain(b0ppp * (1 - b0ppp * I1));
 
-                    constrain(sum_b * (1 - sum_b * I2));
-                    constrain(z - (1 - b0ppp * I1) * (1 - sum_b * I2));
+                    TYPE op_sum_b_I2 = 1 - sum_b * I2;
+                    allocate(op_sum_b_I2,36,0);
+                    constrain(sum_b * op_sum_b_I2);
+                    constrain(z - (1 - b0ppp * I1) * op_sum_b_I2);
 
                     allocate(first_carryless, 16, 2);
                     allocate(second_carryless, 17, 2);
@@ -268,7 +270,9 @@ namespace nil {
                               c_4 * two_192);
                     // add constraints for c_2/c_4: c_2 is 0/1, c_4 is 0/1/2/3
                     constrain(c_2 * (c_2 - 1));
-                    constrain(c_4 * (c_4 - 1) * (c_4 - 2) * (c_4 - 3));
+                    // constrain(c_4 * (c_4 - 1) * (c_4 - 2) * (c_4 - 3));
+                    TYPE c_4_check = c_4 * 16384; // 16-bit range-check on c_4_check <=> c_4 < 4
+                    allocate(c_4_check, 22, 2);
 
                     auto A_128 = chunks16_to_chunks128_reversed<TYPE>(a_chunks);
                     auto B_128 = chunks16_to_chunks128_reversed<TYPE>(input_b_chunks);
@@ -281,12 +285,12 @@ namespace nil {
                     B1 = B_128.second;
                     Res0 = Res_128.first;
                     Res1 = Res_128.second;
-                    allocate(A0, 36, 0);
-                    allocate(A1, 37, 0);
-                    allocate(B0, 38, 0);
-                    allocate(B1, 39, 0);
-                    allocate(Res0, 40, 0);
-                    allocate(Res1, 41, 0);
+                    allocate(A0, 37, 0);
+                    allocate(A1, 38, 0);
+                    allocate(B0, 39, 0);
+                    allocate(B1, 40, 0);
+                    allocate(Res0, 41, 0);
+                    allocate(Res1, 42, 0);
 
                     if constexpr (stage == GenerationStage::CONSTRAINTS) {
                         constrain(current_state.pc_next() - current_state.pc(2) -
