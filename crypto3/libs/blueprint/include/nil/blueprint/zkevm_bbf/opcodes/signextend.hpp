@@ -89,6 +89,7 @@ class zkevm_signextend_bbf : public generic_component<FieldType, stage> {
         TYPE sb;   // the byte from which the sign is extracted
         TYPE sgn;  // the sign
         TYPE saux; // auxiliary variable for computing the sign
+        TYPE tr_c; // transition chunk
 
         TYPE range_check_n;    //
         TYPE range_check_xn_u; // Auxiliary variables for range-checking
@@ -136,14 +137,14 @@ class zkevm_signextend_bbf : public generic_component<FieldType, stage> {
             }
         }
 
-        /* Layout:                    range_checked_opcode_area                                 |non-range-checked area
-             0  ...  15 16 17   18    19  20     21     22     23    24  25  26     27   ...  31         32      ... 47
-            +----------+--+--+------+---+----+--------+----+--------+--+---+----+------------+--+---------------+---+--+
-          0 | b_chunks |                     x_chunks                                           |         indic        |
-            +----------+--+--+------+---+----+--------+----+--------+--+---+----+--------+---+--+---------------+------+
-          1 | y_chunks | n|b0|parity|2*n|xn_u|256*xn_u|xn_l|256*xn_l|sb|sgn|saux|256*saux|...   | b_sum_inverse |  ... |
-            +----------+--+--+------+---+----+--------+----+--------+--+---+----+--------+---+--+---------------+------+
-             0  ...  15 16 17   18    19  20     21     22     23    24  25  26     27   ...  31         32      ... 47
+        /* Layout:                    range_checked_opcode_area                                      |non-range-checked area
+             0  ...  15 16 17   18    19  20     21     22     23    24  25  26     27     28  ... 31         32      ... 47
+            +----------+--+--+------+---+----+--------+----+--------+--+---+----+--------+----+---+--+---------------+---+--+
+          0 | b_chunks |                     x_chunks                                                |         indic        |
+            +----------+--+--+------+---+----+--------+----+--------+--+---+----+--------+----+---+--+---------------+------+
+          1 | y_chunks | n|b0|parity|2*n|xn_u|256*xn_u|xn_l|256*xn_l|sb|sgn|saux|256*saux|tr_c|...   | b_sum_inverse |  ... |
+            +----------+--+--+------+---+----+--------+----+--------+--+---+----+--------+----+---+--+---------------+------+
+             0  ...  15 16 17   18    19  20     21     22     23    24  25  26     27     28  ... 31         32      ... 47
         */
 
         // we need n allocated to create valid constraints on indic chunks
@@ -231,12 +232,13 @@ class zkevm_signextend_bbf : public generic_component<FieldType, stage> {
                                                 // is_sign[i] == 0 for i <= n, is_sign[i] == 1 for i > n
             }
         }
+        // the transition chunk:
+        tr_c = parity * (xn_u * 256 + xn_l)              // parity == 1 => use whole chunk
+               + (1 - parity) * (sgn * 0xFF * 256 + sb); // parity == 0 => transition in the middle of chunk
+        allocate(tr_c,28,1);
         for(std::size_t i = 0; i < chunk_amount; i++) {
             constrain(y_chunks[i] - is_sign[i] * sgn * 0xFFFF                 // sign chunks: fill with sgn * 0xFFFF
-                                  - is_transition[i] * (                      // the transition chunk:
-                                       parity * (xn_u * 256 + xn_l)           // parity == 1 => use whole chunk
-                                     + (1 - parity) * (sgn * 0xFF * 256 + sb) // parity == 0 => transition in the middle of chunk
-                                    )
+                                  - is_transition[i] * tr_c                   // the transition chunk
                                   - (1 - is_sign[i] - is_transition[i]) * x_chunks[i] // other chunks: keep the original x chunk
                      );
         }
