@@ -24,6 +24,7 @@
 #define BOOST_TEST_MODULE dag_expression_test
 
 #include <iostream>
+#include <variant>
 
 #include <boost/test/unit_test.hpp>
 
@@ -49,38 +50,12 @@ make_evaluation_map(
     std::unordered_map<VariableType, typename VariableType::assignment_type> evaluation_map;
     using FieldType = typename VariableType::assignment_type::field_type;
     nil::crypto3::random::algebraic_engine<FieldType> alg_rnd_engine;
-    auto visitor = [&evaluation_map, &alg_rnd_engine](std::shared_ptr<dag_node<VariableType>> node) {
-        auto var_node = std::dynamic_pointer_cast<dag_variable<VariableType>>(node);
-        if (var_node) {
-            auto it = evaluation_map.find(var_node->variable());
-            if (it == evaluation_map.end()) {
-                evaluation_map[var_node->variable()] = alg_rnd_engine();
-            }
+    auto visitor = [&evaluation_map, &alg_rnd_engine](const dag_node<VariableType> &node) {
+        if (!std::holds_alternative<dag_variable<VariableType>>(node)) {
+            return;
         }
-    };
-    dag_expr.visit_const(visitor);
-    return evaluation_map;
-}
-
-template<typename VariableType>
-std::unordered_map<VariableType, typename VariableType::assignment_type>
-make_dfs_evaluation_map(
-    const dag_expression<VariableType> &dag_expr
-) {
-    std::unordered_map<VariableType, typename VariableType::assignment_type> evaluation_map;
-    using dfs_type = typename VariableType::assignment_type;
-    using value_type = typename dfs_type::value_type;
-    using field_type = typename value_type::field_type;
-    nil::crypto3::random::algebraic_engine<field_type> alg_rnd_engine;
-    auto visitor = [&evaluation_map, &alg_rnd_engine](std::shared_ptr<dag_node<VariableType>> node) {
-        auto var_node = std::dynamic_pointer_cast<dag_variable<VariableType>>(node);
-        if (var_node) {
-            auto it = evaluation_map.find(var_node->var);
-            if (it == evaluation_map.end()) {
-                // we use dfs of size 1 for testing, because it's faster
-                evaluation_map[var_node->var] = dfs_type(0, 1, alg_rnd_engine());
-            }
-        }
+        auto var_node = std::get<dag_variable<VariableType>>(node);
+        evaluation_map[var_node.variable] = alg_rnd_engine();
     };
     dag_expr.visit_const(visitor);
     return evaluation_map;
@@ -104,7 +79,7 @@ BOOST_AUTO_TEST_CASE(dag_expression_test) {
     auto evaluation_map = make_evaluation_map(dag_expr);
     math::expression_evaluator<var> evaluator(
         expr,
-        [&evaluation_map](const var &var) -> const typename FieldType::value_type& {
+        [&evaluation_map](const var &var) -> typename FieldType::value_type& {
             return evaluation_map[var];
         }
     );
@@ -146,20 +121,7 @@ BOOST_AUTO_TEST_CASE(dag_expression_test_random) {
     BOOST_CHECK(classic_result == dag_result[0]);
     BOOST_CHECK(classic_result == dag_result[1]);
     // also check that the child nodes are the same: we don't redo the computation
-    BOOST_CHECK(dag_expr.root_nodes[0]->children() == dag_expr.root_nodes[1]->children());
-    // disabled this as we no longer clear caches after evaluation
-    /*std::size_t non_null_children = 0;
-    auto visitor = [&non_null_children](const std::shared_ptr<dag_node<var>> &node) {
-        auto dag_op_node = std::dynamic_pointer_cast<dag_op<var>>(node);
-        if (dag_op_node) {
-            if (dag_op_node->result) {
-                non_null_children++;
-            }
-        }
-    };
-    dag_expr.visit_const(visitor);
-    // check that we have correctly cleared the caches
-    BOOST_CHECK(non_null_children == 0);*/
+    BOOST_CHECK(dag_expr.root_nodes[0] == dag_expr.root_nodes[1]);
 }
 
 BOOST_AUTO_TEST_CASE(dag_expression_test_degree) {
