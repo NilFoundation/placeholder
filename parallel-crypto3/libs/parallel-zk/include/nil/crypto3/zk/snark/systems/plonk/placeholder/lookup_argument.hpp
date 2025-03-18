@@ -36,6 +36,7 @@
 #endif
 
 #include <unordered_map>
+#include <queue>
 #include <thread>
 
 #include <nil/crypto3/math/polynomial/polynomial.hpp>
@@ -527,14 +528,35 @@ namespace nil {
                     typedef detail::placeholder_policy<FieldType, ParamsType> policy_type;
 
                 public:
+                    
+                    void fill_challenge_queue(
+                        const typename placeholder_public_preprocessor<FieldType, ParamsType>::preprocessed_data_type::common_data_type &common_data,
+                        const plonk_constraint_system<FieldType> &constraint_system,
+                        // sorted_batch_values. Pair value/shifted_value
+                        const std::vector<std::vector<typename FieldType::value_type>> &sorted,
+                        // Commitment
+                        const typename CommitmentSchemeTypePermutation::commitment_type &lookup_commitment,
+                        transcript_type &transcript,
+                        std::queue<typename FieldType::value_type>& queue
+                    ) {
+                        // Theta.
+                        queue.push(transcript.template challenge<FieldType>());
+
+                        transcript(lookup_commitment);
+
+                        // alpha, h_challenge, g_challenge
+                        queue.push(transcript.template challenge<FieldType>());
+                        queue.push(transcript.template challenge<FieldType>());
+                        queue.push(transcript.template challenge<FieldType>());
+                    }
+
                     /**
                      * \param[in] challenge - The value of random challenge point 'Y'.
                      * \param[in] evaluations - A map containing evaluations of all the required variables and rotations, I.E. values of
                                                 all the columns at points 'Y' and 'Y*omega' and other points depending on the rotations used.
                      * \param[in] counts - A vector containing the evaluation of polynomails "counts" at point 'T' for each lookup value.
-                                           Each polynomial 'counts' shows the number of times each value appears in the lookup inputs.
-                     * \returns Nullopt if the verification has failed, or a list of lookup argument values that are used as a part of
-                     *          the final zero-check pprotocol.
+                                           Each polynomial 'counts' shows the number of times each value appears in the lookup inputs. 
+                     * \returns A list of lookup argument values that are used as a part of the final zero-check pprotocol.
                      */
                     std::array<typename FieldType::value_type, argument_size> verify_eval(
                         const typename placeholder_public_preprocessor<FieldType, ParamsType>::preprocessed_data_type::common_data_type &common_data,

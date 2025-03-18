@@ -37,6 +37,7 @@ namespace nil {
                 using TableDescription        = typename Types::TableDescription;
                 using LpcScheme               = typename Types::LpcScheme;
                 using FriType                 = typename Types::FriType;
+                using ProofOfWorkType         = typename FriType::grinding_type::output_type;
                 using PlaceholderParams       = typename Types::PlaceholderParams;
                 using polynomial_type         = typename Types::polynomial_type;
                 using CommitmentSchemeFac     = CommitmentSchemeFactory<CurveType, HashType>;
@@ -80,7 +81,7 @@ namespace nil {
 
                     BOOST_LOG_TRIVIAL(info) << "Writing aggregated FRI proof to " << output_file;
 
-                    fri_proof_marshalling_type marshalled_proof = nil::crypto3::marshalling::types::fill_initial_fri_proof<Endianness, LpcScheme>(fri_proof);
+                    fri_proof_marshalling_type marshalled_proof = nil::crypto3::marshalling::types::fill_fri_round_proof<Endianness, LpcScheme>(fri_proof);
 
                     return detail::encode_marshalling_to_file<fri_proof_marshalling_type>(
                         output_file, marshalled_proof);
@@ -98,7 +99,6 @@ namespace nil {
                     return detail::encode_marshalling_to_file<POW_marshalling_type>(
                         output_file, marshalled_pow);
                 }
-
 
                 CommandResult generate_aggregated_FRI_proof_to_file(
                     const boost::filesystem::path &aggregated_challenge_file,
@@ -125,6 +125,12 @@ namespace nil {
 
                     transcript(aggregated_challenge.value());
 
+                    // We don't use this challenge, but we should still create it, because the creation of
+                    // combined Q uses this challenge in the previous step. If we don't do this,
+                    // the next challenge taken from this transcript will match that value of 'theta'.
+                    [[maybe_unused]] auto unused_challenge_from_agg_transcript =
+                        transcript.template challenge<BlueprintField>();
+
                     // Sum up all the polynomials from the files.
                     polynomial_type sum_poly;
                     for (const auto& path : input_combined_Q_polynomial_files) {
@@ -135,10 +141,11 @@ namespace nil {
                         sum_poly += next_combined_Q.value();
                     }
                     auto lpc_scheme = commitment_scheme_fac_.make_lpc_scheme(table_description_->rows_amount);
-                    auto [fri_proof, challenges] = lpc_scheme->proof_eval_FRI_proof(sum_poly, transcript);
+                    FriProof fri_proof;
+                    std::vector<typename BlueprintField::value_type> challenges;
+                    ProofOfWorkType proof_of_work;
 
-                    // And finally run proof of work.
-                    ProofOfWork proof_of_work = nil::crypto3::zk::algorithms::run_grinding<FriType>(lpc_scheme->get_fri_params(), transcript);
+                    lpc_scheme->proof_eval_FRI_proof(sum_poly, fri_proof, challenges, proof_of_work, transcript);
 
                     auto res = save_fri_proof_to_file(fri_proof, aggregated_fri_proof_output_file);
                     if (!res) {

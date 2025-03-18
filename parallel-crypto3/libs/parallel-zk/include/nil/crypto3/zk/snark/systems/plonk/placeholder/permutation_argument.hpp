@@ -32,6 +32,7 @@
 #endif
 
 #include <algorithm>
+#include <queue>
 
 #include <nil/crypto3/math/polynomial/polynomial.hpp>
 #include <nil/crypto3/math/polynomial/polynomial_dfs.hpp>
@@ -258,6 +259,21 @@ namespace nil {
                         prover_result_type res = {std::move(F_dfs), std::move(V_P)};
 
                         return res;
+                    }
+
+                    static inline void fill_challenge_queue(
+                        const typename placeholder_public_preprocessor<FieldType, ParamsType>::preprocessed_data_type::common_data_type
+                            &common_data,
+                        transcript_type &transcript,
+                        std::queue<typename FieldType::value_type>& queue
+                    ) {
+                        // Beta and Gamma
+                        queue.push(transcript.template challenge<FieldType>());
+                        queue.push(transcript.template challenge<FieldType>());
+
+                        for (std::size_t i = 0; i < common_data.permutation_parts - 1; i++) {
+                            queue.push(transcript.template challenge<FieldType>());
+                        }
                     }
 
                     static inline std::array<typename FieldType::value_type, argument_size> verify_eval(

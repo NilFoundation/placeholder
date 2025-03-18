@@ -395,7 +395,8 @@ namespace nil {
                 }
                 out << "\t\t]}," << std::endl;
 
-                out << "\t\t{\"field\": \"" << proof.eval_proof.challenge << "\"}," << std::endl;
+                // TODO(martun): we don't have the challenge in proof any more, fix this when changing the recursive verifier.
+                // out << "\t\t{\"field\": \"" << proof.eval_proof.challenge << "\"}," << std::endl;
                 out << generate_eval_proof<typename PlaceholderParams::commitment_scheme_type>(
                     proof.eval_proof.eval_proof
                 ) << std::endl;

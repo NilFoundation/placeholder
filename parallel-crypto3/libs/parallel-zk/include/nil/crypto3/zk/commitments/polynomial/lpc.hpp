@@ -34,6 +34,8 @@
 #error "You're mixing parallel and non-parallel crypto3 versions"
 #endif
 
+#include <queue>
+
 #include <nil/crypto3/math/polynomial/polynomial.hpp>
 #include <nil/crypto3/math/polynomial/lagrange_interpolation.hpp>
 
@@ -141,6 +143,11 @@ namespace nil {
                         _fixed_polys_values = preprocessed_data;
                     }
 
+                    void fill_challenge_queue_for_setup(transcript_type& transcript, std::queue<value_type>& queue) {
+                        // The value of _etha.
+                        queue.push(transcript.template challenge<field_type>());
+                    } 
+
                     commitment_type commit(std::size_t index) {
                         this->state_commited(index);
 
@@ -181,13 +188,10 @@ namespace nil {
 
                     /** This function must be called for the cases where we want to skip the
                      * round proof for FRI. Must be called once per instance of prover for the aggregated FRI.
-                     * \param[in] combined_Q - Polynomial combined_Q was already computed by the current
-                            prover in the previous step of the aggregated FRI protocol.
                      * \param[in] challenges - These challenges were sent from the "Main" prover,
                             on which the round proof was created for the polynomial F(x) = Sum(combined_Q).
                      */
                     lpc_proof_type proof_eval_lpc_proof(
-                            const polynomial_type& combined_Q,
                             const std::vector<typename fri_type::field_type::value_type>& challenges) {
 
                         typename fri_type::initial_proofs_batch_type initial_proofs =
@@ -203,8 +207,13 @@ namespace nil {
                             challenges from all the other provers.
                      * \returns A pair containing the FRI proof and the vector of size 'lambda' containing the challenges used.
                      */
-                    std::pair<fri_proof_type, std::vector<typename fri_type::field_type::value_type>>
-                    proof_eval_FRI_proof(polynomial_type& sum_poly, transcript_type &transcript) {
+                    void proof_eval_FRI_proof(
+                            polynomial_type& sum_poly, 
+                            fri_proof_type& fri_proof_out,
+                            std::vector<value_type>& challenges_out,
+                            typename params_type::grinding_type::output_type& proof_of_work_out,
+                            transcript_type &transcript
+                    ) {
                         // TODO(martun): this function belongs to FRI, not here, probably will move later.
 
                         // Precommit to sum_poly.
@@ -232,22 +241,22 @@ namespace nil {
                                 sum_poly_precommitment,
                                 _fri_params, transcript);
 
-                        std::vector<typename fri_type::field_type::value_type> challenges =
-                            transcript.template challenges<typename fri_type::field_type>(this->_fri_params.lambda);
+                        // First grinding, then query phase.
+                        proof_of_work_out = nil::crypto3::zk::algorithms::run_grinding<fri_type>(
+                            _fri_params, transcript);
 
-                        fri_proof_type fri_proof;
+                        challenges_out = transcript.template challenges<typename fri_type::field_type>(
+                            this->_fri_params.lambda);
 
-                        fri_proof.fri_round_proof = nil::crypto3::zk::algorithms::query_phase_round_proofs<
+                        fri_proof_out.fri_round_proof = nil::crypto3::zk::algorithms::query_phase_round_proofs<
                                 fri_type, polynomial_type>(
                             _fri_params,
                             fri_trees,
                             fs,
                             commitments_proof.final_polynomial,
-                            challenges);
+                            challenges_out);
 
-                        fri_proof.fri_commitments_proof_part = std::move(commitments_proof);
-
-                        return {fri_proof, challenges};
+                        fri_proof_out.fri_commitments_proof_part = std::move(commitments_proof);
                     }
 
                     typename fri_type::proof_type commit_and_fri_proof(
@@ -460,39 +469,35 @@ namespace nil {
                         return theta_power;
                     }
 
-                    bool verify_eval(
-                        const proof_type &proof,
-                        const std::map<std::size_t, commitment_type> &commitments,
-                        transcript_type &transcript
-                    ) {
-                        this->_z = proof.z;
-                        for (auto const &it: commitments) {
-                            transcript(commitments.at(it.first));
-                        }
-
+                    size_t get_total_points() {
                         auto points = this->get_unique_points();
 
                         // List of unique eval points set. [id=>points]
-                        std::size_t total_points = points.size();
+                        size_t total_points = points.size();
                         if (std::any_of(_batch_fixed.begin(), _batch_fixed.end(), [](auto i){return i.second != false;}))
                             total_points++;
+                        return total_points;
+                    }
 
-                        typename std::vector<typename field_type::value_type> U(total_points);
-                        // V is product of (x - eval_point) polynomial for each eval_point
-                        typename std::vector<math::polynomial<value_type>> V(total_points);
-                        // List of involved polynomials for each eval point [batch_id, poly_id, point_id]
-                        typename std::vector<std::vector<std::tuple<std::size_t, std::size_t>>> poly_map(total_points);
+                    void generate_U_V_polymap(
+                            typename std::vector<typename field_type::value_type>& U,
+                            typename std::vector<math::polynomial<value_type>>& V,
+                            typename std::vector<std::vector<std::tuple<std::size_t, std::size_t>>>& poly_map,
+                            const eval_storage_type& z,
+                            const value_type& theta,
+                            value_type& theta_acc,
+                            size_t total_points) {
 
-                        value_type theta = transcript.template challenge<field_type>();
-                        value_type theta_acc = value_type::one();
-
-                        for (std::size_t p = 0; p < points.size(); p++){
+                        auto points = this->get_unique_points();
+                        for (std::size_t p = 0; p < points.size(); p++) {
                             auto &point = points[p];
                             V[p] = {-point, 1u};
-                            for(std::size_t i:this->_z.get_batches()){
-                                for(std::size_t j = 0; j < this->_z.get_batch_size(i); j++){
+                            for (std::size_t i:z.get_batches()) {
+                                for (std::size_t j = 0; j < z.get_batch_size(i); j++) {
                                     auto it = std::find(this->_points[i][j].begin(), this->_points[i][j].end(), point);
-                                    if( it == this->_points[i][j].end()) continue;
+                                    if (it == this->_points[i][j].end())
+                                        continue;
+
                                     U[p] += this->_z.get(i, j, it - this->_points[i][j].begin()) * theta_acc;
                                     poly_map[p].push_back(std::make_tuple(i, j));
                                     theta_acc *= theta;
@@ -503,18 +508,43 @@ namespace nil {
                         if (total_points > points.size()) {
                             std::size_t p = points.size();
                             V[p] = {-_etha, 1u};
-                            for (std::size_t i:this->_z.get_batches()) {
+                            for (std::size_t i:z.get_batches()) {
                                 if (!_batch_fixed[i])
                                     continue;
-                                for (std::size_t j = 0; j < this->_z.get_batch_size(i); j++) {
+                                for (std::size_t j = 0; j < z.get_batch_size(i); j++) {
                                     U[p] += _fixed_polys_values[i][j] * theta_acc;
                                     poly_map[p].push_back(std::make_tuple(i, j));
                                     theta_acc *= theta;
                                 }
                             }
                         }
+                    }
 
-                        if (!nil::crypto3::zk::algorithms::verify_eval<fri_type>(
+                    bool verify_eval(
+                        const proof_type &proof,
+                        const std::map<std::size_t, commitment_type> &commitments,
+                        transcript_type &transcript
+                    ) {
+                        this->_z = proof.z;
+                        for (auto const &it: commitments) {
+                            transcript(commitments.at(it.first));
+                        }
+
+                        size_t total_points = get_total_points();
+                        typename std::vector<typename field_type::value_type> U(total_points);
+
+                        // V is product of (x - eval_point) polynomial for each eval_point
+                        typename std::vector<math::polynomial<value_type>> V(total_points);
+
+                        // List of involved polynomials for each eval point [batch_id, poly_id, point_id]
+                        typename std::vector<std::vector<std::tuple<std::size_t, std::size_t>>> poly_map(total_points);
+
+                        value_type theta = transcript.template challenge<field_type>();
+                        value_type theta_acc = value_type::one();
+
+                        generate_U_V_polymap(U, V, poly_map, proof.z, theta, theta_acc, total_points);
+
+                        return nil::crypto3::zk::algorithms::verify_eval<fri_type>(
                             proof.fri_proof,
                             _fri_params,
                             commitments,
@@ -523,10 +553,7 @@ namespace nil {
                             U,
                             V,
                             transcript
-                        )) {
-                            return false;
-                        }
-                        return true;
+                        );
                     }
 
                     // Params for LPC are actually FRI params. We can return some LPC params from here in the future if needed.

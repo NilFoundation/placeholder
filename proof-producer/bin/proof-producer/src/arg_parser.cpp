@@ -66,7 +66,7 @@ namespace nil {
             // clang-format off
             auto options_appender = config.add_options()
                 ("stage", po::value(&prover_options.stage),
-                 "Stage of the prover to run, one of (all, preprocess, prove, verify, generate-aggregated-challenge, generate-combined-Q, aggregated-FRI, consistency-checks). Defaults to 'all'.")
+                 "Stage of the prover to run, one of (all, preprocess, prove, verify, generate-aggregated-challenge, generate-combined-Q, aggregated-FRI, consistency-checks, aggregated-verify). Defaults to 'all'.")
                 ("log-level,l", make_defaulted_option(prover_options.log_level), "Log level (trace, debug, info, warning, error, fatal)") // TODO is does not work
                 ("elliptic-curve-type,e", make_defaulted_option(prover_options.elliptic_curve_type), "Elliptic curve type (pallas, alt_bn128_254)")
                 ("hash-type", po::value(&prover_options.hash_type_str), "Hash type (keccak, poseidon, sha256)");

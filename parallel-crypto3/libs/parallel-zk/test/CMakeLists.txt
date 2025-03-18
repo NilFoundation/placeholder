@@ -60,9 +60,8 @@ set(TESTS_NAMES
     "math/expression"
     "math/dag_expression"
 
-#    "routing_algorithms/test_routing_algorithms"
-
     "systems/plonk/placeholder/placeholder_circuits"
+    "systems/plonk/placeholder/placeholder_circuits_dFRI"
     "systems/plonk/placeholder/placeholder_goldilocks"
     # TODO(ioxid): Mersenne31 is unsupported for now.
     # "systems/plonk/placeholder/placeholder_mersenne31"
