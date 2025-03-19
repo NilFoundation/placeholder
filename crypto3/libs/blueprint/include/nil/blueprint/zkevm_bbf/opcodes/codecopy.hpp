@@ -27,7 +27,7 @@
 #include <algorithm>
 #include <numeric>
 
-#include <nil/blueprint/zkevm/zkevm_word.hpp>
+#include <nil/blueprint/zkevm_bbf/types/zkevm_word.hpp>
 #include <nil/blueprint/zkevm_bbf/subcomponents/memory_cost.hpp>
 #include <nil/blueprint/zkevm_bbf/subcomponents/word_size.hpp>
 #include <nil/blueprint/zkevm_bbf/types/opcode.hpp>
@@ -64,7 +64,7 @@ namespace nil {
                         destOffset = w_lo<FieldType>(current_state.stack_top());
                         offset = w_lo<FieldType>(current_state.stack_top(1));
                         length = w_lo<FieldType>(current_state.stack_top(2));
-                        current_mem = current_state.memory_size;
+                        current_mem = current_state.memory_size();
                         next_mem = length.is_zero()
                                        ? current_mem
                                        : std::max(destOffset + length, current_mem);
@@ -121,38 +121,32 @@ namespace nil {
                                   current_state.rw_counter(0) - 3 - length);
                         // rw_counter transition
                         std::vector<TYPE> tmp;
-                        tmp = {TYPE(rw_op_to_num(rw_operation_type::stack)),
-                               current_state.call_id(0),
-                               current_state.stack_size(0) - 1,
-                               TYPE(0),  // storage_key_hi
-                               TYPE(0),  // storage_key_lo
-                               TYPE(0),  // field
-                               current_state.rw_counter(0),
-                               TYPE(0),  // is_write
-                               TYPE(0),
-                               destOffset};
+                        tmp = rw_table<FieldType, stage>::stack_lookup(
+                            current_state.call_id(0),
+                            current_state.stack_size(0) - 1,
+                            current_state.rw_counter(0),
+                            TYPE(0),  // is_write
+                            TYPE(0),
+                            destOffset
+                        );
                         lookup(tmp, "zkevm_rw");
-                        tmp = {TYPE(rw_op_to_num(rw_operation_type::stack)),
-                               current_state.call_id(0),
-                               current_state.stack_size(0) - 2,
-                               TYPE(0),  // storage_key_hi
-                               TYPE(0),  // storage_key_lo
-                               TYPE(0),  // field
-                               current_state.rw_counter(0) + 1,
-                               TYPE(0),  // is_write
-                               TYPE(0),
-                               offset};
+                        tmp = rw_table<FieldType, stage>::stack_lookup(
+                            current_state.call_id(0),
+                            current_state.stack_size(0) - 2,
+                            current_state.rw_counter(0) + 1,
+                            TYPE(0),  // is_write
+                            TYPE(0),
+                            offset
+                        );
                         lookup(tmp, "zkevm_rw");
-                        tmp = {TYPE(rw_op_to_num(rw_operation_type::stack)),
-                               current_state.call_id(0),
-                               current_state.stack_size(0) - 3,
-                               TYPE(0),  // storage_key_hi
-                               TYPE(0),  // storage_key_lo
-                               TYPE(0),  // field
-                               current_state.rw_counter(0) + 2,
-                               TYPE(0),  // is_write
-                               TYPE(0),
-                               length};
+                        tmp = rw_table<FieldType, stage>::stack_lookup(
+                            current_state.call_id(0),
+                            current_state.stack_size(0) - 3,
+                            current_state.rw_counter(0) + 2,
+                            TYPE(0),  // is_write
+                            TYPE(0),
+                            length
+                        );
                         lookup(tmp, "zkevm_rw");
                     } else {
                         std::cout << "\tSTATE transition implemented" << std::endl;

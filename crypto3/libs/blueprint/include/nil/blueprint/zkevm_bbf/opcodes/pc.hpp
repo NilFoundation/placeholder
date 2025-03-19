@@ -3,7 +3,7 @@
 #include <numeric>
 #include <algorithm>
 
-#include <nil/blueprint/zkevm/zkevm_word.hpp>
+#include <nil/blueprint/zkevm_bbf/types/zkevm_word.hpp>
 #include <nil/blueprint/zkevm_bbf/types/opcode.hpp>
 
 namespace nil {
@@ -26,25 +26,21 @@ namespace nil {
                 zkevm_pc_bbf(context_type &context_object, const opcode_input_type<FieldType, stage> &current_state):
                     generic_component<FieldType,stage>(context_object, false)
                 {
-                    
+
                     if constexpr( stage == GenerationStage::CONSTRAINTS ){
                         constrain(current_state.pc_next() - current_state.pc(0) - 1);                   // PC transition
                         constrain(current_state.gas(0) - current_state.gas_next() - 2);                 // GAS transition
                         constrain(current_state.stack_size(0) - current_state.stack_size_next() + 1);       // stack_size transition
                         constrain(current_state.memory_size(0) - current_state.memory_size_next());     // memory_size transition
                         constrain(current_state.rw_counter_next() - current_state.rw_counter(0) - 1);   // rw_counter transition
-                        std::vector<TYPE> tmp({
-                            TYPE(rw_op_to_num(rw_operation_type::stack)),
+                        auto tmp = rw_table<FieldType, stage>::stack_lookup(
                             current_state.call_id(0),
                             current_state.stack_size(0),
-                            TYPE(0),// storage_key_hi
-                            TYPE(0),// storage_key_lo
-                            TYPE(0),// field
                             current_state.rw_counter(0),
                             TYPE(1),// is_write
                             0,
                             current_state.pc(0)
-                        });
+                        );
                         lookup(tmp, "zkevm_rw");
                     }
                 }

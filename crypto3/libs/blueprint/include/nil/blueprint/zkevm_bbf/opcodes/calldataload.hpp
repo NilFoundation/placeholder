@@ -27,7 +27,6 @@
 #include <numeric>
 #include <algorithm>
 
-#include <nil/blueprint/zkevm/zkevm_word.hpp>
 #include <nil/blueprint/zkevm_bbf/types/opcode.hpp>
 
 namespace nil {
@@ -50,14 +49,69 @@ namespace nil {
                 zkevm_calldataload_bbf(context_type &context_object, const opcode_input_type<FieldType, stage> &current_state):
                     generic_component<FieldType,stage>(context_object, false)
                 {
+                    TYPE offset;                        // Offset
+                    std::vector<TYPE> bytes(32);        // Loaded value
+
+                    if constexpr( stage == GenerationStage::ASSIGNMENT ){
+                        auto address = w_to_16(current_state.stack_top())[15];
+                        offset = address;
+                        for (std::size_t i = 0; i < 32; i++) {
+                            bytes[i] = current_state.calldata(address + i);
+                        }
+                    }
+                    // Allocate bytes in two rows to prevent too much of lookup constraints to rw_table
+                    for (std::size_t i = 0; i < 16; i++) {
+                        allocate(bytes[i], i + 16, 0);
+                        allocate(bytes[i + 16], i + 16, 1);
+                    }
+                    allocate(offset,0,0);
+                    auto V_128 = chunks8_to_chunks128<TYPE>(bytes);
+
                     if constexpr( stage == GenerationStage::CONSTRAINTS ){
                         constrain(current_state.pc_next() - current_state.pc(0) - 1);                   // PC transition
                         constrain(current_state.gas(0) - current_state.gas_next() - 3);                 // GAS transition
                         constrain(current_state.stack_size_next() - current_state.stack_size(0));   // stack_size transition
                         constrain(current_state.memory_size(0) - current_state.memory_size_next());     // memory_size transition
-                        constrain(current_state.rw_counter_next() - current_state.rw_counter(0) - 2);   // rw_counter transition
-                    } else {
-                        std::cout << "\tSTATE transition implemented" << std::endl;
+                        constrain(current_state.rw_counter_next() - current_state.rw_counter(0) - 34);   // rw_counter transition
+
+                        // Read offset from stack
+                        lookup(rw_table<FieldType, stage>::stack_lookup(
+                            current_state.call_id(1),
+                            current_state.stack_size(1) - 1,
+                            current_state.rw_counter(1),
+                            TYPE(0),                                               // is_write
+                            TYPE(0),                                               // hi bytes are 0
+                            offset
+                        ), "zkevm_rw");
+
+                        // Read 32 bytes from calldata
+                        for( std::size_t i = 0; i < 32; i++ ){
+                            if( i < 16 ){
+                                lookup(rw_table<FieldType, stage>::calldata_lookup(
+                                    current_state.call_id(0),
+                                    offset + i,
+                                    current_state.rw_counter(0) + i + 1,
+                                    bytes[i]
+                                ), "zkevm_rw");
+                            } else {
+                                lookup(rw_table<FieldType, stage>::calldata_lookup(
+                                    current_state.call_id(1),
+                                    offset + i,
+                                    current_state.rw_counter(1) + i + 1,
+                                    bytes[i]
+                                ), "zkevm_rw");
+                            }
+                        }
+
+                        // Write result to stack
+                        lookup(rw_table<FieldType, stage>::stack_lookup(
+                            current_state.call_id(1),
+                            current_state.stack_size(1) - 1,
+                            current_state.rw_counter(1) + 33,
+                            TYPE(1),                                               // is_write
+                            V_128.first,                                           // hi bytes are 0
+                            V_128.second
+                        ), "zkevm_rw");
                     }
                 }
             };
@@ -66,7 +120,7 @@ namespace nil {
             class zkevm_calldataload_operation : public opcode_abstract<FieldType> {
             public:
                 virtual std::size_t rows_amount() override {
-                    return 1;
+                    return 2;
                 }
                 virtual void fill_context(
                     typename generic_component<FieldType, GenerationStage::ASSIGNMENT>::context_type &context,
