@@ -27,7 +27,6 @@
 #include <numeric>
 #include <algorithm>
 
-#include <nil/blueprint/zkevm/zkevm_word.hpp>
 #include <nil/blueprint/zkevm_bbf/types/opcode.hpp>
 
 namespace nil {
@@ -52,7 +51,7 @@ namespace nil {
                 {
                     std::vector<TYPE> A_bytes(32);
                     if constexpr( stage == GenerationStage::ASSIGNMENT ){
-                        auto bytes = nil::blueprint::w_to_8(current_state.additional_input);
+                        auto bytes = nil::blueprint::w_to_8(current_state.additional_input());
                         for( std::size_t i = 0; i < 32; i++ ){
                             A_bytes[i] = bytes[i];
                         }
@@ -71,18 +70,15 @@ namespace nil {
                         constrain(current_state.memory_size(1) - current_state.memory_size_next());     // memory_size transition
                         constrain(current_state.rw_counter_next() - current_state.rw_counter(1) - 1);   // rw_counter transition
                         auto A_128 = chunks8_to_chunks128<TYPE>(A_bytes);
-                        std::vector<TYPE> tmp({
-                            TYPE(rw_op_to_num(rw_operation_type::stack)),
+                        std::vector<TYPE> tmp;
+                        tmp = rw_table<FieldType, stage>::stack_lookup(
                             current_state.call_id(0),
                             current_state.stack_size(0),
-                            TYPE(0),// storage_key_hi
-                            TYPE(0),// storage_key_lo
-                            TYPE(0),// field
                             current_state.rw_counter(0),
                             TYPE(1),// is_write
                             A_128.first,
                             A_128.second
-                        });
+                        );
                         lookup(tmp, "zkevm_rw");
                         for( std::size_t i = 0; i < 32 - x; i++){
                             constrain(A_bytes[i]);
