@@ -160,97 +160,117 @@ namespace nil {
                     }
 
                     static const auto zerohash = zkevm_keccak_hash({});
-                    for (std::size_t i = 0; i < max_bytecode_size; i++) {
+                    if constexpr (stage == GenerationStage::CONSTRAINTS) {
+                        std::vector<TYPE> every;
+                        std::vector<TYPE> non_first;
+                        std::vector<TYPE> bytes;
+
+                        // Every constraints
                         // 0. TAG is zeroes, one or two
-                        constrain(tag[i] * (tag[i] - 1) * (tag[i] - 2));
+                        every.push_back(context_object.relativize(
+                            tag[0] * (tag[0] - 1) * (tag[0] - 2), -1));
                         // 1. INDEX for HEADER and unused bytes is zero
-                        constrain((tag[i] - 2) * (tag[i] - 1) * index[i]);
+                        every.push_back(context_object.relativize(
+                            (tag[0] - 2) * (tag[0] - 1) * index[0], -1));
                         // 4. In contract header length_left == contract length
-                        constrain((tag[i] - 2) * (tag[i] - 1) *
-                                  (length_left[i] - value[i]));
+                        every.push_back(context_object.relativize(
+                            (tag[0] - 2) * (tag[0] - 1) * (length_left[0] - value[0]),
+                            -1));
                         // 7. is_opcode is zeroes or ones
-                        constrain(is_opcode[i] * (is_opcode[i] - 1));
+                        every.push_back(context_object.relativize(
+                            is_opcode[0] * (is_opcode[0] - 1), -1));
                         // 8. is_opcode on HEADER are zeroes
-                        constrain((tag[i] - 2) * (tag[i] - 1) * is_opcode[i]);
+                        every.push_back(context_object.relativize(
+                            (tag[0] - 2) * (tag[0] - 1) * is_opcode[0], -1));
                         // 14. value_rlc for HEADERS == length_left
-                        constrain((tag[i] - 2) * (tag[i] - 1) *
-                                  (value_rlc[i] - length_left[i]));
+                        every.push_back(context_object.relativize(
+                            (tag[0] - 2) * (tag[0] - 1) * (value_rlc[0] - length_left[0]),
+                            -1));
 
-                        if (i > 0) {
-                            // 2. INDEX for first contract byte is zero
-                            constrain((tag[i - 1] - 2) * (tag[i - 1] - 1) * index[i]);
-                            // 3. INDEX is incremented for all bytes
-                            constrain(tag[i - 1] * tag[i] *
-                                      (index[i] - index[i - 1] - 1));
-                            // 5. In contract bytes each row decrement length_left
-                            constrain(tag[i] * (length_left[i - 1] - length_left[i] - 1));
-                            // 6. Length_left is zero for last byte in the contract
-                            constrain(tag[i - 1] * (tag[i] - 2) * (tag[i] - 1) *
-                                      length_left[i - 1]);
-                            // 9. First is_opcode on BYTE after HEADER is 1
-                            constrain((tag[i] - 2) * (tag[i - 1] - 1) * tag[i] *
-                                      (is_opcode[i] - 1));
-                            // 10. PUSH_SIZE decreases for non-opcodes except metadata
-                            constrain((tag[i] - 2) * tag[i] * (is_opcode[i] - 1) *
-                                      (push_size[i - 1] - push_size[i] - 1));
-                            // 11. before opcode push_size is always zero
-                            constrain(is_opcode[i] * push_size[i - 1]);
-                            // 12. for all bytes hash is similar to previous
-                            constrain(tag[i] * (hash_hi[i - 1] - hash_hi[i]));
-                            // 13. for all bytes hash is similar to previous
-                            constrain(tag[i] * (hash_lo[i - 1] - hash_lo[i]));
-                            // 15. for all bytes RLC is correct
-                            constrain(tag[i] *
-                                      (value_rlc[i] -
-                                       value_rlc[i - 1] * rlc_challenge[i] - value[i]));
-                            // 16. for each BYTEs rlc_challenge are similar
-                            constrain(tag[i] * (rlc_challenge[i] - rlc_challenge[i - 1]));
-                        }
-                        if (i > 0 && i < max_bytecode_size - 1) {
-                            // 17. rlc_challenge is similar for different contracts
-                            constrain(tag[i + 1] *
-                                      (rlc_challenge[i] - rlc_challenge[i - 1]));
-                        }
-                        lookup(tag[i] * value[i] * (2 - tag[i]), "byte_range_table/full");
-                        lookup(std::vector<TYPE>({value[i] * is_opcode[i],
-                                                  push_size[i] * is_opcode[i],
-                                                  is_opcode[i]}),
-                               "zkevm_opcodes/full");
+                        // Non-first row constraints
+                        // 2. INDEX for first contract byte is zero
+                        non_first.push_back(context_object.relativize(
+                            (tag[0] - 2) * (tag[0] - 1) * index[1], -1));
+                        // 3. INDEX is incremented for all bytes
+                        non_first.push_back(context_object.relativize(
+                            tag[0] * tag[1] * (index[1] - index[0] - 1), -1));
+                        // 5. In contract bytes each row decrement length_left
+                        non_first.push_back(context_object.relativize(
+                            tag[1] * (length_left[0] - length_left[1] - 1), -1));
+                        // 6. Length_left is zero for last byte in the contract
+                        non_first.push_back(context_object.relativize(
+                            tag[0] * (tag[1] - 2) * (tag[1] - 1) * length_left[0], -1));
+                        // 9. First is_opcode on BYTE after HEADER is 1
+                        non_first.push_back(context_object.relativize(
+                            (tag[1] - 2) * (tag[0] - 1) * tag[1] * (is_opcode[1] - 1),
+                            -1));
+                        // 10. PUSH_SIZE decreases for non-opcodes except metadata
+                        non_first.push_back(context_object.relativize(
+                            (tag[1] - 2) * tag[1] * (is_opcode[1] - 1) *
+                                (push_size[0] - push_size[1] - 1),
+                            -1));
+                        // 11. before opcode push_size is always zero
+                        non_first.push_back(
+                            context_object.relativize(is_opcode[1] * push_size[0], -1));
+                        // 12. for all bytes hash is similar to previous
+                        non_first.push_back(context_object.relativize(
+                            tag[1] * (hash_hi[0] - hash_hi[1]), -1));
+                        // 13. for all bytes hash is similar to previous
+                        non_first.push_back(context_object.relativize(
+                            tag[1] * (hash_lo[0] - hash_lo[1]), -1));
+                        // 15. for all bytes RLC is correct
+                        non_first.push_back(context_object.relativize(
+                            tag[1] * (value_rlc[1] - value_rlc[0] * rlc_challenge[1] -
+                                      value[1]),
+                            -1));
+                        // 16. for each BYTEs rlc_challenge are similar
+                        non_first.push_back(context_object.relativize(
+                            tag[1] * (rlc_challenge[1] - rlc_challenge[0]), -1));
 
-                        if (i > 0) {
-                            // Lookup for last byte
-                            lookup(
-                                std::vector<TYPE>(
-                                    {// TODO: update math::expression constructor with
-                                     // constant parameter
-                                     tag[i] + 1 - tag[i],
-                                     is_byte[i - 1] * (1 - is_byte[i]) * value_rlc[i - 1],
-                                     is_byte[i - 1] * (1 - is_byte[i]) * hash_hi[i - 1] +
-                                         (1 - is_byte[i - 1] * (1 - is_byte[i])) *
-                                             w_hi<FieldType>(zerohash),
-                                     is_byte[i - 1] * (1 - is_byte[i]) * hash_lo[i - 1] +
-                                         (1 - is_byte[i - 1] * (1 - is_byte[i])) *
-                                             w_lo<FieldType>(zerohash)}),
-                                "keccak_table");
+                        // Bytes constraint
+                        // 17. rlc_challenge is similar for different contracts
+                        bytes.push_back(context_object.relativize(
+                            tag[2] * (rlc_challenge[1] - rlc_challenge[0]), -1));
+
+                        // Apply constraints
+                        for (std::size_t i = 0; i < every.size(); i++) {
+                            context_object.relative_constrain(every[i], 0,
+                                                              max_bytecode_size - 1);
                         }
                         for (std::size_t i = 0; i < non_first.size(); i++) {
-                            context_object.relative_constrain(non_first[i], 1, max_bytecode_size - 1);
+                            context_object.relative_constrain(non_first[i], 1,
+                                                              max_bytecode_size - 1);
                         }
                         for (std::size_t i = 0; i < bytes.size(); i++) {
-                            context_object.relative_constrain(bytes[i], 1, max_bytecode_size - 2);
+                            context_object.relative_constrain(bytes[i], 1,
+                                                              max_bytecode_size - 2);
                         }
 
-                        std::vector<TYPE> tmp = {context_object.relativize(tag[0] * value[0], -1)};
-                        context_object.relative_lookup(tmp, "byte_range_table/full", 0, max_bytecode_size - 1);
-                        tmp = {context_object.relativize(std::vector<TYPE>({value[0] * is_opcode[0], 
-                                                                            push_size[0] * is_opcode[0], 
-                                                                            is_opcode[0]}), -1)};
-                        context_object.relative_lookup(tmp, "zkevm_opcodes/full", 0, max_bytecode_size - 1);
-                        tmp = {context_object.relativize(std::vector<TYPE>({tag[1] + 1 - tag[1], //TODO: update math::expression constructor with constant parameter
-                                                                            tag[0] * (1 - tag[1]) * value_rlc[0],
-                                                                            tag[0] * (1 - tag[1]) * hash_hi[0] + (1 - tag[0] * (1 - tag[1])) * w_hi<FieldType>(zerohash),
-                                                                            tag[0] * (1 - tag[1]) * hash_lo[0] + (1 - tag[0] * (1 - tag[1])) * w_lo<FieldType>(zerohash)}), -1)};
-                        context_object.relative_lookup(tmp, "keccak_table", 1, max_bytecode_size - 1);
+                        // Lookups
+                        std::vector<TYPE> tmp = {context_object.relativize(
+                            tag[0] * value[0] * (2 - tag[0]), -1)};
+                        context_object.relative_lookup(tmp, "byte_range_table/full", 0,
+                                                       max_bytecode_size - 1);
+                        tmp = {context_object.relativize(
+                            std::vector<TYPE>({value[0] * is_opcode[0],
+                                               push_size[0] * is_opcode[0],
+                                               is_opcode[0]}),
+                            -1)};
+                        context_object.relative_lookup(tmp, "zkevm_opcodes/full", 0,
+                                                       max_bytecode_size - 1);
+                        tmp = {context_object.relativize(
+                            std::vector<TYPE>(
+                                {tag[1] + 1 - tag[1],
+                                 is_byte[0] * (1 - is_byte[1]) * value_rlc[0],
+                                 is_byte[0] * (1 - is_byte[1]) * hash_hi[0] +
+                                     (1 - is_byte[0] * (1 - is_byte[1])) *
+                                         w_hi<FieldType>(zerohash),
+                                 is_byte[0] * (1 - is_byte[1]) * hash_lo[0] +
+                                     (1 - is_byte[0] * (1 - is_byte[1])) *
+                                         w_lo<FieldType>(zerohash)}),
+                            -1)};
+                        context_object.relative_lookup(tmp, "keccak_table", 1,
+                                                       max_bytecode_size - 1);
                     }
                 };
             };
