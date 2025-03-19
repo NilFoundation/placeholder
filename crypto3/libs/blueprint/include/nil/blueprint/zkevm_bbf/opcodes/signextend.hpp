@@ -27,7 +27,6 @@
 
 #include <algorithm>
 #include <iostream>
-#include <nil/blueprint/zkevm/zkevm_word.hpp>
 #include <nil/blueprint/zkevm_bbf/subcomponents/rw_table.hpp>
 #include <nil/blueprint/zkevm_bbf/types/opcode.hpp>
 #include <numeric>
@@ -249,7 +248,6 @@ class zkevm_signextend_bbf : public generic_component<FieldType, stage> {
         auto Y_128 = chunks16_to_chunks128_reversed<TYPE>(y_chunks);
 
         if constexpr (stage == GenerationStage::CONSTRAINTS) {
-
             constrain(current_state.pc_next() - current_state.pc(1) -
                       1);  // PC transition
             constrain(current_state.gas(1) - current_state.gas_next() -
@@ -261,55 +259,21 @@ class zkevm_signextend_bbf : public generic_component<FieldType, stage> {
             constrain(current_state.rw_counter_next() - current_state.rw_counter(1) -
                       3);  // rw_counter transition
 
-            lookup({TYPE(rw_op_to_num(rw_operation_type::stack)),
-                   current_state.call_id(1),
-                   current_state.stack_size(1) - 1,
-                   TYPE(0),  // storage_key_hi
-                   TYPE(0),  // storage_key_lo
-                   TYPE(0),  // field
-                   current_state.rw_counter(1),
-                   TYPE(0),  // is_write
-                   B_128.first,
-                   B_128.second}, "zkevm_rw");
+            using RwTable = rw_table<FieldType, stage>;
+            lookup(RwTable::stack_lookup(
+                    current_state.call_id(1), current_state.stack_size(1) - 1,
+                    current_state.rw_counter(1), /* is_write = */ TYPE(0),
+                    B_128.first, B_128.second), "zkevm_rw");
 
-            lookup({TYPE(rw_op_to_num(rw_operation_type::stack)),
-                   current_state.call_id(1),
-                   current_state.stack_size(1) - 2,
-                   TYPE(0),  // storage_key_hi
-                   TYPE(0),  // storage_key_lo
-                   TYPE(0),  // field
-                   current_state.rw_counter(1) + 1,
-                   TYPE(0),  // is_write
-                   X_128.first,
-                   X_128.second}, "zkevm_rw");
+            lookup(RwTable::stack_lookup(
+                    current_state.call_id(1), current_state.stack_size(1) - 2,
+                    current_state.rw_counter(1) + 1, /* is_write = */ TYPE(0),
+                    X_128.first, X_128.second), "zkevm_rw");
 
-            lookup({TYPE(rw_op_to_num(rw_operation_type::stack)),
-                   current_state.call_id(1),
-                   current_state.stack_size(1) - 2,
-                   TYPE(0),  // storage_key_hi
-                   TYPE(0),  // storage_key_lo
-                   TYPE(0),  // field
-                   current_state.rw_counter(1) + 2,
-                   TYPE(1),  // is_write
-                   Y_128.first,
-                   Y_128.second}, "zkevm_rw");
-
-            // using RwTable = rw_table<FieldType, stage>;
-
-            // lookup(RwTable::stack_lookup(
-            //            current_state.call_id(1), current_state.stack_size(1) - 1,
-            //            current_state.rw_counter(1), /* is_write = */ TYPE(0),
-            //            B_128.first, B_128.second), "zkevm_rw");
-
-            // lookup(RwTable::stack_lookup(
-            //            current_state.call_id(1), current_state.stack_size(1) - 2,
-            //            current_state.rw_counter(1) + 1, /* is_write = */ TYPE(0),
-            //            X_128.first, X_128.second), "zkevm_rw");
-
-            // lookup(RwTable::stack_lookup(
-            //            current_state.call_id(1), current_state.stack_size(1) - 2,
-            //            current_state.rw_counter(1) + 2, /* is_write = */ TYPE(1),
-            //            Y_128.first, Y_128.second), "zkevm_rw");
+            lookup(RwTable::stack_lookup(
+                    current_state.call_id(1), current_state.stack_size(1) - 2,
+                    current_state.rw_counter(1) + 2, /* is_write = */ TYPE(1),
+                    Y_128.first, Y_128.second), "zkevm_rw");
         }
     }
 };

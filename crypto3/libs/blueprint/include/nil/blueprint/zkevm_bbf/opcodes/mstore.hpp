@@ -27,7 +27,7 @@
 #include <algorithm>
 #include <numeric>
 
-#include <nil/blueprint/zkevm/zkevm_word.hpp>
+#include <nil/blueprint/zkevm_bbf/types/zkevm_word.hpp>
 #include <nil/blueprint/zkevm_bbf/subcomponents/memory_cost.hpp>
 #include <nil/blueprint/zkevm_bbf/subcomponents/word_size.hpp>
 #include <nil/blueprint/zkevm_bbf/types/opcode.hpp>
@@ -63,7 +63,7 @@ namespace nil {
                         std::cout << "\tASSIGNMENT implemented" << std::endl;
                         auto offsetess = w_to_16(current_state.stack_top())[15];
                         offset = offsetess;
-                        current_mem = current_state.memory_size;
+                        current_mem = current_state.memory_size();
                         next_mem = std::max(offset + length, current_mem);
                         S = next_mem > current_mem;
                         auto bytes = w_to_8(current_state.stack_top(1));
@@ -120,68 +120,46 @@ namespace nil {
                         auto V_128 = chunks8_to_chunks128<TYPE>(value);
 
                         std::vector<TYPE> tmp;
-                        tmp = {
-                            TYPE(rw_op_to_num(rw_operation_type::stack)),
+                        tmp = rw_table<FieldType, stage>::stack_lookup(
                             current_state.call_id(1),
                             current_state.stack_size(1) - 1,
-                            TYPE(0),  // storage_key_hi
-                            TYPE(0),  // storage_key_lo
-                            TYPE(0),  // field
                             current_state.rw_counter(1),
-                            TYPE(0),  // is_write
-                            TYPE(0),  // hi bytes are 0
-                            offset      // offset is smaller than maximum contract size
-                        };
+                            TYPE(0),                                               // is_write
+                            TYPE(0),                                               // hi bytes are 0
+                            offset
+                        );
                         lookup(tmp, "zkevm_rw");
-                        tmp = {
-                            TYPE(rw_op_to_num(rw_operation_type::stack)),
+                        tmp = rw_table<FieldType, stage>::stack_lookup(
                             current_state.call_id(1),
                             current_state.stack_size(1) - 2,
-                            TYPE(0),  // storage_key_hi
-                            TYPE(0),  // storage_key_lo
-                            TYPE(0),  // field
                             current_state.rw_counter(1) + 1,
-                            TYPE(0),      // is_write
-                            V_128.first,  // hi bytes are 0
-                            V_128.second  // offset is smaller than maximum contract size
-                        };
+                            TYPE(0),                                               // is_write
+                            V_128.first,
+                            V_128.second
+                        );
                         lookup(tmp, "zkevm_rw");
 
-                        for (std::size_t i = 0; i < 32; i++) {
-                            if (i < 16) {
-                                tmp = {
-                                    TYPE(rw_op_to_num(rw_operation_type::memory)),
+                        for( std::size_t i = 0; i < 32; i++){
+                            if( i < 16){
+                                tmp = rw_table<FieldType, stage>::memory_lookup(
                                     current_state.call_id(0),
                                     offset + i,
-                                    TYPE(0),  // storage_key_hi
-                                    TYPE(0),  // storage_key_lo
-                                    TYPE(0),  // field
                                     current_state.rw_counter(0) + 2 + i,
-                                    TYPE(1),  // is_write
-                                    TYPE(0),  // hi bytes are 0
-                                    value[i]  // offset is smaller than maximum contract
-                                              // size
-                                };
+                                    TYPE(1),                                               // is_write                                             // hi bytes are 0
+                                    value[i]
+                                );
                                 lookup(tmp, "zkevm_rw");
                             } else {
-                                tmp = {
-                                    TYPE(rw_op_to_num(rw_operation_type::memory)),
+                                tmp = rw_table<FieldType, stage>::memory_lookup(
                                     current_state.call_id(1),
                                     offset + i,
-                                    TYPE(0),  // storage_key_hi
-                                    TYPE(0),  // storage_key_lo
-                                    TYPE(0),  // field
                                     current_state.rw_counter(1) + 2 + i,
-                                    TYPE(1),  // is_write
-                                    TYPE(0),  // hi bytes are 0
-                                    value[i]  // offset is smaller than maximum contract
-                                              // size
-                                };
+                                    TYPE(1),                                               // is_write
+                                    value[i]
+                                );
                                 lookup(tmp, "zkevm_rw");
                             }
                         }
-                    } else {
-                        std::cout << "\tASSIGNMENT implemented" << std::endl;
                     }
                 }
             };

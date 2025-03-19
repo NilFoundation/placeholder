@@ -139,9 +139,10 @@ namespace nil {
                         allocate(rlc_challenge[i],9,i);
                     }
                     // constrain all bytecode values
-//                    if (make_links) {
-//                        copy_constrain(input.rlc_challenge, rlc_challenge[0]);
-//                    }
+                    // if (make_links) {
+                    //     copy_constrain(input.rlc_challenge, rlc_challenge[0]);
+                    // }
+
                     static const auto zerohash = zkevm_keccak_hash({});
                     if constexpr (stage == GenerationStage::CONSTRAINTS) {
                         std::vector<TYPE> every;

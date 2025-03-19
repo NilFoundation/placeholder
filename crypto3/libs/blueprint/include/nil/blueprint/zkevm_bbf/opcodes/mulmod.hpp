@@ -26,7 +26,6 @@
 #pragma once
 
 #include <algorithm>
-#include <nil/blueprint/zkevm/zkevm_word.hpp>
 #include <nil/blueprint/zkevm_bbf/types/opcode.hpp>
 #include <numeric>
 
@@ -582,52 +581,42 @@ namespace nil {
                         constrain(current_state.rw_counter_next() - current_state.rw_counter(6) -
                                   4);  // rw_counter transition
                         std::vector<TYPE> tmp;
-                        tmp = {TYPE(rw_op_to_num(rw_operation_type::stack)),
-                               current_state.call_id(5),
-                               current_state.stack_size(5) - 1,
-                               TYPE(0),  // storage_key_hi
-                               TYPE(0),  // storage_key_lo
-                               TYPE(0),  // field
-                               current_state.rw_counter(5),
-                               TYPE(0),  // is_write
-                               A0,
-                               A1};
+                        tmp = rw_table<FieldType, stage>::stack_lookup(
+                            current_state.call_id(5),
+                            current_state.stack_size(5) - 1,
+                            current_state.rw_counter(5),
+                            TYPE(0),  // is_write
+                            A0,
+                            A1
+                        );
                         lookup(tmp, "zkevm_rw");
-                        tmp = {TYPE(rw_op_to_num(rw_operation_type::stack)),
-                               current_state.call_id(5),
-                               current_state.stack_size(5) - 2,
-                               TYPE(0),  // storage_key_hi
-                               TYPE(0),  // storage_key_lo
-                               TYPE(0),  // field
-                               current_state.rw_counter(5) + 1,
-                               TYPE(0),  // is_write
-                               B0,
-                               B1};
+                        tmp = rw_table<FieldType, stage>::stack_lookup(
+                            current_state.call_id(5),
+                            current_state.stack_size(5) - 2,
+                            current_state.rw_counter(5) + 1,
+                            TYPE(0),  // is_write
+                            B0,
+                            B1
+                        );
                         lookup(tmp, "zkevm_rw");
-                        tmp = {TYPE(rw_op_to_num(rw_operation_type::stack)),
-                               current_state.call_id(1),
-                               current_state.stack_size(1) - 3,
-                               TYPE(0),  // storage_key_hi
-                               TYPE(0),  // storage_key_lo
-                               TYPE(0),  // field
-                               current_state.rw_counter(1) + 2,
-                               TYPE(0),  // is_write
-                               N0,
-                               N1};
+                        tmp = rw_table<FieldType, stage>::stack_lookup(
+                            current_state.call_id(1),
+                            current_state.stack_size(1) - 3,
+                            current_state.rw_counter(1) + 2,
+                            TYPE(0),  // is_write
+                            N0,
+                            N1
+                        );
                         lookup(tmp, "zkevm_rw");
-                        tmp = {TYPE(rw_op_to_num(rw_operation_type::stack)),
-                               current_state.call_id(2),
-                               current_state.stack_size(2) - 3,
-                               TYPE(0),  // storage_key_hi
-                               TYPE(0),  // storage_key_lo
-                               TYPE(0),  // field
-                               current_state.rw_counter(2) + 3,
-                               TYPE(1),  // is_write
-                               Res0,
-                               Res1};
+                        tmp = rw_table<FieldType, stage>::stack_lookup(
+                            current_state.call_id(2),
+                            current_state.stack_size(2) - 3,
+                            current_state.rw_counter(2) + 3,
+                            TYPE(1),  // is_write
+                            Res0,
+                            Res1
+                        );
                         lookup(tmp, "zkevm_rw");
-                    } else {
-                        std::cout << "\tASSIGNMENT implemented" << std::endl;
                     }
                 }
             };

@@ -27,7 +27,6 @@
 #include <numeric>
 #include <algorithm>
 
-#include <nil/blueprint/zkevm/zkevm_word.hpp>
 #include <nil/blueprint/zkevm_bbf/types/opcode.hpp>
 #include <nil/blueprint/zkevm_bbf/types/rw_operation.hpp>
 
@@ -55,7 +54,6 @@ namespace nil {
                     std::vector<TYPE> B_chunks(16);
                     if constexpr( stage == GenerationStage::ASSIGNMENT ){
                         // std::cout << "\tinput=" << std::hex << current_state.additional_input << std::dec << std::endl;
-                        std::cout << "\tASSIGNMENT implemented" << std::endl;
                         auto A = current_state.stack_top();
                         auto A16 = nil::blueprint::w_to_16(A);
                         auto B = current_state.stack_top(x);
@@ -78,57 +76,41 @@ namespace nil {
                         auto A_128 = chunks16_to_chunks128<TYPE>(A_chunks);
                         auto B_128 = chunks16_to_chunks128<TYPE>(B_chunks);
                         std::vector<TYPE> tmp;
-                        tmp = {
-                            TYPE(rw_op_to_num(rw_operation_type::stack)),
+                        tmp = rw_table<FieldType, stage>::stack_lookup(
                             current_state.call_id(0),
                             current_state.stack_size(0) - 1,
-                            TYPE(0),// storage_key_hi
-                            TYPE(0),// storage_key_lo
-                            TYPE(0),// field
                             current_state.rw_counter(0),
                             TYPE(0),// is_write
                             A_128.first,
                             A_128.second
-                        };
+                        );
                         lookup(tmp, "zkevm_rw");
-                        tmp = {
-                            TYPE(rw_op_to_num(rw_operation_type::stack)),
+                        tmp = rw_table<FieldType, stage>::stack_lookup(
                             current_state.call_id(0),
                             current_state.stack_size(0) - x - 1,
-                            TYPE(0),// storage_key_hi
-                            TYPE(0),// storage_key_lo
-                            TYPE(0),// field
                             current_state.rw_counter(0) + 1,
                             TYPE(0),// is_write
                             B_128.first,
                             B_128.second
-                        };
+                        );
                         lookup(tmp, "zkevm_rw");
-                        tmp = {
-                            TYPE(rw_op_to_num(rw_operation_type::stack)),
+                        tmp = rw_table<FieldType, stage>::stack_lookup(
                             current_state.call_id(0),
                             current_state.stack_size(0) - x - 1,
-                            TYPE(0),// storage_key_hi
-                            TYPE(0),// storage_key_lo
-                            TYPE(0),// field
                             current_state.rw_counter(0) + 2,
                             TYPE(1),// is_write
                             A_128.first,
                             A_128.second
-                        };
+                        );
                         lookup(tmp, "zkevm_rw");
-                        tmp = {
-                            TYPE(rw_op_to_num(rw_operation_type::stack)),
+                        tmp = rw_table<FieldType, stage>::stack_lookup(
                             current_state.call_id(0),
                             current_state.stack_size(0) - 1,
-                            TYPE(0),// storage_key_hi
-                            TYPE(0),// storage_key_lo
-                            TYPE(0),// field
                             current_state.rw_counter(0) + 3,
                             TYPE(1),// is_write
                             B_128.first,
                             B_128.second
-                        };
+                        );
                         lookup(tmp, "zkevm_rw");
                     }
                 }

@@ -39,8 +39,8 @@
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
 
-#include <nil/blueprint/zkevm_bbf/input_generators/opcode_tester.hpp>
-#include <nil/blueprint/zkevm_bbf/input_generators/opcode_tester_input_generator.hpp>
+// #include <nil/blueprint/zkevm_bbf/input_generators/opcode_tester.hpp>
+// #include <nil/blueprint/zkevm_bbf/input_generators/opcode_tester_input_generator.hpp>
 
 #include <nil/crypto3/zk/snark/systems/plonk/placeholder/prover.hpp>
 #include <nil/crypto3/zk/snark/systems/plonk/placeholder/verifier.hpp>
@@ -65,6 +65,7 @@ struct l1_size_restrictions{
     std::size_t max_copy;
     std::size_t max_zkevm_rows;
     std::size_t max_exp_rows;
+    std::size_t max_call_commits = 500;
 };
 
 std::vector<std::uint8_t> hex_string_to_bytes(std::string const &hex_string) {
@@ -76,24 +77,15 @@ std::vector<std::uint8_t> hex_string_to_bytes(std::string const &hex_string) {
     return bytes;
 }
 
-std::pair<std::vector<std::vector<std::uint8_t>>, std::vector<boost::property_tree::ptree>> load_hardhat_input(std::string path){
-    std::vector<std::vector<std::uint8_t>> bytecodes;
-    std::vector<boost::property_tree::ptree> pts;
-
+boost::property_tree::ptree load_hardhat_input(std::string path){
     std::ifstream ss;
-    std::cout << "Open file " << std::string(TEST_DATA_DIR) + path + "trace0.json" << std::endl;
-    ss.open(std::string(TEST_DATA_DIR) + path + "trace0.json");
+    std::cout << "Open file " << std::string(TEST_DATA_DIR) + path << std::endl;
+    ss.open(std::string(TEST_DATA_DIR) + path);
     boost::property_tree::ptree pt;
     boost::property_tree::read_json(ss, pt);
     ss.close();
 
-    ss.open(std::string(TEST_DATA_DIR) + path + "contract0.json");
-    boost::property_tree::ptree bytecode_json;
-    boost::property_tree::read_json(ss, bytecode_json);
-    std::vector<uint8_t> bytecode0 = hex_string_to_bytes(std::string(bytecode_json.get_child("bytecode").data().c_str()));
-    ss.close();
-
-    return {{bytecode0}, {pt}};
+    return pt;
 }
 
 template <typename BlueprintFieldType>
@@ -209,8 +201,8 @@ class CircuitTestFixture {
         // It's debug mode. Prover from non-satisfied circuit will throw asserts
         if (result && generate_proof) {
             result = result & check_proof(bp, assignment, desc);
+            std::cout << std::endl;
         }
-        std::cout << std::endl;
         return result;
     }
 
