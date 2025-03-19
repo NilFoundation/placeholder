@@ -173,12 +173,14 @@ namespace nil {
                         load_accounts(tt.second.get_child("execution_trace.prestate_trace"));
                         boost::property_tree::ptree tx_trace_tree = load_json_input(path + std::string("tx_" + tx_hash_string + ".json"));
 
-                        bytecode = byte_vector_from_hex_string(tx_trace_tree.get_child("vmTrace.code").data(), 2);
-                        bytecode_hash = zkevm_keccak_hash(bytecode);
-                        if( _bytecode_hashes.find(bytecode_hash) == _bytecode_hashes.end() ){
-                            _bytecode_hashes.insert(bytecode_hash);
-                            _keccaks.new_buffer(bytecode);
-                            _bytecodes.new_buffer(bytecode);
+                        if( tx_trace_tree.get_child_optional ("vmTrace.code") ){
+                            bytecode = byte_vector_from_hex_string(tx_trace_tree.get_child("vmTrace.code").data(), 2);
+                            bytecode_hash = zkevm_keccak_hash(bytecode);
+                            if( _bytecode_hashes.find(bytecode_hash) == _bytecode_hashes.end() ){
+                                _bytecode_hashes.insert(bytecode_hash);
+                                _keccaks.new_buffer(bytecode);
+                                _bytecodes.new_buffer(bytecode);
+                            }
                         }
                         execute_transaction(tx_trace_tree);
                         end_transaction(tt.second.get_child("details"));
@@ -426,7 +428,7 @@ namespace nil {
 
                 void execute_transaction(const boost::property_tree::ptree &tx_trace){
                     std::cout << "Execute transaction" << std::endl;
-                    if( tx_trace.get_child_optional("vmTrace") ){
+                    if( tx_trace.get_child_optional("vmTrace.code") ){
                         std::vector<std::uint8_t> proposed_bytecode = byte_vector_from_hex_string(tx_trace.get_child("vmTrace.code").data(), 2);
                         if( proposed_bytecode != bytecode ) std::cout << "Bytecode is not equal" << std::endl;
                     }
