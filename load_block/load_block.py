@@ -160,7 +160,7 @@ if __name__ == "__main__":
 
     formatted_data["total_opcodes_amount"] = total_opcodes_amount
     # Save everything
-    formatted_file_path = "final_20526629.json"
+    formatted_file_path = "block.json"
     with open(formatted_file_path, "w") as f:
         json.dump(formatted_data, f, indent=4)
 
