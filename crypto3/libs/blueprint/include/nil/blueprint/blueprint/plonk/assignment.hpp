@@ -155,9 +155,9 @@ namespace nil {
             using ranges = std::vector<std::pair<std::size_t, std::size_t>>;
 
         public:
-            static constexpr const std::size_t private_storage_index = std::numeric_limits<std::size_t>::max()-2;
-            static constexpr const std::size_t batch_private_storage_index = std::numeric_limits<std::size_t>::max() - 3;
-            static constexpr const std::size_t batch_constant_storage_index = std::numeric_limits<std::size_t>::max() - 4;
+            static constexpr size_t private_storage_index = crypto3::zk::snark::PLONK_MAX_SELECTOR_ID;
+            static constexpr size_t batch_private_storage_index = crypto3::zk::snark::PLONK_MAX_SELECTOR_ID - 1;
+            static constexpr size_t batch_constant_storage_index = crypto3::zk::snark::PLONK_MAX_SELECTOR_ID - 2;
 
             assignment(std::size_t witness_amount, std::size_t public_input_amount,
                        std::size_t constant_amount, std::size_t selector_amount)

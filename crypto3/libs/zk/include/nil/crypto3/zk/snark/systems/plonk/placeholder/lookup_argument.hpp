@@ -267,6 +267,8 @@ namespace nil {
                                 lookup_tag = mask_assignment;
                             } else if (l_table.tag_index == PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED) {
                                 lookup_tag = mask_assignment - lagrange0;
+                            } else if (l_table.tag_index == PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED) {
+                                throw std::logic_error("not implemented");
                             } else {
                                 lookup_tag = plonk_columns.selector(l_table.tag_index);
                             }
@@ -340,6 +342,8 @@ namespace nil {
                                 assignment = mask_polynomial;
                             } else if (var.index == PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED && var.type == variable_type::column_type::selector){
                                 assignment = mask_polynomial - lagrange_0;
+                            } else if (var.index == PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED) {
+                                throw std::logic_error("not implemented");
                             } else {
                                 assignment = assignments.get_variable_value(var_dfs, domain);
                             }
@@ -388,6 +392,8 @@ namespace nil {
                                 lookup_selector = mask_assignment;
                             } else if (gate.tag_index == PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED) {
                                 lookup_selector = mask_assignment - lagrange0;
+                            } else if (gate.tag_index == PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED) {
+                                throw std::logic_error("not implemented");
                             } else {
                                 lookup_selector = plonk_columns.selector(gate.tag_index);
                             }

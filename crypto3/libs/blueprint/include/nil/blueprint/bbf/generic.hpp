@@ -286,6 +286,7 @@ namespace nil {
                 using constraint_type = crypto3::zk::snark::plonk_constraint<FieldType>;
                 using plonk_copy_constraint = crypto3::zk::snark::plonk_copy_constraint<FieldType>;
                 using constraints_container_type = std::map<constraint_id_type, std::tuple<constraint_type, row_selector<>, std::set<std::string>>>;
+                using global_constraints_container_type = std::map<constraint_id_type, std::pair<constraint_type, std::string>>;
                 using copy_constraints_container_type = std::vector<plonk_copy_constraint>; // TODO: maybe it's a set, not a vec?
                 using lookup_input_constraints_type = crypto3::zk::snark::lookup_input_constraints<FieldType>;
                 using lookup_constraints_container_type = std::map<std::pair<std::string,constraint_id_type>, // <table_name,expressions_id>
@@ -434,6 +435,30 @@ namespace nil {
                     add_constraint(C_rel, get_row(start_row),  get_row(end_row), constraint_name);
                 }
 
+                void constrain_all_rows(TYPE C_rel, std::string name = "") {
+                    if (is_subcontext)
+                        throw std::logic_error("global constraints are not allowed in subcontexts");
+
+                    if (!C_rel.is_relative()) {
+                        std::stringstream ss;
+                        ss << "Constraint " << C_rel << " has absolute variables, cannot constrain.";
+                        throw std::logic_error(ss.str());
+                    }
+
+                    auto [has_vars, min_row, max_row] = nil::crypto3::math::expression_row_range_visitor<var>::row_range(C_rel);
+                    if (!has_vars) {
+                        BOOST_LOG_TRIVIAL(error) << "Constraint '" << name << "' has no variables!\n";
+                    }
+                    BOOST_ASSERT(has_vars);
+                    if (max_row - min_row > 7) {
+                        BOOST_LOG_TRIVIAL(warning) << "Constraint " << C_rel << " spans over 7 rows!\n";
+                        throw std::logic_error("large constraint");
+                    }
+
+                    constraint_id_type C_id = constraint_id_type(C_rel);
+                    auto [iter, is_new] = global_constraints->try_emplace(C_id, C_rel, name);
+                    if (!is_new) iter->second.second += "," + name;
+                }
 
                 void lookup(std::vector<TYPE> &C, std::string table_name) {
                     std::set<std::size_t> base_rows = {};
@@ -538,6 +563,13 @@ namespace nil {
                     return res;
                 }
 
+                std::vector<std::pair<TYPE, std::string>> get_global_constraints() {
+                    std::vector<std::pair<TYPE, std::string>> res;
+                    for (const auto &[id, data] : *global_constraints)
+                        res.push_back(data);
+                    return res;
+                }
+
                 std::vector<plonk_copy_constraint>& get_copy_constraints() {
                     return *copy_constraints;
                 }
@@ -576,6 +608,8 @@ namespace nil {
 
                 context subcontext(const std::vector<std::size_t>& W, std::size_t new_row_shift, std::size_t new_max_rows) {
                     context res = *this;
+                    res.is_subcontext = true;
+
                     std::vector<std::size_t> new_W = {};
                     for(std::size_t i = 0; i < W.size(); i++) {
                         new_W.push_back(col_map[column_type::witness][W[i]]);
@@ -589,6 +623,7 @@ namespace nil {
 
                 void reset_storage() {
                     constraints = std::make_shared<constraints_container_type>();
+                    global_constraints = std::make_shared<global_constraints_container_type>();
                     copy_constraints = std::make_shared<copy_constraints_container_type>();
                     lookup_constraints = std::make_shared<lookup_constraints_container_type>();
                     lookup_tables = std::make_shared<dynamic_lookup_table_container_type>();
@@ -662,8 +697,12 @@ namespace nil {
                 // Assignment description will be used when resetting the context.
                 assignment_description_type desc;
 
+                bool is_subcontext = false;
+
                 // constraints (with unique id), and the rows they are applied to
                 std::shared_ptr<constraints_container_type> constraints;
+                // constraints applied to all the rows in the table
+                std::shared_ptr<global_constraints_container_type> global_constraints;
                 // copy constraints as in BP
                 std::shared_ptr<copy_constraints_container_type> copy_constraints;
                 // lookup constraints with table name, unique id and row list

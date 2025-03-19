@@ -303,7 +303,6 @@ namespace nil {
                         std::vector<TYPE> erc; // every row constraints
                         std::vector<TYPE> non_padding_rc; // 0 ... max_zkevm_rows - max_opcode_height
                         std::vector<TYPE> nfrc; // non-first row constraints
-                        std::vector<TYPE> relative_mc;
 
                         // Opcode selector marks the first row of the opcode. step_start is just the sum of
                         // opcode_selector_sum is sum of all opcode_row_selector. It is always 1.
@@ -384,7 +383,7 @@ namespace nil {
                                 opcode_impls[current_opcode]->fill_context(fresh_ct, opcode_state_vars);
                                 auto opcode_constraints = fresh_ct.get_constraints();
 
-                                //std::cout << "Current opcode " << current_opcode << std::endl;
+                                // std::cout << "Current opcode " << opcode_to_string(current_opcode) << std::endl;
                                 for( const auto &constr_list: opcode_constraints){
                                     for( const auto &local_row: constr_list.first){
                                         for( auto [constraint, name]: constr_list.second){
@@ -398,19 +397,19 @@ namespace nil {
                                                 high_degree_constraints++;
                                                 continue;
                                             }
-                                            std::size_t real_row = current_opcode_bare_rows_amount - local_row ;
+                                            size_t real_row = 0;
                                             auto C = constraint;
                                             if( local_row > current_opcode_bare_rows_amount ){
-                                                real_row--;
-                                                BOOST_ASSERT(local_row == current_opcode_bare_rows_amount + 1);
                                                 // For constraints on the next opcode state-only
-                                                auto C1 = C.rotate(1);
-                                                BOOST_ASSERT(C1);
-                                                C = *C1;
+                                                BOOST_ASSERT(local_row == current_opcode_bare_rows_amount + 1);
+                                                C = C.rotate(1).value();
+                                            } else {
+                                              real_row = current_opcode_bare_rows_amount - local_row;
                                             }
-                                            opcode_constraints_aggregator[{current_opcode, real_row}].push_back(C);
-                                            if(opcode_constraints_aggregator[{current_opcode, real_row}].size() > max_opcode_row_constraints){
-                                                max_opcode_row_constraints = opcode_constraints_aggregator[{current_opcode, real_row}].size();
+                                            auto &row_constraints = opcode_constraints_aggregator[{current_opcode, real_row}];
+                                            row_constraints.push_back(C);
+                                            if (row_constraints.size() > max_opcode_row_constraints) {
+                                                max_opcode_row_constraints = row_constraints.size();
                                             }
                                             // std::cout << "\t" << local_row << "=>" << real_row << ": " << C << std::endl;
                                         }
@@ -450,15 +449,21 @@ namespace nil {
 
                             std::cout << "Accumulate constraints " << max_opcode_row_constraints << std::endl;
                             for( std::size_t i = 0; i < max_opcode_row_constraints; i++ ){
-                                TYPE acc_constraint;
                                 //std::cout << "\tConstraint " << i << std::endl;
+                                TYPE acc_constraint;
+                                std::string acc_name;
+                                bool has_something = false;
                                 for( auto &[pair, constraints]: opcode_constraints_aggregator ){
-                                    if( constraints.size() <= i) continue;
-                                    acc_constraint += context_object.relativize(zkevm_opcode_row_selectors[pair], -1) * constraints[i];
+                                    if (constraints.size() <= i) continue;
+                                    has_something = true;
+                                    acc_constraint += context_object.relativize(zkevm_opcode_row_selectors.at(pair), -1) * constraints[i];
+                                    auto name = opcode_to_string(pair.first) + ":" + std::to_string(i) + ";";
+                                    acc_name += name;
                                     //std::cout << "\topcode " << pair.first << " row " << pair.second << " constraint " << context_object.relativize(zkevm_opcode_row_selectors[pair], -1) * constraints[i] << std::endl;
-                                    relative_mc.push_back(context_object.relativize(zkevm_opcode_row_selectors[pair], -1) * constraints[i]);
+                                    ;
+                                    context_object.constrain_all_rows(context_object.relativize(zkevm_opcode_row_selectors.at(pair), -1) * constraints[i], name);
                                 }
-                                relative_mc.push_back(acc_constraint);
+                                if (has_something) context_object.constrain_all_rows(acc_constraint, acc_name);
                                 //std::cout << "\t" << acc_constraint << std::endl;
                             }
 
@@ -495,9 +500,6 @@ namespace nil {
                         }
                         for( auto &constr: nfrc ){
                             context_object.relative_constrain(context_object.relativize(constr, -1), 1, max_zkevm_rows-1);
-                        }
-                        for( auto &constr: relative_mc ){
-                            context_object.relative_constrain(constr, 0, max_zkevm_rows);
                         }
                         std::vector<TYPE> tmp(6);
                         tmp[0] = context_object.relativize(evm_opcode_constraint, -1);
