@@ -208,6 +208,18 @@ namespace nil {
                         //std::cout << "\n";
                     }
 
+                    {
+                        std::vector<constraint_type> constraints;
+                        std::vector<std::string> names;
+                        for(const auto &[c, n] : gates.global_constraints) {
+                            constraints.push_back(c);
+                            names.push_back(n);
+                        }
+                        auto selector_id = crypto3::zk::snark::PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED;
+                        bp.add_gate(selector_id, constraints);
+                        constraint_names.insert({selector_id, std::move(names)});
+                    }
+
                     // compatibility layer: copy constraint list
                     for(const auto& cc : gates.copy_constraints) {
                         bp.add_copy_constraint(cc);
