@@ -102,31 +102,6 @@ set(PLONK_TESTS_FILES
     "verifiers/placeholder/dfri_input_generator"
     )
 
-
-set(ZKEVM_TESTS_FILES
-    "zkevm/bytecode"
-    # "zkevm/rw"
-    #"zkevm/copy"
-    "zkevm/connections"
-    #"zkevm/state_selector"
-    "zkevm/zkevm_word"
-    #"zkevm/state_transition"
-    "zkevm/opcodes/iszero"
-    "zkevm/opcodes/add_sub"
-    "zkevm/opcodes/mul"
-    "zkevm/opcodes/div"
-    "zkevm/opcodes/cmp"
-    "zkevm/opcodes/pushx"
-    "zkevm/opcodes/not"
-    "zkevm/opcodes/mod_ops"
-    "zkevm/opcodes/byte_ops"
-    "zkevm/opcodes/bitwise"
-    "zkevm/opcodes/err0"
-    "zkevm/opcodes/err1"
-    #"zkevm/opcodes/workload"
-    "zkevm/opcodes/jumps"
-)
-
 SET(ALGEBRA_TESTS_FILES
     ${FIELDS_TESTS_FILES}
     ${CURVES_TESTS_FILES}

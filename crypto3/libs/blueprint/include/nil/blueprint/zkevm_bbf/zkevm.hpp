@@ -40,9 +40,10 @@
 #include <nil/blueprint/zkevm_bbf/subcomponents/rw_table.hpp>
 #include <nil/blueprint/zkevm_bbf/subcomponents/copy_table.hpp>
 #include <nil/blueprint/zkevm_bbf/subcomponents/exp_table.hpp>
+
 #include <nil/blueprint/zkevm_bbf/types/zkevm_state.hpp>
+
 #include <nil/blueprint/zkevm_bbf/opcodes/zkevm_opcodes.hpp>
-#include <nil/blueprint/zkevm/zkevm_word.hpp>
 
 namespace nil {
     namespace blueprint {
@@ -193,10 +194,14 @@ namespace nil {
                         std::size_t current_row = 0;
                         for( std::size_t i = 0; i <input.zkevm_states.size(); i++ ){
                             const auto &current_state = input.zkevm_states[i];
-                            zkevm_opcode current_opcode = opcode_from_number(current_state.opcode);
+                            zkevm_opcode current_opcode = opcode_from_number(current_state.opcode());
 
                             if( opcode_impls.find(current_opcode) == opcode_impls.end() ){
-                                std::cout << "Opcode not found " << current_opcode << " skip it" << std::endl;
+                                std::cout
+                                    << "Opcode not found " << current_opcode
+                                    << " with numbeer 0x" << std::hex << current_state.opcode() << std::dec
+                                    << " skip it" << std::endl;
+                                BOOST_ASSERT(false);
                                 continue;
                             }
                             std::size_t current_opcode_bare_rows_amount = opcode_impls[current_opcode]->rows_amount();
@@ -211,32 +216,34 @@ namespace nil {
                                 current_row + current_opcode_bare_rows_amount
                             );
                             std::size_t opcode_id = (std::find(implemented_opcodes.begin(), implemented_opcodes.end(), current_opcode) - implemented_opcodes.begin());
-                            std::cout << current_opcode
-                                << " with id = " << opcode_id
-                                << " will be assigned as " << std::hex << current_state.opcode << std::dec
+                            std::cout  << std::dec << current_opcode
+                                << " op = " << opcode_id
+                                << " assigned as " << std::hex << current_state.opcode() << std::dec
                                 << " on row " << current_row
-                                << " rows_amount = " << current_opcode_rows_amount
-                                << " stack_size = " << current_state.stack_size
-                                << " memory_size = " << current_state.memory_size
-                                << " rw_counter = 0x" << std::hex<< current_state.rw_counter << std::dec
-                                << " gas = " << current_state.gas
-                                // << " bytecode_hash = " << current_state.bytecode_hash
+                                << " uses " << current_opcode_rows_amount << " rows"
+                                << " call = " << current_state.call_id()
+                                << " pc = " << current_state.pc()
+                                << " sp = " << current_state.stack_size()
+                                << " mems = " << current_state.memory_size()
+                                << " rw_c = " << current_state.rw_counter()
+                                << " gas = " << current_state.gas()
+                                //<< " bytecode_hash = 0x" << std::hex << current_state.bytecode_hash << std::dec
                                 << std::endl;
 
                             for( std::size_t j = 0; j < current_opcode_rows_amount; j++ ){
                                 BOOST_ASSERT(current_row < max_zkevm_rows);
                                 std::size_t row_counter = current_opcode_rows_amount - j - 1;
                                 all_states[current_row]= {};
-                                all_states[current_row].call_id = current_state.call_id;
-                                all_states[current_row].bytecode_hash_hi = w_hi<FieldType>(current_state.bytecode_hash);
-                                all_states[current_row].bytecode_hash_lo = w_lo<FieldType>(current_state.bytecode_hash);
-                                all_states[current_row].pc = current_state.pc;
+                                all_states[current_row].call_id = current_state.call_id();
+                                all_states[current_row].bytecode_hash_hi = w_hi<FieldType>(current_state.bytecode_hash());
+                                all_states[current_row].bytecode_hash_lo = w_lo<FieldType>(current_state.bytecode_hash());
+                                all_states[current_row].pc = current_state.pc();
                                 all_states[current_row].opcode = opcode_to_number(current_opcode);
-                                all_states[current_row].gas_hi = (current_state.gas & 0xFFFF0000) >> 16;
-                                all_states[current_row].gas_lo = current_state.gas & 0xFFFF;
-                                all_states[current_row].stack_size = current_state.stack_size;
-                                all_states[current_row].memory_size = current_state.memory_size;
-                                all_states[current_row].rw_counter = current_state.rw_counter;
+                                all_states[current_row].gas_hi = (current_state.gas() & 0xFFFF0000) >> 16;
+                                all_states[current_row].gas_lo = current_state.gas() & 0xFFFF;
+                                all_states[current_row].stack_size = current_state.stack_size();
+                                all_states[current_row].memory_size = current_state.memory_size();
+                                all_states[current_row].rw_counter = current_state.rw_counter();
                                 all_states[current_row].row_counter = row_counter;
                                 all_states[current_row].step_start = (j == 0);
                                 all_states[current_row].row_counter_inv = row_counter == 0? 0: val(row_counter).inversed(); //row_counter_inv
@@ -313,6 +320,7 @@ namespace nil {
                         }
                         //std::cout << "Cur_column = " << cur_column << std::endl;
                     }
+                    constrain(all_states[0].opcode - opcode_to_number(zkevm_opcode::start_block), "First opcode is start_block");
                     constrain(all_states[0].is_even - 1);
                     if constexpr (stage == GenerationStage::CONSTRAINTS) {
                         std::vector<TYPE> tmp;
@@ -327,7 +335,6 @@ namespace nil {
                             context_object.relative_lookup(tmp, "chunk_16_bits/full", 0, max_zkevm_rows-1);
                         }
 
-                        // Remove it!
                         std::vector<TYPE> erc; // every row constraints
                         std::vector<TYPE> nfrc; // non-first row constraints
                         std::vector<TYPE> mc; // non-first and non-last row constraints
@@ -375,9 +382,9 @@ namespace nil {
                         TYPE evm_opcode_constraint;
                         for( std::size_t opcode_num = 0; opcode_num < implemented_opcodes_amount; opcode_num++){
                             zkevm_opcode current_opcode = implemented_opcodes[opcode_num];
-                            if( opcode_impls.find(current_opcode) == opcode_impls.end() ) {
-                                std::cout << "Opcode " << current_opcode <<" implementation not found" << std::endl;
-                            }
+                            // if( opcode_impls.find(current_opcode) == opcode_impls.end() ) {
+                            //     std::cout << "Opcode " << current_opcode <<" implementation not found" << std::endl;
+                            // }
                             std::size_t current_opcode_bare_rows_amount =
                                 opcode_impls.find(current_opcode) == opcode_impls.end()?
                                 0:
@@ -450,7 +457,7 @@ namespace nil {
                                 zkevm_opcode current_opcode = implemented_opcodes[opcode_num];
                                 //std::cout << "Build constraints for " << current_opcode << std::endl;
                                 if( opcode_impls.find(current_opcode) == opcode_impls.end() ){
-                                    std::cout << "\tImplementation for "<< current_opcode << " is not defined" << std::endl;
+                                    //std::cout << "\tImplementation for "<< current_opcode << " is not defined" << std::endl;
                                     continue;
                                 }
                                 std::size_t current_opcode_bare_rows_amount = opcode_impls[current_opcode]->rows_amount();
@@ -503,14 +510,20 @@ namespace nil {
                                 }
                             }
                             std::cout << "Accumulate constraints " << max_opcode_row_constraints << std::endl;
-                            for( std::size_t i = 0; i < max_opcode_row_constraints; i++ ){
+                            for (std::size_t i = 0; i < max_opcode_row_constraints; ++i) {
                                 TYPE acc_constraint;
                                 //std::cout << "\tConstraint " << i << std::endl;
-                                for( auto &[pair, constraints]: opcode_constraints_aggregator ){
-                                    if( constraints.size() <= i) continue;
-                                    acc_constraint += context_object.relativize(zkevm_opcode_row_selectors[pair], -1) * constraints[i];
+                                for (auto &[opcode_row, constraints]: opcode_constraints_aggregator) {
+                                    if (constraints.size() <= i) continue;
+                                    auto selector = context_object.relativize(
+                                            zkevm_opcode_row_selectors[opcode_row], -1);
+                                    acc_constraint += selector * constraints[i];
                                     //std::cout << "\topcode " << pair.first << " row " << pair.second << " constraint " << context_object.relativize(zkevm_opcode_row_selectors[pair], -1) * constraints[i] << std::endl;
-                                    //relative_mc.push_back(context_object.relativize(zkevm_opcode_row_selectors[pair], -1) * constraints[i]);
+
+                                    // For debugging, uncomment this line and comment out
+                                    // the acc_constraint below to see the actual failing
+                                    // constraint durin satisfiability check.
+                                    // relative_mc.push_back(selector * constraints[i]);
                                 }
                                 relative_mc.push_back(acc_constraint);
                                 //std::cout << "\t" << acc_constraint << std::endl;
