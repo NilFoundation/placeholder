@@ -143,6 +143,7 @@ namespace nil {
                         std::vector<std::uint32_t> extended_domain_sizes;
                         std::vector<std::uint32_t> degree_limits;
                         std::uint32_t max_degree = std::pow(2, ceil(std::log2(max_gates_degree)));
+                        std::cout << "MAX GATE DEGREE " << max_degree << std::endl;
                         std::uint32_t max_domain_size = original_domain->m * max_degree;
 
                         degree_limits.push_back(max_degree);
