@@ -81,13 +81,13 @@ std::pair<std::vector<std::vector<std::uint8_t>>, std::vector<boost::property_tr
     std::vector<boost::property_tree::ptree> pts;
 
     std::ifstream ss;
-    std::cout << "Open file " << std::string(TEST_DATA_DIR) + path + "trace0.json" << std::endl;
-    ss.open(std::string(TEST_DATA_DIR) + path + "trace0.json");
+    std::cout << "Open file " << "./data/" + path + "trace0.json" << std::endl;
+    ss.open("./data/" + path + "trace0.json");
     boost::property_tree::ptree pt;
     boost::property_tree::read_json(ss, pt);
     ss.close();
 
-    ss.open(std::string(TEST_DATA_DIR) + path + "contract0.json");
+    ss.open("./data/" + path + "contract0.json");
     boost::property_tree::ptree bytecode_json;
     boost::property_tree::read_json(ss, bytecode_json);
     std::vector<uint8_t> bytecode0 = hex_string_to_bytes(std::string(bytecode_json.get_child("bytecode").data().c_str()));
