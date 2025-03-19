@@ -303,7 +303,6 @@ namespace nil {
                         std::vector<TYPE> erc; // every row constraints
                         std::vector<TYPE> non_padding_rc; // 0 ... max_zkevm_rows - max_opcode_height
                         std::vector<TYPE> nfrc; // non-first row constraints
-                        std::vector<TYPE> mc; // non-first and non-last row constraints
                         std::vector<TYPE> relative_mc;
 
                         // Opcode selector marks the first row of the opcode. step_start is just the sum of
@@ -311,7 +310,17 @@ namespace nil {
                         TYPE last_row;
                         TYPE opcode_selector_sum;
                         TYPE current_opcode_constraint;
+                        TYPE evm_opcode_constraint;
                         std::map<std::pair<zkevm_opcode, std::size_t>, TYPE> zkevm_opcode_row_selectors;
+                        std::set<zkevm_opcode> nil_opcodes = {
+                            zkevm_opcode::padding,
+                            zkevm_opcode::start_block,
+                            zkevm_opcode::end_block,
+                            zkevm_opcode::start_transaction,
+                            zkevm_opcode::end_transaction,
+                            zkevm_opcode::start_call,
+                            zkevm_opcode::end_call
+                        };
 
                         for( auto &[current_opcode,impl]: opcode_impls ){
                             std::size_t opcode_id = (
@@ -323,6 +332,9 @@ namespace nil {
                                 opcode_selector_sum += opcode_selectors[1 + j][opcode_id];
                                 current_opcode_constraint += opcode_selectors[1 + j][opcode_id] * opcode_to_number(current_opcode);
                                 zkevm_opcode_row_selectors[{current_opcode, j}] = opcode_selectors[1 + j][opcode_id];
+                                if( nil_opcodes.count(current_opcode) == 0 ){
+                                    evm_opcode_constraint += opcode_selectors[1 + j][opcode_id];
+                                }
                             }
                         }
                         erc.push_back(last_row * (last_row - 1));
@@ -470,7 +482,7 @@ namespace nil {
                             for( auto&[table_name, constraint_list]:acc_lookup_constraints ){
                                 std::cout << "\tOpcode lookups amount for " << table_name << " = " << constraint_list.size() << std::endl;
                                 for(auto &exprs: constraint_list){
-                                    context_object.relative_lookup(exprs, table_name, 1, max_zkevm_rows - 1);
+                                    context_object.relative_lookup(exprs, table_name, 0, max_zkevm_rows - 1);
                                 }
                             }
                         }
@@ -484,23 +496,20 @@ namespace nil {
                         for( auto &constr: nfrc ){
                             context_object.relative_constrain(context_object.relativize(constr, -1), 1, max_zkevm_rows-1);
                         }
-                        for( auto &constr: mc ){
-                            context_object.relative_constrain(context_object.relativize(constr, -1), 1, max_zkevm_rows-2);
-                        }
                         for( auto &constr: relative_mc ){
-                            context_object.relative_constrain(constr, 0, max_zkevm_rows-2);
+                            context_object.relative_constrain(constr, 0, max_zkevm_rows);
                         }
-                        // tmp.resize(6);
-                    //     tmp[0] = context_object.relativize(evm_opcode_constraint, -1);
-                    //     tmp[1] = context_object.relativize(evm_opcode_constraint * all_states[1].pc, -1);
-                    //     tmp[2] = context_object.relativize(evm_opcode_constraint * all_states[1].opcode, -1);
-                    //     tmp[3] = context_object.relativize(evm_opcode_constraint, -1);
-                    //     tmp[4] = context_object.relativize(evm_opcode_constraint * all_states[1].bytecode_hash_hi, -1);
-                    //     tmp[5] = context_object.relativize(evm_opcode_constraint * all_states[1].bytecode_hash_lo, -1);
+                        std::vector<TYPE> tmp(6);
+                        tmp[0] = context_object.relativize(evm_opcode_constraint, -1);
+                        tmp[1] = context_object.relativize(evm_opcode_constraint * all_states[1].pc, -1);
+                        tmp[2] = context_object.relativize(evm_opcode_constraint * all_states[1].opcode, -1);
+                        tmp[3] = context_object.relativize(evm_opcode_constraint, -1);
+                        tmp[4] = context_object.relativize(evm_opcode_constraint * all_states[1].bytecode_hash_hi, -1);
+                        tmp[5] = context_object.relativize(evm_opcode_constraint * all_states[1].bytecode_hash_lo, -1);
 
-                    //     // TODO(oclaw): bytecode check is to be adjusted between nil and placeholder
-                    //     // https://github.com/NilFoundation/placeholder/issues/205
-                    //     context_object.relative_lookup(tmp, "zkevm_bytecode", 1, max_zkevm_rows-1);
+                        // TODO(oclaw): bytecode check is to be adjusted between nil and placeholder
+                        // https://github.com/NilFoundation/placeholder/issues/205
+                        context_object.relative_lookup(tmp, "zkevm_bytecode", 1, max_zkevm_rows-1);
                    }
                 }
             protected:

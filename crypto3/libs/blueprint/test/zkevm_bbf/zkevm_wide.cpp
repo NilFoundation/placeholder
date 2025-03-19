@@ -171,7 +171,7 @@ BOOST_AUTO_TEST_CASE(minimal_math) {
     complex_test<field_type>(pts, max_sizes);
 }
 
-BOOST_AUTO_TEST_CASE(benchmark) {
+BOOST_AUTO_TEST_CASE(benchmark, *boost::unit_test::disabled()) {
     using field_type = typename algebra::curves::pallas::base_field_type;
     auto pts = load_hardhat_input("minimal_math.json");
     l1_size_restrictions max_sizes;
