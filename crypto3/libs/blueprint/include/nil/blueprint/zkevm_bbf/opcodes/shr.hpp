@@ -243,7 +243,7 @@ namespace nil {
                     second_carryless = second_carryless_construct<TYPE>(
                             a_64_chunks, b_64_chunks, r_64_chunks, q_64_chunks);
                     third_carryless = third_carryless_construct<TYPE>(b_64_chunks, r_64_chunks);
-                        
+
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
                         // caluclate first row carries
                         auto first_row_carries = first_carryless.data.base() >> 128;
@@ -319,8 +319,10 @@ namespace nil {
                     constrain(input_b_chunks[0] - b0p - 16 * b0pp - 256 * b0ppp);
                     constrain(b0ppp * (1 - b0ppp * I1));
 
-                    constrain(sum_part_b * (1 - sum_part_b * I2));
-                    constrain(z - (1 - b0ppp * I1) * (1 - sum_part_b * I2));
+                    TYPE op_sum_part_b_I2 = 1 - sum_part_b * I2;
+                    allocate(op_sum_part_b_I2,43,1);
+                    constrain(sum_part_b * op_sum_part_b_I2);
+                    constrain(z - (1 - b0ppp * I1) * op_sum_part_b_I2);
 
                     allocate(first_carryless, 35, 0);
                     allocate(second_carryless, 36, 0);

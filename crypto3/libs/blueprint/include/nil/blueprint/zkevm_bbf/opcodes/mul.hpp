@@ -96,6 +96,7 @@ namespace nil {
                     std::vector<TYPE> B_64(4);
                     std::vector<TYPE> R_64(4);
                     TYPE C0;
+                    TYPE C0_check;
                     std::vector<TYPE> C1(4);
                     TYPE C2;
                     std::vector<TYPE> C3(4);
@@ -167,7 +168,9 @@ namespace nil {
                     allocate(C0, 26, 1);
 
                     constrain(C2 * (C2 - 1));
-                    constrain(C0 * (C0 - 1) * (C0 - 2) * (C0 - 3));
+                    // constrain(C0 * (C0 - 1) * (C0 - 2) * (C0 - 3));
+                    C0_check = C0 * 16384; // 16-bit range-check on C0_check <=> C0 < 4
+                    allocate(C0_check, 27, 1);
 
                     constrain(lo_carries - C3_64 * two_128 - C2 * two_192);
                     constrain(hi_carries + C3_64 + C2 * two_64 - C1_64 * two_128 - C0 * two_192);
