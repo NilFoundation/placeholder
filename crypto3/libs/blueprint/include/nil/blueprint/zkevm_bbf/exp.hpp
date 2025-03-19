@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------//
-// Copyright (c) 2024 Valeh Farzaliyev <estoniaa@nil.foundation>
+// Copyright (c) 2025 Valeh Farzaliyev <estoniaa@nil.foundation>
 //
 // MIT License
 //
@@ -200,6 +200,7 @@ namespace nil {
                             word_type a, b;
 
                             e = exp_a;
+                            bool pruned = false;
                             for(const auto &bit : bitmap){
                                 a = e;
                                 if(!bit){
@@ -208,9 +209,21 @@ namespace nil {
                                     b = exp_a;
                                 }
                                 e = wrapping_mul(a, b);
+                                
+                                if(!pruned){
+                                    intermediate_triplets.push_back({a, b, e});
+                                }
+                                // if result is zero, prune the compuation trace
+                                if(e == 0x00_big_uint256){
+                                    pruned = true;
+                                }
+                            }
+                            // if pruned keep final triplet 
+                            if(pruned) {
                                 intermediate_triplets.push_back({a, b, e});
                             }
-                            BOOST_ASSERT(intermediate_triplets.size() == bitmap.size());
+
+                            BOOST_ASSERT( (intermediate_triplets.size() == bitmap.size()) || pruned);
                             BOOST_ASSERT(tmp_exp.size() == bitmap.size());
 
                             std::size_t its = intermediate_triplets.size();
@@ -231,9 +244,8 @@ namespace nil {
                                 base[3*cur + 2][0] = base[3*cur][0];
                                 base[3*cur + 2][1] = base[3*cur][1];
 
-
-                                exponent[3*cur][0] = w_hi<FieldType>(tmp_exp[j]);
-                                exponent[3*cur][1] = w_lo<FieldType>(tmp_exp[j]);
+                                exponent[3*cur][0] = w_hi<FieldType>(tmp_exp[j + (j!=0)*(tmp_exp.size() - its)]);
+                                exponent[3*cur][1] = w_lo<FieldType>(tmp_exp[j + (j!=0)*(tmp_exp.size() - its)]);
 
                                 exponent[3*cur + 1][0] = exponent[3*cur][0];
                                 exponent[3*cur + 1][1] = exponent[3*cur][1];
@@ -256,7 +268,6 @@ namespace nil {
                                 is_last[3*cur] = (j == its - 1) ? 1 : 0;
                                 is_last[3*cur + 1] = is_last[3*cur];
                                 is_last[3*cur + 2] = is_last[3*cur];
-
 
                                 a_chunks[cur] = zkevm_word_to_field_element<FieldType>(intermediate_triplets[its - j - 1][0]);
                                 b_chunks[cur] = zkevm_word_to_field_element<FieldType>(intermediate_triplets[its - j - 1][1]);
@@ -283,6 +294,7 @@ namespace nil {
                             }
 
                         }
+
                         while(cur < num_proving_blocks){
                             // unused rows will be filled with zeros. To satisfy all constraints
                             // exp_is_even is set 1 (because 0 is even)
@@ -369,6 +381,9 @@ namespace nil {
                         constrain(chunk_sum_128<TYPE>(r_chunks[i], 1) - exponentiation[3*i][0]); // exponent_hi = r_chunk[8:15]
                         for(std::size_t j = 0; j < 16; j++){
                             constrain(exp_is_even[i]*(a_chunks[i][j] - b_chunks[i][j]));  // if exp is even a = b
+                            if(i > 0){
+                                constrain((1-is_last[3*i-1])*(a_chunks[i-1][j] - r_chunks[i][j])); // r = prev a 
+                            }
                         }
                         constrain((1-exp_is_even[i])*(chunk_sum_128<TYPE>(b_chunks[i], 0) - base[3*i][1])); // if exp is odd b[0:7] = base_lo
                         constrain((1-exp_is_even[i])*(chunk_sum_128<TYPE>(b_chunks[i], 1) - base[3*i][0])); // if exp is odd b[8:15] = base_hi
