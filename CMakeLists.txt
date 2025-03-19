@@ -21,6 +21,11 @@ if(${SANITIZE})
   add_link_options(-fsanitize=undefined,address,leak)
 endif()
 
+option(PROFILING_ENABLED "Build with profiling enabled" FALSE)
+if (${PROFILING_ENABLED})
+  add_compile_definitions(PROFILING_ENABLED)
+endif()
+
 # Add dummy target for the more efficient reusing of precompiled headers
 file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/generated-dummy.cpp)
 add_library(crypto3_precompiled_headers STATIC ${CMAKE_CURRENT_BINARY_DIR}/generated-dummy.cpp)
