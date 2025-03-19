@@ -232,7 +232,7 @@ namespace nil {
                     finished_transactions = 0;
                     failed_transactions = 0;
                     block_id = tx_id = call_id = rw_counter++;
-                    block_hash = block_hash;
+                    block_hash = _block_hash;
                     tx_id = 0;
                     depth = 1;
                     tx_hash = 0;

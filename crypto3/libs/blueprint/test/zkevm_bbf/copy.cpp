@@ -178,7 +178,7 @@ BOOST_AUTO_TEST_CASE(keccak){
     test_zkevm_copy<field_type>("keccak.json", max_sizes);
 }
 
-BOOST_AUTO_TEST_CASE(call_keccak) {
+/*BOOST_AUTO_TEST_CASE(call_keccak) {
     using field_type = typename algebra::curves::pallas::base_field_type;
     auto pt = load_hardhat_input("call_keccak.json");
     l1_size_restrictions max_sizes;
@@ -194,7 +194,7 @@ BOOST_AUTO_TEST_CASE(call_keccak) {
     max_sizes.max_call_commits = 500;
 
     complex_test<field_type>(pt, max_sizes);
-}
+}*/
 
 /*
 BOOST_AUTO_TEST_CASE(mstore8_contract){

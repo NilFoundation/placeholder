@@ -201,7 +201,7 @@ namespace nil {
                 void start_block(zkevm_word_type _block_hash, const boost::property_tree::ptree &pt){
                     last_write_rw_counter.clear();
                     block_id = rw_counter++;
-                    block_hash = block_hash;
+                    block_hash = _block_hash;
                     tx_id = 0;
                     depth = 1;
                     tx_hash = 0;
@@ -950,9 +950,10 @@ namespace nil {
                             args_offset + i < memory.size() ? memory[args_offset + i]: 0
                         ));
                     }
-                    std::cout << "\tsubcallid = " << std::hex << rw_counter + 1 << std::dec << std::endl;
-                    _rw_operations.push_back(call_context_w_operation(call_id, call_context_field::lastcall_id, rw_counter++, rw_counter + 1));
-                    _call_stack.back().lastcall_id = rw_counter;
+                    size_t subcall_id = rw_counter + 1;
+                    std::cout << "\tsubcallid = " << std::hex << subcall_id << std::dec << std::endl;
+                    _rw_operations.push_back(call_context_w_operation(call_id, call_context_field::lastcall_id, rw_counter++, subcall_id));
+                    _call_stack.back().lastcall_id = subcall_id;
                 }
                 void delegatecall(){
                     _zkevm_states.push_back(call_header_zkevm_state(get_basic_zkevm_state_part(), get_call_header_state_part()));
@@ -980,9 +981,10 @@ namespace nil {
                             args_offset + i < memory.size()? memory[args_offset + i]: 0
                         ));
                     }
-                    std::cout << "\tsubcallid = " << std::hex << rw_counter + 1 << std::dec << std::endl;
-                    _rw_operations.push_back(call_context_w_operation(call_id, call_context_field::lastcall_id, rw_counter++, rw_counter + 1));
-                    _call_stack.back().lastcall_id = rw_counter;
+                    size_t subcall_id = rw_counter + 1;
+                    std::cout << "\tsubcallid = " << std::hex << subcall_id << std::dec << std::endl;
+                    _rw_operations.push_back(call_context_w_operation(call_id, call_context_field::lastcall_id, rw_counter++, subcall_id));
+                    _call_stack.back().lastcall_id = subcall_id;
                 }
                 void return_opcode(){
                     _zkevm_states.push_back(call_header_zkevm_state(get_basic_zkevm_state_part(), get_call_header_state_part()));
