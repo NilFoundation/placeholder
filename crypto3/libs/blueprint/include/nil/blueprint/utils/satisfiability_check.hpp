@@ -66,25 +66,11 @@ namespace nil {
                 const satisfiability_check_options &options = {}
             ) {
                 satisfiability_checker checker(options);
-                auto result = checker.check_assignments(bp, assignments);
-                if( options.verbose ) checker.print_lookup_failed_table();
-                return result;
+                return checker.check_assignments(bp, assignments);
             }
+
         private:
             satisfiability_checker(const satisfiability_check_options &options) : options_(options) {}
-
-            void print_lookup_failed_table(){
-                if( failed_lookup_table_name != "" ){
-                    auto dynamic_table = used_dynamic_tables_.find(failed_lookup_table_name)->second;
-                    std::cout << "Possible values from " << failed_lookup_table_name << ": " << std::endl;
-                    for( const auto& item : dynamic_table ){
-                        for( const auto& value : item ){
-                            std::cout << std::hex << value << std::dec << " ";
-                        }
-                        std::cout << std::endl;
-                    }
-                }
-            }
 
             bool check_assignments(
                 const circuit<crypto3::zk::snark::plonk_constraint_system<FieldType>>& bp,
@@ -234,9 +220,8 @@ namespace nil {
                                     auto dynamic_table = fetch_dynamic_table(bp, assignments, table_name, lookup_gates[gate_idx].constraints[j].table_id);
                                     if (dynamic_table.find(input_values) == dynamic_table.end()) {
                                         for (std::size_t k = 0; k < input_values.size(); k++) {
-                                            std::cout << std::hex <<  input_values[k] << std::dec << " ";
+                                            std::cout << input_values[k] << " ";
                                         }
-                                        this->failed_lookup_table_name = table_name;
                                         std::cout << std::endl;
                                         std::cout << "Constraint " << j << " from lookup gate " << gate_idx << " from table "
                                             << table_name << " on row " << row << " is not satisfied."
@@ -248,6 +233,7 @@ namespace nil {
                                                 std::cout << lookup_input << std::endl;
                                             }
                                         }
+
                                         return false;
                                     }
                                     continue;
@@ -280,13 +266,12 @@ namespace nil {
                                 if (!found) {
                                     std::cout << "Input values:";
                                     for (std::size_t k = 0; k < input_values.size(); k++) {
-                                        std::cout << std::hex << input_values[k] << std::dec << " ";
+                                        std::cout << input_values[k] << " ";
                                     }
                                     std::cout << std::endl;
                                     std::cout << "Constraint " << j << " from lookup gate " << gate_idx << " from table "
                                         << table_name << " on row " << row << " is not satisfied."
                                         << std::endl;
-                                    this->failed_lookup_table_name = table_name;
                                     std::cout << "Offending Lookup Gate: " << std::endl;
                                     for (const auto &constraint : lookup_gates[gate_idx].constraints) {
                                         std::cout << "Table id: " << constraint.table_id << std::endl;
@@ -467,7 +452,6 @@ namespace nil {
             const satisfiability_check_options& options_;
             std::mutex used_dynamic_tables_mutex_;
             std::map<std::string, std::set<std::vector<typename FieldType::value_type>>> used_dynamic_tables_;
-            std::string failed_lookup_table_name;
             progress_printer progress_printer_;
             check_state check_state_;
         };

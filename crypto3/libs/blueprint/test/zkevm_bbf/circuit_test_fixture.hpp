@@ -65,7 +65,7 @@ struct l1_size_restrictions{
     std::size_t max_copy;
     std::size_t max_zkevm_rows;
     std::size_t max_exp_rows;
-    std::size_t max_call_commits;
+    std::size_t max_call_commits = 500;
 };
 
 std::vector<std::uint8_t> hex_string_to_bytes(std::string const &hex_string) {

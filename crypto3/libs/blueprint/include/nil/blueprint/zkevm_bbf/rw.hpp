@@ -83,7 +83,7 @@ namespace nil {
                         .witnesses = rw_table_type::get_witness_amount() + call_commit_table_type::get_witness_amount() + 50,
                         .public_inputs = 0,
                         .constants = 2,
-                        .rows = max_rw_size + max_mpt_size
+                        .rows = std::max(max_rw_size, max_call_commits) + max_mpt_size
                     };
                 }
 
