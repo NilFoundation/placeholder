@@ -85,7 +85,7 @@ namespace nil {
                 X(COINBASE) \
                 X(TIMESTAMP) \
                 X(NUMBER) \
-                X(PREVRANDAO) \
+                X(DIFFICULTY) \
                 X(GASLIMIT) \
                 X(CHAINID) \
                 X(SELFBALANCE) \
@@ -251,7 +251,7 @@ namespace nil {
                 if( str == "COINBASE" ) return 0x41;
                 if( str == "TIMESTAMP" ) return 0x42;
                 if( str == "NUMBER" ) return 0x43;
-                if( str == "PREVRANDAO" ) return 0x44;
+                if( str == "DIFFICULTY" ) return 0x44;
                 if( str == "GASLIMIT" ) return 0x45;
                 if( str == "CHAINID" ) return 0x46;
                 if( str == "SELFBALANCE" ) return 0x47;
@@ -363,6 +363,7 @@ namespace nil {
                 if( str == "end_call" ) return 0x106; // end call
                 if( str == "end_transaction" ) return 0x107; // end call
                 if( str == "end_block" ) return 0x108; // end call
+                std::cout << "Unknown opcode: " << str << std::endl;
                 BOOST_ASSERT(false);
                 return 0x102;
             }
@@ -415,7 +416,7 @@ namespace nil {
                 if( number ==  0x41) return zkevm_opcode::COINBASE;
                 if( number ==  0x42) return zkevm_opcode::TIMESTAMP;
                 if( number ==  0x43) return zkevm_opcode::NUMBER;
-                if( number ==  0x44) return zkevm_opcode::PREVRANDAO;
+                if( number ==  0x44) return zkevm_opcode::DIFFICULTY;
                 if( number ==  0x45) return zkevm_opcode::GASLIMIT;
                 if( number ==  0x46) return zkevm_opcode::CHAINID;
                 if( number ==  0x47) return zkevm_opcode::SELFBALANCE;

@@ -90,19 +90,19 @@ namespace nil {
                     std::size_t max_bytecode
                 ) {
                     std::size_t implemented_opcodes_amount = get_implemented_opcodes_list().size();
+                    std::cout << "Implemented opcodes amount = " << implemented_opcodes_amount << std::endl;
 
                     return {
                         .witnesses = state::get_items_amout()
-                                   + (implemented_opcodes_amount + 3) / 4
-                                   + max_opcode_height / 2
-                                   + opcode_columns_amount
-                                   + BytecodeTable::get_witness_amount()
-                                   + RWTable::get_witness_amount()
-                                   + ExpTable::get_witness_amount()
-                                   + CopyTable::get_witness_amount()
-                                   + 10,
+                            + (implemented_opcodes_amount + 3) / 4
+                            + max_opcode_height / 2
+                            + opcode_columns_amount
+                            + BytecodeTable::get_witness_amount()
+                            + RWTable::get_witness_amount()
+                            + ExpTable::get_witness_amount()
+                            + CopyTable::get_witness_amount(),
                         .public_inputs = 1,
-                        .constants = 5,
+                        .constants = 0,
                         .rows = std::max(
                             max_zkevm_rows, std::max(
                                 std::max(max_copy, max_rw), std::max(max_exponentations, max_bytecode)
@@ -323,7 +323,9 @@ namespace nil {
                     constrain(all_states[0].opcode - opcode_to_number(zkevm_opcode::start_block), "First opcode is start_block");
                     constrain(all_states[0].is_even - 1);
                     if constexpr (stage == GenerationStage::CONSTRAINTS) {
+                        nil::crypto3::math::expression_max_degree_visitor<nil::crypto3::zk::snark::plonk_variable<typename FieldType::value_type>> gates_visitor;
                         std::vector<TYPE> tmp;
+
                         tmp = {context_object.relativize(all_states[1].gas_hi, -1)};
                         context_object.relative_lookup(tmp, "chunk_16_bits/full", 0, max_zkevm_rows-1);
                         tmp = {context_object.relativize(all_states[1].gas_lo, -1)};
@@ -453,6 +455,8 @@ namespace nil {
                             std::map<std::pair<zkevm_opcode, std::size_t>, std::vector<TYPE>> opcode_constraints_aggregator;
                             std::map<std::tuple<zkevm_opcode, std::size_t, std::string>, std::vector<std::vector<TYPE>>> opcode_lookup_constraints_aggregator;
                             std::size_t max_opcode_row_constraints = 0;
+                            std::size_t high_degree_constraints = 0;
+                            std::size_t high_degree_lookups = 0;
                             for( std::size_t opcode_num = 0; opcode_num < implemented_opcodes.size(); opcode_num++ ){
                                 zkevm_opcode current_opcode = implemented_opcodes[opcode_num];
                                 //std::cout << "Build constraints for " << current_opcode << std::endl;
@@ -471,10 +475,21 @@ namespace nil {
 
                                 opcode_impls[current_opcode]->fill_context(fresh_ct, opcode_state_vars);
                                 auto opcode_constraints = fresh_ct.get_constraints();
+
                                 //std::cout << "Current opcode " << current_opcode << std::endl;
                                 for( const auto &constr_list: opcode_constraints){
                                     for( const auto &local_row: constr_list.first){
                                         for( auto [constraint, name]: constr_list.second){
+                                            auto degree = gates_visitor.compute_max_degree(constraint);
+                                            if( degree > 3 ){
+                                                std::cout
+                                                    << "Opcode " << current_opcode
+                                                    << " on row " << local_row
+                                                    << " has high degree " << degree
+                                                    << ": " << constraint << std::endl;
+                                                high_degree_constraints++;
+                                                continue;
+                                            }
                                             std::size_t real_row = 0;
                                             auto C = constraint;
                                             if( local_row > std::ceil(float(current_opcode_bare_rows_amount) / 2) * 2 - current_opcode_bare_rows_amount % 2  ){
@@ -494,21 +509,36 @@ namespace nil {
                                         //std::cout << std::endl;
                                     }
                                 }
+
                                 auto opcode_lookup_constraints = fresh_ct.get_lookup_constraints();
                                 for( const auto &constr_list: opcode_lookup_constraints){
                                     for( const auto &local_row: constr_list.first){
                                         for( auto lookup_constraint: constr_list.second){
+                                            bool is_high_degree = false;
+                                            for( auto constraint:lookup_constraint.second ){
+                                                //std::cout << "\t\t" << constraint << std::endl;
+                                                auto degree = gates_visitor.compute_max_degree(constraint);
+                                                if( degree > 2 ){
+                                                    std::cout
+                                                        << "Opcode " << current_opcode
+                                                        << " on row " << local_row
+                                                        << " has high degree " << degree << std::endl;
+                                                    high_degree_lookups++;
+                                                    is_high_degree = true;
+                                                    continue;
+                                                }
+                                            }
+                                            if( is_high_degree ) continue;
                                             std::size_t real_row = std::ceil(float(current_opcode_bare_rows_amount) / 2) * 2 - local_row - current_opcode_bare_rows_amount % 2;
                                             opcode_lookup_constraints_aggregator[{current_opcode, real_row, lookup_constraint.first}].push_back(lookup_constraint.second);
                                             //std::cout << "\t" << local_row << "=>" << real_row  << ": " << lookup_constraint.first << std::endl;
-                                            for( auto constraint:lookup_constraint.second ){
-                                                //std::cout << "\t\t" << constraint << std::endl;
-                                            }
                                             //std::cout << std::endl;
                                         }
                                     }
                                 }
                             }
+                            std::cout << "High degree constraints amount " << std::dec << high_degree_constraints << std::endl;
+                            std::cout << "High degree lookups amount " << std::dec << high_degree_lookups << std::endl;
                             std::cout << "Accumulate constraints " << max_opcode_row_constraints << std::endl;
                             for( std::size_t i = 0; i < max_opcode_row_constraints; i++ ){
                                 TYPE acc_constraint;

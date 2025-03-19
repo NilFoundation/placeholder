@@ -257,6 +257,24 @@ BOOST_AUTO_TEST_CASE(minimal_math) {
 
     complex_test<field_type>(pts, max_sizes);
 }
+
+BOOST_AUTO_TEST_CASE(benchmark, *boost::unit_test::disabled()) {
+    using field_type = typename algebra::curves::pallas::base_field_type;
+    auto pts = load_hardhat_input("minimal_math.json");
+    l1_size_restrictions max_sizes;
+
+    max_sizes.max_keccak_blocks = 3;
+    max_sizes.max_bytecode = 300;
+    max_sizes.max_mpt = 0;
+    max_sizes.max_rw = 1000;
+    max_sizes.max_copy = 70;
+    max_sizes.max_zkevm_rows = 524200;
+    max_sizes.max_exponentiations = 50;
+    max_sizes.max_exp_rows = 500;
+    max_sizes.max_call_commits = 500;
+
+    complex_test<field_type>(pts, max_sizes);
+}
 /*
 BOOST_AUTO_TEST_CASE(small_log) {
     using field_type = typename algebra::curves::pallas::base_field_type;

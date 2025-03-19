@@ -57,12 +57,12 @@ namespace nil {
                     }
                 }
 
-                // Measures execution time of a given function just once. Prints 
+                // Measures execution time of a given function just once. Prints
                 // the time when leaving the function in which this class was created.
                 class scoped_profiler
                 {
                     public:
-                        inline scoped_profiler(std::string name) 
+                        inline scoped_profiler(std::string name)
                             : start(std::chrono::high_resolution_clock::now())
                             , name(name) {
                         }
@@ -98,7 +98,7 @@ namespace nil {
                             for (const auto& [name, count]: call_counts) {
                                 uint64_t miliseconds = call_miliseconds[name] / 1000000;
                                 std::cout << name << ": " << count << " calls "
-                                    << miliseconds / 1000 << " sec " 
+                                    << miliseconds / 1000 << " sec "
                                     << miliseconds % 1000 << " ms" << std::endl;
                             }
                         }
@@ -112,7 +112,7 @@ namespace nil {
                 class scoped_aggregate_profiler
                 {
                     public:
-                        inline scoped_aggregate_profiler(std::string name) 
+                        inline scoped_aggregate_profiler(std::string name)
                             : start(std::chrono::high_resolution_clock::now())
                             , name(name) {
                         }
@@ -140,6 +140,7 @@ namespace nil {
     #define PROFILE_SCOPE(name)
 #endif
 
+#define TIME_LOG_ENABLED 1
 #ifdef TIME_LOG_ENABLED
     #define TIME_LOG_SCOPE(name) \
         nil::crypto3::bench::detail::scoped_profiler profiler(name);
