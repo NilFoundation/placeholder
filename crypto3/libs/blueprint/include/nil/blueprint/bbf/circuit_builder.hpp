@@ -216,8 +216,10 @@ namespace nil {
                             names.push_back(n);
                         }
                         auto selector_id = crypto3::zk::snark::PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED;
-                        bp.add_gate(selector_id, constraints);
-                        constraint_names.insert({selector_id, std::move(names)});
+                        if (!constraints.empty()) {
+                            bp.add_gate(selector_id, constraints);
+                            constraint_names.insert({selector_id, std::move(names)});
+                        }
                     }
 
                     // compatibility layer: copy constraint list
