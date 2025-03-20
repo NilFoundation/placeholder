@@ -56,6 +56,18 @@ namespace nil::crypto3::algebra::fields {
         using modular_type = nil::crypto3::multiprecision::auto_big_mod<modulus>;
         using value_type = detail::element_fp<params<babybear>>;
     };
+
+    class babybear_montgomery_big_mod : public babybear {
+      public:
+        using modular_type = nil::crypto3::multiprecision::montgomery_big_mod<modulus>;
+        using value_type = detail::element_fp<params<babybear_montgomery_big_mod>>;
+    };
+
+    class babybear_simple_31_bit : public babybear {
+      public:
+        using modular_type = nil::crypto3::multiprecision::big_mod_impl<nil::crypto3::multiprecision::detail::modular_ops_storage_ct<multiprecision::babybear_modulus, nil::crypto3::multiprecision::detail::simple_31_bit_modular_ops>>;
+        using value_type = detail::element_fp<params<babybear_simple_31_bit>>;
+    };
 }  // namespace nil::crypto3::algebra::fields
 
 #endif  // CRYPTO3_ALGEBRA_FIELDS_BABYBEAR_HPP
