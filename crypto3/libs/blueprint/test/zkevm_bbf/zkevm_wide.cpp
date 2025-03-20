@@ -129,6 +129,9 @@ public:
 
         auto exp_assignment_input = circuit_inputs.exponentiations();
 
+        check_satisfiability = false;
+        generate_proof = true;
+
         bool result{false};
         const std::string zkevm_circuit = "zkevm";
         if (should_run_circuit(zkevm_circuit)) {
@@ -188,6 +191,7 @@ BOOST_AUTO_TEST_CASE(benchmark, *boost::unit_test::disabled()) {
 
     complex_test<field_type>(pts, max_sizes);
 }
+
 /*
 BOOST_AUTO_TEST_CASE(small_log) {
     using field_type = typename algebra::curves::pallas::base_field_type;
@@ -206,6 +210,7 @@ BOOST_AUTO_TEST_CASE(small_log) {
     complex_test<field_type>(bytecodes, pts, max_sizes);
 }
 */
+
 BOOST_AUTO_TEST_CASE(call_counter) {
     using field_type = typename algebra::curves::pallas::base_field_type;
     auto pt = load_hardhat_input("call_counter.json");
@@ -385,6 +390,7 @@ BOOST_AUTO_TEST_CASE(try_catch_cold) {
 
     complex_test<field_type>(pt, max_sizes);
 }
+
 /*
 BOOST_AUTO_TEST_CASE(deploy) {
     using field_type = typename algebra::curves::pallas::base_field_type;
