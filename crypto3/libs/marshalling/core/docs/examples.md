@@ -34,7 +34,7 @@ using MyYearField =
         std::int16_t, // store as 2 byte value
         nil::crypto3::marshalling::option::fixed_length<1>, // serialise using only 1 byte
         nil::crypto3::marshalling::option::num_value_ser_offset<-2000> // add (-2000) before serialization and 
-                                                // subtruct (-2000) after deserialization
+                                                // subtract (-2000) after deserialization
         nil::crypto3::marshalling::option::default_num_value<2017> // construct with default value 2017
     >;
 ```
@@ -204,7 +204,7 @@ using App1Interface =
     nil::crypto3::marshalling::message<
         nil::crypto3::marshalling::option::big_endian, // Use big endian for serialization
         nil::crypto3::marshalling::option::msg_type<msg_id>, // Provide type used for message ID
-        nil::crypto3::marshalling::option::id_info_interface, // Support polymorphic retreival of message ID
+        nil::crypto3::marshalling::option::id_info_interface, // Support polymorphic retrieval of message ID
         nil::crypto3::marshalling::option::read_iterator<const std::uint8_t*>, // Support polymorphic read using "const std::uint8_t*" as iterator
         nil::crypto3::marshalling::option::write_iterator<std::uint8_t*>, // Support polymorphic write using "std::uint8_t*" as iterator
         nil::crypto3::marshalling::option::length_info_interface, // Support polymorphic retrieval of serialization length
@@ -219,7 +219,7 @@ using App2Interface =
     nil::crypto3::marshalling::message<
         nil::crypto3::marshalling::option::big_endian, // Use big endian for serialization
         nil::crypto3::marshalling::option::msg_type<msg_id>, // Provide type used for message ID
-        nil::crypto3::marshalling::option::id_info_interface, // Support polymorphic retreival of message ID
+        nil::crypto3::marshalling::option::id_info_interface, // Support polymorphic retrieval of message ID
         nil::crypto3::marshalling::option::read_iterator<const std::uint8_t*>, // Support polymorphic read using "const std::uint8_t*" as iterator
         nil::crypto3::marshalling::option::write_iterator<std::back_insert_itetrator<std::vector<std::uint8_t> > >, 
                                                           // Support polymorphic write using
