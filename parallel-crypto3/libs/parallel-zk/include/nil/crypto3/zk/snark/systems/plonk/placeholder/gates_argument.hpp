@@ -127,7 +127,7 @@ namespace nil {
                                     assignment = mask_polynomial;
                                 } else if( var.index == PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED && var.type == variable_type::column_type::selector) {
                                     assignment = mask_polynomial - lagrange_0;
-                                } else if (var.index == PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED && var.type == polynomial_dfs_variable_type::column_type::selector){
+                                } else if (var.index == PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED && var.type == variable_type::column_type::selector){
                                     assignment = polynomial_dfs_type::one();
                                 } else {
                                     assignment = assignments.get_variable_value(var_dfs, domain);
