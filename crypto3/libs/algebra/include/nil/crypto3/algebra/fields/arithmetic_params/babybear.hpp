@@ -40,6 +40,12 @@ namespace nil::crypto3::algebra::fields {
         constexpr static integral_type multiplicative_generator = 31u;
         constexpr static integral_type root_of_unity = 0x1a427a41u;
     };
+
+    template<>
+    struct arithmetic_params<babybear_montgomery_big_mod> : public arithmetic_params<babybear> {};
+
+    template<>
+    struct arithmetic_params<babybear_simple_31_bit> : public arithmetic_params<babybear> {};
 }  // namespace nil::crypto3::algebra::fields
 
 #endif  // CRYPTO3_ALGEBRA_FIELDS_BABYBEAR_ARITHMETIC_PARAMS_HPP

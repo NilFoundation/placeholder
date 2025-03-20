@@ -59,32 +59,45 @@ namespace nil {
 
                         constexpr element_fp2() = default;
 
-                        template<typename Number1, typename Number2,
-                            typename std::enable_if<std::is_integral<Number1>::value && std::is_integral<Number2>::value, bool>::type* = true>
-                        constexpr element_fp2(const Number1 &in_data0, const Number2 &in_data1)
-                            : data({underlying_type(in_data0), underlying_type(in_data1)}) {}
+                        template<typename Number,
+                                 std::enable_if_t<multiprecision::is_integral_v<Number>,
+                                                  bool> = true>
+                        constexpr element_fp2(const Number &in_data1)
+                            : data({underlying_type(), underlying_type(in_data1)}) {}
+
+                        template<
+                            typename Number1, typename Number2,
+                            typename std::enable_if<std::is_integral<Number1>::value &&
+                                                        std::is_integral<Number2>::value,
+                                                    bool>::type * = true>
+                        constexpr element_fp2(const Number1 &in_data0,
+                                              const Number2 &in_data1)
+                            : data({underlying_type(in_data0),
+                                    underlying_type(in_data1)}) {}
 
                         constexpr element_fp2(const data_type &in_data)
                             : data({in_data[0], in_data[1]}) {}
 
-                        constexpr element_fp2(const underlying_type &in_data0, const underlying_type &in_data1)
+                        constexpr element_fp2(const underlying_type &in_data1)
+                            : data({underlying_type(), in_data1}) {}
+
+                        constexpr element_fp2(const underlying_type &in_data0,
+                                              const underlying_type &in_data1)
                             : data({in_data0, in_data1}) {}
 
                         constexpr element_fp2(const element_fp2 &B) : data(B.data) {}
-                        constexpr element_fp2(const element_fp2 &&B) BOOST_NOEXCEPT : data(std::move(B.data)) {}
+                        constexpr element_fp2(const element_fp2 &&B) BOOST_NOEXCEPT
+                            : data(std::move(B.data)) {}
 
-                        // Creating a zero is a fairly slow operation and is called very often, so we must return a
-                        // reference to the same static object every time.
-                        constexpr static const element_fp2& zero();
-                        constexpr static const element_fp2& one();
+                        // Creating a zero is a fairly slow operation and is called
+                        // very often, so we must return a reference to the same
+                        // static object every time.
+                        constexpr static const element_fp2 &zero();
+                        constexpr static const element_fp2 &one();
 
-                        constexpr bool is_zero() const {
-                            return *this == zero();
-                        }
+                        constexpr bool is_zero() const { return *this == zero(); }
 
-                        constexpr bool is_one() const {
-                            return *this == one();
-                        }
+                        constexpr bool is_one() const { return *this == one(); }
 
                         constexpr bool operator==(const element_fp2 &B) const {
                             return (data[0] == B.data[0]) && (data[1] == B.data[1]);

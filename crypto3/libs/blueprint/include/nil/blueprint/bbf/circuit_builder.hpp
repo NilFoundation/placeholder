@@ -464,10 +464,12 @@ namespace nil {
                             std::make_tuple(std::ref(ctx), std::cref(input)), static_info_args_storage));
 
                     crypto3::zk::snark::plonk_table_description<FieldType> desc = at.get_description();
-                    std::cout << "Rows amount = " << at.rows_amount() << std::endl;
+                    crypto3::bench::scoped_log(
+                        std::format("Rows amount = {}", at.rows_amount()));
                     desc.usable_rows_amount = at.rows_amount();
                     nil::crypto3::zk::snark::basic_padding(at);
-                    std::cout << "Rows amount after padding = " << at.rows_amount() << std::endl;
+                    crypto3::bench::scoped_log(
+                        std::format("Rows amount after padding = {}", at.rows_amount()));
                     desc.rows_amount = at.rows_amount();
 
                     return {at, component, desc};

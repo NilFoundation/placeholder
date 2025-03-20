@@ -24,6 +24,7 @@ namespace nil::crypto3::multiprecision::detail {
         static constexpr std::size_t Bits = 31;
 
         constexpr void add(base_type &result, const base_type &y) const {
+            register_add();
             BOOST_ASSERT(result < mod() && y < mod());
             result += y;
             if (result >= mod()) {
@@ -33,6 +34,7 @@ namespace nil::crypto3::multiprecision::detail {
         }
 
         constexpr void mul(base_type &result, const base_type &y) const {
+            register_mul();
             BOOST_ASSERT(result < mod() && y < mod());
             result = (static_cast<std::uint64_t>(result) * y) % mod();
             BOOST_ASSERT(result < mod());

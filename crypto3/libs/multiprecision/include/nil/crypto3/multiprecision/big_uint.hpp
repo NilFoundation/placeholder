@@ -2,7 +2,7 @@
 // Copyright (c) 2012-2022 John Maddock
 // Copyright (c) 2022 Christopher Kormanyos
 // Copyright (c) 2024 Martun Karapetyan <martun@nil.foundation>
-// Copyright (c) 2024 Andrey Nefedov <ioxid@nil.foundation>
+// Copyright (c) 2024-2025 Andrey Nefedov <ioxid@nil.foundation>
 //
 // Distributed under the Boost Software License, Version 1.0
 // See accompanying file LICENSE_1_0.txt or copy at
@@ -17,6 +17,7 @@
 #include <cctype>
 #include <charconv>
 #include <climits>
+#include <compare>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
@@ -153,7 +154,7 @@ namespace nil::crypto3::multiprecision {
         constexpr void do_assign_integral(const T& a) {
             do_assign_integral_unchecked(unsigned_or_throw(a));
             if constexpr (sizeof(T) * CHAR_BIT > Bits) {
-                if (compare(a) != 0) {
+                if (*this != a) {
                     throw std::range_error("big_uint: overflow");
                 }
             }
@@ -175,7 +176,7 @@ namespace nil::crypto3::multiprecision {
         constexpr void do_assign(const big_uint<Bits2>& other) {
             do_assign_unchecked(other);
             if constexpr (Bits2 > Bits) {
-                if (other.compare(*this) != 0) {
+                if (*this != other) {
                     throw std::range_error("big_uint: overflow");
                 }
             }
@@ -368,7 +369,7 @@ namespace nil::crypto3::multiprecision {
         explicit constexpr operator T() const {
             auto result = to_unsigned_unchecked<T>();
             if constexpr (sizeof(T) * CHAR_BIT < Bits) {
-                if (compare(result) != 0) {
+                if (*this != result) {
                     throw std::overflow_error("big_uint: overflow");
                 }
             }
@@ -380,7 +381,7 @@ namespace nil::crypto3::multiprecision {
         explicit constexpr operator T() const {
             T result = static_cast<T>(to_unsigned_unchecked<std::make_unsigned_t<T>>());
             if constexpr (sizeof(T) * CHAR_BIT <= Bits) {
-                if (compare(result) != 0) {
+                if (*this != result) {
                     throw std::overflow_error("big_uint: overflow");
                 }
             }
@@ -392,7 +393,8 @@ namespace nil::crypto3::multiprecision {
         // Comparison
 
         template<std::size_t Bits2>
-        constexpr int compare(const big_uint<Bits2>& b) const noexcept {
+        constexpr std::strong_ordering operator<=>(
+            const big_uint<Bits2>& b) const noexcept {
             auto pa = limbs();
             auto pb = b.limbs();
             constexpr std::size_t m =
@@ -400,61 +402,67 @@ namespace nil::crypto3::multiprecision {
             for (auto i = static_cast<std::ptrdiff_t>(limb_count()) - 1;
                  i >= b.limb_count(); --i) {
                 if (pa[i]) {
-                    return 1;
+                    return std::strong_ordering::greater;
                 }
             }
             for (auto i = static_cast<std::ptrdiff_t>(b.limb_count()) - 1;
                  i >= limb_count(); --i) {
                 if (pb[i]) {
-                    return -1;
+                    return std::strong_ordering::less;
                 }
             }
             for (auto i = static_cast<std::ptrdiff_t>(m) - 1; i >= 0; --i) {
                 if (pa[i] != pb[i]) {
-                    return pa[i] > pb[i] ? 1 : -1;
+                    return pa[i] <=> pb[i];
                 }
             }
-            return 0;
+            return std::strong_ordering::equal;
         }
 
         template<typename T,
                  std::enable_if_t<std::is_integral_v<T> && std::is_signed_v<T>, int> = 0>
-        constexpr int compare(const T& b) const noexcept {
+        constexpr std::strong_ordering operator<=>(const T& b) const noexcept {
             if (b < 0) {
-                return 1;
+                return std::strong_ordering::greater;
             }
-            return compare(static_cast<std::make_unsigned_t<T>>(b));
+            return *this <=> static_cast<std::make_unsigned_t<T>>(b);
         }
 
         template<typename T, std::enable_if_t<
                                  std::is_integral_v<T> && std::is_unsigned_v<T>, int> = 0>
-        constexpr int compare(const T& b) const noexcept {
+        constexpr std::strong_ordering operator<=>(const T& b) const noexcept {
             static_assert(sizeof(T) <= sizeof(double_limb_type));
             std::size_t s = used_limbs();
             if constexpr (sizeof(T) <= sizeof(limb_type)) {
                 if (s > 1) {
-                    return 1;
+                    return std::strong_ordering::greater;
                 }
                 auto lmb = this->limbs()[0];
-                return lmb == b ? 0 : lmb > b ? 1 : -1;
+                return lmb <=> b;
             } else {
                 if (s > 2) {
-                    return 1;
+                    return std::strong_ordering::greater;
                 }
                 auto dbl = to_unsigned_unchecked<double_limb_type>();
-                return dbl == b ? 0 : dbl > b ? 1 : -1;
+                return dbl <=> b;
             }
         }
 
-#define NIL_CO3_MP_BIG_UINT_IMPL_COMPARISON_OPERATOR(OP_)                        \
+        template<typename T, std::enable_if_t<std::is_integral_v<T>, int> = 0>
+        friend constexpr std::strong_ordering operator<=>(const T& a,
+                                                          const big_uint& b) noexcept {
+            return 0 <=> (b <=> a);
+        }
+
+#define NIL_CO3_MP_BIG_UINT_IMPL_COMPARISON_OPERATOR(OP)                        \
     template<typename T, std::enable_if_t<is_integral_v<T>, int> = 0>            \
-    friend constexpr bool operator OP_(const big_uint& a, const T& b) noexcept { \
-        return a.compare(b) OP_ 0;                                               \
+    friend constexpr bool operator OP(const big_uint& a, const T& b) noexcept { \
+        return (a <=> b) OP 0;                                                  \
     }                                                                            \
                                                                                  \
     template<typename T, std::enable_if_t<std::is_integral_v<T>, int> = 0>       \
-    friend constexpr bool operator OP_(const T& a, const big_uint& b) noexcept { \
-        return (-(b.compare(a)))OP_ 0;                                           \
+    friend constexpr bool operator OP(const T& a, const big_uint& b) noexcept { \
+        return (a <=> b) OP 0;                                                  \
     }
 
         NIL_CO3_MP_BIG_UINT_IMPL_COMPARISON_OPERATOR(<)
@@ -792,17 +800,17 @@ namespace nil::crypto3::multiprecision {
             return a;
         }
 
-#define NIL_CO3_MP_BIG_UINT_BITWISE_OPERATOR_IMPL(OP_, OP_ASSIGN_, METHOD_)     \
+#define NIL_CO3_MP_BIG_UINT_BITWISE_OPERATOR_IMPL(OP, OP_ASSIGN_, METHOD_)      \
     template<typename T, std::enable_if_t<is_integral_v<T>, int> = 0>           \
-    friend constexpr auto operator OP_(const big_uint& a, const T& b) {         \
+    friend constexpr auto operator OP(const big_uint& a, const T& b) {         \
         detail::largest_big_uint_t<big_uint, T> result = a;                     \
         result.METHOD_(detail::as_limb_type_or_big_uint(unsigned_or_throw(b))); \
         return result;                                                          \
     }                                                                           \
                                                                                 \
     template<typename T, std::enable_if_t<std::is_integral_v<T>, int> = 0>      \
-    friend constexpr auto operator OP_(const T& a, const big_uint& b) {         \
-        return b OP_ a;                                                         \
+    friend constexpr auto operator OP(const T& a, const big_uint& b) {         \
+        return b OP a;                                                         \
     }                                                                           \
                                                                                 \
     template<typename T, std::enable_if_t<is_integral_v<T>, int> = 0>           \

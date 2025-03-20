@@ -155,12 +155,7 @@ namespace nil {
                     return *this;
                 }
 
-                bool operator==(const polynomial_dfs& rhs) const {
-                    return val == rhs.val && _d == rhs._d;
-                }
-                bool operator!=(const polynomial_dfs& rhs) const {
-                    return !(rhs == *this && _d == rhs._d);
-                }
+                auto operator<=>(const polynomial_dfs&) const = default;
 
                 allocator_type get_allocator() const BOOST_NOEXCEPT {
                     return this->val.__alloc();

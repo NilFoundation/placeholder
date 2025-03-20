@@ -25,6 +25,10 @@ target_include_directories(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTER
                            $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>
                            ${Boost_INCLUDE_DIRS})
 
+target_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTERFACE
+                           ${CMAKE_WORKSPACE_NAME}::benchmark_tools)
+                   
+
 set_target_properties(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} PROPERTIES
                       EXPORT_NAME ${CURRENT_PROJECT_NAME})
 
