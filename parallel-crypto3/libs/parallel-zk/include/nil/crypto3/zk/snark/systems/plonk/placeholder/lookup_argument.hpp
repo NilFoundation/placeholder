@@ -380,7 +380,7 @@ namespace nil {
                         }
 
                         // We need to +1 on the next line, because we will multiply with selector.
-                        std::uint32_t max_degree = std::pow(2, ceil(std::log2(max_expr_degree + 1)));
+                        std::uint32_t max_degree = max_expr_degree == 0 ? 1 : std::pow(2, ceil(std::log2(max_expr_degree)));
                         extended_domain_size_out = domain->m * max_degree;
 
                         std::shared_ptr<math::evaluation_domain<FieldType>> extended_domain =
