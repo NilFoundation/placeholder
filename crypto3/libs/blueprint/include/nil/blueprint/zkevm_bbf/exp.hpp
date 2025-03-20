@@ -200,7 +200,6 @@ namespace nil {
                             word_type a, b;
 
                             e = exp_a;
-                            bool pruned = false;
                             for(const auto &bit : bitmap){
                                 a = e;
                                 if(!bit){
@@ -209,21 +208,10 @@ namespace nil {
                                     b = exp_a;
                                 }
                                 e = wrapping_mul(a, b);
-                                
-                                if(!pruned){
-                                    intermediate_triplets.push_back({a, b, e});
-                                }
-                                // if result is zero, prune the compuation trace
-                                if(e == 0x00_big_uint256){
-                                    pruned = true;
-                                }
-                            }
-                            // if pruned keep final triplet 
-                            if(pruned) {
                                 intermediate_triplets.push_back({a, b, e});
                             }
 
-                            BOOST_ASSERT( (intermediate_triplets.size() == bitmap.size()) || pruned);
+                            BOOST_ASSERT(intermediate_triplets.size() == bitmap.size());
                             BOOST_ASSERT(tmp_exp.size() == bitmap.size());
 
                             std::size_t its = intermediate_triplets.size();
@@ -244,8 +232,8 @@ namespace nil {
                                 base[3*cur + 2][0] = base[3*cur][0];
                                 base[3*cur + 2][1] = base[3*cur][1];
 
-                                exponent[3*cur][0] = w_hi<FieldType>(tmp_exp[j + (j!=0)*(tmp_exp.size() - its)]);
-                                exponent[3*cur][1] = w_lo<FieldType>(tmp_exp[j + (j!=0)*(tmp_exp.size() - its)]);
+                                exponent[3*cur][0] = w_hi<FieldType>(tmp_exp[j]);
+                                exponent[3*cur][1] = w_lo<FieldType>(tmp_exp[j]);
 
                                 exponent[3*cur + 1][0] = exponent[3*cur][0];
                                 exponent[3*cur + 1][1] = exponent[3*cur][1];
