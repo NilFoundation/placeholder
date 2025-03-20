@@ -256,6 +256,17 @@ namespace nil {
 
                             std::cout << std::endl;
                         }
+                        for( std::size_t i = 0; i < max_rw_size; i++ ){
+                            not_start_or_padding[i] = (op[i] - START_OP) * (op[i] - PADDING_OP);
+                            last_and_not_start_or_padding[i] = not_start_or_padding[i] * is_last[i];
+                            firsts_diff_index_bits[i] = diff_index_bits[i][0] * diff_index_bits[i][1] * diff_index_bits[i][2];
+                            not_first_or_write[i] = (1 - is_first[i]) * (1 - is_write[i]);
+                            first_and_not_write[i] = is_first[i] * (is_write[i] - 1);
+                            if (i!=0){
+                                address_near[i] = (address[i] - address[i-1]) * (address[i] - address[i-1] - 1);
+                            }
+                                
+                        }
 
                         for( std::size_t i = 0; i < max_rw_size; i++ ){
                             not_first_or_padding[i] = (1 - is_first[i]) * (op[i] - PADDING_OP);
@@ -301,6 +312,7 @@ namespace nil {
                         allocate(state_root_before_hi[i], ++cur_column, i);
                         allocate(state_root_before_lo[i], ++cur_column, i);
                         allocate(not_first_or_padding[i], ++cur_column, i);
+                        allocate(not_start_or_padding[i], ++cur_column, i);
                         allocate(last_and_not_start_or_padding[i], ++cur_column, i);
                         allocate(firsts_diff_index_bits[i], ++cur_column, i);
                         allocate(address_near[i], ++cur_column, i);
@@ -413,12 +425,18 @@ namespace nil {
 
                         every_row_constraints.push_back(context_object.relativize((diff[1] * inv_diff[1] - 1) * diff[1], -1));
                         every_row_constraints.push_back(context_object.relativize((diff[1] * inv_diff[1] - 1) * inv_diff[1], -1));
-
-                        every_row_constraints.push_back(context_object.relativize(not_first_or_padding[1] - (is_first[1] - 1) * (op[1] - PADDING_OP), -1));
-                        every_row_constraints.push_back(context_object.relativize(not_first_or_padding[1] * (op[1] - START_OP) * (diff_index_bits[1][0] - 1), -1));
-                        every_row_constraints.push_back(context_object.relativize(not_first_or_padding[1] * (op[1] - START_OP) * (diff_index_bits[1][1] - 1), -1));
-                        every_row_constraints.push_back(context_object.relativize(not_first_or_padding[1] * (op[1] - START_OP) * (diff_index_bits[1][2] - 1), -1));
-                        every_row_constraints.push_back(context_object.relativize(not_first_or_padding[1] * (op[1] - START_OP) * (diff_index_bits[1][3] - 1), -1));
+                        every_row_constraints.push_back(context_object.relativize(is_first[1] * (is_first[1] - 1), -1));
+                        every_row_constraints.push_back(context_object.relativize(is_last[1] * (is_last[1] - 1), -1));
+                        every_row_constraints.push_back(context_object.relativize(not_start_or_padding[1] * (is_first[1] - 1) * (diff_index_bits[1][0] - 1), -1));
+                        every_row_constraints.push_back(context_object.relativize(not_start_or_padding[1] * (is_first[1] - 1) * (diff_index_bits[1][1] - 1), -1));
+                        every_row_constraints.push_back(context_object.relativize(not_start_or_padding[1] * (is_first[1] - 1) * (diff_index_bits[1][2] - 1), -1));
+                        every_row_constraints.push_back(context_object.relativize(not_start_or_padding[1] * (is_first[1] - 1) * (diff_index_bits[1][3] - 1), -1));
+                        every_row_constraints.push_back(context_object.relativize(not_start_or_padding[1] - (op[1] - START_OP) * (op[1] - PADDING_OP), -1));
+                        non_first_row_constraints.push_back(context_object.relativize(last_and_not_start_or_padding[0] - not_start_or_padding[0] * is_last[0], -1));
+                        non_first_row_constraints.push_back(context_object.relativize(firsts_diff_index_bits[1] - diff_index_bits[1][0] * diff_index_bits[1][1] * diff_index_bits[1][2], -1));
+                        non_first_row_constraints.push_back(context_object.relativize(last_and_not_start_or_padding[0] * firsts_diff_index_bits[1] * diff_index_bits[1][3], -1));
+                        every_row_constraints.push_back(context_object.relativize(not_start_or_padding[1] * (is_first[1] - 1) * (value_before_hi[1] - value_before_hi[0]), -1));
+                        every_row_constraints.push_back(context_object.relativize(not_start_or_padding[1] * (is_first[1] - 1) * (value_before_lo[1] - value_before_lo[0]), -1));
 
                         every_row_constraints.push_back(context_object.relativize(firsts_diff_index_bits[1] - diff_index_bits[1][0] * diff_index_bits[1][1] * diff_index_bits[1][2], -1));
                         every_row_constraints.push_back(context_object.relativize(firsts_diff_index_bits[1] * diff_index_bits[1][3] * is_first[1], -1));
