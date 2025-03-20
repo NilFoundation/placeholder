@@ -258,6 +258,139 @@ BOOST_AUTO_TEST_CASE(minimal_math) {
     complex_test<field_type>(pts, max_sizes);
 }
 
+BOOST_AUTO_TEST_CASE(minimal_math_2_17) {
+    using field_type = typename algebra::curves::pallas::scalar_field_type;
+    auto pts = load_hardhat_input("minimal_math.json");
+    l1_size_restrictions max_sizes;
+
+    std::size_t size = (1 << 17) - 2;
+
+    max_sizes.max_keccak_blocks = size;
+    max_sizes.max_bytecode = size;
+    max_sizes.max_mpt = size;
+    max_sizes.max_rw = size;
+    max_sizes.max_copy = size;
+    max_sizes.max_zkevm_rows = size;
+    max_sizes.max_exponentiations = size;
+    max_sizes.max_exp_rows = size;
+
+    complex_test<field_type>(pts, max_sizes);
+}
+
+BOOST_AUTO_TEST_CASE(minimal_math_2_18) {
+    using field_type = typename algebra::curves::pallas::scalar_field_type;
+    auto pts = load_hardhat_input("minimal_math.json");
+    l1_size_restrictions max_sizes;
+
+    std::size_t size = (1 << 18) - 2;
+
+    max_sizes.max_keccak_blocks = size;
+    max_sizes.max_bytecode = size;
+    max_sizes.max_mpt = size;
+    max_sizes.max_rw = size;
+    max_sizes.max_copy = size;
+    max_sizes.max_zkevm_rows = size;
+    max_sizes.max_exponentiations = size;
+    max_sizes.max_exp_rows = size;
+
+    complex_test<field_type>(pts, max_sizes);
+}
+
+BOOST_AUTO_TEST_CASE(minimal_math_2_19) {
+    using field_type = typename algebra::curves::pallas::scalar_field_type;
+    auto pts = load_hardhat_input("minimal_math.json");
+    l1_size_restrictions max_sizes;
+
+    std::size_t size = (1 << 19) - 2;
+
+    max_sizes.max_keccak_blocks = size;
+    max_sizes.max_bytecode = size;
+    max_sizes.max_mpt = size;
+    max_sizes.max_rw = size;
+    max_sizes.max_copy = size;
+    max_sizes.max_zkevm_rows = size;
+    max_sizes.max_exponentiations = size;
+    max_sizes.max_exp_rows = size;
+
+    complex_test<field_type>(pts, max_sizes);
+}
+
+BOOST_AUTO_TEST_CASE(minimal_math_2_20) {
+    using field_type = typename algebra::curves::pallas::scalar_field_type;
+    auto pts = load_hardhat_input("minimal_math.json");
+    l1_size_restrictions max_sizes;
+
+    std::size_t size = (1 << 20) - 2;
+
+    max_sizes.max_keccak_blocks = size;
+    max_sizes.max_bytecode = size;
+    max_sizes.max_mpt = size;
+    max_sizes.max_rw = size;
+    max_sizes.max_copy = size;
+    max_sizes.max_zkevm_rows = size;
+    max_sizes.max_exponentiations = size;
+    max_sizes.max_exp_rows = size;
+
+    complex_test<field_type>(pts, max_sizes);
+}
+
+BOOST_AUTO_TEST_CASE(minimal_math_2_21) {
+    using field_type = typename algebra::curves::pallas::scalar_field_type;
+    auto pts = load_hardhat_input("minimal_math.json");
+    l1_size_restrictions max_sizes;
+
+    std::size_t size = (1 << 21) - 2;
+
+    max_sizes.max_keccak_blocks = size;
+    max_sizes.max_bytecode = size;
+    max_sizes.max_mpt = size;
+    max_sizes.max_rw = size;
+    max_sizes.max_copy = size;
+    max_sizes.max_zkevm_rows = size;
+    max_sizes.max_exponentiations = size;
+    max_sizes.max_exp_rows = size;
+
+    complex_test<field_type>(pts, max_sizes);
+}
+
+BOOST_AUTO_TEST_CASE(minimal_math_2_22) {
+    using field_type = typename algebra::curves::pallas::scalar_field_type;
+    auto pts = load_hardhat_input("minimal_math.json");
+    l1_size_restrictions max_sizes;
+
+    std::size_t size = (1 << 22) - 2;
+
+    max_sizes.max_keccak_blocks = size;
+    max_sizes.max_bytecode = size;
+    max_sizes.max_mpt = size;
+    max_sizes.max_rw = size;
+    max_sizes.max_copy = size;
+    max_sizes.max_zkevm_rows = size;
+    max_sizes.max_exponentiations = size;
+    max_sizes.max_exp_rows = size;
+
+    complex_test<field_type>(pts, max_sizes);
+}
+
+BOOST_AUTO_TEST_CASE(minimal_math_2_23) {
+    using field_type = typename algebra::curves::pallas::scalar_field_type;
+    auto pts = load_hardhat_input("minimal_math.json");
+    l1_size_restrictions max_sizes;
+
+    std::size_t size = (1 << 23) - 2;
+
+    max_sizes.max_keccak_blocks = size;
+    max_sizes.max_bytecode = size;
+    max_sizes.max_mpt = size;
+    max_sizes.max_rw = size;
+    max_sizes.max_copy = size;
+    max_sizes.max_zkevm_rows = size;
+    max_sizes.max_exponentiations = size;
+    max_sizes.max_exp_rows = size;
+
+    complex_test<field_type>(pts, max_sizes);
+}
+
 BOOST_AUTO_TEST_CASE(benchmark, *boost::unit_test::disabled()) {
     using field_type = typename algebra::curves::pallas::base_field_type;
     auto pts = load_hardhat_input("minimal_math.json");
@@ -290,7 +423,7 @@ BOOST_AUTO_TEST_CASE(small_log) {
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
 
-    complex_test<field_type>(bytecodes, pts, max_sizes);
+    complex_test<field_type>(pts, max_sizes);
 }
 */
 BOOST_AUTO_TEST_CASE(call_counter) {
@@ -487,11 +620,11 @@ BOOST_AUTO_TEST_CASE(deploy) {
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
 
-    complex_test<field_type>(bytecodes, pts, max_sizes);
+    complex_test<field_type>(pts, max_sizes);
 }
 
 BOOST_AUTO_TEST_CASE(modular_operations) {
-    using field_type = typename algebra::curves::pallas::base_field_type;
+    using field_type = typename algebra::curves::pallas::scalar_field_type;
     auto [bytecodes, pts] = load_hardhat_input("modular_operations/");
     l1_size_restrictions max_sizes;
 
@@ -504,11 +637,11 @@ BOOST_AUTO_TEST_CASE(modular_operations) {
     max_sizes.max_exponentiations = 10;
     max_sizes.max_exp_rows = 100;
 
-    complex_test<field_type>(bytecodes, pts, max_sizes);
+    complex_test<field_type>(pts, max_sizes);
 }
 
 BOOST_AUTO_TEST_CASE(exp) {
-    using field_type = typename algebra::curves::pallas::base_field_type;
+    using field_type = typename algebra::curves::pallas::scalar_field_type;
     auto [bytecodes, pts] = load_hardhat_input("exp/");
     l1_size_restrictions max_sizes;
 
@@ -521,11 +654,11 @@ BOOST_AUTO_TEST_CASE(exp) {
     max_sizes.max_exponentiations = 10;
     max_sizes.max_exp_rows = 100;
 
-    complex_test<field_type>(bytecodes, pts, max_sizes);
+    complex_test<field_type>(pts, max_sizes);
 }
 
 BOOST_AUTO_TEST_CASE(keccak) {
-    using field_type = typename algebra::curves::pallas::base_field_type;
+    using field_type = typename algebra::curves::pallas::scalar_field_type;
     auto [bytecodes, pts] = load_hardhat_input("keccak/");
     l1_size_restrictions max_sizes;
 
@@ -538,11 +671,11 @@ BOOST_AUTO_TEST_CASE(keccak) {
     max_sizes.max_exponentiations = 10;
     max_sizes.max_exp_rows = 100;
 
-    complex_test<field_type>(bytecodes, pts, max_sizes);
+    complex_test<field_type>(pts, max_sizes);
 }
 
 BOOST_AUTO_TEST_CASE(mstore8) {
-    using field_type = typename algebra::curves::pallas::base_field_type;
+    using field_type = typename algebra::curves::pallas::scalar_field_type;
     auto [bytecodes, pts] = load_hardhat_input("mstore8/");
     l1_size_restrictions max_sizes;
 
@@ -555,11 +688,11 @@ BOOST_AUTO_TEST_CASE(mstore8) {
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
 
-    complex_test<field_type>(bytecodes, pts, max_sizes);
+    complex_test<field_type>(pts, max_sizes);
 }
 
 BOOST_AUTO_TEST_CASE(meminit) {
-    using field_type = typename algebra::curves::pallas::base_field_type;
+    using field_type = typename algebra::curves::pallas::scalar_field_type;
     auto [bytecodes, pts] = load_hardhat_input("mem_init/");
     l1_size_restrictions max_sizes;
 
@@ -572,11 +705,11 @@ BOOST_AUTO_TEST_CASE(meminit) {
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
 
-    complex_test<field_type>(bytecodes, pts, max_sizes);
+    complex_test<field_type>(pts, max_sizes);
 }
 
 BOOST_AUTO_TEST_CASE(calldatacopy) {
-    using field_type = typename algebra::curves::pallas::base_field_type;
+    using field_type = typename algebra::curves::pallas::scalar_field_type;
     auto [bytecodes, pts] = load_hardhat_input("calldatacopy/");
     l1_size_restrictions max_sizes;
 
@@ -589,11 +722,11 @@ BOOST_AUTO_TEST_CASE(calldatacopy) {
     max_sizes.max_exponentiations = 10;
     max_sizes.max_exp_rows = 100;
 
-    complex_test<field_type>(bytecodes, pts, max_sizes);
+    complex_test<field_type>(pts, max_sizes);
 }
 
 BOOST_AUTO_TEST_CASE(logger) {
-    using field_type = typename algebra::curves::pallas::base_field_type;
+    using field_type = typename algebra::curves::pallas::scalar_field_type;
     auto [bytecodes, pts] = load_hardhat_input("logger/");
     l1_size_restrictions max_sizes;
 
@@ -606,11 +739,11 @@ BOOST_AUTO_TEST_CASE(logger) {
     max_sizes.max_exponentiations = 25;
     max_sizes.max_exp_rows = 500;
 
-    complex_test<field_type>(bytecodes, pts, max_sizes);
+    complex_test<field_type>(pts, max_sizes);
 }
 
 BOOST_AUTO_TEST_CASE(codecopy) {
-    using field_type = typename algebra::curves::pallas::base_field_type;
+    using field_type = typename algebra::curves::pallas::scalar_field_type;
     auto [bytecodes, pts] = load_hardhat_input("codecopy/");
     l1_size_restrictions max_sizes;
 
@@ -624,11 +757,11 @@ BOOST_AUTO_TEST_CASE(codecopy) {
     max_sizes.max_exp_rows = 500;
 
 
-    complex_test<field_type>(bytecodes, pts, max_sizes);
+    complex_test<field_type>(pts, max_sizes);
 }
 
 BOOST_AUTO_TEST_CASE(returndatacopy) {
-    using field_type = typename algebra::curves::pallas::base_field_type;
+    using field_type = typename algebra::curves::pallas::scalar_field_type;
     auto [bytecodes, pts] = load_hardhat_input("returndatacopy/");
     l1_size_restrictions max_sizes;
 
@@ -640,7 +773,7 @@ BOOST_AUTO_TEST_CASE(returndatacopy) {
     max_sizes.max_zkevm_rows = 2500;
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
-    complex_test<field_type>(bytecodes, pts, max_sizes);
+    complex_test<field_type>(pts, max_sizes);
 }
 */
 
