@@ -76,6 +76,6 @@ BOOST_AUTO_TEST_CASE(one_exponent){
     std::vector<std::pair<zkevm_word_type, zkevm_word_type>> exp_input;
     exp_input.push_back({2, 2566798231683721});
     exp_input.push_back({3, 3});
-    test_zkevm_exp<field_type>(exp_input, 5, 50);
+    test_zkevm_exp<field_type>(exp_input, 50, 3000);
 }
 BOOST_AUTO_TEST_SUITE_END()
