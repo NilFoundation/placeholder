@@ -320,9 +320,9 @@ namespace nil {
                     for(std::size_t i = 0; i < vars.size(); i++) {
                         vars[i].relative = true;
                         vars[i].rotation += shift;
-                        if (std::abs(vars[i].rotation) > 1) {
-                            return std::nullopt;
-                        }
+                        // if (std::abs(vars[i].rotation) > 1) {
+                        //     return std::nullopt;
+                        // }
                     }
 
                     return crypto3::math::term<VariableType>(vars, term.get_coeff());
