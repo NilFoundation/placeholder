@@ -313,14 +313,12 @@ namespace nil {
                         const plonk_polynomial_dfs_table<FieldType>& assignments,
                         std::shared_ptr<math::evaluation_domain<FieldType>> domain,
                         std::unordered_map<variable_type, polynomial_dfs_type>& variable_values_out,
-                        size_t& extended_domain_size_out,
+                        size_t extended_domain_size,
                         const polynomial_dfs_type &mask_polynomial,
                         const polynomial_dfs_type &lagrange_0
                     ) {
                         // Get out all the variables used and maximal degree of any expression in all possible lookup inputs
                         std::vector<variable_type> variables;
-                        size_t max_expr_degree = 0;
-                        math::expression_max_degree_visitor<variable_type> max_degree_visitor;
 
                         for (const auto& expr: exprs) {
                             math::expression_for_each_variable_visitor<variable_type> visitor(
@@ -331,21 +329,14 @@ namespace nil {
                                         variables.push_back(var);
                                     }
                                 });
-
                             visitor.visit(expr);
-                            size_t degree = max_degree_visitor.compute_max_degree(expr);
-                            max_expr_degree = std::max(max_expr_degree, degree);
                         }
 
-                        // We need to +1 on the next line, because we will multiply with selector.
-                        std::uint32_t max_degree = std::pow(2, ceil(std::log2(max_expr_degree + 1)));
-                        extended_domain_size_out = domain->m * max_degree;
-
                         std::shared_ptr<math::evaluation_domain<FieldType>> extended_domain =
-                            math::make_evaluation_domain<FieldType>(extended_domain_size_out);
+                            math::make_evaluation_domain<FieldType>(extended_domain_size);
 
                         parallel_for(0, variable_values_out.size(),
-                            [&variables,&variable_values_out, &assignments, &domain, &extended_domain, extended_domain_size_out, &mask_polynomial, &lagrange_0](std::size_t i) {
+                            [&variables,&variable_values_out, &assignments, &domain, &extended_domain, extended_domain_size, &mask_polynomial, &lagrange_0](std::size_t i) {
                                 const variable_type& var = variables[i];
 
                                 // Convert the variable to polynomial_dfs variable type.
@@ -361,7 +352,7 @@ namespace nil {
                                 } else
                                     assignment = assignments.get_variable_value(var_dfs, domain);
 
-                                assignment.resize(extended_domain_size_out, domain, extended_domain);
+                                assignment.resize(extended_domain_size, domain, extended_domain);
                                 variable_values_out[var] = std::move(assignment);
                             }, ThreadPool::PoolLevel::HIGH);
                     }
@@ -395,10 +386,6 @@ namespace nil {
                         std::vector<expression<variable_type>> expressions;
 
                         for (const auto &gate : lookup_gates) {
-                            // Increase the size to fit the next table values.
-                            std::size_t lookup_inputs_used = lookup_input_ptr->size();
-                            lookup_input_ptr->resize(lookup_inputs_used + gate.constraints.size());
-
                             // Build all expressions
                             for (const auto& constraint : gate.constraints) {
                                 expression<variable_type> l = value_type(constraint.table_id);
@@ -411,25 +398,30 @@ namespace nil {
                                 expressions.push_back(std::move(l));
                             }
                         }
+                        lookup_input_ptr->resize(expressions.size());
 
                         std::vector<std::vector<expression<variable_type>>> batched_expressions;
+                        std::vector<std::unordered_map<std::size_t, std::size_t>> batch_index_maps;
                         // Group expressions into batches based on their degree
                         for (std::size_t i = 0; i < expressions.size(); ++i) {
                             math::expression_max_degree_visitor<variable_type> max_degree_visitor;
                             std::size_t degree = max_degree_visitor.compute_max_degree(expressions[i]);
                             // next power of 2
-                            std::size_t batch_index = std::ceil(std::log2(degree + 1));
+                            std::size_t batch_index = std::max<std::size_t>(std::ceil(std::log2(degree)), 0);
                             if (batch_index >= batched_expressions.size()) {
                                 batched_expressions.resize(batch_index + 1);
+                                batch_index_maps.resize(batch_index + 1);
                             }
+                            const std::size_t curr_size = batched_expressions[batch_index].size();
+                            batch_index_maps[batch_index][curr_size] = i;
                             batched_expressions[batch_index].push_back(expressions[i]);
                         }
-                        std::size_t lookup_input_idx = 0;
-                        for (const auto& batch : batched_expressions) {
+                        for (std::size_t i = 0; i < batched_expressions.size(); i++) {
+                            const auto &batch = batched_expressions[i];
                             if (batch.size() == 0) {
                                 continue;
                             }
-                            size_t extended_domain_size;
+                            const size_t extended_domain_size = basic_domain->m * std::pow(2, i);
                             std::unordered_map<variable_type, polynomial_dfs_type> variable_values;
                             build_variable_value_map(
                                 batch, plonk_columns, basic_domain,
@@ -439,15 +431,16 @@ namespace nil {
                             for (const auto &expr : batch) {
                                 dag_expr.add_expression(expr);
                             }
-                            parallel_for(lookup_input_idx, lookup_input_idx + batch.size(),
-                            [&lookup_input_ptr, &extended_domain_size]
+                            const auto& batch_index_map = batch_index_maps[i];
+                            parallel_for(0, batch.size(),
+                            [&lookup_input_ptr, &extended_domain_size, &batch_index_map]
                                 (std::size_t idx) {
-                                    (*lookup_input_ptr)[idx] =
+                                    (*lookup_input_ptr)[batch_index_map.at(idx)] =
                                         polynomial_dfs_type(extended_domain_size - 1, extended_domain_size);
                                 }
                             );
                             wait_for_all(parallel_run_in_chunks<void>(extended_domain_size,
-                                [&variable_values, &extended_domain_size, &expressions, &lookup_input_ptr, &dag_expr, &lookup_input_idx]
+                                [&variable_values, &extended_domain_size, &expressions, &lookup_input_ptr, &dag_expr, &batch_index_map]
                                 (std::size_t begin, std::size_t end) {
                                     auto dag_expr_copy = dag_expr;
                                     for (std::size_t j = begin; j < end; ++j) {
@@ -457,12 +450,11 @@ namespace nil {
                                             };
                                         const auto result_vector = dag_expr_copy.evaluate(eval_map);
                                         for (std::size_t idx = 0; idx < result_vector.size(); ++idx) {
-                                            (*lookup_input_ptr)[lookup_input_idx + idx][j] = result_vector[idx];
+                                            (*lookup_input_ptr)[batch_index_map.at(idx)][j] = result_vector[idx];
                                         }
                                         dag_expr_copy.clear_cache();
                                     }
                             }, ThreadPool::PoolLevel::HIGH));
-                            lookup_input_idx += batch.size();
                         }
                         return std::move(lookup_input_ptr);
                     }
