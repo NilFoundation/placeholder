@@ -480,16 +480,16 @@ namespace nil {
                                 for( const auto &constr_list: opcode_constraints){
                                     for( const auto &local_row: constr_list.first){
                                         for( auto [constraint, name]: constr_list.second){
-                                            auto degree = gates_visitor.compute_max_degree(constraint);
-                                            if( degree > 3 ){
-                                                std::cout
-                                                    << "Opcode " << current_opcode
-                                                    << " on row " << local_row
-                                                    << " has high degree " << degree
-                                                    << ": " << constraint << std::endl;
-                                                high_degree_constraints++;
-                                                continue;
-                                            }
+                                            // auto degree = gates_visitor.compute_max_degree(constraint);
+                                            // if( degree > 3 ){
+                                            //     std::cout
+                                            //         << "Opcode " << current_opcode
+                                            //         << " on row " << local_row
+                                            //         << " has high degree " << degree
+                                            //         << ": " << constraint << std::endl;
+                                            //     high_degree_constraints++;
+                                            //     continue;
+                                            // }
                                             std::size_t real_row = 0;
                                             auto C = constraint;
                                             if( local_row > std::ceil(float(current_opcode_bare_rows_amount) / 2) * 2 - current_opcode_bare_rows_amount % 2  ){
@@ -547,7 +547,7 @@ namespace nil {
                                     if( constraints.size() <= i) continue;
                                     acc_constraint += context_object.relativize(zkevm_opcode_row_selectors[pair], -1) * constraints[i];
                                     //std::cout << "\topcode " << pair.first << " row " << pair.second << " constraint " << context_object.relativize(zkevm_opcode_row_selectors[pair], -1) * constraints[i] << std::endl;
-                                    relative_mc.push_back(context_object.relativize(zkevm_opcode_row_selectors[pair], -1) * constraints[i]);
+                                    // relative_mc.push_back(context_object.relativize(zkevm_opcode_row_selectors[pair], -1) * constraints[i]);
                                 }
                                 relative_mc.push_back(acc_constraint);
                                 //std::cout << "\t" << acc_constraint << std::endl;

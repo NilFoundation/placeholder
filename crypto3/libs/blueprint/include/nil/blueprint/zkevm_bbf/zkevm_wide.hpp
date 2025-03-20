@@ -461,7 +461,7 @@ namespace nil {
                                     acc_name += name;
                                     //std::cout << "\topcode " << pair.first << " row " << pair.second << " constraint " << context_object.relativize(zkevm_opcode_row_selectors[pair], -1) * constraints[i] << std::endl;
                                     ;
-                                    context_object.constrain_all_rows(context_object.relativize(zkevm_opcode_row_selectors.at(pair), -1) * constraints[i], name);
+                                    // context_object.constrain_all_rows(context_object.relativize(zkevm_opcode_row_selectors.at(pair), -1) * constraints[i], name);
                                 }
                                 if (has_something) context_object.constrain_all_rows(acc_constraint, acc_name);
                                 //std::cout << "\t" << acc_constraint << std::endl;
