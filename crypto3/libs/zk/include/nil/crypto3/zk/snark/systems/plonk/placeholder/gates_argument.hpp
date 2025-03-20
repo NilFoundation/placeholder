@@ -54,6 +54,7 @@
 #include <nil/crypto3/zk/math/expression_visitors.hpp>
 
 #include <nil/crypto3/bench/scoped_profiler.hpp>
+#include "nil/crypto3/multiprecision/detail/big_mod/modular_ops/common.hpp"
 
 namespace nil {
     namespace crypto3 {
@@ -135,6 +136,8 @@ namespace nil {
                         // max_gates_degree that comes from the outside does not take into account multiplication
                         // by selector.
                         ++max_gates_degree;
+                        // std::cout << "Max gates degree: " << max_gates_degree
+                        //           << std::endl;
                         typename FieldType::value_type theta = transcript.template challenge<FieldType>();
 
                         auto value_type_to_polynomial_dfs = [](
@@ -229,6 +232,8 @@ namespace nil {
                                 extended_domain_sizes[i], variable_values,
                                 mask_polynomial, lagrange_0
                             );
+
+                            PROFILE_SCOPE("Gate argument evaluation");
 
                             math::cached_expression_evaluator<polynomial_dfs_variable_type> evaluator(
                                 expressions[i], [&assignments=variable_values, domain_size=extended_domain_sizes[i]]

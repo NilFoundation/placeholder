@@ -62,6 +62,7 @@
 
 #include <nil/actor/core/thread_pool.hpp>
 #include <nil/actor/core/parallelization_utils.hpp>
+#include "nil/crypto3/multiprecision/detail/big_mod/modular_ops/common.hpp"
 
 namespace nil {
     namespace crypto3 {
@@ -183,29 +184,28 @@ namespace nil {
                         const auto& gates = constraint_system.gates();
                         {
                             PROFILE_SCOPE("Gate argument build expression");
-                            for (const auto& gate : gates) {
-                                std::vector<math::expression<variable_type>> gate_results(
-                                    extended_domain_sizes.size());
-                                for (const auto& constraint : gate.constraints) {
+                            for (const auto& gate: gates) {
+                                std::vector<math::expression<variable_type>> gate_results(extended_domain_sizes.size());
+                                for (std::size_t constraint_idx = 0; constraint_idx < gate.constraints.size(); ++constraint_idx) {
+                                    const auto& constraint = gate.constraints[constraint_idx];
                                     auto next_term = constraint * theta_acc;
 
-                        for (const auto& gate: gates) {
-                            std::vector<math::expression<variable_type>> gate_results(extended_domain_sizes.size());
-                            for (std::size_t constraint_idx = 0; constraint_idx < gate.constraints.size(); ++constraint_idx) {
-                                const auto& constraint = gate.constraints[constraint_idx];
-                                auto next_term = constraint * theta_acc;
+                                    theta_acc *= theta;
 
-                                theta_acc *= theta;
-                                // +1 stands for the selector multiplication.
-                                size_t constraint_degree = visitor.compute_max_degree(constraint) + 1;
-                                for (int i = extended_domain_sizes.size() - 1; i >= 0; --i) {
-                                    // Whatever the degree of term is, add it to the maximal degree expression.
-                                    if (degree_limits[i] >= constraint_degree || i == 0) {
-                                        gate_results[i] += next_term;
-                                        ++constraint_counts[i];
-                                        break;
+                                    size_t constraint_degree = visitor.compute_max_degree(constraint);
+                                    if (gate.selector_index != PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED)
+                                        constraint_degree += 1; // selector multiplication.
+
+                                    for (int i = extended_domain_sizes.size() - 1; i >= 0; --i) {
+                                        // Whatever the degree of term is, add it to the maximal degree expression.
+                                        if (degree_limits[i] >= constraint_degree || i == 0) {
+                                            gate_results[i] += next_term;
+                                            ++constraint_counts[i];
+                                            break;
+                                        }
                                     }
                                 }
+
                                 variable_type selector(
                                     gate.selector_index, 0, false,
                                     variable_type::column_type::selector);
