@@ -151,7 +151,7 @@ namespace nil {
                         std::vector<polynomial_dfs_type> hs = compute_h_polys(reduced_input, alpha);
 
                         std::vector<polynomial_dfs_type> gs = compute_g_polys(reduced_value, counts, alpha);
-                        
+
                         // We don't use reduced_input and reduced_value after this line.
                         reduced_input_ptr.reset(nullptr);
                         reduced_value_ptr.reset(nullptr);
@@ -335,8 +335,7 @@ namespace nil {
                             max_expr_degree = std::max(max_expr_degree, degree);
                         }
 
-                        // We need to +1 on the next line, because we will multiply with selector.
-                        std::uint32_t max_degree = std::pow(2, ceil(std::log2(max_expr_degree + 1)));
+                        std::uint32_t max_degree = std::pow(2, ceil(std::log2(max_expr_degree)));
                         extended_domain_size_out = domain->m * max_degree;
 
                         std::shared_ptr<math::evaluation_domain<FieldType>> extended_domain =
@@ -380,7 +379,7 @@ namespace nil {
                             for (const auto &constraint : gate.constraints) {
                                 for(std::size_t k = 0; k < constraint.lookup_input.size(); k++){
                                     exprs.push_back(constraint.lookup_input[k]);
-                                }        
+                                }
                             }
                         }
 
@@ -409,6 +408,9 @@ namespace nil {
                                 lookup_selector = mask_assignment;
                             } else if (gate.tag_index == PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED) {
                                 lookup_selector = mask_assignment - lagrange0;
+                            } else if (gate.tag_index == PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED) {
+                                //throw std::logic_error("not implemented");
+                                lookup_selector = polynomial_dfs_type::one();
                             } else {
                                 lookup_selector = plonk_columns.selector(gate.tag_index);
                             }
@@ -423,7 +425,7 @@ namespace nil {
                                     const math::expression<variable_type>& expr = constraint.lookup_input[k];
 
                                     polynomial_dfs_type result(extended_domain_size - 1, extended_domain_size);
-                                    
+
                                     for (std::size_t j = 0; j < extended_domain_size; ++j) {
                                         // Don't use cache here. In practice it's slower to maintain the cache
                                         // than to re-compute the subexpression value when value type is field element.
@@ -466,12 +468,12 @@ namespace nil {
                         for (std::size_t i = 0; i < new_domain_size; i++) {
                             reduced[i] = polynomial[i * step];
                         }
-                        
+
                         return reduced;
                     }
 
                     // Counts how many times each values in 'reduced_value' appears in any 'reduced_input'.
-                    // Returns a vector of polynomials, but inside are integers which are normally 
+                    // Returns a vector of polynomials, but inside are integers which are normally
                     // significantly smaller than the field size.
                     std::vector<polynomial_dfs_type> count_lookup_input_appearances(
                         const std::vector<polynomial_dfs_type>& reduced_input,
@@ -528,7 +530,7 @@ namespace nil {
                     typedef detail::placeholder_policy<FieldType, ParamsType> policy_type;
 
                 public:
-                    
+
                     void fill_challenge_queue(
                         const typename placeholder_public_preprocessor<FieldType, ParamsType>::preprocessed_data_type::common_data_type &common_data,
                         const plonk_constraint_system<FieldType> &constraint_system,
@@ -552,10 +554,10 @@ namespace nil {
 
                     /**
                      * \param[in] challenge - The value of random challenge point 'Y'.
-                     * \param[in] evaluations - A map containing evaluations of all the required variables and rotations, I.E. values of 
+                     * \param[in] evaluations - A map containing evaluations of all the required variables and rotations, I.E. values of
                                                 all the columns at points 'Y' and 'Y*omega' and other points depending on the rotations used.
                      * \param[in] counts - A vector containing the evaluation of polynomails "counts" at point 'T' for each lookup value.
-                                           Each polynomial 'counts' shows the number of times each value appears in the lookup inputs. 
+                                           Each polynomial 'counts' shows the number of times each value appears in the lookup inputs.
                      * \returns A list of lookup argument values that are used as a part of the final zero-check pprotocol.
                      */
                     std::array<typename FieldType::value_type, argument_size> verify_eval(
@@ -661,7 +663,7 @@ namespace nil {
 
                         // Check that U[Nu] == 0.
                         F[2] = special_selector_values[1] * U_value;
-                        
+
                         // Check that Mask(X) * (U(wX) - U(X) - Sum(hs) - Sum(gs)) == 0.
                         F[3] = U_shifted_value - U_value - sum_H_G;
                         F[3] *= (special_selector_values[1] + special_selector_values[2]) - one;

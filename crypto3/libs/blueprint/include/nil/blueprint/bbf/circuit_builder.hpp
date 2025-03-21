@@ -214,6 +214,36 @@ namespace nil {
                     }
 
                     std::set<std::string> lookup_table_names;
+
+                    {
+                        auto selector_id = crypto3::zk::snark::PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED;
+
+                        // global polynomial constraints
+                        std::vector<constraint_type> constraints;
+                        std::vector<std::string> names;
+                        for(const auto &[c, n] : gates.global_constraints) {
+                            constraints.push_back(c);
+                            names.push_back(n);
+                        }
+
+                        if (!constraints.empty()) {
+                            bp.add_gate(selector_id, constraints);
+                            constraint_names.insert({selector_id, std::move(names)});
+                        }
+
+                        // global lookup constraints if there are any
+                        if (!gates.global_lookup_constraints.empty()) {
+                            std::vector<lookup_constraint_type> lookup_gate;
+                            for (const auto& single_lookup_constraint : gates.global_lookup_constraints) {
+                                std::string table_name = single_lookup_constraint.first;
+                                size_t table_index = create_table(table_name, lookup_table_names, gates);
+                                lookup_gate.push_back({table_index, single_lookup_constraint.second});
+                            }
+
+                            bp.add_lookup_gate(selector_id, lookup_gate);
+                        }
+                    }
+
                     for (const auto& [selector_id, lookup_list] : gates.lookup_constraints) {
                         std::vector<lookup_constraint_type> lookup_gate;
                         for (const auto& single_lookup_constraint : lookup_list) {
