@@ -339,8 +339,7 @@ namespace nil {
                             max_expr_degree = std::max(max_expr_degree, degree);
                         }
 
-                        // We need to +1 on the next line, because we will multiply with selector.
-                        std::uint32_t max_degree = std::pow(2, ceil(std::log2(max_expr_degree + 1)));
+                        std::uint32_t max_degree = std::pow(2, ceil(std::log2(max_expr_degree)));
                         extended_domain_size_out = domain->m * max_degree;
 
                         std::shared_ptr<math::evaluation_domain<FieldType>> extended_domain =
@@ -360,8 +359,9 @@ namespace nil {
                                     assignment = mask_polynomial;
                                 } else if( var.index == PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED && var.type == variable_type::column_type::selector) {
                                     assignment = mask_polynomial - lagrange_0;
-                                } else if (var.index == PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED) {
-                                    throw std::logic_error("not implemented");
+                                } else if (var.index == PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED && var.type == variable_type::column_type::selector) {
+                                    //throw std::logic_error("not implemented");
+                                    assignment = polynomial_dfs_type::one();
                                 } else
                                     assignment = assignments.get_variable_value(var_dfs, domain);
 
@@ -532,7 +532,7 @@ namespace nil {
                     typedef detail::placeholder_policy<FieldType, ParamsType> policy_type;
 
                 public:
-                    
+
                     void fill_challenge_queue(
                         const typename placeholder_public_preprocessor<FieldType, ParamsType>::preprocessed_data_type::common_data_type &common_data,
                         const plonk_constraint_system<FieldType> &constraint_system,
@@ -559,7 +559,7 @@ namespace nil {
                      * \param[in] evaluations - A map containing evaluations of all the required variables and rotations, I.E. values of
                                                 all the columns at points 'Y' and 'Y*omega' and other points depending on the rotations used.
                      * \param[in] counts - A vector containing the evaluation of polynomails "counts" at point 'T' for each lookup value.
-                                           Each polynomial 'counts' shows the number of times each value appears in the lookup inputs. 
+                                           Each polynomial 'counts' shows the number of times each value appears in the lookup inputs.
                      * \returns A list of lookup argument values that are used as a part of the final zero-check pprotocol.
                      */
                     std::array<typename FieldType::value_type, argument_size> verify_eval(
