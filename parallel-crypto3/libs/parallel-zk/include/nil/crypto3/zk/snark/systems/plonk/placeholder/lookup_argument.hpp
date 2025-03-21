@@ -423,8 +423,11 @@ namespace nil {
                                                     selector) {
                                     assignment = mask_polynomial - lagrange_0;
                                 } else if (var.index ==
-                                           PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED) {
-                                    throw std::logic_error("not implemented");
+                                           PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED &&
+                                    var.type == simd_vector_variable_type::column_type::
+                                                    selector) {
+                                    //throw std::logic_error("not implemented");
+                                    assignment = polynomial_dfs_type::one();
                                 } else
                                     assignment = assignments.get_variable_value(var_dfs, domain);
 
@@ -609,7 +612,7 @@ namespace nil {
                     typedef detail::placeholder_policy<FieldType, ParamsType> policy_type;
 
                 public:
-                    
+
                     void fill_challenge_queue(
                         const typename placeholder_public_preprocessor<FieldType, ParamsType>::preprocessed_data_type::common_data_type &common_data,
                         const plonk_constraint_system<FieldType> &constraint_system,
@@ -636,7 +639,7 @@ namespace nil {
                      * \param[in] evaluations - A map containing evaluations of all the required variables and rotations, I.E. values of
                                                 all the columns at points 'Y' and 'Y*omega' and other points depending on the rotations used.
                      * \param[in] counts - A vector containing the evaluation of polynomails "counts" at point 'T' for each lookup value.
-                                           Each polynomial 'counts' shows the number of times each value appears in the lookup inputs. 
+                                           Each polynomial 'counts' shows the number of times each value appears in the lookup inputs.
                      * \returns A list of lookup argument values that are used as a part of the final zero-check pprotocol.
                      */
                     std::array<typename FieldType::value_type, argument_size> verify_eval(
