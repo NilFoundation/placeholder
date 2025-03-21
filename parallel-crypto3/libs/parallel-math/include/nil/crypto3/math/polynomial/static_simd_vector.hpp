@@ -41,6 +41,8 @@
 
 #include <nil/crypto3/bench/scoped_profiler.hpp>
 
+#include <nil/crypto3/math/polynomial/polynomial_dfs.hpp>
+
 namespace nil::crypto3::math {
     template<typename FieldValueType, std::size_t Size>
     class static_simd_vector {
@@ -249,6 +251,37 @@ namespace nil::crypto3::math {
             return (*this <=> rhs) >= 0;
         }
     };
+
+    template<std::size_t Size>
+    std::size_t count_chunks(std::size_t size) {
+        return (size + Size - 1) / Size;
+    }
+
+    template<std::size_t Size, typename FieldValueType>
+    static_simd_vector<FieldValueType, Size> get_chunk(
+        const polynomial_dfs<FieldValueType>& poly, std::size_t offset,
+        std::size_t number) {
+        static_simd_vector<FieldValueType, Size> result;
+        for (std::size_t i = 0; i < Size; ++i) {
+            if (offset + number * Size + i >= poly.size()) {
+                break;
+            }
+            result[i] = poly[offset + number * Size + i];
+        }
+        return result;
+    }
+
+    template<std::size_t Size, typename FieldValueType>
+    void set_chunk(polynomial_dfs<FieldValueType>& poly, std::size_t offset,
+                   std::size_t number,
+                   const static_simd_vector<FieldValueType, Size>& chunk) {
+        for (std::size_t i = 0; i < Size; ++i) {
+            if (offset + number * Size + i >= poly.size()) {
+                break;
+            }
+            poly[offset + number * Size + i] = chunk[i];
+        }
+    }
 }  // namespace nil::crypto3::math
 
 // As our operator== returns false for vectors with different sizes, the same will happen here,
