@@ -340,6 +340,10 @@ namespace nil {
                         ) {
                             PROFILE_SCOPE("Create cycle representation");
 
+                            if (constraint_system.copy_constraints().size() == 0) {
+                                return;
+                            }
+
                             {
                                 PROFILE_SCOPE("Initialize maps");
                                 for (std::size_t i = 0;
@@ -407,8 +411,11 @@ namespace nil {
                             }
                         }
 
-                        key_type &operator[](key_type key) {
-                            return _mapping[key];
+                        key_type operator[](key_type key) const {
+                            if (!_mapping.contains(key)) {
+                                return key;
+                            }
+                            return _mapping.at(key);
                         }
                     };
 
