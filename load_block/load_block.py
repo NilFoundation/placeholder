@@ -3,11 +3,23 @@ import json
 from web3 import Web3
 import time
 
-ALCHEMY_API_KEY = "I38oXHAOj0OUcvNfObEX8cS0I3PAHj0R"
-ALCHEMY_RPC_URL = f"https://eth-mainnet.g.alchemy.com/v2/{ALCHEMY_API_KEY}"
+# ALCHEMY_API_KEY = "I38oXHAOj0OUcvNfObEX8cS0I3PAHj0R"
+# ALCHEMY_RPC_URL = f"https://eth-mainnet.g.alchemy.com/v2/{ALCHEMY_API_KEY}"
+RPC_URL = "https://0xrpc.io/eth"
 BLOCK_NUMBER = "0x1393625"  # 20526629 in hex
 
-w3 = Web3(Web3.HTTPProvider(ALCHEMY_RPC_URL))
+w3 = Web3(Web3.HTTPProvider(RPC_URL))
+
+def send_request_with_backoff(payload, is_hex=False):
+    delay = 4
+    while True:
+        try:
+            response = requests.post(RPC_URL, json=payload).json()
+            return response.get("result", "0x" if is_hex else {})
+        except Exception as e:
+            print("[ERROR] Increasing backoff to {} seconds!".format(delay*2))
+            time.sleep(delay)
+            delay *= 2
 
 
 def get_block_data():
@@ -18,8 +30,7 @@ def get_block_data():
         "params": [BLOCK_NUMBER, True],
         "id": 1
     }
-    response = requests.post(ALCHEMY_RPC_URL, json=payload).json()
-    return response.get("result", {})
+    return send_request_with_backoff(payload)
 
 
 def get_transaction_data(tx_hash):
@@ -29,8 +40,7 @@ def get_transaction_data(tx_hash):
         "params": [tx_hash],
         "id": 1
     }
-    response = requests.post(ALCHEMY_RPC_URL, json=payload).json()
-    return response.get("result", {})
+    return send_request_with_backoff(payload)
 
 def calculate_opcodes(tx_trace):
     opcodes = 0
@@ -51,17 +61,16 @@ def get_transaction_trace(tx_hash):
         "params": [tx_hash, {"tracer": "prestateTracer"}],
         "id": 1
     }
-    response = requests.post(ALCHEMY_RPC_URL, json=payload).json()
 
-    result["prestate_trace"] =  response.get("result", {})
+    result["prestate_trace"] =  send_request_with_backoff(payload)
     payload = {
         "jsonrpc": "2.0",
         "method": "debug_traceTransaction",
         "params": [tx_hash, {"tracer": "callTracer"}],
         "id": 1
     }
-    response = requests.post(ALCHEMY_RPC_URL, json=payload).json()
-    result["call_trace"] =  response.get("result", {})
+
+    result["call_trace"] =  send_request_with_backoff(payload)
 
     payload = {
         "jsonrpc": "2.0",
@@ -69,13 +78,13 @@ def get_transaction_trace(tx_hash):
         "params": [tx_hash, ["vmTrace", "stateDiff"]],
         "id": 1
     }
-    response = requests.post(ALCHEMY_RPC_URL, json=payload).json()
-    tx_trace = response.get("result", {})
+
+    tx_trace = send_request_with_backoff(payload)
 
     if( "vmTrace" in tx_trace):
         tx_trace["opcodes_amount"] = result["opcodes_amount"] = calculate_opcodes(tx_trace["vmTrace"])
 
-    path = "tx_" + tx_hash + ".json"
+    path = "/Users/amirhossein/Desktop/room/nil/placeholder/load_block/traces/tx_" + tx_hash + ".json"
     with open(path, "w") as f:
         json.dump(tx_trace, f, indent=4)
 
@@ -89,8 +98,7 @@ def get_contract_bytecode(contract_address):
         "params": [contract_address, "latest"],
         "id": 1
     }
-    response = requests.post(ALCHEMY_RPC_URL, json=payload).json()
-    return response.get("result", "0x")
+    return send_request_with_backoff(payload, is_hex=True)
 
 
 def get_storage_value(account_address, slot):
@@ -100,8 +108,7 @@ def get_storage_value(account_address, slot):
         "params": [account_address, slot, "latest"],
         "id": 1
     }
-    response = requests.post(ALCHEMY_RPC_URL, json=payload).json()
-    return response.get("result", "0x")
+    return send_request_with_backoff(payload, is_hex=True)
 
 
 if __name__ == "__main__":
@@ -123,7 +130,7 @@ if __name__ == "__main__":
 
     tx_hashes = [tx["hash"] for tx in block_data["transactions"]]
 
-    total_opcodes_amount = 0;
+    total_opcodes_amount = 0
     for tx_hash in tx_hashes:
         tx_data = get_transaction_data(tx_hash)
         if not tx_data:
