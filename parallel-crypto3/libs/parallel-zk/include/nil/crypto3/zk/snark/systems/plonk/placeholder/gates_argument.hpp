@@ -296,40 +296,23 @@ namespace nil {
                                     [&variable_values, &result, &dag_expr](
                                         std::size_t begin, std::size_t end) {
                                         auto dag_expr_copy = dag_expr;
-                                        auto len = end - begin;
-                                        auto mini_chunks =
-                                            (len + mini_chunk_size - 1) / mini_chunk_size;
-                                        for (std::size_t j = 0; j < mini_chunks; ++j) {
+                                        auto count = math::count_chunks<mini_chunk_size>(
+                                            end - begin);
+                                        for (std::size_t j = 0; j < count; ++j) {
                                             std::function<simd_vector_type(
                                                 const simd_vector_variable_type&)>
                                                 eval_map =
                                                     [&variable_values, begin, end,
                                                      j](const simd_vector_variable_type&
                                                             var) -> simd_vector_type {
-                                                simd_vector_type chunk;
-                                                for (std::size_t t = 0;
-                                                     t < mini_chunk_size; ++t) {
-                                                    std::size_t o =
-                                                        begin + j * mini_chunk_size + t;
-                                                    if (o >= end) {
-                                                        break;
-                                                    }
-                                                    chunk[t] = variable_values[var][o];
-                                                }
-                                                return chunk;
+                                                return math::get_chunk<mini_chunk_size>(
+                                                    variable_values[var], begin, j);
                                             };
                                             auto chunk_result =
                                                 dag_expr_copy.evaluate(eval_map)[0];
                                             dag_expr_copy.clear_cache();
-                                            for (std::size_t t = 0; t < mini_chunk_size;
-                                                 ++t) {
-                                                std::size_t o =
-                                                    begin + j * mini_chunk_size + t;
-                                                if (o >= end) {
-                                                    break;
-                                                }
-                                                result[o] = chunk_result[t];
-                                            }
+                                            math::set_chunk(result, begin, j,
+                                                            chunk_result);
                                         }
                                     },
                                     ThreadPool::PoolLevel::HIGH));
