@@ -435,7 +435,7 @@ namespace nil {
                                                     continue;
                                                 }
                                             }
-                                            if( is_high_degree ) continue;
+                                            // if( is_high_degree ) continue;
                                             std::size_t real_row = current_opcode_bare_rows_amount - local_row ;
                                             opcode_lookup_constraints_aggregator[{current_opcode, real_row, lookup_constraint.first}].push_back(lookup_constraint.second);
                                             //std::cout << "\t" << local_row << "=>" << real_row  << ": " << lookup_constraint.first << std::endl;
@@ -487,7 +487,7 @@ namespace nil {
                             for( auto&[table_name, constraint_list]:acc_lookup_constraints ){
                                 std::cout << "\tOpcode lookups amount for " << table_name << " = " << constraint_list.size() << std::endl;
                                 for(auto &exprs: constraint_list) {
-                                    // context_object.relative_lookup(exprs, table_name, 0, max_zkevm_rows - 1);
+                                    //context_object.relative_lookup(exprs, table_name, 0, max_zkevm_rows - 1);
                                     context_object.lookup_all_rows(exprs, table_name);
                                 }
                             }
