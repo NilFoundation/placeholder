@@ -218,7 +218,6 @@ namespace nil {
                                                 return variable_values[var][j];
                                             };
                                         result[j] = dag_expr_copy.evaluate(eval_map)[0];
-                                        dag_expr_copy.clear_cache();
                                     }
                             }, ThreadPool::PoolLevel::HIGH));
                             F[0] += result;

@@ -444,7 +444,6 @@ namespace nil {
                                     for (std::size_t idx = 0; idx < result_vector.size(); ++idx) {
                                         (*lookup_input_ptr)[idx][j] = result_vector[idx];
                                     }
-                                    dag_expr_copy.clear_cache();
                                 }
                         }, ThreadPool::PoolLevel::HIGH));
                         return std::move(lookup_input_ptr);
@@ -528,7 +527,7 @@ namespace nil {
                     typedef detail::placeholder_policy<FieldType, ParamsType> policy_type;
 
                 public:
-                    
+
                     void fill_challenge_queue(
                         const typename placeholder_public_preprocessor<FieldType, ParamsType>::preprocessed_data_type::common_data_type &common_data,
                         const plonk_constraint_system<FieldType> &constraint_system,
@@ -555,7 +554,7 @@ namespace nil {
                      * \param[in] evaluations - A map containing evaluations of all the required variables and rotations, I.E. values of
                                                 all the columns at points 'Y' and 'Y*omega' and other points depending on the rotations used.
                      * \param[in] counts - A vector containing the evaluation of polynomails "counts" at point 'T' for each lookup value.
-                                           Each polynomial 'counts' shows the number of times each value appears in the lookup inputs. 
+                                           Each polynomial 'counts' shows the number of times each value appears in the lookup inputs.
                      * \returns A list of lookup argument values that are used as a part of the final zero-check pprotocol.
                      */
                     std::array<typename FieldType::value_type, argument_size> verify_eval(
