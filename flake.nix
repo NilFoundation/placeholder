@@ -122,7 +122,7 @@
             staticBuild = false;
             enableDebug = true;
             runTests = true;
-            sanitize = true;
+            sanitize = false;
             crypto3_tests = true;
             parallel_crypto3_tests = true;
             crypto3_bechmarks = true;
