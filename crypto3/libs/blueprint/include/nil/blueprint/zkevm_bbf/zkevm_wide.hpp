@@ -435,7 +435,7 @@ namespace nil {
                                                     continue;
                                                 }
                                             }
-                                            // if( is_high_degree ) continue;
+                                            if (is_high_degree) continue;
                                             std::size_t real_row = current_opcode_bare_rows_amount - local_row ;
                                             opcode_lookup_constraints_aggregator[{current_opcode, real_row, lookup_constraint.first}].push_back(lookup_constraint.second);
                                             //std::cout << "\t" << local_row << "=>" << real_row  << ": " << lookup_constraint.first << std::endl;
