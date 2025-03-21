@@ -388,7 +388,7 @@ namespace nil {
                         std::shared_ptr<math::evaluation_domain<FieldType>> extended_domain =
                             math::make_evaluation_domain<FieldType>(extended_domain_size);
 
-                        parallel_for(0, variable_values_out.size(),
+                        parallel_for(0, variables.size(),
                             [&variables,&variable_values_out, &assignments, &domain, &extended_domain, extended_domain_size, &mask_polynomial, &lagrange_0](std::size_t i) {
                                 const simd_vector_variable_type& var = variables[i];
 
@@ -507,7 +507,8 @@ namespace nil {
                             PROFILE_SCOPE("Lookup argument expression evaluation");
 
                             wait_for_all(parallel_run_in_chunks<void>(extended_domain_size,
-                                [&variable_values, &extended_domain_size, &expressions, &lookup_input_ptr, &dag_expr]
+                                [&variable_values, &extended_domain_size, &expressions, &lookup_input_ptr, &dag_expr,
+                                 &batch_index_map]
                                 (std::size_t begin, std::size_t end) {
                                     auto dag_expr_copy = dag_expr;
                                     auto count =
@@ -527,7 +528,7 @@ namespace nil {
                                         for (std::size_t idx = 0; idx < result_chunks.size();
                                              ++idx) {
                                             math::set_chunk<mini_chunk_size>(
-                                                (*lookup_input_ptr)[idx], begin, j,
+                                                (*lookup_input_ptr)[batch_index_map.at(idx)], begin, j,
                                                 result_chunks[idx]);
                                         }
                                         dag_expr_copy.clear_cache();
