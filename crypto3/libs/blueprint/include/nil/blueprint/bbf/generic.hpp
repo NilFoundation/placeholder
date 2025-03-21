@@ -291,6 +291,8 @@ namespace nil {
                 using lookup_constraints_container_type = std::map<std::pair<std::string,constraint_id_type>, // <table_name,expressions_id>
                                                                    std::pair<lookup_input_constraints_type, row_selector<>>>;
                                                                    // ^^^ expressions, rows
+                using global_lookup_constraints_container_type = std::map<std::pair<std::string,constraint_id_type>, // <table_name,expressions_id>
+                                                                   lookup_input_constraints_type>;
                 // NB: NOT exactly as plonk!!!
                 using lookup_constraint_type = std::pair<std::string, lookup_input_constraints_type>;
                 using dynamic_lookup_table_container_type = std::map<std::string,std::pair<std::vector<std::size_t>, row_selector<>>>;
@@ -405,7 +407,7 @@ namespace nil {
                     }
                     std::size_t row = (min_row + max_row)/2;
 
-                    
+
 
                     std::optional<TYPE> C_rel = C.rotate(-row);
                     if (!C_rel) {
@@ -497,6 +499,20 @@ namespace nil {
                     add_lookup_constraint(table_name, C, start_row, end_row);
                 }
 
+                void lookup_all_rows(const std::vector<TYPE> &C, std::string table_name) {
+                    if (is_subcontext)
+                        throw std::logic_error("global constraints are not allowed in subcontexts");
+
+                    for(const TYPE& c_part : C) {
+                        if (!c_part.is_relative()) {
+                            std::stringstream ss;
+                            ss << "Constraint " << c_part << " has absolute variables, cannot constrain.";
+                            throw std::logic_error(ss.str());
+                        }
+                    }
+                    add_global_lookup_constraint(table_name, C);
+                }
+
                 void lookup_table(std::string name, std::vector<std::size_t> W, std::size_t from_row, std::size_t num_rows) {
                     if (lookup_tables->find(name) != lookup_tables->end()) {
                         BOOST_LOG_TRIVIAL(error) << "Double declaration of dynamic lookup table '" << name << "'!\n";
@@ -546,6 +562,13 @@ namespace nil {
                     return *lookup_tables;
                 }
 
+                std::vector<lookup_constraint_type> get_global_lookup_constraints() {
+                    std::vector<lookup_constraint_type> res;
+                    for (const auto &[id, data] : *global_lookup_constraints)
+                        res.push_back(lookup_constraint_type(id.first,data));
+                    return res;
+                }
+
                 std::unordered_map<row_selector<>, std::vector<lookup_constraint_type>> get_lookup_constraints() {
                     // std::map<std::pair<std::string,constraint_id_type>, // <table_name,expressions_id>
                     //          std::pair<std::vector<constraint_type>,row_selector<>>> // expressions, rows
@@ -591,6 +614,7 @@ namespace nil {
                     constraints = std::make_shared<constraints_container_type>();
                     copy_constraints = std::make_shared<copy_constraints_container_type>();
                     lookup_constraints = std::make_shared<lookup_constraints_container_type>();
+                    global_lookup_constraints = std::make_shared<global_lookup_constraints_container_type>();
                     lookup_tables = std::make_shared<dynamic_lookup_table_container_type>();
                     constants_storage = std::make_shared<assignment_type>(0, 0, desc.constant_columns, 0);
                     is_fresh = false;
@@ -644,7 +668,16 @@ namespace nil {
                     lookup_constraints->at(key).second.set_row(stored_row);
                 }
 
-                void add_lookup_constraint(const std::string& table_name, const std::vector<TYPE> &C_rel, 
+                void add_global_lookup_constraint(
+                        std::string table_name, const std::vector<TYPE> &C_rel) {
+                    constraint_id_type C_id = constraint_id_type(C_rel);
+                    std::pair<std::string,constraint_id_type> key = {table_name, C_id};
+                    if (global_lookup_constraints->find(key) == global_lookup_constraints->end()) {
+                        global_lookup_constraints->insert({ key, C_rel });
+                    }
+                }
+
+                void add_lookup_constraint(const std::string& table_name, const std::vector<TYPE> &C_rel,
                         std::size_t start_row, std::size_t end_row) {
                     std::size_t stored_start_row = start_row - (is_fresh ? row_shift : 0);
                     std::size_t stored_end_row = end_row - (is_fresh ? row_shift : 0);
@@ -668,6 +701,8 @@ namespace nil {
                 std::shared_ptr<copy_constraints_container_type> copy_constraints;
                 // lookup constraints with table name, unique id and row list
                 std::shared_ptr<lookup_constraints_container_type> lookup_constraints;
+                // lookup constraints applied to all rows with table name, unique id
+                std::shared_ptr<global_lookup_constraints_container_type> global_lookup_constraints;
                 // dynamic lookup tables
                 std::shared_ptr<dynamic_lookup_table_container_type> lookup_tables;
                 // constants

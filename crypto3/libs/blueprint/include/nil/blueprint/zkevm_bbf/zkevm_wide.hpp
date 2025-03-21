@@ -435,7 +435,7 @@ namespace nil {
                                                     continue;
                                                 }
                                             }
-                                            if( is_high_degree ) continue;
+                                            // if( is_high_degree ) continue;
                                             std::size_t real_row = current_opcode_bare_rows_amount - local_row ;
                                             opcode_lookup_constraints_aggregator[{current_opcode, real_row, lookup_constraint.first}].push_back(lookup_constraint.second);
                                             //std::cout << "\t" << local_row << "=>" << real_row  << ": " << lookup_constraint.first << std::endl;
@@ -461,7 +461,7 @@ namespace nil {
                                     acc_name += name;
                                     //std::cout << "\topcode " << pair.first << " row " << pair.second << " constraint " << context_object.relativize(zkevm_opcode_row_selectors[pair], -1) * constraints[i] << std::endl;
                                     ;
-                                    // context_object.constrain_all_rows(context_object.relativize(zkevm_opcode_row_selectors.at(pair), -1) * constraints[i], name);
+                                    //context_object.constrain_all_rows(context_object.relativize(zkevm_opcode_row_selectors.at(pair), -1) * constraints[i], name);
                                 }
                                 if (has_something) context_object.constrain_all_rows(acc_constraint, acc_name);
                                 //std::cout << "\t" << acc_constraint << std::endl;
@@ -486,8 +486,9 @@ namespace nil {
                             }
                             for( auto&[table_name, constraint_list]:acc_lookup_constraints ){
                                 std::cout << "\tOpcode lookups amount for " << table_name << " = " << constraint_list.size() << std::endl;
-                                for(auto &exprs: constraint_list){
-                                    context_object.relative_lookup(exprs, table_name, 0, max_zkevm_rows - 1);
+                                for(auto &exprs: constraint_list) {
+                                    //context_object.relative_lookup(exprs, table_name, 0, max_zkevm_rows - 1);
+                                    context_object.lookup_all_rows(exprs, table_name);
                                 }
                             }
                         }

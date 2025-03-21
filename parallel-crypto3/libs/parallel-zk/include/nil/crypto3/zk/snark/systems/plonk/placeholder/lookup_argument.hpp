@@ -408,8 +408,11 @@ namespace nil {
                                                     selector) {
                                     assignment = mask_polynomial - lagrange_0;
                                 } else if (var.index ==
-                                           PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED) {
-                                    throw std::logic_error("not implemented");
+                                           PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED &&
+                                    var.type == simd_vector_variable_type::column_type::
+                                                    selector) {
+                                    //throw std::logic_error("not implemented");
+                                    assignment = polynomial_dfs_type::one();
                                 } else
                                     assignment = assignments.get_variable_value(var_dfs, domain);
 
