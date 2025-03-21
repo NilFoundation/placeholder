@@ -25,8 +25,9 @@
 #ifndef CRYPTO3_THREAD_POOL_HPP
 #define CRYPTO3_THREAD_POOL_HPP
 
-#include <boost/asio/thread_pool.hpp>
+#include <sched.h>
 #include <boost/asio/post.hpp>
+#include <boost/asio/thread_pool.hpp>
 
 #include <functional>
 #include <future>
@@ -40,8 +41,20 @@ namespace nil {
     namespace crypto3 {
 
         class ThreadPool {
-        public:
+            static std::size_t core_count() {
+#if defined(__linux__) && !defined(__ANDROID__)
+                cpu_set_t cpuset;
+                if (sched_getaffinity(0, sizeof(cpuset), &cpuset)) {
+                    auto count = CPU_COUNT(&cpuset);
+                    if (count != 0) {
+                        return count;
+                    }
+                }
+#endif
+                return std::thread::hardware_concurrency();
+            }
 
+          public:
             enum class PoolLevel {
                 LOW,
                 HIGH,
@@ -52,7 +65,8 @@ namespace nil {
              *  operations and fft. Any code that uses these operations and needs to be parallel will submit its tasks to pool with HIGH.
              *  Submission of higher level tasks to low level pool will immediately result in a deadlock.
              */
-            static ThreadPool& get_instance(PoolLevel pool_id, std::size_t pool_size = std::thread::hardware_concurrency()) {
+            static ThreadPool& get_instance(PoolLevel pool_id) {
+                static std::size_t pool_size = core_count();
                 static ThreadPool instance_for_low_level(pool_size);
                 static ThreadPool instance_for_middle_level(pool_size);
                 static ThreadPool instance_for_high_level(pool_size);
