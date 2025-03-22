@@ -27,7 +27,8 @@
 #include <numeric>
 #include <algorithm>
 
-#include <nil/blueprint/zkevm/zkevm_word.hpp>
+#include <nil/blueprint/zkevm_bbf/opcodes/zkevm_opcodes.hpp>
+#include <nil/blueprint/zkevm_bbf/types/zkevm_word.hpp>
 #include <nil/blueprint/zkevm_bbf/subcomponents/memory_cost.hpp>
 #include <nil/blueprint/zkevm_bbf/types/copy_event.hpp>
 #include <nil/blueprint/zkevm_bbf/types/opcode.hpp>
@@ -52,15 +53,20 @@ namespace nil {
                 zkevm_return_bbf(context_type &context_object, const opcode_input_type<FieldType, stage> &current_state):
                     generic_component<FieldType,stage>(context_object, false){
                     using Memory_Cost = typename bbf::memory_cost<FieldType, stage>;
-                    
-                    TYPE offset, length, current_mem, next_mem, memory_expansion_cost, memory_expansion_size, S;
+
+                    TYPE offset, length, length_inv, depth, depth_inv;
+                    TYPE current_mem, next_mem, memory_expansion_cost, memory_expansion_size, S;
                     if constexpr( stage == GenerationStage::ASSIGNMENT ){
                         offset = w_lo<FieldType>(current_state.stack_top());
                         length = w_lo<FieldType>(current_state.stack_top(1));
-                        current_mem = current_state.memory_size;
+                        current_mem = current_state.memory_size();
                         next_mem = length.is_zero()? current_mem : std::max(offset + length, current_mem);
                         S = next_mem > current_mem;
+                        length_inv = length == 0? 0: length.inversed();
+                        depth = current_state.depth() - 2;
+                        depth_inv = depth == 0? 0: depth.inversed();
                     }
+                    allocate(depth, 0, 0);
                     allocate(offset, 32, 0);
                     allocate(length, 33, 0);
                     allocate(current_mem, 34, 0);
@@ -69,6 +75,24 @@ namespace nil {
 
                     allocate(memory_expansion_cost, 32, 1);
                     allocate(memory_expansion_size, 33, 1);
+                    allocate(length_inv, 34, 1);
+                    allocate(depth_inv, 35, 1);
+
+                    // length_inv is correct
+                    constrain(length * (length * length_inv - 1));
+                    constrain(length_inv * (length * length_inv - 1));
+
+                    // depth_inv is correct
+                    constrain(depth * (depth * depth_inv - 1));
+                    constrain(depth_inv * (depth * depth_inv - 1));
+                    // if depth == 0 then end_transaction else end_call
+                    TYPE next_opcode =
+                        depth * depth_inv * TYPE(std::size_t(opcode_to_number(zkevm_opcode::end_call))) +
+                        (1 - depth * depth_inv) * TYPE(std::size_t(opcode_to_number(zkevm_opcode::end_transaction)));
+                    std::cout << "Next opcode = " << std::hex << next_opcode << std::endl;
+                    std::cout << "Depth = " << depth << std::endl;
+                    allocate(next_opcode, 36, 1);
+
                     std::vector<std::size_t> memory_cost_lookup_area = {42, 43, 44,
                                                                         45, 46, 47};
 
@@ -84,63 +108,57 @@ namespace nil {
                     memory_expansion_size =
                         (next_memory.word_size - current_memory.word_size) * 32;
                     if constexpr( stage == GenerationStage::CONSTRAINTS ){
-                        std::vector<TYPE> tmp;
-                        tmp = {
-                            TYPE(rw_op_to_num(rw_operation_type::stack)),
-                            current_state.call_id(0),
-                            current_state.stack_size(0) - 1,
-                            TYPE(0),// storage_key_hi
-                            TYPE(0),// storage_key_lo
-                            TYPE(0),// field
-                            current_state.rw_counter(0),
-                            TYPE(0),// is_write
-                            TYPE(0),// hi bytes are 0
-                            offset    // addr is smaller than maximum contract size
-                        };
-                        lookup(tmp, "zkevm_rw");
-                        tmp = {
-                            TYPE(rw_op_to_num(rw_operation_type::stack)),
-                            current_state.call_id(0),
-                            current_state.stack_size(0) - 2,
-                            TYPE(0),// storage_key_hi
-                            TYPE(0),// storage_key_lo
-                            TYPE(0),// field
-                            current_state.rw_counter(0) +1,
-                            TYPE(0),// is_write
-                            TYPE(0),// hi bytes are 0
-                            length    // addr is smaller than maximum contract size
-                        };
-                        lookup(tmp, "zkevm_rw");
-
-                        tmp = {
-                            TYPE(1),                     // is_first
-                            TYPE(0),                     // source_id_hi
-                            current_state.call_id(0),    // source_id_lo
-                            TYPE(copy_op_to_num(copy_operand_type::memory)),                     // cp_type
-                            offset,
-                            length,
-                            TYPE(0),  // is_write
-                            current_state.rw_counter(0) + 2    // addr is smaller than maximum contract size
-                        };
-                        lookup(tmp, "zkevm_copy");
-                        tmp = {
-                            TYPE(1),                     // is_first
-                            TYPE(0),                     // dst_id_hi
-                            current_state.call_id(0),    // dst_id_lo
-                            TYPE(copy_op_to_num(copy_operand_type::returndata)),                     // cp_type
-                            0,
-                            length,
-                            TYPE(1),     // is_write
-                            current_state.rw_counter(0) + 2 + length    // addr is smaller than maximum contract size
-                        };
-                        lookup(tmp, "zkevm_copy");
                         // constrain(current_state.pc_next() - current_state.pc(0) - 1);                   // PC transition
                         // constrain(current_state.gas(0) - current_state.gas_next()  - memory_expansion_cost)  // GAS transition
                         // constrain(current_state.stack_size(0) - current_state.stack_size_next());       // stack_size transition
-                        // constrain(current_state.memory_size_next() - current_state.memory_size() - memory_expansion_size);     // memory_size transition
-                        // constrain(current_state.rw_counter_next() - current_state.rw_counter(0) - length);       // rw_counter transition
-                    } else {
-                        // std::cout << "\tASSIGNMENT implemented" << std::endl;
+                        // constrain(current_state.memory_size(0) - current_state.memory_size_next());     // memory_size transition
+                        // constrain(current_state.rw_counter_next() - current_state.rw_counter(0) - 2 - 2 * length); // rw_counter transition
+                        constrain(current_state.opcode_next() - next_opcode); // Next opcode restrictions
+
+                        std::vector<TYPE> tmp;
+                        lookup(rw_table<FieldType, stage>::stack_lookup(
+                            current_state.call_id(0),
+                            current_state.stack_size(0) - 1,
+                            current_state.rw_counter(0),
+                            TYPE(0),// is_write
+                            TYPE(0),// hi bytes are 0
+                            offset
+                        ), "zkevm_rw");
+                        lookup(rw_table<FieldType, stage>::stack_lookup(
+                            current_state.call_id(0),
+                            current_state.stack_size(0) - 2,
+                            current_state.rw_counter(0) +1,
+                            TYPE(0),// is_write
+                            TYPE(0),// hi bytes are 0
+                            length
+                        ), "zkevm_rw");
+                        lookup(rw_table<FieldType, stage>::call_context_lookup(
+                            current_state.call_id(0),
+                            std::size_t(call_context_field::depth),
+                            TYPE(0),
+                            depth + 1
+                        ), "zkevm_rw");
+
+                        lookup({
+                            length * length_inv,                                                       // is_first
+                            TYPE(0),                                                                   // is_write
+                            length * length_inv * TYPE(copy_op_to_num(copy_operand_type::memory)),     // cp_type
+                            TYPE(0),                                                                   // id_hi
+                            length * length_inv * current_state.call_id(0),                            // id_lo
+                            length * length_inv * offset,                                              // counter_1
+                            length * length_inv * (current_state.rw_counter(0) + 2),                   // counter_2
+                            length
+                        }, "zkevm_copy");
+                        lookup({
+                            length * length_inv,                                                          // is_first
+                            length * length_inv,                                                          // is_write
+                            length * length_inv * TYPE(copy_op_to_num(copy_operand_type::returndata)),    // cp_type
+                            TYPE(0),                                                                      // id_hi
+                            length * length_inv * current_state.call_id(0),                               // id_lo
+                            TYPE(0),                                                                      // counter_1
+                            length * length_inv * (current_state.rw_counter(0) + length + 2),             // counter_2
+                            length
+                        }, "zkevm_copy");
                     }
                 }
             };

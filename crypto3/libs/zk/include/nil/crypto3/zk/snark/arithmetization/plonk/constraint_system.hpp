@@ -51,8 +51,10 @@ namespace nil {
         namespace zk {
             namespace snark {
                 /************************* PLONK constraint system ****************************/
-                constexpr static std::size_t const PLONK_SPECIAL_SELECTOR_ALL_USABLE_ROWS_SELECTED = std::numeric_limits<std::size_t>::max();
-                constexpr static std::size_t const PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED = std::numeric_limits<std::size_t>::max() - 1; // Useful for lookup tables
+                static constexpr size_t PLONK_SPECIAL_SELECTOR_ALL_USABLE_ROWS_SELECTED = -1;
+                static constexpr size_t PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED = -2; // Useful for lookup tables
+                static constexpr size_t PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED = -3;
+                static constexpr size_t PLONK_MAX_SELECTOR_ID = -4;
 
                 template<typename FieldType>
                 struct plonk_constraint_system {
@@ -211,6 +213,8 @@ namespace nil {
                         for (const auto& gate : _gates) {
                             for (const auto& constr : gate.constraints) {
                                 std::size_t deg = gates_visitor.compute_max_degree(constr);
+                                if (gate.selector_index == PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED)
+                                  deg = deg ? deg - 1 : 0;
                                 max_gates_degree = std::max(max_gates_degree, deg);
                             }
                         }

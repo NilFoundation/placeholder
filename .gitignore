@@ -647,3 +647,5 @@ callgrind.*
 
 # direnv outputs
 .direnv
+
+crypto3/libs/blueprint/test/zkevm_bbf/data/alchemy/sp1_block/

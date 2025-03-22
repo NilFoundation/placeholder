@@ -24,8 +24,9 @@ namespace nil {
             using AssignmentTable = typename PresetTypes<BlueprintFieldType>::AssignmentTable;
 
             blueprint::bbf::circuit_builder<
-                BlueprintFieldType, nil::blueprint::bbf::rw, std::size_t, std::size_t
-            > builder(circuits_limits.max_rw_rows, circuits_limits.max_mpt_rows);
+                BlueprintFieldType, nil::blueprint::bbf::rw, std::size_t, std::size_t, std::size_t
+            > builder(circuits_limits.max_rw_rows, circuits_limits.max_mpt_rows,
+                      circuits_limits.max_call_commits);
 
             rw_circuit = std::make_shared<ConstraintSystem>(builder.get_circuit());
 

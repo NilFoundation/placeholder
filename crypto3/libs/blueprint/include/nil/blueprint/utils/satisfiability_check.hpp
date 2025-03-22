@@ -120,7 +120,15 @@ namespace nil {
                     this,
                     verbose
                 ] (std::size_t gate_idx, std::size_t start, std::size_t end) -> bool {
-                    Column selector = assignments.selector(gates[gate_idx].selector_index);
+                    Column selector;
+                    if (auto index = gates[gate_idx].selector_index;
+                            index <= crypto3::zk::snark::PLONK_MAX_SELECTOR_ID) {
+                        selector = assignments.selector(index);
+                    } else if (index == crypto3::zk::snark::PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED) {
+                        selector.resize(assignments.rows_amount(), 1);
+                    } else {
+                      assert(false);
+                    }
                     end = std::min(end, selector.size());
                     for (auto row = start; row < end; row++) {
                         if (selector[row].is_zero()) continue;
@@ -151,7 +159,15 @@ namespace nil {
                 };
 
                 for (const auto& i : used_gates) {
-                    Column selector = assignments.selector(gates[i].selector_index);
+                    Column selector;
+                    if (auto index = gates[i].selector_index;
+                            index <= crypto3::zk::snark::PLONK_MAX_SELECTOR_ID) {
+                        selector = assignments.selector(gates[i].selector_index);
+                    } else if (index == crypto3::zk::snark::PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED) {
+                        selector.resize(assignments.rows_amount(), 1);
+                    } else {
+                      assert(false);
+                    }
 
                     // To use the attrs we have to create threads manually
                     boost::asio::thread_pool gate_pool(0);

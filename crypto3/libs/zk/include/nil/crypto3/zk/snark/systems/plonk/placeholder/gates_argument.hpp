@@ -105,8 +105,10 @@ namespace nil {
 
                             if (var.index == PLONK_SPECIAL_SELECTOR_ALL_USABLE_ROWS_SELECTED && var.type == polynomial_dfs_variable_type::column_type::selector) {
                                 assignment = mask_polynomial;
-                            } else if (var.index ==  PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED && var.type == polynomial_dfs_variable_type::column_type::selector){
+                            } else if (var.index == PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED && var.type == polynomial_dfs_variable_type::column_type::selector){
                                 assignment = mask_polynomial - lagrange_0;
+                            } else if (var.index == PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED && var.type == polynomial_dfs_variable_type::column_type::selector){
+                                assignment = polynomial_dfs_type::one();
                             } else {
                                 assignment = assignments.get_variable_value(var, domain);
                             }
@@ -141,6 +143,7 @@ namespace nil {
                         std::vector<std::uint32_t> extended_domain_sizes;
                         std::vector<std::uint32_t> degree_limits;
                         std::uint32_t max_degree = std::pow(2, ceil(std::log2(max_gates_degree)));
+                        std::cout << "MAX GATE DEGREE " << max_degree << std::endl;
                         std::uint32_t max_domain_size = original_domain->m * max_degree;
 
                         degree_limits.push_back(max_degree);
@@ -169,8 +172,11 @@ namespace nil {
                                 auto next_term = converter.convert(constraint) * value_type_to_polynomial_dfs(theta_acc);
 
                                 theta_acc *= theta;
-                                // +1 stands for the selector multiplication.
-                                size_t constraint_degree = visitor.compute_max_degree(constraint) + 1;
+
+                                size_t constraint_degree = visitor.compute_max_degree(constraint);
+                                if (gate.selector_index != PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED)
+                                    constraint_degree += 1; // selector multiplication.
+
                                 for (int i = extended_domain_sizes.size() - 1; i >= 0; --i) {
                                     // Whatever the degree of term is, add it to the maximal degree expression.
                                     if (degree_limits[i] >= constraint_degree || i == 0) {
