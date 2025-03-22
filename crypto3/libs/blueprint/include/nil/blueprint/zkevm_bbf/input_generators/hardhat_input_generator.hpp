@@ -305,7 +305,7 @@ namespace nil {
                     for( auto it = ptrace.begin(); it!=ptrace.end(); it++){
                         std::string opcode = it->second.get_child("op").data();
                         current_opcode = opcode_number_from_str(opcode);
-                        for( std::size_t i = 0; i < depth; i++) std::cout << "\t";
+                        for( std::size_t i = 1; i < depth; i++) std::cout << "\t";
 
                         if(std::distance(it, ptrace.end()) != 1){
                             stack_next = zkevm_word_vector_from_ptree(std::next(it)->second.get_child("stack"));

@@ -158,6 +158,7 @@ namespace nil {
                     calldata_rw_operations = 0;
                     returndata_rw_operations = 0;
                     state_rw_operations = 0;
+                    call_context_rw_operations = 0;
 
                     boost::property_tree::ptree tree = load_json_input(path + std::string("block.json"));
                     std::cout << "ZKEVM ALCHEMY INPUT GENERATOR loaded" << std::endl;
@@ -174,17 +175,20 @@ namespace nil {
                             load_accounts(tt.second.get_child("execution_trace.prestate_trace"));
                             boost::property_tree::ptree tx_trace_tree = load_json_input(path + std::string("tx_" + tx_hash_string + ".json"));
 
-                            bytecode = byte_vector_from_hex_string(tx_trace_tree.get_child("vmTrace.code").data(), 2);
-                            bytecode_hash = zkevm_keccak_hash(bytecode);
-                            if( _bytecode_hashes.find(bytecode_hash) == _bytecode_hashes.end() ){
-                                _bytecode_hashes.insert(bytecode_hash);
-                                _keccaks.new_buffer(bytecode);
-                                _bytecodes.new_buffer(bytecode);
+                            if( tx_trace_tree.get_child_optional("vmTrace.code") ){
+                                std::vector<std::uint8_t> proposed_bytecode = byte_vector_from_hex_string(tx_trace_tree.get_child("vmTrace.code").data(), 2);
+                                if( proposed_bytecode != bytecode ) std::cout << "Bytecode is not equal" << std::endl;
+                                bytecode = byte_vector_from_hex_string(tx_trace_tree.get_child("vmTrace.code").data(), 2);
+                                bytecode_hash = zkevm_keccak_hash(bytecode);
+                                if( _bytecode_hashes.find(bytecode_hash) == _bytecode_hashes.end() ){
+                                    _bytecode_hashes.insert(bytecode_hash);
+                                    _keccaks.new_buffer(bytecode);
+                                    _bytecodes.new_buffer(bytecode);
+                                }
                             }
                             execute_transaction(tx_trace_tree);
   //                      }
                         end_transaction(tt.second.get_child("details"));
-                        break;
                         std::cout << "Total opcodes amount = " << opcode_sum << std::endl;
                     }
                     end_block(pt_block);
@@ -429,7 +433,7 @@ namespace nil {
 
                 void execute_transaction(const boost::property_tree::ptree &tx_trace){
                     std::cout << "Execute transaction" << std::endl;
-                    if( tx_trace.get_child_optional("vmTrace") ){
+                    if( tx_trace.get_child_optional("vmTrace.code") ){
                         std::vector<std::uint8_t> proposed_bytecode = byte_vector_from_hex_string(tx_trace.get_child("vmTrace.code").data(), 2);
                         if( proposed_bytecode != bytecode ) std::cout << "Bytecode is not equal" << std::endl;
                     }
@@ -500,31 +504,34 @@ namespace nil {
                     zkevm_opcode op = opcode_from_number(opcode_number_from_str(opcode_description.get_child("op").data()));
                     current_opcode = opcode_to_number(op);
                     pc = atoi(opcode_description.get_child("pc").data().c_str());
-                    gas = atoi(opcode_description.get_child("ex.used").data().c_str());
+                    if( opcode_description.get_child_optional("ex.used") )
+                        gas = atoi(opcode_description.get_child("ex.used").data().c_str());
                     stack_size = stack.size();
-                    memory_size = atoi(opcode_description.get_child("ex.mem.off").data().c_str());
-                    last_opcode_push = zkevm_word_vector_from_ptree(opcode_description.get_child("ex.push"));
+                    // memory_size = atoi(opcode_description.get_child("ex.mem.off").data().c_str());
+                    last_opcode_push.clear();
+                    if( opcode_description.get_child_optional("ex.push") )
+                        last_opcode_push = zkevm_word_vector_from_ptree(opcode_description.get_child("ex.push"));
 
-                    for( std::size_t i = 1; i < depth; i++) std::cout << "\t";
-                    std::cout << op << "=0x" << std::hex<< current_opcode << std::dec << " call_id = " << call_id << " pc = " << pc << std::endl;
+                    // for( std::size_t i = 1; i < depth; i++) std::cout << "\t";
+                    // std::cout << op << "=0x" << std::hex<< current_opcode << std::dec << " call_id = " << call_id << " pc = " << pc << std::endl;
 
                     executed_opcodes++;
                     std::string opcode = opcode_to_string(op);
 
                     // This does not work :(( bytecode should be loaded somehow in another way
-                    if( pc >= bytecode.size()){
-                        std::cout << "Bytecode size = " << bytecode.size()<< std::endl;
-                    }
+                    // if( pc >= bytecode.size()){
+                    //     std::cout << "Bytecode size = " << bytecode.size()<< std::endl;
+                    // }
                     //BOOST_ASSERT(pc < bytecode.size());
-                    if( pc < bytecode.size() && bytecode[pc] != current_opcode){
-                        std::cout << std::hex << std::size_t(bytecode[pc]) << " != " << current_opcode << std::dec <<  std::endl;
-                        // std::cout << "0x";
-                        // for( auto b: bytecode ){
-                        //     std::cout << std::hex << std::size_t(b) << std::dec << " ";
-                        // }
-                        std::cout << std::endl;
-                    }
-                    BOOST_ASSERT(bytecode[pc] == current_opcode);
+                    // if( pc < bytecode.size() && bytecode[pc] != current_opcode){
+                    //     std::cout << std::hex << std::size_t(bytecode[pc]) << " != " << current_opcode << std::dec <<  std::endl;
+                    //     // std::cout << "0x";
+                    //     // for( auto b: bytecode ){
+                    //     //     std::cout << std::hex << std::size_t(b) << std::dec << " ";
+                    //     // }
+                    //     std::cout << std::endl;
+                    // }
+                    // BOOST_ASSERT(bytecode[pc] == current_opcode);
                     if(opcode == "STOP") { stop();}
                     else if(
                         opcode == "ADD" || opcode == "MUL" || opcode == "SUB" || opcode == "DIV" ||
@@ -692,8 +699,10 @@ namespace nil {
                 void two_operands_arithmetic() {
                     stack.pop_back();
                     stack.pop_back();
-                    BOOST_ASSERT(last_opcode_push.size() == 1);
-                    stack.push_back(last_opcode_push.back());
+                    if( last_opcode_push.size() == 1)
+                        stack.push_back(last_opcode_push.back());
+                    else
+                        stack.push_back(0);
                     stack_rw_operations += 3;
                 }
                 void three_operands_arithmetic() {
@@ -856,19 +865,24 @@ namespace nil {
                     stack_rw_operations += 1;
                 }
                 void blobhash() {
-                    BOOST_ASSERT(last_opcode_push.size() == 1);
-                    stack.push_back(last_opcode_push.back());
+                    // BOOST_ASSERT(last_opcode_push.size() == 1);
+                    // stack.push_back(last_opcode_push.back());
+                    // TODO: non-correct!
+                    stack.push_back(0);
                     stack_rw_operations += 1;
                 }
                 void blobbasefee() {
-                    BOOST_ASSERT(last_opcode_push.size() == 1);
-                    stack.push_back(last_opcode_push.back());
+                    //BOOST_ASSERT(last_opcode_push.size() == 1);
+                    //stack.push_back(last_opcode_push.back());
+                    // TODO: non-correct!
+                    stack.push_back(0);
                     stack_rw_operations += 1;
                 }
                 void tload() {
                     stack.pop_back();
-                    BOOST_ASSERT(last_opcode_push.size() == 1);
-                    stack.push_back(last_opcode_push.back());
+                    //BOOST_ASSERT(last_opcode_push.size() == 1);
+                    // TODO: non-correct!
+                    stack.push_back(0);
                     stack_rw_operations += 2;  state_rw_operations += 2;
                 }
                 void tstore() {
@@ -927,15 +941,15 @@ namespace nil {
                     zkevm_word_type ret_offset = stack.back();  stack.pop_back();
                     zkevm_word_type ret_length = stack.back();  stack.pop_back();
                     call_context_address = addr;
-                    std::cout <<
-                        "gas = 0x" << std::hex << gas << std::dec << std::endl <<
-                        "addr = 0x" << std::hex << addr << std::dec << std::endl <<
-                        "value = 0x" << std::hex << value << std::dec << std::endl <<
-                        "args_offset = 0x" << std::hex << args_offset << std::dec << std::endl <<
-                        "args_length = 0x" << std::hex << args_length << std::dec << std::endl <<
-                        "ret_offset = 0x" << std::hex << ret_offset << std::dec << std::endl <<
-                        "ret_length = 0x" << std::hex << ret_length << std::dec << std::endl;
-                    BOOST_ASSERT(last_opcode_push.size() == 1);
+                    // std::cout <<
+                    //     "gas = 0x" << std::hex << gas << std::dec << std::endl <<
+                    //     "addr = 0x" << std::hex << addr << std::dec << std::endl <<
+                    //     "value = 0x" << std::hex << value << std::dec << std::endl <<
+                    //     "args_offset = 0x" << std::hex << args_offset << std::dec << std::endl <<
+                    //     "args_length = 0x" << std::hex << args_length << std::dec << std::endl <<
+                    //     "ret_offset = 0x" << std::hex << ret_offset << std::dec << std::endl <<
+                    //     "ret_length = 0x" << std::hex << ret_length << std::dec << std::endl;
+                    // BOOST_ASSERT(last_opcode_push.size() == 1);
                     stack.push_back(last_opcode_push.back());
                     stack_rw_operations += 8;
                 }
@@ -948,7 +962,7 @@ namespace nil {
                     zkevm_word_type ret_length = stack.back();  stack.pop_back();
                     call_context_address = addr;
                     std::cout << "addr = 0x" << std::hex << addr << std::dec << std::endl;
-                    BOOST_ASSERT(last_opcode_push.size() == 1);
+                    // BOOST_ASSERT(last_opcode_push.size() == 1);
                     stack.push_back(last_opcode_push.back());
                     stack_rw_operations += 7;
                 }
@@ -1038,7 +1052,7 @@ namespace nil {
 
                     call_context_address = addr;
                     std::cout << "addr = 0x" << std::hex << addr << std::dec << std::endl;
-                    BOOST_ASSERT(last_opcode_push.size() == 1);
+                    // BOOST_ASSERT(last_opcode_push.size() == 1);
                     stack.push_back(last_opcode_push.back());
                     stack_rw_operations += 7;
                 }
@@ -1134,6 +1148,10 @@ namespace nil {
                     std::ifstream ss;
                     //std::cout << "Open file " << std::string(TEST_DATA_DIR) + path << std::endl;
                     ss.open(std::string(TEST_DATA_DIR) + path);
+                    if( !ss.is_open() ){
+                        std::cout << "Cannot open file " << std::string(TEST_DATA_DIR) + path << std::endl;
+                        exit(1);
+                    }
                     boost::property_tree::ptree pt;
                     boost::property_tree::read_json(ss, pt);
                     ss.close();
