@@ -395,6 +395,7 @@ namespace nil {
                                                     << " has high degree " << degree
                                                     << ": " << constraint << std::endl;
                                                 high_degree_constraints++;
+                                                BOOST_ASSERT(false);
                                                 continue;
                                             }
                                             size_t real_row = 0;
@@ -432,6 +433,7 @@ namespace nil {
                                                         << " has high degree " << degree << std::endl;
                                                     high_degree_lookups++;
                                                     is_high_degree = true;
+                                                    BOOST_ASSERT(false);
                                                     continue;
                                                 }
                                             }
