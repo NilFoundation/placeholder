@@ -60,7 +60,6 @@ namespace nil {
                     std::vector<TYPE> value(32);
                     length = 32;
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                        std::cout << "\tASSIGNMENT implemented" << std::endl;
                         auto offsetess = w_to_16(current_state.stack_top())[15];
                         offset = offsetess;
                         current_mem = current_state.memory_size();

@@ -57,12 +57,13 @@ namespace nil {
                     using Word_Size = typename bbf::word_size<FieldType, stage>;
                     using Memory_Cost = typename bbf::memory_cost<FieldType, stage>;
                     TYPE hash_hi, hash_lo, offset, length, current_mem, next_mem,
-                        memory_expansion_size, memory_expansion_cost, S, length_inv;
+                        memory_expansion_size, memory_expansion_cost, S, length_inv, is_length_zero;
 
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
                         offset = w_lo<FieldType>(current_state.stack_top());
                         length = w_lo<FieldType>(current_state.stack_top(1));
                         length_inv = length == 0? 0 :length.inversed();
+                        is_length_zero = length == 0? 0: 1;
                         std::size_t start_offset = std::size_t(current_state.stack_top());
                         std::size_t l = std::size_t(current_state.stack_top(1));
                         std::vector<std::uint8_t> buffer;
@@ -88,6 +89,7 @@ namespace nil {
                     allocate(next_mem, 37, 0);
                     allocate(S, 38, 0);
                     allocate(length_inv, 39, 0);
+                    allocate(is_length_zero, 40, 0);
 
                     // length_inv is correct
                     constrain(length * (length*length_inv -1));
@@ -95,6 +97,7 @@ namespace nil {
                     // if length = 0 then result = zerohash
                     constrain((length * length_inv - 1) * (hash_hi - w_hi<FieldType>(zerohash)));
                     constrain((length * length_inv - 1) * (hash_lo - w_lo<FieldType>(zerohash)));
+                    constrain(is_length_zero - length * length_inv);
 
                     constrain(S * (S - 1));
                     constrain(S * (next_mem - offset - length) +
@@ -139,58 +142,53 @@ namespace nil {
                                   length);  // rw_counter transition
 
                         std::vector<TYPE> tmp;
-                        tmp = rw_table<FieldType, stage>::stack_lookup(
+                        lookup(rw_table<FieldType, stage>::stack_lookup(
                             current_state.call_id(0),
                             current_state.stack_size(0) - 1,
                             current_state.rw_counter(0),
                             TYPE(0),// is_write
                             TYPE(0),// hi bytes are 0
                             offset
-                        );
-                        lookup(tmp, "zkevm_rw");
-                        tmp = rw_table<FieldType, stage>::stack_lookup(
+                        ), "zkevm_rw");
+                        lookup(rw_table<FieldType, stage>::stack_lookup(
                             current_state.call_id(0),
                             current_state.stack_size(0) - 2,
                             current_state.rw_counter(0) +1,
                             TYPE(0),// is_write
                             TYPE(0),// hi bytes are 0
                             length
-                        );
-                        lookup(tmp, "zkevm_rw");
+                        ), "zkevm_rw");
 
                         // Lookup to copy table only if length != 0
-                        tmp = {
-                            length * length_inv,                                            // is_first
+                        lookup({
+                            is_length_zero,                                            // is_first
                             TYPE(0),                                            // is_write
-                            length * length_inv * TYPE(copy_op_to_num(copy_operand_type::memory)),    // cp_type
+                            is_length_zero * TYPE(copy_op_to_num(copy_operand_type::memory)),    // cp_type
                             TYPE(0),                                            // id_hi
-                            length * length_inv * current_state.call_id(0),                           // id_lo
-                            length * length_inv * offset,                                             // counter_1
-                            length * length_inv * (current_state.rw_counter(0) + 2),                    // counter_2
+                            is_length_zero * current_state.call_id(0),                           // id_lo
+                            is_length_zero * offset,                                             // counter_1
+                            is_length_zero * (current_state.rw_counter(0) + 2),                    // counter_2
                             length
-                        };
-                        lookup(tmp, "zkevm_copy");
-                        tmp = {
-                            length * length_inv,                                // is_first
-                            length * length_inv,                                // is_write
-                            length * length_inv * TYPE(copy_op_to_num(copy_operand_type::keccak)),    // cp_type
-                            length * length_inv * hash_hi,                                            // id_hi
-                            length * length_inv * hash_lo,                                            // id_lo
+                        }, "zkevm_copy");
+                        lookup({
+                            is_length_zero,                                // is_first
+                            is_length_zero,                                // is_write
+                            is_length_zero * TYPE(copy_op_to_num(copy_operand_type::keccak)),    // cp_type
+                            is_length_zero * hash_hi,                                            // id_hi
+                            is_length_zero * hash_lo,                                            // id_lo
                             TYPE(0),                                            // counter_1
                             TYPE(0),                                            // counter_2
                             length
-                        };
-                        lookup(tmp, "zkevm_copy");
+                        }, "zkevm_copy");
 
-                        tmp = rw_table<FieldType, stage>::stack_lookup(
+                        lookup(rw_table<FieldType, stage>::stack_lookup(
                             current_state.call_id(0),
                             current_state.stack_size(0) - 2,
                             current_state.rw_counter(0) + 2 + length,
                             TYPE(1),// is_write
                             hash_hi,
                             hash_lo
-                        );
-                        lookup(tmp, "zkevm_rw");
+                        ), "zkevm_rw");
                     }
                 }
             };
@@ -198,7 +196,7 @@ namespace nil {
             template<typename FieldType>
             class zkevm_keccak_operation : public opcode_abstract<FieldType> {
               public:
-                virtual std::size_t rows_amount() override { return 2; }
+                virtual std::size_t rows_amount() override { return 1; }
                 virtual void fill_context(
                     typename generic_component<
                         FieldType, GenerationStage::ASSIGNMENT>::context_type &context,

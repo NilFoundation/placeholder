@@ -632,7 +632,6 @@ namespace nil {
                             call_id, offset + i, rw_counter++, byte
                         ));
                     }
-                    std::cout << std::endl;
                     _rw_operations.push_back(stack_rw_operation(call_id,  stack_next.size()-1, rw_counter++, true, stack_next[stack_next.size()-1]));
                 }
                 void calldatasize(){
