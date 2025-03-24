@@ -40,6 +40,7 @@
 
 #include <boost/bimap/bimap.hpp>
 #include <boost/bimap/unordered_set_of.hpp>
+#include <boost/container/small_vector.hpp>
 
 #include <nil/crypto3/zk/math/expression.hpp>
 #include <nil/crypto3/math/polynomial/polynomial_dfs.hpp>
@@ -47,6 +48,8 @@
 namespace nil {
     namespace crypto3 {
         namespace math {
+
+            using operands_vector_type = boost::container::small_vector<std::size_t, 2>;
 
             template<typename VariableType>
             struct dag_constant {
@@ -72,9 +75,9 @@ namespace nil {
             };
 
             struct dag_addition {
-                std::vector<std::size_t> operands;
+                operands_vector_type operands;
 
-                dag_addition(std::vector<std::size_t> operands) : operands(operands) {}
+                dag_addition(operands_vector_type operands) : operands(operands) {}
                 dag_addition(std::initializer_list<std::size_t> operands) : operands(operands) {}
 
                 bool operator==(const dag_addition& other) const {
@@ -83,9 +86,9 @@ namespace nil {
             };
 
             struct dag_multiplication {
-                std::vector<std::size_t> operands;
+                operands_vector_type operands;
 
-                dag_multiplication(std::vector<std::size_t> operands) : operands(operands) {}
+                dag_multiplication(operands_vector_type operands) : operands(operands) {}
                 dag_multiplication(std::initializer_list<std::size_t> operands) : operands(operands) {}
 
                 bool operator==(const dag_multiplication& other) const {
@@ -184,13 +187,13 @@ namespace nil {
                         } else if (std::holds_alternative<dag_variable<VariableType>>(node)) {
                             degrees.push_back(1);
                         } else if (std::holds_alternative<dag_addition>(node)) {
-                            auto add = std::get<dag_addition>(node);
+                            const auto& add = std::get<dag_addition>(node);
                             auto max_operand_degree = std::accumulate(add.operands.begin(), add.operands.end(), 0, [this, &degrees](std::size_t a, std::size_t b) {
                                 return std::max(a, degrees[b]);
                             });
                             degrees.push_back(max_operand_degree);
                         } else if (std::holds_alternative<dag_multiplication>(node)) {
-                            auto mul = std::get<dag_multiplication>(node);
+                            const auto& mul = std::get<dag_multiplication>(node);
                             auto sum_of_degrees = std::accumulate(mul.operands.begin(), mul.operands.end(), 0, [this, &degrees](std::size_t a, std::size_t b) {
                                 return a + degrees[b];
                             });
@@ -210,26 +213,28 @@ namespace nil {
                     assignments.reserve(nodes.size());
                     for (const auto& [node, index] : node_map.right) {
                         if (std::holds_alternative<dag_constant<VariableType>>(node)) {
-                            assignments.push_back(std::get<dag_constant<VariableType>>(node).value);
+                            assignments.emplace_back(
+                                std::get<dag_constant<VariableType>>(node).value);
                         } else if (std::holds_alternative<dag_variable<VariableType>>(node)) {
-                            assignments.push_back(variable_evaluator(std::get<dag_variable<VariableType>>(node).variable));
+                            assignments.emplace_back(variable_evaluator(
+                                std::get<dag_variable<VariableType>>(node).variable));
                         } else if (std::holds_alternative<dag_addition>(node)) {
-                            auto add = std::get<dag_addition>(node);
-                            auto result = assignments[add.operands[0]];
+                            const auto& add = std::get<dag_addition>(node);
+                            assignments.emplace_back(assignments[add.operands[0]]);
+                            auto& result = assignments.back();
                             for (std::size_t i = 1; i < add.operands.size(); i++) {
                                 result += assignments[add.operands[i]];
                             }
-                            assignments.push_back(std::move(result));
                         } else if (std::holds_alternative<dag_multiplication>(node)) {
-                            auto mul = std::get<dag_multiplication>(node);
-                            auto result = assignments[mul.operands[0]];
+                            const auto& mul = std::get<dag_multiplication>(node);
+                            assignments.emplace_back(assignments[mul.operands[0]]);
+                            auto& result = assignments.back();
                             for (std::size_t i = 1; i < mul.operands.size(); i++) {
                                 result *= assignments[mul.operands[i]];
                             }
-                            assignments.push_back(std::move(result));
                         } else if (std::holds_alternative<dag_negation>(node)) {
-                            auto neg = std::get<dag_negation>(node);
-                            assignments.push_back(-assignments[neg.operand]);
+                            assignments.emplace_back(
+                                -assignments[std::get<dag_negation>(node).operand]);
                         }
                     }
                     std::vector<assignment_type> result;
@@ -253,7 +258,7 @@ namespace nil {
                     auto type_num = expression.get_expr().which();
                     if (type_num == 0) { // term
                         const auto& term = boost::get<term_type>(expression.get_expr());
-                        std::vector<std::size_t> children;
+                        operands_vector_type children;
                         // first insert coefficient
                         // note that multiplying by one is superfluous, so we skip it when we can
                         if (term.get_vars().size() == 0 || term.get_coeff() != assignment_type::one()) {
