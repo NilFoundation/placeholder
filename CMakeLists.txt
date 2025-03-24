@@ -21,6 +21,21 @@ if(${SANITIZE})
   add_link_options(-fsanitize=undefined,address,leak)
 endif()
 
+option(ARITHMETIC_COUNTERS "Build with arithmetic counters" FALSE)
+if (${ARITHMETIC_COUNTERS})
+  add_compile_definitions(NIL_CO3_MP_ENABLE_ARITHMETIC_COUNTERS NIL_CO3_PROFILE_COUNT_ARITHMETIC_OPS)
+endif()
+
+option(PROFILING_ENABLED "Build with profiling enabled" FALSE)
+if (${PROFILING_ENABLED})
+  add_compile_definitions(PROFILING_ENABLED)
+endif()
+
+option(USE_X86_64_V3 "Build with x86-64-v3 microarchitecture level" FALSE)
+if (${USE_X86_64_V3})
+  add_compile_options(-march=x86-64-v3)
+endif()
+
 # Add dummy target for the more efficient reusing of precompiled headers
 file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/generated-dummy.cpp)
 add_library(crypto3_precompiled_headers STATIC ${CMAKE_CURRENT_BINARY_DIR}/generated-dummy.cpp)

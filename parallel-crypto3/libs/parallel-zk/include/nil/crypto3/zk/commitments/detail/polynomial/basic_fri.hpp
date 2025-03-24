@@ -419,6 +419,7 @@ namespace nil {
                 precommit(const math::polynomial_dfs<typename FRI::field_type::value_type> &f,
                           std::shared_ptr<math::evaluation_domain<typename FRI::field_type>> D,
                           const std::size_t fri_step) {
+                    PROFILE_SCOPE("FRI precommit dfs");
                     if (f.size() != D->size()) {
                         throw std::runtime_error("Polynomial size does not match the domain size in FRI precommit.");
                     }
@@ -477,11 +478,14 @@ namespace nil {
                           std::shared_ptr<math::evaluation_domain<typename FRI::field_type>>
                           D,
                           const std::size_t fri_step) {
+                    PROFILE_SCOPE("FRI precommit");
 
                     math::polynomial_dfs<typename FRI::field_type::value_type> f_dfs;
                     f_dfs.from_coefficients(f);
 
                     if (f_dfs.size() != D->size()) {
+                        PROFILE_SCOPE(std::format("FRI precommit resize from {} to {}",
+                                                  f_dfs.size(), D->size()));
                         f_dfs.resize(D->size(), nullptr, D);
                     }
 
@@ -504,14 +508,22 @@ namespace nil {
                           std::shared_ptr<math::evaluation_domain<typename FRI::field_type>> D,
                           const std::size_t fri_step
                 ) {
-                    PROFILE_SCOPE("Basic FRI Precommit time");
+                    PROFILE_SCOPE("Basic FRI precommit");
 
-                    // Resize uses low level thread pool, so we need to use the high level one here.
-                    parallel_for(0, poly.size(), [&poly, &D](std::size_t i) {
-                        if (poly[i].size() != D->size()) {
-                            poly[i].resize(D->size(), nullptr, D);
-                        }
-                    }, ThreadPool::PoolLevel::HIGH);
+                    {
+                        PROFILE_SCOPE("FRI precommit resize polynomials");
+
+                        // Resize uses low level thread pool, so we need to use the high
+                        // level one here.
+                        parallel_for(
+                            0, poly.size(),
+                            [&poly, &D](std::size_t i) {
+                                if (poly[i].size() != D->size()) {
+                                    poly[i].resize(D->size(), nullptr, D);
+                                }
+                            },
+                            ThreadPool::PoolLevel::HIGH);
+                    }
 
                     std::size_t domain_size = D->size();
                     std::size_t list_size = poly.size();
@@ -522,33 +534,53 @@ namespace nil {
                         detail::fri_field_element_consumer<FRI>(coset_size * list_size)
                     );
 
-                    parallel_for(0, leafs_number, [&y_data, &poly, domain_size, coset_size, list_size](std::size_t x_index) {
-                        auto& element_consumer = y_data[x_index].reset_cursor();
-                        for (std::size_t polynom_index = 0; polynom_index < list_size; polynom_index++) {
-                            std::vector<std::array<std::size_t, FRI::m>> s_indices(coset_size / FRI::m);
-                            s_indices[0][0] = x_index;
-                            s_indices[0][1] = get_paired_index<FRI>(x_index, domain_size);
+                    {
+                        PROFILE_SCOPE("FRI precommit leafs");
 
-                            element_consumer.consume(poly[polynom_index][s_indices[0][0]]);
-                            element_consumer.consume(poly[polynom_index][s_indices[0][1]]);
+                        parallel_for(
+                            0, leafs_number,
+                            [&y_data, &poly, domain_size, coset_size,
+                             list_size](std::size_t x_index) {
+                                auto &element_consumer = y_data[x_index].reset_cursor();
+                                for (std::size_t polynom_index = 0;
+                                     polynom_index < list_size; polynom_index++) {
+                                    std::vector<std::array<std::size_t, FRI::m>>
+                                        s_indices(coset_size / FRI::m);
+                                    s_indices[0][0] = x_index;
+                                    s_indices[0][1] =
+                                        get_paired_index<FRI>(x_index, domain_size);
 
-                            std::size_t base_index = domain_size / (FRI::m * FRI::m);
-                            std::size_t prev_half_size = 1;
-                            std::size_t i = 1;
-                            while (i < coset_size / FRI::m) {
-                                for (std::size_t j = 0; j < prev_half_size; j++) {
-                                    s_indices[i][0] = (base_index + s_indices[j][0]) % domain_size;
-                                    s_indices[i][1] = get_paired_index<FRI>(s_indices[i][0], domain_size);
-                                    element_consumer.consume(poly[polynom_index][s_indices[i][0]]);
-                                    element_consumer.consume(poly[polynom_index][s_indices[i][1]]);
+                                    element_consumer.consume(
+                                        poly[polynom_index][s_indices[0][0]]);
+                                    element_consumer.consume(
+                                        poly[polynom_index][s_indices[0][1]]);
 
-                                    i++;
+                                    std::size_t base_index =
+                                        domain_size / (FRI::m * FRI::m);
+                                    std::size_t prev_half_size = 1;
+                                    std::size_t i = 1;
+                                    while (i < coset_size / FRI::m) {
+                                        for (std::size_t j = 0; j < prev_half_size; j++) {
+                                            s_indices[i][0] =
+                                                (base_index + s_indices[j][0]) %
+                                                domain_size;
+                                            s_indices[i][1] = get_paired_index<FRI>(
+                                                s_indices[i][0], domain_size);
+                                            element_consumer.consume(
+                                                poly[polynom_index][s_indices[i][0]]);
+                                            element_consumer.consume(
+                                                poly[polynom_index][s_indices[i][1]]);
+
+                                            i++;
+                                        }
+                                        base_index /= FRI::m;
+                                        prev_half_size <<= 1;
+                                    }
                                 }
-                                base_index /= FRI::m;
-                                prev_half_size <<= 1;
-                            }
-                        }
-                    });
+                            });
+                    }
+
+                    PROFILE_SCOPE("FRI precommit make merkle tree");
 
                     return containers::make_merkle_tree<typename FRI::merkle_tree_hash_type, FRI::m>(y_data.begin(),
                                                                                                      y_data.end());
@@ -572,6 +604,7 @@ namespace nil {
                           D,
                           const std::size_t fri_step
                 ) {
+                    PROFILE_SCOPE("FRI precommit polynomial");
                     std::size_t list_size = poly.size();
                     std::vector<math::polynomial_dfs<typename FRI::field_type::value_type>> poly_dfs(list_size);
                     for (std::size_t i = 0; i < list_size; i++) {
@@ -1010,12 +1043,16 @@ namespace nil {
                     for (std::size_t query_id = 0; query_id < fri_params.lambda; query_id++) {
                         std::size_t domain_size = fri_params.D[0]->size();
                         typename FRI::field_type::value_type x = challenges[query_id];
+
                         x = x.pow((FRI::field_type::modulus - 1) / domain_size);
 
                         std::uint64_t x_index = 0;
 
-                        while (fri_params.D[0]->get_domain_element(x_index) != x) {
-                            ++x_index;
+                        {
+                            PROFILE_SCOPE("FRI query phase round proofs find x_index");
+                            while (fri_params.D[0]->get_domain_element(x_index) != x) {
+                                ++x_index;
+                            }
                         }
 
                         // Fill round proofs
@@ -1156,7 +1193,7 @@ namespace nil {
                     const typename FRI::params_type &fri_params,
                     typename FRI::transcript_type &transcript
                 ) {
-                    PROFILE_SCOPE("Basic FRI proof_eval time");
+                    PROFILE_SCOPE("Basic FRI proof eval time");
                     typename FRI::proof_type proof;
 
                     BOOST_ASSERT(check_step_list<FRI>(fri_params));

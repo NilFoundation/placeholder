@@ -58,6 +58,7 @@ namespace nil::crypto3::multiprecision::detail {
         constexpr void decrement(base_type &a) const { this->sub(a, m_one); }
 
         constexpr void mul(base_type &result, const base_type &y) const {
+            register_mul();
             BOOST_ASSERT(result < mod() && y < mod());
             result = montgomery_reduce(static_cast<std::uint64_t>(result) * y);
             BOOST_ASSERT(result < mod());

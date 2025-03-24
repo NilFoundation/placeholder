@@ -81,13 +81,13 @@ std::pair<std::vector<std::vector<std::uint8_t>>, std::vector<boost::property_tr
     std::vector<boost::property_tree::ptree> pts;
 
     std::ifstream ss;
-    std::cout << "Open file " << std::string(TEST_DATA_DIR) + path + "trace0.json" << std::endl;
-    ss.open(std::string(TEST_DATA_DIR) + path + "trace0.json");
+    std::cout << "Open file " << "./data/" + path + "trace0.json" << std::endl;
+    ss.open("./data/" + path + "trace0.json");
     boost::property_tree::ptree pt;
     boost::property_tree::read_json(ss, pt);
     ss.close();
 
-    ss.open(std::string(TEST_DATA_DIR) + path + "contract0.json");
+    ss.open("./data/" + path + "contract0.json");
     boost::property_tree::ptree bytecode_json;
     boost::property_tree::read_json(ss, bytecode_json);
     std::vector<uint8_t> bytecode0 = hex_string_to_bytes(std::string(bytecode_json.get_child("bytecode").data().c_str()));
@@ -120,17 +120,17 @@ bool check_proof(
     typename lpc_type::fri_type::params_type fri_params(1, std::ceil(log2(assignment.rows_amount())), Lambda, 2);
     lpc_scheme_type lpc_scheme(fri_params);
 
-    std::cout << "Public preprocessor" << std::endl;
+    // std::cout << "Public preprocessor" << std::endl;
     typename nil::crypto3::zk::snark::placeholder_public_preprocessor<BlueprintFieldType, lpc_placeholder_params_type>::preprocessed_data_type
             lpc_preprocessed_public_data = nil::crypto3::zk::snark::placeholder_public_preprocessor<BlueprintFieldType, lpc_placeholder_params_type>::process(
             bp, assignment.public_table(), desc, lpc_scheme, 10);
 
-    std::cout << "Private preprocessor" << std::endl;
+    // std::cout << "Private preprocessor" << std::endl;
     typename nil::crypto3::zk::snark::placeholder_private_preprocessor<BlueprintFieldType, lpc_placeholder_params_type>::preprocessed_data_type
             lpc_preprocessed_private_data = nil::crypto3::zk::snark::placeholder_private_preprocessor<BlueprintFieldType, lpc_placeholder_params_type>::process(
             bp, assignment.private_table(), desc);
 
-    std::cout << "Prover" << std::endl;
+    // std::cout << "Prover" << std::endl;
     auto lpc_proof = nil::crypto3::zk::snark::placeholder_prover<BlueprintFieldType, lpc_placeholder_params_type>::process(
             lpc_preprocessed_public_data, std::move(lpc_preprocessed_private_data), desc, bp,
             lpc_scheme);
@@ -138,7 +138,7 @@ bool check_proof(
     // We must not use the same instance of lpc_scheme.
     lpc_scheme_type verifier_lpc_scheme(fri_params);
 
-    std::cout << "Verifier" << std::endl;
+    // std::cout << "Verifier" << std::endl;
     bool verifier_res = nil::crypto3::zk::snark::placeholder_verifier<BlueprintFieldType, lpc_placeholder_params_type>::process(
             *lpc_preprocessed_public_data.common_data, lpc_proof, desc, bp, verifier_lpc_scheme);
     return verifier_res;

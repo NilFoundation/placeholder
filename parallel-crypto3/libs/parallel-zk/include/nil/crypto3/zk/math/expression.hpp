@@ -40,6 +40,9 @@
 #include <boost/functional/hash.hpp>
 #include <boost/variant.hpp>
 #include <boost/variant/recursive_wrapper.hpp>
+
+#include <nil/crypto3/multiprecision/big_uint.hpp>
+
 #include <nil/crypto3/zk/snark/arithmetization/plonk/variable.hpp>
 
 namespace nil {
