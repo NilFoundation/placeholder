@@ -76,6 +76,7 @@ public:
         std::string                        path,
         const l1_size_restrictions         &max_sizes
     ){
+        std::cout << "running alchemy '" << path << "'" << std::endl;
         nil::blueprint::bbf::zkevm_alchemy_input_generator circuit_inputs(path);
         return;
 
@@ -255,5 +256,5 @@ BOOST_AUTO_TEST_CASE(sp1_block) {
     max_sizes.max_exp_rows = 500;
     max_sizes.max_call_commits = 500;
 
-    complex_test<field_type>("alchemy/sp1_block/", max_sizes);
+    complex_test<field_type>("alchemy/22124119/", max_sizes);
 }BOOST_AUTO_TEST_SUITE_END()

@@ -1,3 +1,4 @@
+import os
 import requests
 import json
 from web3 import Web3
@@ -84,7 +85,8 @@ def get_transaction_trace(tx_hash):
     if( "vmTrace" in tx_trace):
         tx_trace["opcodes_amount"] = result["opcodes_amount"] = calculate_opcodes(tx_trace["vmTrace"])
 
-    path = "/Users/amirhossein/Desktop/room/nil/placeholder/load_block/traces/tx_" + tx_hash + ".json"
+    path = "/Users/amirhossein/Desktop/room/nil/placeholder/load_block/traces/" + str(int(BLOCK_NUMBER, 16)) + "/tx_" + tx_hash + ".json"
+    os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w") as f:
         json.dump(tx_trace, f, indent=4)
 
@@ -167,7 +169,7 @@ if __name__ == "__main__":
 
     formatted_data["total_opcodes_amount"] = total_opcodes_amount
     # Save everything
-    formatted_file_path = "final_20526629.json"
+    formatted_file_path = "final_" + str(int(BLOCK_NUMBER, 16)) + ".json"
     with open(formatted_file_path, "w") as f:
         json.dump(formatted_data, f, indent=4)
 

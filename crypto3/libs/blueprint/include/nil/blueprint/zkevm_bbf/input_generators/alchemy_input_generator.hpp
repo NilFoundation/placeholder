@@ -47,8 +47,8 @@ namespace nil {
         namespace bbf {
             class zkevm_alchemy_input_generator:zkevm_abstract_input_generator{
             protected:
-                std::map<zkevm_word_type, zkevm_account>                _accounts_initial_state; // Initial state; Update it after block.
-                std::map<zkevm_word_type, zkevm_account>                _accounts_current_state; // Initial state; Update it after block.
+                std::map<zkevm_word_type, zkevm_account>                 _accounts_initial_state; // Initial state; Update it after block.
+                std::map<zkevm_word_type, zkevm_account>                 _accounts_current_state; // Initial state; Update it after block.
                 std::vector<zkevm_call_context>                          _call_stack;
 
                 zkevm_keccak_buffers                                     _keccaks;
@@ -57,7 +57,8 @@ namespace nil {
                 std::vector<copy_event>                                  _copy_events;
                 std::vector<zkevm_state>                                 _zkevm_states;
                 std::vector<std::pair<zkevm_word_type, zkevm_word_type>> _exponentiations;
-                std::map<std::size_t,zkevm_call_commit>                   _call_commits;
+                std::map<std::size_t,zkevm_call_commit>                  _call_commits;
+                zkevm_word_type                                          _value_from_create;
                 std::map<std::tuple<rw_operation_type, zkevm_word_type, std::size_t, zkevm_word_type>, std::size_t>  last_write_rw_counter;
 
                 std::size_t     call_id;                // RW counter on start_call
@@ -168,13 +169,18 @@ namespace nil {
                     rw_counter = 0;
                     for( auto &tt: tree.get_child("transactions")){
                         std::string tx_hash_string = tt.second.get_child("tx_hash").data();
-                        std::cout << tx_order++ << "." << tx_hash_string << " ";
-                        start_transaction(tx_hash_string, tt.second.get_child("details"));
-//                        if( tt.second.get_child("details.type").data() != "0x2") {
+                        std::cout << tx_order++ << "." << tx_hash_string << std::endl;
+                        auto initial_context = start_transaction(tx_hash_string, tt.second.get_child("details"));
+                    //    if( tt.second.get_child("details.type").data() != "0x3") {
                             load_accounts(tt.second.get_child("execution_trace.prestate_trace"));
                             boost::property_tree::ptree tx_trace_tree = load_json_input(path + std::string("tx_" + tx_hash_string + ".json"));
-
+                            // Another RPC bug:( for too big transactions it doesn't produce the trace
+                            if (tx_trace_tree.empty())
+                                continue;
+                            // We must update the bytecode of initial call here
                             bytecode = byte_vector_from_hex_string(tx_trace_tree.get_child("vmTrace.code").data(), 2);
+                            initial_context.bytecode = bytecode;
+                            _call_stack.push_back(initial_context);
                             bytecode_hash = zkevm_keccak_hash(bytecode);
                             if( _bytecode_hashes.find(bytecode_hash) == _bytecode_hashes.end() ){
                                 _bytecode_hashes.insert(bytecode_hash);
@@ -182,10 +188,11 @@ namespace nil {
                                 _bytecodes.new_buffer(bytecode);
                             }
                             execute_transaction(tx_trace_tree);
-  //                      }
-                        end_transaction(tt.second.get_child("details"));
-                        break;
-                        std::cout << "Total opcodes amount = " << opcode_sum << std::endl;
+                            end_transaction(tt.second.get_child("details"));
+                            std::cout << "Total opcodes amount = " << opcode_sum << std::endl;
+                        // } else {
+                        //     std::cout << "Type 3 transaction not supported yet" << std::endl;
+                        // }
                     }
                     end_block(pt_block);
 
@@ -279,7 +286,7 @@ namespace nil {
                         opcode_distribution[zkevm_opcode::end_block] = 1;
                 }
 
-                void start_transaction(std::string _tx_hash, const boost::property_tree::ptree &tt){
+                zkevm_call_context start_transaction(std::string _tx_hash, const boost::property_tree::ptree &tt){
                     depth++;
                     tx_id = call_id = rw_counter;
                     tx_to = zkevm_word_from_string(tt.get_child("to").data());
@@ -305,7 +312,10 @@ namespace nil {
                     auto base = get_basic_zkevm_state_part();
                     auto call_context = get_call_header_state_part();
 
-                    _call_stack.push_back({_zkevm_states.back(),call_id, 0, 0, 0, calldata, {}, bytecode});
+                    // bytecode must be overriden later
+                    zkevm_call_context initial_context = {_zkevm_states.back(),call_id, 0, 0, 0, calldata, bytecode};
+
+                    // _call_stack.push_back();
 
                     _rw_operations.push_back(call_context_rw_operation(
                         tx_id, call_context_field::parent_id, block_id
@@ -348,6 +358,7 @@ namespace nil {
 
                     calldata_rw_operations += calldata.size();
                     call_context_rw_operations += call_context_readonly_field_amount;
+                    return initial_context;
                 }
 
                 void end_transaction(const boost::property_tree::ptree &tt){
@@ -437,20 +448,49 @@ namespace nil {
                     for( const auto &opcode_description: tx_trace.get_child("vmTrace.ops")){
                         execute_opcode(opcode_description.second);
                         opcode_sum++;
+                        std::cout << "2.addr = 0x" << std::hex << call_context_address << std::dec << std::endl;
                         if( opcode_description.second.get_child("sub").data() != "null"){
+                            std::cout<<"as inja"<<std::endl;
                             start_call(opcode_description.second.get_child("sub"));
                             execute_call(opcode_description.second.get_child("sub"));
                             end_call(opcode_description.second.get_child("sub"));
+                            std::cout<< "it's the first level " <<bytecode.size()<<std::endl;
                         }
                     }
                 }
+                std::string hexStr(std::uint8_t data)
+                {
+                    std::stringstream ss;
+                    ss << std::hex;
+                    ss << std::setw(2) << std::setfill('0') << (int)data;
+                    return ss.str();
+                }
 
                 void start_call(const boost::property_tree::ptree &tx_trace){
-                    //std::cout << "START CALL " << std::endl;
+                    std::cout << "START CALL " << std::endl;
+
                     //exit(1);
                     call_id = rw_counter;
-
+                    std::cout << "3.addr = 0x" << std::hex << call_context_address << std::dec << std::endl;
+                    // if (_accounts_current_state.find( call_context_address ) == _accounts_current_state.end()) {
+                        // in case where opcode is CREATE or CREATE2 bytecode is generated now
+                        if ( "0x" != tx_trace.get_child("code").data()) {
+                                zkevm_account acc;
+                                acc.bytecode = byte_vector_from_hex_string(tx_trace.get_child("code").data(), 2);
+                                acc.code_hash = zkevm_keccak_hash(acc.bytecode);
+                                // acc.balance = _value_from_create;
+                                // acc.initialized = false;
+                                _accounts_current_state[call_context_address] = acc;
+                                std::cout<< "we must load bytecode: " << acc.bytecode.size() << "_" << hexStr(acc.bytecode[0]) << "_"<< std::endl;
+                    }
+                    // } else if (!_accounts_current_state[call_context_address].initialized) {
+                        // the contract bytecode must have changed after initialization
+                        // _accounts_current_state[call_context_address].initialized = true;
+                        // _accounts_current_state[call_context_address].bytecode = byte_vector_from_hex_string(tx_trace.get_child("code").data(), 2);
+                        // _accounts_current_state[call_context_address].code_hash = zkevm_keccak_hash(_accounts_current_state[call_context_address].bytecode);
+                    // }
                     bytecode = _accounts_current_state[call_context_address].bytecode;
+                    std::cout<< "be inja ham nemirese! " << bytecode.size() << std::endl;
                     bytecode_hash = zkevm_keccak_hash(bytecode);
                     if( _bytecode_hashes.find(bytecode_hash) == _bytecode_hashes.end() ){
                         _bytecode_hashes.insert(bytecode_hash);
@@ -470,19 +510,24 @@ namespace nil {
                 }
 
                 void execute_call(const boost::property_tree::ptree &call_trace){
+                    std::cout << "we're executing call! " << bytecode.size() << " " << call_trace.get_child("ops").size() << std::endl;
                     for( const auto &opcode_description: call_trace.get_child("ops")){
+                    std::cout << "in the for " << bytecode.size() << std::endl;
                         //for( std::size_t i = 0; i < depth; i++) std::cout << "\t";
                         //std::cout << opcode_description.second.get_child("op").data() << std::endl;
                         zkevm_opcode op = opcode_from_number(opcode_number_from_str(opcode_description.second.get_child("op").data()));
                         execute_opcode(opcode_description.second);
                         opcode_sum++;
                         if( opcode_description.second.get_child("sub").data() != "null"){
-                            //std::cout << "\tSUBOPCODE " << op << std::endl;
+                            std::cout << "\tSUBOPCODE " << op << opcode_description.second.get_child("sub").data() << std::endl;
                             start_call(opcode_description.second.get_child("sub"));
+                            std::cout << "after start call " << bytecode.size() << std::endl;
                             execute_call(opcode_description.second.get_child("sub"));
+                            std::cout << "continueing  " << bytecode.size() << std::endl;
                             end_call(opcode_description.second.get_child("sub"));
                         }
                     }
+                    std::cout << "did it jumb? " << bytecode.size() << std::endl;
                 }
                 void end_call(const boost::property_tree::ptree &tx_trace){
                     //std::cout << "END CALL " << std::endl;
@@ -500,11 +545,21 @@ namespace nil {
                     zkevm_opcode op = opcode_from_number(opcode_number_from_str(opcode_description.get_child("op").data()));
                     current_opcode = opcode_to_number(op);
                     pc = atoi(opcode_description.get_child("pc").data().c_str());
-                    gas = atoi(opcode_description.get_child("ex.used").data().c_str());
+                    if (opcode_description.get_child("ex").data() != "null") {
+                        gas = atoi(opcode_description.get_child("ex.used").data().c_str());
+                        if( opcode_description.get_child("ex.mem").data() != "null"){
+                            memory_size = atoi(opcode_description.get_child("ex.mem.off").data().c_str());
+                        } else {
+                            memory_size = 0;
+                        }
+                        last_opcode_push = zkevm_word_vector_from_ptree(opcode_description.get_child("ex.push"));
+                    } else {
+                        // it sounds to be a bug in the RPC. For last opcode in a call "ex" may be empty!
+                        last_opcode_push = {};
+                        memory_size = 0;
+                        return;
+                    }
                     stack_size = stack.size();
-                    memory_size = atoi(opcode_description.get_child("ex.mem.off").data().c_str());
-                    last_opcode_push = zkevm_word_vector_from_ptree(opcode_description.get_child("ex.push"));
-
                     for( std::size_t i = 1; i < depth; i++) std::cout << "\t";
                     std::cout << op << "=0x" << std::hex<< current_opcode << std::dec << " call_id = " << call_id << " pc = " << pc << std::endl;
 
@@ -512,26 +567,28 @@ namespace nil {
                     std::string opcode = opcode_to_string(op);
 
                     // This does not work :(( bytecode should be loaded somehow in another way
-                    if( pc >= bytecode.size()){
-                        std::cout << "Bytecode size = " << bytecode.size()<< std::endl;
-                    }
-                    //BOOST_ASSERT(pc < bytecode.size());
-                    if( pc < bytecode.size() && bytecode[pc] != current_opcode){
+                    if( pc > bytecode.size() || (pc == bytecode.size() && current_opcode != 0)){
+                        std::cout << "Bytecode size = " << bytecode.size()<< " pc=" << pc << std::endl;
+                        std::cout << "20.addr = 0x" << std::hex << call_context_address << std::dec << std::endl;
+                        std::cout << "in the errorrrr";
+                        exit(10);
+                    } else if (pc < bytecode.size() && bytecode[pc] != current_opcode){
                         std::cout << std::hex << std::size_t(bytecode[pc]) << " != " << current_opcode << std::dec <<  std::endl;
                         // std::cout << "0x";
                         // for( auto b: bytecode ){
                         //     std::cout << std::hex << std::size_t(b) << std::dec << " ";
                         // }
                         std::cout << std::endl;
+                        exit(10);
                     }
-                    BOOST_ASSERT(bytecode[pc] == current_opcode);
+                    // BOOST_ASSERT(bytecode[pc] == current_opcode);
                     if(opcode == "STOP") { stop();}
                     else if(
                         opcode == "ADD" || opcode == "MUL" || opcode == "SUB" || opcode == "DIV" ||
                         opcode == "SDIV" || opcode == "MOD" || opcode == "SMOD" ||  opcode == "SIGNEXTEND" ||
-                        opcode == "LT" || opcode == "GT"   || opcode == "SLT" || opcode == "SGT" || opcode == "SGT" ||
+                        opcode == "LT" || opcode == "GT"   || opcode == "SLT" || opcode == "SGT" ||
                         opcode == "EQ"  || opcode == "AND" || opcode == "OR"  || opcode == "XOR" || opcode == "BYTE" ||
-                        opcode == "SHL" || opcode == "SHR" || opcode == "SAR"
+                        opcode == "SHL" || opcode == "SHR" || opcode == "SAR" 
                     ) {
                         two_operands_arithmetic();
                     } else if(
@@ -544,7 +601,8 @@ namespace nil {
                         opcode == "NOT"
                     ) {
                         one_operand_arithmetic();
-                    } else if( opcode == "EXP" )     exp();
+                    } 
+                    else if( opcode == "EXP" )     exp();
                     else if( opcode == "KECCAK256" ) keccak();
                     else if( opcode == "ADDRESS" )   address();
                     else if( opcode == "BALANCE" )   balance();
@@ -724,9 +782,10 @@ namespace nil {
                     stack_rw_operations += 1;
                 }
                 void balance() {
+                    stack.pop_back();
                     BOOST_ASSERT(last_opcode_push.size() == 1);
                     stack.push_back(last_opcode_push.back());
-                    stack_rw_operations += 1;
+                    stack_rw_operations += 2;
                 }
                 void origin() {
                     BOOST_ASSERT(last_opcode_push.size() == 1);
@@ -744,6 +803,7 @@ namespace nil {
                     stack_rw_operations += 1;
                 }
                 void calldataload() {
+                    stack.pop_back();
                     BOOST_ASSERT(last_opcode_push.size() == 1);
                     stack.push_back(last_opcode_push.back());
                     stack_rw_operations += 2;
@@ -802,15 +862,16 @@ namespace nil {
                     stack.pop_back();
                     stack.pop_back();
                     BOOST_ASSERT(last_opcode_push.size() == 1);
-                    stack.push_back(last_opcode_push.back());
                     stack_rw_operations += 4;
                 }
                 void extcodehash() {
+                    stack.pop_back();
                     BOOST_ASSERT(last_opcode_push.size() == 1);
                     stack.push_back(last_opcode_push.back());
                     stack_rw_operations += 2;
                 }
                 void blockhash() {
+                    stack.pop_back();
                     BOOST_ASSERT(last_opcode_push.size() == 1);
                     stack.push_back(last_opcode_push.back());
                     stack_rw_operations += 2;
@@ -856,9 +917,11 @@ namespace nil {
                     stack_rw_operations += 1;
                 }
                 void blobhash() {
-                    BOOST_ASSERT(last_opcode_push.size() == 1);
-                    stack.push_back(last_opcode_push.back());
-                    stack_rw_operations += 1;
+                    stack.pop_back();
+                    // RPC bug
+                    // BOOST_ASSERT(last_opcode_push.size() == 1);
+                    // stack.push_back(last_opcode_push.back());
+                    stack_rw_operations += 2;
                 }
                 void blobbasefee() {
                     BOOST_ASSERT(last_opcode_push.size() == 1);
@@ -867,51 +930,60 @@ namespace nil {
                 }
                 void tload() {
                     stack.pop_back();
-                    BOOST_ASSERT(last_opcode_push.size() == 1);
-                    stack.push_back(last_opcode_push.back());
-                    stack_rw_operations += 2;  state_rw_operations += 2;
+                    // Bug in RPC provider
+                    // BOOST_ASSERT(last_opcode_push.size() == 1);
+                    if (last_opcode_push.size() == 1)
+                        stack.push_back(last_opcode_push.back());
+                    stack_rw_operations += 2;  
                 }
                 void tstore() {
                     stack.pop_back();
                     stack.pop_back();
                     BOOST_ASSERT(last_opcode_push.size() == 0);
-                    stack_rw_operations += 2;  state_rw_operations += 2;
+                    stack_rw_operations += 2;
                 }
                 void mcopy() {
                     stack.pop_back();
                     stack.pop_back();
                     stack.pop_back();
                     BOOST_ASSERT(last_opcode_push.size() == 0);
+                    memory_rw_operations += 1;
                     stack_rw_operations += 3;
                 }
                 void create() {
-                    stack.pop_back();
+                    _value_from_create = stack.back();
                     stack.pop_back();
                     stack.pop_back();
                     stack.pop_back();
                     BOOST_ASSERT(last_opcode_push.size() == 1);
                     stack.push_back(last_opcode_push.back());
-                    stack_rw_operations += 5;
+                    call_context_address = stack.back();
+                    stack_rw_operations += 4;
                 }
                 void create2() {
-                    stack.pop_back();
+                    _value_from_create = stack.back();
                     stack.pop_back();
                     stack.pop_back();
                     stack.pop_back();
                     stack.pop_back();
                     BOOST_ASSERT(last_opcode_push.size() == 1);
                     stack.push_back(last_opcode_push.back());
-                    stack_rw_operations += 6;
+                    call_context_address = stack.back();
+                    stack_rw_operations += 5;
                 }
-                void selfdestruct() {stack_rw_operations += 1;}
+                void selfdestruct() {
+                    stack.pop_back();
+                    BOOST_ASSERT(last_opcode_push.size() == 0);
+                    stack_rw_operations += 1;
+                }
                 void callcode() {
-                    zkevm_word_type gas = stack.back();  stack.pop_back();
-                    zkevm_word_type addr = stack.back();  stack.pop_back();
-                    zkevm_word_type value = stack.back();  stack.pop_back();
-                    zkevm_word_type args_offset = stack.back();  stack.pop_back();
-                    zkevm_word_type args_length = stack.back();  stack.pop_back();
-                    zkevm_word_type ret_offset = stack.back();  stack.pop_back();
-                    zkevm_word_type ret_length = stack.back();  stack.pop_back();
+                    zkevm_word_type gas = stack.back(); stack.pop_back();
+                    zkevm_word_type addr = stack.back(); stack.pop_back();
+                    zkevm_word_type value = stack.back(); stack.pop_back();
+                    zkevm_word_type args_offset = stack.back(); stack.pop_back();
+                    zkevm_word_type args_length = stack.back(); stack.pop_back();
+                    zkevm_word_type ret_offset = stack.back(); stack.pop_back();
+                    zkevm_word_type ret_length = stack.back(); stack.pop_back();
                     call_context_address = addr;
                     std::cout << "addr = 0x" << std::hex << addr << std::dec << std::endl;
                     BOOST_ASSERT(last_opcode_push.size() == 1);
@@ -919,13 +991,13 @@ namespace nil {
                     stack_rw_operations += 8;
                 }
                 void call() {
-                    zkevm_word_type gas = stack.back();  stack.pop_back();
-                    zkevm_word_type addr = stack.back();  stack.pop_back();
-                    zkevm_word_type value = stack.back();  stack.pop_back();
-                    zkevm_word_type args_offset = stack.back();  stack.pop_back();
-                    zkevm_word_type args_length = stack.back();  stack.pop_back();
-                    zkevm_word_type ret_offset = stack.back();  stack.pop_back();
-                    zkevm_word_type ret_length = stack.back();  stack.pop_back();
+                    zkevm_word_type gas = stack.back(); stack.pop_back();
+                    zkevm_word_type addr = stack.back(); stack.pop_back();
+                    zkevm_word_type value = stack.back(); stack.pop_back();
+                    zkevm_word_type args_offset = stack.back(); stack.pop_back();
+                    zkevm_word_type args_length = stack.back(); stack.pop_back();
+                    zkevm_word_type ret_offset = stack.back(); stack.pop_back();
+                    zkevm_word_type ret_length = stack.back(); stack.pop_back();
                     call_context_address = addr;
                     std::cout <<
                         "gas = 0x" << std::hex << gas << std::dec << std::endl <<
@@ -940,49 +1012,57 @@ namespace nil {
                     stack_rw_operations += 8;
                 }
                 void staticcall() {
-                    zkevm_word_type gas = stack.back();  stack.pop_back();
-                    zkevm_word_type addr = stack.back();  stack.pop_back();
-                    zkevm_word_type args_offset = stack.back();  stack.pop_back();
-                    zkevm_word_type args_length = stack.back();  stack.pop_back();
-                    zkevm_word_type ret_offset = stack.back();  stack.pop_back();
-                    zkevm_word_type ret_length = stack.back();  stack.pop_back();
+                    zkevm_word_type gas = stack.back(); stack.pop_back();
+                    zkevm_word_type addr = stack.back(); stack.pop_back();
+                    zkevm_word_type args_offset = stack.back(); stack.pop_back();
+                    zkevm_word_type args_length = stack.back(); stack.pop_back();
+                    zkevm_word_type ret_offset = stack.back(); stack.pop_back();
+                    zkevm_word_type ret_length = stack.back(); stack.pop_back();
                     call_context_address = addr;
                     std::cout << "addr = 0x" << std::hex << addr << std::dec << std::endl;
                     BOOST_ASSERT(last_opcode_push.size() == 1);
                     stack.push_back(last_opcode_push.back());
                     stack_rw_operations += 7;
                 }
-                void pop() {stack.pop_back();}
+                void pop() {
+                    stack.pop_back();
+                    stack_rw_operations += 1;
+                }
                 void simple_dummy() {}
                 void mload() {
                     stack.pop_back();
                     BOOST_ASSERT(last_opcode_push.size() == 1);
                     stack.push_back(last_opcode_push.back());
-                    stack_rw_operations += 2; memory_rw_operations += 32;
+                    stack_rw_operations += 2; 
+                    memory_rw_operations += 32;
                 }
                 void mstore() {
                     stack.pop_back();
                     stack.pop_back();
                     BOOST_ASSERT(last_opcode_push.size() == 0);
-                    stack_rw_operations += 2; memory_rw_operations += 32;
+                    stack_rw_operations += 2; 
+                    memory_rw_operations += 32;
                 }
                 void mstore8() {
                     stack.pop_back();
                     stack.pop_back();
                     BOOST_ASSERT(last_opcode_push.size() == 0);
-                    stack_rw_operations += 2; memory_rw_operations += 1;
+                    stack_rw_operations += 2; 
+                    memory_rw_operations += 1;
                 }
                 void sload() {
                     stack.pop_back();
                     BOOST_ASSERT(last_opcode_push.size() == 1);
                     stack.push_back(last_opcode_push.back());
-                    stack_rw_operations += 2; state_rw_operations += 2;
+                    stack_rw_operations += 2; 
+                    state_rw_operations += 1;
                 }
                 void sstore() {
                     stack.pop_back();
                     stack.pop_back();
                     BOOST_ASSERT(last_opcode_push.size() == 0);
-                    stack_rw_operations += 2;  state_rw_operations += 2;
+                    stack_rw_operations += 2;  
+                    state_rw_operations += 1;
                 }
                 void jump() {
                     stack.pop_back();
@@ -1006,10 +1086,12 @@ namespace nil {
                     stack_rw_operations += 1;
                 }
                 void dupx( std::size_t d) {
+                    BOOST_ASSERT(last_opcode_push.size() == d+1);
                     stack.push_back(stack[stack.size()-d]);
                     stack_rw_operations += 2;
                 }
                 void swapx( std::size_t s) {
+                    BOOST_ASSERT(last_opcode_push.size() == s + 1);
                     auto tmp = stack[stack.size() - s - 1];
                     stack[stack.size() - s - 1] = stack[stack.size()-1];
                     stack[stack.size()-1] = tmp;
@@ -1029,15 +1111,16 @@ namespace nil {
                     stack_rw_operations += 2;
                 }
                 void delegatecall(){
-                    zkevm_word_type gas = stack.back();  stack.pop_back();
-                    zkevm_word_type addr = stack.back();  stack.pop_back();
-                    zkevm_word_type args_offset = stack.back();  stack.pop_back();
-                    zkevm_word_type args_length = stack.back();  stack.pop_back();
-                    zkevm_word_type ret_offset = stack.back();  stack.pop_back();
-                    zkevm_word_type ret_length = stack.back();  stack.pop_back();
+                    zkevm_word_type gas = stack.back(); stack.pop_back();
+                    zkevm_word_type addr = stack.back(); stack.pop_back();
+                    zkevm_word_type args_offset = stack.back(); stack.pop_back();
+                    zkevm_word_type args_length = stack.back(); stack.pop_back();
+                    zkevm_word_type ret_offset = stack.back(); stack.pop_back();
+                    zkevm_word_type ret_length = stack.back(); stack.pop_back();
 
                     call_context_address = addr;
-                    std::cout << "addr = 0x" << std::hex << addr << std::dec << std::endl;
+                    std::cout << "addr = 0x" << std::hex << addr << std::dec << "injas?" << std::endl;
+                    std::cout << call_context_address << std::endl;
                     BOOST_ASSERT(last_opcode_push.size() == 1);
                     stack.push_back(last_opcode_push.back());
                     stack_rw_operations += 7;
@@ -1125,6 +1208,7 @@ namespace nil {
                         if( account.get_child_optional("code") )
                             acc.bytecode = byte_vector_from_hex_string(account.get_child("code").data(), 2);
                         acc.code_hash = zkevm_keccak_hash(acc.bytecode);
+                        acc.initialized = true;
                         _accounts_initial_state[acc.address] = acc ;
                         _accounts_current_state = _accounts_initial_state;
                     }
@@ -1132,12 +1216,15 @@ namespace nil {
 
                 boost::property_tree::ptree load_json_input(std::string path){
                     std::ifstream ss;
-                    //std::cout << "Open file " << std::string(TEST_DATA_DIR) + path << std::endl;
-                    ss.open(std::string(TEST_DATA_DIR) + path);
+                    std::string ab_path = "/Users/amirhossein/Desktop/room/nil/placeholder/crypto3/libs/blueprint/test/zkevm_bbf/data/"+path;
+                    std::cout << "Open file " << ab_path << std::endl;
+                    std::cout << "Loading data from " << path << std::endl;
+                    // ss.open(std::string(TEST_DATA_DIR) + path);
+
+                    ss.open(std::string(ab_path));
                     boost::property_tree::ptree pt;
                     boost::property_tree::read_json(ss, pt);
                     ss.close();
-
                     return pt;
                 }
             };
