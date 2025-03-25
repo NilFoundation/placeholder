@@ -242,7 +242,7 @@ public:
 // Here they are different for different tests just for fast and easy testing
 BOOST_FIXTURE_TEST_SUITE(zkevm_bbf_hardhat, zkEVMAlchemyTestFixture)
 
-BOOST_AUTO_TEST_CASE(sp1_block) {
+BOOST_AUTO_TEST_CASE(sp1_block_26) {
     using field_type = typename algebra::curves::pallas::base_field_type;
     l1_size_restrictions max_sizes;
 
@@ -256,5 +256,58 @@ BOOST_AUTO_TEST_CASE(sp1_block) {
     max_sizes.max_exp_rows = 500;
     max_sizes.max_call_commits = 500;
 
-    complex_test<field_type>("alchemy/22124119/", max_sizes);
-}BOOST_AUTO_TEST_SUITE_END()
+    complex_test<field_type>("alchemy/sp1_block_26/", max_sizes);
+}
+
+BOOST_AUTO_TEST_CASE(sp1_block_28) {
+    using field_type = typename algebra::curves::pallas::base_field_type;
+    l1_size_restrictions max_sizes;
+
+    max_sizes.max_keccak_blocks = 3;
+    max_sizes.max_bytecode = 300;
+    max_sizes.max_mpt = 0;
+    max_sizes.max_rw = 1000;
+    max_sizes.max_copy = 70;
+    max_sizes.max_zkevm_rows = 500;
+    max_sizes.max_exponentiations = 50;
+    max_sizes.max_exp_rows = 500;
+    max_sizes.max_call_commits = 500;
+
+    complex_test<field_type>("alchemy/sp1_block_28/", max_sizes);
+}
+
+BOOST_AUTO_TEST_CASE(sp1_block_29) {
+    using field_type = typename algebra::curves::pallas::base_field_type;
+    l1_size_restrictions max_sizes;
+
+    max_sizes.max_keccak_blocks = 3;
+    max_sizes.max_bytecode = 300;
+    max_sizes.max_mpt = 0;
+    max_sizes.max_rw = 1000;
+    max_sizes.max_copy = 70;
+    max_sizes.max_zkevm_rows = 500;
+    max_sizes.max_exponentiations = 50;
+    max_sizes.max_exp_rows = 500;
+    max_sizes.max_call_commits = 500;
+
+    complex_test<field_type>("alchemy/sp1_block_29/", max_sizes);
+}
+
+BOOST_AUTO_TEST_CASE(sp1_block_29_2) {
+    using field_type = typename algebra::curves::pallas::base_field_type;
+    l1_size_restrictions max_sizes;
+
+    max_sizes.max_keccak_blocks = 3;
+    max_sizes.max_bytecode = 300;
+    max_sizes.max_mpt = 0;
+    max_sizes.max_rw = 1000;
+    max_sizes.max_copy = 70;
+    max_sizes.max_zkevm_rows = 500;
+    max_sizes.max_exponentiations = 50;
+    max_sizes.max_exp_rows = 500;
+    max_sizes.max_call_commits = 500;
+
+    complex_test<field_type>("alchemy/sp1_block_29_2/", max_sizes);
+}
+
+BOOST_AUTO_TEST_SUITE_END()

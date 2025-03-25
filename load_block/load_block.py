@@ -6,6 +6,8 @@ import time
 
 # ALCHEMY_API_KEY = "I38oXHAOj0OUcvNfObEX8cS0I3PAHj0R"
 # ALCHEMY_RPC_URL = f"https://eth-mainnet.g.alchemy.com/v2/{ALCHEMY_API_KEY}"
+#BLOCK_NUMBER = "0x1393622"  # 20526626 in hex
+#BLOCK_NUMBER = "0x1393624"  # 20526628 in hex
 RPC_URL = "https://docs-demo.quiknode.pro/"
 BLOCK_NUMBER = "0x1393625"  # 20526629 in hex
 
@@ -85,9 +87,8 @@ def get_transaction_trace(tx_hash):
     if( "vmTrace" in tx_trace):
         tx_trace["opcodes_amount"] = result["opcodes_amount"] = calculate_opcodes(tx_trace["vmTrace"])
 
-    path = "/Users/amirhossein/Desktop/room/nil/placeholder/load_block/traces/" + str(int(BLOCK_NUMBER, 16)) + "/tx_" + tx_hash + ".json"
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    with open(path, "w") as f:
+    path = "./tx_" + tx_hash + ".json"
+    with open(path, "w+") as f:
         json.dump(tx_trace, f, indent=4)
 
     return result
@@ -169,8 +170,8 @@ if __name__ == "__main__":
 
     formatted_data["total_opcodes_amount"] = total_opcodes_amount
     # Save everything
-    formatted_file_path = "final_" + str(int(BLOCK_NUMBER, 16)) + ".json"
-    with open(formatted_file_path, "w") as f:
+    formatted_file_path = "block.json"
+    with open(formatted_file_path, "w+") as f:
         json.dump(formatted_data, f, indent=4)
 
     print(f"[SUCCESS] Data fetching complete! JSON saved as {formatted_file_path}")

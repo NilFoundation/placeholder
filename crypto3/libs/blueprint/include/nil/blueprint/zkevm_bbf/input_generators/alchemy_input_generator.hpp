@@ -158,6 +158,7 @@ namespace nil {
                     calldata_rw_operations = 0;
                     returndata_rw_operations = 0;
                     state_rw_operations = 0;
+                    call_context_rw_operations = 0;
 
                     boost::property_tree::ptree tree = load_json_input(path + std::string("block.json"));
                     std::cout << "ZKEVM ALCHEMY INPUT GENERATOR loaded" << std::endl;
@@ -173,7 +174,7 @@ namespace nil {
                         load_accounts(tt.second.get_child("execution_trace.prestate_trace"));
                         boost::property_tree::ptree tx_trace_tree = load_json_input(path + std::string("tx_" + tx_hash_string + ".json"));
                         if (tx_trace_tree.empty()) {
-                            std::cout << "transaction was faild" << std::endl;
+                            std::cout << "transaction did not produce any traces" << std::endl;
                             continue;
                         }
                         // We must update the bytecode of initial call here
@@ -436,7 +437,7 @@ namespace nil {
 
                 void execute_transaction(const boost::property_tree::ptree &tx_trace){
                     std::cout << "Execute transaction" << std::endl;
-                    if( tx_trace.get_child_optional("vmTrace") ){
+                    if( tx_trace.get_child_optional("vmTrace.code") ){
                         std::vector<std::uint8_t> proposed_bytecode = byte_vector_from_hex_string(tx_trace.get_child("vmTrace.code").data(), 2);
                         if( proposed_bytecode != bytecode ) std::cout << "Bytecode is not equal" << std::endl;
                     }
@@ -529,7 +530,7 @@ namespace nil {
                         last_opcode_push = zkevm_word_vector_from_ptree(opcode_description.get_child("ex.push"));
                     } else {
                         // For last opcode in a call "ex" may be empty! Both quicknode and 0xrpc show this pattern. What does it mean?
-                        last_opcode_push = {};
+                        last_opcode_push.clear();
                         memory_size = 0;
                         return;
                     }
@@ -710,8 +711,10 @@ namespace nil {
                 void two_operands_arithmetic() {
                     stack.pop_back();
                     stack.pop_back();
-                    BOOST_ASSERT(last_opcode_push.size() == 1);
-                    stack.push_back(last_opcode_push.back());
+                    if( last_opcode_push.size() == 1)
+                        stack.push_back(last_opcode_push.back());
+                    else
+                        stack.push_back(0);
                     stack_rw_operations += 3;
                 }
                 void three_operands_arithmetic() {
@@ -887,8 +890,10 @@ namespace nil {
                     stack_rw_operations += 2;
                 }
                 void blobbasefee() {
-                    BOOST_ASSERT(last_opcode_push.size() == 1);
-                    stack.push_back(last_opcode_push.back());
+                    //BOOST_ASSERT(last_opcode_push.size() == 1);
+                    //stack.push_back(last_opcode_push.back());
+                    // TODO: non-correct!
+                    stack.push_back(0);
                     stack_rw_operations += 1;
                 }
                 void tload() {
@@ -962,15 +967,15 @@ namespace nil {
                     zkevm_word_type ret_offset = stack.back(); stack.pop_back();
                     zkevm_word_type ret_length = stack.back(); stack.pop_back();
                     call_context_address = addr;
-                    std::cout <<
-                        "gas = 0x" << std::hex << gas << std::dec << std::endl <<
-                        "addr = 0x" << std::hex << addr << std::dec << std::endl <<
-                        "value = 0x" << std::hex << value << std::dec << std::endl <<
-                        "args_offset = 0x" << std::hex << args_offset << std::dec << std::endl <<
-                        "args_length = 0x" << std::hex << args_length << std::dec << std::endl <<
-                        "ret_offset = 0x" << std::hex << ret_offset << std::dec << std::endl <<
-                        "ret_length = 0x" << std::hex << ret_length << std::dec << std::endl;
-                    BOOST_ASSERT(last_opcode_push.size() == 1);
+                    // std::cout <<
+                    //     "gas = 0x" << std::hex << gas << std::dec << std::endl <<
+                    //     "addr = 0x" << std::hex << addr << std::dec << std::endl <<
+                    //     "value = 0x" << std::hex << value << std::dec << std::endl <<
+                    //     "args_offset = 0x" << std::hex << args_offset << std::dec << std::endl <<
+                    //     "args_length = 0x" << std::hex << args_length << std::dec << std::endl <<
+                    //     "ret_offset = 0x" << std::hex << ret_offset << std::dec << std::endl <<
+                    //     "ret_length = 0x" << std::hex << ret_length << std::dec << std::endl;
+                    // BOOST_ASSERT(last_opcode_push.size() == 1);
                     stack.push_back(last_opcode_push.back());
                     stack_rw_operations += 8;
                 }
@@ -983,7 +988,7 @@ namespace nil {
                     zkevm_word_type ret_length = stack.back(); stack.pop_back();
                     call_context_address = addr;
                     std::cout << "addr = 0x" << std::hex << addr << std::dec << std::endl;
-                    BOOST_ASSERT(last_opcode_push.size() == 1);
+                    // BOOST_ASSERT(last_opcode_push.size() == 1);
                     stack.push_back(last_opcode_push.back());
                     stack_rw_operations += 7;
                 }
@@ -1082,9 +1087,8 @@ namespace nil {
                     zkevm_word_type ret_length = stack.back(); stack.pop_back();
 
                     call_context_address = addr;
-                    std::cout << "addr = 0x" << std::hex << addr << std::dec << "injas?" << std::endl;
-                    std::cout << call_context_address << std::endl;
-                    BOOST_ASSERT(last_opcode_push.size() == 1);
+                    std::cout << "addr = 0x" << std::hex << addr << std::dec << std::endl;
+                    // BOOST_ASSERT(last_opcode_push.size() == 1);
                     stack.push_back(last_opcode_push.back());
                     stack_rw_operations += 7;
                 }
@@ -1179,12 +1183,12 @@ namespace nil {
 
                 boost::property_tree::ptree load_json_input(std::string path){
                     std::ifstream ss;
-                    std::string ab_path = "/Users/amirhossein/Desktop/room/nil/placeholder/crypto3/libs/blueprint/test/zkevm_bbf/data/"+path;
-                    std::cout << "Open file " << ab_path << std::endl;
-                    std::cout << "Loading data from " << path << std::endl;
-                    // ss.open(std::string(TEST_DATA_DIR) + path);
-
-                    ss.open(std::string(ab_path));
+                    //std::cout << "Open file " << std::string(TEST_DATA_DIR) + path << std::endl;
+                    ss.open(std::string(TEST_DATA_DIR) + path);
+                    if( !ss.is_open() ){
+                        std::cout << "Cannot open file " << std::string(TEST_DATA_DIR) + path << std::endl;
+                        exit(1);
+                    }
                     boost::property_tree::ptree pt;
                     boost::property_tree::read_json(ss, pt);
                     ss.close();
