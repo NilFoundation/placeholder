@@ -6,7 +6,7 @@ import time
 
 # ALCHEMY_API_KEY = "I38oXHAOj0OUcvNfObEX8cS0I3PAHj0R"
 # ALCHEMY_RPC_URL = f"https://eth-mainnet.g.alchemy.com/v2/{ALCHEMY_API_KEY}"
-RPC_URL = "https://0xrpc.io/eth"
+RPC_URL = "https://docs-demo.quiknode.pro/"
 BLOCK_NUMBER = "0x1393625"  # 20526629 in hex
 
 w3 = Web3(Web3.HTTPProvider(RPC_URL))
