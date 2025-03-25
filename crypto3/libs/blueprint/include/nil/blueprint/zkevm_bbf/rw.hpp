@@ -80,7 +80,7 @@ namespace nil {
                     std::size_t max_call_commits
                 ) {
                     return {
-                        .witnesses = rw_table_type::get_witness_amount() + call_commit_table_type::get_witness_amount() + 56,
+                        .witnesses = rw_table_type::get_witness_amount() + call_commit_table_type::get_witness_amount() + 64,
                         .public_inputs = 0,
                         .constants = 2,
                         .rows = std::max(max_rw_size, max_call_commits) + max_mpt_size
@@ -128,34 +128,35 @@ namespace nil {
                 //0
                 //1
                 //1
-                template<std::size_t n>
-                TYPE bit_tag_type_selector(std::array<TYPE, n> bits, std::size_t k){
-                    //If odd, n - 1
-                    //Do the loop n times
-                    //If odd, appened last 2 results
-                    bool odd = (n%2);
-                    size_t n_temp = odd ? n-1 : n;
-                    std::array<TYPE,2*n_temp + odd> result;
-                    for( std::size_t bit_ind = 0; bit_ind < n_temp; bit_ind++ ){
-                        if( bit_ind%2 == 0){
-                            result[4*bit_ind] = (1 - bits[bit_ind]);
-                            result[4*bit_ind + 1] = (1 - bits[bit_ind]);
-                            result[4*bit_ind + 2] = bits[bit_ind];
-                            result[4*bit_ind + 3] = bits[bit_ind];
-                        }
-                        else {
-                            result[4*bit_ind - 4] *= (1 - bits[bit_ind]);
-                            result[4*bit_ind - 3] *= (1 - bits[bit_ind]);
-                            result[4*bit_ind - 2] *= bits[bit_ind];
-                            result[4*bit_ind - 1] *= bits[bit_ind];
-                        }
-                    }
-                    if(odd){
-                        result[n_temp] =
-                        result[n_temp + 1] =
-                    }
-                    return result;
-                }
+                // template<std::size_t n>
+                // TYPE bit_tag_type_selector(std::array<TYPE, n> bits, std::size_t k){
+                //     //If odd, n - 1
+                //     //Do the loop n times
+                //     //If odd, appened last 2 results
+                //     bool odd = (n%2);
+                //     size_t n_temp = odd ? n-1 : n;
+                //     std::array<TYPE,2*n_temp + odd> result;
+                //     for( std::size_t bit_ind = 0; bit_ind < n_temp; bit_ind++ ){
+                //         if( bit_ind%2 == 0){
+                //             result[4*bit_ind] = (1 - bits[bit_ind]);
+                //             result[4*bit_ind + 1] = (1 - bits[bit_ind]);
+                //             result[4*bit_ind + 2] = bits[bit_ind];
+                //             result[4*bit_ind + 3] = bits[bit_ind];
+                //         }
+                //         else {
+                //             result[4*bit_ind - 4] *= (1 - bits[bit_ind]);
+                //             result[4*bit_ind - 3] *= (1 - bits[bit_ind]);
+                //             result[4*bit_ind - 2] *= bits[bit_ind];
+                //             result[4*bit_ind - 1] *= bits[bit_ind];
+                //         }
+                //     }
+                //     if(odd){
+                //         result[n_temp] =
+                //         result[n_temp + 1] =
+                //     }
+                //     return result;
+                // }
+
 
                 rw(context_type &context_object, const input_type &input,
                     std::size_t max_rw_size,
@@ -219,7 +220,8 @@ namespace nil {
                     // Temporary variables
                     std::vector<TYPE> sorted;
                     std::vector<TYPE> sorted_prev;
-
+                    std::vector<TYPE> not_first_or_padding(max_rw_size);
+                    std::vector<TYPE> not_first_or_padding_or_start(max_rw_size);
                     std::vector<TYPE> not_start_or_padding(max_rw_size);
                     std::vector<TYPE> not_start_or_padding_or_first(max_rw_size);
                     std::vector<TYPE> firsts_diff_index_bits(max_rw_size);
@@ -228,8 +230,10 @@ namespace nil {
                     std::vector<TYPE> last_and_not_start_or_padding(max_rw_size);
                     std::vector<TYPE> address_near(max_rw_size);
                     std::vector<TYPE> not_first_or_write(max_rw_size);
+                    std::vector<TYPE> not_first_or_write_or_padding(max_rw_size);
                     std::vector<TYPE> first_and_not_write(max_rw_size);
                     std::vector<TYPE> diff_inv_diff(max_rw_size);
+                    std::vector<TYPE> first_or_not_start(max_rw_size);
                     
 
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
@@ -307,6 +311,7 @@ namespace nil {
                             std::cout << std::endl;
                         }
                         for( std::size_t i = 0; i < max_rw_size; i++ ){
+                            not_first_or_padding[i] = (1 - is_first[i]) * (op[i] - PADDING_OP);
                             not_start_or_padding[i] = (op[i] - START_OP) * (op[i] - PADDING_OP);
                             not_start_or_padding_or_first[i] = not_start_or_padding[i] * (is_first[i] - 1);
                             last_and_not_start_or_padding[i] = not_start_or_padding[i] * is_last[i];
@@ -314,25 +319,13 @@ namespace nil {
                             lasts_diff_index_bits[i] = diff_index_bits[i][2] * diff_index_bits[i][3];
                             all_diff_index_bits[i] = firsts_diff_index_bits[i] * lasts_diff_index_bits[i];
                             not_first_or_write[i] = (1 - is_first[i]) * (1 - is_write[i]);
+                            not_first_or_write_or_padding[i] = not_first_or_write[i] * (op[i] - PADDING_OP);
                             first_and_not_write[i] = is_first[i] * (is_write[i] - 1);
                             diff_inv_diff[i] = diff[i] * inv_diff[i];
                             
-
-
-
                             if (i!=0){
-                                address_near[i] = (address[i] - address[i-1]) * (address[i] - address[i-1] - 1);
-                            }
-                                
-                        }
-
-                        for( std::size_t i = 0; i < max_rw_size; i++ ){
-                            not_first_or_padding[i] = (1 - is_first[i]) * (op[i] - PADDING_OP);
-                            last_and_not_start_or_padding[i] = (op[i] - START_OP) * (op[i] - PADDING_OP) * is_last[i];
-                            firsts_diff_index_bits[i] = diff_index_bits[i][0] * diff_index_bits[i][1] * diff_index_bits[i][2];
-                            not_first_or_write[i] = (1 - is_first[i]) * (1 - is_write[i]);
-                            first_and_not_write[i] = is_first[i] * (is_write[i] - 1);
-                            if (i!=0){
+                                not_first_or_padding_or_start[i] = (op[i-1] - START_OP) * (not_first_or_padding[i]);
+                                first_or_not_start[i] = is_first[i] * (op[i-1] - START_OP);
                                 address_near[i] = (address[i] - address[i-1]) * (address[i] - address[i-1] - 1);
                             }
                         }
@@ -370,6 +363,7 @@ namespace nil {
                         allocate(state_root_before_hi[i], ++cur_column, i);
                         allocate(state_root_before_lo[i], ++cur_column, i);
                         allocate(not_first_or_padding[i], ++cur_column, i);
+                        allocate(not_first_or_padding_or_start[i], ++cur_column, i);
                         allocate(not_start_or_padding[i], ++cur_column, i);
                         allocate(last_and_not_start_or_padding[i], ++cur_column, i);
                         allocate(firsts_diff_index_bits[i], ++cur_column, i);
@@ -377,10 +371,11 @@ namespace nil {
                         allocate(all_diff_index_bits[i], ++cur_column, i);
                         allocate(address_near[i], ++cur_column, i);
                         allocate(not_first_or_write[i], ++cur_column, i);
+                        allocate(not_first_or_write_or_padding[i], ++cur_column, i);
                         allocate(first_and_not_write[i], ++cur_column, i);
                         allocate(diff_inv_diff[i], ++cur_column, i);
                         allocate(not_start_or_padding_or_first[i], ++cur_column, i);
-                        
+                        allocate(first_or_not_start[i], ++cur_column, i);
 
                     }
                     // std::cout << std::endl;
@@ -505,13 +500,12 @@ namespace nil {
                         non_first_row_constraints.push_back(context_object.relativize(lasts_diff_index_bits[1] - diff_index_bits[1][2] * diff_index_bits[1][3], -1));
                         non_first_row_constraints.push_back(context_object.relativize(all_diff_index_bits[1] - firsts_diff_index_bits[1] * lasts_diff_index_bits[1], -1));
                         non_first_row_constraints.push_back(context_object.relativize(last_and_not_start_or_padding[0] * all_diff_index_bits[1], -1));
-                        every_row_constraints.push_back(context_object.relativize(not_start_or_padding_or_first[1] * (value_before_hi[1] - value_before_hi[0]), -1));
-                        every_row_constraints.push_back(context_object.relativize(not_start_or_padding_or_first[1] * (value_before_lo[1] - value_before_lo[0]), -1));
 
                         every_row_constraints.push_back(context_object.relativize(firsts_diff_index_bits[1] - diff_index_bits[1][0] * diff_index_bits[1][1] * diff_index_bits[1][2], -1));
                         every_row_constraints.push_back(context_object.relativize(firsts_diff_index_bits[1] * diff_index_bits[1][3] * is_first[1], -1));
 
-                        non_first_row_constraints.push_back(context_object.relativize(is_last[0] * (1 - is_first[1]) * (op[1] - PADDING_OP), -1));
+                        //here
+                        non_first_row_constraints.push_back(context_object.relativize(is_last[0] * not_first_or_padding[1], -1));
                         // non_first_row_constraints.push_back(context_object.relativize(is_last_for_id[0] * (1 - is_first_for_id[1]) * (op[1] - PADDING_OP), -1));
                         non_first_row_constraints.push_back(context_object.relativize((1 - is_last[0]) * is_first[1] * (op[0] - START_OP), -1));
                         // non_first_row_constraints.push_back(context_object.relativize((1 - is_last_for_id[0]) * is_first_for_id[1] * (op[0] - START_OP), -1));
@@ -537,31 +531,18 @@ namespace nil {
                         non_first_row_constraints.push_back(context_object.relativize(last_and_not_start_or_padding[0] * firsts_diff_index_bits[1] * diff_index_bits[1][3], -1));
 
                         non_first_row_constraints.push_back(context_object.relativize(
-                                not_first_or_padding[1] * (1 - is_write[1]) * (value_hi[1] - value_hi[0]), -1));
+                                not_first_or_write_or_padding[1] - not_first_or_write[1] * (op[1] - PADDING_OP), -1));
                         non_first_row_constraints.push_back(context_object.relativize(
-                                not_first_or_padding[1] * (1 - is_write[1]) * (value_lo[1] - value_lo[0]), -1));
+                                not_first_or_write_or_padding[1] * (value_hi[1] - value_hi[0]), -1));
+                        non_first_row_constraints.push_back(context_object.relativize(
+                                not_first_or_write_or_padding[1]* (value_lo[1] - value_lo[0]), -1));
 
-                        every_row_constraints.push_back(context_object.relativize(not_first_or_padding[1] * (op[0] - START_OP) * (initial_value_hi[1] - initial_value_hi[0]), -1));
-                        every_row_constraints.push_back(context_object.relativize(not_first_or_padding[1] * (op[0] - START_OP) * (initial_value_lo[1] - initial_value_lo[0]), -1));
+                        every_row_constraints.push_back(context_object.relativize(not_first_or_padding_or_start[1] - (op[0] - START_OP) * (not_first_or_padding[1]), -1));
+                        every_row_constraints.push_back(context_object.relativize(not_first_or_padding_or_start[1] * (initial_value_hi[1] - initial_value_hi[0]), -1));
+                        every_row_constraints.push_back(context_object.relativize(not_first_or_padding_or_start[1] * (initial_value_lo[1] - initial_value_lo[0]), -1));
 
                         // Specific constraints for START
-                        std::map<std::size_t, std::vector<TYPE>> special_constraints;
-                        std::cout<<"start_selector: "<< start_selector << std::endl;
-                        std::cout<<"start_selector: "<< start_selector << std::endl;
-                        std::cout<<"stack_selector: "<< stack_selector << std::endl;
-                        std::cout<<"memory_selector: "<< memory_selector << std::endl;
-                        std::cout<<"storage_selector: "<< storage_selector << std::endl;
-                        std::cout<<"transient_storage_selector: "<< transient_storage_selector << std::endl;
-                        std::cout<<"call_context_selector: "<< call_context_selector << std::endl;
-                        std::cout<<"account_selector: "<< account_selector << std::endl;
-                        std::cout<<"tx_refund_selector: "<< tx_refund_selector << std::endl;
-                        std::cout<<"tx_access_list_account_selector: "<< tx_access_list_account_selector << std::endl;
-                        std::cout<<"tx_access_list_account_storage_selector: "<< tx_access_list_account_storage_selector << std::endl;
-                        std::cout<<"tx_log_selector: "<< tx_log_selector << std::endl;
-                        std::cout<<"tx_receipt_selector: "<< tx_receipt_selector << std::endl;
-                        std::cout<<"padding_selector: "<< padding_selector << std::endl;
-                        
-                        
+                        std::map<std::size_t, std::vector<TYPE>> special_constraints;                        
 
                         special_constraints[START_OP].push_back(context_object.relativize(start_selector * storage_key_hi[1], -1));
                         special_constraints[START_OP].push_back(context_object.relativize(start_selector * storage_key_lo[1], -1));
