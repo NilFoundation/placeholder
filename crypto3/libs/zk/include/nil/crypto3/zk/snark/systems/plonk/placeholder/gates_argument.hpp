@@ -191,21 +191,25 @@ namespace nil {
                                         converter.convert(constraint) *
                                         value_type_to_polynomial_dfs(theta_acc);
 
-                            for (const auto& constraint : gate.constraints) {
-                                auto next_term = converter.convert(constraint) * value_type_to_polynomial_dfs(theta_acc);
+                                    theta_acc *= theta;
 
-                                theta_acc *= theta;
+                                    size_t constraint_degree =
+                                        visitor.compute_max_degree(constraint);
+                                    if (gate.selector_index !=
+                                        PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED)
+                                        constraint_degree +=
+                                            1;  // selector multiplication.
 
-                                size_t constraint_degree = visitor.compute_max_degree(constraint);
-                                if (gate.selector_index != PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED)
-                                    constraint_degree += 1; // selector multiplication.
-
-                                for (int i = extended_domain_sizes.size() - 1; i >= 0; --i) {
-                                    // Whatever the degree of term is, add it to the maximal degree expression.
-                                    if (degree_limits[i] >= constraint_degree || i == 0) {
-                                        gate_results[i] += next_term;
-                                        ++constraint_counts[i];
-                                        break;
+                                    for (int i = extended_domain_sizes.size() - 1; i >= 0;
+                                         --i) {
+                                        // Whatever the degree of term is, add it to the
+                                        // maximal degree expression.
+                                        if (degree_limits[i] >= constraint_degree ||
+                                            i == 0) {
+                                            gate_results[i] += next_term;
+                                            ++constraint_counts[i];
+                                            break;
+                                        }
                                     }
                                 }
 
@@ -230,7 +234,8 @@ namespace nil {
                                 "Gate argument evaluation on domain #{}", i + 1));
                             bench::scoped_log(std::format("Constraint count: {}",
                                                           constraint_counts[i]));
-                            std::unordered_map<variable_type, polynomial_dfs_type>
+                            std::unordered_map<polynomial_dfs_variable_type,
+                                               polynomial_dfs_type>
                                 variable_values;
 
                             build_variable_value_map(
