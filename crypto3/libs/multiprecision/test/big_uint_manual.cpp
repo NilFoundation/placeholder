@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <climits>
 #include <cmath>
+#include <compare>
 #include <cstddef>
 #include <cstdint>
 #include <functional>
@@ -42,7 +43,9 @@ struct is_checked_cpp_int : public std::integral_constant<bool, true> {};
 template<class big_uint_t, class val_t>
 void test_comparisons(val_t, val_t, const std::integral_constant<bool, false>&) {}
 
-int normalize_compare_result(int r) { return r > 0 ? 1 : r < 0 ? -1 : 0; }
+constexpr int ordering_as_int(std::strong_ordering cmp) noexcept {
+    return (cmp < 0) ? -1 : (cmp == 0 ? 0 : 1);
+}
 
 template<class big_uint_t, class val_t>
 void test_comparisons(val_t a, val_t b, const std::integral_constant<bool, true>&) {
@@ -108,10 +111,10 @@ void test_comparisons(val_t a, val_t b, const std::integral_constant<bool, true>
     BOOST_CHECK_EQUAL(a >= r2 * z, a >= b);
     BOOST_CHECK_EQUAL(a > r2 * z, a > b);
 
-    BOOST_CHECK_EQUAL(normalize_compare_result(r1.compare(r2)), cr);
-    BOOST_CHECK_EQUAL(normalize_compare_result(r2.compare(r1)), -cr);
-    BOOST_CHECK_EQUAL(normalize_compare_result(r1.compare(b)), cr);
-    BOOST_CHECK_EQUAL(normalize_compare_result(r2.compare(a)), -cr);
+    BOOST_CHECK_EQUAL(ordering_as_int(r1 <=> r2), cr);
+    BOOST_CHECK_EQUAL(ordering_as_int(r2 <=> r1), -cr);
+    BOOST_CHECK_EQUAL(ordering_as_int(r1 <=> b), cr);
+    BOOST_CHECK_EQUAL(ordering_as_int(r2 <=> a), -cr);
 }
 
 template<class big_uint_t, class Exp>
