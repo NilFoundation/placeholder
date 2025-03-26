@@ -80,7 +80,7 @@ namespace nil {
                     std::size_t max_call_commits
                 ) {
                     return {
-                        .witnesses = rw_table_type::get_witness_amount() + call_commit_table_type::get_witness_amount() + 71 + 2*op_bits_amount + (chunks_amount+2)*(diff_index_bits_amount+2),
+                        .witnesses = rw_table_type::get_witness_amount() + call_commit_table_type::get_witness_amount() + 72 + 2*op_bits_amount + (chunks_amount+2)*(diff_index_bits_amount+2),
                         .public_inputs = 0,
                         .constants = 2,
                         .rows = std::max(max_rw_size, max_call_commits) + max_mpt_size
@@ -215,8 +215,8 @@ namespace nil {
                     std::vector<std::array<TYPE,op_bits_amount>> memory_selector_bits(max_rw_size);
                     std::vector<TYPE> stack_selector(max_rw_size);
                     std::vector<TYPE> memory_selector(max_rw_size);
+                    std::vector<TYPE> first_or_start(max_rw_size);
 
-                    // std::vector<std::vector<std::array<TYPE, diff_index_bits_amount>>> diff_ind_selector_bits(chunks_amount+2, std::vector<std::array<TYPE, diff_index_bits_amount>>(max_rw_size));
                     std::vector<std::vector<std::array<TYPE, diff_index_bits_amount>>> diff_ind_selector_bits(
                                         max_rw_size, 
                                         std::vector<std::array<TYPE, diff_index_bits_amount>>(chunks_amount + 2)
@@ -343,6 +343,7 @@ namespace nil {
                             
                             if (i!=0){
                                 not_first_or_padding_or_start[i] = (op[i-1] - START_OP) * (not_first_or_padding[i]);
+                                first_or_start[i] = is_first[i] * (op[i-1] - START_OP);
                                 address_near[i] = (address[i] - address[i-1]) * (address[i] - address[i-1] - 1);
                                 address_diff_and_not_write[i] = (address[i] - address[i-1]) * (is_write[i] - 1);
                             }
@@ -394,6 +395,7 @@ namespace nil {
                         allocate(stack_selector_and_not_first[i], ++cur_column, i);
                         allocate(memory_selector[i], ++cur_column, i);
                         allocate(stack_selector[i], ++cur_column, i);
+                        allocate(first_or_start[i], ++cur_column, i);
 
                         for( std::size_t j = 0; j < op_bits_amount; j++){
                             allocate(memory_selector_bits[i][j], ++cur_column, i);
@@ -404,7 +406,6 @@ namespace nil {
                         for( std::size_t j = 0; j < chunks_amount+2; j++){
                             for( std::size_t k = 0; k < diff_index_bits_amount; k++){
                                 allocate(diff_ind_selector_bits[i][j][k], ++cur_column, i);
-                                
                             }
                         }
                         for( std::size_t j = 0; j < chunks_amount+2; j++){
@@ -413,7 +414,6 @@ namespace nil {
                         for( std::size_t j = 0; j < chunks_amount+2; j++){
                             allocate(not_padding_and_diff_ind_selector[i][j], ++cur_column, i);
                         }
-
                     }
 
                     if constexpr (stage == GenerationStage::CONSTRAINTS) {
@@ -527,9 +527,11 @@ namespace nil {
                         every_row_constraints.push_back(context_object.relativize(all_diff_index_bits[1] - firsts_diff_index_bits[1] * lasts_diff_index_bits[1], -1));
                         every_row_constraints.push_back(context_object.relativize(all_diff_index_bits[1] * is_first[1], -1));
 
+                        every_row_constraints.push_back(context_object.relativize(not_first_or_padding[1] - (1 - is_first[1]) * (op[1] - PADDING_OP), -1));
+                        non_first_row_constraints.push_back(context_object.relativize(first_or_start[1] - is_first[1] * (op[0] - START_OP), -1));
                         non_first_row_constraints.push_back(context_object.relativize(is_last[0] * not_first_or_padding[1], -1));
                         // non_first_row_constraints.push_back(context_object.relativize(is_last_for_id[0] * (1 - is_first_for_id[1]) * (op[1] - PADDING_OP), -1));
-                        non_first_row_constraints.push_back(context_object.relativize((1 - is_last[0]) * is_first[1] * (op[0] - START_OP), -1));
+                        non_first_row_constraints.push_back(context_object.relativize((1 - is_last[0]) *first_or_start[1], -1));
                         // non_first_row_constraints.push_back(context_object.relativize((1 - is_last_for_id[0]) * is_first_for_id[1] * (op[0] - START_OP), -1));
 
                         // every_row_constraints.push_back(context_object.relativize((op[1] - START_OP) * (op[1] - PADDING_OP) * is_first_for_id[1] * diff_index_bits[1][0], -1));
