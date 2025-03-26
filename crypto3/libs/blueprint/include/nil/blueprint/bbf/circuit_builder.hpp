@@ -28,9 +28,10 @@
 #ifndef CRYPTO3_BLUEPRINT_PLONK_BBF_CIRCUIT_BUILDER_HPP
 #define CRYPTO3_BLUEPRINT_PLONK_BBF_CIRCUIT_BUILDER_HPP
 
-#include <cstddef>
-#include <functional>
 #include <algorithm>
+#include <cstddef>
+#include <format>
+#include <functional>
 
 #include <nil/crypto3/zk/snark/arithmetization/plonk/constraint_system.hpp>
 
@@ -50,6 +51,8 @@
 #include <nil/crypto3/hash/keccak.hpp>
 
 #include <nil/crypto3/zk/snark/arithmetization/plonk/params.hpp>
+
+#include <nil/crypto3/bench/scoped_profiler.hpp>
 
 namespace nil {
     namespace blueprint {
