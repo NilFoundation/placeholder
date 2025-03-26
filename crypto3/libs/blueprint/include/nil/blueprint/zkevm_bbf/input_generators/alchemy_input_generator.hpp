@@ -170,25 +170,25 @@ namespace nil {
                     for( auto &tt: tree.get_child("transactions")){
                         std::string tx_hash_string = tt.second.get_child("tx_hash").data();
                         std::cout << tx_order++ << "." << tx_hash_string << " ";
-                        start_transaction(tx_hash_string, tt.second.get_child("details"));
-//                        if( tt.second.get_child("details.type").data() != "0x2") {
-                            load_accounts(tt.second.get_child("execution_trace.prestate_trace"));
-                            boost::property_tree::ptree tx_trace_tree = load_json_input(path + std::string("tx_" + tx_hash_string + ".json"));
 
-                            if( tx_trace_tree.get_child_optional("vmTrace.code") ){
-                                std::vector<std::uint8_t> proposed_bytecode = byte_vector_from_hex_string(tx_trace_tree.get_child("vmTrace.code").data(), 2);
-                                if( proposed_bytecode != bytecode ) std::cout << "Bytecode is not equal" << std::endl;
-                                bytecode = byte_vector_from_hex_string(tx_trace_tree.get_child("vmTrace.code").data(), 2);
-                                bytecode_hash = zkevm_keccak_hash(bytecode);
-                                if( _bytecode_hashes.find(bytecode_hash) == _bytecode_hashes.end() ){
-                                    _bytecode_hashes.insert(bytecode_hash);
-                                    _keccaks.new_buffer(bytecode);
-                                    _bytecodes.new_buffer(bytecode);
-                                }
+                        boost::property_tree::ptree tx_trace_tree = load_json_input(path + std::string("tx_" + tx_hash_string + ".json"));
+                        if( tx_trace_tree.get_child_optional("vmTrace.code") ){
+                            // std::vector<std::uint8_t> proposed_bytecode = byte_vector_from_hex_string(tx_trace_tree.get_child("vmTrace.code").data(), 2);
+                            // if( proposed_bytecode != bytecode ) std::cout << "Bytecode is not equal" << std::endl;
+                            bytecode = byte_vector_from_hex_string(tx_trace_tree.get_child("vmTrace.code").data(), 2);
+                            bytecode_hash = zkevm_keccak_hash(bytecode);
+                            if( _bytecode_hashes.find(bytecode_hash) == _bytecode_hashes.end() ){
+                                _bytecode_hashes.insert(bytecode_hash);
+                                _keccaks.new_buffer(bytecode);
+                                _bytecodes.new_buffer(bytecode);
                             }
-                            execute_transaction(tx_trace_tree);
-  //                      }
+                        }
+
+                        start_transaction(tx_hash_string, tt.second.get_child("details"));
+                        load_accounts(tt.second.get_child("execution_trace.prestate_trace"));
+                        execute_transaction(tx_trace_tree);
                         end_transaction(tt.second.get_child("details"));
+                        break;
                         std::cout << "Total opcodes amount = " << opcode_sum << std::endl;
                     }
                     end_block(pt_block);
@@ -454,7 +454,7 @@ namespace nil {
                     //exit(1);
                     call_id = rw_counter;
 
-                    bytecode = _accounts_current_state[call_context_address].bytecode;
+                    bytecode = byte_vector_from_hex_string(tx_trace.get_child("code").data(),2);//_accounts_current_state[call_context_address].bytecode;
                     bytecode_hash = zkevm_keccak_hash(bytecode);
                     if( _bytecode_hashes.find(bytecode_hash) == _bytecode_hashes.end() ){
                         _bytecode_hashes.insert(bytecode_hash);
@@ -475,7 +475,7 @@ namespace nil {
 
                 void execute_call(const boost::property_tree::ptree &call_trace){
                     for( const auto &opcode_description: call_trace.get_child("ops")){
-                        //for( std::size_t i = 0; i < depth; i++) std::cout << "\t";
+                        for( std::size_t i = 0; i < depth; i++) std::cout << "\t";
                         //std::cout << opcode_description.second.get_child("op").data() << std::endl;
                         zkevm_opcode op = opcode_from_number(opcode_number_from_str(opcode_description.second.get_child("op").data()));
                         execute_opcode(opcode_description.second);
@@ -512,26 +512,26 @@ namespace nil {
                     if( opcode_description.get_child_optional("ex.push") )
                         last_opcode_push = zkevm_word_vector_from_ptree(opcode_description.get_child("ex.push"));
 
-                    // for( std::size_t i = 1; i < depth; i++) std::cout << "\t";
-                    // std::cout << op << "=0x" << std::hex<< current_opcode << std::dec << " call_id = " << call_id << " pc = " << pc << std::endl;
+                    for( std::size_t i = 1; i < depth; i++) std::cout << "\t";
+                    std::cout << op << "=0x" << std::hex<< current_opcode << std::dec << " call_id = " << call_id << " pc = " << pc << std::endl;
 
                     executed_opcodes++;
                     std::string opcode = opcode_to_string(op);
 
                     // This does not work :(( bytecode should be loaded somehow in another way
-                    // if( pc >= bytecode.size()){
-                    //     std::cout << "Bytecode size = " << bytecode.size()<< std::endl;
-                    // }
-                    //BOOST_ASSERT(pc < bytecode.size());
-                    // if( pc < bytecode.size() && bytecode[pc] != current_opcode){
-                    //     std::cout << std::hex << std::size_t(bytecode[pc]) << " != " << current_opcode << std::dec <<  std::endl;
-                    //     // std::cout << "0x";
-                    //     // for( auto b: bytecode ){
-                    //     //     std::cout << std::hex << std::size_t(b) << std::dec << " ";
-                    //     // }
-                    //     std::cout << std::endl;
-                    // }
-                    // BOOST_ASSERT(bytecode[pc] == current_opcode);
+                    if( pc >= bytecode.size()){
+                        std::cout << "Bytecode size = " << bytecode.size()<< std::endl;
+                    }
+                    BOOST_ASSERT((pc < bytecode.size()) || (pc == bytecode.size() && opcode == "STOP" ));
+                    if( pc < bytecode.size() && bytecode[pc] != current_opcode){
+                        std::cout << std::hex << std::size_t(bytecode[pc]) << " != " << current_opcode << std::dec <<  std::endl;
+                        // std::cout << "0x";
+                        // for( auto b: bytecode ){
+                        //     std::cout << std::hex << std::size_t(b) << std::dec << " ";
+                        // }
+                        std::cout << std::endl;
+                    }
+                    BOOST_ASSERT((pc == bytecode.size() && opcode == "STOP" ) || (bytecode[pc] == current_opcode));
                     if(opcode == "STOP") { stop();}
                     else if(
                         opcode == "ADD" || opcode == "MUL" || opcode == "SUB" || opcode == "DIV" ||

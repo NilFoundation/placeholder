@@ -129,8 +129,8 @@ public:
 
         auto exp_assignment_input = circuit_inputs.exponentiations();
 
-        check_satisfiability = false;
-        generate_proof = true;
+        check_satisfiability = true;
+        generate_proof = false;
 
         bool result{false};
         const std::string zkevm_circuit = "zkevm";
