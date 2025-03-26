@@ -34,7 +34,7 @@ namespace nil::crypto3::multiprecision {
         if (x.negative()) {
             x += m;
         }
-        BOOST_ASSERT(x < m && !x.negative());
+        BOOST_ASSERT(!x.negative() && x.abs() < m);
         return x.abs();
     }
 
