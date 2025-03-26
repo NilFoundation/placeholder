@@ -364,8 +364,8 @@ namespace nil {
                             variable_values_out[var] = assignment;
                         }
 
-                        bench::scoped_log(
-                            std::format("Variables count: {}", variable_values_outs.size()));
+                        bench::scoped_log(std::format("Variables count: {}",
+                                                      variable_values_out.size()));
                     }
 
                     // Run over all the lookup inputs, and collect a vector of expressions that will need to be evaluated.
