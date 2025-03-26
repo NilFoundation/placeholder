@@ -159,19 +159,9 @@ namespace nil::crypto3::multiprecision {
             return this->m_abs <=> other.m_abs;
         }
 
-#define NIL_CO3_MP_BIG_INT_IMPL_OPERATOR(OP)                                         \
-    friend constexpr bool operator OP(const big_int& a, const big_int& b) noexcept { \
-        return (a <=> b) OP 0;                                                       \
-    }
-
-        NIL_CO3_MP_BIG_INT_IMPL_OPERATOR(<)
-        NIL_CO3_MP_BIG_INT_IMPL_OPERATOR(<=)
-        NIL_CO3_MP_BIG_INT_IMPL_OPERATOR(>)
-        NIL_CO3_MP_BIG_INT_IMPL_OPERATOR(>=)
-        NIL_CO3_MP_BIG_INT_IMPL_OPERATOR(==)
-        NIL_CO3_MP_BIG_INT_IMPL_OPERATOR(!=)
-
-#undef NIL_CO3_MP_BIG_INT_IMPL_OPERATOR
+        friend constexpr bool operator==(const big_int& a, const big_int& b) noexcept {
+            return (a <=> b) == 0;
+        }
 
         NIL_CO3_MP_FORCEINLINE constexpr bool is_zero() const noexcept {
             return abs().is_zero();

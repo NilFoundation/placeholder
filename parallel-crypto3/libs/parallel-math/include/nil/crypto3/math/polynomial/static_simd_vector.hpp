@@ -235,21 +235,6 @@ namespace nil::crypto3::math {
         constexpr bool operator==(const static_simd_vector& rhs) const {
             return (*this <=> rhs) == 0;
         }
-        constexpr bool operator!=(const static_simd_vector& rhs) const {
-            return (*this <=> rhs) != 0;
-        }
-        constexpr bool operator<(const static_simd_vector& rhs) const {
-            return (*this <=> rhs) < 0;
-        }
-        constexpr bool operator>(const static_simd_vector& rhs) const {
-            return (*this <=> rhs) > 0;
-        }
-        constexpr bool operator<=(const static_simd_vector& rhs) const {
-            return (*this <=> rhs) <= 0;
-        }
-        constexpr bool operator>=(const static_simd_vector& rhs) const {
-            return (*this <=> rhs) >= 0;
-        }
     };
 
     template<std::size_t Size>

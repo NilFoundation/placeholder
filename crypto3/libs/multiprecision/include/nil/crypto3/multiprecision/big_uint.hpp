@@ -448,31 +448,10 @@ namespace nil::crypto3::multiprecision {
             }
         }
 
-        template<typename T, std::enable_if_t<std::is_integral_v<T>, int> = 0>
-        friend constexpr std::strong_ordering operator<=>(const T& a,
-                                                          const big_uint& b) noexcept {
-            return 0 <=> (b <=> a);
+        template<typename T, std::enable_if_t<is_integral_v<T>, int> = 0>
+        friend constexpr bool operator==(const big_uint& a, const T& b) noexcept {
+            return (a <=> b) == 0;
         }
-
-#define NIL_CO3_MP_BIG_UINT_IMPL_COMPARISON_OPERATOR(OP)                        \
-    template<typename T, std::enable_if_t<is_integral_v<T>, int> = 0>            \
-    friend constexpr bool operator OP(const big_uint& a, const T& b) noexcept { \
-        return (a <=> b) OP 0;                                                  \
-    }                                                                            \
-                                                                                 \
-    template<typename T, std::enable_if_t<std::is_integral_v<T>, int> = 0>       \
-    friend constexpr bool operator OP(const T& a, const big_uint& b) noexcept { \
-        return (a <=> b) OP 0;                                                  \
-    }
-
-        NIL_CO3_MP_BIG_UINT_IMPL_COMPARISON_OPERATOR(<)
-        NIL_CO3_MP_BIG_UINT_IMPL_COMPARISON_OPERATOR(<=)
-        NIL_CO3_MP_BIG_UINT_IMPL_COMPARISON_OPERATOR(>)
-        NIL_CO3_MP_BIG_UINT_IMPL_COMPARISON_OPERATOR(>=)
-        NIL_CO3_MP_BIG_UINT_IMPL_COMPARISON_OPERATOR(==)
-        NIL_CO3_MP_BIG_UINT_IMPL_COMPARISON_OPERATOR(!=)
-
-#undef NIL_CO3_MP_BIG_UINT_IMPL_COMPARISON_OPERATOR
 
         NIL_CO3_MP_FORCEINLINE constexpr bool is_zero() const noexcept {
             for (std::size_t i = 0; i < limb_count(); ++i) {
