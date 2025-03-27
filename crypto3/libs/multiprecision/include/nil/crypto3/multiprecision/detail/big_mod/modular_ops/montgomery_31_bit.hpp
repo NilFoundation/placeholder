@@ -19,6 +19,8 @@
 #include "nil/crypto3/multiprecision/detail/big_mod/modular_ops/montgomery_utils.hpp"
 #include "nil/crypto3/multiprecision/detail/big_mod/modular_ops/simple_31_bit.hpp"
 
+#include "nil/crypto3/bench/scoped_profiler.hpp"
+
 namespace nil::crypto3::multiprecision::detail {
     // Montgomery modular operations for 31-bit modulus.
     class montgomery_31_bit_modular_ops : public simple_31_bit_modular_ops {
@@ -58,7 +60,7 @@ namespace nil::crypto3::multiprecision::detail {
         constexpr void decrement(base_type &a) const { this->sub(a, m_one); }
 
         constexpr void mul(base_type &result, const base_type &y) const {
-            register_mul();
+            bench::register_mul();
             BOOST_ASSERT(result < mod() && y < mod());
             result = montgomery_reduce(static_cast<std::uint64_t>(result) * y);
             BOOST_ASSERT(result < mod());

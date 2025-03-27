@@ -11,7 +11,6 @@
 
 #pragma once
 
-#include <atomic>
 #include <climits>
 #include <cstddef>
 #include <limits>
@@ -23,52 +22,9 @@
 #include "nil/crypto3/multiprecision/type_traits.hpp"
 #include "nil/crypto3/multiprecision/unsigned_utils.hpp"
 
+#include "nil/crypto3/bench/scoped_profiler.hpp"
+
 namespace nil::crypto3::multiprecision::detail {
-    // NOLINTNEXTLINE
-    inline std::atomic_size_t mul_counter;
-    // NOLINTNEXTLINE
-    inline std::atomic_size_t add_counter;
-    // NOLINTNEXTLINE
-    inline std::atomic_size_t sub_counter;
-
-    inline constexpr void register_mul() {
-        if (!std::is_constant_evaluated()) {
-#ifdef NIL_CO3_MP_ENABLE_ARITHMETIC_COUNTERS
-            mul_counter++;
-#endif
-        }
-    }
-
-    inline constexpr void register_add() {
-        if (!std::is_constant_evaluated()) {
-#ifdef NIL_CO3_MP_ENABLE_ARITHMETIC_COUNTERS
-            add_counter++;
-#endif
-        }
-    }
-
-    inline constexpr void register_sub() {
-        if (!std::is_constant_evaluated()) {
-#ifdef NIL_CO3_MP_ENABLE_ARITHMETIC_COUNTERS
-            sub_counter++;
-#endif
-        }
-    }
-
-    struct counters {
-        std::size_t mul_counter;
-        std::size_t add_counter;
-        std::size_t sub_counter;
-    };
-
-    inline constexpr counters get_counters() {
-        if (!std::is_constant_evaluated()) {
-            return {mul_counter, add_counter, sub_counter};
-        } else {
-            return {};
-        }
-    }
-
     template<typename base_type_>
     class common_modular_ops {
       public:
@@ -93,7 +49,7 @@ namespace nil::crypto3::multiprecision::detail {
         }
 
         constexpr void sub(base_type &a, const base_type &b) const {
-            register_sub();
+            bench::register_sub();
             if (a < b) {
                 auto v = mod();
                 v -= b;

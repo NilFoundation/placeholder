@@ -20,6 +20,8 @@
 #include "nil/crypto3/multiprecision/big_uint.hpp"
 #include "nil/crypto3/multiprecision/detail/big_mod/modular_ops/common.hpp"
 
+#include "nil/crypto3/bench/scoped_profiler.hpp"
+
 namespace nil::crypto3::multiprecision::detail {
     template<std::size_t Bits_>
     class common_big_uint_modular_ops : public common_modular_ops<big_uint<Bits_>> {
@@ -35,7 +37,7 @@ namespace nil::crypto3::multiprecision::detail {
                  // result should fit in the output parameter
                  std::enable_if_t<Bits2 >= Bits3, int> = 0>
         constexpr void add(big_uint<Bits2> &result, const big_uint<Bits3> &y) const {
-            register_add();
+            bench::register_add();
             BOOST_ASSERT(result < this->mod() && y < this->mod());
 
             bool carry = overflowing_add_assign(result, y);

@@ -141,6 +141,15 @@ namespace nil {
                         PROFILE_SCOPE("Placeholder prover");
                         // BOOST_LOG_TRIVIAL(info) << "Running prover in multi-threaded mode.";
 
+                        SCOPED_LOG(
+                            "Assignment table statistics: total columns: {}, witnesses: "
+                            "{}, constants: {}, public inputs: {}, selectors: {}",
+                            _polynomial_table->size(),
+                            _polynomial_table->witnesses_amount(),
+                            _polynomial_table->constants_amount(),
+                            _polynomial_table->public_inputs_amount(),
+                            _polynomial_table->selectors_amount());
+
                         // 2. Commit witness columns and public_input columns
                         _commitment_scheme.append_to_batch(VARIABLE_VALUES_BATCH, _polynomial_table->witnesses());
                         _commitment_scheme.append_to_batch(VARIABLE_VALUES_BATCH, _polynomial_table->public_inputs());

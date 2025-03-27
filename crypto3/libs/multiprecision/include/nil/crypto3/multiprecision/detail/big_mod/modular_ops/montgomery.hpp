@@ -25,6 +25,8 @@
 #include "nil/crypto3/multiprecision/detail/big_uint/storage.hpp"
 #include "nil/crypto3/multiprecision/detail/integer_ops_base.hpp"
 
+#include "nil/crypto3/bench/scoped_profiler.hpp"
+
 namespace nil::crypto3::multiprecision::detail {
     template<typename T>
     constexpr bool modulus_supports_montgomery(const T &m) {
@@ -299,7 +301,7 @@ namespace nil::crypto3::multiprecision::detail {
         // Delegates Montgomery multiplication to one of corresponding algorithms.
         template<std::size_t Bits2>
         constexpr void mul(big_uint<Bits2> &result, const big_uint<Bits2> &y) const {
-            register_mul();
+            bench::register_mul();
             if (m_no_carry_montgomery_mul_allowed) {
                 montgomery_mul_no_carry_impl(result, y);
             } else {

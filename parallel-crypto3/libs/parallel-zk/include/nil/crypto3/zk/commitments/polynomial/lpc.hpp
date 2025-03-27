@@ -343,6 +343,7 @@ namespace nil {
                         std::map<std::size_t, std::vector<math::polynomial<value_type>>>* polys_coefficients_ptr;
 
                         if constexpr(std::is_same<math::polynomial_dfs<value_type>, PolynomialType>::value ) {
+                            PROFILE_SCOPE("Convert polys to coefficients form");
                             // Convert this->_polys to coefficients form.
                             std::vector<std::pair<std::size_t, std::size_t>> indices;
                             for (const auto& [i, V]: this->_polys) {
@@ -365,38 +366,68 @@ namespace nil {
                         std::vector<std::vector<math::polynomial<value_type>>> Q_normal_parts(
                             points.size(), std::vector<math::polynomial<value_type>>(this->_z.get_batches().size()));
 
-                        parallel_for(0, point_batch_pairs.size(),
-                            [this, &points, &theta, &theta_powers, polys_coefficients_ptr, &point_batch_pairs, &Q_normal_parts, &theta_powers_for_each_batch]
-                                (std::size_t point_batch_index) {
-                            typename field_type::value_type theta_acc = theta.pow(theta_powers_for_each_batch[point_batch_index]);
-                            std::size_t point_index = point_batch_pairs[point_batch_index].first;
-                            auto const &point = points[point_index];
+                        {
+                            PROFILE_SCOPE("Compute Q normal parts");
+                            parallel_for(
+                                0, point_batch_pairs.size(),
+                                [this, &points, &theta, &theta_powers,
+                                 polys_coefficients_ptr, &point_batch_pairs,
+                                 &Q_normal_parts, &theta_powers_for_each_batch](
+                                    std::size_t point_batch_index) {
+                                    typename field_type::value_type theta_acc = theta.pow(
+                                        theta_powers_for_each_batch[point_batch_index]);
+                                    std::size_t point_index =
+                                        point_batch_pairs[point_batch_index].first;
+                                    auto const& point = points[point_index];
 
-                            std::size_t i = this->_z.get_batches()[point_batch_pairs[point_batch_index].second];
-                            for(std::size_t j = 0; j < this->_z.get_batch_size(i); j++) {
-                                auto iter = this->_points_map[i][j].find(point);
-                                if (iter == this->_points_map[i][j].end())
-                                    continue;
+                                    std::size_t i =
+                                        this->_z.get_batches()
+                                            [point_batch_pairs[point_batch_index].second];
+                                    for (std::size_t j = 0;
+                                         j < this->_z.get_batch_size(i); j++) {
+                                        auto iter = this->_points_map[i][j].find(point);
+                                        if (iter == this->_points_map[i][j].end())
+                                            continue;
 
-                                math::polynomial<value_type> g_normal = (*polys_coefficients_ptr)[i][j];
-                                g_normal *= theta_acc;
-                                Q_normal_parts[point_index][point_batch_pairs[point_batch_index].second] += g_normal;
-                                Q_normal_parts[point_index][point_batch_pairs[point_batch_index].second] -=
-                                    this->_z.get(i, j, iter->second) * theta_acc;
-                                theta_acc *= theta;
-                            }
-                        }, ThreadPool::PoolLevel::HIGH);
+                                        math::polynomial<value_type> g_normal =
+                                            (*polys_coefficients_ptr)[i][j];
+                                        g_normal *= theta_acc;
+                                        Q_normal_parts
+                                            [point_index]
+                                            [point_batch_pairs[point_batch_index]
+                                                 .second] += g_normal;
+                                        Q_normal_parts
+                                            [point_index]
+                                            [point_batch_pairs[point_batch_index]
+                                                 .second] -=
+                                            this->_z.get(i, j, iter->second) * theta_acc;
+                                        theta_acc *= theta;
+                                    }
+                                },
+                                ThreadPool::PoolLevel::HIGH);
+                        }
 
-                        parallel_for(0, points.size(), [this, &points, &Q_normals, &Q_normal_parts](std::size_t point_index) {
-                            math::polynomial<value_type>& Q_normal = Q_normals[point_index];
+                        {
+                            PROFILE_SCOPE("Compute Q normal");
+                            parallel_for(
+                                0, points.size(),
+                                [this, &points, &Q_normals,
+                                 &Q_normal_parts](std::size_t point_index) {
+                                    math::polynomial<value_type>& Q_normal =
+                                        Q_normals[point_index];
 
-                            for(std::size_t batch_index = 0; batch_index < this->_z.get_batches().size(); ++batch_index) {
-                                Q_normal += Q_normal_parts[point_index][batch_index];
-                            }
-                            auto const &point = points[point_index];
-                            math::polynomial<value_type> V = {-point, 1};
-                            Q_normal = Q_normal / V;
-                        }, ThreadPool::PoolLevel::HIGH);
+                                    for (std::size_t batch_index = 0;
+                                         batch_index < this->_z.get_batches().size();
+                                         ++batch_index) {
+                                        Q_normal +=
+                                            Q_normal_parts[point_index][batch_index];
+                                    }
+                                    auto const& point = points[point_index];
+                                    math::polynomial<value_type> V = {-point, 1};
+                                    Q_normal = Q_normal / V;
+                                },
+                                ThreadPool::PoolLevel::HIGH);
+                        }
 
                         for (const auto& Q_normal: Q_normals) {
                             combined_Q_normal += Q_normal;
@@ -409,26 +440,38 @@ namespace nil {
                         }
                         Q_normals.assign(this->_z.get_batches().size(), math::polynomial<value_type>{});
 
-                        parallel_for(0, this->_z.get_batches().size(), [this, &theta, &theta_powers, &Q_normals, polys_coefficients_ptr](std::size_t batch_idx) {
-                            std::size_t i = this->_z.get_batches()[batch_idx];
-                            typename field_type::value_type theta_acc = theta.pow(theta_powers[i]);
+                        {
+                            PROFILE_SCOPE("Compute Q normals 2 (with point = etha)");
+                            parallel_for(
+                                0, this->_z.get_batches().size(),
+                                [this, &theta, &theta_powers, &Q_normals,
+                                 polys_coefficients_ptr](std::size_t batch_idx) {
+                                    std::size_t i = this->_z.get_batches()[batch_idx];
+                                    typename field_type::value_type theta_acc =
+                                        theta.pow(theta_powers[i]);
 
-                            if( _batch_fixed.find(i) == _batch_fixed.end() || !_batch_fixed[i] )
-                                return;
-                            math::polynomial<value_type>& Q_normal = Q_normals[batch_idx];
-                            auto point = _etha;
-                            math::polynomial<value_type> V = {-point, 1u};
+                                    if (_batch_fixed.find(i) == _batch_fixed.end() ||
+                                        !_batch_fixed[i])
+                                        return;
+                                    math::polynomial<value_type>& Q_normal =
+                                        Q_normals[batch_idx];
+                                    auto point = _etha;
+                                    math::polynomial<value_type> V = {-point, 1u};
 
-                            for(std::size_t j = 0; j < this->_z.get_batch_size(i); j++){
-                                math::polynomial<value_type> g_normal = (*polys_coefficients_ptr)[i][j];
-                                g_normal *= theta_acc;
-                                Q_normal += g_normal;
-                                Q_normal -= _fixed_polys_values[i][j] * theta_acc;
-                                theta_acc *= theta;
-                            }
+                                    for (std::size_t j = 0;
+                                         j < this->_z.get_batch_size(i); j++) {
+                                        math::polynomial<value_type> g_normal =
+                                            (*polys_coefficients_ptr)[i][j];
+                                        g_normal *= theta_acc;
+                                        Q_normal += g_normal;
+                                        Q_normal -= _fixed_polys_values[i][j] * theta_acc;
+                                        theta_acc *= theta;
+                                    }
 
-                            Q_normal = Q_normal / V;
-                        }, ThreadPool::PoolLevel::HIGH);
+                                    Q_normal = Q_normal / V;
+                                },
+                                ThreadPool::PoolLevel::HIGH);
+                        }
 
                         for (const auto& Q_normal: Q_normals) {
                             combined_Q_normal += Q_normal;

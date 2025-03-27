@@ -16,6 +16,8 @@
 #include "nil/crypto3/multiprecision/detail/big_mod/modular_ops/simple_31_bit.hpp"
 #include "nil/crypto3/multiprecision/detail/big_mod/modular_ops_storage.hpp"
 
+#include "nil/crypto3/bench/scoped_profiler.hpp"
+
 namespace nil::crypto3::multiprecision {
     inline constexpr std::uint32_t mersenne31_modulus = 0x7FFFFFFFU;
 
@@ -29,6 +31,7 @@ namespace nil::crypto3::multiprecision {
                 : simple_31_bit_modular_ops(mersenne31_modulus) {}
 
             constexpr void mul(base_type &result, const base_type &y) const {
+                bench::register_mul();
                 BOOST_ASSERT(result < mod() && y < mod());
                 auto prod = static_cast<std::uint64_t>(result) * y;
                 std::uint32_t prod_lo =
