@@ -569,7 +569,7 @@ namespace nil::crypto3::multiprecision {
         }
 
         template<std::size_t Bits2>
-        [[nodiscard]] friend constexpr bool overflowing_add_assign(
+        [[clang::noinline]] [[nodiscard]] friend constexpr bool overflowing_add_assign(
             big_uint& a, const big_uint<Bits2>& b) {
             return detail::add_unsigned<detail::overflow_policy::throw_exception>(a, a,
                                                                                   b);

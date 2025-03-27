@@ -24,19 +24,20 @@
 #ifndef PARALLEL_CRYPTO3_ZK_MATH_DAG_EXPRESSION_HPP
 #define PARALLEL_CRYPTO3_ZK_MATH_DAG_EXPRESSION_HPP
 
+#include <format>
+#include <fstream>
+#include <functional>
+#include <iostream>
+#include <map>
 #include <memory>
 #include <ostream>
-#include <stdexcept>
-#include <type_traits>
-#include <vector>
-#include <map>
-#include <functional>
 #include <set>
-#include <iostream>
-#include <fstream>
-#include <string>
 #include <sstream>
+#include <stdexcept>
+#include <string>
+#include <type_traits>
 #include <variant>
+#include <vector>
 
 #include <boost/bimap/bimap.hpp>
 #include <boost/bimap/unordered_set_of.hpp>
@@ -45,11 +46,23 @@
 #include <nil/crypto3/zk/math/expression.hpp>
 #include <nil/crypto3/math/polynomial/polynomial_dfs.hpp>
 
+#include <nil/crypto3/bench/scoped_profiler.hpp>
+
 namespace nil {
     namespace crypto3 {
         namespace math {
 
+            template<class... Ts>
+            struct overloaded : Ts... {
+                using Ts::operator()...;
+            };
+
             using operands_vector_type = boost::container::small_vector<std::size_t, 2>;
+
+            template<typename T>
+            std::size_t hash_val(const T& a) {
+                return std::hash<T>()(a);
+            }
 
             template<typename VariableType>
             struct dag_constant {
@@ -125,25 +138,38 @@ namespace nil {
                     const size_t negation_seed = 0x9c2250db3076ccc2;
                     const size_t variable_seed = 0x4c8f509c18342c3e;
 
-                    return std::visit([&](const dag_node<VariableType>& n) -> size_t {
-                        if (std::holds_alternative<dag_constant<VariableType>>(n)) {
-                            return constant_seed ^ std::hash<assignment_type>()(std::get<dag_constant<VariableType>>(n).value);
-                        } else if (std::holds_alternative<dag_variable<VariableType>>(n)) {
-                            return variable_seed ^ std::hash<VariableType>()(std::get<dag_variable<VariableType>>(n).variable);
-                        } else if (std::holds_alternative<dag_addition>(n)) {
-                            size_t hash = std::accumulate(std::get<dag_addition>(n).operands.begin(), std::get<dag_addition>(n).operands.end(), add_seed, [](size_t a, size_t b) {
-                                return a ^ b;
-                            });
-                        } else if (std::holds_alternative<dag_multiplication>(n)) {
-                            size_t hash = std::accumulate(std::get<dag_multiplication>(n).operands.begin(), std::get<dag_multiplication>(n).operands.end(), multiply_seed, [](size_t a, size_t b) {
-                                return a ^ b;
-                            });
-                            return hash;
-                        } else if (std::holds_alternative<dag_negation>(n)) {
-                            return negation_seed ^ std::hash<std::size_t>()(std::get<dag_negation>(n).operand);
-                        }
-                        return 0;
-                    }, node);
+                    return std::visit(
+                        overloaded{[&](const dag_constant<VariableType>& node) {
+                                       std::size_t result = constant_seed;
+                                       boost::hash_combine(result, hash_val(node.value));
+                                       return result;
+                                   },
+                                   [&](const dag_variable<VariableType>& node) {
+                                       std::size_t result = variable_seed;
+                                       boost::hash_combine(result,
+                                                           hash_val(node.variable));
+                                       return result;
+                                   },
+                                   [&](const dag_addition& node) {
+                                       std::size_t result = add_seed;
+                                       for (std::size_t operand : node.operands) {
+                                           boost::hash_combine(result, operand);
+                                       }
+                                       return result;
+                                   },
+                                   [&](const dag_multiplication& node) {
+                                       std::size_t result = multiply_seed;
+                                       for (std::size_t operand : node.operands) {
+                                           boost::hash_combine(result, operand);
+                                       }
+                                       return result;
+                                   },
+                                   [&](const dag_negation& node) {
+                                       std::size_t result = negation_seed;
+                                       boost::hash_combine(result, node.operand);
+                                       return result;
+                                   }},
+                        node);
                 }
             };
 
@@ -163,19 +189,22 @@ namespace nil {
                 dag_expression() = default;
 
                 dag_expression(const math_expression_type& expression) {
-                    std::size_t root_node = convert_expression(expression);
-                    root_nodes.push_back(root_node);
+                    add_expression(expression);
+                    dump_info();
                 }
 
+                template<std::ranges::input_range R>
+                dag_expression(const R& range) {
+                    for (const auto& expression : range) {
+                        add_expression(expression);
+                    }
+                    dump_info();
+                }
+
+              private:
                 void add_expression(const math_expression_type& expression) {
                     std::size_t root_node = convert_expression(expression);
                     root_nodes.push_back(root_node);
-                }
-
-                void visit_const(std::function<void(const node_type&)> visitor) const {
-                    for (const auto& node : nodes) {
-                        visitor(node);
-                    }
                 }
 
                 std::size_t calc_degree() const {
@@ -206,40 +235,100 @@ namespace nil {
                     return max_degree;
                 }
 
+                std::map<std::size_t, std::vector<std::size_t>> backlinks;
+
+                void dump_info() const {
+                    std::size_t deduplicated_nodes = 0;
+                    std::size_t copies = 0;
+
+                    for (const auto& [index, links] : backlinks) {
+                        if (links.size() > 1) {
+                            ++deduplicated_nodes;
+                            copies += links.size() - 1;
+                        }
+                    }
+
+                    SCOPED_LOG(
+                        "DAG evaluation plan statistics: original nodes: {}, final "
+                        "nodes: {}, nodes with multiple references "
+                        ": {}, copies: {}",
+                        original_nodes, node_map.right.size(), deduplicated_nodes,
+                        copies);
+
+                    std::size_t constants = 0;
+                    std::size_t variables = 0;
+                    std::size_t additions = 0;
+                    std::size_t multiplications = 0;
+                    std::size_t negations = 0;
+
+                    for (const auto& [node, i] : node_map.right) {
+                        std::visit(
+                            overloaded{
+                                [&](const dag_constant<VariableType>& /*node*/) {
+                                    ++constants;
+                                },
+                                [&](const dag_variable<VariableType>& /*node*/) {
+                                    ++variables;
+                                },
+                                [&](const dag_addition& /*node*/) { ++additions; },
+                                [&](const dag_multiplication& /*node*/) {
+                                    ++multiplications;
+                                },
+                                [&](const dag_negation& /*node*/) { ++negations; }},
+                            node);
+                    }
+
+                    SCOPED_LOG(
+                        "DAG evaluation plan statistics: multiplications: {}, additions: "
+                        "{}, negations: {}, constants: "
+                        "{}, variables: {}",
+                        multiplications, additions, negations, constants, variables);
+                }
+
+              public:
                 std::vector<assignment_type> evaluate(
                     std::function<assignment_type(const VariableType&)> variable_evaluator
                 ) {
-                    assignments.clear();
-                    assignments.reserve(nodes.size());
-                    for (const auto& [node, index] : node_map.right) {
-                        if (std::holds_alternative<dag_constant<VariableType>>(node)) {
-                            assignments.emplace_back(
-                                std::get<dag_constant<VariableType>>(node).value);
-                        } else if (std::holds_alternative<dag_variable<VariableType>>(node)) {
-                            assignments.emplace_back(variable_evaluator(
-                                std::get<dag_variable<VariableType>>(node).variable));
-                        } else if (std::holds_alternative<dag_addition>(node)) {
-                            const auto& add = std::get<dag_addition>(node);
-                            assignments.emplace_back(assignments[add.operands[0]]);
-                            auto& result = assignments.back();
-                            for (std::size_t i = 1; i < add.operands.size(); i++) {
-                                result += assignments[add.operands[i]];
-                            }
-                        } else if (std::holds_alternative<dag_multiplication>(node)) {
-                            const auto& mul = std::get<dag_multiplication>(node);
-                            assignments.emplace_back(assignments[mul.operands[0]]);
-                            auto& result = assignments.back();
-                            for (std::size_t i = 1; i < mul.operands.size(); i++) {
-                                result *= assignments[mul.operands[i]];
-                            }
-                        } else if (std::holds_alternative<dag_negation>(node)) {
-                            assignments.emplace_back(
-                                -assignments[std::get<dag_negation>(node).operand]);
-                        }
+                    std::vector<assignment_type> results;
+
+                    results.resize(nodes.size());
+
+                    for (const auto& [node, i] : node_map.right) {
+                        std::visit(
+                            overloaded{[&](const dag_constant<VariableType>& node) {
+                                           results[i] = node.value;
+                                       },
+                                       [&](const dag_variable<VariableType>& node) {
+                                           results[i] = variable_evaluator(node.variable);
+                                       },
+                                       [&](const dag_addition& node) {
+                                           add_at(results[i], results[node.operands[0]],
+                                                  results[node.operands[1]]);
+                                           auto& result = results[i];
+
+                                           for (std::size_t i = 2;
+                                                i < node.operands.size(); i++) {
+                                               result += results[node.operands[i]];
+                                           }
+                                       },
+                                       [&](const dag_multiplication& node) {
+                                           mul_at(results[i], results[node.operands[0]],
+                                                  results[node.operands[1]]);
+                                           auto& result = results[i];
+
+                                           for (std::size_t i = 2;
+                                                i < node.operands.size(); i++) {
+                                               result *= results[node.operands[i]];
+                                           }
+                                       },
+                                       [&](const dag_negation& node) {
+                                           neg_at(results[i], results[node.operand]);
+                                       }},
+                            node);
                     }
                     std::vector<assignment_type> result;
                     for (const auto& root_node : root_nodes) {
-                        result.push_back(assignments[root_node]);
+                        result.push_back(results[root_node]);
                     }
                     return result;
                 }
@@ -252,7 +341,7 @@ namespace nil {
 
                 map_type node_map;
                 std::vector<node_type> nodes;
-                std::vector<assignment_type> assignments;
+                std::size_t original_nodes = 0;
 
                 std::size_t convert_expression(const math_expression_type& expression) {
                     auto type_num = expression.get_expr().which();
@@ -303,7 +392,8 @@ namespace nil {
                                     return left_node;
                                 }
                                 if (right_term.get_vars().size() == 0) {
-                                    // this means that we have to neagate the non-zero constant and add it to the left node
+                                    // this means that we have to negate the non-zero
+                                    // constant and add it to the left node
                                     auto coeff = right_term.get_coeff();
                                     auto neg_coeff = -coeff;
                                     auto negated_right_node = register_node(dag_constant<VariableType>{neg_coeff});
@@ -322,11 +412,32 @@ namespace nil {
                 }
 
                 size_t register_node(const node_type& node) {
+                    ++original_nodes;
                     auto it = node_map.left.find(node);
                     if (it != node_map.left.end()) {
                         return it->second;
                     }
                     size_t index = nodes.size();
+                    std::visit(overloaded{[&](const dag_addition& node) {
+                                              for (const auto& operand : node.operands) {
+                                                  backlinks[operand].push_back(index);
+                                              }
+                                          },
+                                          [&](const dag_multiplication& node) {
+                                              for (const auto& operand : node.operands) {
+                                                  backlinks[operand].push_back(index);
+                                              }
+                                          },
+                                          [&](const dag_negation& node) {
+                                              backlinks[node.operand].push_back(index);
+                                          },
+                                          [&](const dag_variable<VariableType>& node) {
+                                              // nothing to do
+                                          },
+                                          [&](const dag_constant<VariableType>& node) {
+                                              // nothing to do
+                                          }},
+                               node);
                     nodes.push_back(node);
                     node_map.left.insert(std::make_pair(node, index));
                     return index;

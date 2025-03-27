@@ -133,10 +133,23 @@ namespace nil::crypto3::math {
             return true;
         }
 
-        inline static static_simd_vector zero() { return static_simd_vector(); }
+        static static_simd_vector zero() { return static_simd_vector(); }
 
-        inline static static_simd_vector one() {
-            return static_simd_vector(value_type::one());
+        static static_simd_vector one() { return static_simd_vector(value_type::one()); }
+
+        void negate_inplace() {
+            for (auto& v : val) {
+                v.negate_inplace();
+            }
+        }
+
+        [[clang::noinline]] friend void add_at(static_simd_vector& result,
+                                               const static_simd_vector& a,
+                                               const static_simd_vector& b) {
+            for (std::size_t i = 0; i < Size; ++i) {
+                result[i] = a[i];
+                result[i] += b[i];
+            }
         }
 
         static_simd_vector operator+(const static_simd_vector& other) const {
@@ -159,6 +172,13 @@ namespace nil::crypto3::math {
                 (*this)[i] += c;
             }
             return *this;
+        }
+
+        [[clang::noinline]] friend void neg_at(static_simd_vector& result,
+                                               const static_simd_vector& a) {
+            for (std::size_t i = 0; i < Size; ++i) {
+                result[i] = -a[i];
+            }
         }
 
         static_simd_vector operator-() const {
@@ -189,6 +209,15 @@ namespace nil::crypto3::math {
                 (*this)[i] -= c;
             }
             return *this;
+        }
+
+        [[clang::noinline]] friend void mul_at(static_simd_vector& result,
+                                               const static_simd_vector& a,
+                                               const static_simd_vector& b) {
+            for (std::size_t i = 0; i < Size; ++i) {
+                result[i] = a[i];
+                result[i] *= b[i];
+            }
         }
 
         static_simd_vector operator*(const static_simd_vector& other) const {

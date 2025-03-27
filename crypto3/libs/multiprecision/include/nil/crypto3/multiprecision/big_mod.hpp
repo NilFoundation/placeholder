@@ -180,8 +180,8 @@ namespace nil::crypto3::multiprecision {
 
       private:
         template<typename S, std::enable_if_t<is_integral_v<S>, int> = 0>
-        static constexpr base_type convert_to_raw_base(const S& s,
-                                                       const modular_ops_t& ops) {
+        [[clang::noinline]] static constexpr base_type convert_to_raw_base(
+            const S& s, const modular_ops_t& ops) {
             if (nil::crypto3::multiprecision::is_zero(s)) {
                 return base_type{};
             }
@@ -190,42 +190,38 @@ namespace nil::crypto3::multiprecision {
             return result;
         }
 
-        static constexpr const base_type& convert_to_raw_base(
+        [[clang::noinline]] static constexpr const base_type& convert_to_raw_base(
             const big_mod_impl& s, const modular_ops_t& /*ops*/) {
             return s.raw_base();
         }
 
       public:
-#define NIL_CO3_MP_BIG_MOD_OPERATOR_IMPL(OP_, OP_ASSIGN_, METHOD_)                       \
-    template<                                                                            \
-        typename T,                                                                      \
-        std::enable_if_t<std::is_same_v<big_mod_impl, T> || is_integral_v<T>, int> = 0>  \
-    friend constexpr auto operator OP_(const big_mod_impl& a, const T& b) noexcept {     \
-        if constexpr (is_big_mod_v<T>) {                                                 \
-            BOOST_ASSERT(a.ops_storage().compare_eq(b.ops_storage()));                   \
-        }                                                                                \
-        big_mod_impl result = a;                                                         \
-        a.ops().METHOD_(result.m_raw_base, convert_to_raw_base(b, a.ops()));             \
-        return result;                                                                   \
-    }                                                                                    \
-                                                                                         \
-    template<typename T, std::enable_if_t<is_integral_v<T>, int> = 0>                    \
-    friend constexpr auto operator OP_(const T& a, const big_mod_impl& b) noexcept {     \
-        big_mod_impl result(b.ops_storage());                                            \
-        result.m_raw_base = convert_to_raw_base(a, b.ops());                             \
-        b.ops().METHOD_(result.m_raw_base, b.raw_base());                                \
-        return result;                                                                   \
-    }                                                                                    \
-                                                                                         \
-    template<                                                                            \
-        typename T,                                                                      \
-        std::enable_if_t<std::is_same_v<big_mod_impl, T> || is_integral_v<T>, int> = 0>  \
-    friend constexpr auto& operator OP_ASSIGN_(big_mod_impl & a, const T & b) noexcept { \
-        if constexpr (is_big_mod_v<T>) {                                                 \
-            BOOST_ASSERT(a.ops_storage().compare_eq(b.ops_storage()));                   \
-        }                                                                                \
-        a.ops().METHOD_(a.m_raw_base, convert_to_raw_base(b, a.ops()));                  \
-        return a;                                                                        \
+#define NIL_CO3_MP_BIG_MOD_OPERATOR_IMPL(OP_, OP_ASSIGN_, METHOD_)                      \
+    template<                                                                           \
+        typename T,                                                                     \
+        std::enable_if_t<std::is_same_v<big_mod_impl, T> || is_integral_v<T>, int> = 0> \
+    [[clang::noinline]] friend constexpr auto operator OP_(const big_mod_impl& a,       \
+                                                           const T& b) noexcept {       \
+        big_mod_impl result = a;                                                        \
+        a.ops().METHOD_(result.m_raw_base, convert_to_raw_base(b, a.ops()));            \
+        return result;                                                                  \
+    }                                                                                   \
+                                                                                        \
+    template<typename T, std::enable_if_t<is_integral_v<T>, int> = 0>                   \
+    friend constexpr auto operator OP_(const T& a, const big_mod_impl& b) noexcept {    \
+        big_mod_impl result(b.ops_storage());                                           \
+        result.m_raw_base = convert_to_raw_base(a, b.ops());                            \
+        b.ops().METHOD_(result.m_raw_base, b.raw_base());                               \
+        return result;                                                                  \
+    }                                                                                   \
+                                                                                        \
+    template<                                                                           \
+        typename T,                                                                     \
+        std::enable_if_t<std::is_same_v<big_mod_impl, T> || is_integral_v<T>, int> = 0> \
+    [[clang::noinline]] friend constexpr auto& operator OP_ASSIGN_(                     \
+        big_mod_impl & a, const T & b) noexcept {                                       \
+        a.ops().METHOD_(a.m_raw_base, convert_to_raw_base(b, a.ops()));                 \
+        return a;                                                                       \
     }
 
         NIL_CO3_MP_BIG_MOD_OPERATOR_IMPL(+, +=, add)

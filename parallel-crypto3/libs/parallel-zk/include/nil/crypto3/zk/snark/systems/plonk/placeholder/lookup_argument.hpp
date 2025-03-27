@@ -504,10 +504,7 @@ namespace nil {
                                 batch, plonk_columns, basic_domain,
                                 variable_values, extended_domain_size, mask_assignment, lagrange0
                             );
-                            dag_expression<simd_vector_variable_type> dag_expr;
-                            for (const auto &expr : batch) {
-                                dag_expr.add_expression(expr);
-                            }
+                            dag_expression<simd_vector_variable_type> dag_expr(batch);
                             const auto& batch_index_map = batch_index_maps[i];
                             parallel_for(0, batch.size(),
                             [&lookup_input_ptr, &extended_domain_size, &batch_index_map]
