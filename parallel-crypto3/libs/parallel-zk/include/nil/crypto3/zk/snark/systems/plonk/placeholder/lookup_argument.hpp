@@ -454,9 +454,11 @@ namespace nil {
                                     l += theta_acc * converter.convert(expr);
                                     theta_acc *= this->theta;
                                 }
-                                l *= simd_vector_variable_type(
-                                    gate.tag_index, 0, false,
-                                    simd_vector_variable_type::column_type::selector);
+                                if (gate.tag_index != PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED) {
+                                    l *= simd_vector_variable_type(
+                                        gate.tag_index, 0, false,
+                                        simd_vector_variable_type::column_type::selector);
+                                }
                                 expressions.push_back(std::move(l));
                             }
                         }
