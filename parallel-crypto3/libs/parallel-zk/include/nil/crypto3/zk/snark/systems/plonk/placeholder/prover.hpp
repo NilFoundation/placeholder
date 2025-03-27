@@ -318,10 +318,10 @@ namespace nil {
                         return T_consolidated;
                     }
 
-                    typename placeholder_lookup_argument_prover<FieldType, commitment_scheme_type, ParamsType>::prover_lookup_result
+                    typename placeholder_lookup_argument_prover<
+                        FieldType, commitment_scheme_type,
+                        ParamsType>::prover_lookup_result
                     lookup_argument() {
-                        PROFILE_SCOPE("Lookup argument");
-
                         typename placeholder_lookup_argument_prover<
                             FieldType,
                             commitment_scheme_type,
