@@ -146,41 +146,41 @@ namespace nil {
                                 return step_list;
                             }
 
-                            params_type(
-                                std::size_t max_step,
-                                std::size_t degree_log,
-                                std::size_t lambda,
-                                std::size_t expand_factor,
-                                bool use_grinding = false,
-                                std::size_t grinding_parameter = 16
-                            ): lambda(lambda)
-                              , use_grinding(use_grinding)
-                              , grinding_parameter(grinding_parameter)
-                              , max_degree((1 << degree_log) - 1)
-                              , D(math::calculate_domain_set<FieldType>(degree_log + expand_factor, degree_log - 1))
-                              , r(degree_log - 1)
-                              , step_list(generate_random_step_list(r, max_step))
-                              , expand_factor(expand_factor)
-                            { }
+                            params_type(std::size_t max_step, std::size_t degree_log,
+                                        std::size_t lambda, std::size_t expand_factor,
+                                        bool use_grinding = false,
+                                        std::size_t grinding_parameter = 16)
+                                : lambda(lambda),
+                                  use_grinding(use_grinding),
+                                  grinding_parameter(grinding_parameter),
+                                  max_degree((1 << degree_log) - 1),
+                                  D(math::calculate_domain_set<FieldType>(
+                                      degree_log + expand_factor, degree_log - 1)),
+                                  r(degree_log - 1),
+                                  step_list(generate_random_step_list(r, max_step)),
+                                  expand_factor(expand_factor),
+                                  max_step(max_step),
+                                  degree_log(degree_log) {}
 
-                            params_type(
-                                const std::vector<std::size_t>& step_list_in,
-                                std::size_t degree_log,
-                                std::size_t lambda,
-                                std::size_t expand_factor,
-                                bool use_grinding = false,
-                                std::size_t grinding_parameter = 16
-                            ) : lambda(lambda)
-                              , use_grinding(use_grinding)
-                              , grinding_parameter(grinding_parameter)
-                              , max_degree((1 << degree_log) - 1)
-                              , D(math::calculate_domain_set<FieldType>(
-                                    degree_log + expand_factor,
-                                    std::accumulate(step_list_in.begin(), step_list_in.end(), 0)))
-                              , r(std::accumulate(step_list_in.begin(), step_list_in.end(), 0))
-                              , step_list(step_list_in)
-                              , expand_factor(expand_factor)
-                            { }
+                            params_type(const std::vector<std::size_t> &step_list_in,
+                                        std::size_t degree_log, std::size_t lambda,
+                                        std::size_t expand_factor,
+                                        bool use_grinding = false,
+                                        std::size_t grinding_parameter = 16)
+                                : lambda(lambda),
+                                  use_grinding(use_grinding),
+                                  grinding_parameter(grinding_parameter),
+                                  max_degree((1 << degree_log) - 1),
+                                  D(math::calculate_domain_set<FieldType>(
+                                      degree_log + expand_factor,
+                                      std::accumulate(step_list_in.begin(),
+                                                      step_list_in.end(), 0))),
+                                  r(std::accumulate(step_list_in.begin(),
+                                                    step_list_in.end(), 0)),
+                                  step_list(step_list_in),
+                                  expand_factor(expand_factor),
+                                  max_step(max_step),
+                                  degree_log(degree_log) {}
 
                             bool operator==(const params_type &rhs) const {
                                 if (D.size() != rhs.D.size()) {
@@ -223,6 +223,8 @@ namespace nil {
                             // Degrees of D are degree_log + expand_factor. This is unused in FRI,
                             // but we still want to keep the parameter with which it was constructed.
                             const std::size_t expand_factor;
+                            const std::size_t max_step;
+                            const std::size_t degree_log;
                         };
 
                         struct round_proof_type {
@@ -477,8 +479,8 @@ namespace nil {
                     f_dfs.from_coefficients(f);
 
                     if (f_dfs.size() != D->size()) {
-                        PROFILE_SCOPE(std::format("FRI precommit resize from {} to {}",
-                                                  f_dfs.size(), D->size()));
+                        PROFILE_SCOPE("FRI precommit resize from {} to {}", f_dfs.size(),
+                                      D->size());
                         f_dfs.resize(D->size(), nullptr, D);
                     }
 
@@ -1158,7 +1160,7 @@ namespace nil {
                     const typename FRI::params_type &fri_params,
                     typename FRI::transcript_type &transcript
                 ) {
-                    PROFILE_SCOPE("Basic FRI proof eval time");
+                    PROFILE_SCOPE("Basic FRI proof eval");
                     typename FRI::proof_type proof;
 
                     BOOST_ASSERT(check_step_list<FRI>(fri_params));

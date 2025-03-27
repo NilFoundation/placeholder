@@ -17,6 +17,8 @@
 
 #include "nil/crypto3/multiprecision/detail/big_mod/modular_ops/common.hpp"
 
+#include "nil/crypto3/bench/scoped_profiler.hpp"
+
 namespace nil::crypto3::multiprecision::detail {
     class simple_31_bit_modular_ops : public common_modular_ops<std::uint32_t> {
       public:
@@ -24,7 +26,7 @@ namespace nil::crypto3::multiprecision::detail {
         static constexpr std::size_t Bits = 31;
 
         constexpr void add(base_type &result, const base_type &y) const {
-            register_add();
+            bench::register_add();
             BOOST_ASSERT(result < mod() && y < mod());
             result += y;
             if (result >= mod()) {
@@ -34,7 +36,7 @@ namespace nil::crypto3::multiprecision::detail {
         }
 
         constexpr void mul(base_type &result, const base_type &y) const {
-            register_mul();
+            bench::register_mul();
             BOOST_ASSERT(result < mod() && y < mod());
             result = (static_cast<std::uint64_t>(result) * y) % mod();
             BOOST_ASSERT(result < mod());

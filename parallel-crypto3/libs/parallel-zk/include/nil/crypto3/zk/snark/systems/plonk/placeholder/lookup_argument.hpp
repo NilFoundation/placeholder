@@ -203,9 +203,9 @@ namespace nil {
 
                         std::vector<polynomial_dfs_type> h_constraint_parts(hs.size());
                         {
-                            PROFILE_SCOPE(std::format(
+                            PROFILE_SCOPE(
                                 "Lookup argument compute h constraint parts of size {}",
-                                hs.size()));
+                                hs.size());
                             parallel_for(
                                 0, hs.size(),
                                 [&hs, &h_constraint_parts, &h_challenges, &alpha,
@@ -230,9 +230,9 @@ namespace nil {
                         std::vector<polynomial_dfs_type> g_constraint_parts(gs.size());
 
                         {
-                            PROFILE_SCOPE(std::format(
+                            PROFILE_SCOPE(
                                 "Lookup argument compute g constraint parts of size {}",
-                                gs.size()));
+                                gs.size());
                             parallel_for(
                                 0, gs.size(),
                                 [&gs, &g_constraint_parts, &g_challenges, &alpha,
@@ -421,8 +421,7 @@ namespace nil {
                             },
                             ThreadPool::PoolLevel::HIGH);
 
-                        bench::scoped_log(
-                            std::format("Variables count: {}", variable_values_out.size()));
+                        SCOPED_LOG("Variables count: {}", variable_values_out.size());
                     }
 
                     std::unique_ptr<std::vector<polynomial_dfs_type>> prepare_lookup_input(
@@ -485,15 +484,14 @@ namespace nil {
                             if (batch.size() == 0) {
                                 continue;
                             }
-                            PROFILE_SCOPE(std::format(
+                            PROFILE_SCOPE(
                                 "Lookup argument evaluation on batch #{}, {} expressions",
-                                i, batch.size()));
+                                i, batch.size());
                             auto degree = std::pow(2, i);
                             const size_t extended_domain_size = basic_domain->m * degree;
 
-                            bench::scoped_log(
-                                std::format("Extended domain size: {}, multiplier: {}",
-                                            extended_domain_size, degree));
+                            SCOPED_LOG("Extended domain size: {}, multiplier: {}",
+                                       extended_domain_size, degree);
 
                             std::unordered_map<simd_vector_variable_type,
                                                polynomial_dfs_type>

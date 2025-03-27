@@ -43,6 +43,8 @@
 #include <nil/actor/core/thread_pool.hpp>
 #include <nil/actor/core/parallelization_utils.hpp>
 
+#include <nil/crypto3/bench/scoped_profiler.hpp>
+
 namespace nil {
     namespace crypto3 {
         namespace math {
@@ -84,6 +86,7 @@ namespace nil {
                     const std::size_t n = a.size(), logn = log2(n);
                     if (n != (1u << logn))
                         throw std::invalid_argument("expected n == (1u << logn)");
+                    bench::register_fft(logn);
 
                     // swapping in place (from Storer's book)
                     // We can parallelize this look, since k and rk are pairs, they will never intersect.

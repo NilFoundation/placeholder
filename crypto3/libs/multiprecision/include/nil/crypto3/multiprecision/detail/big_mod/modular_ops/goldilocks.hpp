@@ -20,6 +20,8 @@
 #include "nil/crypto3/multiprecision/detail/big_mod/modular_ops_storage.hpp"
 #include "nil/crypto3/multiprecision/detail/int128.hpp"
 
+#include "nil/crypto3/bench/scoped_profiler.hpp"
+
 #if !defined(NIL_CO3_MP_HAS_INT128)
 #include "nil/crypto3/multiprecision/detail/big_mod/modular_ops/montgomery.hpp"
 #endif
@@ -41,7 +43,7 @@ namespace nil::crypto3::multiprecision {
                 : common_modular_ops<std::uint64_t>(goldilocks_modulus) {}
 
             static constexpr void add(base_type &result, const base_type &y) {
-                register_add();
+                bench::register_add();
                 BOOST_ASSERT(result < goldilocks_modulus && y < goldilocks_modulus);
                 detail::uint128_t sum = static_cast<detail::uint128_t>(result) +
                                         static_cast<detail::uint128_t>(y);
@@ -94,7 +96,7 @@ Goldilocks::new(t2)
 
           public:
             static constexpr void mul(base_type &result, const base_type &y) {
-                register_mul();
+                bench::register_mul();
                 BOOST_ASSERT(result < goldilocks_modulus && y < goldilocks_modulus);
                 detail::uint128_t prod = static_cast<detail::uint128_t>(result) *
                                          static_cast<detail::uint128_t>(y);
