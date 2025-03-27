@@ -80,7 +80,7 @@ namespace nil {
                     std::size_t max_call_commits
                 ) {
                     return {
-                        .witnesses = rw_table_type::get_witness_amount() + call_commit_table_type::get_witness_amount() + 76 + 6*op_bits_amount + (chunks_amount+2)*(diff_index_bits_amount+2),
+                        .witnesses = rw_table_type::get_witness_amount() + call_commit_table_type::get_witness_amount() + 76 + 6*(op_bits_amount-2) + (chunks_amount+2)*diff_index_bits_amount,
                         .public_inputs = 0,
                         .constants = 2,
                         .rows = std::max(max_rw_size, max_call_commits) + max_mpt_size
@@ -113,9 +113,17 @@ namespace nil {
 
                 template<std::size_t n>
                 void bit_tag_selector_constraints(context_type &context_object, std::array<TYPE, n> bits, std::size_t k, 
-                                                    std::vector<TYPE> &constraints, std::array<TYPE,n> selector_bits){
+                                                    std::vector<TYPE> &constraints, std::array<TYPE,n> selector_bits, TYPE selector){
                     integral_type mask = (1 << n);
-                    for( std::size_t bit_ind = 0; bit_ind < n; bit_ind++ ){
+
+                    mask >>= 1;
+                    TYPE first_bit_selector;
+                    if( (mask & k) == 0)
+                        first_bit_selector = (1 - bits[0]);
+                    else
+                        first_bit_selector = bits[0];
+
+                    for( std::size_t bit_ind = 1; bit_ind < n; bit_ind++ ){
                         mask >>= 1;
                         TYPE bit_selector;
                         if( (mask & k) == 0)
@@ -123,11 +131,12 @@ namespace nil {
                         else
                             bit_selector = bits[bit_ind];
 
-                        if (bit_ind == 0) 
-                            constraints.push_back(context_object.relativize(selector_bits[bit_ind] - bit_selector, -1));
-                        
-                        else 
+                        if (bit_ind == 1)
+                            constraints.push_back(context_object.relativize(selector_bits[bit_ind] - first_bit_selector*bit_selector, -1));
+                        else if (bit_ind != n-1)
                             constraints.push_back(context_object.relativize(selector_bits[bit_ind] - selector_bits[bit_ind-1]*bit_selector, -1));
+                        else
+                            constraints.push_back(context_object.relativize(selector - selector_bits[bit_ind-1]*bit_selector, -1));
                     }
                 }
                 
@@ -422,27 +431,27 @@ namespace nil {
                         allocate(state_access_selector_and_write[i], ++cur_column, i);
                         allocate(first_or_start[i], ++cur_column, i);
                         
-                        for( std::size_t j = 0; j < op_bits_amount; j++){
+                        for( std::size_t j = 1; j < op_bits_amount - 1; j++){
                             allocate(start_selector_bits[i][j], ++cur_column, i);
                         }
-                        for( std::size_t j = 0; j < op_bits_amount; j++){
+                        for( std::size_t j = 1; j < op_bits_amount - 1; j++){
                             allocate(state_selector_bits[i][j], ++cur_column, i);
                         }
-                        for( std::size_t j = 0; j < op_bits_amount; j++){
+                        for( std::size_t j = 1; j < op_bits_amount - 1; j++){
                             allocate(transient_storage_selector_bits[i][j], ++cur_column, i);
                         }
-                        for( std::size_t j = 0; j < op_bits_amount; j++){
+                        for( std::size_t j = 1; j < op_bits_amount - 1; j++){
                             allocate(call_context_selector_bits[i][j], ++cur_column, i);
                         }
-                        for( std::size_t j = 0; j < op_bits_amount; j++){
+                        for( std::size_t j = 1; j < op_bits_amount - 1; j++){
                             allocate(access_list_selector_bits[i][j], ++cur_column, i);
                         }
-                        for( std::size_t j = 0; j < op_bits_amount; j++){
+                        for( std::size_t j = 1; j < op_bits_amount - 1; j++){
                             allocate(padding_selector_bits[i][j], ++cur_column, i);
                         }
 
                         for( std::size_t j = 0; j < chunks_amount+2; j++){
-                            for( std::size_t k = 0; k < diff_index_bits_amount; k++){
+                            for( std::size_t k = 1; k < diff_index_bits_amount - 1; k++){
                                 allocate(diff_ind_selector_bits[i][j][k], ++cur_column, i);
                             }
                         }
@@ -534,8 +543,7 @@ namespace nil {
                         }
 
                         for( std::size_t diff_ind = 0; diff_ind < sorted.size(); diff_ind++ ){
-                            bit_tag_selector_constraints(context_object, diff_index_bits[1], diff_ind,non_first_row_constraints,diff_ind_selector_bits[1][diff_ind]);
-                            non_first_row_constraints.push_back(context_object.relativize(diff_ind_selector[1][diff_ind] -diff_ind_selector_bits[1][diff_ind][diff_index_bits_amount-1], -1));
+                            bit_tag_selector_constraints(context_object, diff_index_bits[1], diff_ind,non_first_row_constraints,diff_ind_selector_bits[1][diff_ind],diff_ind_selector[1][diff_ind]);
                             for(std::size_t less_diff_ind = 0; less_diff_ind < diff_ind; less_diff_ind++){
                                 non_first_row_constraints.push_back(context_object.relativize(not_padding_and_diff_ind_selector[1][diff_ind] * (sorted[less_diff_ind]-sorted_prev[less_diff_ind]),-1));
                             }
@@ -606,8 +614,7 @@ namespace nil {
                         // Specific constraints for START
                         std::map<std::size_t, std::vector<TYPE>> special_constraints;  
                                            
-                        bit_tag_selector_constraints(context_object, op_bits[1], START_OP, special_constraints[START_OP],start_selector_bits[1]);
-                        special_constraints[START_OP].push_back(context_object.relativize(start_selector[1] - start_selector_bits[1][op_bits_amount-1], -1));
+                        bit_tag_selector_constraints(context_object, op_bits[1], START_OP, special_constraints[START_OP],start_selector_bits[1],start_selector[1]);
                         special_constraints[START_OP].push_back(context_object.relativize(start_selector[1] * storage_key_hi[1], -1));
                         special_constraints[START_OP].push_back(context_object.relativize(start_selector[1]  * storage_key_lo[1], -1));
                         special_constraints[START_OP].push_back(context_object.relativize(start_selector[1]  * id[1], -1));
@@ -626,14 +633,12 @@ namespace nil {
                         // lookup to MPT circuit
                         // if field is not 0 then is account state change storage key is 0
                         
-                        bit_tag_selector_constraints(context_object, op_bits[1], STATE_OP, special_constraints[STATE_OP],state_selector_bits[1]);
-                        special_constraints[STATE_OP].push_back(context_object.relativize(state_selector[1] - state_selector_bits[1][op_bits_amount-1], -1));
+                        bit_tag_selector_constraints(context_object, op_bits[1], STATE_OP, special_constraints[STATE_OP],state_selector_bits[1],state_selector[1] );
                         special_constraints[STATE_OP].push_back(context_object.relativize(state_selector_and_field_type[1] - state_selector[1] * field_type[1], -1));
                         special_constraints[STATE_OP].push_back(context_object.relativize(state_selector_and_field_type[1] * storage_key_hi[1], -1));
                         special_constraints[STATE_OP].push_back(context_object.relativize(state_selector_and_field_type[1] * storage_key_lo[1], -1));
                         
-                        bit_tag_selector_constraints(context_object, op_bits[1], ACCESS_LIST_OP, non_first_row_constraints,access_list_selector_bits[1]);
-                        non_first_row_constraints.push_back(context_object.relativize(access_list_selector[1] - access_list_selector_bits[1][op_bits_amount-1], -1));
+                        bit_tag_selector_constraints(context_object, op_bits[1], ACCESS_LIST_OP, non_first_row_constraints,access_list_selector_bits[1],access_list_selector[1]);
                         
                         non_first_row_constraints.push_back(context_object.relativize(
                             state_access_selector_and_not_first[1] - (state_selector[1] + access_list_selector[1]) * (1 - is_first[1]), -1
@@ -695,16 +700,14 @@ namespace nil {
                         
                         // Specific constraints for TRANSIENT_STORAGE
                         // field is 0
-                        bit_tag_selector_constraints(context_object, op_bits[1], TRANSIENT_STORAGE_OP, special_constraints[TRANSIENT_STORAGE_OP],transient_storage_selector_bits[1]);
-                        special_constraints[TRANSIENT_STORAGE_OP].push_back(context_object.relativize(transient_storage_selector[1] - transient_storage_selector_bits[1][op_bits_amount-1], -1));
+                        bit_tag_selector_constraints(context_object, op_bits[1], TRANSIENT_STORAGE_OP, special_constraints[TRANSIENT_STORAGE_OP],transient_storage_selector_bits[1],transient_storage_selector[1]);
                         special_constraints[TRANSIENT_STORAGE_OP].push_back(context_object.relativize(transient_storage_selector[1] * field_type[1], -1));
 
                         // Specific constraints for CALL_CONTEXT
                         // address, storage_key, initial_value, value_prev are 0
                         // state_root = state_root_prev
                         // range_check for field_flag
-                        bit_tag_selector_constraints(context_object, op_bits[1], CALL_CONTEXT_OP, special_constraints[CALL_CONTEXT_OP],call_context_selector_bits[1]);
-                        special_constraints[CALL_CONTEXT_OP].push_back(context_object.relativize(call_context_selector[1] - call_context_selector_bits[1][op_bits_amount-1], -1));
+                        bit_tag_selector_constraints(context_object, op_bits[1], CALL_CONTEXT_OP, special_constraints[CALL_CONTEXT_OP],call_context_selector_bits[1],call_context_selector[1]);
                         special_constraints[CALL_CONTEXT_OP].push_back(context_object.relativize(call_context_selector[1] * address[1], -1));
                         special_constraints[CALL_CONTEXT_OP].push_back(context_object.relativize(call_context_selector[1] * storage_key_hi[1], -1));
                         special_constraints[CALL_CONTEXT_OP].push_back(context_object.relativize(call_context_selector[1] * storage_key_lo[1], -1));
@@ -834,8 +837,7 @@ namespace nil {
                         // context_object.relative_lookup( modified_items_amount_lookup, "zkevm_rw", 1, max_rw_size-1 );
 
                         // Specific constraints for PADDING
-                        bit_tag_selector_constraints(context_object, op_bits[1], PADDING_OP, special_constraints[PADDING_OP],padding_selector_bits[1]);
-                        special_constraints[PADDING_OP].push_back(context_object.relativize(padding_selector[1] - padding_selector_bits[1][op_bits_amount-1], -1));
+                        bit_tag_selector_constraints(context_object, op_bits[1], PADDING_OP, special_constraints[PADDING_OP],padding_selector_bits[1],padding_selector[1]);
                         special_constraints[PADDING_OP].push_back(context_object.relativize(padding_selector[1] * address[1], -1));
                         special_constraints[PADDING_OP].push_back(context_object.relativize(padding_selector[1] * storage_key_hi[1], -1));
                         special_constraints[PADDING_OP].push_back(context_object.relativize(padding_selector[1] * storage_key_lo[1], -1));
