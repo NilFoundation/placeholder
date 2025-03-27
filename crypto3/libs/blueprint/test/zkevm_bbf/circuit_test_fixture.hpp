@@ -79,8 +79,12 @@ std::vector<std::uint8_t> hex_string_to_bytes(std::string const &hex_string) {
 
 boost::property_tree::ptree load_hardhat_input(std::string path){
     std::ifstream ss;
-    std::cout << "Open file " << std::string(TEST_DATA_DIR) + path << std::endl;
-    ss.open(std::string(TEST_DATA_DIR) + path);
+    auto test_data_dir = std::getenv("NIL_CO3_TEST_DATA_DIR")
+                             ? std::getenv("NIL_CO3_TEST_DATA_DIR")
+                             : std::string(TEST_DATA_DIR);
+    auto full_path = test_data_dir + path;
+    std::cout << "Open file " << full_path << std::endl;
+    ss.open(full_path);
     boost::property_tree::ptree pt;
     boost::property_tree::read_json(ss, pt);
     ss.close();
@@ -94,7 +98,19 @@ bool check_proof(
     const crypto3::zk::snark::plonk_assignment_table<BlueprintFieldType> &assignment,
     const zk::snark::plonk_table_description<BlueprintFieldType> &desc
 ) {
-    std::size_t Lambda = 9;
+    std::size_t max_step = std::getenv("NIL_CO3_TEST_MAX_STEP")
+                               ? std::stoi(std::getenv("NIL_CO3_TEST_MAX_STEP"))
+                               : 1;
+    std::size_t lambda = std::getenv("NIL_CO3_TEST_LAMBDA")
+                             ? std::stoi(std::getenv("NIL_CO3_TEST_LAMBDA"))
+                             : 9;
+    std::size_t log_blowup = std::getenv("NIL_CO3_TEST_LOG_BLOWUP")
+                                 ? std::stoi(std::getenv("NIL_CO3_TEST_LOG_BLOWUP"))
+                                 : 2;
+    std::size_t max_quotient_poly_chunks =
+        std::getenv("NIL_CO3_TEST_LOG_MAX_QUOTIENT_POLY_CHUNKS")
+            ? std::stoi(std::getenv("NIL_CO3_TEST_LOG_MAX_QUOTIENT_POLY_CHUNKS"))
+            : 10;
 
     typedef nil::crypto3::zk::snark::placeholder_circuit_params<BlueprintFieldType> circuit_params;
     using transcript_hash_type = nil::crypto3::hashes::keccak_1600<256>;
@@ -109,13 +125,19 @@ bool check_proof(
     using lpc_type = nil::crypto3::zk::commitments::list_polynomial_commitment<BlueprintFieldType, lpc_params_type>;
     using lpc_scheme_type = typename nil::crypto3::zk::commitments::lpc_commitment_scheme<lpc_type>;
     using lpc_placeholder_params_type = nil::crypto3::zk::snark::placeholder_params<circuit_params, lpc_scheme_type>;
-    typename lpc_type::fri_type::params_type fri_params(1, std::ceil(log2(assignment.rows_amount())), Lambda, 2);
+    typename lpc_type::fri_type::params_type fri_params(
+        max_step, std::ceil(log2(assignment.rows_amount())), lambda, log_blowup);
     lpc_scheme_type lpc_scheme(fri_params);
 
     // std::cout << "Public preprocessor" << std::endl;
-    typename nil::crypto3::zk::snark::placeholder_public_preprocessor<BlueprintFieldType, lpc_placeholder_params_type>::preprocessed_data_type
-            lpc_preprocessed_public_data = nil::crypto3::zk::snark::placeholder_public_preprocessor<BlueprintFieldType, lpc_placeholder_params_type>::process(
-            bp, assignment.public_table(), desc, lpc_scheme, 10);
+    typename nil::crypto3::zk::snark::placeholder_public_preprocessor<
+        BlueprintFieldType, lpc_placeholder_params_type>::preprocessed_data_type
+        lpc_preprocessed_public_data =
+            nil::crypto3::zk::snark::placeholder_public_preprocessor<
+                BlueprintFieldType,
+                lpc_placeholder_params_type>::process(bp, assignment.public_table(), desc,
+                                                      lpc_scheme,
+                                                      max_quotient_poly_chunks);
 
     // std::cout << "Private preprocessor" << std::endl;
     typename nil::crypto3::zk::snark::placeholder_private_preprocessor<BlueprintFieldType, lpc_placeholder_params_type>::preprocessed_data_type
