@@ -118,8 +118,7 @@ namespace nil {
                             variable_values_out[var] = assignment;
                         }
 
-                        bench::scoped_log(std::format("Variables count: {}",
-                            variable_values_out.size()));
+                        SCOPED_LOG("Variables count: {}", variable_values_out.size());
                     }
 
                     static inline std::array<polynomial_dfs_type, argument_size> prove_eval(
@@ -150,10 +149,10 @@ namespace nil {
                         std::uint32_t max_degree = std::pow(2, ceil(std::log2(max_gates_degree)));
                         std::uint32_t max_domain_size = original_domain->m * max_degree;
 
-                        bench::scoped_log(
-                            std::format("Gate argument max degree: {}, small domain max "
-                                        "degree: {}, original domain size: {}",
-                                        max_degree, max_degree / 2, original_domain->m));
+                        SCOPED_LOG(
+                            "Gate argument max degree: {}, small domain max "
+                            "degree: {}, original domain size: {}",
+                            max_degree, max_degree / 2, original_domain->m);
 
                         degree_limits.push_back(max_degree);
                         extended_domain_sizes.push_back(max_domain_size);
@@ -228,12 +227,10 @@ namespace nil {
                         std::array<polynomial_dfs_type, argument_size> F;
 
                         for (size_t i = 0; i < extended_domain_sizes.size(); ++i) {
-                            PROFILE_SCOPE(std::format(
-                                "Gate argument evaluation on domain #{}", i + 1));
-                            bench::scoped_log(std::format("Constraint count: {}",
-                                                          constraint_counts[i]));
-                            std::unordered_map<polynomial_dfs_variable_type,
-                                               polynomial_dfs_type>
+                            PROFILE_SCOPE("Gate argument evaluation on domain #{}",
+                                          i + 1);
+                            SCOPED_LOG("Constraint count: {}", constraint_counts[i]);
+                            std::unordered_map<polynomial_dfs_variable_type, polynomial_dfs_type>
                                 variable_values;
 
                             build_variable_value_map(

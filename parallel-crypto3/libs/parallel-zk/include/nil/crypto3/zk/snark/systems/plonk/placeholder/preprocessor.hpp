@@ -529,9 +529,9 @@ namespace nil {
                         std::shared_ptr<math::evaluation_domain<FieldType>> domain
                     ) {
                         PROFILE_SCOPE(
-                            std::format("Preprocessor create permutation polynomials, "
-                                        "global_indices.size() = {}, domain->size() = {}",
-                                        global_indices.size(), domain->size()));
+                            "Preprocessor create permutation polynomials, "
+                            "global_indices.size() = {}, domain->size() = {}",
+                            global_indices.size(), domain->size());
                         // TODO: add std::vector<std::size_t> columns_with_copy_constraints;
                         cycle_representation permutation(constraint_system, table_description);
 

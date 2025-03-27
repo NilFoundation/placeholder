@@ -36,6 +36,8 @@
 #include <nil/crypto3/math/algorithms/unity_root.hpp>
 #include <nil/crypto3/math/detail/field_utils.hpp>
 
+#include <nil/crypto3/bench/scoped_profiler.hpp>
+
 namespace nil {
     namespace crypto3 {
         namespace math {
@@ -73,6 +75,7 @@ namespace nil {
                     const std::size_t n = a.size(), logn = log2(n);
                     if (n != (1u << logn))
                         throw std::invalid_argument("expected n == (1u << logn)");
+                    bench::register_fft(logn);
 
                     /* swapping in place (from Storer's book) */
                     for (std::size_t k = 0; k < n; ++k) {
