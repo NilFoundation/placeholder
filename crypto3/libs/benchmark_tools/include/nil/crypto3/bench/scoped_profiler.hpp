@@ -253,7 +253,7 @@ namespace nil::crypto3::bench::detail {
 #endif
             auto ffts_str = get_fft_counters().compared_to(fft_counters);
             if (!ffts_str.empty()) {
-                std::cout << ", ffts: " << ffts_str;
+                std::cout << ", FFTs: " << ffts_str;
             }
             std::cout << std::endl;
         }
