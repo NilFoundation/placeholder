@@ -77,7 +77,7 @@ public:
         const l1_size_restrictions         &max_sizes
     ){
         nil::blueprint::bbf::zkevm_alchemy_input_generator circuit_inputs(path);
-//        return;
+        return;
 
         using integral_type = typename field_type::integral_type;
         using value_type = typename field_type::value_type;

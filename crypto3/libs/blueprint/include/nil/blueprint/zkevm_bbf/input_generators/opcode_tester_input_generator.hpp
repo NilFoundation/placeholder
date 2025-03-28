@@ -66,9 +66,9 @@ class zkevm_opcode_tester_input_generator : zkevm_abstract_input_generator {
                         basic_state_part(), additional_input);
             } else switch (opcode) {
                 case zkevm_opcode::KECCAK256:
-                case zkevm_opcode::MLOAD: 
-                case zkevm_opcode::MSTORE: 
-                case zkevm_opcode::MSTORE8: 
+                case zkevm_opcode::MLOAD:
+                case zkevm_opcode::MSTORE:
+                case zkevm_opcode::MSTORE8:
                     _zkevm_states.emplace_back(
                             basic_state_part(), memory);
                     break;
@@ -212,8 +212,7 @@ class zkevm_opcode_tester_input_generator : zkevm_abstract_input_generator {
         call_commit.depth = depth;
 
         // SLOAD and SSTORE are not supported, so cold_write_list is empty
-        _rw_operations.push_back(call_context_rw_operation(
-                call_id, call_context_field::modified_items, 0));
+        _rw_operations.push_back(call_context_rw_operation(call_id, call_context_field::modified_items, 0));
     }
 
     void process_opcode(zkevm_opcode opcode, zkevm_word_type additional_input) {
@@ -660,7 +659,7 @@ class zkevm_opcode_tester_input_generator : zkevm_abstract_input_generator {
             std::size_t memory_size_word = (memory.size() + 31) / 32;
             std::size_t last_memory_cost = memory_size_word * memory_size_word / 512 + (3*memory_size_word);
 
-            std::size_t tmp = addr1 + 32; 
+            std::size_t tmp = addr1 + 32;
             tmp = 32*((tmp + 31) / 32);
             for( std::size_t i = memory.size(); i < tmp; i++){
                 memory[i] = 0;

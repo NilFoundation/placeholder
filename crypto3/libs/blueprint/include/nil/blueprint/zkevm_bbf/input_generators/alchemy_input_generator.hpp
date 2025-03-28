@@ -46,6 +46,7 @@ namespace nil {
     namespace blueprint {
         namespace bbf {
             class zkevm_alchemy_input_generator:zkevm_abstract_input_generator{
+                using extended_integral_type = nil::crypto3::multiprecision::big_uint<512>;
             protected:
                 std::map<zkevm_word_type, zkevm_account>                _accounts_initial_state; // Initial state; Update it after block.
                 std::map<zkevm_word_type, zkevm_account>                _accounts_current_state; // Initial state; Update it after block.
@@ -75,15 +76,26 @@ namespace nil {
                 std::size_t tx_id;
                 std::size_t block_id;
                 std::size_t depth;
+                std::size_t tx_chain_id;
                 zkevm_word_type tx_to;
                 zkevm_word_type tx_from;
-                zkevm_word_type tx_value;
+                std::size_t tx_value;
                 zkevm_word_type tx_hash;
                 zkevm_word_type call_caller;
                 zkevm_word_type block_hash;
                 zkevm_word_type transaction_hash;
-                zkevm_word_type call_context_address;
                 zkevm_word_type block_timestamp;
+                std::size_t     block_number;
+
+                zkevm_word_type call_context_address;
+                std::size_t     call_context_value;
+                std::size_t     call_gas;
+                zkevm_word_type call_addr;
+                std::size_t     call_value;
+                std::size_t     call_args_offset;
+                std::size_t     call_args_length;
+                std::size_t     call_status;
+                zkevm_word_type caller;
                 std::vector<std::uint8_t> calldata;
                 std::vector<std::uint8_t> returndata;
 
@@ -92,7 +104,11 @@ namespace nil {
                 std::vector<std::uint8_t> memory;
                 std::vector<std::uint8_t> bytecode;
                 std::set<zkevm_word_type> _bytecode_hashes;
+
                 std::vector<zkevm_word_type> last_opcode_push;
+                std::vector<std::uint8_t> last_opcode_memory;
+                std::size_t last_opcode_mem_offset;
+                std::size_t last_opcode_gas_cost;
 
                 std::map<zkevm_opcode, std::size_t> _unknown_opcodes;
                 std::size_t finished_transactions;
@@ -159,6 +175,7 @@ namespace nil {
                     returndata_rw_operations = 0;
                     state_rw_operations = 0;
                     call_context_rw_operations = 0;
+                    rw_counter = 0;
 
                     boost::property_tree::ptree tree = load_json_input(path + std::string("block.json"));
                     std::cout << "ZKEVM ALCHEMY INPUT GENERATOR loaded" << std::endl;
@@ -166,7 +183,7 @@ namespace nil {
                     start_block(pt_block.get_child("hash").data(), pt_block);
                     block_transactions = tree.get_child("transactions").size();
                     std::size_t tx_order = 0;
-                    rw_counter = 0;
+                    rw_counter = 1;
                     for( auto &tt: tree.get_child("transactions")){
                         std::string tx_hash_string = tt.second.get_child("tx_hash").data();
                         std::cout << tx_order++ << "." << tx_hash_string << " ";
@@ -240,7 +257,8 @@ namespace nil {
                     tx_id = 0;
                     depth = 1;
                     tx_hash = 0;
-                    //block_timestamp = zkevm_word_from_string(pt.get_child("timestamp").data());
+                    block_timestamp = zkevm_word_from_string(pt.get_child("timestamp").data());
+                    block_number = std::size_t(zkevm_word_from_string(pt.get_child("number").data()));
 
                     std::cout << "START BLOCK " << block_id << std::endl;
                     _zkevm_states.push_back(start_block_zkevm_state(block_hash, block_id));
@@ -285,13 +303,16 @@ namespace nil {
 
                 void start_transaction(std::string _tx_hash, const boost::property_tree::ptree &tt){
                     depth++;
-                    tx_id = call_id = rw_counter;
+                    pc = 0;
+                    tx_id = call_id = rw_counter++;
                     tx_to = zkevm_word_from_string(tt.get_child("to").data());
                     tx_from = zkevm_word_from_string(tt.get_child("from").data());
-                    call_caller = 0;
-                    tx_value = zkevm_word_from_string(tt.get_child("value").data());
+                    caller = tx_from;
+                    tx_chain_id = std::size_t(zkevm_word_from_string(tt.get_child("chainId").data().c_str()));
+                    tx_value = call_context_value = call_value = std::size_t(zkevm_word_from_string(tt.get_child("value").data()));
                     gas = std::size_t(zkevm_word_from_string(tt.get_child("gas").data()));
                     tx_hash = zkevm_word_from_string(_tx_hash);
+                    gas -= 21000; // transaction cost
 
                     current_opcode = opcode_to_number(zkevm_opcode::start_transaction);
                     call_context_address = tx_to;
@@ -302,14 +323,22 @@ namespace nil {
                         << std::endl;
                     std::cout << "CALLDATA size = " << calldata.size() << " : ";
                     for( auto &c: calldata){
+                        gas -= (c==0 ? 4: 16); // calldata cost
                         std::cout << std::hex << std::size_t(c) << std::dec << " ";
                     }
                     std::cout << std::endl;
+                    std::cout << "CALLVALUE = " << std::hex << call_context_value << std::dec << std::endl;
 
                     auto base = get_basic_zkevm_state_part();
                     auto call_context = get_call_header_state_part();
 
                     _call_stack.push_back({_zkevm_states.back(),call_id, 0, 0, 0, calldata, {}, bytecode});
+                    _call_stack.back().caller = caller;
+                    _call_stack.back().call_context_address = call_context_address;
+                    _call_stack.back().was_accessed.insert({call_context_address, 1, 0});
+                    _call_stack.back().was_accessed.insert({tx_from, 1, 0});
+                    _call_stack.back().call_value = call_value;
+                    _call_stack.back().call_context_value = call_context_value;
 
                     _rw_operations.push_back(call_context_rw_operation(
                         tx_id, call_context_field::parent_id, block_id
@@ -352,6 +381,18 @@ namespace nil {
 
                     calldata_rw_operations += calldata.size();
                     call_context_rw_operations += call_context_readonly_field_amount;
+
+                    if( tt.get_child_optional("accessList") ){
+                        for( auto &access_list: tt.get_child("accessList")){
+                            zkevm_word_type address = zkevm_word_from_string(access_list.second.get_child("address").data());
+                            _call_stack.back().was_accessed.insert({address, 1, 0});
+                            gas -= 2400; // access_list cost
+                            for( auto &storage: access_list.second.get_child("storageKeys")){
+                                _call_stack.back().was_accessed.insert({address, 0, zkevm_word_from_string(storage.second.data())});
+                                gas -= 1900; // access_list cost
+                            }
+                        }
+                    }
                 }
 
                 void end_transaction(const boost::property_tree::ptree &tt){
@@ -441,11 +482,17 @@ namespace nil {
                     for( const auto &opcode_description: tx_trace.get_child("vmTrace.ops")){
                         execute_opcode(opcode_description.second);
                         opcode_sum++;
-                        if( opcode_description.second.get_child("sub").data() != "null"){
+                        if( opcode_description.second.get_child("sub").data() != "null" &&
+                            opcode_description.second.get_child("sub.ops").size() != 0
+                        ){
                             start_call(opcode_description.second.get_child("sub"));
                             execute_call(opcode_description.second.get_child("sub"));
                             end_call(opcode_description.second.get_child("sub"));
                         }
+                        if( gas != atoi(opcode_description.second.get_child("ex.used").data().c_str())){
+                            std::cout << "Gas error: " << gas << " != " << atoi(opcode_description.second.get_child("ex.used").data().c_str()) << std::endl;
+                        }
+                        BOOST_ASSERT( gas == atoi(opcode_description.second.get_child("ex.used").data().c_str()) );
                     }
                 }
 
@@ -466,32 +513,115 @@ namespace nil {
                     else
                         opcode_distribution[zkevm_opcode::start_call] = 1;
 
+                    gas -= 100; // call cost
+                    if( _call_stack.back().was_accessed.count({call_addr, 1, 0}) == 0 ) {
+                        std::cout << "Was not accessed " << std::hex << call_addr << std::dec << std::endl;
+                        gas -= 2500; // call cost
+                    } else {
+                        std::cout << "Was accessed " << std::hex << call_addr << std::dec << std::endl;
+                    }
+                    _call_stack.back().was_accessed.insert({call_addr, 1, 0});
 
-                    _call_stack.push_back({_zkevm_states.back(), call_id, 0, 0, 0, calldata, {}, bytecode});
+                    // std::cout << "Memory size = " << memory.size() << ": " << std::hex;
+                    // for(auto c:memory){
+                    //     std::cout << std::size_t(c) << " ";
+                    // }
+                    // std::cout << std::dec << std::endl;
+                    _zkevm_states.push_back(call_header_zkevm_state(get_basic_zkevm_state_part(), get_call_header_state_part()));
+                    _call_stack.push_back({_zkevm_states.back(), call_id, 0, 0, 0, calldata, {}, bytecode, stack, memory});
+                    _call_stack.back().caller = caller;
+                    _call_stack.back().call_context_address = call_context_address;
+                    _call_stack.back().was_accessed = _call_stack[_call_stack.size() - 2].was_accessed;
+                    _call_stack.back().was_written = _call_stack[_call_stack.size() - 2].was_written;
+                    _call_stack.back().call_value = call_value;
+                    _call_stack.back().call_context_value = call_context_value;
+                    std::cout << "call_value = " << std::hex << call_value << std::dec << std::endl;
+                    std::cout << "call_context_value = " << std::hex << call_context_value << std::dec << std::endl;
 
+                    calldata.clear();
+                    //std::cout << "calldata size = " << call_args_length <<  " : " << std::hex;
+                    for( std::size_t i = 0; i < call_args_length; i++){
+                        calldata.push_back(memory[call_args_offset + i]);
+                        //std::cout << std::size_t(memory[call_args_offset + i]) << " ";
+                    }
+                    //std::cout << std::dec << std::endl;
+                    _call_stack.back().calldata = calldata;
+
+                    if(call_gas >= gas - (gas / 64)) {
+                        std::cout << "gas - gas/64" << std::endl;
+                        gas = gas - (gas / 64);
+                    } else {
+                        std::cout << "call_gas is valid" << std::endl;
+                        gas = call_gas;
+                    }
+                    if( call_value != 0 ) {
+                        gas += 2300;
+                    }
+                    call_gas = gas;
+                    _call_stack.back().call_gas = call_gas;
+
+                    stack = {};
+                    memory = {};
+                    pc = 0;
                     opcode_sum++;
                     depth++;
                 }
 
                 void execute_call(const boost::property_tree::ptree &call_trace){
                     for( const auto &opcode_description: call_trace.get_child("ops")){
-                        for( std::size_t i = 0; i < depth; i++) std::cout << "\t";
+                        //for( std::size_t i = 0; i < depth; i++) std::cout << "\t";
                         //std::cout << opcode_description.second.get_child("op").data() << std::endl;
                         zkevm_opcode op = opcode_from_number(opcode_number_from_str(opcode_description.second.get_child("op").data()));
                         execute_opcode(opcode_description.second);
                         opcode_sum++;
-                        if( opcode_description.second.get_child("sub").data() != "null"){
+                        if( opcode_description.second.get_child("sub").data() != "null"&&
+                            opcode_description.second.get_child("sub.ops").size() != 0
+                        ){
                             //std::cout << "\tSUBOPCODE " << op << std::endl;
                             start_call(opcode_description.second.get_child("sub"));
                             execute_call(opcode_description.second.get_child("sub"));
                             end_call(opcode_description.second.get_child("sub"));
                         }
+                        if( gas != atoi(opcode_description.second.get_child("ex.used").data().c_str())){
+                            std::cout << "Gas error: " << gas << " != " << atoi(opcode_description.second.get_child("ex.used").data().c_str()) << std::endl;
+                        }
+                        BOOST_ASSERT( gas == atoi(opcode_description.second.get_child("ex.used").data().c_str()) );
                     }
                 }
                 void end_call(const boost::property_tree::ptree &tx_trace){
-                    //std::cout << "END CALL " << std::endl;
+                    std::cout << "END CALL" << std::endl;
+                    pc = _call_stack.back().state.pc() + 1;
+                    gas = _call_stack.back().state.gas() - (call_gas - gas);
+                    memory = _call_stack.back().memory;
+                    stack = _call_stack.back().stack;
+                    call_value = _call_stack.back().call_value;
+                    if( call_value != 0 ) gas += 2300;
+
                     _call_stack.pop_back();
+                    call_id = _call_stack.back().call_id;
                     bytecode = _call_stack.back().bytecode;
+                    calldata = _call_stack.back().calldata;
+                    caller = _call_stack.back().caller;
+                    call_context_address = _call_stack.back().call_context_address;
+                    call_context_value = _call_stack.back().call_context_value;
+                    call_value = _call_stack.back().call_value;
+                    call_gas = _call_stack.back().call_gas;
+                    std::size_t returndata_offset = _call_stack.back().lastcall_returndataoffset;
+                    std::size_t returndata_length = _call_stack.back().lastcall_returndatalength;
+
+                    if( memory.size() < returndata_offset + returndata_length ){
+                        memory.resize(returndata_offset + returndata_length);
+                    }
+                    for( std::size_t i = 0; i < returndata_length; i++){
+                        memory[returndata_offset + i] = returndata[i];
+                    }
+                    stack.push_back(call_status);
+
+                    // std::cout << "Memory size = " << memory.size() << ": " << std::hex;
+                    // for(auto c:memory){
+                    //     std::cout << std::size_t(c) << " ";
+                    // }
+                    // std::cout << std::dec << std::endl;
 
                     depth--;
                     if (opcode_distribution.count(zkevm_opcode::end_call))
@@ -499,21 +629,37 @@ namespace nil {
                     else
                         opcode_distribution[zkevm_opcode::end_call] = 1;
                     opcode_sum++;
+
+                    std::cout << "call_value = " << std::hex << call_value << std::dec << std::endl;
+                    std::cout << "call_context_value = " << std::hex << call_context_value << std::dec << std::endl;
                 }
                 void execute_opcode(const boost::property_tree::ptree &opcode_description){
+                    //!TODO: Remove it later!
+
+                    rw_counter++;
                     zkevm_opcode op = opcode_from_number(opcode_number_from_str(opcode_description.get_child("op").data()));
                     current_opcode = opcode_to_number(op);
-                    pc = atoi(opcode_description.get_child("pc").data().c_str());
-                    if( opcode_description.get_child_optional("ex.used") )
-                        gas = atoi(opcode_description.get_child("ex.used").data().c_str());
+                    BOOST_ASSERT( pc == atoi(opcode_description.get_child("pc").data().c_str()) );
+
+                    memory_size = memory.size();
                     stack_size = stack.size();
+
                     // memory_size = atoi(opcode_description.get_child("ex.mem.off").data().c_str());
                     last_opcode_push.clear();
                     if( opcode_description.get_child_optional("ex.push") )
                         last_opcode_push = zkevm_word_vector_from_ptree(opcode_description.get_child("ex.push"));
 
                     for( std::size_t i = 1; i < depth; i++) std::cout << "\t";
-                    std::cout << op << "=0x" << std::hex<< current_opcode << std::dec << " call_id = " << call_id << " pc = " << pc << std::endl;
+                    std::cout << op << "=0x" << std::hex<< current_opcode << std::dec << " call_id = " << call_id << " pc = " << pc << " gas = " << gas << std::endl;
+
+                    last_opcode_memory.clear();
+                    if( opcode_description.get_child_optional("ex.mem.data") ){
+                        last_opcode_memory = byte_vector_from_hex_string(opcode_description.get_child("ex.mem.data").data(), 2);
+                    }
+                    if( opcode_description.get_child_optional("ex.mem.off") )
+                        last_opcode_mem_offset = atoi(opcode_description.get_child("ex.mem.off").data().c_str());
+
+                    last_opcode_gas_cost = atoi(opcode_description.get_child("cost").data().c_str());
 
                     executed_opcodes++;
                     std::string opcode = opcode_to_string(op);
@@ -533,75 +679,80 @@ namespace nil {
                     }
                     BOOST_ASSERT((pc == bytecode.size() && opcode == "STOP" ) || (bytecode[pc] == current_opcode));
                     if(opcode == "STOP") { stop();}
-                    else if(
-                        opcode == "ADD" || opcode == "MUL" || opcode == "SUB" || opcode == "DIV" ||
-                        opcode == "SDIV" || opcode == "MOD" || opcode == "SMOD" ||  opcode == "SIGNEXTEND" ||
-                        opcode == "LT" || opcode == "GT"   || opcode == "SLT" || opcode == "SGT" || opcode == "SGT" ||
-                        opcode == "EQ"  || opcode == "AND" || opcode == "OR"  || opcode == "XOR" || opcode == "BYTE" ||
-                        opcode == "SHL" || opcode == "SHR" || opcode == "SAR"
-                    ) {
-                        two_operands_arithmetic();
-                    } else if(
-                        opcode == "ADDMOD" ||
-                        opcode == "MULMOD"
-                    ) {
-                        three_operands_arithmetic();
-                    } else if(
-                        opcode == "ISZERO" ||
-                        opcode == "NOT"
-                    ) {
-                        one_operand_arithmetic();
-                    } else if( opcode == "EXP" )     exp();
+                    else if( opcode == "LT" ) lt();
+                    else if( opcode == "GT" ) gt();
+                    else if( opcode == "SLT" ) slt();
+                    else if( opcode == "SGT" ) sgt();
+                    else if( opcode == "SHL" ) shl();
+                    else if( opcode == "SHR" ) shr();
+                    else if( opcode == "SAR" ) sar();
+                    else if( opcode == "ADD" ) add();
+                    else if( opcode == "SUB" ) sub();
+                    else if( opcode == "DIV" ) div();
+                    else if( opcode == "MOD" ) mod();
+                    else if( opcode == "SDIV" ) sdiv();
+                    else if( opcode == "SMOD" ) smod();
+                    else if( opcode == "MULMOD" ) mulmod();
+                    else if( opcode == "MUL" ) mul();
+                    else if( opcode == "EXP" ) exp();
+                    else if( opcode == "SIGNEXTEND" ) signextend();
+                    else if( opcode == "AND" ) and_opcode();
+                    else if( opcode == "OR" ) or_opcode();
+                    else if( opcode == "XOR" ) xor_opcode();
+                    else if( opcode == "BYTE" ) byte();
+                    else if( opcode == "EQ" ) eq();
+                    else if( opcode == "ISZERO" ) iszero();
+                    else if( opcode == "NOT" ) not_opcode();
                     else if( opcode == "KECCAK256" ) keccak();
                     else if( opcode == "ADDRESS" )   address();
-                    else if( opcode == "BALANCE" )   balance();
+                    // else if( opcode == "BALANCE" )   balance();
                     else if( opcode == "ORIGIN" )    origin();
-                    else if( opcode == "CALLER" )    caller();
+                    else if( opcode == "CALLER" )    caller_opcode();
                     else if( opcode == "CALLVALUE" ) callvalue();
                     else if( opcode == "CALLDATALOAD" ) calldataload();
                     else if( opcode == "CALLDATASIZE" ) calldatasize();
                     else if( opcode == "CALLDATACOPY" ) calldatacopy();
-                    else if( opcode == "CODESIZE" ) codesize();
+                    // else if( opcode == "CODESIZE" ) codesize();
                     else if( opcode == "CODECOPY" ) codecopy();
-                    else if( opcode == "GASPRICE" ) gasprice();
+                    // else if( opcode == "GASPRICE" ) gasprice();
                     else if( opcode == "RETURNDATASIZE" ) returndatasize();
                     else if( opcode == "RETURNDATACOPY" ) returndatacopy();
                     else if( opcode == "EXTCODESIZE" ) extcodesize();
-                    else if( opcode == "EXTCODECOPY" ) extcodecopy();
-                    else if( opcode == "EXTCODEHASH" ) extcodehash();
-                    else if( opcode == "BLOCKHASH" ) blockhash();
-                    else if( opcode == "COINBASE" ) coinbase();
+                    // else if( opcode == "EXTCODECOPY" ) extcodecopy();
+                    // else if( opcode == "EXTCODEHASH" ) extcodehash();
+                    // else if( opcode == "BLOCKHASH" ) blockhash();
+                    // else if( opcode == "COINBASE" ) coinbase();
                     else if( opcode == "TIMESTAMP" ) timestamp();
                     else if( opcode == "NUMBER" ) number();
-                    else if( opcode == "DIFFICULTY" ) difficulty();
-                    else if( opcode == "GASLIMIT" ) gaslimit();
-                    else if( opcode == "CHAINID" ) chaindid();
-                    else if( opcode == "SELFBALANCE" ) selfbalance();
-                    else if( opcode == "BASEFEE" ) basefee();
-                    else if( opcode == "BLOBHASH" ) blobhash();
-                    else if( opcode == "BLOBBASEFEE" ) blobbasefee();
-                    else if( opcode == "TLOAD" ) tload();
-                    else if( opcode == "TSTORE" ) tstore();
-                    else if( opcode == "MCOPY" ) mcopy();
-                    else if( opcode == "CREATE" ) create();
-                    else if( opcode == "CREATE2" ) create2();
-                    else if( opcode == "SELFDESTRUCT" ) selfdestruct();
-                    else if( opcode == "CALLCODE" ) callcode();
+                    // else if( opcode == "DIFFICULTY" ) difficulty();
+                    // else if( opcode == "GASLIMIT" ) gaslimit();
+                    else if( opcode == "CHAINID" ) chainid();
+                    // else if( opcode == "SELFBALANCE" ) selfbalance();
+                    // else if( opcode == "BASEFEE" ) basefee();
+                    // else if( opcode == "BLOBHASH" ) blobhash();
+                    // else if( opcode == "BLOBBASEFEE" ) blobbasefee();
+                    // else if( opcode == "TLOAD" ) tload();
+                    // else if( opcode == "TSTORE" ) tstore();
+                    // else if( opcode == "MCOPY" ) mcopy();
+                    // else if( opcode == "CREATE" ) create();
+                    // else if( opcode == "CREATE2" ) create2();
+                    // else if( opcode == "SELFDESTRUCT" ) selfdestruct();
+                    // else if( opcode == "CALLCODE" ) callcode();
                     else if( opcode == "STATICCALL" ) staticcall();
-                    else if( opcode == "JUMPDEST" ) simple_dummy();
+                    else if( opcode == "JUMPDEST" ) jumpdest();
                     else if( opcode == "POP" ) pop();
                     else if( opcode == "MLOAD" ) mload();
                     else if( opcode == "MSTORE" ) mstore();
-                    else if( opcode == "MSTORE8" ) mstore8();
+                    // else if( opcode == "MSTORE8" ) mstore8();
                     else if( opcode == "SLOAD" ) sload();
                     else if( opcode == "SSTORE" ) sstore();
                     else if( opcode == "JUMP" ) jump();
                     else if( opcode == "JUMPI" ) jumpi();
-                    else if(
-                        opcode == "PC" ||
-                        opcode == "MSIZE" ||
-                        opcode == "GAS"
-                    ) one_push_to_stack();
+                    else if( opcode == "GAS" ) gas_opcode();
+                    // else if(
+                    //     opcode == "PC" ||
+                    //     opcode == "MSIZE" ||
+                    // ) one_push_to_stack();
                     else if(opcode == "PUSH0") push_opcode(0);
                     else if(opcode == "PUSH1") push_opcode(1);
                     else if(opcode == "PUSH2") push_opcode(2);
@@ -675,7 +826,7 @@ namespace nil {
                     else if(opcode == "CALL") { call();}
                     else if(opcode == "RETURN"){ return_opcode();}
                     else if(opcode == "DELEGATECALL") { delegatecall();}
-                    else if (opcode == "REVERT"){ revert(); }
+                    // else if (opcode == "REVERT"){ revert(); }
                     else {
                         std::cout << "Input generator does not support " << opcode << std::endl;
                         exit(2);
@@ -689,12 +840,38 @@ namespace nil {
                 }
 
                 void stop() {
+                    call_status = 1;
+                    _call_stack[_call_stack.size()-2].was_accessed.insert(_call_stack.back().was_accessed.begin(), _call_stack.back().was_accessed.end());
+                    _call_stack[_call_stack.size()-2].was_written.insert(_call_stack.back().was_written.begin(), _call_stack.back().was_written.end());
+                    returndata.clear();
                 }
                 void one_operand_arithmetic() {
                     stack.pop_back();
                     BOOST_ASSERT(last_opcode_push.size() == 1);
                     stack.push_back(last_opcode_push.back());
                     stack_rw_operations += 2;
+                    pc++;
+                }
+                void iszero() {
+                    auto a = stack.back(); stack.pop_back();
+                    zkevm_word_type result = a == 0? 1: 0;
+                    BOOST_ASSERT(last_opcode_push.size() == 1);
+                    BOOST_ASSERT(last_opcode_push.back() == result);
+                    stack.push_back(result);
+                    stack_rw_operations += 2;
+                    gas -= 3;
+                    pc++;
+                }
+                void not_opcode() {
+                    auto a = stack.back(); stack.pop_back();
+                    zkevm_word_type result =
+                        zkevm_word_type(0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_big_uint256) - a;
+                    BOOST_ASSERT(last_opcode_push.size() == 1);
+                    BOOST_ASSERT(last_opcode_push.back() == result);
+                    stack.push_back(result);
+                    stack_rw_operations += 2;
+                    gas -= 3;
+                    pc++;
                 }
                 void two_operands_arithmetic() {
                     stack.pop_back();
@@ -704,6 +881,292 @@ namespace nil {
                     else
                         stack.push_back(0);
                     stack_rw_operations += 3;
+                    pc++;
+                }
+                void shl() {
+                    auto b = stack.back(); stack.pop_back();
+                    auto a = stack.back(); stack.pop_back();
+                    int shift = (b < 256) ? int(b) : 256;
+                    zkevm_word_type result = a << shift;
+
+                    BOOST_ASSERT(last_opcode_push.size() == 1);
+                    BOOST_ASSERT(last_opcode_push.back() == result);
+                    stack.push_back(result);
+                    stack_rw_operations += 3;
+                    gas -= 3;
+                    pc++;
+                }
+                void shr() {
+                    auto b = stack.back(); stack.pop_back();
+                    auto a = stack.back(); stack.pop_back();
+                    int shift = (b < 256) ? int(b) : 256;
+                    zkevm_word_type result = a >> shift;
+
+                    BOOST_ASSERT(last_opcode_push.size() == 1);
+                    BOOST_ASSERT(last_opcode_push.back() == result);
+                    stack.push_back(result);
+                    stack_rw_operations += 3;
+                    gas -= 3;
+                    pc++;
+                }
+                void lt() {
+                    auto a = stack.back(); stack.pop_back();
+                    auto b = stack.back(); stack.pop_back();
+                    zkevm_word_type result = (a < b);
+
+                    BOOST_ASSERT(last_opcode_push.size() == 1);
+                    BOOST_ASSERT(last_opcode_push.back() == result);
+                    stack.push_back(result);
+                    stack_rw_operations += 3;
+                    gas -= 3;
+                    pc++;
+                }
+                void gt() {
+                    auto a = stack.back(); stack.pop_back();
+                    auto b = stack.back(); stack.pop_back();
+                    zkevm_word_type result = (a > b);
+
+                    BOOST_ASSERT(last_opcode_push.size() == 1);
+                    BOOST_ASSERT(last_opcode_push.back() == result);
+                    stack.push_back(result);
+                    stack_rw_operations += 3;
+                    gas -= 3;
+                    pc++;
+                }
+                void slt() {
+                    auto a = stack.back(); stack.pop_back();
+                    auto b = stack.back(); stack.pop_back();
+                    zkevm_word_type result;
+                    if( is_negative(a) && !is_negative(b) ){
+                        result = 1;
+                    } else if( is_negative(a) && is_negative(b) ){
+                        result = a > b;
+                    } else if( !is_negative(a) && !is_negative(b) ){
+                        result = a < b;
+                    }
+
+                    BOOST_ASSERT(last_opcode_push.size() == 1);
+                    BOOST_ASSERT(last_opcode_push.back() == result);
+                    stack.push_back(result);
+                    stack_rw_operations += 3;
+                    gas -= 3;
+                    pc++;
+                }
+                void sgt() {
+                    auto a = stack.back(); stack.pop_back();
+                    auto b = stack.back(); stack.pop_back();
+                    zkevm_word_type result;
+                    if( !is_negative(a) && is_negative(b) ){
+                        result = 1;
+                    } else if( is_negative(a) && is_negative(b) ){
+                        result = a < b;
+                    } else if( !is_negative(a) && !is_negative(b) ){
+                        result = a > b;
+                    }
+
+                    BOOST_ASSERT(last_opcode_push.size() == 1);
+                    BOOST_ASSERT(last_opcode_push.back() == result);
+                    stack.push_back(result);
+                    stack_rw_operations += 3;
+                    gas -= 3;
+                    pc++;
+                }
+                void sub() {
+                    auto a = stack.back(); stack.pop_back();
+                    auto b = stack.back(); stack.pop_back();
+                    zkevm_word_type result = wrapping_sub(a, b);
+                    BOOST_ASSERT(last_opcode_push.size() == 1);
+                    //! Trace subtraction is not correct:
+                    //! 1 - 6e38d4999fdb6fac24973e508cde9397e369c5af = ffffffffffffffffffffffff91c72b6660249053db68c1af73216c681c963a52 != ffffffffffffffffffffffffffffffffffffffff
+                    // if( last_opcode_push.back() != result){
+                    //     std::cout << "Subtraction error: " << std::hex << a << " - " << b << " = " << result << " != " << last_opcode_push.back() << std::dec << std::endl;
+                    // }
+                    // BOOST_ASSERT(last_opcode_push.back() == result);
+                    stack.push_back(result);
+                    stack_rw_operations += 3;
+                    gas -= 3;
+                    pc++;
+                }
+                void add() {
+                    auto a = stack.back(); stack.pop_back();
+                    auto b = stack.back(); stack.pop_back();
+                    zkevm_word_type result = wrapping_add(a, b);
+                    BOOST_ASSERT(last_opcode_push.size() == 1);
+                    BOOST_ASSERT(last_opcode_push.back() == result);
+                    stack.push_back(result);
+                    stack_rw_operations += 3;
+                    gas -= 3;
+                    pc++;
+                }
+                void div() {
+                    auto a = stack.back(); stack.pop_back();
+                    auto b = stack.back(); stack.pop_back();
+                    zkevm_word_type result = b != 0u ? a / b : 0u;
+                    BOOST_ASSERT(last_opcode_push.size() == 1);
+                    BOOST_ASSERT(last_opcode_push.back() == result);
+                    stack.push_back(result);
+                    stack_rw_operations += 3;
+                    gas -= 5;
+                    pc++;
+                }
+                void mod() {
+                    auto a = stack.back(); stack.pop_back();
+                    auto b = stack.back(); stack.pop_back();
+                    zkevm_word_type q = b != 0u ? a % b : a;
+                    zkevm_word_type result =
+                        b != 0u ? q : 0u;  // according to EVM spec a % 0 = 0                    BOOST_ASSERT(last_opcode_push.size() == 1);
+                    BOOST_ASSERT(last_opcode_push.back() == result);
+                    stack.push_back(result);
+                    stack_rw_operations += 3;
+                    gas -= 5;
+                    pc++;
+                }
+                void sdiv() {
+                    auto a = stack.back(); stack.pop_back();
+                    auto b_input = stack.back(); stack.pop_back();
+                    bool overflow = (a == neg_one) && (b_input == min_neg);
+                    zkevm_word_type b = overflow ? 1 : b_input;
+                    zkevm_word_type a_abs = abs_word(a), b_abs = abs_word(b);
+                    zkevm_word_type r_abs = b != 0u ? a_abs / b_abs : 0u;
+                    zkevm_word_type result = (is_negative(a) == is_negative(b)) ? r_abs : negate_word(r_abs);
+                    BOOST_ASSERT(last_opcode_push.size() == 1);
+                    BOOST_ASSERT(last_opcode_push.back() == result);
+                    stack.push_back(result);
+                    stack_rw_operations += 3;
+                    gas -= 5;
+                    pc++;
+                }
+                void smod() {
+                    auto a = stack.back(); stack.pop_back();
+                    auto b_input = stack.back(); stack.pop_back();
+                    bool overflow = (a == neg_one) && (b_input == min_neg);
+                    zkevm_word_type b = overflow ? 1 : b_input;
+                    zkevm_word_type a_abs = abs_word(a), b_abs = abs_word(b);
+                    zkevm_word_type r_abs = b != 0u ? a_abs / b_abs : 0u;
+                    zkevm_word_type q_abs = b != 0u ? a_abs % b_abs : a_abs,
+                                    r = (is_negative(a) == is_negative(b))
+                                        ? r_abs
+                                        : negate_word(r_abs),
+                                    q = is_negative(a) ? negate_word(q_abs) : q_abs;
+                    zkevm_word_type result = b != 0u ? q : 0u;  // according to EVM spec a % 0 = 0
+
+                    BOOST_ASSERT(last_opcode_push.size() == 1);
+                    BOOST_ASSERT(last_opcode_push.back() == result);
+                    stack.push_back(result);
+                    stack_rw_operations += 3;
+                    gas -= 5;
+                    pc++;
+                }
+                void sar() {
+                    zkevm_word_type b = stack.back();  stack.pop_back();
+                    zkevm_word_type input_a = stack.back(); stack.pop_back();
+                    zkevm_word_type a = abs_word(input_a);
+                    int shift = (b < 256) ? int(b) : 256;
+                    zkevm_word_type r = a >> shift;
+                    zkevm_word_type result = is_negative(a) ? ((r == 0) ? neg_one : negate_word(r)) : r;
+
+                    BOOST_ASSERT(last_opcode_push.size() == 1);
+                    BOOST_ASSERT(last_opcode_push.back() == result);
+                    stack.push_back(result);
+                    stack_rw_operations += 3;
+                    gas -= 3;
+                    pc++;
+                }
+                void mulmod(){
+                    zkevm_word_type a = stack.back(); stack.pop_back();
+                    zkevm_word_type b = stack.back(); stack.pop_back();
+                    zkevm_word_type modulus = stack.back(); stack.pop_back();
+                    a = modulus != 0u ? a : 0;
+                    extended_integral_type s_integral =
+                        extended_integral_type(a) * extended_integral_type(b);
+                    zkevm_word_type sp = zkevm_word_type(s_integral % extended_zkevm_mod);
+                    zkevm_word_type spp = zkevm_word_type(s_integral / extended_zkevm_mod);
+                    extended_integral_type r_integral =
+                        modulus != 0u ? s_integral / extended_integral_type(modulus) : 0u;
+                    zkevm_word_type rp = zkevm_word_type(r_integral % extended_zkevm_mod);
+                    zkevm_word_type rpp = zkevm_word_type(r_integral / extended_zkevm_mod);
+                    zkevm_word_type result =
+                        modulus != 0u
+                        ? zkevm_word_type(s_integral % extended_integral_type(modulus))
+                        : 0u;
+
+                    BOOST_ASSERT(last_opcode_push.size() == 1);
+                    BOOST_ASSERT(last_opcode_push.back() == result);
+                    stack.push_back(result);
+                    stack_rw_operations += 3;
+                    gas -= 8;
+                    pc++;
+                }
+
+                void mul() {
+                    auto a = stack.back(); stack.pop_back();
+                    auto b = stack.back(); stack.pop_back();
+                    zkevm_word_type result = wrapping_mul(a, b);
+                    BOOST_ASSERT(last_opcode_push.size() == 1);
+                    BOOST_ASSERT(last_opcode_push.back() == result);
+                    stack.push_back(result);
+                    stack_rw_operations += 3;
+                    gas -= 5;
+                    pc++;
+                }
+                void eq() {
+                    auto a = stack.back(); stack.pop_back();
+                    auto b = stack.back(); stack.pop_back();
+                    zkevm_word_type result = a==b? 1: 0;
+                    BOOST_ASSERT(last_opcode_push.size() == 1);
+                    if( last_opcode_push.back() != result){
+                        std::cout << "Equality error: " << std::hex << a << " ==s " << b << " = " << result << " != " << last_opcode_push.back() << std::dec << std::endl;
+                    }
+                    BOOST_ASSERT(last_opcode_push.back() == result);
+                    stack.push_back(result);
+                    stack_rw_operations += 3;
+                    gas -= 3;
+                    pc++;
+                }
+                void and_opcode() {
+                    auto a = stack.back(); stack.pop_back();
+                    auto b = stack.back(); stack.pop_back();
+                    zkevm_word_type result = a & b;
+                    BOOST_ASSERT(last_opcode_push.size() == 1);
+                    BOOST_ASSERT(last_opcode_push.back() == result);
+                    stack.push_back(result);
+                    stack_rw_operations += 3;
+                    gas -= 3;
+                    pc++;
+                }
+                void or_opcode() {
+                    auto a = stack.back(); stack.pop_back();
+                    auto b = stack.back(); stack.pop_back();
+                    zkevm_word_type result = a | b;
+                    BOOST_ASSERT(last_opcode_push.size() == 1);
+                    BOOST_ASSERT(last_opcode_push.back() == result);
+                    stack.push_back(result);
+                    stack_rw_operations += 3;
+                    gas -= 3;
+                    pc++;
+                }
+                void xor_opcode() {
+                    auto a = stack.back(); stack.pop_back();
+                    auto b = stack.back(); stack.pop_back();
+                    zkevm_word_type result = a ^ b;
+                    BOOST_ASSERT(last_opcode_push.size() == 1);
+                    BOOST_ASSERT(last_opcode_push.back() == result);
+                    stack.push_back(result);
+                    stack_rw_operations += 3;
+                    gas -= 3;
+                    pc++;
+                }
+                void byte() {
+                    auto N = stack.back(); stack.pop_back();
+                    auto a = stack.back(); stack.pop_back();
+                    auto n = w_to_8(N)[31];
+                    zkevm_word_type result = N > 31? 0: w_to_8(a)[n];
+                    BOOST_ASSERT(last_opcode_push.size() == 1);
+                    BOOST_ASSERT(last_opcode_push.back() == result);
+                    stack.push_back(result);
+                    stack_rw_operations += 3;
+                    gas -= 3;
+                    pc++;
                 }
                 void three_operands_arithmetic() {
                     stack.pop_back();
@@ -712,98 +1175,270 @@ namespace nil {
                     BOOST_ASSERT(last_opcode_push.size() == 1);
                     stack.push_back(last_opcode_push.back());
                     stack_rw_operations += 4;
+                    pc++;
                 }
                 void exp() {
-                    stack.pop_back();
-                    stack.pop_back();
+                    auto a = stack.back(); stack.pop_back();
+                    auto d = stack.back(); stack.pop_back();
+                    zkevm_word_type result = exp_by_squaring(a, d);
+
                     BOOST_ASSERT(last_opcode_push.size() == 1);
-                    stack.push_back(last_opcode_push.back());
+                    BOOST_ASSERT(last_opcode_push.back() == result);
+                    BOOST_ASSERT(last_opcode_gas_cost == 10 + 50 * count_significant_bytes(d));
+
+                    stack.push_back(result);
                     stack_rw_operations += 3;
+                    pc++;
+                    gas -= 10 + 50 * count_significant_bytes(d);
+                }
+                void signextend() {
+                    zkevm_word_type b = stack.back(); stack.pop_back();
+                    zkevm_word_type x = stack.back(); stack.pop_back();
+                    int len = (b < 32) ? int(b) + 1 : 32;
+                    zkevm_word_type sign = (x << (8 * (32 - len))) >> 255;
+                    zkevm_word_type result =
+                        zkevm_word_type(
+                                (wrapping_sub(zkevm_word_type(1) << 8 * (32 - len), 1)
+                                << 8 * len) *
+                                sign) +
+                        ((x << (8 * (32 - len))) >> (8 * (32 - len)));
+
+                    BOOST_ASSERT(last_opcode_push.size() == 1);
+                    BOOST_ASSERT(last_opcode_push.back() == result);
+                    stack.push_back(result);
+
+                    stack_rw_operations += 3;
+                    pc++;
+                    gas -= 5;
                 }
                 void keccak() {
-                    stack.pop_back();
-                    stack.pop_back();
+                    std::size_t offset = std::size_t(stack.back()); stack.pop_back();
+                    std::size_t length = std::size_t(stack.back()); stack.pop_back();
+
+                    std::size_t memory_size_word = (memory.size() + 31) / 32;
+                    std::size_t last_memory_cost = memory_size_word * memory_size_word / 512 + (3*memory_size_word);
+                    if( memory.size() < offset + length) memory.resize(offset + length, 0);
+                    memory_size_word = (memory.size() + 31) / 32;
+                    std::size_t new_memory_cost = memory_size_word * memory_size_word / 512 + (3*memory_size_word);
+                    std::size_t memory_expansion = new_memory_cost - last_memory_cost;
+
+                    std::vector<std::uint8_t> data;
+                    for( std::size_t i = 0; i < length; i++){
+                        data.push_back(memory[offset+i]);
+                    };
+                    zkevm_word_type result = zkevm_keccak_hash(data);
+
                     BOOST_ASSERT(last_opcode_push.size() == 1);
-                    stack.push_back(last_opcode_push.back());
+                    BOOST_ASSERT(last_opcode_push.back() == result);
+                    stack.push_back(result);
+
+                    std::size_t cost = 30 + 6 * ((length + 31) / 32) + memory_expansion;
+                    BOOST_ASSERT(last_opcode_gas_cost == cost);
+                    gas -= cost;
                     stack_rw_operations += 3;
+                    memory_rw_operations += length;
+                    pc++;
                 }
                 void address() {
                     BOOST_ASSERT(last_opcode_push.size() == 1);
-                    stack.push_back(last_opcode_push.back());
+                    BOOST_ASSERT(last_opcode_push.back() == call_context_address);
+                    stack.push_back(call_context_address);
                     stack_rw_operations += 1;
+                    gas -= 2;
+                    pc++;
                 }
                 void balance() {
                     BOOST_ASSERT(last_opcode_push.size() == 1);
                     stack.push_back(last_opcode_push.back());
                     stack_rw_operations += 1;
+                    pc++;
                 }
                 void origin() {
                     BOOST_ASSERT(last_opcode_push.size() == 1);
+                    BOOST_ASSERT(last_opcode_push.back() == tx_from);
                     stack.push_back(last_opcode_push.back());
                     stack_rw_operations += 1;
+                    pc++;
+                    gas -= 2;
                 }
-                void caller() {
+                void caller_opcode() {
                     BOOST_ASSERT(last_opcode_push.size() == 1);
-                    stack.push_back(last_opcode_push.back());
+                    if( last_opcode_push.back() != caller){
+                        std::cout << "Caller opcode error: " << std::hex
+                            << last_opcode_push.back() << " != "
+                            << caller << " tx_from = "
+                            << tx_from << std::dec << std::endl;
+                    }
+                    BOOST_ASSERT(last_opcode_push.back() == caller);
+                    stack.push_back(caller);
                     stack_rw_operations += 1;
+                    pc++;
+                    gas -= 2;
                 }
                 void callvalue() {
                     BOOST_ASSERT(last_opcode_push.size() == 1);
+                    if( last_opcode_push.back() != call_context_value){
+                        std::cout << "Callvalue opcode error: " << std::hex
+                            << last_opcode_push.back() << " != "
+                            << call_context_value << std::dec << std::endl;
+                    }
+                    BOOST_ASSERT(last_opcode_push.back() == call_context_value);
                     stack.push_back(last_opcode_push.back());
                     stack_rw_operations += 1;
+                    pc++;
+                    gas -= 2;
                 }
                 void calldataload() {
+                    std::size_t offset = std::size_t(stack.back()); stack.pop_back();
                     BOOST_ASSERT(last_opcode_push.size() == 1);
-                    stack.push_back(last_opcode_push.back());
+                    zkevm_word_type result;
+                    for( std::size_t i = 0; i < 32; i++){
+                        result = ((offset + i) < calldata.size())? (result << 8) + calldata[offset+i]: result << 8;
+                    }
+                    BOOST_ASSERT(last_opcode_push.back() == result);
+                    stack.push_back(result);
                     stack_rw_operations += 2;
                     calldata_rw_operations += 32;
+                    pc++;
+                    gas -= 3;
                 }
                 void calldatasize() {
                     BOOST_ASSERT(last_opcode_push.size() == 1);
+                    BOOST_ASSERT(last_opcode_push.back() == calldata.size());
                     stack.push_back(last_opcode_push.back());
                     stack_rw_operations += 1;
+                    gas -= 2;
+                    pc++;
                 }
                 void calldatacopy() {
-                    stack.pop_back();
-                    stack.pop_back();
-                    stack.pop_back();
+                    std::size_t dst = std::size_t(stack.back()); stack.pop_back();
+                    std::size_t src = std::size_t(stack.back()); stack.pop_back();
+                    std::size_t length = std::size_t(stack.back()); stack.pop_back();
                     BOOST_ASSERT(last_opcode_push.size() == 0);
+                    //BOOST_ASSERT(last_opcode_mem_offset == dst);
+
+                    std::size_t minimum_word_size = (length + 31) / 32;
+                    std::size_t next_mem = std::max(dst + length, memory.size());
+                    std::size_t memory_expansion = memory_expansion_cost(next_mem, memory.size());
+                    std::size_t next_memory_size = (memory_size_word_util(next_mem))*32;
+
+                    if( memory.size() < dst + length) memory.resize(dst + length);
+                    for( std::size_t i = 0; i < length; i++){
+                        memory[dst+i] = src + i < calldata.size()? calldata[src+i]: 0;
+                    }
+
+                    bool is_equal = true;
+                    for( std::size_t i = 0; i < last_opcode_memory.size(); i++){
+                        is_equal = (memory[last_opcode_mem_offset+i] == last_opcode_memory[i]);
+                        if( !is_equal ) break;
+                    }
+                    if(!is_equal){
+                        std::cout << "last_opcode_mem offset = " << last_opcode_mem_offset << " :" << std::hex;
+                        for( std::size_t i = 0; i < last_opcode_memory.size(); i++ ) std::cout << std::size_t(last_opcode_memory[i]) << " ";
+                        std::cout << std::dec << std::endl;
+                        std::cout << "real memory     offset = " << last_opcode_mem_offset << " :" << std::hex;
+                        for( std::size_t i = 0; i < last_opcode_memory.size(); i++ ) std::cout << std::size_t(memory[last_opcode_mem_offset + i]) << " ";
+                        std::cout << std::dec << std::endl;
+                    }
+                    BOOST_ASSERT(is_equal);
+
+                    gas -=3; //static gas
+                    gas -= 3 * minimum_word_size + memory_expansion; //dynamic gas
                     stack_rw_operations += 3;
+                    memory_rw_operations += length;
+                    calldata_rw_operations += length;
+                    pc++;
                 }
                 void codesize() {
                     BOOST_ASSERT(last_opcode_push.size() == 1);
                     stack.push_back(last_opcode_push.back());
                     stack_rw_operations += 1;
+                    pc++;
                 }
                 void codecopy() {
-                    stack.pop_back();
-                    stack.pop_back();
-                    stack.pop_back();
+                    std::size_t dst = std::size_t(stack.back()); stack.pop_back();
+                    std::size_t src = std::size_t(stack.back()); stack.pop_back();
+                    std::size_t length = std::size_t(stack.back()); stack.pop_back();
                     BOOST_ASSERT(last_opcode_push.size() == 0);
+                    BOOST_ASSERT(last_opcode_mem_offset == dst);
+
+                    std::size_t minimum_word_size = (length + 31) / 32;
+                    std::size_t next_mem = std::max(dst + length, memory.size());
+                    std::size_t memory_expansion = memory_expansion_cost(next_mem, memory.size());
+                    std::size_t next_memory_size = (memory_size_word_util(next_mem))*32;
+
+                    if( memory.size() < dst + length) memory.resize(dst + length);
+                    for( std::size_t i = 0; i < length; i++){
+                        memory[dst+i] = src + i < bytecode.size()? bytecode[src+i]: 0;
+                    }
+                    for( std::size_t i = 0; i < last_opcode_memory.size(); i++){
+                        BOOST_ASSERT(memory[dst+i] == last_opcode_memory[i]);
+                    }
+                    BOOST_ASSERT(last_opcode_gas_cost == 3 + 3 * minimum_word_size + memory_expansion);
+
+                    gas -=3; //static gas
+                    gas -= 3 * minimum_word_size + memory_expansion; //dynamic gas
                     stack_rw_operations += 3;
+                    memory_rw_operations += length;
+                    pc++;
                 }
                 void gasprice() {
                     BOOST_ASSERT(last_opcode_push.size() == 1);
                     stack.push_back(last_opcode_push.back());
                     stack_rw_operations += 1;
+                    pc++;
                 }
                 void returndatasize() {
                     BOOST_ASSERT(last_opcode_push.size() == 1);
+                    BOOST_ASSERT(last_opcode_push.back() == returndata.size());
                     stack.push_back(last_opcode_push.back());
                     stack_rw_operations += 1;
+                    pc++;
+                    gas -= 2;
                 }
                 void returndatacopy() {
-                    stack.pop_back();
-                    stack.pop_back();
-                    stack.pop_back();
+                    std::size_t dst = std::size_t(stack.back()); stack.pop_back();
+                    std::size_t src = std::size_t(stack.back()); stack.pop_back();
+                    std::size_t length = std::size_t(stack.back()); stack.pop_back();
                     BOOST_ASSERT(last_opcode_push.size() == 0);
+                    //BOOST_ASSERT(last_opcode_mem_offset == dst);
+
+                    std::size_t minimum_word_size = (length + 31) / 32;
+                    std::size_t next_mem = std::max(dst + length, memory.size());
+                    std::size_t memory_expansion = memory_expansion_cost(next_mem, memory.size());
+                    std::size_t next_memory_size = (memory_size_word_util(next_mem))*32;
+
+                    if( memory.size() < dst + length) memory.resize(dst + length);
+                    for( std::size_t i = 0; i < length; i++){
+                        memory[dst+i] = src + i < returndata.size()? returndata[src+i]: 0;
+                    }
+                    for( std::size_t i = 0; i < last_opcode_memory.size(); i++){
+                        BOOST_ASSERT(memory[dst+i] == last_opcode_memory[dst + i - last_opcode_mem_offset]);
+                    }
+                    BOOST_ASSERT(last_opcode_gas_cost == 3 + 3 * minimum_word_size + memory_expansion);
+
+                    gas -=3; //static gas
+                    gas -= 3 * minimum_word_size + memory_expansion; //dynamic gas
                     stack_rw_operations += 3;
+                    memory_rw_operations += length;
+                    calldata_rw_operations += length;
+                    pc++;
                 }
                 void extcodesize() {
-                    stack.pop_back();
+                    zkevm_word_type addr = stack.back(); stack.pop_back();
+                    std::cout << "addr = " << std::hex << addr << std::dec << std::endl;
                     BOOST_ASSERT(last_opcode_push.size() == 1);
+                    BOOST_ASSERT(last_opcode_push.back() == _accounts_current_state[addr].bytecode.size());
                     stack.push_back(last_opcode_push.back());
+                    // TODO: change 1 maybe
+                    if( _call_stack.back().was_accessed.count({addr, 1, 0}) == 0){
+                        gas -= 2500;
+                    }
+                    gas -= 100;
+                    _call_stack.back().was_accessed.insert({addr, 1, 0});
                     stack_rw_operations += 2;
+                    state_rw_operations += 2;
+                    pc++;
                 }
                 void extcodecopy() {
                     stack.pop_back();
@@ -813,56 +1448,76 @@ namespace nil {
                     BOOST_ASSERT(last_opcode_push.size() == 1);
                     stack.push_back(last_opcode_push.back());
                     stack_rw_operations += 4;
+                    pc++;
                 }
                 void extcodehash() {
                     BOOST_ASSERT(last_opcode_push.size() == 1);
                     stack.push_back(last_opcode_push.back());
                     stack_rw_operations += 2;
+                    pc++;
                 }
                 void blockhash() {
                     BOOST_ASSERT(last_opcode_push.size() == 1);
                     stack.push_back(last_opcode_push.back());
                     stack_rw_operations += 2;
+                    pc++;
                 }
                 void coinbase() {
                     BOOST_ASSERT(last_opcode_push.size() == 1);
                     stack.push_back(last_opcode_push.back());
                     stack_rw_operations += 1;
+                    pc++;
                 }
                 void timestamp() {
                     BOOST_ASSERT(last_opcode_push.size() == 1);
-                    stack.push_back(last_opcode_push.back());
+                    if( last_opcode_push.back() != block_timestamp){
+                        std::cout << "Timestamp error: " << last_opcode_push.back() << " != " << block_timestamp << std::endl;
+                    }
+                    BOOST_ASSERT(last_opcode_push.back() == block_timestamp);
+                    stack.push_back(block_timestamp);
+                    gas -= 2;
                     stack_rw_operations += 1;
+                    pc++;
                 }
                 void number() {
                     BOOST_ASSERT(last_opcode_push.size() == 1);
+                    BOOST_ASSERT(last_opcode_push.back() == block_number);
                     stack.push_back(last_opcode_push.back());
                     stack_rw_operations += 1;
+                    pc++;
+                    gas -= 2;
                 }
                 void difficulty() {
                     BOOST_ASSERT(last_opcode_push.size() == 1);
                     stack.push_back(last_opcode_push.back());
                     stack_rw_operations += 1;
+                    pc++;
                 }
                 void gaslimit() {
                     BOOST_ASSERT(last_opcode_push.size() == 1);
                     stack.push_back(last_opcode_push.back());
                     stack_rw_operations += 1;
+                    pc++;
                 }
-                void chaindid() {
+                void chainid() {
                     BOOST_ASSERT(last_opcode_push.size() == 1);
-                    stack.push_back(last_opcode_push.back());
+                    BOOST_ASSERT(last_opcode_push.back() == tx_chain_id);
+                    stack.push_back(tx_chain_id);
+                    gas -= 2;
                     stack_rw_operations += 1;
+                    pc++;
                 }
                 void selfbalance() {
                     BOOST_ASSERT(last_opcode_push.size() == 1);
                     stack.push_back(last_opcode_push.back());
                     stack_rw_operations += 1;
+                    pc++;
                 }
                 void basefee() {
                     BOOST_ASSERT(last_opcode_push.size() == 1);
                     stack.push_back(last_opcode_push.back());
                     stack_rw_operations += 1;
+                    pc++;
                 }
                 void blobhash() {
                     // BOOST_ASSERT(last_opcode_push.size() == 1);
@@ -870,6 +1525,7 @@ namespace nil {
                     // TODO: non-correct!
                     stack.push_back(0);
                     stack_rw_operations += 1;
+                    pc++;
                 }
                 void blobbasefee() {
                     //BOOST_ASSERT(last_opcode_push.size() == 1);
@@ -877,6 +1533,7 @@ namespace nil {
                     // TODO: non-correct!
                     stack.push_back(0);
                     stack_rw_operations += 1;
+                    pc++;
                 }
                 void tload() {
                     stack.pop_back();
@@ -884,12 +1541,14 @@ namespace nil {
                     // TODO: non-correct!
                     stack.push_back(0);
                     stack_rw_operations += 2;  state_rw_operations += 2;
+                    pc++;
                 }
                 void tstore() {
                     stack.pop_back();
                     stack.pop_back();
                     BOOST_ASSERT(last_opcode_push.size() == 0);
                     stack_rw_operations += 2;  state_rw_operations += 2;
+                    pc++;
                 }
                 void mcopy() {
                     stack.pop_back();
@@ -897,6 +1556,7 @@ namespace nil {
                     stack.pop_back();
                     BOOST_ASSERT(last_opcode_push.size() == 0);
                     stack_rw_operations += 3;
+                    pc++;
                 }
                 void create() {
                     stack.pop_back();
@@ -906,6 +1566,7 @@ namespace nil {
                     BOOST_ASSERT(last_opcode_push.size() == 1);
                     stack.push_back(last_opcode_push.back());
                     stack_rw_operations += 5;
+                    pc++;
                 }
                 void create2() {
                     stack.pop_back();
@@ -916,6 +1577,7 @@ namespace nil {
                     BOOST_ASSERT(last_opcode_push.size() == 1);
                     stack.push_back(last_opcode_push.back());
                     stack_rw_operations += 6;
+                    pc++;
                 }
                 void selfdestruct() {stack_rw_operations += 1;}
                 void callcode() {
@@ -933,14 +1595,21 @@ namespace nil {
                     stack_rw_operations += 8;
                 }
                 void call() {
-                    zkevm_word_type gas = stack.back();  stack.pop_back();
-                    zkevm_word_type addr = stack.back();  stack.pop_back();
-                    zkevm_word_type value = stack.back();  stack.pop_back();
-                    zkevm_word_type args_offset = stack.back();  stack.pop_back();
-                    zkevm_word_type args_length = stack.back();  stack.pop_back();
-                    zkevm_word_type ret_offset = stack.back();  stack.pop_back();
-                    zkevm_word_type ret_length = stack.back();  stack.pop_back();
-                    call_context_address = addr;
+                    call_gas = std::size_t(stack.back());  stack.pop_back();
+                    call_addr = stack.back();  stack.pop_back();
+                    caller = call_context_address;
+                    call_context_value = call_value = std::size_t(stack.back());  stack.pop_back();
+                    call_args_offset = std::size_t(stack.back());  stack.pop_back();
+                    call_args_length = std::size_t(stack.back());  stack.pop_back();
+                    std::size_t ret_offset = std::size_t(stack.back());  stack.pop_back();
+                    std::size_t ret_length = std::size_t(stack.back());  stack.pop_back();
+                    _call_stack.back().lastcall_returndataoffset = ret_offset;
+                    _call_stack.back().lastcall_returndatalength = ret_length;
+
+                    std::cout << "caller = 0x" << std::hex << call_context_address << std::dec << std::endl;
+                    std::cout << "callee = 0x" << std::hex << call_addr << std::dec << std::endl;
+                    std::cout << "gas = " << call_gas << std::endl;
+                    std::cout << "value = " << call_value << std::endl;
                     // std::cout <<
                     //     "gas = 0x" << std::hex << gas << std::dec << std::endl <<
                     //     "addr = 0x" << std::hex << addr << std::dec << std::endl <<
@@ -950,111 +1619,358 @@ namespace nil {
                     //     "ret_offset = 0x" << std::hex << ret_offset << std::dec << std::endl <<
                     //     "ret_length = 0x" << std::hex << ret_length << std::dec << std::endl;
                     // BOOST_ASSERT(last_opcode_push.size() == 1);
-                    stack.push_back(last_opcode_push.back());
+                    //stack.push_back(last_opcode_push.back());
+
+                    // TODO: check memory expansion
+                    std::size_t next_mem = std::max(ret_offset + ret_length, std::max(call_args_offset + call_args_length, memory.size()));
+                    std::size_t memory_expansion = memory_expansion_cost(next_mem, memory.size());
+                    if( memory.size() < next_mem) {
+                        std::cout << "Memory expansion";
+                        memory.resize(next_mem, 0);
+                    }
+                    gas -= memory_expansion;
+
+                    if( call_value != 0 ) gas -= 9000;
+
+                    call_context_address = call_addr;
                     stack_rw_operations += 8;
                 }
-                void staticcall() {
-                    zkevm_word_type gas = stack.back();  stack.pop_back();
-                    zkevm_word_type addr = stack.back();  stack.pop_back();
-                    zkevm_word_type args_offset = stack.back();  stack.pop_back();
-                    zkevm_word_type args_length = stack.back();  stack.pop_back();
-                    zkevm_word_type ret_offset = stack.back();  stack.pop_back();
-                    zkevm_word_type ret_length = stack.back();  stack.pop_back();
-                    call_context_address = addr;
-                    std::cout << "addr = 0x" << std::hex << addr << std::dec << std::endl;
-                    // BOOST_ASSERT(last_opcode_push.size() == 1);
-                    stack.push_back(last_opcode_push.back());
-                    stack_rw_operations += 7;
-                }
-                void pop() {stack.pop_back();}
-                void simple_dummy() {}
-                void mload() {
-                    stack.pop_back();
+                void precomp_ecrecover(){
+                    //! TODO implement precompile
+                    std::cout << "last_mem_offset = " << last_opcode_mem_offset << std::endl;
+                    std::cout << "last_mem_size = " << last_opcode_memory.size() << std::endl;
+
+                    std::cout << "ecRecover precompile" << std::endl;
+                    std::size_t precomp_gas = std::size_t(stack.back()); stack.pop_back(); // gas
+                    zkevm_word_type precomp_addr = stack.back(); stack.pop_back(); // addr
+                    std::size_t precomp_args_offset = std::size_t(stack.back()); stack.pop_back(); // args_offset
+                    std::size_t precomp_args_length = std::size_t(stack.back()); stack.pop_back(); // args_length
+                    std::size_t precomp_ret_offset = std::size_t(stack.back()); stack.pop_back(); // ret_offset
+                    std::size_t precomp_ret_length = std::size_t(stack.back()); stack.pop_back(); // ret_length
+
+                    // std::cout << "precomp_gas = " << precomp_gas << std::endl;
+                    // std::cout << "precomp_addr = 0x" << std::hex << precomp_addr << std::dec << std::endl;
+                    // std::cout << "precomp_args_offset = " << precomp_args_offset << std::endl;
+                    // std::cout << "precomp_args_length = " << precomp_args_length << std::endl;
+                    // std::cout << "precomp_ret_offset = " << precomp_ret_offset << std::endl;
+                    // std::cout << "precomp_ret_length = " << precomp_ret_length << std::endl;
+
+                    if(memory.size() < precomp_ret_offset + precomp_ret_length) memory.resize(precomp_ret_offset + precomp_ret_length, 0);
+                    for( std::size_t i = 0; i < precomp_ret_length; i++){
+                        memory[precomp_ret_offset + i] = last_opcode_memory[precomp_ret_offset + i - last_opcode_mem_offset];
+                    }
+
                     BOOST_ASSERT(last_opcode_push.size() == 1);
                     stack.push_back(last_opcode_push.back());
+                    stack_rw_operations += 7;
+                    gas -= 3100;
+                    pc++;
+                }
+                void staticcall() {
+                    if( stack[stack.size() - 2] == 0x1){
+                        precomp_ecrecover();
+                        return;
+                    }
+
+                    call_gas = std::size_t(stack.back());  stack.pop_back();
+                    call_addr = stack.back();  stack.pop_back();
+                    call_value = 0;
+                    call_context_value = 0;
+                    call_args_offset = std::size_t(stack.back());  stack.pop_back();
+                    call_args_length = std::size_t(stack.back());  stack.pop_back();
+                    caller = call_context_address;
+                    std::size_t ret_offset = std::size_t(stack.back());  stack.pop_back();
+                    std::size_t ret_length = std::size_t(stack.back());  stack.pop_back();
+                    _call_stack.back().lastcall_returndataoffset = ret_offset;
+                    _call_stack.back().lastcall_returndatalength = ret_length;
+
+                    // std::cout << "call_gas = " << call_gas << std::endl;
+                    // std::cout << "call_addr = 0x" << std::hex << call_addr << std::dec << std::endl;
+                    // std::cout << "call_args_offset = " << call_args_offset << std::endl;
+                    // std::cout << "call_args_length = " << call_args_length << std::endl;
+                    // std::cout << "ret_offset = " << ret_offset << std::endl;
+                    // std::cout << "ret_length = " << ret_length << std::endl;
+                    // BOOST_ASSERT(last_opcode_push.size() == 1);
+                    stack_rw_operations += 7;
+
+                    // TODO: check memory expansion
+                    std::size_t next_mem = std::max(ret_offset + ret_length, std::max(call_args_offset + call_args_length, memory.size()));
+                    std::size_t memory_expansion = memory_expansion_cost(next_mem, memory.size());
+                    if( memory.size() < call_args_offset + call_args_length) memory.resize(call_args_offset + call_args_length, 0);
+                    gas -= memory_expansion;
+
+                    call_context_address = call_addr;
+                }
+
+                void pop() {stack.pop_back(); pc++; gas-=2;}
+                void jumpdest() {pc++;gas--;}
+                void mload() {
+                    std::size_t offset = std::size_t(stack.back()); stack.pop_back();
+
+                    std::size_t memory_size_word = (memory.size() + 31) / 32;
+                    std::size_t last_memory_cost = memory_size_word * memory_size_word / 512 + (3*memory_size_word);
+
+                    if( memory.size() < offset + 32) memory.resize(offset + 32, 0);
+                    memory_size_word = (memory.size() + 31) / 32;
+                    std::size_t new_memory_cost = memory_size_word * memory_size_word / 512 + (3*memory_size_word);
+                    std::size_t memory_expansion = new_memory_cost - last_memory_cost;
+
+                    zkevm_word_type result = 0;
+                    for( std::size_t i = 0; i < 32; i++){
+                        result = (result << 8) + memory[offset + i];
+                    }
+                    for( std::size_t i = 0; i < last_opcode_memory.size(); i++){
+                        BOOST_ASSERT(memory[last_opcode_mem_offset+i] == last_opcode_memory[i]);
+                    }
+
+                    BOOST_ASSERT(last_opcode_push.size() == 1);
+                    if( last_opcode_push.back() != result){
+                        std::cout << "Offset = " << offset << std::endl;
+                        std::cout << "Mload error: " << std::hex << last_opcode_push.back() << " != " << result << std::dec << std::endl;
+                    }
+                    BOOST_ASSERT(last_opcode_push.back() == result);
+                    BOOST_ASSERT(last_opcode_gas_cost == 3 + memory_expansion);
+
+                    stack.push_back(result);
                     stack_rw_operations += 2; memory_rw_operations += 32;
+                    gas -= 3 + memory_expansion;
+                    pc++;
                 }
                 void mstore() {
-                    stack.pop_back();
-                    stack.pop_back();
+                    std::size_t offset = std::size_t(stack.back()); stack.pop_back();
+                    auto value = stack.back(); stack.pop_back();
+
+                    std::size_t memory_size_word = (memory.size() + 31) / 32;
+                    std::size_t last_memory_cost = memory_size_word * memory_size_word / 512 + (3*memory_size_word);
+
+                    if( memory.size() < offset + 32) memory.resize(offset + 32);
+                    for( std::size_t i = 0; i < 32; i++){
+                        memory[offset + 31 - i] = std::uint8_t(std::size_t(value % 256));
+                        value = value >> 8;
+                    }
+
+                    memory_size_word = (memory.size() + 31) / 32;
+                    std::size_t new_memory_cost = memory_size_word * memory_size_word / 512 + (3*memory_size_word);
+                    std::size_t memory_expansion = new_memory_cost - last_memory_cost;
+                    if( last_opcode_gas_cost != 3 + memory_expansion){
+                        std::cout << "Gas error: " << last_opcode_gas_cost << " != " << 3 + memory_expansion << std::endl;
+                    }
+                    BOOST_ASSERT(last_opcode_gas_cost == 3 + memory_expansion);
+                    gas -= 3 + memory_expansion;
+
                     BOOST_ASSERT(last_opcode_push.size() == 0);
+                    BOOST_ASSERT(last_opcode_mem_offset == offset);
+
+                    for( std::size_t i = 0; i < last_opcode_memory.size(); i++){
+                        BOOST_ASSERT(memory[offset+i] == last_opcode_memory[i]);
+                    }
+
                     stack_rw_operations += 2; memory_rw_operations += 32;
+                    pc++;
                 }
                 void mstore8() {
                     stack.pop_back();
                     stack.pop_back();
                     BOOST_ASSERT(last_opcode_push.size() == 0);
                     stack_rw_operations += 2; memory_rw_operations += 1;
+                    pc++;
                 }
                 void sload() {
-                    stack.pop_back();
+                    auto addr = stack.back(); stack.pop_back();
                     BOOST_ASSERT(last_opcode_push.size() == 1);
+                    BOOST_ASSERT(last_opcode_push.back() == _accounts_current_state[call_context_address].storage[addr]);
                     stack.push_back(last_opcode_push.back());
+                    if( _call_stack.back().was_accessed.count({call_context_address, 0, addr}) == 0){
+                        _call_stack.back().was_accessed.insert({call_context_address, 0, addr});
+                        // std::cout << "COLD {" << std::hex << call_context_address << ", " << addr << "}"  << std::endl;
+                        gas -= 2000;
+                    } else {
+                        // std::cout << "WARM {" << std::hex << call_context_address << ", " << addr << "}"  << std::endl;
+                    }
+                    gas -= 100;
+                    // TODO: was_written and was_accessed processing
                     stack_rw_operations += 2; state_rw_operations += 2;
+                    pc++;
                 }
                 void sstore() {
-                    stack.pop_back();
-                    stack.pop_back();
+                    auto addr = stack.back(); stack.pop_back();
+                    auto value = stack.back(); stack.pop_back();
+                    auto previous_value = _accounts_current_state[call_context_address].storage[addr];
+
+                    std::size_t is_cold = (_call_stack.back().was_accessed.count({call_context_address, 0, addr}) == 0);
+                    std::size_t is_clean = (_call_stack.back().was_written.count({call_context_address, 0, addr}) == 0);
+                    std::size_t is_equal = (previous_value == value);
+                    std::size_t was_zero = (previous_value == 0);
+
+                    // if(is_cold){
+                    //     std::cout << "COLD {" << std::hex << call_context_address << ", " << addr << "}"  << std::endl;
+                    // } else {
+                    //     std::cout << "WARM {" << std::hex << call_context_address << ", " << addr << "}"  << std::endl;
+                    // }
+
+                    std::size_t cost = 100 + is_cold * 2100
+                        + is_clean * (1 - is_equal) * was_zero * 19900
+                        + is_clean * (1 - is_equal) * (1 - was_zero) * 2800;
+
+                    _accounts_current_state[call_context_address].storage[addr] = value;
+                    _call_stack.back().was_accessed.insert({call_context_address, 0, addr});
+                    _call_stack.back().was_written.insert({call_context_address, 0, addr});
+
                     BOOST_ASSERT(last_opcode_push.size() == 0);
+                    BOOST_ASSERT(last_opcode_gas_cost == cost);
+
+                    gas -= cost;
                     stack_rw_operations += 2;  state_rw_operations += 2;
+                    pc++;
                 }
                 void jump() {
-                    stack.pop_back();
+                    pc = std::size_t(stack.back()); stack.pop_back();
                     BOOST_ASSERT(last_opcode_push.size() == 0);
                     stack_rw_operations += 1;
+                    gas -= 8;
                 }
                 void jumpi() {
-                    stack.pop_back();
-                    stack.pop_back();
+                    auto addr = stack.back(); stack.pop_back();
+                    auto condition = stack.back(); stack.pop_back();
+                    pc = condition == 0? pc+1: std::size_t(addr);
                     BOOST_ASSERT(last_opcode_push.size() == 0);
                     stack_rw_operations += 2;
+                    gas -= 10;
                 }
                 void one_push_to_stack() {
                     BOOST_ASSERT(last_opcode_push.size() == 1);
                     stack.push_back(last_opcode_push.back());
                     stack_rw_operations += 1;
+                    pc++;
+                }
+                void gas_opcode() {
+                    BOOST_ASSERT(last_opcode_push.size() == 1);
+                    gas -= 2;
+                    BOOST_ASSERT(last_opcode_push.back() == gas);
+                    stack.push_back(gas);
+                    stack_rw_operations += 1;
+                    pc++;
                 }
                 void push_opcode( std::size_t x) {
                     BOOST_ASSERT(last_opcode_push.size() == 1);
+                    zkevm_word_type additional_input;
+                    for( std::size_t i = 0; i < x; i++ ){
+                        additional_input = additional_input << 8;
+                        additional_input += bytecode[pc + 1 + i];
+                    }
+                    BOOST_ASSERT(last_opcode_push.back() == additional_input);
                     stack.push_back(last_opcode_push.back());
                     stack_rw_operations += 1;
+                    pc += 1 + x;
+                    gas -= (x == 0? 2 : 3);
                 }
                 void dupx( std::size_t d) {
                     stack.push_back(stack[stack.size()-d]);
+                    BOOST_ASSERT(last_opcode_push.size() == d+1);
+                    bool is_equal = true;
+                    for( std::size_t i = 0; i < d+1; i++ ){
+                        is_equal = (last_opcode_push[i] == stack[stack.size()-d-1+i]);
+                        if( !is_equal ) break;
+                    }
+                    if( !is_equal ){
+                        std::cout << "Dup error: " << std::endl;
+                        for( std::size_t i = 0; i < d+1; i++ ){
+                            std::cout << "\t" << std::hex << last_opcode_push[i] << " " << stack[stack.size()-d-1+i] << std::endl;
+                        }
+                    }
+                    BOOST_ASSERT(is_equal);
                     stack_rw_operations += 2;
+                    pc++;
+                    gas -= 3;
                 }
                 void swapx( std::size_t s) {
                     auto tmp = stack[stack.size() - s - 1];
                     stack[stack.size() - s - 1] = stack[stack.size()-1];
                     stack[stack.size()-1] = tmp;
+                    BOOST_ASSERT(last_opcode_push.size() == s+1);
+                    bool is_equal = true;
+                    for( std::size_t i = 0; i < s+1; i++ ){
+                        if( last_opcode_push[i] != stack[stack.size()-s-1+i] ){
+                            is_equal = false;
+                            break;
+                        }
+                    }
+                    if( !is_equal ){
+                        std::cout << "Swap error: " << std::endl;
+                        for( std::size_t i = 0; i < s+1; i++ ){
+                            std::cout << "\t" << std::hex << last_opcode_push[i] << " " << stack[stack.size()-s-1+i] << std::endl;
+                        }
+                    }
+                    BOOST_ASSERT(is_equal);
                     stack_rw_operations += 4;
+                    pc++;
+                    gas -= 3;
                 }
                 void logx( std::size_t l) {
-                    stack.pop_back();
-                    stack.pop_back();
+                    std::size_t offset = std::size_t(stack.back()); stack.pop_back();
+                    std::size_t length = std::size_t(stack.back()); stack.pop_back();
                     for( std::size_t i = 0; i < l; i++ ) stack.pop_back();
+
+                    std::size_t next_mem = std::max(offset + length, memory.size());
+                    std::size_t memory_expansion = memory_expansion_cost(next_mem, memory.size());
+                    if( memory.size() < next_mem ) memory.resize(next_mem, 0);
+
                     BOOST_ASSERT(last_opcode_push.size() == 0);
                     stack_rw_operations += 2 + l;
+                    memory_rw_operations += length;
+                    std::size_t gas_cost = 375 + 375 * l + 8 * length + memory_expansion;
+                    BOOST_ASSERT(last_opcode_gas_cost == gas_cost);
+                    gas -= gas_cost;
+                    pc++;
                 }
                 void return_opcode(){
-                    stack.pop_back();
-                    stack.pop_back();
+                    std::size_t offset = std::size_t(stack.back()); stack.pop_back();
+                    std::size_t length = std::size_t(stack.back()); stack.pop_back();
                     BOOST_ASSERT(last_opcode_push.size() == 0);
+
+                    std::size_t next_mem = std::max(offset + length, memory.size());
+                    std::size_t memory_expansion = memory_expansion_cost(next_mem, memory.size());
+
+                    if( memory.size() < offset + length) memory.resize(offset + length);
+                    for( std::size_t i = 0; i < last_opcode_memory.size(); i++){
+                        BOOST_ASSERT(memory[offset+i] == last_opcode_memory[i]);
+                    }
+                    BOOST_ASSERT(last_opcode_gas_cost == memory_expansion);
+                    gas -= memory_expansion;
+
+                    returndata.clear();
+                    std::cout << "Return data length = " << length << ": " << std::hex;
+                    for( std::size_t i = 0; i < length; i++){
+                        std::cout << " " << std::size_t(memory[offset+i]);
+                        returndata.push_back(memory[offset+i]);
+                    }
+                    std::cout << std::dec << std::endl;
+
+                    _call_stack[_call_stack.size()-2].was_accessed.insert(_call_stack.back().was_accessed.begin(), _call_stack.back().was_accessed.end());
+                    _call_stack[_call_stack.size()-2].was_written.insert(_call_stack.back().was_written.begin(), _call_stack.back().was_written.end());
+
+                    call_status = 1;
                     stack_rw_operations += 2;
                 }
                 void delegatecall(){
-                    zkevm_word_type gas = stack.back();  stack.pop_back();
-                    zkevm_word_type addr = stack.back();  stack.pop_back();
-                    zkevm_word_type args_offset = stack.back();  stack.pop_back();
-                    zkevm_word_type args_length = stack.back();  stack.pop_back();
-                    zkevm_word_type ret_offset = stack.back();  stack.pop_back();
-                    zkevm_word_type ret_length = stack.back();  stack.pop_back();
+                    call_gas = std::size_t(stack.back());  stack.pop_back();
+                    call_addr = stack.back();  stack.pop_back();
+                    call_value = 0;
+                    call_args_offset = std::size_t(stack.back());  stack.pop_back();
+                    call_args_length = std::size_t(stack.back());  stack.pop_back();
+                    std::size_t ret_offset = std::size_t(stack.back());  stack.pop_back();
+                    std::size_t ret_length = std::size_t(stack.back());  stack.pop_back();
 
-                    call_context_address = addr;
-                    std::cout << "addr = 0x" << std::hex << addr << std::dec << std::endl;
+                    //std::cout << "addr = 0x" << std::hex << addr << std::dec << std::endl;
                     // BOOST_ASSERT(last_opcode_push.size() == 1);
                     stack.push_back(last_opcode_push.back());
                     stack_rw_operations += 7;
+
+                    // TODO: check memory expansion
+                    std::size_t next_mem = std::max(ret_offset + ret_length, std::max(call_args_offset + call_args_length, memory.size()));
+                    std::size_t memory_expansion = memory_expansion_cost(next_mem, memory.size());
+                    if( memory.size() < call_args_offset + call_args_length) memory.resize(call_args_offset + call_args_length, 0);
+                    gas -= memory_expansion;
                 }
                 void revert(){
                     stack.pop_back();
