@@ -377,11 +377,10 @@ namespace nil {
                                 });
                             visitor.visit(expr);
                         }
-                        bench::scoped_log(
-                            std::format("Variables count: {}", variables_set.size()));
                         for (const auto& variable : variables_set) {
                             variable_values_out[variable] = dfs_cache.get(variable, extended_domain_size);
                         }
+                        SCOPED_LOG("Variables count: {}", variable_values_out.size());
                     }
 
                     std::unique_ptr<std::vector<polynomial_dfs_type>> prepare_lookup_input(

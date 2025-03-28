@@ -384,8 +384,8 @@ namespace nil::crypto3::bench {
     }
 #define SCOPED_LOG(...) nil::crypto3::bench::detail::scoped_log(std::format(__VA_ARGS__))
 #else
-#define PROFILE_SCOPE(name)
-#define PARALLEL_PROFILE_SCOPE(name)
+#define PROFILE_SCOPE(...)
+#define PARALLEL_PROFILE_SCOPE(...)
 #define SCOPED_LOG(...) BOOST_LOG_TRIVIAL(info) << std::format(__VA_ARGS__)
 #endif
 
