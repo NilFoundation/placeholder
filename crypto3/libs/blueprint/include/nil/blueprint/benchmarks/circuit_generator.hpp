@@ -108,7 +108,7 @@ namespace nil {
                 // might be already present
                 // for the sake of simplicity we don't check for that, as the probability of that is really small
                 // for the assignment tables of a reasonable size compared to the number of constraints
-                while (a == b) { [[unlikely]]
+                while (a == b) [[unlikely]] {
                     b = generate_random_global_var(assignments, random_engine);
                 }
                 bp.add_copy_constraint({a, b});

@@ -43,6 +43,7 @@
 #include <nil/crypto3/math/polynomial/polynomial_dfs.hpp>
 #include <nil/crypto3/math/polynomial/shift.hpp>
 #include <nil/crypto3/math/polynomial/static_simd_vector.hpp>
+#include <nil/crypto3/math/polynomial/dfs_cache.hpp>
 #include <nil/crypto3/zk/snark/arithmetization/plonk/assignment.hpp>
 
 #include <nil/crypto3/hash/sha2.hpp>
@@ -91,6 +92,7 @@ namespace nil {
                     using polynomial_dfs_variable_type =
                         plonk_variable<polynomial_dfs_type>;
                     using simd_vector_variable_type = plonk_variable<simd_vector_type>;
+                    using dfs_cache_type = math::dfs_cache<FieldType>;
 
                     typedef detail::placeholder_policy<FieldType, ParamsType> policy_type;
 
@@ -102,9 +104,9 @@ namespace nil {
                         std::shared_ptr<math::evaluation_domain<FieldType>> domain,
                         std::size_t extended_domain_size,
                         std::unordered_map<simd_vector_variable_type,
-                                           polynomial_dfs_type>& variable_values_out,
-                        const polynomial_dfs_type& mask_polynomial,
-                        const polynomial_dfs_type& lagrange_0) {
+                                           std::shared_ptr<polynomial_dfs_type>>& variable_values_out,
+                        dfs_cache_type& dfs_cache
+                    ) {
                         PROFILE_SCOPE("Gate argument build variable value map");
 
                         std::vector<simd_vector_variable_type> variables;
@@ -115,8 +117,8 @@ namespace nil {
                                         const simd_vector_variable_type& var) {
                                 // Create the structure of the map, so its values can be filled in parallel.
                                 if (variable_values_out.find(var) == variable_values_out.end()) {
+                                    variable_values_out[var] = nullptr;
                                     variables.push_back(var);
-                                    variable_values_out[var] = polynomial_dfs_type::zero();
                                 }
                             });
 
@@ -126,48 +128,10 @@ namespace nil {
                             extended_domain = math::make_evaluation_domain<FieldType>(
                                 extended_domain_size);
 
-                        parallel_for(
-                            0, variables.size(),
-                            [&variables, &variable_values_out, &assignments, &domain,
-                             &extended_domain, extended_domain_size, &mask_polynomial,
-                             &lagrange_0](std::size_t i) {
-                                const simd_vector_variable_type& var = variables[i];
-
-                                // Convert the variable to polynomial_dfs variable type.
-                                polynomial_dfs_variable_type var_dfs(
-                                    var.index, var.rotation, var.relative,
-                                    static_cast<typename polynomial_dfs_variable_type::
-                                                    column_type>(
-                                        static_cast<std::uint8_t>(var.type)));
-
-                                polynomial_dfs_type assignment;
-                                if (var.index ==
-                                        PLONK_SPECIAL_SELECTOR_ALL_USABLE_ROWS_SELECTED &&
-                                    var.type == simd_vector_variable_type::column_type::
-                                                    selector) {
-                                    assignment = mask_polynomial;
-                                } else if (
-                                    var.index ==
-                                        PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED &&
-                                    var.type == simd_vector_variable_type::column_type::
-                                                    selector) {
-                                    assignment = mask_polynomial - lagrange_0;
-                                } else if (var.index ==
-                                               PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED &&
-                                           var.type == simd_vector_variable_type::
-                                                           column_type::selector) {
-                                    assignment = polynomial_dfs_type::one();
-                                } else {
-                                    assignment =
-                                        assignments.get_variable_value(var_dfs, domain);
-                                }
-
-                                // In parallel version we always resize the assignment
-                                // poly, it's better for parallelization. if (count > 1) {
-                                assignment.resize(extended_domain_size, domain,
-                                                  extended_domain);
-                                variable_values_out[var] = std::move(assignment);
-                            }, ThreadPool::PoolLevel::HIGH);
+                        for (std::size_t i = 0; i < variables.size(); ++i) {
+                            const simd_vector_variable_type& var = variables[i];
+                            variable_values_out[var] = dfs_cache.get(var, extended_domain_size);
+                        }
 
                         SCOPED_LOG("Variables count: {}", variable_values_out.size());
                     }
@@ -180,9 +144,8 @@ namespace nil {
                         std::shared_ptr<math::evaluation_domain<FieldType>>
                             original_domain,
                         std::uint32_t max_gates_degree,
-                        const polynomial_dfs_type &mask_polynomial,
-                        const polynomial_dfs_type &lagrange_0,
-                        transcript_type& transcript
+                        transcript_type& transcript,
+                        dfs_cache_type& dfs_cache
                     ) {
                         using value_type = typename FieldType::value_type;
                         PROFILE_SCOPE("Gate argument prove eval");
@@ -272,13 +235,14 @@ namespace nil {
                                           i + 1);
                             SCOPED_LOG("Constraint count: {}", constraint_counts[i]);
                             std::unordered_map<simd_vector_variable_type,
-                                               polynomial_dfs_type>
+                                               std::shared_ptr<polynomial_dfs_type>>
                                 variable_values;
 
                             build_variable_value_map(
                                 expressions[i], column_polynomials, original_domain,
                                 extended_domain_sizes[i], variable_values,
-                                mask_polynomial, lagrange_0);
+                                dfs_cache
+                            );
 
                             math::dag_expression<simd_vector_variable_type> dag_expr(
                                 expressions[i]);
@@ -304,7 +268,7 @@ namespace nil {
                                                      j](const simd_vector_variable_type&
                                                             var) -> simd_vector_type {
                                                 return math::get_chunk<mini_chunk_size>(
-                                                    variable_values[var], begin, j);
+                                                    *variable_values[var], begin, j);
                                             };
                                             auto chunk_result =
                                                 dag_expr_copy.evaluate(eval_map)[0];
