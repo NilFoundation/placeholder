@@ -15,6 +15,7 @@ namespace nil {
             const std::size_t max_zkevm_rows = 25000;
             const std::size_t max_exp_rows = 25000;
             const std::size_t max_exp_ops = 50;
+            const std::size_t max_call_commits = 500;
 
             const std::size_t RLC_CHALLENGE = 7; // should be the same between all components
         } // limits
@@ -29,6 +30,7 @@ namespace nil {
             std::size_t max_zkevm_rows;
             std::size_t max_exp_rows;
             std::size_t max_exp_ops;
+            std::size_t max_call_commits;
             std::size_t RLC_CHALLENGE;
 
             CircuitsLimits():
@@ -41,6 +43,7 @@ namespace nil {
                 max_zkevm_rows(limits::max_zkevm_rows),
                 max_exp_rows(limits::max_exp_rows),
                 max_exp_ops(limits::max_exp_ops),
+                max_call_commits(limits::max_call_commits),
                 RLC_CHALLENGE(limits::RLC_CHALLENGE) {}
         };
     } // proof_producer

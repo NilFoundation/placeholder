@@ -27,7 +27,6 @@
 #include <numeric>
 #include <algorithm>
 
-#include <nil/blueprint/zkevm/zkevm_word.hpp>
 #include <nil/blueprint/zkevm_bbf/types/opcode.hpp>
 
 namespace nil {
@@ -50,12 +49,50 @@ namespace nil {
                 zkevm_returndatasize_bbf(context_type &context_object, const opcode_input_type<FieldType, stage> &current_state):
                     generic_component<FieldType,stage>(context_object, false)
                 {
+                    TYPE lastcall_id;
+                    TYPE returndata_size;
+                    if constexpr( stage == GenerationStage::ASSIGNMENT ){
+                        lastcall_id = current_state.lastsubcall_id();
+                        returndata_size = current_state.returndatasize();
+                    }
+                    allocate(lastcall_id, 32, 0);
+                    allocate(returndata_size, 33, 0);
+
                     if constexpr( stage == GenerationStage::CONSTRAINTS ){
                         constrain(current_state.pc_next() - current_state.pc(0) - 1);                   // PC transition
                         constrain(current_state.gas(0) - current_state.gas_next() - 2);                 // GAS transition
                         constrain(current_state.stack_size_next() - current_state.stack_size(0) - 1);   // stack_size transition
                         constrain(current_state.memory_size(0) - current_state.memory_size_next());     // memory_size transition
-                        constrain(current_state.rw_counter_next() - current_state.rw_counter(0) - 1);   // rw_counter transition
+                        constrain(current_state.rw_counter_next() - current_state.rw_counter(0) - 2);   // rw_counter transition
+
+                        // lastcall_id is correct for current call_id
+                        lookup(rw_table<FieldType, stage>::call_context_editable_lookup(
+                            current_state.call_id(0),
+                            std::size_t(call_context_field::lastcall_id),
+                            current_state.rw_counter(0),
+                            TYPE(0),
+                            TYPE(0),
+                            lastcall_id
+                        ), "zkevm_rw");
+
+                        // CALLDATASIZE is correct for current call_id
+                        lookup(rw_table<FieldType, stage>::call_context_lookup(
+                            lastcall_id,
+                            std::size_t(call_context_field::returndata_size),
+                            TYPE(0),
+                            returndata_size
+                        ), "zkevm_rw");
+
+                        // calldatasize was successfully written to stack
+                        lookup(rw_table<FieldType, stage>::stack_lookup(
+                            current_state.call_id(0),
+                            current_state.stack_size(0),
+                            current_state.rw_counter(0)+1,
+                            TYPE(1),                                               // is_write
+                            TYPE(0),
+                            returndata_size
+                        ), "zkevm_rw");
+
                     } else {
                         std::cout << "\tSTATE transition implemented" << std::endl;
                     }

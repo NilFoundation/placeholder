@@ -26,8 +26,6 @@
 
 #include <numeric>
 #include <algorithm>
-
-#include <nil/blueprint/zkevm/zkevm_word.hpp>
 #include <nil/blueprint/zkevm_bbf/types/opcode.hpp>
 
 namespace nil::blueprint::bbf {
@@ -159,44 +157,24 @@ class zkevm_byte_bbf : generic_component<FieldType, stage> {
       constrain(current_state.stack_size(1) - current_state.stack_size_next() - 1);   // stack_size transition
       constrain(current_state.memory_size(1) - current_state.memory_size_next());     // memory_size transition
       constrain(current_state.rw_counter_next() - current_state.rw_counter(1) - 3);   // rw_counter transition
-      lookup({
-            TYPE(rw_op_to_num(rw_operation_type::stack)),
-            current_state.call_id(0),
-            current_state.stack_size(0) - 1,
-            TYPE(0),// storage_key_hi
-            TYPE(0),// storage_key_lo
-            TYPE(0),// field
-            current_state.rw_counter(0),
-            TYPE(0),// is_write
-            I_128.first, // high bits of i
-            I_128.second // low bits of i
-      }, "zkevm_rw");
 
-      lookup({
-            TYPE(rw_op_to_num(rw_operation_type::stack)),
-            current_state.call_id(0),
-            current_state.stack_size(0) - 2,
-            TYPE(0),// storage_key_hi
-            TYPE(0),// storage_key_lo
-            TYPE(0),// field
-            current_state.rw_counter(0) + 1,
-            TYPE(0),// is_write
-            X_128.first, // high bits of b
-            X_128.second // low bits of b
-      }, "zkevm_rw");
-      
-      lookup({
-            TYPE(rw_op_to_num(rw_operation_type::stack)),
-            current_state.call_id(1),
-            current_state.stack_size(1) - 2,
-            TYPE(0),// storage_key_hi
-            TYPE(0),// storage_key_lo
-            TYPE(0),// field
-            current_state.rw_counter(1) + 2,
-            TYPE(1),// is_write
+      using RwTable = rw_table<FieldType, stage>;
+
+      lookup(RwTable::stack_lookup(
+          current_state.call_id(0), current_state.stack_size(0) - 1,
+          current_state.rw_counter(0), /* is_write = */ TYPE(0),
+            I_128.first, I_128.second), "zkevm_rw");
+
+      lookup(RwTable::stack_lookup(
+          current_state.call_id(0), current_state.stack_size(0) - 2,
+          current_state.rw_counter(0) + 1, /* is_write = */ TYPE(0),
+          X_128.first, X_128.second), "zkevm_rw");
+
+      lookup(RwTable::stack_lookup(
+          current_state.call_id(1), current_state.stack_size(1) - 2,
+            current_state.rw_counter(1) + 2, /* is_write = */ TYPE(1),
             TYPE(0), // high bits of result is always 0
-            b // low bits of result
-      }, "zkevm_rw");
+            b /* low bits of result */), "zkevm_rw");
     } else {
         std::cout << "\tAssignment implemented" << std::endl;
     }

@@ -27,7 +27,6 @@
 #include <numeric>
 #include <algorithm>
 
-#include <nil/blueprint/zkevm/zkevm_word.hpp>
 #include <nil/blueprint/zkevm_bbf/types/opcode.hpp>
 
 namespace nil {
@@ -57,7 +56,6 @@ namespace nil {
                     TYPE is_jump;
                     TYPE new_pc;
                     if constexpr( stage == GenerationStage::ASSIGNMENT ){
-                        std::cout << "\tASSIGNMENT implemented" << std::endl;
                         addr = nil::blueprint::w_to_16(current_state.stack_top())[15];
                         auto c_chunks = nil::blueprint::w_to_16(current_state.stack_top(1));
                         for( std::size_t i = 0; i < 16; i++ ){
@@ -91,31 +89,23 @@ namespace nil {
                         constrain(current_state.memory_size(0) - current_state.memory_size_next());     // memory_size transition
                         constrain(current_state.rw_counter_next() - current_state.rw_counter(0) - 2);   // rw_counter transition
                         std::vector<TYPE> tmp;
-                        tmp = {
-                            TYPE(rw_op_to_num(rw_operation_type::stack)),
+                        tmp = rw_table<FieldType, stage>::stack_lookup(
                             current_state.call_id(0),
                             current_state.stack_size(0) - 1,
-                            TYPE(0),                                                                    // storage_key_hi
-                            TYPE(0),                                                                    // storage_key_lo
-                            TYPE(0),                                                                    // field
                             current_state.rw_counter(0),
                             TYPE(0),                                                                    // is_write
                             TYPE(0),                                                                    // hi bytes are 0
-                            addr                                                                        // addr is smaller than maximum contract size
-                        };
+                            addr
+                        );
                         lookup(tmp, "zkevm_rw");
-                        tmp = {
-                            TYPE(rw_op_to_num(rw_operation_type::stack)),
+                        tmp = rw_table<FieldType, stage>::stack_lookup(
                             current_state.call_id(0),
                             current_state.stack_size(0) - 2,
-                            TYPE(0),                                                                    // storage_key_hi
-                            TYPE(0),                                                                    // storage_key_lo
-                            TYPE(0),                                                                    // field
                             current_state.rw_counter(0)+1,
                             TYPE(0),                                                                    // is_write
-                            C_128.first,                                                                // hi bytes are 0
-                            C_128.second                                                                // addr is smaller than maximum contract size
-                        };
+                            C_128.first,
+                            C_128.second
+                        );
                         lookup(tmp, "zkevm_rw");
                         // JUMP may be done only to JUMPDEST destination
                         tmp = {
