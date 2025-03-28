@@ -38,6 +38,7 @@
 #include <unordered_map>
 #include <queue>
 #include <thread>
+#include <format>
 
 #include <nil/crypto3/math/algorithms/make_evaluation_domain.hpp>
 #include <nil/crypto3/math/domains/evaluation_domain.hpp>
@@ -68,7 +69,7 @@ namespace nil {
             namespace snark {
                 template<typename FieldType, typename CommitmentSchemeTypePermutation, typename ParamsType>
                 class placeholder_lookup_argument_prover {
-                    static constexpr std::size_t mini_chunk_size = 16;
+                    static constexpr std::size_t mini_chunk_size = 64;
                     using transcript_hash_type = typename ParamsType::transcript_hash_type;
                     using transcript_type = transcript::fiat_shamir_heuristic_sequential<transcript_hash_type>;
                     using polynomial_dfs_type = math::polynomial_dfs<typename FieldType::value_type>;
@@ -206,6 +207,7 @@ namespace nil {
                             PROFILE_SCOPE(
                                 "Lookup argument compute h constraint parts of size {}",
                                 hs.size());
+
                             parallel_for(
                                 0, hs.size(),
                                 [&hs, &h_constraint_parts, &h_challenges, &alpha,
@@ -461,6 +463,7 @@ namespace nil {
                                         gate.tag_index, 0, false,
                                         simd_vector_variable_type::column_type::selector);
                                 }
+
                                 expressions.push_back(std::move(l));
                             }
                         }
@@ -537,14 +540,13 @@ namespace nil {
                                             return math::get_chunk<mini_chunk_size>(
                                                 variable_values[var], begin, j);
                                         };
-                                        const auto result_chunks =
-                                            dag_expr_copy.evaluate(eval_map);
+                                        dag_expr_copy.evaluate(eval_map);
                                         for (std::size_t idx = 0;
-                                             idx < result_chunks.size(); ++idx) {
+                                             idx < dag_expr_copy.get_result_size(); ++idx) {
                                             math::set_chunk<mini_chunk_size>(
                                                 (*lookup_input_ptr)[batch_index_map.at(
                                                     idx)],
-                                                begin, j, result_chunks[idx]);
+                                                begin, j, dag_expr_copy.get_result(idx));
                                         }
                                     }
                                 },

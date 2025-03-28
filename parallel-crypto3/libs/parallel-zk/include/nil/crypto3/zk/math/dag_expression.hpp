@@ -115,6 +115,7 @@ namespace nil {
                 dag_negation
             >;
 
+            // TODO(martun): This is a very very bad hash function, change it.
             template<typename VariableType>
             struct dag_node_hash {
                 using assignment_type = typename VariableType::assignment_type;
@@ -206,7 +207,8 @@ namespace nil {
                     return max_degree;
                 }
 
-                std::vector<assignment_type> evaluate(
+                // This function will count the evaluation results of all the expressions, but will not return the values.
+                void evaluate(
                     std::function<assignment_type(const VariableType&)> variable_evaluator
                 ) {
                     assignments.clear();
@@ -237,11 +239,14 @@ namespace nil {
                                 -assignments[std::get<dag_negation>(node).operand]);
                         }
                     }
-                    std::vector<assignment_type> result;
-                    for (const auto& root_node : root_nodes) {
-                        result.push_back(assignments[root_node]);
-                    }
-                    return result;
+                }
+
+                // Please call this function only after a call to evaluate, otherwise we don't have the results.
+                const assignment_type& get_result(size_t index) const {
+                    return assignments.at(root_nodes.at(index));
+                }
+                size_t get_result_size() const {
+                    return root_nodes.size();
                 }
 
             private:

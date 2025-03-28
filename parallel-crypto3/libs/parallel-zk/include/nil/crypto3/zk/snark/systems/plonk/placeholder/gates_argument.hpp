@@ -77,7 +77,7 @@ namespace nil {
 
                 template<typename FieldType, typename ParamsType>
                 struct placeholder_gates_argument<FieldType, ParamsType, 1> {
-                    static constexpr std::size_t mini_chunk_size = 16;
+                    static constexpr std::size_t mini_chunk_size = 64;
                     typedef
                         typename ParamsType::transcript_hash_type transcript_hash_type;
                     using transcript_type = transcript::fiat_shamir_heuristic_sequential<
@@ -306,10 +306,9 @@ namespace nil {
                                                 return math::get_chunk<mini_chunk_size>(
                                                     variable_values[var], begin, j);
                                             };
-                                            auto chunk_result =
-                                                dag_expr_copy.evaluate(eval_map)[0];
+                                            dag_expr_copy.evaluate(eval_map);
                                             math::set_chunk(result, begin, j,
-                                                            chunk_result);
+                                                            dag_expr_copy.get_result(0));
                                         }
                                     },
                                     ThreadPool::PoolLevel::HIGH));
