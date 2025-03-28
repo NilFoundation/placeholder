@@ -20,11 +20,8 @@ let
   inherit (lib) optional;
 
   # Aux function that assembles a shell line for running test binary for specific (test suite, test case, circuit subset) combination
-  buildTestRunLines = {binary, test_suite, test_runs}:
-    builtins.map
-      (test_name: "${binary} --run_test=${test_suite}/${test_name} -- --proof --run-for-circuits=${lib.strings.concatStringsSep "," test_runs.${test_name}}\n")
-      (builtins.attrNames test_runs)
-  ;
+  buildTestRunLines = {binary}:
+    [ "${binary} -- --proof" ];
 
 in stdenv.mkDerivation rec {
   name = "Proof verifier test";
@@ -60,33 +57,6 @@ in stdenv.mkDerivation rec {
 
   test_lines = buildTestRunLines {
     binary = "./parallel-crypto3/libs/parallel-blueprint/test/blueprint_multi_thread_zkevm_bbf_hardhat_test";
-
-    test_suite = "zkevm_bbf_hardhat";
-
-    test_runs = {
-
-      # test case name
-      keccak = [
-        "copy" # circuit name (leave empty to run all circuits)
-        "keccak"
-        "exp"
-        "rw"
-        "bytecode"
-        "zkevm"
-      ];
-
-      calldatacopy = [ "copy" "rw" "bytecode" "zkevm" "exp" "keccak"];
-
-      exp = [ "copy" "rw" "bytecode" "zkevm" "exp" "keccak"];
-
-      logger = [ "copy" "rw" "bytecode" "zkevm" "exp" "keccak"];
-
-      returndatacopy = [ "copy" "rw" "bytecode" "zkevm" "exp" "keccak" ];
-
-      mstore8 = [ "copy" "rw" "bytecode" "zkevm" "exp" "keccak"];
-
-      modular_operations = [ "copy" "rw" "bytecode" "zkevm" "exp" "keccak"];
-    };
   };
 
   checkPhase = lib.concatLines (["set -x"] ++ test_lines);

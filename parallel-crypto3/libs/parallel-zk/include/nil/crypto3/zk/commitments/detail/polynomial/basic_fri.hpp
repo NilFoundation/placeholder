@@ -186,7 +186,7 @@ namespace nil {
                                                     step_list_in.end(), 0)),
                                   step_list(step_list_in),
                                   expand_factor(expand_factor),
-                                  max_step(max_step),
+                                  max_step(*std::max_element(step_list_in.begin(), step_list_in.end())),
                                   degree_log(degree_log) {}
 
                             bool operator==(const params_type &rhs) const {
@@ -1517,7 +1517,7 @@ namespace nil {
                     // Calculate combinedQ values
                     combined_Q_y_out = calculate_combined_Q_values<FRI>(
                         combined_U, initial_proof, poly_ids, s_indices, denominators, s, theta, coset_size, starting_index);
-                     
+
                     return true;
                 }
 
@@ -1564,7 +1564,7 @@ namespace nil {
                     std::uint64_t x_index;
                     // Combined Q values
                     typename FRI::polynomial_values_type y;
- 
+
                     size_t starting_index = 0;
                     if (!verify_initial_proof_and_return_combined_Q_values<FRI>(
                             query_proof.initial_proof, combined_U, poly_ids, denominators, fri_params, commitments, theta, coset_size, domain_size,
@@ -1609,9 +1609,9 @@ namespace nil {
 
                     std::size_t domain_size = fri_params.D[0]->size();
                     std::size_t coset_size = 1 << fri_params.step_list[0];
- 
+
                     for (std::size_t query_id = 0; query_id < fri_params.lambda; query_id++) {
-                        if (!verify_query_proof<FRI>(proof.query_proofs[query_id], combined_U, poly_ids, denominators, fri_params, commitments, 
+                        if (!verify_query_proof<FRI>(proof.query_proofs[query_id], combined_U, poly_ids, denominators, fri_params, commitments,
                                                      theta, alphas, proof.fri_roots, proof.final_polynomial, coset_size, domain_size, transcript))
                             return false;
                     }
