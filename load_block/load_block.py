@@ -6,23 +6,21 @@ import time
 
 # ALCHEMY_API_KEY = "I38oXHAOj0OUcvNfObEX8cS0I3PAHj0R"
 # ALCHEMY_RPC_URL = f"https://eth-mainnet.g.alchemy.com/v2/{ALCHEMY_API_KEY}"
-#BLOCK_NUMBER = "0x1393622"  # 20526626 in hex
-#BLOCK_NUMBER = "0x1393624"  # 20526628 in hex
 RPC_URL = "https://docs-demo.quiknode.pro/"
-BLOCK_NUMBER = "0x1393625"  # 20526629 in hex
+BLOCK_NUMBER = "0x1393625"
 
 w3 = Web3(Web3.HTTPProvider(RPC_URL))
 
 def send_request_with_backoff(payload, is_hex=False):
     delay = 4
     while True:
-        try:
-            response = requests.post(RPC_URL, json=payload).json()
-            return response.get("result", "0x" if is_hex else {})
-        except Exception as e:
+        response = requests.post(RPC_URL, json=payload)
+        if response.status_code != 200:
             print("[ERROR] Increasing backoff to {} seconds!".format(delay*2))
             time.sleep(delay)
             delay *= 2
+            continue
+        return response.json().get("result", "0x" if is_hex else {})
 
 
 def get_block_data():
