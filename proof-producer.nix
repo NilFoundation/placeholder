@@ -38,8 +38,7 @@ in stdenv.mkDerivation {
                        (lib.optional (!stdenv.isDarwin) gdb) ++
                        (lib.optional (stdenv.isDarwin) lldb);
 
-  # enableDebugging will keep debug symbols in boost
-  propagatedBuildInputs = [ (if enableDebug then (enableDebugging boost) else boost) ];
+  propagatedBuildInputs = [ (boost.override { enableDebug = enableDebug; }) ];
 
   buildInputs = [cmake_modules gtest protobuf] ++
                   ( lib.optional (staticBuild) glibc.static ) ++

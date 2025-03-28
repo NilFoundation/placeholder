@@ -66,7 +66,9 @@ namespace nil {
                 using pair_type = std::pair<var, std::size_t>;
                 using pair_hash_type = variable_pair_hash<var>;
 
-                static constexpr const std::array<int32_t, 3> possible_rotations = {-1, 0, 1};
+                static constexpr const std::array<int32_t, 15> possible_rotations = {
+                    -7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7
+                };
 
                 const plonk_polynomial_dfs_table &table;
                 std::unordered_map<std::size_t, std::shared_ptr<domain_type>> domain_cache;
@@ -143,14 +145,17 @@ namespace nil {
                             }
                             tmp_v.rotation = possible_rotation;
                             auto old_key = std::make_pair(tmp_v, size);
-                            if (cache.find(old_key) != cache.end()) {
-                                old_result = cache[old_key];
+                            auto cache_it = cache.find(old_key);
+                            if (cache_it != cache.end()) {
+                                old_result = cache_it->second;
                                 new_rotation = possible_rotation;
                                 break;
                             }
                         }
                         if (old_result == nullptr) {
-                            throw std::logic_error("Rotationless variables do not match cached results.");
+                            throw std::logic_error(
+                                "It seems that max possible rotation got exceeded, please increase it possible_rotations."
+                            );
                         }
                         // note that scaling the shift value is performed by polynomial_shift
                         int shift = cur_rotation - new_rotation;
