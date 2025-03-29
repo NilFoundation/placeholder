@@ -47,8 +47,8 @@ namespace nil {
                 std::vector<std::uint8_t> memory;
                 zkevm_word_type  caller;
                 zkevm_word_type  call_context_address;
-                std::size_t call_value;
-                std::size_t call_context_value;
+                zkevm_word_type  call_value;
+                zkevm_word_type  call_context_value;
                 std::size_t call_gas;
 
                 std::map<std::tuple<rw_operation_type, zkevm_word_type, std::size_t, zkevm_word_type>, rw_operation> cold_access_list; // For REVERT proving. First state access rw_operation in the given CALL
