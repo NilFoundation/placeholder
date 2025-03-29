@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------//
-// Copyright (c) 2024 Valeh Farzaliyev <estoniaa@nil.foundation>
+// Copyright (c) 2025 Valeh Farzaliyev <estoniaa@nil.foundation>
 //
 // MIT License
 //
@@ -206,6 +206,7 @@ namespace nil {
                                 e = wrapping_mul(a, b);
                                 intermediate_triplets.push_back({a, b, e});
                             }
+
                             BOOST_ASSERT(intermediate_triplets.size() == bitmap.size());
                             BOOST_ASSERT(tmp_exp.size() == bitmap.size());
 
@@ -226,7 +227,6 @@ namespace nil {
 
                                 base[3*cur + 2][0] = base[3*cur][0];
                                 base[3*cur + 2][1] = base[3*cur][1];
-
 
                                 exponent[3*cur][0] = w_hi<FieldType>(tmp_exp[j]);
                                 exponent[3*cur][1] = w_lo<FieldType>(tmp_exp[j]);
@@ -253,7 +253,6 @@ namespace nil {
                                 is_last[3*cur + 1] = is_last[3*cur];
                                 is_last[3*cur + 2] = is_last[3*cur];
 
-
                                 a_chunks[cur] = zkevm_word_to_field_element<FieldType>(intermediate_triplets[its - j - 1][0]);
                                 b_chunks[cur] = zkevm_word_to_field_element<FieldType>(intermediate_triplets[its - j - 1][1]);
                                 r_chunks[cur] = zkevm_word_to_field_element<FieldType>(intermediate_triplets[its - j - 1][2]);
@@ -279,6 +278,7 @@ namespace nil {
                             }
 
                         }
+
                         while(cur < num_proving_blocks){
                             // unused rows will be filled with zeros. To satisfy all constraints
                             // exp_is_even is set 1 (because 0 is even)
@@ -306,6 +306,9 @@ namespace nil {
                             allocate(r_chunks[block_idx][j], 3*num_chunks + j + 2, block_start_row);
                             allocate(b_chunks[block_idx][j], 3*num_chunks + j + 2, block_start_row + 1);
                             allocate(a_chunks[block_idx][j], 3*num_chunks + j + 2, block_start_row + 2);
+                            lookup(r_chunks[block_idx][j], "chunk_16_bits/full");
+                            lookup(b_chunks[block_idx][j], "chunk_16_bits/full");
+                            lookup(a_chunks[block_idx][j], "chunk_16_bits/full");
                         }
                         for(std::size_t j = 0; j < 4; j++){
                             allocate(c_1_chunks[block_idx][j], 3*num_chunks + j + 18, block_start_row);
@@ -362,6 +365,9 @@ namespace nil {
                         constrain(chunk_sum_128<TYPE>(r_chunks[i], 1) - exponentiation[3*i][0]); // exponent_hi = r_chunk[8:15]
                         for(std::size_t j = 0; j < 16; j++){
                             constrain(exp_is_even[i]*(a_chunks[i][j] - b_chunks[i][j]));  // if exp is even a = b
+                            if(i > 0){
+                                constrain((1-is_last[3*i-1])*(a_chunks[i-1][j] - r_chunks[i][j])); // r = prev a 
+                            }
                         }
                         constrain((1-exp_is_even[i])*(chunk_sum_128<TYPE>(b_chunks[i], 0) - base[3*i][1])); // if exp is odd b[0:7] = base_lo
                         constrain((1-exp_is_even[i])*(chunk_sum_128<TYPE>(b_chunks[i], 1) - base[3*i][0])); // if exp is odd b[8:15] = base_hi
@@ -411,7 +417,7 @@ namespace nil {
                         TYPE second_carryless = second_carryless_construct<TYPE>(a_64_chunks, b_64_chunks, r_64_chunks);
                         constrain(second_carryless + c_1_64 + c_2[i] * two_64 - c_3_64 * two128 - c_4[i] * two192);
                         constrain(c_2[i] * (c_2[i] - 1));
-                        constrain(c_4[i] * (c_4[i] - 1) * (c_4[i] - 2) * (c_4[i] - 3));
+                        lookup(16384*c_4[i], "chunk_16_bits/full"); // => c_4[i] = 0,1,2 or 3
                     }
                     lookup_table("exp_prover", {0,1,2,3,4,5,6}, start_row ,max_working_rows);
                     for( std::size_t i = start_row; i < max_exponentiations; i++){
