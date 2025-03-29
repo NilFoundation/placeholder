@@ -29,6 +29,7 @@
 #include <functional>
 #include <variant>
 #include <stack>
+#include <bit>
 
 #include <boost/bimap/bimap.hpp>
 #include <boost/bimap/unordered_set_of.hpp>
@@ -69,8 +70,12 @@ namespace nil {
             struct dag_addition {
                 operands_vector_type operands;
 
-                dag_addition(operands_vector_type operands) : operands(operands) {}
-                dag_addition(std::initializer_list<std::size_t> operands) : operands(operands) {}
+                dag_addition(operands_vector_type _operands) : operands(_operands) {
+                    std::sort(operands.begin(), operands.end());
+                }
+                dag_addition(std::initializer_list<std::size_t> _operands) : operands(_operands) {
+                    std::sort(operands.begin(), operands.end());
+                }
 
                 bool operator==(const dag_addition& other) const {
                     return operands == other.operands;
@@ -80,8 +85,12 @@ namespace nil {
             struct dag_multiplication {
                 operands_vector_type operands;
 
-                dag_multiplication(operands_vector_type operands) : operands(operands) {}
-                dag_multiplication(std::initializer_list<std::size_t> operands) : operands(operands) {}
+                dag_multiplication(operands_vector_type _operands) : operands(_operands) {
+                    std::sort(operands.begin(), operands.end());
+                }
+                dag_multiplication(std::initializer_list<std::size_t> _operands) : operands(_operands) {
+                    std::sort(operands.begin(), operands.end());
+                }
 
                 bool operator==(const dag_multiplication& other) const {
                     return operands == other.operands;
@@ -107,7 +116,6 @@ namespace nil {
                 dag_negation
             >;
 
-            // TODO(martun): This is a very very bad hash function, change it.
             template<typename VariableType>
             struct dag_node_hash {
                 using assignment_type = typename VariableType::assignment_type;
@@ -124,14 +132,13 @@ namespace nil {
                         } else if (std::holds_alternative<dag_variable<VariableType>>(n)) {
                             return variable_seed ^ std::hash<VariableType>()(std::get<dag_variable<VariableType>>(n).variable);
                         } else if (std::holds_alternative<dag_addition>(n)) {
-                            size_t hash = std::accumulate(std::get<dag_addition>(n).operands.begin(), std::get<dag_addition>(n).operands.end(), add_seed, [](size_t a, size_t b) {
-                                return a ^ b;
+                            return std::accumulate(std::get<dag_addition>(n).operands.begin(), std::get<dag_addition>(n).operands.end(), add_seed, [](size_t a, size_t b) {
+                                return std::rotl(a, 8) ^ b;
                             });
                         } else if (std::holds_alternative<dag_multiplication>(n)) {
-                            size_t hash = std::accumulate(std::get<dag_multiplication>(n).operands.begin(), std::get<dag_multiplication>(n).operands.end(), multiply_seed, [](size_t a, size_t b) {
-                                return a ^ b;
+                            return std::accumulate(std::get<dag_multiplication>(n).operands.begin(), std::get<dag_multiplication>(n).operands.end(), multiply_seed, [](size_t a, size_t b) {
+                                return std::rotl(a, 8) ^ b;
                             });
-                            return hash;
                         } else if (std::holds_alternative<dag_negation>(n)) {
                             return negation_seed ^ std::hash<std::size_t>()(std::get<dag_negation>(n).operand);
                         }
