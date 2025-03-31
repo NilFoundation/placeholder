@@ -89,7 +89,18 @@ in stdenv.mkDerivation rec {
     };
   };
 
-  checkPhase = lib.concatLines (["set -x"] ++ test_lines);
+  wide_test_lines = buildTestRunLines {
+    binary = "./parallel-crypto3/libs/parallel-blueprint/test/blueprint_multi_thread_zkevm_bbf_zkevm_wide_test";
+
+    test_suite = "zkevm_bbf_wide";
+
+    test_runs = {
+      minimal_math = [ "copy" "rw" "bytecode" "zkevm" "exp" "keccak"];
+      call_keccak = [ "copy" "rw" "bytecode" "zkevm" "exp" "keccak"];
+    };
+  };
+
+  checkPhase = lib.concatLines (["set -x"] ++ test_lines ++ wide_test_lines);
 
   dontInstall = true;
   installPhase = "true";

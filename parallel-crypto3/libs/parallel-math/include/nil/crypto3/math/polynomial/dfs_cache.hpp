@@ -184,7 +184,33 @@ namespace nil {
                         cache[key] = res;
                         return res;
                     }
-                    auto og_column = table.get_variable_value(v, old_domain);
+                    polynomial_type og_column;
+                    if ((v.index == zk::snark::PLONK_SPECIAL_SELECTOR_ALL_USABLE_ROWS_SELECTED ||
+                         v.index == zk::snark::PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED ||
+                         v.index == zk::snark::PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED) &&
+                         v.type == var::column_type::selector)
+                    {
+                        auto column_size_key = std::make_pair(v, column_size);
+                        auto special_it = cache.find(column_size_key);
+                        if (special_it != cache.end()) {
+                            og_column = *special_it->second;
+                        } else {
+                            // we have to rotate the column
+                            auto special_rotationless_key = std::make_pair(var_without_rotation, column_size);
+                            auto rotationless_it = cache.find(special_rotationless_key);
+                            if (rotationless_it == cache.end()) {
+                                throw std::logic_error("Special selector column not found in cache");
+                            }
+                            og_column = math::polynomial_shift(
+                                *rotationless_it->second,
+                                - v.rotation,
+                                column_size
+                            );
+                            cache[column_size_key] = std::make_shared<polynomial_type>(og_column);
+                        }
+                    } else {
+                        og_column = table.get_variable_value(v, old_domain);
+                    }
                     old_domain->inverse_fft(og_column.get_storage());
                     ifft_cache[v] = std::make_shared<polynomial_type>(og_column);
                     new_domain->fft(og_column.get_storage());
