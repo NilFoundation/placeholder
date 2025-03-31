@@ -116,7 +116,7 @@ namespace nil {
                         allocate(rw_counter[i], 7, i);
                     }
                     if( register_dynamic_lookup )
-                        lookup_table("zkevm_copy",std::vector<std::size_t>({0,1,2,3,4,5,6,7}),0,max_copy_size);
+                        lookup_table("zkevm_copy", {{0,1,2,3,4,5,6,7}}, 0, max_copy_size);
                 }
             };
          }

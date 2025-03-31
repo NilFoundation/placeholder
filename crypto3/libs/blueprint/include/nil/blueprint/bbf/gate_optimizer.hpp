@@ -56,7 +56,7 @@ namespace nil {
                 // Here size_t is the index of the selector from 'selectors_'.
                 std::unordered_map<size_t, std::vector<std::pair<constraint_type,std::string>>> constraint_list;
                 std::vector<plonk_copy_constraint> copy_constraints;
-                std::map<std::string, std::pair<std::vector<std::size_t>, size_t>> dynamic_lookup_tables;
+                std::map<std::string, std::pair<std::vector<std::vector<std::size_t>>, size_t>> dynamic_lookup_tables;
 
                 // Lookup constraints with single selector are stored here.
                 std::unordered_map<size_t, std::vector<lookup_constraint_type>> lookup_constraints;
@@ -201,7 +201,7 @@ namespace nil {
 
                     // Take everything out of context, and erase the context to free its memory.
                     std::unordered_map<row_selector<>, std::vector<std::pair<constraint_type, std::string>>> constraint_list = context_->get_constraints();
-                    std::map<std::string, std::pair<std::vector<std::size_t>, row_selector<>>>
+                    std::map<std::string, std::pair<std::vector<std::vector<std::size_t>>, row_selector<>>>
                         dynamic_lookup_tables = context_->get_dynamic_lookup_tables();
                     result.copy_constraints = context_->get_copy_constraints();
                     std::unordered_map<row_selector<>, std::vector<typename context_type::lookup_constraint_type>>

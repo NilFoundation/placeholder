@@ -118,7 +118,7 @@ namespace nil {
                         allocate(exponentiation_lo[i], 6, i);
                     }
 
-                    lookup_table("zkevm_exp", {0, 1, 2, 3, 4, 5, 6}, 0, max_exponentiations);
+                    lookup_table("zkevm_exp", {{0, 1, 2, 3, 4, 5, 6}}, 0, max_exponentiations);
                 };
             };
         }  // namespace bbf

@@ -97,7 +97,7 @@ namespace nil {
                         allocate(value_lo[i], 9, i);
                     }
                     if( register_dynamic_lookup )
-                        lookup_table("zkevm_rw",std::vector<std::size_t>({0,1,2,3,4,5,6,7,8,9}),0,max_rw_size);
+                        lookup_table("zkevm_rw", {{0,1,2,3,4,5,6,7,8,9}}, 0, max_rw_size);
                 }
             };
          }

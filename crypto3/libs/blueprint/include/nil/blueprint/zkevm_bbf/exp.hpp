@@ -423,7 +423,7 @@ namespace nil {
                         constrain(c_2[i] * (c_2[i] - 1));
                         lookup(16384*c_4[i], "chunk_16_bits/full"); // => c_4[i] = 0,1,2 or 3
                     }
-                    lookup_table("exp_prover", {0,1,2,3,4,5,6}, start_row ,max_working_rows);
+                    lookup_table("exp_prover", {{0,1,2,3,4,5,6}}, start_row ,max_working_rows);
                     for( std::size_t i = start_row; i < max_exponentiations; i++){
                         lookup({
                             exp_t.selector[i],

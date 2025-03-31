@@ -114,7 +114,7 @@ namespace nil {
                         allocate(hash_lo[i],3,i);
                     }
                     // declare dynamic lookup table
-                    lookup_table("keccak_table",std::vector<std::size_t>({0,1,2,3}),0,max_blocks);
+                    lookup_table("keccak_table", {{0,1,2,3}}, 0, max_blocks);
                 };
             };
         } // namespace bbf

@@ -119,7 +119,7 @@ namespace nil {
                     if (register_dynamic_lookup) {
                         std::vector<std::size_t> indices(48);
                         std::iota(indices.begin(), indices.end(), 0);
-                        lookup_table("zkevm_rw", indices, 0, max_rw_size);
+                        lookup_table("zkevm_rw", {indices}, 0, max_rw_size);
                     }
                 }
             };

@@ -118,7 +118,7 @@ namespace nil {
                         allocate(hash_lo[i],5,i);
                     }
                     // declare dynamic lookup table
-                    lookup_table("zkevm_bytecode",std::vector<std::size_t>({0,1,2,3,4,5}),0,max_bytecode_size);
+                    lookup_table("zkevm_bytecode", {{0,1,2,3,4,5}}, 0, max_bytecode_size);
                 };
 	    };
         }

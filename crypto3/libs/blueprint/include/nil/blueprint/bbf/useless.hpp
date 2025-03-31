@@ -69,8 +69,8 @@ namespace nil {
                         allocate(X[2],0,2);
 
                         std::vector<std::size_t> lookup_cols = {0};
-                        lookup_table("dummy_dynamic",lookup_cols,0,3);
-                        lookup_table("dummy_dynamic2",lookup_cols,1,1);
+                        lookup_table("dummy_dynamic",{lookup_cols},0,3);
+                        lookup_table("dummy_dynamic2",{lookup_cols},1,1);
                         lookup(X[0],"dummy_dynamic");
                     };
             };

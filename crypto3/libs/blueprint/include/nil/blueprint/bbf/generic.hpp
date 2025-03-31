@@ -249,7 +249,7 @@ namespace nil {
                 void lookup(std::vector<TYPE> &C, std::string table_name) {
                     // TODO: actually check membership of C in table?
                 }
-                void lookup_table(std::string name, std::vector<std::size_t> W, std::size_t from_row, std::size_t num_rows) {
+                void lookup_table(std::string name, std::vector<std::vector<std::size_t>> W, std::size_t from_row, std::size_t num_rows) {
                     // most probably do nothing
                 }
                 context subcontext(const std::vector<std::size_t>& W, std::size_t new_row_shift, std::size_t new_max_rows) {
@@ -293,8 +293,10 @@ namespace nil {
                                                                    // ^^^ expressions, rows
                 // NB: NOT exactly as plonk!!!
                 using lookup_constraint_type = std::pair<std::string, lookup_input_constraints_type>;
-                using dynamic_lookup_table_container_type = std::map<std::string,std::pair<std::vector<std::size_t>, row_selector<>>>;
-                                                            // ^^^ name -> (columns, rows)
+
+                using dynamic_lookup_table_container_type =
+                        std::map<std::string, std::pair<std::vector<std::vector<std::size_t>>, row_selector<>>>;
+                        //   ^^^ name -> (columns, rows)
                 using basic_context<FieldType>::col_map;
                 using basic_context<FieldType>::add_rows_to_description;
 
@@ -497,22 +499,30 @@ namespace nil {
                     add_lookup_constraint(table_name, C, start_row, end_row);
                 }
 
-                void lookup_table(std::string name, std::vector<std::size_t> W, std::size_t from_row, std::size_t num_rows) {
+                void lookup_table(std::string name,
+                                  std::vector<std::vector<std::size_t>> options,
+                                  std::size_t from_row, std::size_t num_rows) {
                     if (lookup_tables->find(name) != lookup_tables->end()) {
                         BOOST_LOG_TRIVIAL(error) << "Double declaration of dynamic lookup table '" << name << "'!\n";
                     }
                     BOOST_ASSERT(lookup_tables->find(name) == lookup_tables->end());
-                    std::vector<std::size_t> cols;
-                    row_selector<> rows(desc.rows_amount);
 
-                    for(std::size_t i = 0; i < W.size(); i++) {
-                        cols.push_back(col_map[column_type::witness][W[i]]);
-                    }
+                    row_selector<> rows(desc.rows_amount);
                     for(std::size_t i = 0; i < num_rows; i++) {
                         rows.set_row(get_row(from_row + i)); // store absolute row numbers
                     }
 
-                    lookup_tables->insert({name,{cols,rows}});
+                    BOOST_ASSERT(!options.empty());
+                    std::size_t n_cols = options[0].size();
+
+                    for (auto &cols : options) {
+                        BOOST_ASSERT(cols.size() == n_cols);
+
+                        for (auto &col : cols)
+                            col = col_map[column_type::witness][col];
+                    }
+
+                    lookup_tables->insert({name, {std::move(options), std::move(rows)}});
                 }
 
                 std::unordered_map<row_selector<>, std::vector<std::pair<TYPE, std::string>>> get_constraints() {
@@ -725,8 +735,10 @@ namespace nil {
                     ct.lookup(input,table_name);
                 }
 
-                void lookup_table(std::string name, std::vector<std::size_t> W, std::size_t from_row, std::size_t num_rows) {
-                    ct.lookup_table(name,W,from_row,num_rows);
+                void lookup_table(std::string name,
+                                  std::vector<std::vector<size_t>> options,
+                                  size_t from_row, size_t num_rows) {
+                    ct.lookup_table(name, options, from_row, num_rows);
                 }
 
                 generic_component(context_type &context_object, // context object, created outside

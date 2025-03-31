@@ -253,13 +253,15 @@ namespace nil {
                         //crypto3::zk::snark::plonk_lookup_table<FieldType> table_specs;
                         plonk_lookup_table table_specs;
                         table_specs.tag_index = selector_index;
-                        table_specs.columns_number = area.first.size();
-                        std::vector<var> dynamic_lookup_cols;
-                        for(const auto& c : area.first) {
-                            // TODO: does this make sense?!
-                            dynamic_lookup_cols.push_back(var(c, 0, false, var::column_type::witness));
+
+                        table_specs.columns_number = area.first[0].size();
+                        for(const auto &cols : area.first) {
+                            table_specs.lookup_options.emplace_back();
+                            auto &option = table_specs.lookup_options.back();
+                            for (auto c : cols)
+                                option.push_back(var(c, 0, false, var::column_type::witness));
                         }
-                        table_specs.lookup_options = {dynamic_lookup_cols};
+
                         bp.define_dynamic_table(name,table_specs);
                     }
 
