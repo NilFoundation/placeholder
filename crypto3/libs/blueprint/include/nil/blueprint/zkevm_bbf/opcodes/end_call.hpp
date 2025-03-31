@@ -24,22 +24,25 @@ namespace nil {
                     generic_component<FieldType,stage>(context_object, false)
                 {
                     TYPE lastcall_id;
-                    TYPE length, length_inv;
+                    TYPE length, length_inv, is_length_zero;
                     TYPE offset;
                     if constexpr( stage == GenerationStage::ASSIGNMENT ){
                         lastcall_id = current_state.lastsubcall_id();
                         length = current_state.lastcall_returndata_length();
                         offset = current_state.lastcall_returndata_offset();
                         length_inv = length == 0? 0: length.inversed();
+                        is_length_zero = length == 0? 0: 1;
                     }
                     allocate(lastcall_id, 32, 0);
                     allocate(length, 33, 0);
                     allocate(offset, 34, 0);
                     allocate(length_inv, 35, 0);
+                    allocate(is_length_zero, 36, 0);
 
                     // Length_inv correctness
                     constrain(length * (length * length_inv - 1));
                     constrain(length_inv * (length * length_inv - 1));
+                    constrain(is_length_zero - length * length_inv);
 
                     if constexpr( stage == GenerationStage::CONSTRAINTS ){
                         // constrain(current_state.pc_next() - current_state.pc(0) - 1);                   // PC transition
@@ -73,23 +76,23 @@ namespace nil {
                         ), "zkevm_rw");
 
                         lookup({
-                            length * length_inv,                                                          // is_first
+                            is_length_zero,                                                          // is_first
                             TYPE(0),                                                                      // is_write
-                            length * length_inv * TYPE(copy_op_to_num(copy_operand_type::returndata)),    // cp_type
+                            is_length_zero * TYPE(copy_op_to_num(copy_operand_type::returndata)),    // cp_type
                             TYPE(0),                                                                      // id_hi
-                            length * length_inv * lastcall_id,                                            // id_lo
+                            is_length_zero * lastcall_id,                                            // id_lo
                             TYPE(0),                                                                      // counter_1
-                            length * length_inv * (current_state.rw_counter(0) + 3),                      // counter_2
+                            is_length_zero * (current_state.rw_counter(0) + 3),                      // counter_2
                             length
                         }, "zkevm_copy");
                         lookup({
-                            length * length_inv,                                                       // is_first
-                            length * length_inv,                                                       // is_write
-                            length * length_inv * TYPE(copy_op_to_num(copy_operand_type::memory)),     // cp_type
+                            is_length_zero,                                                       // is_first
+                            is_length_zero,                                                       // is_write
+                            is_length_zero * TYPE(copy_op_to_num(copy_operand_type::memory)),     // cp_type
                             TYPE(0),                                                                   // id_hi
-                            length * length_inv * current_state.call_id(0),                            // id_lo
-                            length * length_inv * offset,                                              // counter_1
-                            length * length_inv * (current_state.rw_counter(0) + length + 3),          // counter_2
+                            is_length_zero * current_state.call_id(0),                            // id_lo
+                            is_length_zero * offset,                                              // counter_1
+                            is_length_zero * (current_state.rw_counter(0) + length + 3),          // counter_2
                             length
                         }, "zkevm_copy");
                     }
