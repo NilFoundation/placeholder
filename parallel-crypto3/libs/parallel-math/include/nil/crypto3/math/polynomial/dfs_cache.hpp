@@ -76,24 +76,26 @@ namespace nil {
                 std::unordered_map<var, std::shared_ptr<polynomial_type>> ifft_cache;
                 std::unordered_set<pair_type, pair_hash_type> rotationless_vars;
 
+                std::size_t column_size;
+
                 dfs_cache(const plonk_polynomial_dfs_table &table,
                     polynomial_type mask_assignment,
                     polynomial_type lagrange_0
-                ) : table(table) {
+                ) : table(table), column_size(mask_assignment.size()) {
                     cache[std::make_pair(
                         var(zk::snark::PLONK_SPECIAL_SELECTOR_ALL_USABLE_ROWS_SELECTED, 0, false, var::column_type::selector),
-                        mask_assignment.size()
+                        column_size
                     )] = std::make_shared<polynomial_type>(mask_assignment);
                     cache[std::make_pair(
                         var(zk::snark::PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED, 0, false, var::column_type::selector),
-                        lagrange_0.size()
+                        column_size
                     )] = std::make_shared<polynomial_type>(mask_assignment - lagrange_0);
                     cache[std::make_pair(
                         var(zk::snark::PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED, 0, false, var::column_type::selector),
-                        mask_assignment.size()
-                    )] = std::make_shared<polynomial_type>(polynomial_type(0, mask_assignment.size(), value_type::one()));
+                        column_size
+                    )] = std::make_shared<polynomial_type>(polynomial_type(0, column_size, value_type::one()));
                     // pre-create the base domain
-                    domain_cache[mask_assignment.size()] = make_evaluation_domain<FieldType>(mask_assignment.size());
+                    domain_cache[column_size] = make_evaluation_domain<FieldType>(column_size);
                 }
 
                 dfs_cache(const dfs_cache &) = default;
@@ -114,7 +116,6 @@ namespace nil {
                         auto res = cache[key];
                         return res;
                     }
-                    const auto column_size = table.get_variable_value_without_rotation(v).size();
                     if (column_size > size) {
                         throw std::invalid_argument("Column size is more than the requested size");
                     }
