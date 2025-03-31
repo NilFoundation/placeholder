@@ -16,7 +16,7 @@ macro(define_custom_blueprint_test test prefix)
 
     set_target_properties(${full_test_name} PROPERTIES CXX_STANDARD 20)
 
-    file(INSTALL "${BLUEPRINT_TEST_ROOT}/zkevm/data" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
+    file(INSTALL "${BLUEPRINT_TEST_ROOT}/zkevm_bbf/data" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
 
     target_compile_definitions(${full_test_name} PRIVATE TEST_DATA_DIR="${CMAKE_CURRENT_BINARY_DIR}/data/")
 

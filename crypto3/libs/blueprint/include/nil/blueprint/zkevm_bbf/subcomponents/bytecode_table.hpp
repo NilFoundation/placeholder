@@ -74,6 +74,7 @@ namespace nil {
 
                         std::size_t cur = 0;
                         for(std::size_t i = 0; i < bytecodes.size(); i++) {
+                            std::cout << "Bytecode " << i << " size = " << bytecodes[i].first.size() << std::endl;
                             TYPE hash_hi_val = w_hi<FieldType>(bytecodes[i].second);
                             TYPE hash_lo_val = w_lo<FieldType>(bytecodes[i].second);
                             TYPE push_size = 0;

@@ -22,6 +22,8 @@
 #include "nil/crypto3/multiprecision/type_traits.hpp"
 #include "nil/crypto3/multiprecision/unsigned_utils.hpp"
 
+#include "nil/crypto3/bench/scoped_profiler.hpp"
+
 namespace nil::crypto3::multiprecision::detail {
     template<typename base_type_>
     class common_modular_ops {
@@ -47,6 +49,7 @@ namespace nil::crypto3::multiprecision::detail {
         }
 
         constexpr void sub(base_type &a, const base_type &b) const {
+            bench::register_sub();
             if (a < b) {
                 auto v = mod();
                 v -= b;

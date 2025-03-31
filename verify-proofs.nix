@@ -75,21 +75,32 @@ in stdenv.mkDerivation rec {
         "zkevm"
       ];
 
-      calldatacopy = [ "copy" "rw" "bytecode" "zkevm" "exp" "keccak"];
+      minimal_math = [ "copy" "rw" "bytecode" "zkevm" "exp" "keccak"];
 
-      exp = [ "copy" "rw" "bytecode" "zkevm" "exp" "keccak"];
+      call_counter = [ "copy" "rw" "bytecode" "zkevm" "exp" "keccak"];
 
-      logger = [ "copy" "rw" "bytecode" "zkevm" "exp" "keccak"];
+      delegatecall_counter = [ "copy" "rw" "bytecode" "zkevm" "exp" "keccak"];
 
-      returndatacopy = [ "copy" "rw" "bytecode" "zkevm" "exp" "keccak" ];
+      indexed_log = [ "copy" "rw" "bytecode" "zkevm" "exp" "keccak" ];
 
-      mstore8 = [ "copy" "rw" "bytecode" "zkevm" "exp" "keccak"];
+      cold_sstore = [ "copy" "rw" "bytecode" "zkevm" "exp" "keccak"];
 
-      modular_operations = [ "copy" "rw" "bytecode" "zkevm" "exp" "keccak"];
+      try_catch = [ "copy" "rw" "bytecode" "zkevm" "exp" "keccak"];
     };
   };
 
-  checkPhase = lib.concatLines (["set -x"] ++ test_lines);
+  wide_test_lines = buildTestRunLines {
+    binary = "./parallel-crypto3/libs/parallel-blueprint/test/blueprint_multi_thread_zkevm_bbf_zkevm_wide_test";
+
+    test_suite = "zkevm_bbf_wide";
+
+    test_runs = {
+      minimal_math = [ "copy" "rw" "bytecode" "zkevm" "exp" "keccak"];
+      call_keccak = [ "copy" "rw" "bytecode" "zkevm" "exp" "keccak"];
+    };
+  };
+
+  checkPhase = lib.concatLines (["set -x"] ++ test_lines ++ wide_test_lines);
 
   dontInstall = true;
   installPhase = "true";

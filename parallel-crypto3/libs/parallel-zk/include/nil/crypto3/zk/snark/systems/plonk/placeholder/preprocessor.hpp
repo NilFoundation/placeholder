@@ -338,16 +338,29 @@ namespace nil {
                             const plonk_constraint_system<FieldType>  &constraint_system,
                             const plonk_table_description<FieldType> &table_description
                         ) {
-                            for (std::size_t i = 0;
-                                 i < table_description.table_width() - table_description.selector_columns;
-                                 i++) {
-                                for (std::size_t j = 0; j < table_description.rows_amount; j++) {
-                                    key_type key(i, j);
-                                    this->_mapping[key] = key;
-                                    this->_aux[key] = key;
-                                    this->_sizes[key] = 1;
+                            PROFILE_SCOPE("Create cycle representation");
+
+                            if (constraint_system.copy_constraints().size() == 0) {
+                                return;
+                            }
+
+                            {
+                                PROFILE_SCOPE("Initialize maps");
+                                for (std::size_t i = 0;
+                                     i < table_description.table_width() -
+                                             table_description.selector_columns;
+                                     i++) {
+                                    for (std::size_t j = 0;
+                                         j < table_description.rows_amount; j++) {
+                                        key_type key(i, j);
+                                        this->_mapping[key] = key;
+                                        this->_aux[key] = key;
+                                        this->_sizes[key] = 1;
+                                    }
                                 }
                             }
+
+                            PROFILE_SCOPE("Apply copy constraints");
 
                             std::vector<plonk_copy_constraint<FieldType>> copy_constraints =
                                 constraint_system.copy_constraints();
@@ -398,8 +411,11 @@ namespace nil {
                             }
                         }
 
-                        key_type &operator[](key_type key) {
-                            return _mapping[key];
+                        key_type operator[](key_type key) const {
+                            if (!_mapping.contains(key)) {
+                                return key;
+                            }
+                            return _mapping.at(key);
                         }
                     };
 
@@ -512,6 +528,10 @@ namespace nil {
                         const plonk_table_description<FieldType>& table_description,
                         std::shared_ptr<math::evaluation_domain<FieldType>> domain
                     ) {
+                        PROFILE_SCOPE(
+                            "Preprocessor create permutation polynomials, "
+                            "global_indices.size() = {}, domain->size() = {}",
+                            global_indices.size(), domain->size());
                         // TODO: add std::vector<std::size_t> columns_with_copy_constraints;
                         cycle_representation permutation(constraint_system, table_description);
 
@@ -695,6 +715,7 @@ namespace nil {
                         std::shared_ptr<private_assignment_type> private_assignment,
                         const plonk_table_description<FieldType>  &table_description
                     ) {
+                        PROFILE_SCOPE("Placeholder private preprocessor");
                         std::size_t N_rows = table_description.rows_amount;
 
                         std::shared_ptr<math::evaluation_domain<FieldType>> basic_domain =

@@ -57,27 +57,31 @@ namespace nil {
                 };
 
                 static table_params get_minimal_requirements(
-                    std::size_t max_keccak_blocks) {
+                    std::size_t max_keccak_blocks, std::size_t keccak_circuit_repetitions) {
                     return {
-                        .witnesses = 20,
+                        .witnesses = KeccakTable::get_witness_amount() +
+                                     KeccakDynamic::get_minimal_requirements(max_keccak_blocks)
+                                         .witnesses * keccak_circuit_repetitions,
                         .public_inputs = 1,
                         .constants = 3,
-                        .rows = KeccakDynamic::get_minimal_requirements(max_keccak_blocks)
-                                    .rows};
+                        .rows = KeccakDynamic::get_minimal_requirements(max_keccak_blocks).rows
+                    };
                 }
 
-                static void allocate_public_inputs(context_type& context,
-                                                   input_type& input,
-                                                   std::size_t max_keccak_blocks) {
+                static void allocate_public_inputs(
+                    context_type& context,
+                    input_type& input,
+                    std::size_t max_keccak_blocks,
+                    std::size_t keccak_circuit_repetitions
+                ) {
                     context.allocate(input.rlc_challenge, 0, 0,
                                      column_type::public_input);
                 }
 
                 zkevm_keccak(context_type& context_object, const input_type& input,
-                             std::size_t max_keccak_blocks)
+                             std::size_t max_keccak_blocks, std::size_t keccak_circuit_repetitions)
                     : generic_component<FieldType, stage>(context_object) {
                     std::vector<std::size_t> keccak_lookup_area;
-                    std::vector<std::size_t> keccak_dynamic_lookup_area;
                     std::size_t current_column = 0;
                     std::size_t dynamic_rows =
                         KeccakDynamic::get_minimal_requirements(max_keccak_blocks).rows;
@@ -86,18 +90,9 @@ namespace nil {
                         keccak_lookup_area.push_back(current_column++);
                     }
 
-                    for (std::size_t i = 0;
-                         i < KeccakDynamic::get_minimal_requirements(max_keccak_blocks)
-                                 .witnesses;
-                         i++) {
-                        keccak_dynamic_lookup_area.push_back(current_column++);
-                    }
-
                     context_type keccak_ct = context_object.subcontext(
                         keccak_lookup_area, 1, dynamic_rows + 1);
 
-                    context_type keccak_dynamic_ct = context_object.subcontext(
-                        keccak_dynamic_lookup_area, 1, dynamic_rows + 1);
                     typename KeccakDynamic::input_type input_dynamic;
                     typename KeccakTable::input_type input_keccak_table;
                     TYPE rlc_challenge;
@@ -123,20 +118,37 @@ namespace nil {
 
                     allocate(rlc_challenge, 0, 0);
                     input_dynamic.rlc_challenge = rlc_challenge;
-                    KeccakDynamic kd = KeccakDynamic(keccak_dynamic_ct, input_dynamic,
-                                                     max_keccak_blocks);
 
-                    if constexpr (stage == GenerationStage::CONSTRAINTS) {
-                        std::vector<TYPE> tmp;
-                        for (std::size_t i = 0; i < max_keccak_blocks; i++) {
-                            tmp = {TYPE(1), kt.RLC[i], kt.hash_hi[i], kt.hash_lo[i],
-                                   kt.is_last[i]};
-                            lookup(tmp, "keccak_dynamic");
-                            tmp = {kd.m[i].h.is_last, kd.m[i].h.RLC, kd.m[i].h.hash_hi,
-                                   kd.m[i].h.hash_lo};
-                            lookup(tmp, "keccak_table");
+                    for( std::size_t rep = 0; rep < keccak_circuit_repetitions; rep++){
+                        std::vector<std::size_t> keccak_dynamic_lookup_area;
+
+                        std::cout << "Keccak area " << rep << " : ";
+                        for (std::size_t i = 0;
+                            i < KeccakDynamic::get_minimal_requirements(max_keccak_blocks).witnesses;
+                            i++
+                        ) {
+                            std::cout << current_column << " ";
+                            keccak_dynamic_lookup_area.push_back(current_column++);
                         }
+                        std::cout << std::endl;
+
+                        context_type keccak_dynamic_ct = context_object.subcontext(
+                            keccak_dynamic_lookup_area, 1, dynamic_rows + 1);
+                        KeccakDynamic kd = KeccakDynamic(keccak_dynamic_ct, input_dynamic,
+                                                        max_keccak_blocks, true, "keccak_dynamic_"+std::to_string(rep));
                     }
+
+                    // if constexpr (stage == GenerationStage::CONSTRAINTS) {
+                    //     std::vector<TYPE> tmp;
+                    //     for (std::size_t i = 0; i < max_keccak_blocks; i++) {
+                    //         tmp = {TYPE(1), kt.RLC[i], kt.hash_hi[i], kt.hash_lo[i],
+                    //                kt.is_last[i]};
+                    //         lookup(tmp, "keccak_dynamic");
+                    //         tmp = {kd.m[i].h.is_last, kd.m[i].h.RLC, kd.m[i].h.hash_hi,
+                    //                kd.m[i].h.hash_lo};
+                    //         lookup(tmp, "keccak_table");
+                    //     }
+                    // }
                 }
             };
         }  // namespace bbf

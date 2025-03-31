@@ -32,7 +32,6 @@
 #error "You're mixing parallel and non-parallel crypto3 versions"
 #endif
 
-#include <chrono>
 #include <set>
 
 #include <nil/crypto3/math/polynomial/polynomial.hpp>
@@ -49,6 +48,7 @@
 #include <nil/crypto3/zk/snark/systems/plonk/placeholder/gates_argument.hpp>
 #include <nil/crypto3/zk/snark/systems/plonk/placeholder/params.hpp>
 #include <nil/crypto3/zk/snark/systems/plonk/placeholder/preprocessor.hpp>
+#include <nil/crypto3/math/polynomial/dfs_cache.hpp>
 
 #include <nil/crypto3/bench/scoped_profiler.hpp>
 
@@ -61,8 +61,6 @@ namespace nil {
                     static inline std::vector<math::polynomial<typename FieldType::value_type>>
                         split_polynomial(const math::polynomial<typename FieldType::value_type> &f,
                                          std::size_t max_degree) {
-                        PROFILE_SCOPE("split_polynomial_time");
-
                         std::vector<math::polynomial<typename FieldType::value_type>> f_splitted;
 
                         std::size_t chunk_size = max_degree + 1;    // polynomial contains max_degree + 1 coeffs
@@ -89,6 +87,8 @@ namespace nil {
 
                     using public_preprocessor_type = placeholder_public_preprocessor<FieldType, ParamsType>;
                     using private_preprocessor_type = placeholder_private_preprocessor<FieldType, ParamsType>;
+
+                    using dfs_cache_type = math::dfs_cache<FieldType>;
 
                     constexpr static const std::size_t gate_parts = 1;
                     constexpr static const std::size_t permutation_parts = 3;
@@ -140,14 +140,34 @@ namespace nil {
                     }
 
                     placeholder_proof<FieldType, ParamsType> process() {
-                        PROFILE_SCOPE("Placeholder prover, total time");
-                        BOOST_LOG_TRIVIAL(info) << "Running prover in multi-threaded mode.";
+                        PROFILE_SCOPE("Placeholder prover");
+                        // BOOST_LOG_TRIVIAL(info) << "Running prover in multi-threaded mode.";
+                        polynomial_dfs_type mask_polynomial(
+                            0, preprocessed_public_data.common_data->basic_domain->m,
+                            typename FieldType::value_type(1u)
+                        );
+                        mask_polynomial -= preprocessed_public_data.q_last;
+                        mask_polynomial -= preprocessed_public_data.q_blind;
+                        dfs_cache_type dfs_cache(
+                            *_polynomial_table,
+                            mask_polynomial,
+                            preprocessed_public_data.common_data->lagrange_0
+                        );
+
+                        SCOPED_LOG(
+                            "Assignment table statistics: total columns: {}, witnesses: "
+                            "{}, constants: {}, public inputs: {}, selectors: {}",
+                            _polynomial_table->size(),
+                            _polynomial_table->witnesses_amount(),
+                            _polynomial_table->constants_amount(),
+                            _polynomial_table->public_inputs_amount(),
+                            _polynomial_table->selectors_amount());
 
                         // 2. Commit witness columns and public_input columns
                         _commitment_scheme.append_to_batch(VARIABLE_VALUES_BATCH, _polynomial_table->witnesses());
                         _commitment_scheme.append_to_batch(VARIABLE_VALUES_BATCH, _polynomial_table->public_inputs());
                         {
-                            PROFILE_SCOPE("variable_values_precommit_time");
+                            PROFILE_SCOPE("Variable values precommit");
                             _proof.commitments[VARIABLE_VALUES_BATCH] = _commitment_scheme.commit(VARIABLE_VALUES_BATCH);
                         }
                         transcript(_proof.commitments[VARIABLE_VALUES_BATCH]);
@@ -169,7 +189,7 @@ namespace nil {
 
                         // 5. lookup_argument
                         {
-                            auto lookup_argument_result = lookup_argument();
+                            auto lookup_argument_result = lookup_argument(dfs_cache);
                             _F_dfs[3] = std::move(lookup_argument_result.F_dfs[0]);
                             _F_dfs[4] = std::move(lookup_argument_result.F_dfs[1]);
                             _F_dfs[5] = std::move(lookup_argument_result.F_dfs[2]);
@@ -177,25 +197,19 @@ namespace nil {
                         }
 
                         if( constraint_system.copy_constraints().size() > 0 || constraint_system.lookup_gates().size() > 0){
+                            PROFILE_SCOPE("Permutation batch precommit");
                             _proof.commitments[PERMUTATION_BATCH] = _commitment_scheme.commit(PERMUTATION_BATCH);
                             transcript(_proof.commitments[PERMUTATION_BATCH]);
                         }
 
                         // 6. circuit-satisfability
 
-                        polynomial_dfs_type mask_polynomial(
-                            0, preprocessed_public_data.common_data->basic_domain->m,
-                            typename FieldType::value_type(1u)
-                        );
-                        mask_polynomial -= preprocessed_public_data.q_last;
-                        mask_polynomial -= preprocessed_public_data.q_blind;
                         _F_dfs[7] = placeholder_gates_argument<FieldType, ParamsType>::prove_eval(
                             constraint_system, *_polynomial_table,
                             preprocessed_public_data.common_data->basic_domain,
                             preprocessed_public_data.common_data->max_gates_degree,
-                            mask_polynomial,
-                            preprocessed_public_data.common_data->lagrange_0,
-                            transcript
+                            transcript,
+                            dfs_cache
                         )[0];
 
                         _polynomial_table.reset(); // We don't need it anymore, release memory
@@ -237,7 +251,7 @@ namespace nil {
 
                 private:
                     std::vector<polynomial_dfs_type> quotient_polynomial_split_dfs() {
-                        PROFILE_SCOPE("quotient_polynomial_split_dfs");
+                        PROFILE_SCOPE("Quotient polynomial split dfs");
 
                         const auto& assignment_desc = preprocessed_public_data.common_data->desc;
 
@@ -283,7 +297,7 @@ namespace nil {
                     }
 
                     polynomial_type quotient_polynomial() {
-                        PROFILE_SCOPE("quotient_polynomial_time");
+                        PROFILE_SCOPE("Quotient polynomial");
 
                         // 7.1. Get $\alpha_0, \dots, \alpha_8 \in \mathbb{F}$ from $hash(\text{transcript})$
                         std::array<typename FieldType::value_type, f_parts> alphas =
@@ -311,8 +325,8 @@ namespace nil {
                     }
 
                     typename placeholder_lookup_argument_prover<FieldType, commitment_scheme_type, ParamsType>::prover_lookup_result
-                    lookup_argument() {
-                        PROFILE_SCOPE("lookup_argument_time");
+                    lookup_argument(dfs_cache_type& dfs_cache) {
+                        PROFILE_SCOPE("Lookup argument");
 
                         typename placeholder_lookup_argument_prover<
                             FieldType,
@@ -333,14 +347,14 @@ namespace nil {
                                 transcript
                             );
 
-                            lookup_argument_result = lookup_argument_prover.prove_eval();
+                            lookup_argument_result = lookup_argument_prover.prove_eval(dfs_cache);
                             _proof.commitments[LOOKUP_BATCH] = lookup_argument_result.lookup_commitment;
                         }
                         return lookup_argument_result;
                     }
 
                     commitment_type T_commit(const std::vector<polynomial_dfs_type>& T_splitted_dfs) {
-                        PROFILE_SCOPE("T_split_precommit_time");
+                        PROFILE_SCOPE("T split precommit");
                         _commitment_scheme.append_to_batch(QUOTIENT_BATCH, T_splitted_dfs);
                         return _commitment_scheme.commit(QUOTIENT_BATCH);
                     }
@@ -372,7 +386,6 @@ namespace nil {
                     }
 
                     void generate_evaluation_points(const typename FieldType::value_type& evaluation_challenge) {
-                        PROFILE_SCOPE("evaluation_points_generated_time");
                         const auto& assignment_desc = preprocessed_public_data.common_data->desc;
 
                         _omega = preprocessed_public_data.common_data->basic_domain->get_domain_element(1);

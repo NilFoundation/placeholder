@@ -18,8 +18,9 @@
   staticBuild ? true,
   runTests ? false,
   sanitize? false,
+  profiling ? false,
   crypto3_tests? false,
-  parallel_crypto3_tets? false,
+  parallel_crypto3_tests? false,
   crypto3_bechmarks? false,
   parallel_crypto3_bechmarks? false,
   proof_producer_benchmarks? false,
@@ -37,8 +38,7 @@ in stdenv.mkDerivation {
                        (lib.optional (!stdenv.isDarwin) gdb) ++
                        (lib.optional (stdenv.isDarwin) lldb);
 
-  # enableDebugging will keep debug symbols in boost
-  propagatedBuildInputs = [ (if enableDebug then (enableDebugging boost) else boost) ];
+  propagatedBuildInputs = [ (boost.override { enableDebug = enableDebug; }) ];
 
   buildInputs = [cmake_modules gtest protobuf] ++
                   ( lib.optional (staticBuild) glibc.static ) ++
@@ -52,10 +52,11 @@ in stdenv.mkDerivation {
       (if sanitize then "-DSANITIZE=ON" else "-DSANITIZE=OFF")
       "-DPROOF_PRODUCER_ENABLE=TRUE"
       (if crypto3_tests then "-DBUILD_CRYPTO3_TESTS=TRUE" else "-DBUILD_CRYPTO3_TESTS=False")
-      (if parallel_crypto3_tets then "-DBUILD_PARALLEL_CRYPTO3_TESTS=TRUE" else "")
+      (if parallel_crypto3_tests then "-DBUILD_PARALLEL_CRYPTO3_TESTS=TRUE" else "")
       (if parallel_crypto3_bechmarks then "-DENABLE_BENCHMARKS=ON" else "-DENABLE_BENCHMARKS=OFF")
       (if crypto3_bechmarks then "-DBUILD_CRYPTO3_BENCH_TESTS=ON" else "-DBUILD_CRYPTO3_BENCH_TESTS=OFF")
       (if staticBuild then "-DPROOF_PRODUCER_STATIC_BINARIES=ON" else "-DPROOF_PRODUCER_STATIC_BINARIES=OFF")
+      (if profiling then "-DPROFILING_ENABLED=ON" else "-DPROFILING_ENABLED=OFF")
       "-G Ninja"
     ];
 

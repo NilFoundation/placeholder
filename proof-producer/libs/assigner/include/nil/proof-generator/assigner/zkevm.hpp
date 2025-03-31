@@ -93,7 +93,7 @@ namespace nil {
             }
             size_t total_copy_bytes = 0;
             for (const auto &copy_event : input.copy_events) {
-                total_copy_bytes += copy_event.bytes.size();
+                total_copy_bytes += copy_event.get_bytes().size();
             }
             size_t expected_copy_table_size = total_copy_bytes * 2;
             if (expected_copy_table_size > options.circuits_limits.max_copy_rows) {

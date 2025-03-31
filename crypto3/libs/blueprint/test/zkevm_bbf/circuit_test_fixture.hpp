@@ -39,8 +39,8 @@
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
 
-#include <nil/blueprint/zkevm_bbf/input_generators/opcode_tester.hpp>
-#include <nil/blueprint/zkevm_bbf/input_generators/opcode_tester_input_generator.hpp>
+// #include <nil/blueprint/zkevm_bbf/input_generators/opcode_tester.hpp>
+// #include <nil/blueprint/zkevm_bbf/input_generators/opcode_tester_input_generator.hpp>
 
 #include <nil/crypto3/zk/snark/systems/plonk/placeholder/prover.hpp>
 #include <nil/crypto3/zk/snark/systems/plonk/placeholder/verifier.hpp>
@@ -65,6 +65,7 @@ struct l1_size_restrictions{
     std::size_t max_copy;
     std::size_t max_zkevm_rows;
     std::size_t max_exp_rows;
+    std::size_t max_call_commits = 500;
 };
 
 std::vector<std::uint8_t> hex_string_to_bytes(std::string const &hex_string) {
@@ -76,24 +77,19 @@ std::vector<std::uint8_t> hex_string_to_bytes(std::string const &hex_string) {
     return bytes;
 }
 
-std::pair<std::vector<std::vector<std::uint8_t>>, std::vector<boost::property_tree::ptree>> load_hardhat_input(std::string path){
-    std::vector<std::vector<std::uint8_t>> bytecodes;
-    std::vector<boost::property_tree::ptree> pts;
-
+boost::property_tree::ptree load_hardhat_input(std::string path){
     std::ifstream ss;
-    std::cout << "Open file " << std::string(TEST_DATA_DIR) + path + "trace0.json" << std::endl;
-    ss.open(std::string(TEST_DATA_DIR) + path + "trace0.json");
+    auto test_data_dir = std::getenv("NIL_CO3_TEST_DATA_DIR")
+                             ? std::getenv("NIL_CO3_TEST_DATA_DIR")
+                             : std::string(TEST_DATA_DIR);
+    auto full_path = test_data_dir + path;
+    std::cout << "Open file " << full_path << std::endl;
+    ss.open(full_path);
     boost::property_tree::ptree pt;
     boost::property_tree::read_json(ss, pt);
     ss.close();
 
-    ss.open(std::string(TEST_DATA_DIR) + path + "contract0.json");
-    boost::property_tree::ptree bytecode_json;
-    boost::property_tree::read_json(ss, bytecode_json);
-    std::vector<uint8_t> bytecode0 = hex_string_to_bytes(std::string(bytecode_json.get_child("bytecode").data().c_str()));
-    ss.close();
-
-    return {{bytecode0}, {pt}};
+    return pt;
 }
 
 template <typename BlueprintFieldType>
@@ -102,7 +98,19 @@ bool check_proof(
     const crypto3::zk::snark::plonk_assignment_table<BlueprintFieldType> &assignment,
     const zk::snark::plonk_table_description<BlueprintFieldType> &desc
 ) {
-    std::size_t Lambda = 9;
+    std::size_t max_step = std::getenv("NIL_CO3_TEST_MAX_STEP")
+                               ? std::stoi(std::getenv("NIL_CO3_TEST_MAX_STEP"))
+                               : 1;
+    std::size_t lambda = std::getenv("NIL_CO3_TEST_LAMBDA")
+                             ? std::stoi(std::getenv("NIL_CO3_TEST_LAMBDA"))
+                             : 9;
+    std::size_t log_blowup = std::getenv("NIL_CO3_TEST_LOG_BLOWUP")
+                                 ? std::stoi(std::getenv("NIL_CO3_TEST_LOG_BLOWUP"))
+                                 : 2;
+    std::size_t max_quotient_poly_chunks =
+        std::getenv("NIL_CO3_TEST_LOG_MAX_QUOTIENT_POLY_CHUNKS")
+            ? std::stoi(std::getenv("NIL_CO3_TEST_LOG_MAX_QUOTIENT_POLY_CHUNKS"))
+            : 10;
 
     typedef nil::crypto3::zk::snark::placeholder_circuit_params<BlueprintFieldType> circuit_params;
     using transcript_hash_type = nil::crypto3::hashes::keccak_1600<256>;
@@ -117,20 +125,26 @@ bool check_proof(
     using lpc_type = nil::crypto3::zk::commitments::list_polynomial_commitment<BlueprintFieldType, lpc_params_type>;
     using lpc_scheme_type = typename nil::crypto3::zk::commitments::lpc_commitment_scheme<lpc_type>;
     using lpc_placeholder_params_type = nil::crypto3::zk::snark::placeholder_params<circuit_params, lpc_scheme_type>;
-    typename lpc_type::fri_type::params_type fri_params(1, std::ceil(log2(assignment.rows_amount())), Lambda, 2);
+    typename lpc_type::fri_type::params_type fri_params(
+        max_step, std::ceil(log2(assignment.rows_amount())), lambda, log_blowup);
     lpc_scheme_type lpc_scheme(fri_params);
 
-    std::cout << "Public preprocessor" << std::endl;
-    typename nil::crypto3::zk::snark::placeholder_public_preprocessor<BlueprintFieldType, lpc_placeholder_params_type>::preprocessed_data_type
-            lpc_preprocessed_public_data = nil::crypto3::zk::snark::placeholder_public_preprocessor<BlueprintFieldType, lpc_placeholder_params_type>::process(
-            bp, assignment.public_table(), desc, lpc_scheme, 10);
+    // std::cout << "Public preprocessor" << std::endl;
+    typename nil::crypto3::zk::snark::placeholder_public_preprocessor<
+        BlueprintFieldType, lpc_placeholder_params_type>::preprocessed_data_type
+        lpc_preprocessed_public_data =
+            nil::crypto3::zk::snark::placeholder_public_preprocessor<
+                BlueprintFieldType,
+                lpc_placeholder_params_type>::process(bp, assignment.public_table(), desc,
+                                                      lpc_scheme,
+                                                      max_quotient_poly_chunks);
 
-    std::cout << "Private preprocessor" << std::endl;
+    // std::cout << "Private preprocessor" << std::endl;
     typename nil::crypto3::zk::snark::placeholder_private_preprocessor<BlueprintFieldType, lpc_placeholder_params_type>::preprocessed_data_type
             lpc_preprocessed_private_data = nil::crypto3::zk::snark::placeholder_private_preprocessor<BlueprintFieldType, lpc_placeholder_params_type>::process(
             bp, assignment.private_table(), desc);
 
-    std::cout << "Prover" << std::endl;
+    // std::cout << "Prover" << std::endl;
     auto lpc_proof = nil::crypto3::zk::snark::placeholder_prover<BlueprintFieldType, lpc_placeholder_params_type>::process(
             lpc_preprocessed_public_data, std::move(lpc_preprocessed_private_data), desc, bp,
             lpc_scheme);
@@ -138,7 +152,7 @@ bool check_proof(
     // We must not use the same instance of lpc_scheme.
     lpc_scheme_type verifier_lpc_scheme(fri_params);
 
-    std::cout << "Verifier" << std::endl;
+    // std::cout << "Verifier" << std::endl;
     bool verifier_res = nil::crypto3::zk::snark::placeholder_verifier<BlueprintFieldType, lpc_placeholder_params_type>::process(
             *lpc_preprocessed_public_data.common_data, lpc_proof, desc, bp, verifier_lpc_scheme);
     return verifier_res;
@@ -195,7 +209,13 @@ class CircuitTestFixture {
     ) {
         // Max_copy, Max_rw, Max_keccak, Max_bytecode
         circuit_builder<field_type, BBFType, ComponentStaticInfoArgs...> builder(component_static_info_args...);
+
         auto &bp = builder.get_circuit();
+        std::size_t max_gates_degree  = bp.max_gates_degree();
+        std::size_t max_lookup_degree  = bp.max_lookup_gates_degree();
+        std::cout << "Max gates degree " << max_gates_degree << std::endl;
+        std::cout << "Max lookup degree " << max_lookup_degree << std::endl;
+
         auto [assignment, component, desc] = builder.assign(assignment_input);
         if (print_to_file) {
             print_zk_circuit_and_table_to_file(output_file + "_" + circuit_name, bp, desc, assignment);
@@ -209,8 +229,8 @@ class CircuitTestFixture {
         // It's debug mode. Prover from non-satisfied circuit will throw asserts
         if (result && generate_proof) {
             result = result & check_proof(bp, assignment, desc);
+            std::cout << std::endl;
         }
-        std::cout << std::endl;
         return result;
     }
 

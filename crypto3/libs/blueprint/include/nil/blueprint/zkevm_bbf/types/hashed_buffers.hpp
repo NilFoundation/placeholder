@@ -30,14 +30,11 @@
 #include <nil/blueprint/components/hashes/keccak/util.hpp> //Move needed utils to bbf
 #include <nil/blueprint/bbf/generic.hpp>
 
-#include <nil/blueprint/zkevm/zkevm_word.hpp>
+#include <nil/blueprint/zkevm_bbf/types/zkevm_word.hpp>
 
 namespace nil {
     namespace blueprint {
         namespace bbf {
-            // ! zkevm_word.hpp has similar function but it is not in the bbf namespace
-            // TODO: Remove one of them
-
             nil::blueprint::zkevm_word_type
             zkevm_keccak_hash(const std::vector<uint8_t> &buffer){
                 nil::crypto3::hashes::keccak_1600<256>::digest_type d = nil::crypto3::hash<nil::crypto3::hashes::keccak_1600<256>>(buffer);

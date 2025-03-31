@@ -122,9 +122,9 @@
             staticBuild = false;
             enableDebug = true;
             runTests = true;
-            sanitize = true;
+            sanitize = false;
             crypto3_tests = true;
-            parallel_crypto3_tets = true;
+            parallel_crypto3_tests = true;
             crypto3_bechmarks = true;
             parallel_crypto3_bechmarks = true;
           });
@@ -136,7 +136,32 @@
             runTests = true;
             sanitize = true;
             crypto3_tests = true;
-            parallel_crypto3_tets = true;
+            parallel_crypto3_tests = true;
+            crypto3_bechmarks = true;
+            parallel_crypto3_bechmarks = true;
+          });
+
+          develop-clang-profile = (pkgs.callPackage ./proof-producer.nix {
+            staticBuild = false;
+            stdenv = pkgs.llvmPackages_19.stdenv;
+            enableDebug = false;
+            runTests = true;
+            sanitize = false;
+            crypto3_tests = true;
+            parallel_crypto3_tests = true;
+            crypto3_bechmarks = true;
+            parallel_crypto3_bechmarks = true;
+            profiling = true;
+          });
+          
+          develop-clang-release = (pkgs.callPackage ./proof-producer.nix {
+            staticBuild = false;
+            stdenv = pkgs.llvmPackages_19.stdenv;
+            enableDebug = false;
+            runTests = true;
+            sanitize = false;
+            crypto3_tests = true;
+            parallel_crypto3_tests = true;
             crypto3_bechmarks = true;
             parallel_crypto3_bechmarks = true;
           });
