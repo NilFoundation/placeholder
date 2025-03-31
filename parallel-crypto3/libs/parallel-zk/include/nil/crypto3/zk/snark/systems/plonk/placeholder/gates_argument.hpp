@@ -216,14 +216,19 @@ namespace nil {
                                     }
                                 }
 
-                                simd_vector_variable_type selector =
-                                    simd_vector_variable_type(
-                                        gate.selector_index, 0, false,
-                                        simd_vector_variable_type::column_type::selector);
-                                for (size_t i = 0; i < extended_domain_sizes.size();
-                                     ++i) {
-                                    gate_results[i] *= selector;
-                                    expressions[i] += gate_results[i];
+                                if (gate.selector_index != PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED) {
+                                    simd_vector_variable_type selector =
+                                        simd_vector_variable_type(
+                                            gate.selector_index, 0, false,
+                                            simd_vector_variable_type::column_type::selector);
+                                    for (size_t i = 0; i < extended_domain_sizes.size(); ++i) {
+                                        gate_results[i] *= selector;
+                                        expressions[i] += gate_results[i];
+                                    }
+                                } else {
+                                    for (size_t i = 0; i < extended_domain_sizes.size(); ++i) {
+                                        expressions[i] += gate_results[i];
+                                    }
                                 }
                             }
                         }
