@@ -180,7 +180,7 @@ namespace nil {
                     std::vector<TYPE> address_near(max_rw_size);
                     std::vector<TYPE> not_first_or_write(max_rw_size);
                     std::vector<TYPE> first_and_not_write(max_rw_size);
-                    
+
 
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
                         auto rw_trace = input.rw_operations;
@@ -306,7 +306,6 @@ namespace nil {
                         allocate(address_near[i], ++cur_column, i);
                         allocate(not_first_or_write[i], ++cur_column, i);
                         allocate(first_and_not_write[i], ++cur_column, i);
-
                     }
                     // std::cout << std::endl;
                     if constexpr (stage == GenerationStage::CONSTRAINTS) {
@@ -414,14 +413,14 @@ namespace nil {
                         every_row_constraints.push_back(context_object.relativize((diff[1] * inv_diff[1] - 1) * diff[1], -1));
                         every_row_constraints.push_back(context_object.relativize((diff[1] * inv_diff[1] - 1) * inv_diff[1], -1));
 
-                        every_row_constraints.push_back(context_object.relativize(not_first_or_padding[1] - (is_first[1] - 1) * (op[1] - PADDING_OP), -1));
-                        every_row_constraints.push_back(context_object.relativize(not_first_or_padding[1] * (op[1] - START_OP) * (diff_index_bits[1][0] - 1), -1));
-                        every_row_constraints.push_back(context_object.relativize(not_first_or_padding[1] * (op[1] - START_OP) * (diff_index_bits[1][1] - 1), -1));
-                        every_row_constraints.push_back(context_object.relativize(not_first_or_padding[1] * (op[1] - START_OP) * (diff_index_bits[1][2] - 1), -1));
-                        every_row_constraints.push_back(context_object.relativize(not_first_or_padding[1] * (op[1] - START_OP) * (diff_index_bits[1][3] - 1), -1));
+                        non_first_row_constraints.push_back(context_object.relativize(not_first_or_padding[1] - (is_first[1] - 1) * (PADDING_OP - op[1]), -1));
+                        non_first_row_constraints.push_back(context_object.relativize(not_first_or_padding[1] * (op[1] - START_OP) * (diff_index_bits[1][0] - 1), -1));
+                        non_first_row_constraints.push_back(context_object.relativize(not_first_or_padding[1] * (op[1] - START_OP) * (diff_index_bits[1][1] - 1), -1));
+                        non_first_row_constraints.push_back(context_object.relativize(not_first_or_padding[1] * (op[1] - START_OP) * (diff_index_bits[1][2] - 1), -1));
+                        non_first_row_constraints.push_back(context_object.relativize(not_first_or_padding[1] * (op[1] - START_OP) * (diff_index_bits[1][3] - 1), -1));
 
-                        every_row_constraints.push_back(context_object.relativize(firsts_diff_index_bits[1] - diff_index_bits[1][0] * diff_index_bits[1][1] * diff_index_bits[1][2], -1));
-                        every_row_constraints.push_back(context_object.relativize(firsts_diff_index_bits[1] * diff_index_bits[1][3] * is_first[1], -1));
+                        non_first_row_constraints.push_back(context_object.relativize(firsts_diff_index_bits[1] - diff_index_bits[1][0] * diff_index_bits[1][1] * diff_index_bits[1][2], -1));
+                        non_first_row_constraints.push_back(context_object.relativize(firsts_diff_index_bits[1] * diff_index_bits[1][3] * is_first[1], -1));
 
                         non_first_row_constraints.push_back(context_object.relativize(is_last[0] * (1 - is_first[1]) * (op[1] - PADDING_OP), -1));
                         // non_first_row_constraints.push_back(context_object.relativize(is_last_for_id[0] * (1 - is_first_for_id[1]) * (op[1] - PADDING_OP), -1));
@@ -453,8 +452,8 @@ namespace nil {
                         non_first_row_constraints.push_back(context_object.relativize(
                                 not_first_or_padding[1] * (1 - is_write[1]) * (value_lo[1] - value_lo[0]), -1));
 
-                        every_row_constraints.push_back(context_object.relativize(not_first_or_padding[1] * (op[0] - START_OP) * (initial_value_hi[1] - initial_value_hi[0]), -1));
-                        every_row_constraints.push_back(context_object.relativize(not_first_or_padding[1] * (op[0] - START_OP) * (initial_value_lo[1] - initial_value_lo[0]), -1));
+                        non_first_row_constraints.push_back(context_object.relativize(not_first_or_padding[1] * (op[0] - START_OP) * (initial_value_hi[1] - initial_value_hi[0]), -1));
+                        non_first_row_constraints.push_back(context_object.relativize(not_first_or_padding[1] * (op[0] - START_OP) * (initial_value_lo[1] - initial_value_lo[0]), -1));
 
                         // Specific constraints for START
                         std::map<std::size_t, std::vector<TYPE>> special_constraints;
@@ -476,7 +475,7 @@ namespace nil {
                         special_constraints[STACK_OP].push_back(context_object.relativize(stack_selector * is_first[1] * (1 - is_write[1]), -1));  // 4. First stack operation is obviously write
                         //if(i!=0) {
                             non_first_row_constraints.push_back(context_object.relativize(stack_selector * (address[1] - address[0]) * (is_write[1] - 1), -1));                  // 5. First operation is always write
-                            non_first_row_constraints.push_back(context_object.relativize(address_near[1] - (address[1] - address[0]) * (address[1] - address[0] - 1), -1)); 
+                            non_first_row_constraints.push_back(context_object.relativize(address_near[1] - (address[1] - address[0]) * (address[1] - address[0] - 1), -1));
                             non_first_row_constraints.push_back(context_object.relativize(stack_selector * (1 - is_first[1]) * address_near[1], -1));      // 6. Stack pointer always grows and only by one
                             non_first_row_constraints.push_back(context_object.relativize(stack_selector * (1 - is_first[1]) * (state_root_hi[1] - state_root_before_hi[0]), -1));
                             non_first_row_constraints.push_back(context_object.relativize(stack_selector * (1 - is_first[1]) * (state_root_lo[1] - state_root_before_lo[0]), -1));
@@ -491,7 +490,7 @@ namespace nil {
                         // Specific constraints for MEMORY
                         // address is 32 bit
                         //if( i != 0 )
-                            non_first_row_constraints.push_back(context_object.relativize(not_first_or_write[1] - (1 - is_first[1]) * (1 - is_write[1]), -1));    
+                            non_first_row_constraints.push_back(context_object.relativize(not_first_or_write[1] - (1 - is_first[1]) * (1 - is_write[1]), -1));
                             non_first_row_constraints.push_back(context_object.relativize(memory_selector * not_first_or_write[1] * (value_lo[1] - value_lo[0]), -1));       // 4. for read operations value is equal to previous value
                         special_constraints[MEMORY_OP].push_back(context_object.relativize(memory_selector * value_hi[1], -1));
                         special_constraints[MEMORY_OP].push_back(context_object.relativize(first_and_not_write[1] - is_first[1] * (is_write[1] - 1), -1));
