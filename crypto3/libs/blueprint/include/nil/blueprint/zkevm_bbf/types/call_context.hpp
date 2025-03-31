@@ -49,13 +49,16 @@ namespace nil {
                 zkevm_word_type  call_context_address;
                 zkevm_word_type  call_value;
                 zkevm_word_type  call_context_value;
-                std::size_t call_gas;
+                std::size_t      call_gas;
+                bool             call_is_create = false;
+                bool             call_is_create2 = false;
 
                 std::map<std::tuple<rw_operation_type, zkevm_word_type, std::size_t, zkevm_word_type>, rw_operation> cold_access_list; // For REVERT proving. First state access rw_operation in the given CALL
                 std::map<std::tuple<rw_operation_type, zkevm_word_type, std::size_t, zkevm_word_type>, rw_operation> cold_write_list;
 
                 std::set<std::tuple<zkevm_word_type, std::size_t, zkevm_word_type>> was_accessed; // For SLOAD, SSTORE gas proving
                 std::set<std::tuple<zkevm_word_type, std::size_t, zkevm_word_type>> was_written;
+                std::map<std::pair<zkevm_word_type, zkevm_word_type>, zkevm_word_type> transient_storage; // For TLOAD, TSTORE
 
                 std::size_t end; // rw_counter before opcode that finishes CALL -- REVERT, STOP, RETURN
                 std::size_t args_offset;
