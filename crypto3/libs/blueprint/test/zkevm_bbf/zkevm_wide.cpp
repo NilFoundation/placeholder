@@ -176,7 +176,7 @@ public:
                 // Max_keccak
                 result =
                     test_bbf_component<field_type, nil::blueprint::bbf::zkevm_keccak>(
-                        keccak_circuit, {}, keccak_assignment_input, max_keccak_blocks);
+                        keccak_circuit, {}, keccak_assignment_input, max_keccak_blocks, 1);
                 BOOST_ASSERT(result);
                 std::cout << std::endl;
             }

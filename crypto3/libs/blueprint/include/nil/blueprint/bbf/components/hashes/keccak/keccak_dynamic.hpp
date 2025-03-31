@@ -196,12 +196,12 @@ namespace nil {
                     context_object.allocate(input.rlc_challenge, 0, 0,
                                             column_type::public_input);
                 }
-                
+
                 std::size_t max_blocks;
                 std::vector<keccak_map> m = std::vector<keccak_map>(max_blocks);
 
                 keccak_dynamic(context_type &context_object, input_type instance_input,
-                               std::size_t max_blocks_, bool make_links = true)
+                               std::size_t max_blocks_, bool make_links = true, std::string lookup_table_name = "keccak_dynamic")
                     : max_blocks(max_blocks_), generic_component<FieldType, stage>(context_object) {
                     using integral_type = typename FieldType::integral_type;
                     using value_type = typename FieldType::value_type;
@@ -1063,7 +1063,7 @@ namespace nil {
                                    "keccak_pack_table/extended_swap");  // UN6
                         }
                     }
-                    lookup_table("keccak_dynamic", {15, 1, 2, 3, 9}, 0,
+                    lookup_table(lookup_table_name, {15, 1, 2, 3, 9}, 0,
                                  6247 * max_blocks);
                 }
             };

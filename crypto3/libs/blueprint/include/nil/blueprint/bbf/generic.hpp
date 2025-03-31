@@ -203,6 +203,8 @@ namespace nil {
 
                 void allocate(TYPE &C, size_t col, size_t row, column_type t) {
                     if (is_allocated(col, row, t)) {
+                        // TODO: Process constant columns more accurately
+                        if( t == column_type::constant ) return;
                         std::stringstream ss;
                         ss << "RE-allocation of " << t << " cell at col = " << col << ", row = " << row << ".\n";
                         throw std::logic_error(ss.str());
