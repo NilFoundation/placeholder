@@ -47,14 +47,6 @@
 namespace nil {
     namespace crypto3 {
         namespace math {
-            template<typename VariableType>
-            struct variable_pair_hash {
-                std::size_t operator()(const std::pair<VariableType, std::size_t> &v) const {
-                    auto v_hash = std::hash<VariableType>()(v.first);
-                    boost::hash_combine(v_hash, v.second);
-                    return v_hash;
-                }
-            };
 
             template<typename FieldType>
             struct dfs_cache {
@@ -62,164 +54,191 @@ namespace nil {
                 using polynomial_type = polynomial_dfs<value_type>;
                 using domain_type = evaluation_domain<FieldType>;
                 using plonk_polynomial_dfs_table = zk::snark::plonk_polynomial_dfs_table<FieldType>;
-                using var = zk::snark::plonk_variable<typename plonk_polynomial_dfs_table::column_type>;
-                using pair_type = std::pair<var, std::size_t>;
-                using pair_hash_type = variable_pair_hash<var>;
+                using var = zk::snark::plonk_variable<
+                    typename plonk_polynomial_dfs_table::column_type>;
 
-                static constexpr const std::array<int32_t, 15> possible_rotations = {
-                    -7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7
+                struct var_without_rotation {
+                    std::size_t index;
+                    var::column_type type;
+
+                    auto operator<=>(var_without_rotation const &) const = default;
                 };
 
+                struct var_without_rotation_hash {
+                    std::size_t operator()(const var_without_rotation &v) const {
+                        auto v_hash = boost::hash_value(v.index);
+                        boost::hash_combine(v_hash, v.type);
+                        return v_hash;
+                    }
+                };
+
+                struct variable_pair_hash {
+                    std::size_t operator()(
+                        const std::pair<var_without_rotation, std::size_t> &v) const {
+                        auto v_hash = boost::hash_value(v.first.index);
+                        boost::hash_combine(v_hash, v.first.type);
+                        boost::hash_combine(v_hash, v.second);
+                        return v_hash;
+                    }
+                };
+
+                using pair_type = std::pair<var_without_rotation, std::size_t>;
+
                 const plonk_polynomial_dfs_table &table;
-                std::unordered_map<std::size_t, std::shared_ptr<domain_type>> domain_cache;
-                std::unordered_map<pair_type, std::shared_ptr<polynomial_type>, pair_hash_type> cache;
-                std::unordered_map<var, std::shared_ptr<polynomial_type>> ifft_cache;
-                std::unordered_set<pair_type, pair_hash_type> rotationless_vars;
+                std::unordered_map<std::size_t, std::shared_ptr<domain_type>>
+                    domain_cache;
+                std::unordered_map<pair_type, std::shared_ptr<polynomial_type>,
+                                   variable_pair_hash>
+                    cache;
+                std::unordered_map<var_without_rotation, std::shared_ptr<polynomial_type>,
+                                   var_without_rotation_hash>
+                    ifft_cache;
+                std::unordered_map<var_without_rotation, std::int32_t,
+                                   var_without_rotation_hash>
+                    var_rotation;
 
                 std::size_t column_size;
+                std::shared_ptr<domain_type> domain;
 
                 dfs_cache(const plonk_polynomial_dfs_table &table,
-                    polynomial_type mask_assignment,
-                    polynomial_type lagrange_0
-                ) : table(table), column_size(mask_assignment.size()) {
-                    cache[std::make_pair(
-                        var(zk::snark::PLONK_SPECIAL_SELECTOR_ALL_USABLE_ROWS_SELECTED, 0, false, var::column_type::selector),
-                        column_size
-                    )] = std::make_shared<polynomial_type>(mask_assignment);
-                    cache[std::make_pair(
-                        var(zk::snark::PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED, 0, false, var::column_type::selector),
-                        column_size
-                    )] = std::make_shared<polynomial_type>(mask_assignment - lagrange_0);
-                    cache[std::make_pair(
-                        var(zk::snark::PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED, 0, false, var::column_type::selector),
-                        column_size
-                    )] = std::make_shared<polynomial_type>(polynomial_type(0, column_size, value_type::one()));
-                    // pre-create the base domain
-                    domain_cache[column_size] = make_evaluation_domain<FieldType>(column_size);
-                }
+                          polynomial_type mask_assignment, polynomial_type lagrange_0)
+                    : table(table),
+                      column_size(mask_assignment.size()),
+                      domain(get_domain(column_size)) {}
 
                 dfs_cache(const dfs_cache &) = default;
                 dfs_cache &operator=(const dfs_cache &) = default;
 
-                // we might have different types of variables, and this auto-converts them to one type
-                template<typename VariableType>
-                std::shared_ptr<polynomial_type> get(const VariableType &uncon_v, std::size_t size) {
-                    var v;
-                    if constexpr (std::is_same_v<VariableType, var>) {
-                        v = var(uncon_v);
-                    } else {
-                        v = var(uncon_v.index, uncon_v.rotation, false, typename var::column_type(uncon_v.type));
-                    }
-                    v.relative = false;
-                    const auto key = std::make_pair(v, size);
-                    if (cache.find(key) != cache.end()) {
-                        auto res = cache[key];
-                        return res;
-                    }
-                    if (column_size > size) {
-                        throw std::invalid_argument("Column size is more than the requested size");
-                    }
-                    // many different subcases in order to avoid unnecessary copying/computation
-                    std::shared_ptr<domain_type> old_domain;
-                    auto old_dom_it = domain_cache.find(column_size);
-                    if (old_dom_it == domain_cache.end()) {
-                        throw std::logic_error("OG Domain not found in cache");
-                    }
-                    old_domain = old_dom_it->second;
-                    if (column_size == size) {
-                        auto res = std::make_shared<polynomial_type>(table.get_variable_value(v, old_domain));
-                        cache[key] = res;
-                        return res;
-                    }
-                    auto var_without_rotation = var(v.index, 0, false, v.type);
-                    auto rotationless_key = std::make_pair(var_without_rotation, size);
-                    if (rotationless_vars.find(rotationless_key) != rotationless_vars.end()) {
-                        // means that we have already resized this column to the requested size
-                        // need to just shift the cached result
-                        auto &cur_rotation = v.rotation;
-                        int new_rotation = 0;
-                        std::shared_ptr<polynomial_type> old_result = nullptr;
-                        var tmp_v = var_without_rotation;
-                        for (const auto &possible_rotation : possible_rotations) {
-                            if (possible_rotation == cur_rotation) {
-                                continue;
-                            }
-                            tmp_v.rotation = possible_rotation;
-                            auto old_key = std::make_pair(tmp_v, size);
-                            auto cache_it = cache.find(old_key);
-                            if (cache_it != cache.end()) {
-                                old_result = cache_it->second;
-                                new_rotation = possible_rotation;
-                                break;
-                            }
-                        }
-                        if (old_result == nullptr) {
-                            throw std::logic_error(
-                                "It seems that max possible rotation got exceeded, please increase it possible_rotations."
-                            );
-                        }
-                        // note that scaling the shift value is performed by polynomial_shift
-                        int shift = cur_rotation - new_rotation;
-                        auto new_res = std::make_shared<polynomial_type>(
-                            math::polynomial_shift(*old_result, shift, column_size)
-                        );
-                        cache[key] = new_res;
-                        return new_res;
-                    }
-                    rotationless_vars.insert(rotationless_key);
-                    // resizing is necessary
-                    std::shared_ptr<domain_type> new_domain;
-                    auto new_dom_it = domain_cache.find(size);
-                    if (new_dom_it == domain_cache.end()) [[unlikely]] {
+                void ensure_domain(std::size_t size) {
+                    if (!domain_cache.contains(size)) {
                         domain_cache[size] = make_evaluation_domain<FieldType>(size);
                     }
-                    new_domain = domain_cache[size];
-                    auto ifft_cache_it = ifft_cache.find(v);
-                    if (ifft_cache_it != ifft_cache.end()) {
-                        // just have to run forward FFT
-                        auto cached_result_copy = *ifft_cache_it->second;
-                        cached_result_copy.get_storage().resize(size, value_type::zero());
-                        new_domain->fft(cached_result_copy.get_storage());
-                        auto res = std::make_shared<polynomial_type>(std::move(cached_result_copy));
-                        cache[key] = res;
-                        return res;
+                }
+
+                std::shared_ptr<domain_type> get_domain(std::size_t size) {
+                    auto it = domain_cache.find(size);
+                    if (it != domain_cache.end()) {
+                        return it->second;
                     }
-                    polynomial_type og_column;
-                    if ((v.index == zk::snark::PLONK_SPECIAL_SELECTOR_ALL_USABLE_ROWS_SELECTED ||
-                         v.index == zk::snark::PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED ||
-                         v.index == zk::snark::PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED) &&
-                         v.type == var::column_type::selector)
-                    {
-                        auto column_size_key = std::make_pair(v, column_size);
-                        auto special_it = cache.find(column_size_key);
-                        if (special_it != cache.end()) {
-                            og_column = *special_it->second;
-                        } else {
-                            // we have to rotate the column
-                            auto special_rotationless_key = std::make_pair(var_without_rotation, column_size);
-                            auto rotationless_it = cache.find(special_rotationless_key);
-                            if (rotationless_it == cache.end()) {
-                                throw std::logic_error("Special selector column not found in cache");
-                            }
-                            og_column = math::polynomial_shift(
-                                *rotationless_it->second,
-                                - v.rotation,
-                                column_size
-                            );
-                            cache[column_size_key] = std::make_shared<polynomial_type>(og_column);
+                    auto new_domain = make_evaluation_domain<FieldType>(size);
+                    domain_cache[size] = new_domain;
+                    return new_domain;
+                }
+
+                template<typename VariableType>
+                void ensure_cache(const std::set<VariableType> &variables,
+                                  std::size_t size) {
+                    if (column_size > size) {
+                        throw std::invalid_argument(
+                            "Column size is more than the requested "
+                            "size");
+                    }
+                    ensure_domain(size);
+                    std::vector<var_without_rotation> new_vars_ifft;
+                    std::vector<std::int32_t> new_vars_ifft_rotation;
+                    std::set<var_without_rotation> new_vars_ifft_set;
+                    for (const auto &uncon_v : variables) {
+                        auto v = get_var_without_rotation(uncon_v);
+
+                        if (is_cached_ifft(v) || new_vars_ifft_set.contains(v)) {
+                            continue;
                         }
-                    } else {
-                        og_column = table.get_variable_value(v, old_domain);
+                        new_vars_ifft.push_back(v);
+                        new_vars_ifft_rotation.push_back(uncon_v.rotation);
+                        new_vars_ifft_set.insert(v);
+                        ifft_cache[v] = nullptr;
+                        var_rotation[v] = uncon_v.rotation;
                     }
-                    old_domain->inverse_fft(og_column.get_storage());
-                    ifft_cache[v] = std::make_shared<polynomial_type>(og_column);
-                    new_domain->fft(og_column.get_storage());
-                    auto res = std::make_shared<polynomial_type>(std::move(og_column));
-                    cache[key] = res;
-                    return res;
+
+                    parallel_for(
+                        0, new_vars_ifft.size(),
+                        [&new_vars_ifft, &new_vars_ifft_rotation, this](std::size_t i) {
+                            auto og_column = table.get_variable_value(
+                                var(new_vars_ifft[i].index, new_vars_ifft_rotation[i],
+                                    false, new_vars_ifft[i].type),
+                                domain);
+                            domain->inverse_fft(og_column.get_storage());
+                            ifft_cache[new_vars_ifft[i]] =
+                                std::make_shared<polynomial_type>(std::move(og_column));
+                        },
+                        ThreadPool::PoolLevel::HIGH);
+
+                    std::vector<var_without_rotation> new_vars;
+                    std::set<var_without_rotation> new_vars_set;
+                    for (const auto &uncon_v : variables) {
+                        auto v = get_var_without_rotation(uncon_v);
+                        if (is_cached(v, size) || new_vars_set.contains(v)) {
+                            continue;
+                        }
+                        new_vars.push_back(v);
+                        new_vars_set.insert(v);
+                        cache[pair_type(v, size)] = nullptr;
+                    }
+
+                    parallel_for(
+                        0, new_vars.size(),
+                        [&new_vars, size, this](std::size_t i) {
+                            auto cached_result_copy = *ifft_cache[new_vars[i]];
+                            cached_result_copy.get_storage().resize(size,
+                                                                    value_type::zero());
+                            get_domain(size)->fft(cached_result_copy.get_storage());
+                            cache[std::make_pair(new_vars[i], size)] =
+                                std::make_shared<polynomial_type>(
+                                    std::move(cached_result_copy));
+                        },
+                        ThreadPool::PoolLevel::HIGH);
+                }
+
+                template<typename VariableType>
+                var_without_rotation get_var_without_rotation(
+                    const VariableType &uncon_v) {
+                    if (uncon_v.index >= zk::snark::PLONK_MAX_SELECTOR_ID) {
+                        throw std::runtime_error("dfs_cache: unsupported variable type");
+                    }
+                    return {uncon_v.index, typename var::column_type(uncon_v.type)};
+                }
+
+                bool is_cached_ifft(var_without_rotation v) {
+                    return var_rotation.contains(v);
+                }
+                bool is_cached(var_without_rotation v, std::size_t size) {
+                    const auto key = std::make_pair(v, size);
+                    return cache.contains(key);
+                }
+
+                // we might have different types of variables, and this auto-converts them
+                // to one type
+                template<typename VariableType>
+                std::shared_ptr<polynomial_type> get(const VariableType &uncon_v,
+                                                     std::size_t size) {
+                    auto v = get_var_without_rotation(uncon_v);
+                    return get(v, uncon_v.rotation, size);
+                }
+
+                std::shared_ptr<polynomial_type> get(var_without_rotation v,
+                                                     std::int32_t rotation,
+                                                     std::size_t size) {
+                    auto old_result_it = cache.find(std::make_pair(v, size));
+                    if (old_result_it == cache.end()) {
+                        throw std::logic_error("Should be precomputed");
+                    }
+                    auto cur_rotation = var_rotation[v];
+                    if (cur_rotation == rotation) {
+                        return old_result_it->second;
+                    }
+                    // means that we have already resized this column
+                    // to the requested size need to just shift the
+                    // cached result
+                    auto new_rotation = rotation;
+                    auto old_result = *old_result_it->second;
+                    // note that scaling the shift value is performed
+                    // by polynomial_shift
+                    std::int32_t shift = new_rotation - cur_rotation;
+                    return std::make_shared<polynomial_type>(
+                        math::polynomial_shift(old_result, shift, column_size));
                 }
             };
-        } // namespace math
+        }  // namespace math
     } // namespace crypto3
 } // namespace nil
 

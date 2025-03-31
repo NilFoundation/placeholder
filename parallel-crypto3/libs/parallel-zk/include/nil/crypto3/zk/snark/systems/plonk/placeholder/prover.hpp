@@ -166,29 +166,63 @@ namespace nil {
                         // resize the witnesses/public_inputs to 4 * domain size before committing
                         // technically 4 should be a parameter from somewhere
                         using var_type = plonk_variable<typename FieldType::value_type>;
-                        std::vector<polynomial_dfs_type> witnesses_resized(_polynomial_table->witnesses_amount());
-                        std::vector<polynomial_dfs_type> public_inputs_resized(_polynomial_table->public_inputs_amount());
+
                         {
-                            PROFILE_SCOPE("Resizing witnesses/public inputs before committing");
-                            for (std::size_t i = 0; i < _polynomial_table->witnesses_amount(); i++) {
-                                var_type v(i, 0, false, var_type::witness);
-                                witnesses_resized[i] = *dfs_cache.get(v, 4 * preprocessed_public_data.common_data->basic_domain->m);
+                            std::vector<polynomial_dfs_type> witnesses_resized(
+                                _polynomial_table->witnesses_amount());
+                            std::vector<polynomial_dfs_type> public_inputs_resized(
+                                _polynomial_table->public_inputs_amount());
+
+                            {
+                                PROFILE_SCOPE("Precompute FFTs");
+
+                                std::set<var_type> vars;
+                                for (std::size_t i = 0;
+                                     i < _polynomial_table->witnesses_amount(); i++) {
+                                    var_type v(i, 0, false, var_type::witness);
+                                    vars.insert(v);
+                                }
+                                for (std::size_t i = 0;
+                                     i < _polynomial_table->public_inputs_amount(); i++) {
+                                    var_type v(i, 0, false, var_type::public_input);
+                                    vars.insert(v);
+                                }
+                                dfs_cache.ensure_cache(
+                                    vars, 4 * preprocessed_public_data.common_data
+                                                  ->basic_domain->m);
                             }
-                            for (std::size_t i = 0; i < _polynomial_table->public_inputs_amount(); i++) {
-                                var_type v(i, 0, false, var_type::public_input);
-                                public_inputs_resized[i] = *dfs_cache.get(v, 4 * preprocessed_public_data.common_data->basic_domain->m);
+
+                            {
+                                PROFILE_SCOPE(
+                                    "Resizing witnesses/public inputs before committing");
+                                for (std::size_t i = 0;
+                                     i < _polynomial_table->witnesses_amount(); i++) {
+                                    var_type v(i, 0, false, var_type::witness);
+                                    witnesses_resized[i] = *dfs_cache.get(
+                                        v, 4 * preprocessed_public_data.common_data
+                                                   ->basic_domain->m);
+                                }
+                                for (std::size_t i = 0;
+                                     i < _polynomial_table->public_inputs_amount(); i++) {
+                                    var_type v(i, 0, false, var_type::public_input);
+                                    public_inputs_resized[i] = *dfs_cache.get(
+                                        v, 4 * preprocessed_public_data.common_data
+                                                   ->basic_domain->m);
+                                }
                             }
-                        }
 
                         // 2. Commit witness columns and public_input columns
-                        _commitment_scheme.append_to_batch(VARIABLE_VALUES_BATCH, witnesses_resized);
-                        _commitment_scheme.append_to_batch(VARIABLE_VALUES_BATCH, public_inputs_resized);
+                            _commitment_scheme.append_to_batch(VARIABLE_VALUES_BATCH,
+                                                               witnesses_resized);
+                            _commitment_scheme.append_to_batch(VARIABLE_VALUES_BATCH,
+                                                               public_inputs_resized);
+                        }
+
                         {
                             PROFILE_SCOPE("Variable values precommit");
                             _proof.commitments[VARIABLE_VALUES_BATCH] = _commitment_scheme.commit(VARIABLE_VALUES_BATCH);
                         }
-                        witnesses_resized.clear();
-                        public_inputs_resized.clear();
+
                         transcript(_proof.commitments[VARIABLE_VALUES_BATCH]);
 
                         // 4. permutation_argument

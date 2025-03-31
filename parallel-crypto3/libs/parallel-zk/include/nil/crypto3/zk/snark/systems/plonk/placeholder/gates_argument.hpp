@@ -108,31 +108,23 @@ namespace nil {
                         dfs_cache_type& dfs_cache
                     ) {
                         PROFILE_SCOPE("Gate argument build variable value map");
-
-                        std::vector<simd_vector_variable_type> variables;
+                        // Get out all the variables used and maximal degree of any
+                        // expression in all possible lookup inputs
+                        std::set<simd_vector_variable_type> variables_set;
 
                         math::expression_for_each_variable_visitor<
                             simd_vector_variable_type>
-                            visitor([&variables, &variable_values_out](
-                                        const simd_vector_variable_type& var) {
-                                // Create the structure of the map, so its values can be filled in parallel.
-                                if (variable_values_out.find(var) == variable_values_out.end()) {
-                                    variable_values_out[var] = nullptr;
-                                    variables.push_back(var);
-                                }
-                            });
-
+                            visitor(
+                                [&variables_set](const simd_vector_variable_type& var) {
+                                    variables_set.insert(var);
+                                });
                         visitor.visit(expr);
 
-                        std::shared_ptr<math::evaluation_domain<FieldType>>
-                            extended_domain = math::make_evaluation_domain<FieldType>(
-                                extended_domain_size);
-
-                        for (std::size_t i = 0; i < variables.size(); ++i) {
-                            const simd_vector_variable_type& var = variables[i];
-                            variable_values_out[var] = dfs_cache.get(var, extended_domain_size);
+                        dfs_cache.ensure_cache(variables_set, extended_domain_size);
+                        for (const auto& variable : variables_set) {
+                            variable_values_out[variable] =
+                                dfs_cache.get(variable, extended_domain_size);
                         }
-
                         SCOPED_LOG("Variables count: {}", variable_values_out.size());
                     }
 

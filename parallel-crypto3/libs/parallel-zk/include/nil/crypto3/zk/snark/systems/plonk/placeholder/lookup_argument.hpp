@@ -379,6 +379,7 @@ namespace nil {
                                 });
                             visitor.visit(expr);
                         }
+                        dfs_cache.ensure_cache(variables_set, extended_domain_size);
                         for (const auto& variable : variables_set) {
                             variable_values_out[variable] = dfs_cache.get(variable, extended_domain_size);
                         }
