@@ -49,6 +49,8 @@ namespace nil {
                 virtual std::vector<zkevm_state> zkevm_states() = 0;
                 virtual std::vector<std::pair<zkevm_word_type, zkevm_word_type>> exponentiations() = 0;
                 virtual std::map<std::size_t,zkevm_call_commit> call_commits() = 0;
+
+                virtual ~zkevm_abstract_input_generator(){}
             };
 
             class zkevm_small_test_input_generator:zkevm_abstract_input_generator{
