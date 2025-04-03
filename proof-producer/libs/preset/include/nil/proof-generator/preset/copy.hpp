@@ -23,9 +23,10 @@ namespace nil {
 
             blueprint::bbf::circuit_builder<
                 BlueprintFieldType, nil::blueprint::bbf::copy,
-                std::size_t, std::size_t, std::size_t, std::size_t
+                std::size_t, std::size_t, std::size_t, std::size_t, std::size_t
             > builder(circuits_limits.max_copy_rows, circuits_limits.max_rw_rows,
-                      circuits_limits.max_keccak_blocks, circuits_limits.max_bytecode_rows);
+                      circuits_limits.max_keccak_blocks, circuits_limits.max_bytecode_rows,
+                      circuits_limits.max_call_commits);
 
             copy_circuit = std::make_shared<ConstraintSystem>(builder.get_circuit());
 
