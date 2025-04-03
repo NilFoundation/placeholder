@@ -60,7 +60,7 @@ Generate circuit:
     --circuit="circuit.crct"
 ```
 
-Generate assignment table from EVM trace:
+Generate assignemnt table from EVM trace:
 ```bash
 ./result/bin/proof-producer-single-threaded \
     --stage "fill-assignment" \
@@ -126,7 +126,7 @@ Generate circuit:
     --circuit="circuit.crct"
 ```
 
-Generate assignment table from EVM trace:
+Generate assignemnt table from EVM trace:
 ```bash
 ./result/bin/proof-producer-single-threaded \
     --stage "fill-assignment" \
