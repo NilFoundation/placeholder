@@ -35,7 +35,13 @@ namespace nil {
                 return std::format("rw operations size {} exceeds circuit limit {}", input->value.size(), options.circuits_limits.max_rw_rows);
             }
 
-            ComponentType instance(context_object, input->value, options.circuits_limits.max_rw_rows, options.circuits_limits.max_mpt_rows);
+            // TODO: call commits
+            ComponentType instance(
+                    context_object, {input->value, {}},
+                    options.circuits_limits.max_rw_rows,
+                    options.circuits_limits.max_mpt_rows,
+                    options.circuits_limits.max_call_commits
+            );
 
             return {};
         }

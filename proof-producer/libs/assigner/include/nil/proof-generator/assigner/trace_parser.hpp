@@ -14,7 +14,7 @@
 #include <boost/log/trivial.hpp>
 #include <boost/filesystem.hpp>
 
-#include <nil/blueprint/zkevm/zkevm_word.hpp>
+#include <nil/blueprint/zkevm_bbf/types/zkevm_word.hpp>
 #include <nil/blueprint/zkevm_bbf/types/rw_operation.hpp>
 #include <nil/blueprint/zkevm_bbf/types/zkevm_state.hpp>
 #include <nil/blueprint/zkevm_bbf/types/copy_event.hpp>
@@ -276,7 +276,9 @@ namespace nil {
 
             // Convert storage operations
             for (const auto& pb_sop : pb_traces.storage_ops()) {
-                auto op = blueprint::bbf::storage_rw_operation(
+                // TODO: add missing parameters to traces
+                throw std::logic_error("storage operations are not supported yet");
+                /* auto op = blueprint::bbf::storage_rw_operation(
                     static_cast<uint64_t>(pb_sop.txn_id()),
                     blueprint::zkevm_word_from_string(static_cast<std::string>(pb_sop.key())),
                     static_cast<uint64_t>(pb_sop.rw_idx()),
@@ -286,7 +288,7 @@ namespace nil {
                     blueprint::zkevm_word_from_string(pb_sop.address().address_bytes())
                 );
                 //TODO root and initial_root?
-                rw_traces.push_back(std::move(op));
+                rw_traces.push_back(std::move(op)); */
             }
 
             std::sort(rw_traces.begin(), rw_traces.end(), std::less());
@@ -325,18 +327,28 @@ namespace nil {
                 for (const auto& pb_storage_entry : pb_state.storage_slice()) {
                     storage.emplace(proto_uint256_to_zkevm_word(pb_storage_entry.key()), proto_uint256_to_zkevm_word(pb_storage_entry.value()));
                 }
-                zkevm_states.emplace_back(stack, memory, storage);
-                zkevm_states.back().call_id = static_cast<uint64_t>(pb_state.call_id());
-                zkevm_states.back().pc = static_cast<uint64_t>(pb_state.pc());
-                zkevm_states.back().gas = static_cast<uint64_t>(pb_state.gas());
-                zkevm_states.back().rw_counter = static_cast<uint64_t>(pb_state.rw_idx());
-                zkevm_states.back().bytecode_hash = blueprint::zkevm_word_from_string(static_cast<std::string>(pb_state.bytecode_hash()));
-                zkevm_states.back().opcode = static_cast<uint64_t>(pb_state.opcode());
-                zkevm_states.back().additional_input = proto_uint256_to_zkevm_word(pb_state.additional_input()),
-                zkevm_states.back().stack_size = static_cast<uint64_t>(pb_state.stack_size());
-                zkevm_states.back().memory_size = static_cast<uint64_t>(pb_state.memory_size());
-                zkevm_states.back().tx_finish = static_cast<bool>(pb_state.tx_finish());
-                zkevm_states.back().error_opcode = static_cast<uint64_t>(pb_state.error_opcode());
+
+                blueprint::bbf::basic_zkevm_state_part basic_state = {
+                    .call_id = static_cast<uint64_t>(pb_state.call_id()),
+                    .bytecode_hash = blueprint::zkevm_word_from_string(static_cast<std::string>(pb_state.bytecode_hash())),
+                    .opcode = static_cast<uint64_t>(pb_state.opcode()),
+                    .pc = static_cast<uint64_t>(pb_state.pc()),
+                    .stack_size = static_cast<uint64_t>(pb_state.stack_size()),
+                    .memory_size = static_cast<uint64_t>(pb_state.memory_size()),
+                    .rw_counter = static_cast<uint64_t>(pb_state.rw_idx()),
+                    .gas = static_cast<uint64_t>(pb_state.gas()),
+                    .stack_slice = stack,
+                };
+
+                if (blueprint::bbf::opcode_to_string(blueprint::bbf::opcode_from_number(basic_state.opcode)).starts_with("PUSH")) {
+                    zkevm_states.emplace_back(basic_state, proto_uint256_to_zkevm_word(pb_state.additional_input()));
+                } else {
+                    zkevm_states.emplace_back(basic_state, memory);
+                }
+
+                // do we need it?
+                // zkevm_states.back().tx_finish = static_cast<bool>(pb_state.tx_finish());
+                // zkevm_states.back().error_opcode = static_cast<uint64_t>(pb_state.error_opcode());
             }
 
             return DeserializeResult<ZKEVMTraces>{
@@ -357,27 +369,41 @@ namespace nil {
             std::vector<bbf::copy_event> copy_events;
             copy_events.reserve(pb_traces.copy_events_size());
             for (const auto& pb_event: pb_traces.copy_events()) {
-                bbf::copy_event event;
-                event.initial_rw_counter = pb_event.rw_idx();
-
                 const auto source = copy_operand_from_proto(pb_event.from());
-                if (!source) {
-                    throw trace_parse_error(copy_traces_file.string());
-                }
-                event.source_type = source->first;
-                event.source_id = source->second;
-                event.src_address = pb_event.from().mem_address();
-
                 const auto dest = copy_operand_from_proto(pb_event.to());
-                if (!dest) {
+                if (!source || !dest) {
                     throw trace_parse_error(copy_traces_file.string());
                 }
-                event.destination_type = dest->first;
-                event.destination_id = dest->second;
-                event.dst_address = pb_event.to().mem_address();
 
-                event.bytes = std::move(string_to_bytes(pb_event.data()));
-                event.length = event.bytes.size();
+                auto [src_type, src_id] = *source;
+                auto [dst_type, dst_id] = *dest;
+
+                auto src_address = pb_event.from().mem_address();
+                auto dst_address = pb_event.to().mem_address();
+
+                auto rw_counter = pb_event.rw_idx();
+                auto bytes = string_to_bytes(pb_event.data());
+                auto length = bytes.size();
+
+                bbf::copy_event event;
+                using enum bbf::copy_operand_type;
+                if (src_type == memory && dst_type == keccak) {
+                    event = bbf::keccak_copy_event(size_t{src_id}, src_address, rw_counter, dst_id, bytes.size());
+                } else if (src_type == reverted && dst_type == reverted) {
+                    event = bbf::revert_copy_event(size_t{src_id}, size_t{dst_id}, rw_counter, length);
+                } else if (src_type == memory && dst_type == returndata) {
+                    event = bbf::return_copy_event(size_t{src_id}, src_address, rw_counter, length);
+                } else if (src_type == returndata && dst_type == memory) {
+                  throw std::logic_error("returndatacopy or end_call_copy?");
+                } else if (src_type == calldata && dst_type == memory) {
+                  event = bbf::calldatacopy_copy_event(size_t{src_id}, src_address, dst_address, rw_counter, length);
+                } else if (src_type == memory && dst_type == calldata) {
+                  event = bbf::call_copy_event(size_t{src_id}, size_t{dst_id}, src_address, length);
+                } else {
+                  throw std::logic_error("incorrect copy event");
+                }
+
+                for (auto b : bytes) event.push_byte(b);
 
                 copy_events.push_back(std::move(event));
             }
