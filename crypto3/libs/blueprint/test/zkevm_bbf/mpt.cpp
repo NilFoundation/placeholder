@@ -25,6 +25,7 @@
 #define BOOST_TEST_MODULE blueprint_plonk_mpt_test
 
 #include <boost/test/unit_test.hpp>
+#include <boost/property_tree/ptree.hpp>
 
 #include <nil/crypto3/algebra/curves/pallas.hpp>
 #include <nil/crypto3/algebra/fields/arithmetic_params/pallas.hpp>
@@ -52,13 +53,46 @@ using namespace nil::blueprint::bbf;
 
 class zkEVMMPTTestFixture: public CircuitTestFixture {
 public:
+    boost::property_tree::ptree load_json_input(std::string path){
+        std::ifstream ss;
+        //std::cout << "Open file " << std::string(TEST_DATA_DIR) + path << std::endl;
+        ss.open(std::string(TEST_DATA_DIR) + path);
+        if( !ss.is_open() ){
+            std::cout << "Cannot open file " << std::string(TEST_DATA_DIR) + path << std::endl;
+            exit(1);
+        }
+        boost::property_tree::ptree pt;
+        boost::property_tree::read_json(ss, pt);
+        ss.close();
+
+        return pt;
+    }
+
     template <typename field_type>
     void test_zkevm_mpt(
         const std::vector<mpt_path> &paths,
+        std::string data_source,
         std::size_t max_mpt_size,
         bool expected_result = true
     ) {
         using input_type = typename mpt<field_type, GenerationStage::ASSIGNMENT>::input_type;
+
+        boost::property_tree::ptree src_data = load_json_input(data_source);
+        std::string path_key = src_data.get<std::string>("storageProof..key");
+        boost::property_tree::ptree proof_path = src_data.get_child("storageProof..proof");
+
+        std::cout << "key = " << path_key << std::endl;
+
+        for(const auto &v : proof_path) {
+            boost::property_tree::ptree node = v.second;
+            std::cout << "[" << std::endl;
+            for(const auto &w : node) {
+                std::string hash_value = w.second.data();
+                std::cout << "    value = " << hash_value << std::endl;
+            }
+            std::cout << "]" << std::endl;
+        }
+
         bool result = test_bbf_component<field_type, mpt>(
             "mpt",                 //  Circuit name
             {} ,                   //  Public input
@@ -69,10 +103,10 @@ public:
     }
 };
 
-BOOST_FIXTURE_TEST_SUITE(zkevm_bbf_exp, zkEVMMPTTestFixture)
+BOOST_FIXTURE_TEST_SUITE(zkevm_bbf_mpt, zkEVMMPTTestFixture)
     using field_type = nil::crypto3::algebra::curves::alt_bn128_254::scalar_field_type;
-BOOST_AUTO_TEST_CASE(one_exponent){
+BOOST_AUTO_TEST_CASE(one_mpt_path) {
     std::vector<mpt_path> mpt_input;
-    test_zkevm_mpt<field_type>(mpt_input, 50);
+    test_zkevm_mpt<field_type>(mpt_input, "mpt_path_0.json", 50);
 }
 BOOST_AUTO_TEST_SUITE_END()
