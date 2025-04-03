@@ -5,6 +5,7 @@ set(ZKEVM_BBF_TESTS_FILES
     "${BLUEPRINT_TEST_ROOT}/zkevm_bbf/copy"
     "${BLUEPRINT_TEST_ROOT}/zkevm_bbf/call_commit"
     "${BLUEPRINT_TEST_ROOT}/zkevm_bbf/exp"
+    "${BLUEPRINT_TEST_ROOT}/zkevm_bbf/mpt"
     "${BLUEPRINT_TEST_ROOT}/zkevm_bbf/opcodes/pushx"
     "${BLUEPRINT_TEST_ROOT}/zkevm_bbf/opcodes/iszero"
     "${BLUEPRINT_TEST_ROOT}/zkevm_bbf/opcodes/mod_ops"
