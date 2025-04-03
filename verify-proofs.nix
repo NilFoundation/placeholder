@@ -66,8 +66,8 @@ in stdenv.mkDerivation rec {
     test_runs = {
 
       # test case name
-      keccak = [
-        "copy" # circuit name (leave empty to run all circuits)
+      keccak = [ # circuit names
+        "copy"
         "keccak"
         "exp"
         "rw"
@@ -75,17 +75,16 @@ in stdenv.mkDerivation rec {
         "zkevm"
       ];
 
-      calldatacopy = [ "copy" "rw" "bytecode" "zkevm" "exp" "keccak"];
+      minimal_math = [ "zkevm" "exp" "copy" "keccak" "bytecode" "rw" "call_comit" ];
+      try_catch = [ "zkevm" "exp" "copy" "keccak" "bytecode" "rw" "call_comit" ];
 
-      exp = [ "copy" "rw" "bytecode" "zkevm" "exp" "keccak"];
-
-      logger = [ "copy" "rw" "bytecode" "zkevm" "exp" "keccak"];
-
-      returndatacopy = [ "copy" "rw" "bytecode" "zkevm" "exp" "keccak" ];
-
-      mstore8 = [ "copy" "rw" "bytecode" "zkevm" "exp" "keccak"];
-
-      modular_operations = [ "copy" "rw" "bytecode" "zkevm" "exp" "keccak"];
+      # Need traces in new format
+      # calldatacopy = [ "copy" "rw" "bytecode" "zkevm" "exp" "keccak"];
+      # exp = [ "copy" "rw" "bytecode" "zkevm" "exp" "keccak"];
+      # logger = [ "copy" "rw" "bytecode" "zkevm" "exp" "keccak"];
+      # returndatacopy = [ "copy" "rw" "bytecode" "zkevm" "exp" "keccak" ];
+      # mstore8 = [ "copy" "rw" "bytecode" "zkevm" "exp" "keccak"];
+      # modular_operations = [ "copy" "rw" "bytecode" "zkevm" "exp" "keccak"];
     };
   };
 
