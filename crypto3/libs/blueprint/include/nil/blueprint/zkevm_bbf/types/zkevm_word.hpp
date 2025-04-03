@@ -125,6 +125,16 @@ namespace nil {
             return val & mask;
         }
 
+
+        std::array<std::uint8_t, 64> w_to_4(const zkevm_word_type &val) {
+            std::array<std::uint8_t, 64> result;
+            zkevm_word_type tmp(val);
+            for(std::size_t i = 0; i < 64; i++){
+                result[63-i] = std::uint8_t(tmp & 0xF); tmp >>=  4;
+            }
+            return result;
+        }
+
         std::array<std::uint8_t, 32> w_to_8(const zkevm_word_type &val) {
             std::array<std::uint8_t, 32> result;
             zkevm_word_type tmp(val);
@@ -132,6 +142,28 @@ namespace nil {
                 result[31-i] = std::uint8_t(tmp & 0xFF); tmp >>=  8;
             }
             return result;
+        }
+
+        std::array<zkevm_word_type, 32> w_8(const zkevm_word_type &val) {
+            std::array<std::uint8_t, 32> uints = w_to_8(val);
+            std::array<zkevm_word_type, 32> result;
+            for (size_t i = 0; i < 32; i++)
+            {
+                result[i] = zkevm_word_type(uints[i]);
+            }
+            return result;
+            
+        }
+
+        std::array<zkevm_word_type, 64> w_4(const zkevm_word_type &val) {
+            std::array<std::uint8_t, 64> uints = w_to_4(val);
+            std::array<zkevm_word_type, 64> result;
+            for (size_t i = 0; i < 64; i++)
+            {
+                result[i] = zkevm_word_type(uints[i]);
+            }
+            return result;
+            
         }
 
         std::array<std::size_t, 16> w_to_16(const zkevm_word_type &val) {
