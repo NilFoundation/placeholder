@@ -502,6 +502,41 @@ namespace nil {
                                     }
                                 }
                             }
+
+                            using constraint_id_type = gate_id<FieldType>;
+                            std::map<zkevm_opcode, std::pair<std::set<constraint_id_type>, std::map<size_t, size_t>>> cmp_ops;
+                            std::set<constraint_id_type> cmp_cs;
+                            std::set<constraint_id_type> other_cs;
+                            for (const auto &[pair, cs] : opcode_constraints_aggregator) {
+                              auto &[opcode, row] = pair;
+                              if (opcode == EQ || opcode == LT || opcode == GT || opcode == SLT || opcode == SGT) {
+                                auto &op = cmp_ops[opcode];
+                                for (auto &c : cs) op.first.emplace(c), cmp_cs.emplace(c);
+                                op.second[row] = cs.size();
+                              } else {
+                                for (auto &c : cs) other_cs.emplace(c);
+                              }
+                            }
+
+                            for (const auto &[opcode, info] : cmp_ops) {
+                              std::cout << opcode_to_string(opcode) << ": per row";
+                              for (auto &[row, count] : info.second) std::cout << ' ' << count;
+                              size_t count = 0;
+                              for (auto &c : info.first)
+                                if (!other_cs.contains(c)) ++count;
+                              std::cout << ", new constraints: " << count << std::endl;
+                            }
+
+                            {
+                              size_t count = 0;
+                              for (auto &c : cmp_cs)
+                                if (!other_cs.contains(c)) ++count;
+                              std::cout << "New constraints for all: " << count << std::endl;
+                            }
+
+                            // std::terminate();
+                            { char c; std::cin >> c; }
+
                             std::cout << "Accumulate constraints " << max_opcode_row_constraints << std::endl;
                             for( std::size_t i = 0; i < max_opcode_row_constraints; i++ ){
                                 TYPE acc_constraint;

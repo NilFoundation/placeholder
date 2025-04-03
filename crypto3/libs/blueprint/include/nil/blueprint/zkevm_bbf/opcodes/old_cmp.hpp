@@ -27,7 +27,6 @@
 #include <numeric>
 #include <algorithm>
 
-#include <nil/blueprint/zkevm/zkevm_word.hpp>
 #include <nil/blueprint/zkevm_bbf/subcomponents/rw_table.hpp>
 #include <nil/blueprint/zkevm_bbf/types/opcode.hpp>
 
@@ -36,121 +35,149 @@ namespace nil::blueprint::bbf {
 template<typename Field>
 class opcode_abstract;
 
-enum cmp_type { C_LT, C_GT };
+enum old_cmp_type { OC_LT, OC_GT, OC_SLT, OC_SGT, OC_EQ };
 
-// 0x10 LT, 0x11 GT: Less-than / greater-than comparison
-// Gas: 3
-// Stack Input: a, b
-// Stack Output: a < b / a > b
 template<typename Field, GenerationStage stage>
-class zkevm_cmp_bbf : generic_component<Field, stage> {
+class zkevm_old_cmp_bbf : generic_component<Field, stage> {
  public:
   using Context = generic_component<Field, stage>::context_type;
   using typename generic_component<Field, stage>::TYPE;
 
-  zkevm_cmp_bbf(
+  zkevm_old_cmp_bbf(
       Context &context, const opcode_input_type<Field, stage> &current_state,
-      cmp_type cmp_operation)
+      old_cmp_type cmp_operation)
       : generic_component<Field,stage>(context, false) {
+    // a + b = c + r*2^T
     std::vector<TYPE> A(16);
     std::vector<TYPE> B(16);
+    std::vector<TYPE> R(16);
+    TYPE result;
 
-    // We use the absolute difference between the most significant chunks
-    // that differ in A and B to check which one is larger; we also mark it
-    // to ensure the "most significant" constraint.
-    TYPE diff;
-    TYPE diff_inv;
-    std::vector<TYPE> S(16);
-
-    TYPE lt, gt;
+    zkevm_word_type r;
+ 
+    bool is_less = (cmp_operation == OC_LT) || (cmp_operation == OC_SLT);
 
     if constexpr (stage == GenerationStage::ASSIGNMENT) {
-      auto a = current_state.stack_top();
-      auto b = current_state.stack_top(1);
+      auto x = current_state.stack_top();
+      auto y = current_state.stack_top(1);
+
+      auto a = is_less ? y : x;
+      auto c = is_less ? x : y;
       
       auto a16 = w_to_16(a);
+      auto c16 = w_to_16(c);
+
+      r = a > c;
+
+      if (cmp_operation == OC_SLT) {
+        result = (is_negative(x) && !is_negative(y)) || ((is_negative(x) == is_negative(y)) && r);
+      } else if (cmp_operation == OC_SGT) {
+        result = (!is_negative(x) && is_negative(y)) || ((is_negative(x) == is_negative(y)) && r);
+      } else if (cmp_operation == OC_EQ) {
+        result = (x == y);
+      } else {
+        result = r;
+      }
+
+      auto b = wrapping_sub(c, a);
       auto b16 = w_to_16(b);
+
       for (size_t i = 0; i < 16; ++i) {
         A[i] = a16[i];
         B[i] = b16[i];
+        R[i] = c16[i];
+      }
+    }
+
+    std::cout << "assmnt done\n";
+
+    TYPE b_sum;
+    for (size_t i = 0; i < 16; ++i) {
+      allocate(A[i], i, 0);
+      allocate(B[i], i, 1);
+      allocate(R[i], i, 2);
+
+      b_sum += B[i];
+    }
+
+    allocate(result, 16, 1);
+
+    auto A_48 = chunks_to_48(A);
+    auto B_48 = chunks_to_48(B);
+    auto R_48 = chunks_to_48(R);
+
+    const size_t n_carries = 16 / 3 + 1;
+    std::vector<TYPE> carries(n_carries + 1); // 0 for uniformity
+
+    if constexpr (stage == GenerationStage::ASSIGNMENT) {
+      bool carry = 0;
+      carries.back() = 0;
+      for (size_t i = n_carries - 1; i > 0; --i) { // MS chunk order!
+        carry = (carry + A_48[i] + B_48[i]) >= (1ull << 48);
+        carries[i] = carry;
+      }
+      carry = (carry + A[0] + B[0]) >= (1ull << 16);
+      BOOST_ASSERT(carry == r);
+      carries[0] = carry;
+    }
+
+    for (size_t i = 0; i < n_carries; ++i) {
+      allocate(carries[i], 16 + i, 2);
+      constrain(carries[i] * (1 - carries[i]));
+    }
+    
+    for (size_t i = 0; i < n_carries; ++i) {
+      auto overflow = carries[i] * (i > 0 ? 1ull<<48 : 1ull<<16);
+      constrain(carries[i+1] + A_48[i] + B_48[i] - R_48[i] - overflow);
+    }
+
+    if (cmp_operation == OC_EQ) {
+      TYPE b_sum_inv;
+      if constexpr (stage == GenerationStage::ASSIGNMENT)
+        b_sum_inv = b_sum == 0 ? 0 : b_sum.inversed();
+
+      allocate(b_sum_inv, 32, 1);
+      constrain(b_sum * (1 - b_sum * b_sum_inv)); // added
+
+      // constrain(b_sum * result) seems redundant
+      constrain(result - (1 - b_sum * b_sum_inv));
+    } else if (cmp_operation == OC_SLT || cmp_operation == OC_SGT) {
+      // find the sign bit by adding 2^15 to the biggest chunk. The carry-on bit is 1 iff the sign bit is 1
+      TYPE a_neg, a_diff;
+      TYPE r_neg, r_diff;
+
+      if constexpr (stage == GenerationStage::ASSIGNMENT) {
+        a_neg = A[0] >= 1<<15;
+        a_diff = a_neg != 0 ? A[0] - (1<<15) : A[0] + (1<<15);
+
+        r_neg = R[0] >= 1<<15;
+        r_diff =  r_neg != 0 ? R[0] - (1<<15) : R[0] + (1<<15);
       }
 
-      lt = a < b;
-      gt = a > b;
+      allocate(a_diff, 17, 1);
+      allocate(a_neg, 18, 1);
+      allocate(r_diff, 19, 1);
+      allocate(r_neg, 20, 1);
 
-      switch (cmp_operation) {
-        case cmp_type::C_LT:
-          std::cout << "\t" << a << "<" <<  a << " = " << lt << std::endl;
-          break;
-        case cmp_type::C_GT:
-          std::cout << "\t" << b << ">" <<  b << " = " << gt << std::endl;
-          break;
-      }
+      constrain(a_neg * (1 - a_neg));
+      constrain(A[0] + (1<<15) - (1ull<<16) * a_neg - a_diff);
 
-      for (size_t i = 0; i < 16; ++i) {
-        if (a16[i] == b16[i]) continue;
+      constrain(r_neg * (1 - r_neg));
+      constrain(R[0] + (1<<15) - (1ull<<16) * r_neg - r_diff);
 
-        std::cout << "\tNOT equal" << std::endl;
-        diff = a16[i] < b16[i] ? b16[i] - a16[i]: a16[i] - b16[i];
-        diff_inv = diff.inversed();
-        S[i] = 1;
-        break;
-      }
+      // result = (r_neg & !a_neg) | ((r_neg&a_neg | !r_neg & !a_neg) & c) =
+      // = (r_neg & !a_neg) | (c & !a_neg) | (c & r_neg) =
+      // = r_neg(1-a_neg) + c(1-a_neg) + c r_neg - 2*r_neg(1-a_neg)c
+      constrain(result - r_neg * (1 - a_neg)
+                       - carries[0] * (1 - a_neg)
+                       - carries[0] * r_neg
+                       + 2 * carries[0] * r_neg * (1 - a_neg));
+    } else {
+      constrain(result - carries[0]);
     }
 
     auto A_128 = chunks16_to_chunks128<TYPE>(A);
-    auto B_128 = chunks16_to_chunks128<TYPE>(B);
-
-    for (size_t i = 0; i < 16; ++i) {
-      allocate(A[i], i, 0);
-      allocate(B[i], i + 16, 0);
-
-      allocate(S[i], i, 1);
-      constrain(S[i] * (S[i] - 1));
-    }
-
-    allocate(diff, 16, 1 );
-    allocate(diff_inv, 32, 0);
-    constrain(diff * (diff * diff_inv - 1));
-    constrain(diff_inv * (diff * diff_inv - 1));
-
-    allocate(lt, 17, 1);
-    allocate(gt, 18, 1);
-    constrain(lt * (lt - 1));
-    constrain(gt * (gt - 1));
-
-    TYPE result;
-    switch (cmp_operation) {
-      case cmp_type::C_LT: result = lt; break;
-      case cmp_type::C_GT: result = gt; break;
-    }
-
-    // S must not have more than one one (sic!)
-    TYPE s_sum;
-    for (size_t i = 0; i < 16; ++i) s_sum += S[i];
-    constrain(s_sum * (s_sum - 1));
-
-    // If A != B, a chunk is actually marked
-    constrain((1 - s_sum) * (A_128.first - B_128.first));
-    constrain((1 - s_sum) * (A_128.second - B_128.second));
-
-    // ... and either lt or gt is true
-    constrain(lt + gt - s_sum);
-
-    // diff is calluclated for the marked chunk
-    TYPE diff_constraint;
-    for (size_t i = 0; i < 16; ++i)
-      diff_constraint += S[i] * (gt * (A[i] - B[i]) + lt * (B[i] - A[i]));
-    constrain(diff - diff_constraint);
-
-    // Finally, S marks *most significant* differing chunk
-    for (size_t i = 0; i < 15; ++i) {
-      TYPE c;
-      for (size_t j = i + 1; j < 16; ++j) c += S[j];
-
-      // A[i] != B[i] => for j > i, S[j] = 0
-      constrain(c * (A[i] - B[i]));
-    }
+    auto R_128 = chunks16_to_chunks128<TYPE>(R);
 
     if constexpr (stage == GenerationStage::CONSTRAINTS) {
       constrain(current_state.pc_next() - current_state.pc(1) - 1);                   // PC transition
@@ -162,7 +189,7 @@ class zkevm_cmp_bbf : generic_component<Field, stage> {
       lookup({
         TYPE(rw_op_to_num(rw_operation_type::stack)),
         current_state.call_id(1),
-        current_state.stack_size(1) - 1,
+        current_state.stack_size(1) - (is_less ? 2 : 1),
         TYPE(0),// storage_key_hi
         TYPE(0),// storage_key_lo
         TYPE(0),// field
@@ -174,15 +201,15 @@ class zkevm_cmp_bbf : generic_component<Field, stage> {
 
       lookup({
         TYPE(rw_op_to_num(rw_operation_type::stack)),
-        current_state.call_id(1),
-        current_state.stack_size(1) - 2,
+        current_state.call_id(2),
+        current_state.stack_size(2) - (is_less ? 1 : 2),
         TYPE(0),// storage_key_hi
         TYPE(0),// storage_key_lo
         TYPE(0),// field
-        current_state.rw_counter(1) + 1,
+        current_state.rw_counter(2) + 1,
         TYPE(0),// is_write
-        B_128.first,
-        B_128.second
+        R_128.first,
+        R_128.second
       }, "zkevm_rw");
 
       lookup({
@@ -225,31 +252,41 @@ class zkevm_cmp_bbf : generic_component<Field, stage> {
   using generic_component<Field, stage>::constrain;
   using generic_component<Field, stage>::lookup;
   using generic_component<Field, stage>::lookup_table;
+
+  static std::vector<TYPE> chunks_to_48(const std::vector<TYPE> &chunks) {
+    std::vector<TYPE> res(6);
+    res[0] = chunks[0];
+    for (size_t i = 0; i < 5; ++i)
+      res[i + 1] = chunks[3*i + 3]
+        + chunks[3*i + 2] * (1ull<<16)
+        + chunks[3*i + 1] * (1ull<<32);
+    return res;
+  }
 };
 
 template<typename Field>
-class zkevm_cmp_operation : public opcode_abstract<Field> {
+class zkevm_old_cmp_operation : public opcode_abstract<Field> {
  public:
-  zkevm_cmp_operation(cmp_type _cmp_operation) : cmp_operation(_cmp_operation) {}
+  zkevm_old_cmp_operation(old_cmp_type _cmp_operation) : cmp_operation(_cmp_operation) {}
 
   virtual std::size_t rows_amount() override {
-    return 2;
+    return 3;
   }
 
   virtual void fill_context(
       typename generic_component<Field, GenerationStage::ASSIGNMENT>::context_type &context,
       const opcode_input_type<Field, GenerationStage::ASSIGNMENT> &current_state) override {
-    zkevm_cmp_bbf<Field, GenerationStage::ASSIGNMENT> bbf_obj(context, current_state, cmp_operation);
+    zkevm_old_cmp_bbf<Field, GenerationStage::ASSIGNMENT> bbf_obj(context, current_state, cmp_operation);
   }
 
   virtual void fill_context(
       typename generic_component<Field, GenerationStage::CONSTRAINTS>::context_type &context,
       const opcode_input_type<Field, GenerationStage::CONSTRAINTS> &current_state) override {
-    zkevm_cmp_bbf<Field, GenerationStage::CONSTRAINTS> bbf_obj(context, current_state, cmp_operation);
+    zkevm_old_cmp_bbf<Field, GenerationStage::CONSTRAINTS> bbf_obj(context, current_state, cmp_operation);
   }
 
  private:
-  cmp_type cmp_operation;
+  old_cmp_type cmp_operation;
 };
 
 } // namespace bbf::blueprint::nil

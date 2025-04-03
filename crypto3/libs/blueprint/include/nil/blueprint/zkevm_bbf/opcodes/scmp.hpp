@@ -117,6 +117,10 @@ namespace nil {
                         allocate(B[i], i + 16, 0);
                         allocate(S[i], i, 1);
                     }
+
+                    auto A_128 = chunks16_to_chunks128<TYPE>(A);
+                    auto B_128 = chunks16_to_chunks128<TYPE>(B);
+
                     allocate(diff, 16, 1 );
                     allocate(diff_inv, 32, 0);
                     allocate(lt, 17, 1);
@@ -159,18 +163,21 @@ namespace nil {
                             zero_constraints[i] += S[j];
                         }
                         zero_constraints[i] *= A[i] - B[i];
-                        // constrain(zero_constraints[i]);
+                        constrain(zero_constraints[i]);
                     }
+
+                    // If A != B, the first different chunk is marked
+                    constrain((1 - s_sum) * (A_128.first - B_128.first));
+                    constrain((1 - s_sum) * (A_128.second - B_128.second));
+
                     TYPE diff_constraint;
                     for( std::size_t i = 0; i < 16; i++ ){
                         diff_constraint += S[i] * (gt * (A[i] - B[i]) + lt *(B[i] - A[i]));
                     }
-                    // constrain(diff - diff_constraint);
-                    // constrain(diff * (diff * diff_inv - 1));
-                    // constrain(diff_inv * (diff * diff_inv - 1));
-                    // constrain(diff * diff_inv - lt - gt);
-                    auto A_128 = chunks16_to_chunks128<TYPE>(A);
-                    auto B_128 = chunks16_to_chunks128<TYPE>(B);
+                    constrain(diff - diff_constraint);
+                    constrain(diff * (diff * diff_inv - 1));
+                    constrain(diff_inv * (diff * diff_inv - 1));
+                    constrain(diff * diff_inv - lt - gt);
                     // std::cout << "A = " << std::hex << A_128.first << " " << A_128.second << std::dec << std::endl;
                     // std::cout << "B = " << std::hex << B_128.first << " " << B_128.second << std::dec << std::endl;
                     if constexpr( stage == GenerationStage::CONSTRAINTS ){
