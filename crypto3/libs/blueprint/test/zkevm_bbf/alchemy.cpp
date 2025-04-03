@@ -63,11 +63,30 @@
 #include <nil/blueprint/zkevm_bbf/exp.hpp>
 #include <nil/blueprint/zkevm_bbf/call_commit.hpp>
 
+#include <boost/log/core.hpp>
+#include <boost/log/trivial.hpp>
+#include <boost/log/expressions.hpp>
+#include <boost/log/sinks/sync_frontend.hpp>
+#include <boost/log/sinks/text_ostream_backend.hpp>
+#include <boost/log/sources/severity_logger.hpp>
+#include <boost/log/sources/record_ostream.hpp>
+#include <boost/log/utility/formatting_ostream.hpp>
+#include <boost/log/utility/setup/common_attributes.hpp>
+#include <boost/log/attributes/value_extraction.hpp>
+#include <boost/log/utility/setup/console.hpp>
+
+
 #include "./circuit_test_fixture.hpp"
 
 using namespace nil::crypto3;
 using namespace nil::blueprint;
 using namespace nil::blueprint::bbf;
+
+void my_formatter(boost::log::record_view const& rec, boost::log::formatting_ostream& strm){
+    // Finally, put the record message to the stream
+    strm << rec[boost::log::expressions::smessage];
+}
+
 
 class zkEVMAlchemyTestFixture: public CircuitTestFixture {
 public:
@@ -76,6 +95,14 @@ public:
         std::string                        path,
         const l1_size_restrictions         &max_sizes
     ){
+        typedef boost::log::sinks::synchronous_sink< boost::log::sinks::text_ostream_backend > text_sink;
+        boost::shared_ptr< text_sink > sink = boost::make_shared< text_sink >();
+
+        sink->locked_backend()->add_stream(boost::shared_ptr< std::ostream >(&std::cout, boost::null_deleter()));
+        sink->set_formatter(&my_formatter);
+        boost::log::core::get()->add_sink(sink);
+
+        // boost::log::add_console_log(std::cout, boost::log::keywords::auto_flush = false);
         nil::blueprint::bbf::zkevm_alchemy_input_generator circuit_inputs(path);
         return;
 
@@ -413,6 +440,23 @@ BOOST_AUTO_TEST_CASE(sp1_block_20526629) {
 }
 
 BOOST_AUTO_TEST_CASE(sp1_block_20526630) {
+    using field_type = typename algebra::curves::pallas::base_field_type;
+    l1_size_restrictions max_sizes;
+
+    max_sizes.max_keccak_blocks = 3;
+    max_sizes.max_bytecode = 300;
+    max_sizes.max_mpt = 0;
+    max_sizes.max_rw = 1000;
+    max_sizes.max_copy = 70;
+    max_sizes.max_zkevm_rows = 500;
+    max_sizes.max_exponentiations = 50;
+    max_sizes.max_exp_rows = 500;
+    max_sizes.max_call_commits = 500;
+
+    complex_test<field_type>("alchemy/sp1_block_20526630/", max_sizes);
+}
+
+BOOST_AUTO_TEST_CASE(sp1_block_20526631) {
     using field_type = typename algebra::curves::pallas::base_field_type;
     l1_size_restrictions max_sizes;
 

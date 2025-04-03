@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------//
-// Copyright (c) 2024 Elena Tatuzova   <e.tatuzova@nil.foundation>
+// Copyright (c) 2025 Elena Tatuzova   <e.tatuzova@nil.foundation>
 //
 // MIT License
 //
@@ -24,19 +24,20 @@
 
 #pragma once
 #include <nil/crypto3/hash/type_traits.hpp>
-#include <nil/crypto3/hash/algorithm/hash.hpp>
-
-#include <nil/blueprint/components/hashes/keccak/util.hpp> //Move needed utils to bbf
-#include <nil/blueprint/bbf/generic.hpp>
-
-#include <nil/blueprint/zkevm/util/ptree.hpp>
+#include <nil/blueprint/zkevm_bbf/types/zkevm_word.hpp>
 
 namespace nil {
     namespace blueprint {
         namespace bbf {
-            struct block{
-                zkevm_word_type block_hash;
-            }
+            struct zkevm_block{
+                zkevm_word_type hash;
+                std::size_t     number;
+                zkevm_word_type basefee;
+                zkevm_word_type coinbase;
+                zkevm_word_type timestamp;
+                zkevm_word_type parent_hash;
+                zkevm_word_type difficulty;
+            };
         } // namespace bbf
     } // namespace blueprint
 } // namespace nil

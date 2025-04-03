@@ -2,6 +2,7 @@ import requests
 import json
 from web3 import Web3
 import time
+import sys
 
 # ALCHEMY_API_KEY = "I38oXHAOj0OUcvNfObEX8cS0I3PAHj0R"
 # ALCHEMY_RPC_URL = f"https://eth-mainnet.g.alchemy.com/v2/{ALCHEMY_API_KEY}"
@@ -123,8 +124,12 @@ def get_storage_value(account_address, slot):
     }
     return send_request_with_backoff(payload, is_hex=True)
 
-
+1
 if __name__ == "__main__":
+    # Block number may be passed as a command line argument
+    if( len(sys.argv) > 1):
+        BLOCK_NUMBER =  hex(int(sys.argv[1]))
+
     start_time = time.time()
     formatted_data = {
         "block": {},

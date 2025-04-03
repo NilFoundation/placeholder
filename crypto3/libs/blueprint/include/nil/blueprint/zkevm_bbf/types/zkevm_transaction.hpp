@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------//
-// Copyright (c) 2024 Elena Tatuzova   <e.tatuzova@nil.foundation>
+// Copyright (c) 2025 Elena Tatuzova   <e.tatuzova@nil.foundation>
 //
 // MIT License
 //
@@ -24,19 +24,26 @@
 
 #pragma once
 #include <nil/crypto3/hash/type_traits.hpp>
-#include <nil/crypto3/hash/algorithm/hash.hpp>
-
-#include <nil/blueprint/components/hashes/keccak/util.hpp> //Move needed utils to bbf
-#include <nil/blueprint/bbf/generic.hpp>
-
-#include <nil/blueprint/zkevm/util/ptree.hpp>
+#include <nil/blueprint/zkevm_bbf/types/zkevm_word.hpp>
 
 namespace nil {
     namespace blueprint {
         namespace bbf {
-            struct transaction{
-                zkevm_word_type tx_hash;
-            }
+            struct zkevm_transaction {
+                zkevm_word_type              hash;
+                std::size_t                  chain_id;
+                std::size_t                  gas;
+                zkevm_word_type              to;
+                zkevm_word_type              from;
+                zkevm_word_type              value;
+                zkevm_word_type              gasprice;
+                bool                         deploy;
+                std::vector<zkevm_word_type> blob_versioned_hashes;
+                std::vector<std::uint8_t>    calldata;
+
+                std::set<zkevm_word_type>                               account_access_list;
+                std::set<std::pair<zkevm_word_type, zkevm_word_type>>   storage_access_list;
+            };
         } // namespace bbf
     } // namespace blueprint
 } // namespace nil

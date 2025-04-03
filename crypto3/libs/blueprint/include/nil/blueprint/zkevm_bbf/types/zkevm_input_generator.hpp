@@ -52,27 +52,6 @@ namespace nil {
 
                 virtual ~zkevm_abstract_input_generator(){}
             };
-
-            class zkevm_small_test_input_generator:zkevm_abstract_input_generator{
-            public:
-                virtual zkevm_keccak_buffers keccaks() override {return _keccaks;}
-                virtual zkevm_keccak_buffers bytecodes() override { return _bytecodes;}
-                virtual rw_operations_vector rw_operations() override {return _rw_operations;}
-                virtual std::vector<copy_event> copy_events() override { return _copy_events;}
-                virtual std::vector<zkevm_state> zkevm_states() override{ return _zkevm_states;}
-                virtual std::vector<std::pair<zkevm_word_type, zkevm_word_type>> exponentiations()override{return _exponentiations;}
-                virtual std::map<std::size_t,zkevm_call_commit> call_commits() override {return _call_commits;}
-
-                zkevm_small_test_input_generator(){}
-            private:
-                zkevm_keccak_buffers                                     _keccaks;
-                zkevm_keccak_buffers                                     _bytecodes;
-                rw_operations_vector                                     _rw_operations;
-                std::vector<copy_event>                                  _copy_events;
-                std::vector<zkevm_state>                                 _zkevm_states;
-                std::vector<std::pair<zkevm_word_type, zkevm_word_type>> _exponentiations;
-                std::map<std::size_t,zkevm_call_commit>                  _call_commits;
-            };
         } // namespace bbf
     } // namespace blueprint
 } // namespace nil
