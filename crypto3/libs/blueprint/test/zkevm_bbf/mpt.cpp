@@ -70,33 +70,61 @@ public:
 
     template <typename field_type>
     void test_zkevm_mpt(
-        const std::vector<mpt_path> &paths,
         std::string data_source,
         std::size_t max_mpt_size,
         bool expected_result = true
     ) {
         using input_type = typename mpt<field_type, GenerationStage::ASSIGNMENT>::input_type;
 
+        input_type paths;
+
         boost::property_tree::ptree src_data = load_json_input(data_source);
+
+        mpt_path single_path;
+
         std::string path_key = src_data.get<std::string>("storageProof..key");
         boost::property_tree::ptree proof_path = src_data.get_child("storageProof..proof");
 
         std::cout << "key = " << path_key << std::endl;
+        single_path.key = zkevm_word_from_string(path_key);
 
         for(const auto &v : proof_path) {
             boost::property_tree::ptree node = v.second;
+
+            mpt_node single_node = {extension, {}};
+            if (node.size() == 17) {
+                single_node.type = branch;
+            }
+
             std::cout << "[" << std::endl;
+
             for(const auto &w : node) {
                 std::string hash_value = w.second.data();
                 std::cout << "    value = " << hash_value << std::endl;
+                single_node.value.push_back(zkevm_word_from_string(hash_value));
             }
             std::cout << "]" << std::endl;
+            single_path.proof.push_back(single_node);
+        }
+        single_path.proof.back().type = leaf; // the last node is a leaf
+        paths.push_back(single_path);
+
+        for(auto &p : paths) {
+            std::cout << " key = " << std::hex << p.key << std::dec << std::endl;
+            for(auto &n : p.proof) {
+                std::cout << "type = " << n.type << std::endl;
+                std::cout << "[" << std::endl;
+                for(auto &v : n.value) {
+                    std::cout << "    value = " << std::hex << v << std::dec << std::endl;
+                }
+                std::cout << "]" << std::endl;
+            }
         }
 
         bool result = test_bbf_component<field_type, mpt>(
             "mpt",                 //  Circuit name
             {} ,                   //  Public input
-            input_type(paths),     //  Assignment input (paths to prove)
+            paths,                 //  Assignment input (paths to prove)
             max_mpt_size           //  Maximum size of mpt circuit
         );
         BOOST_CHECK((!check_satisfiability && !generate_proof) || result == expected_result); // Max_rw, Max_mpt
@@ -106,7 +134,6 @@ public:
 BOOST_FIXTURE_TEST_SUITE(zkevm_bbf_mpt, zkEVMMPTTestFixture)
     using field_type = nil::crypto3::algebra::curves::alt_bn128_254::scalar_field_type;
 BOOST_AUTO_TEST_CASE(one_mpt_path) {
-    std::vector<mpt_path> mpt_input;
-    test_zkevm_mpt<field_type>(mpt_input, "mpt_path_0.json", 50);
+    test_zkevm_mpt<field_type>("mpt_path_0.json", 50);
 }
 BOOST_AUTO_TEST_SUITE_END()
