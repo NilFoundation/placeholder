@@ -85,8 +85,8 @@ public:
         std::string path_key = src_data.get<std::string>("storageProof..key");
         boost::property_tree::ptree proof_path = src_data.get_child("storageProof..proof");
 
-        std::cout << "key = " << path_key << std::endl;
-        single_path.key = zkevm_word_from_string(path_key);
+        // std::cout << "key = " << path_key << std::endl;
+        single_path.slotNumber = zkevm_word_from_string(path_key);
 
         for(const auto &v : proof_path) {
             boost::property_tree::ptree node = v.second;
@@ -96,30 +96,19 @@ public:
                 single_node.type = branch;
             }
 
-            std::cout << "[" << std::endl;
+            // std::cout << "[" << std::endl;
 
             for(const auto &w : node) {
                 std::string hash_value = w.second.data();
-                std::cout << "    value = " << hash_value << std::endl;
+                // std::cout << "    value = " << hash_value << std::endl;
                 single_node.value.push_back(zkevm_word_from_string(hash_value));
             }
-            std::cout << "]" << std::endl;
+            // std::cout << "]" << std::endl;
             single_path.proof.push_back(single_node);
         }
         single_path.proof.back().type = leaf; // the last node is a leaf
         paths.push_back(single_path);
 
-        for(auto &p : paths) {
-            std::cout << " key = " << std::hex << p.key << std::dec << std::endl;
-            for(auto &n : p.proof) {
-                std::cout << "type = " << n.type << std::endl;
-                std::cout << "[" << std::endl;
-                for(auto &v : n.value) {
-                    std::cout << "    value = " << std::hex << v << std::dec << std::endl;
-                }
-                std::cout << "]" << std::endl;
-            }
-        }
 
         bool result = test_bbf_component<field_type, mpt>(
             "mpt",                 //  Circuit name
