@@ -31,7 +31,6 @@
 #include <nil/blueprint/component.hpp>
 
 #include <nil/blueprint/bbf/generic.hpp>
-#include <nil/blueprint/zkevm/zkevm_word.hpp> // TODO why is this in old zkevm dir?!
 #include <nil/blueprint/zkevm_bbf/util.hpp>
 
 namespace nil::blueprint::bbf {
@@ -44,7 +43,7 @@ struct mpt_node {
 };
 
 struct mpt_path {
-    zkevm_word_type key;
+    zkevm_word_type slotNumber;
     std::vector<mpt_node> proof;
 };
 
@@ -86,22 +85,116 @@ public:
         const input_type &input,
         std::size_t max_mpt_size) : generic_component<FieldType,stage>(context_object) {
 
-        std::vector<TYPE> parent_hash_0;
-        std::vector<TYPE> parent_hash_1;
+        std::vector<TYPE> parent_hash_0(max_mpt_size);
+        std::vector<TYPE> parent_hash_1(max_mpt_size);
+        std::vector<TYPE> key_part(max_mpt_size);
+        std::vector<TYPE> key_length(max_mpt_size);
+        std::vector<TYPE> node_type(max_mpt_size);
+        std::vector<TYPE> depth(max_mpt_size);
+        std::vector<TYPE> key_0(max_mpt_size);
+        std::vector<TYPE> key_1(max_mpt_size);
+
         std::array<std::vector<TYPE>,16> child_0;
         std::array<std::vector<TYPE>,16> child_1;
-        std::vector<TYPE> key_part;
-        std::vector<TYPE> key_length;
-        std::vector<TYPE> node_type;
-        std::vector<TYPE> depth;
-        std::vector<TYPE> key_0;
-        std::vector<TYPE> key_1;
+
+        for(std::size_t i = 0; i < 16; i++) {
+            child_0[i].resize(max_mpt_size);
+            child_1[i].resize(max_mpt_size);
+        }
 
         if constexpr (stage == GenerationStage::ASSIGNMENT) {
            // assignment
+           std::size_t node_num = 0;
+
+           for(auto &p : input) { // enumerate paths
+               std::cout << "slot number = " << std::hex << p.slotNumber << std::dec << std::endl;
+
+               std::array<uint8_t,32> slotNumber = w_to_8(p.slotNumber);
+               std::vector<uint8_t> buffer(slotNumber.begin(), slotNumber.end());
+               zkevm_word_type path_key = nil::blueprint::zkevm_keccak_hash(buffer);
+               std::cout << "path key = " << std::hex << path_key << std::dec << std::endl;
+
+               zkevm_word_type key_suffix = path_key;
+               std::size_t accumulated_length = 0;
+               std::size_t node_depth = 0;
+               zkevm_word_type parent_hash = 0;
+
+               for(auto &n : p.proof) {
+                   std::cout << "node type = " << n.type << std::endl;
+                   std::cout << "[" << std::endl;
+
+                   parent_hash_0[node_num] = w_lo<FieldType>(parent_hash);
+                   parent_hash_1[node_num] = w_hi<FieldType>(parent_hash);
+
+                   std::size_t node_key_length = 0;
+                   if (n.type != branch) {
+                       zkevm_word_type first_value = n.value.at(0);
+                       while(first_value > 0) {
+                           first_value >>= 4;
+                           node_key_length++;
+                       }
+                       zkevm_word_type k0 = n.value.at(0) >> 4*(node_key_length - 1);
+                       if ((k0 == 1) || (k0 == 3)) {
+                           node_key_length--; // then we only skip the first hex symbol
+                       } else {
+                           node_key_length -= 2; // otherwise, the second hex is 0 and we skip it too
+                       }
+                   } else {
+                       node_key_length = 1;
+                   }
+                   key_length[node_num] = node_key_length;
+                   std::cout << "Node key length = " << node_key_length << std::endl;
+
+                   accumulated_length += node_key_length;
+                   std::cout << "Accumulated length = " << accumulated_length << std::endl;
+
+                   zkevm_word_type node_key_part = key_suffix >> 4*(64 - accumulated_length);
+                   key_part[node_num] = w_lo<FieldType>(node_key_part); // we expect it to fit into one field element always!
+                   std::cout << "Node key part = " << std::hex << node_key_part << std::dec << std::endl;
+
+                   key_suffix &= (zkevm_word_type(1) << 4*(64 - accumulated_length)) - 1;
+                   std::cout << "key suffix: " << std::hex << key_suffix << std::dec << std::endl;
+
+                   node_type[node_num] = static_cast<size_t>(n.type);
+                   depth[node_num] = node_depth;
+                   key_0[node_num] = w_lo<FieldType>(path_key);
+                   key_1[node_num] = w_hi<FieldType>(path_key);
+
+                   std::size_t child_num = 0;
+                   for(auto &v : n.value) {
+                       std::cout << "    value = " << std::hex << v << std::dec << std::endl;
+                       if (child_num < 16) { // branch nodes have an empty 17-th value
+                           child_0[child_num][node_num] = w_lo<FieldType>(v);
+                           child_1[child_num][node_num] = w_hi<FieldType>(v);
+                       }
+                       child_num++;
+                   }
+                   std::cout << "]" << std::endl;
+
+                   // TODO: code to update parent hash!
+
+                   node_num++;
+                   node_depth++;
+               }
+           }
         }
 
         // allocation
+        for(std::size_t i = 0; i < max_mpt_size; i++) {
+            allocate(parent_hash_0[i],0,i);
+            allocate(parent_hash_1[i],1,i);
+            allocate(key_part[i],     2,i);
+            allocate(key_length[i],   3,i);
+            allocate(node_type[i],    4,i);
+            allocate(depth[i],        5,i);
+            allocate(key_0[i],        6,i);
+            allocate(key_1[i],        7,i);
+            // columns 8-39
+            for(std::size_t j = 0; j < 16; j++) {
+                allocate(child_0[j][i], 8 + 2*j,i);
+                allocate(child_1[j][i], 8 + 2*j + 1,i);
+            }
+        }
 
         if constexpr (stage == GenerationStage::CONSTRAINTS) {
            // constraints
