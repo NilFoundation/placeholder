@@ -31,10 +31,21 @@
 #include <nil/blueprint/component.hpp>
 
 #include <nil/blueprint/bbf/generic.hpp>
+#include <nil/blueprint/zkevm/zkevm_word.hpp> // TODO why is this in old zkevm dir?!
+#include <nil/blueprint/zkevm_bbf/util.hpp>
 
 namespace nil::blueprint::bbf {
 
-class mpt_path {
+enum mpt_node_type { extension = 0, branch = 1, leaf = 2 };
+
+struct mpt_node {
+   enum mpt_node_type type;
+   std::vector<zkevm_word_type> value;
+};
+
+struct mpt_path {
+    zkevm_word_type key;
+    std::vector<mpt_node> proof;
 };
 
 class mpt_paths_vector : public std::vector<mpt_path> {
