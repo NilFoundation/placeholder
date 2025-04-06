@@ -103,7 +103,7 @@ BOOST_AUTO_TEST_CASE(minimal_math){
     max_sizes.max_bytecode = 3000;
     max_sizes.max_mpt = 0;
     max_sizes.max_rw = 1000;
-    max_sizes.max_copy = 500;
+    max_sizes.max_copy = 70;
     max_sizes.max_zkevm_rows = 500;
     max_sizes.max_call_commits = 500;
 
@@ -117,8 +117,8 @@ BOOST_AUTO_TEST_CASE(try_catch) {
     max_sizes.max_keccak_blocks = 20;
     max_sizes.max_bytecode = 3000;
     max_sizes.max_mpt = 0;
-    max_sizes.max_rw = 6000;
-    max_sizes.max_copy = 500;
+    max_sizes.max_rw = 7000;
+    max_sizes.max_copy = 1500;
     max_sizes.max_zkevm_rows = 3000;
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
@@ -134,8 +134,8 @@ BOOST_AUTO_TEST_CASE(try_catch2) {
     max_sizes.max_keccak_blocks = 20;
     max_sizes.max_bytecode = 3000;
     max_sizes.max_mpt = 0;
-    max_sizes.max_rw = 6000;
-    max_sizes.max_copy = 500;
+    max_sizes.max_rw = 7000;
+    max_sizes.max_copy = 1500;
     max_sizes.max_zkevm_rows = 3000;
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
@@ -152,7 +152,7 @@ BOOST_AUTO_TEST_CASE(try_catch_cold) {
     max_sizes.max_bytecode = 3000;
     max_sizes.max_mpt = 0;
     max_sizes.max_rw = 6000;
-    max_sizes.max_copy = 500;
+    max_sizes.max_copy = 3000;
     max_sizes.max_zkevm_rows = 3000;
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
@@ -168,9 +168,9 @@ BOOST_AUTO_TEST_CASE(keccak){
     max_sizes.max_keccak_blocks = 50;
     max_sizes.max_bytecode = 3000;
     max_sizes.max_mpt = 0;
-    max_sizes.max_rw = 30000;
+    max_sizes.max_rw = 4000;
     max_sizes.max_copy = 3000;
-    max_sizes.max_zkevm_rows = 4500;
+    max_sizes.max_zkevm_rows = 500;
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
     max_sizes.max_call_commits = 500;
