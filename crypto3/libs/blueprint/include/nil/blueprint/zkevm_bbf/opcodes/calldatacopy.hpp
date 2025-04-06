@@ -54,8 +54,7 @@ namespace nil {
                     using Word_Size = typename bbf::word_size<FieldType, stage>;
                     using Memory_Cost = typename bbf::memory_cost<FieldType, stage>;
 
-                    TYPE destOffset, offset, length, current_mem, next_mem,
-                        memory_expansion_cost, memory_expansion_size, S, length_inv;
+                    TYPE destOffset, offset, length, current_mem, next_mem, S, length_inv;
 
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
                         destOffset = w_lo<FieldType>(current_state.stack_top());
@@ -86,26 +85,26 @@ namespace nil {
                               (1 - S) * (next_mem - current_mem));
 
                     std::vector<std::size_t> word_size_lookup_area = {32, 33, 34};
-                    allocate(memory_expansion_cost, 35, 1);
-                    allocate(memory_expansion_size, 36, 1);
+
+                    auto word_size_ct = context_object.subcontext(
+                            word_size_lookup_area, 1, 1);
+                    Word_Size minimum_word(word_size_ct, length);
+
                     std::vector<std::size_t> memory_cost_lookup_area = {42, 43, 44,
                                                                         45, 46, 47};
 
-                    context_type word_size_ct =
-                        context_object.subcontext(word_size_lookup_area, 1, 1);
+                    auto current_memory_ct = context_object.subcontext(
+                            memory_cost_lookup_area, 0, 1);
+                    Memory_Cost current_memory(current_memory_ct, current_mem);
 
-                    context_type current_memory_ct =
-                        context_object.subcontext(memory_cost_lookup_area, 0, 1);
-                    context_type next_memory_ct =
-                        context_object.subcontext(memory_cost_lookup_area, 1, 1);
+                    auto next_memory_ct = context_object.subcontext(
+                            memory_cost_lookup_area, 1, 1);
+                    Memory_Cost next_memory(next_memory_ct, next_mem);
 
-                    Memory_Cost current_memory =
-                        Memory_Cost(current_memory_ct, current_mem);
-                    Memory_Cost next_memory = Memory_Cost(next_memory_ct, next_mem);
-                    memory_expansion_cost = next_memory.cost - current_memory.cost;
-                    memory_expansion_size =
+                    TYPE memory_expansion_cost =
+                        next_memory.cost - current_memory.cost;
+                    TYPE memory_expansion_size =
                         (next_memory.word_size - current_memory.word_size) * 32;
-                    Word_Size minimum_word = Word_Size(word_size_ct, length);
 
                     if constexpr (stage == GenerationStage::CONSTRAINTS) {
                         constrain(current_state.pc_next() - current_state.pc(0) -
@@ -171,8 +170,6 @@ namespace nil {
                             length * length_inv * (current_state.rw_counter(0) + length + 3),        // counter_2
                             length
                         }, "zkevm_copy");
-                    } else {
-                        std::cout << "\tSTATE transition implemented" << std::endl;
                     }
                 }
             };

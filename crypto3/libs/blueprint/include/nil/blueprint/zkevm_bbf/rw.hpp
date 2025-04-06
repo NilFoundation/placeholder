@@ -178,8 +178,8 @@ namespace nil {
                         auto rw_trace = input.rw_operations;
                         std::cout << "RW trace.size = " << rw_trace.size() << std::endl;
                         for( std::size_t i = 0; i < rw_trace.size(); i++ ){
-                            if( rw_trace[i].op != rw_operation_type::padding )
-                                std::cout << "\t" << i << "." << rw_trace[i];
+                            // if( rw_trace[i].op != rw_operation_type::padding )
+                            //    std::cout << "\t" << i << "." << rw_trace[i];
 
                             integral_type mask = (1 << op_bits_amount);
                             for( std::size_t j = 0; j < op_bits_amount; j++){
@@ -232,8 +232,8 @@ namespace nil {
                                 is_first[i] = 1;
                                 if(i != 0) is_last[i-1] = 1;
                             }
-                            std::cout << " is_first = " << is_first[i];
-                            std::cout << " w_id_before = " << w_id_before[i];
+                            // std::cout << " is_first = " << is_first[i];
+                            // std::cout << " w_id_before = " << w_id_before[i];
 
                             initial_value_hi[i] = w_hi<FieldType>(rw_trace[i].initial_value);
                             initial_value_lo[i] = w_lo<FieldType>(rw_trace[i].initial_value);
@@ -244,7 +244,7 @@ namespace nil {
                             }
                             diff[i] = sorted[diff_ind] - sorted_prev[diff_ind];
                             inv_diff[i] = diff[i] == 0? 0: diff[i].inversed();
-                            std::cout << std::endl;
+                            // std::cout << std::endl;
                         }
                         for( std::size_t i = rw_trace.size(); i < max_rw_size; i++ ){
                             integral_type mask = (1 << op_bits_amount);
