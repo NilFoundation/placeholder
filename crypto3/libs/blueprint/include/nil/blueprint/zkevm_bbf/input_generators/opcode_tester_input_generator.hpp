@@ -627,23 +627,36 @@ class zkevm_opcode_tester_input_generator : zkevm_abstract_input_generator {
             stack.pop_back();
             _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, length));
 
-            for( std::size_t i = 0; i < length; i++){
-                _rw_operations.push_back(memory_rw_operation(call_id, stack.size(), rw_counter++, true, 0)); // placeholder
-            }
-
             std::size_t minimum_word_size = (length + 31) / 32;
             std::size_t next_mem = std::max(destOffset + length, memory.size());
             std::size_t memory_expansion = memory_expansion_cost(next_mem, memory.size());
             std::size_t next_memory_size = (memory_size_word_util(next_mem))*32;
 
+            for (std::size_t i = memory.size(); i < next_memory_size; ++i)
+                memory[i] = 0;
 
-            //placeholder values to mimic memory expansion
-            for (std::size_t i = 0; i < next_memory_size; ++i) {
-                memory[i] = static_cast<std::uint8_t>(i);
+            auto copy_event = calldatacopy_copy_event(
+                    call_id, offset, destOffset, rw_counter, length);
+
+            for (std::size_t i = 0; i < length; i++) {
+                uint8_t value = offset + i;
+                copy_event.push_byte(value);
+
+                _rw_operations.push_back(calldata_rw_operation(
+                        call_id, offset + i, rw_counter, value));
+                _rw_operations.push_back(memory_rw_operation(
+                        call_id, destOffset + i, rw_counter + length, true,
+                        value));
+                ++rw_counter;
+
+                memory[destOffset + i] = value;
             }
+            rw_counter += length;
 
-            gas-=3; //static gas
-            gas -= 3 * minimum_word_size + memory_expansion; //dynamic gas
+            _copy_events.push_back(copy_event);
+
+            gas -= 3; // static gas
+            gas -= 3 * minimum_word_size + memory_expansion; // dynamic gas
             pc++;
         } else if(opcode == zkevm_opcode::MLOAD) {
             // 0x51

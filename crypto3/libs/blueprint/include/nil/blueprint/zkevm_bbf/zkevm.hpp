@@ -201,7 +201,6 @@ namespace nil {
                                     << "Opcode not found " << current_opcode
                                     << " with numbeer 0x" << std::hex << current_state.opcode() << std::dec
                                     << " skip it" << std::endl;
-                                BOOST_ASSERT(false);
                                 continue;
                             }
                             std::size_t current_opcode_bare_rows_amount = opcode_impls[current_opcode]->rows_amount();

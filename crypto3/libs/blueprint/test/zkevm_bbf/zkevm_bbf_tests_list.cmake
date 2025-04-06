@@ -17,7 +17,7 @@ set(ZKEVM_BBF_TESTS_FILES
     "${BLUEPRINT_TEST_ROOT}/zkevm_bbf/opcodes/jumps"
     "${BLUEPRINT_TEST_ROOT}/zkevm_bbf/opcodes/not"
     "${BLUEPRINT_TEST_ROOT}/zkevm_bbf/opcodes/exp"
-    # "${BLUEPRINT_TEST_ROOT}/zkevm_bbf/opcodes/calldata"
+    "${BLUEPRINT_TEST_ROOT}/zkevm_bbf/opcodes/calldata"
     "${BLUEPRINT_TEST_ROOT}/zkevm_bbf/opcodes/logx"
     "${BLUEPRINT_TEST_ROOT}/zkevm_bbf/opcodes/gas"
     "${BLUEPRINT_TEST_ROOT}/zkevm_bbf/opcodes/pc"

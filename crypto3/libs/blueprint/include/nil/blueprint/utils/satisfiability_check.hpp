@@ -226,13 +226,13 @@ namespace nil {
                                         std::cout << "Constraint " << j << " from lookup gate " << gate_idx << " from table "
                                             << table_name << " on row " << row << " is not satisfied."
                                             << std::endl;
-                                        std::cout << "Offending Lookup Gate: " << std::endl;
-                                        for (const auto &constraint : lookup_gates[gate_idx].constraints) {
-                                            std::cout << "Table id: " << constraint.table_id << std::endl;
-                                            for (auto &lookup_input : constraint.lookup_input) {
-                                                std::cout << lookup_input << std::endl;
-                                            }
-                                        }
+                                        // std::cout << "Offending Lookup Gate: " << std::endl;
+                                        // for (const auto &constraint : lookup_gates[gate_idx].constraints) {
+                                        //     std::cout << "Table id: " << constraint.table_id << std::endl;
+                                        //     for (auto &lookup_input : constraint.lookup_input) {
+                                        //         std::cout << lookup_input << std::endl;
+                                        //     }
+                                        // }
 
                                         return false;
                                     }
@@ -272,13 +272,13 @@ namespace nil {
                                     std::cout << "Constraint " << j << " from lookup gate " << gate_idx << " from table "
                                         << table_name << " on row " << row << " is not satisfied."
                                         << std::endl;
-                                    std::cout << "Offending Lookup Gate: " << std::endl;
-                                    for (const auto &constraint : lookup_gates[gate_idx].constraints) {
-                                        std::cout << "Table id: " << constraint.table_id << std::endl;
-                                        for (auto &lookup_input : constraint.lookup_input) {
-                                            std::cout << lookup_input << std::endl;
-                                        }
-                                    }
+                                    // std::cout << "Offending Lookup Gate: " << std::endl;
+                                    // for (const auto &constraint : lookup_gates[gate_idx].constraints) {
+                                    //     std::cout << "Table id: " << constraint.table_id << std::endl;
+                                    //     for (auto &lookup_input : constraint.lookup_input) {
+                                    //         std::cout << lookup_input << std::endl;
+                                    //     }
+                                    // }
 
                                     return false;
                                 }
