@@ -87,6 +87,18 @@ void my_formatter(boost::log::record_view const& rec, boost::log::formatting_ost
     strm << rec[boost::log::expressions::smessage];
 }
 
+class zkEVMGlobalFixture {
+public:
+    zkEVMGlobalFixture() {
+        // Initialize the logging system
+        typedef boost::log::sinks::synchronous_sink< boost::log::sinks::text_ostream_backend > text_sink;
+        boost::shared_ptr< text_sink > sink = boost::make_shared< text_sink >();
+
+        sink->locked_backend()->add_stream(boost::shared_ptr< std::ostream >(&std::cout, boost::null_deleter()));
+        sink->set_formatter(&my_formatter);
+        boost::log::core::get()->add_sink(sink);
+    }
+};
 
 class zkEVMAlchemyTestFixture: public CircuitTestFixture {
 public:
@@ -95,178 +107,177 @@ public:
         std::string                        path,
         const l1_size_restrictions         &max_sizes
     ){
-        typedef boost::log::sinks::synchronous_sink< boost::log::sinks::text_ostream_backend > text_sink;
-        boost::shared_ptr< text_sink > sink = boost::make_shared< text_sink >();
-
-        sink->locked_backend()->add_stream(boost::shared_ptr< std::ostream >(&std::cout, boost::null_deleter()));
-        sink->set_formatter(&my_formatter);
-        boost::log::core::get()->add_sink(sink);
-
-        // boost::log::add_console_log(std::cout, boost::log::keywords::auto_flush = false);
-        nil::blueprint::bbf::zkevm_alchemy_input_generator circuit_inputs(path);
+        {
+            nil::blueprint::bbf::zkevm_alchemy_input_generator circuit_inputs(path);
+            BOOST_LOG_TRIVIAL(trace) << "Circuit inputs generated";
+            BOOST_ASSERT(circuit_inputs.get_execution_status());
+            BOOST_LOG_TRIVIAL(trace) << "Execution status";
+        }
+        std::cout << "Done" << std::endl;
         return;
 
-        using integral_type = typename field_type::integral_type;
-        using value_type = typename field_type::value_type;
+        // using integral_type = typename field_type::integral_type;
+        // using value_type = typename field_type::value_type;
 
-        integral_type base16 = integral_type(1) << 16;
+        // integral_type base16 = integral_type(1) << 16;
 
-        std::size_t max_keccak_blocks = max_sizes.max_keccak_blocks;
-        std::size_t max_bytecode = max_sizes.max_bytecode;
-        std::size_t max_mpt = max_sizes.max_mpt;
-        std::size_t max_rw = max_sizes.max_rw;
-        std::size_t max_copy = max_sizes.max_copy;
-        std::size_t max_zkevm_rows = max_sizes.max_zkevm_rows;
-        std::size_t max_exponentiations = max_sizes.max_exponentiations;
-        std::size_t max_exp_rows = max_sizes.max_exp_rows;
-        std::size_t max_call_commits = max_sizes.max_call_commits;
+        // std::size_t max_keccak_blocks = max_sizes.max_keccak_blocks;
+        // std::size_t max_bytecode = max_sizes.max_bytecode;
+        // std::size_t max_mpt = max_sizes.max_mpt;
+        // std::size_t max_rw = max_sizes.max_rw;
+        // std::size_t max_copy = max_sizes.max_copy;
+        // std::size_t max_zkevm_rows = max_sizes.max_zkevm_rows;
+        // std::size_t max_exponentiations = max_sizes.max_exponentiations;
+        // std::size_t max_exp_rows = max_sizes.max_exp_rows;
+        // std::size_t max_call_commits = max_sizes.max_call_commits;
 
-        typename copy<field_type, GenerationStage::ASSIGNMENT>::input_type copy_assignment_input;
-        copy_assignment_input.rlc_challenge = 7;
-        copy_assignment_input.bytecodes = circuit_inputs.bytecodes();
-        copy_assignment_input.keccak_buffers = circuit_inputs.keccaks();
-        copy_assignment_input.rw_operations = circuit_inputs.rw_operations();
-        copy_assignment_input.copy_events = circuit_inputs.copy_events();
-        copy_assignment_input.call_commits = circuit_inputs.call_commits();
+        // typename copy<field_type, GenerationStage::ASSIGNMENT>::input_type copy_assignment_input;
+        // copy_assignment_input.rlc_challenge = 7;
+        // copy_assignment_input.bytecodes = circuit_inputs.bytecodes();
+        // copy_assignment_input.keccak_buffers = circuit_inputs.keccaks();
+        // copy_assignment_input.rw_operations = circuit_inputs.rw_operations();
+        // copy_assignment_input.copy_events = circuit_inputs.copy_events();
+        // copy_assignment_input.call_commits = circuit_inputs.call_commits();
 
-        typename zkevm<field_type, GenerationStage::ASSIGNMENT>::input_type zkevm_assignment_input;
-        zkevm_assignment_input.rlc_challenge = 7;
-        zkevm_assignment_input.bytecodes = circuit_inputs.bytecodes();
-        zkevm_assignment_input.keccak_buffers = circuit_inputs.keccaks();
-        zkevm_assignment_input.rw_operations = circuit_inputs.rw_operations();
-        zkevm_assignment_input.copy_events = circuit_inputs.copy_events();
-        zkevm_assignment_input.zkevm_states = circuit_inputs.zkevm_states();
-        zkevm_assignment_input.exponentiations = circuit_inputs.exponentiations();
+        // typename zkevm<field_type, GenerationStage::ASSIGNMENT>::input_type zkevm_assignment_input;
+        // zkevm_assignment_input.rlc_challenge = 7;
+        // zkevm_assignment_input.bytecodes = circuit_inputs.bytecodes();
+        // zkevm_assignment_input.keccak_buffers = circuit_inputs.keccaks();
+        // zkevm_assignment_input.rw_operations = circuit_inputs.rw_operations();
+        // zkevm_assignment_input.copy_events = circuit_inputs.copy_events();
+        // zkevm_assignment_input.zkevm_states = circuit_inputs.zkevm_states();
+        // zkevm_assignment_input.exponentiations = circuit_inputs.exponentiations();
 
-        typename nil::blueprint::bbf::rw<field_type,nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type rw_assignment_input;
-        rw_assignment_input.rw_operations = circuit_inputs.rw_operations();
-        rw_assignment_input.call_commits = circuit_inputs.call_commits();
+        // typename nil::blueprint::bbf::rw<field_type,nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type rw_assignment_input;
+        // rw_assignment_input.rw_operations = circuit_inputs.rw_operations();
+        // rw_assignment_input.call_commits = circuit_inputs.call_commits();
 
-        typename nil::blueprint::bbf::call_commit<field_type,nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type call_commit_assignment_input;
-        call_commit_assignment_input.rw_operations = circuit_inputs.rw_operations();
-        call_commit_assignment_input.call_commits = circuit_inputs.call_commits();
+        // typename nil::blueprint::bbf::call_commit<field_type,nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type call_commit_assignment_input;
+        // call_commit_assignment_input.rw_operations = circuit_inputs.rw_operations();
+        // call_commit_assignment_input.call_commits = circuit_inputs.call_commits();
 
-        typename zkevm_keccak<field_type,GenerationStage::ASSIGNMENT>::input_type keccak_assignment_input;
-        keccak_assignment_input.rlc_challenge = 7;
-        keccak_assignment_input.private_input = circuit_inputs.keccaks();
+        // typename zkevm_keccak<field_type,GenerationStage::ASSIGNMENT>::input_type keccak_assignment_input;
+        // keccak_assignment_input.rlc_challenge = 7;
+        // keccak_assignment_input.private_input = circuit_inputs.keccaks();
 
-        typename bytecode<field_type, GenerationStage::ASSIGNMENT>::input_type bytecode_assignment_input;
-        bytecode_assignment_input.rlc_challenge = 7;
-        bytecode_assignment_input.bytecodes = circuit_inputs.bytecodes();
-        bytecode_assignment_input.keccak_buffers = circuit_inputs.keccaks();
+        // typename bytecode<field_type, GenerationStage::ASSIGNMENT>::input_type bytecode_assignment_input;
+        // bytecode_assignment_input.rlc_challenge = 7;
+        // bytecode_assignment_input.bytecodes = circuit_inputs.bytecodes();
+        // bytecode_assignment_input.keccak_buffers = circuit_inputs.keccaks();
 
-        auto exp_assignment_input = circuit_inputs.exponentiations();
+        // auto exp_assignment_input = circuit_inputs.exponentiations();
 
-        bool result{false};
-        const std::string zkevm_circuit = "zkevm";
-        if (should_run_circuit(zkevm_circuit)) {
-            std::cout << "circuit '" << zkevm_circuit << "'" << std::endl;
+        // bool result{false};
+        // const std::string zkevm_circuit = "zkevm";
+        // if (should_run_circuit(zkevm_circuit)) {
+        //     std::cout << "circuit '" << zkevm_circuit << "'" << std::endl;
 
-            // Max_rows, max_bytecode, max_rw
-            result = test_bbf_component<field_type, nil::blueprint::bbf::zkevm>(
-                zkevm_circuit,
-                {}, zkevm_assignment_input,
-                max_zkevm_rows,
-                max_copy,
-                max_rw,
-                max_exponentiations,
-                max_bytecode
-            );
-            BOOST_ASSERT(result);
-        }
-        return;
+        //     // Max_rows, max_bytecode, max_rw
+        //     result = test_bbf_component<field_type, nil::blueprint::bbf::zkevm>(
+        //         zkevm_circuit,
+        //         {}, zkevm_assignment_input,
+        //         max_zkevm_rows,
+        //         max_copy,
+        //         max_rw,
+        //         max_exponentiations,
+        //         max_bytecode
+        //     );
+        //     BOOST_ASSERT(result);
+        // }
+        // return;
 
-        const std::string exp_circuit = "exp";
-        if (should_run_circuit(exp_circuit)) {
-            // Max_copy, Max_rw, Max_keccak, Max_bytecode
-            result =test_bbf_component<field_type, nil::blueprint::bbf::exponentiation>(
-                exp_circuit,
-                {}, exp_assignment_input,
-                max_exp_rows,
-                max_exponentiations
-            );
-            BOOST_ASSERT(result);
-            std::cout << std::endl;
-        }
+        // const std::string exp_circuit = "exp";
+        // if (should_run_circuit(exp_circuit)) {
+        //     // Max_copy, Max_rw, Max_keccak, Max_bytecode
+        //     result =test_bbf_component<field_type, nil::blueprint::bbf::exponentiation>(
+        //         exp_circuit,
+        //         {}, exp_assignment_input,
+        //         max_exp_rows,
+        //         max_exponentiations
+        //     );
+        //     BOOST_ASSERT(result);
+        //     std::cout << std::endl;
+        // }
 
-        const std::string copy_circuit = "copy";
-        if (should_run_circuit(copy_circuit)) {
-            std::cout << "circuit '" << copy_circuit << "'" << std::endl;
+        // const std::string copy_circuit = "copy";
+        // if (should_run_circuit(copy_circuit)) {
+        //     std::cout << "circuit '" << copy_circuit << "'" << std::endl;
 
-            // Max_copy, Max_rw, Max_keccak, Max_bytecode
-            result =test_bbf_component<field_type, nil::blueprint::bbf::copy>(
-                copy_circuit,
-                {7}, copy_assignment_input,
-                max_copy, max_rw, max_keccak_blocks, max_bytecode, max_call_commits
-            );
-            BOOST_ASSERT(result);
-            std::cout << std::endl;
-        }
+        //     // Max_copy, Max_rw, Max_keccak, Max_bytecode
+        //     result =test_bbf_component<field_type, nil::blueprint::bbf::copy>(
+        //         copy_circuit,
+        //         {7}, copy_assignment_input,
+        //         max_copy, max_rw, max_keccak_blocks, max_bytecode, max_call_commits
+        //     );
+        //     BOOST_ASSERT(result);
+        //     std::cout << std::endl;
+        // }
 
-        const std::string keccak_circuit = "keccak";
-        if (should_run_circuit(keccak_circuit)) {
-            std::cout << "circuit '" << keccak_circuit << "'" << std::endl;
+        // const std::string keccak_circuit = "keccak";
+        // if (should_run_circuit(keccak_circuit)) {
+        //     std::cout << "circuit '" << keccak_circuit << "'" << std::endl;
 
-            // Max_keccak
-            result = test_bbf_component<field_type, nil::blueprint::bbf::zkevm_keccak>(
-                keccak_circuit,
-                {}, keccak_assignment_input,max_keccak_blocks
-            );
-            BOOST_ASSERT(result);
-            std::cout << std::endl;
-        }
+        //     // Max_keccak
+        //     result = test_bbf_component<field_type, nil::blueprint::bbf::zkevm_keccak>(
+        //         keccak_circuit,
+        //         {}, keccak_assignment_input,max_keccak_blocks
+        //     );
+        //     BOOST_ASSERT(result);
+        //     std::cout << std::endl;
+        // }
 
-        const std::string bytecode_circuit = "bytecode";
-        if (should_run_circuit(bytecode_circuit)) {
-            std::cout << "circuit '" << bytecode_circuit << "'" << std::endl;
+        // const std::string bytecode_circuit = "bytecode";
+        // if (should_run_circuit(bytecode_circuit)) {
+        //     std::cout << "circuit '" << bytecode_circuit << "'" << std::endl;
 
-            // Max_bytecode, max_bytecode
-            result = test_bbf_component<field_type, nil::blueprint::bbf::bytecode>(
-                bytecode_circuit,
-                {7}, bytecode_assignment_input, max_bytecode, max_keccak_blocks
-            );
-            BOOST_ASSERT(result);
-            std::cout << std::endl;
-        }
+        //     // Max_bytecode, max_bytecode
+        //     result = test_bbf_component<field_type, nil::blueprint::bbf::bytecode>(
+        //         bytecode_circuit,
+        //         {7}, bytecode_assignment_input, max_bytecode, max_keccak_blocks
+        //     );
+        //     BOOST_ASSERT(result);
+        //     std::cout << std::endl;
+        // }
 
-        const std::string rw_circuit = "rw";
-        if (should_run_circuit(rw_circuit)) {
-            std::cout << "circuit '" << rw_circuit << "'" << std::endl;
+        // const std::string rw_circuit = "rw";
+        // if (should_run_circuit(rw_circuit)) {
+        //     std::cout << "circuit '" << rw_circuit << "'" << std::endl;
 
-            // Max_rw, Max_mpt
-            result = test_bbf_component<field_type, nil::blueprint::bbf::rw>(
-                rw_circuit,
-                {}, rw_assignment_input, max_rw, max_mpt, max_call_commits
-            );
-            BOOST_ASSERT(result);
+        //     // Max_rw, Max_mpt
+        //     result = test_bbf_component<field_type, nil::blueprint::bbf::rw>(
+        //         rw_circuit,
+        //         {}, rw_assignment_input, max_rw, max_mpt, max_call_commits
+        //     );
+        //     BOOST_ASSERT(result);
 
-            // using small_field_type = typename algebra::fields::babybear;
-            // // Max_rw, Max_mpt
-            // result = test_bbf_component<small_field_type, nil::blueprint::bbf::rw_small_field>(
-            //     rw_circuit,
-            //     {}, rw_assignment_input, max_rw, max_mpt
-            // );
-            // BOOST_ASSERT(result);
-            std::cout << std::endl;
-        }
+        //     // using small_field_type = typename algebra::fields::babybear;
+        //     // // Max_rw, Max_mpt
+        //     // result = test_bbf_component<small_field_type, nil::blueprint::bbf::rw_small_field>(
+        //     //     rw_circuit,
+        //     //     {}, rw_assignment_input, max_rw, max_mpt
+        //     // );
+        //     // BOOST_ASSERT(result);
+        //     std::cout << std::endl;
+        // }
 
-        const std::string call_commit_circuit = "call_commit";
-        if (should_run_circuit(call_commit_circuit)) {
-            std::cout << "circuit '" << call_commit_circuit << "'" << std::endl;
+        // const std::string call_commit_circuit = "call_commit";
+        // if (should_run_circuit(call_commit_circuit)) {
+        //     std::cout << "circuit '" << call_commit_circuit << "'" << std::endl;
 
-            // Max_rw, Max_mpt
-            result = test_bbf_component<field_type, nil::blueprint::bbf::call_commit>(
-                call_commit_circuit,
-                {}, call_commit_assignment_input, max_rw, max_call_commits
-            );
-            BOOST_ASSERT(result);
-            std::cout << std::endl;
-        }
+        //     // Max_rw, Max_mpt
+        //     result = test_bbf_component<field_type, nil::blueprint::bbf::call_commit>(
+        //         call_commit_circuit,
+        //         {}, call_commit_assignment_input, max_rw, max_call_commits
+        //     );
+        //     BOOST_ASSERT(result);
+        //     std::cout << std::endl;
+        // }
     }
 };
 
 // Remember that in production sizes should be preset.
 // Here they are different for different tests just for fast and easy testing
+BOOST_GLOBAL_FIXTURE(zkEVMGlobalFixture);
 BOOST_FIXTURE_TEST_SUITE(zkevm_bbf_hardhat, zkEVMAlchemyTestFixture)
 
 BOOST_AUTO_TEST_CASE(sp1_block_18884864) {
@@ -488,6 +499,23 @@ BOOST_AUTO_TEST_CASE(sp1_block_20528708) {
     max_sizes.max_call_commits = 500;
 
     complex_test<field_type>("alchemy/sp1_block_20528708/", max_sizes);
+}
+
+BOOST_AUTO_TEST_CASE(sp1_block_20528709) {
+    using field_type = typename algebra::curves::pallas::base_field_type;
+    l1_size_restrictions max_sizes;
+
+    max_sizes.max_keccak_blocks = 3;
+    max_sizes.max_bytecode = 300;
+    max_sizes.max_mpt = 0;
+    max_sizes.max_rw = 1000;
+    max_sizes.max_copy = 70;
+    max_sizes.max_zkevm_rows = 500;
+    max_sizes.max_exponentiations = 50;
+    max_sizes.max_exp_rows = 500;
+    max_sizes.max_call_commits = 500;
+
+    complex_test<field_type>("alchemy/sp1_block_20528709/", max_sizes);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

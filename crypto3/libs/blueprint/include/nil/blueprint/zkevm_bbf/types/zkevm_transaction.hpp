@@ -37,6 +37,9 @@ namespace nil {
                 zkevm_word_type              from;
                 zkevm_word_type              value;
                 zkevm_word_type              gasprice;
+                zkevm_word_type              max_fee_per_gas;
+                zkevm_word_type              max_fee_per_blob_gas;
+                zkevm_word_type              max_priority_fee_per_gas;
                 bool                         deploy;
                 std::vector<zkevm_word_type> blob_versioned_hashes;
                 std::vector<std::uint8_t>    calldata;

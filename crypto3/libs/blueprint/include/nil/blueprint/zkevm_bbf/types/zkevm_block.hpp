@@ -37,6 +37,7 @@ namespace nil {
                 zkevm_word_type timestamp;
                 zkevm_word_type parent_hash;
                 zkevm_word_type difficulty;
+                std::size_t     tx_amount;
             };
         } // namespace bbf
     } // namespace blueprint
