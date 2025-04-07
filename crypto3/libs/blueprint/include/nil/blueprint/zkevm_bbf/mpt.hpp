@@ -149,7 +149,7 @@ public:
                    std::cout << "Accumulated length = " << accumulated_length << std::endl;
 
                    zkevm_word_type node_key_part = key_suffix >> 4*(64 - accumulated_length);
-                   key_part[node_num] = w_lo<FieldType>(node_key_part); // we expect it to fit into one field element always!
+                   key_part[node_num] = node_key_part; // we expect it to fit into one field element always!
                    std::cout << "Node key part = " << std::hex << node_key_part << std::dec << std::endl;
 
                    key_suffix &= (zkevm_word_type(1) << 4*(64 - accumulated_length)) - 1;
