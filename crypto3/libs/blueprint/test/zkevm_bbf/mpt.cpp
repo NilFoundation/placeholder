@@ -86,7 +86,7 @@ public:
         boost::property_tree::ptree proof_path = src_data.get_child("storageProof..proof");
 
         // std::cout << "key = " << path_key << std::endl;
-        single_path.slotNumber = zkevm_word_from_string(path_key);
+        single_path.slotNumber = zkevm_word_from_string(path_key); // TODO it's not slot number always
 
         for(const auto &v : proof_path) {
             boost::property_tree::ptree node = v.second;
@@ -106,7 +106,9 @@ public:
             // std::cout << "]" << std::endl;
             single_path.proof.push_back(single_node);
         }
-        single_path.proof.back().type = leaf; // the last node is a leaf
+        if (single_path.proof.back().value.size() != 17){ // the last node is either a leaf node or a branch node (if leaf doesn't exist)
+            single_path.proof.back().type = leaf; 
+        }
         paths.push_back(single_path);
 
 
