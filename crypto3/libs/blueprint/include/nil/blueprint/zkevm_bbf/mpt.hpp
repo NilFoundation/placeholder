@@ -43,7 +43,7 @@ struct mpt_node {
 };
 
 struct mpt_path {
-    zkevm_word_type slotNumber;
+    zkevm_word_type slotNumber; // TODO change this
     std::vector<mpt_node> proof;
 };
 
@@ -149,7 +149,7 @@ public:
                    std::cout << "Accumulated length = " << accumulated_length << std::endl;
 
                    zkevm_word_type node_key_part = key_suffix >> 4*(64 - accumulated_length);
-                   key_part[node_num] = node_key_part; // we expect it to fit into one field element always!
+                   key_part[node_num] = node_key_part; // we expect it to fit into one field element always! TODO we need to fix this. In a newly generated tree root is a leaf node
                    std::cout << "Node key part = " << std::hex << node_key_part << std::dec << std::endl;
 
                    key_suffix &= (zkevm_word_type(1) << 4*(64 - accumulated_length)) - 1;
