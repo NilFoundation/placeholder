@@ -28,10 +28,9 @@
 #ifndef CRYPTO3_BLUEPRINT_PLONK_BBF_CIRCUIT_BUILDER_HPP
 #define CRYPTO3_BLUEPRINT_PLONK_BBF_CIRCUIT_BUILDER_HPP
 
-#include <algorithm>
 #include <cstddef>
-#include <format>
 #include <functional>
+#include <algorithm>
 
 #include <nil/crypto3/zk/snark/arithmetization/plonk/constraint_system.hpp>
 
@@ -51,8 +50,6 @@
 #include <nil/crypto3/hash/keccak.hpp>
 
 #include <nil/crypto3/zk/snark/arithmetization/plonk/params.hpp>
-
-#include <nil/crypto3/bench/scoped_profiler.hpp>
 
 namespace nil {
     namespace blueprint {
@@ -217,36 +214,6 @@ namespace nil {
                     }
 
                     std::set<std::string> lookup_table_names;
-
-                    {
-                        auto selector_id = crypto3::zk::snark::PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED;
-
-                        // global polynomial constraints
-                        std::vector<constraint_type> constraints;
-                        std::vector<std::string> names;
-                        for(const auto &[c, n] : gates.global_constraints) {
-                            constraints.push_back(c);
-                            names.push_back(n);
-                        }
-
-                        if (!constraints.empty()) {
-                            bp.add_gate(selector_id, constraints);
-                            constraint_names.insert({selector_id, std::move(names)});
-                        }
-
-                        // global lookup constraints if there are any
-                        if (!gates.global_lookup_constraints.empty()) {
-                            std::vector<lookup_constraint_type> lookup_gate;
-                            for (const auto& single_lookup_constraint : gates.global_lookup_constraints) {
-                                std::string table_name = single_lookup_constraint.first;
-                                size_t table_index = create_table(table_name, lookup_table_names, gates);
-                                lookup_gate.push_back({table_index, single_lookup_constraint.second});
-                            }
-
-                            bp.add_lookup_gate(selector_id, lookup_gate);
-                        }
-                    }
-
                     for (const auto& [selector_id, lookup_list] : gates.lookup_constraints) {
                         std::vector<lookup_constraint_type> lookup_gate;
                         for (const auto& single_lookup_constraint : lookup_list) {
@@ -497,10 +464,10 @@ namespace nil {
                             std::make_tuple(std::ref(ctx), std::cref(input)), static_info_args_storage));
 
                     crypto3::zk::snark::plonk_table_description<FieldType> desc = at.get_description();
-                    SCOPED_LOG("Rows amount = {}", at.rows_amount());
+                    std::cout << "Rows amount = " << at.rows_amount() << std::endl;
                     desc.usable_rows_amount = at.rows_amount();
                     nil::crypto3::zk::snark::basic_padding(at);
-                    SCOPED_LOG("Rows amount after padding = {}", at.rows_amount());
+                    std::cout << "Rows amount after padding = " << at.rows_amount() << std::endl;
                     desc.rows_amount = at.rows_amount();
 
                     return {at, component, desc};
