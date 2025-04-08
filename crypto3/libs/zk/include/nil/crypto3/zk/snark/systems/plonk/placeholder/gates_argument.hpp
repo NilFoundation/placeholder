@@ -117,8 +117,6 @@ namespace nil {
                             }
                             variable_values_out[var] = assignment;
                         }
-
-                        SCOPED_LOG("Variables count: {}", variable_values_out.size());
                     }
 
                     static inline std::array<polynomial_dfs_type, argument_size> prove_eval(
@@ -206,7 +204,6 @@ namespace nil {
                                             ++constraint_counts[i];
                                             break;
                                         }
->>>>>>> 72a05f34f (fix single-thread compilation on clang)
                                     }
                                 }
 
@@ -227,8 +224,7 @@ namespace nil {
                         std::array<polynomial_dfs_type, argument_size> F;
 
                         for (size_t i = 0; i < extended_domain_sizes.size(); ++i) {
-                            PROFILE_SCOPE("Gate argument evaluation on domain #{}",
-                                          i + 1);
+                            PROFILE_SCOPE("Gate argument evaluation on domain #{}", i + 1);
                             SCOPED_LOG("Constraint count: {}", constraint_counts[i]);
                             std::unordered_map<polynomial_dfs_variable_type, polynomial_dfs_type>
                                 variable_values;
