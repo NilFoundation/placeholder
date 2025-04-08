@@ -168,8 +168,6 @@ namespace nil {
                                                   extended_domain);
                                 variable_values_out[var] = std::move(assignment);
                             }, ThreadPool::PoolLevel::HIGH);
-
-                        SCOPED_LOG("Variables count: {}", variable_values_out.size());
                     }
 
                     static inline std::array<polynomial_dfs_type, argument_size>
@@ -270,7 +268,6 @@ namespace nil {
                         for (std::size_t i = 0; i < extended_domain_sizes.size(); ++i) {
                             PROFILE_SCOPE("Gate argument evaluation on domain #{}",
                                           i + 1);
-                            SCOPED_LOG("Constraint count: {}", constraint_counts[i]);
                             std::unordered_map<simd_vector_variable_type,
                                                polynomial_dfs_type>
                                 variable_values;
