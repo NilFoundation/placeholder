@@ -575,7 +575,7 @@ namespace nil {
                         }
 
                         {
-                            PROFILE_SCOPE("RW circuit constraints row definition");
+                            PROFILE_SCOPE("RW circuit constraints row definition")
                             std::vector<std::size_t> every_row;
                             std::vector<std::size_t> non_first_row;
                             for( std::size_t i = 0; i < max_rw_size; i++){
