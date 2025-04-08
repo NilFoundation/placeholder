@@ -124,7 +124,7 @@ namespace nil {
                     std::size_t CALL_CONTEXT_OP = rw_op_to_num(rw_operation_type::call_context);
                     std::size_t ACCESS_LIST_OP = rw_op_to_num(rw_operation_type::access_list);
                     // std::size_t TX_REFUND_OP = rw_op_to_num(rw_operation_type::tx_refund);
-                    // std::size_t TX_LOG_OP = rw_op_to_num(rw_operation_type::tx_log);
+                    std::size_t TX_LOG_OP = rw_op_to_num(rw_operation_type::tx_log);
                     // std::size_t TX_RECEIPT_OP = rw_op_to_num(rw_operation_type::tx_receipt);
                     std::size_t PADDING_OP = rw_op_to_num(rw_operation_type::padding);
 
@@ -366,6 +366,8 @@ namespace nil {
                         TYPE call_context_selector = bit_tag_selector(op_bits[1], CALL_CONTEXT_OP);
                         TYPE access_list_selector = bit_tag_selector(op_bits[1], ACCESS_LIST_OP);
                         TYPE padding_selector = bit_tag_selector(op_bits[1], PADDING_OP);
+                        TYPE tx_log_selector = bit_tag_selector(op_bits[1], TX_LOG_OP);
+                        
 
                         for( std::size_t diff_ind = 0; diff_ind < sorted.size(); diff_ind++ ){
                             TYPE diff_ind_selector = bit_tag_selector<diff_index_bits_amount>(diff_index_bits[1], diff_ind);
@@ -552,11 +554,13 @@ namespace nil {
                         //  state_root eqauls state_root_prev
                         //  value_prev equals initial_value
                         //  address 64 bits
-                        // Grouped by transactionints[TX_LOG_OP].push_back(context_object.relativize(tx_log_selector * (1 - is_write[1]), -1));
-                        // special_constraints[TX_LOG_OP].push_back(context_object.relativize(tx_log_selector * (state_root_hi[1] - state_root_before_hi[1]), -1));
-                        // special_constraints[TX_LOG_OP].push_back(context_object.relativize(tx_log_selector * (state_root_lo[1] - state_root_before_lo[1]), -1));
-                        // special_constraints[TX_LOG_OP].push_back(context_object.relativize(tx_log_selector * initial_value_hi[1], -1));
-                        // special_constraints[TX_LOG_OP].push_back(context_object.relativize(tx_log_selector * initial_value_lo[1], -1));
+                        // Grouped by transaction
+                        special_constraints[TX_LOG_OP].push_back(context_object.relativize(tx_log_selector * (1 - is_write[1]), -1));
+                        special_constraints[TX_LOG_OP].push_back(context_object.relativize(tx_log_selector * (state_root_hi[1] - state_root_before_hi[1]), -1));
+                        special_constraints[TX_LOG_OP].push_back(context_object.relativize(tx_log_selector * (state_root_lo[1] - state_root_before_lo[1]), -1));
+                        special_constraints[TX_LOG_OP].push_back(context_object.relativize(tx_log_selector * initial_value_hi[1], -1));
+                        special_constraints[TX_LOG_OP].push_back(context_object.relativize(tx_log_selector * initial_value_lo[1], -1));
+                        
 
                         // Specific constraints for TX_RECEIPT_OP
                         // address and storage_key are 0

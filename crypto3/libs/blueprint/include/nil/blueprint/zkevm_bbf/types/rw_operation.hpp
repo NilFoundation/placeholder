@@ -49,7 +49,8 @@ namespace nil {
                 transient_storage = 7,  // Grouped by transaction
                 access_list = 8,
 
-                padding = 9
+                padding = 9,
+                tx_log = 10
             };
             static constexpr std::size_t rw_operation_types_amount = 10;
 
@@ -454,6 +455,29 @@ namespace nil {
             rw_operation padding_operation(){
                 rw_operation r;
                 r.op = rw_operation_type::padding;
+                return r;
+            }
+
+            rw_operation log_rw_operation(
+                std::size_t id,          
+                std::size_t rw_id,            
+                zkevm_word_type address,      
+                std::size_t num_topics,      
+                zkevm_word_type offset,  
+                zkevm_word_type length 
+            ) {
+                BOOST_ASSERT(num_topics <= 4); 
+
+                rw_operation r;
+                r.op = rw_operation_type::tx_log;
+                r.id = id;               
+                r.address = address;        
+                r.field = num_topics;         
+                r.rw_counter = rw_id;         
+                r.is_write = true;            
+                r.storage_key = offset; 
+                r.value = length;
+
                 return r;
             }
 

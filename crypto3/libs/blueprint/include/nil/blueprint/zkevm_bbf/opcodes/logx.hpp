@@ -27,9 +27,9 @@
 #include <algorithm>
 #include <numeric>
 
-#include <nil/blueprint/zkevm_bbf/types/zkevm_word.hpp>
 #include <nil/blueprint/zkevm_bbf/subcomponents/memory_cost.hpp>
 #include <nil/blueprint/zkevm_bbf/types/opcode.hpp>
+#include <nil/blueprint/zkevm_bbf/types/zkevm_word.hpp>
 
 namespace nil {
     namespace blueprint {
@@ -48,6 +48,8 @@ namespace nil {
 
               public:
                 using typename generic_component<FieldType, stage>::TYPE;
+                using value_type = typename FieldType::value_type;
+                constexpr static const value_type two_128 = 0x100000000000000000000000000000000_big_uint254;
 
                 zkevm_logx_bbf(context_type &context_object,
                                const opcode_input_type<FieldType, stage> &current_state,
@@ -59,8 +61,13 @@ namespace nil {
                         memory_expansion_cost, S;
                     std::vector<TYPE> topics_lo(x);
                     std::vector<TYPE> topics_hi(x);
+                    TYPE call_context_address_hi;  // Range checked by rw circuit
+                    TYPE call_context_address_lo;  // Range checked by rw circuit
 
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
+                        auto call_context_address = current_state.call_context_address();
+                        call_context_address_hi = w_hi<FieldType>(call_context_address);
+                        call_context_address_lo = w_lo<FieldType>(call_context_address);
                         offset = w_lo<FieldType>(current_state.stack_top());
                         length = w_lo<FieldType>(current_state.stack_top(1));
                         current_mem = current_state.memory_size();
@@ -76,6 +83,8 @@ namespace nil {
                         }
                     }
 
+                    allocate(call_context_address_hi, 44, 1);
+                    allocate(call_context_address_lo, 45, 1);
                     allocate(offset, 32, 0);
                     allocate(length, 33, 0);
                     allocate(current_mem, 34, 0);
@@ -111,32 +120,30 @@ namespace nil {
 
                     if constexpr (stage == GenerationStage::CONSTRAINTS) {
                         constrain(current_state.pc_next() - current_state.pc(0) - 1);  // PC transition
-                        // constrain(current_state.gas(0) - current_state.gas_next() -
-                        //           375 * (1 + x) - 8 * length -
-                        //           memory_expansion_cost);  // GAS transition
+                        constrain(current_state.gas(0) - current_state.gas_next() -
+                                  375 * (1 + x) - 8 * length -
+                                  memory_expansion_cost);  // GAS transition
                         constrain(current_state.stack_size(0) - current_state.stack_size_next() - 2 - x);  // stack_size transition
-                        // constrain(current_state.memory_size_next() -
-                        //           current_state.memory_size(0) -
-                        //           memory_expansion_size);  // memory_size transition
-                        // constrain(current_state.rw_counter_next() -
-                        //           current_state.rw_counter(0) - 2 - x -
-                        //           length);  // rw_counter transition
+                        constrain(current_state.memory_size_next() -
+                                  current_state.memory_size(0) -
+                                  memory_expansion_size);  // memory_size transition
+                        constrain(current_state.rw_counter_next() - current_state.rw_counter(0) - 3 - x);  // rw_counter transition
                         std::vector<TYPE> tmp;
                         tmp = rw_table<FieldType, stage>::stack_lookup(
                             current_state.call_id(0),
                             current_state.stack_size(0) - 1,
                             current_state.rw_counter(0),
                             TYPE(0),  // is_write
-                            TYPE(0),
+                            TYPE(0), 
                             offset
-                        );
+                            );
                         lookup(tmp, "zkevm_rw");
                         tmp = rw_table<FieldType, stage>::stack_lookup(
-                            current_state.call_id(0),
+                            current_state.call_id(0), 
                             current_state.stack_size(0) - 2,
                             current_state.rw_counter(0) + 1,
                             TYPE(0),  // is_write
-                            TYPE(0),
+                            TYPE(0), 
                             length
                         );
                         lookup(tmp, "zkevm_rw");
@@ -146,11 +153,29 @@ namespace nil {
                                 current_state.stack_size(0) - 3 - i,
                                 current_state.rw_counter(0) + 2 + i,
                                 TYPE(0),  // is_write
-                                topics_hi[i],
+                                topics_hi[i], 
                                 topics_lo[i]
-                            );
+                                );
                             lookup(tmp, "zkevm_rw");
                         }
+
+                        tmp = {
+                            TYPE(rw_op_to_num(rw_operation_type::tx_log)),
+                            current_state.call_id(0),
+                            call_context_address_hi * two_128 + call_context_address_lo,
+                            TYPE(x),    // number of topics
+                            TYPE(0),    // offset_hi is 0
+                            offset,     // offset_lo
+                            current_state.rw_counter(0) + 2 + x,
+                            TYPE(1),    // is_write
+                            TYPE(0),    // length_hi is 0  
+                            length,     // length_lo
+                            TYPE(0),  
+                            TYPE(0),  
+                            TYPE(0), 
+                            TYPE(0), 
+                        };
+                        lookup(tmp, "zkevm_rw");
                     }
                 }
             };

@@ -157,9 +157,9 @@ namespace nil {
                         TYPE(rw_op_to_num(rw_operation_type::memory)),
                         call_id,
                         memory_address,
+                        TYPE(0),              // field
                         TYPE(0),              // storage_key_hi
                         TYPE(0),              // storage_key_lo
-                        TYPE(0),              // field
                         rw_counter,
                         is_write,
                         TYPE(0),              // hi bytes are 0
@@ -181,9 +181,9 @@ namespace nil {
                         TYPE(rw_op_to_num(rw_operation_type::calldata)),
                         call_id,
                         calldata_address,
+                        TYPE(0),              // field
                         TYPE(0),              // storage_key_hi
                         TYPE(0),              // storage_key_lo
-                        TYPE(0),              // field
                         rw_counter,
                         TYPE(0),              // calldata is readonly
                         TYPE(0),              // hi bytes are 0
@@ -205,9 +205,9 @@ namespace nil {
                         TYPE(rw_op_to_num(rw_operation_type::returndata)),
                         call_id,
                         returndata_address,
+                        TYPE(0),              // field
                         TYPE(0),              // storage_key_hi
                         TYPE(0),              // storage_key_lo
-                        TYPE(0),              // field
                         rw_counter,
                         TYPE(0),              // calldata is readonly
                         TYPE(0),              // hi bytes are 0

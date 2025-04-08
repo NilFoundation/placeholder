@@ -914,12 +914,13 @@ namespace nil {
                     _rw_operations.push_back(stack_rw_operation(call_id,  stack_next.size()-1, rw_counter++, true, stack_next[stack_next.size()-1]));
                 }
                 void logx( std::size_t l){
-                    _zkevm_states.push_back(simple_zkevm_state(get_basic_zkevm_state_part()));
+                    _zkevm_states.push_back(storage_zkevm_state(get_basic_zkevm_state_part(), get_call_header_state_part(), get_world_state_state_part()));
                     _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-1, rw_counter++, false, stack[stack.size()-1]));
                     _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-2, rw_counter++, false, stack[stack.size()-2]));
                     for( std::size_t i = 0; i < l; i++){
                         _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-3-i, rw_counter++, false, stack[stack.size()-3-i]));
                     }
+                    _rw_operations.push_back(log_rw_operation(call_id, rw_counter++, call_context_address, l, stack[stack.size()-1],stack[stack.size()-2]));
                 }
 
                 void call(){
