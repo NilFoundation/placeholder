@@ -31,7 +31,8 @@
 #include <nil/blueprint/bbf/generic.hpp>
 
 #include <nil/blueprint/zkevm_bbf/types/hashed_buffers.hpp>
-#include <nil/blueprint/zkevm_bbf/types/rw_operation.hpp>
+#include <nil/blueprint/zkevm_bbf/types/short_rw_operation.hpp>
+#include <nil/blueprint/zkevm_bbf/types/state_rw_operation.hpp>
 #include <nil/blueprint/zkevm_bbf/types/copy_event.hpp>
 #include <nil/blueprint/zkevm_bbf/types/zkevm_state.hpp>
 #include <nil/blueprint/zkevm_bbf/types/call_commit.hpp>

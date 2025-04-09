@@ -31,16 +31,15 @@
 #include <nil/blueprint/bbf/generic.hpp>
 
 #include <nil/blueprint/zkevm_bbf/types/hashed_buffers.hpp>
-#include <nil/blueprint/zkevm_bbf/types/rw_operation.hpp>
+#include <nil/blueprint/zkevm_bbf/types/short_rw_operation.hpp>
 #include <nil/blueprint/zkevm_bbf/types/copy_event.hpp>
 #include <nil/blueprint/zkevm_bbf/types/zkevm_state.hpp>
 #include <nil/blueprint/zkevm_bbf/types/zkevm_account.hpp>
 #include <nil/blueprint/zkevm_bbf/types/call_context.hpp>
 
-#include <nil/blueprint/zkevm_bbf/types/zkevm_input_generator.hpp>
-#include <nil/blueprint/zkevm_bbf/opcodes/zkevm_opcodes.hpp>
+#include <nil/blueprint/zkevm_bbf/util/ptree.hpp>
 
-#include <nil/blueprint/zkevm_bbf/opcodes/zkevm_opcodes.hpp>
+// #include <nil/blueprint/zkevm_bbf/opcodes/zkevm_opcodes.hpp>
 #include <nil/blueprint/zkevm_bbf/input_generators/basic_input_generator.hpp>
 
 namespace nil {
@@ -63,28 +62,20 @@ namespace nil {
                 boost::property_tree::ptree                                             current_tx_ptree;
                 boost::property_tree::ptree                                             tx_trace_tree;
                 std::vector<std::pair<std::vector<boost::property_tree::ptree>, std::size_t>> trace_stack;
+                std::map<std::pair<std::size_t, std::vector<std::uint8_t>>, std::vector<std::uint8_t>> precompiles_cache;
 
                 // Statistics
                 std::size_t opcode_sum = 0;
                 std::size_t executed_opcodes = 0;
-                std::size_t stack_rw_operations = 0;
-                std::size_t memory_rw_operations = 0;
-                std::size_t calldata_rw_operations = 0;
-                std::size_t returndata_rw_operations = 0;
-                std::size_t state_rw_operations = 0;
-                std::size_t call_context_rw_operations = 0;
+                std::size_t stack_short_rw_operations = 0;
+                std::size_t memory_short_rw_operations = 0;
+                std::size_t calldata_short_rw_operations = 0;
+                std::size_t returndata_short_rw_operations = 0;
+                std::size_t state_short_rw_operations = 0;
+                std::size_t call_context_short_rw_operations = 0;
                 std::map<zkevm_opcode, std::size_t> opcode_distribution;
 
                 std::string path;
-            public:
-                virtual zkevm_keccak_buffers keccaks() override {return _keccaks;}
-                virtual zkevm_keccak_buffers bytecodes() override { return _bytecodes;}
-                virtual rw_operations_vector rw_operations() override {return _rw_operations;}
-                virtual std::map<std::size_t,zkevm_call_commit> call_commits() override {return _call_commits;}
-                virtual std::vector<copy_event> copy_events() override { return _copy_events;}
-                virtual std::vector<zkevm_state> zkevm_states() override{ return _zkevm_states;}
-                virtual std::vector<std::pair<zkevm_word_type, zkevm_word_type>> exponentiations()override{return _exponentiations;}
-
             public:
                 zkevm_alchemy_input_generator(
                     std::string _path
@@ -93,12 +84,12 @@ namespace nil {
 
                     opcode_sum = 0;
                     executed_opcodes = 0;
-                    stack_rw_operations = 0;
-                    memory_rw_operations = 0;
-                    calldata_rw_operations = 0;
-                    returndata_rw_operations = 0;
-                    state_rw_operations = 0;
-                    call_context_rw_operations = 0;
+                    stack_short_rw_operations = 0;
+                    memory_short_rw_operations = 0;
+                    calldata_short_rw_operations = 0;
+                    returndata_short_rw_operations = 0;
+                    state_short_rw_operations = 0;
+                    call_context_short_rw_operations = 0;
 
                     block_ptree = load_json_input(path + std::string("block.json"));
                     BOOST_LOG_TRIVIAL(trace) << "ZKEVM ALCHEMY INPUT GENERATOR loaded";
@@ -266,7 +257,7 @@ namespace nil {
                         opcode_distribution[zkevm_opcode::start_block]++;
                     else
                         opcode_distribution[zkevm_opcode::start_block] = 1;
-                    call_context_rw_operations += block_context_field_amount - 1;
+                    call_context_short_rw_operations += block_context_fields_amount - 1;
 
                     tx_list.clear();
                     for( auto &[k,v]: block_ptree.get_child("transactions") ){
@@ -319,8 +310,8 @@ namespace nil {
                         opcode_distribution[zkevm_opcode::start_transaction]++;
                     else
                         opcode_distribution[zkevm_opcode::start_transaction] = 1;
-                    calldata_rw_operations += calldata.size();
-                    call_context_rw_operations += call_context_readonly_field_amount;
+                    calldata_short_rw_operations += calldata.size();
+                    call_context_short_rw_operations += call_context_readonly_field_amount;
                 }
 
                 void end_transaction() override{
@@ -411,26 +402,6 @@ namespace nil {
 
                     if( !execution_status ) return;
                     trace_stack.back().second++;
-                }
-
-                virtual void balance() override {
-                    // TODO: understand balance logic and remove this hook
-                    zkevm_word_type addr = stack.back(); stack.pop_back();
-                    addr &= 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_big_uint256;
-                    BOOST_LOG_TRIVIAL(trace) << "BALANCE for address 0x" << std::hex << addr << std::dec;
-                    if( last_opcode_push.back() != _accounts_current_state[addr].balance ){
-                        BOOST_LOG_TRIVIAL(warning)
-                            << "Our balance: " << std::hex << _accounts_current_state[addr].balance << std::dec << std::endl
-                            << "Trace balance: " << std::hex << last_opcode_push.back() << std::dec;
-                        BOOST_ASSERT(false);
-                    }
-                    stack.push_back(last_opcode_push.back());
-                    if( _call_stack.back().was_accessed.count({addr, 1, 0}) == 0){
-                        decrease_gas(2500);
-                    }
-                    decrease_gas(100);
-                    _call_stack.back().was_accessed.insert({addr, 1, 0});
-                    pc++;
                 }
 
                 virtual void start_call() override {

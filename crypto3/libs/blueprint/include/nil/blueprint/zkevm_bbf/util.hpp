@@ -31,7 +31,6 @@
 #include <nil/blueprint/component.hpp>
 
 #include <nil/blueprint/bbf/generic.hpp>
-#include <nil/blueprint/zkevm_bbf/subcomponents/rw_table.hpp>
 
 namespace nil {
     namespace blueprint {

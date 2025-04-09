@@ -71,7 +71,7 @@ namespace nil {
             struct world_state_zkevm_state_part{
                 std::map<zkevm_word_type, zkevm_word_type>  storage_slice; // BEFORE opcode
                 std::size_t     modified_items;
-                std::map<std::tuple<rw_operation_type, zkevm_word_type, std::size_t, zkevm_word_type>, std::size_t>  last_write_rw_counter; // BEFORE opcode
+                std::map<std::tuple<state_operation_type, zkevm_word_type, std::size_t, zkevm_word_type>, std::size_t>  last_write_rw_counter; // BEFORE opcode
                 std::set<std::tuple<zkevm_word_type, std::size_t, zkevm_word_type>> was_accessed; // For SLOAD, SSTORE gas proving
                 std::set<std::tuple<zkevm_word_type, std::size_t, zkevm_word_type>> was_written;
             };
@@ -152,7 +152,7 @@ namespace nil {
                     return call_context.lastcall_returndata_slice.size();
                 }
 
-                std::size_t last_write(rw_operation_type op, zkevm_word_type address, std::size_t field, zkevm_word_type key) const{
+                std::size_t last_write(state_operation_type op, zkevm_word_type address, std::size_t field, zkevm_word_type key) const{
                     BOOST_ASSERT(needs_world_state_access);
                     if( world_state.last_write_rw_counter.find(std::make_tuple(op, address, field, key)) == world_state.last_write_rw_counter.end() )
                         return 0;

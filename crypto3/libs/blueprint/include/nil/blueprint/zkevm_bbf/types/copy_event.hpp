@@ -31,7 +31,8 @@
 
 #include <nil/blueprint/zkevm_bbf/types/zkevm_word.hpp>
 #include <nil/blueprint/zkevm_bbf/types/state_item_address.hpp>
-#include <nil/blueprint/zkevm_bbf/types/rw_operation.hpp>
+#include <nil/blueprint/zkevm_bbf/types/short_rw_operation.hpp>
+#include <nil/blueprint/zkevm_bbf/types/state_operation.hpp>
 
 namespace nil {
     namespace blueprint {
@@ -57,7 +58,7 @@ namespace nil {
 
 
             struct copied_data_item{
-                rw_operation_type op;
+                short_rw_operation_type op;
                 std::size_t context_id;
                 zkevm_word_type address;
                 std::size_t field_type;
@@ -79,9 +80,9 @@ namespace nil {
                 std::size_t         length;
 
                 std::size_t get_op(std::size_t i) const {
-                    if( bytes.size() != 0 ) return rw_op_to_num(rw_operation_type::memory);
+                    if( bytes.size() != 0 ) return std::size_t(short_rw_operation_type::memory);
                     BOOST_ASSERT(i < values.size());
-                    return rw_op_to_num(values[i].op);
+                    return std::size_t(values[i].op);
                 }
 
                 zkevm_word_type get_address(std::size_t i) const {

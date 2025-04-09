@@ -29,7 +29,7 @@
 #include <nil/blueprint/components/hashes/keccak/util.hpp> //Move needed utils to bbf
 #include <nil/blueprint/bbf/generic.hpp>
 
-#include <nil/blueprint/zkevm_bbf/types/rw_operation.hpp>
+#include <nil/blueprint/zkevm_bbf/types/state_operation.hpp>
 
 namespace nil {
     namespace blueprint {
@@ -39,7 +39,7 @@ namespace nil {
                 std::size_t parent_id;
                 std::size_t depth;  // 0 for block, 1 for transaction e t.c.
                 std::size_t call_end;
-                std::vector<rw_operation> items;
+                std::vector<state_operation> items;
             };
         } // namespace bbf
     } // namespace blueprint

@@ -46,7 +46,8 @@
 #include <nil/crypto3/zk/snark/arithmetization/plonk/params.hpp>
 
 #include <nil/blueprint/zkevm_bbf/types/hashed_buffers.hpp>
-#include <nil/blueprint/zkevm_bbf/types/rw_operation.hpp>
+#include <nil/blueprint/zkevm_bbf/types/short_rw_operation.hpp>
+#include <nil/blueprint/zkevm_bbf/types/state_operation.hpp>
 #include <nil/blueprint/zkevm_bbf/types/copy_event.hpp>
 #include <nil/blueprint/zkevm_bbf/types/zkevm_state.hpp>
 #include <nil/blueprint/zkevm_bbf/input_generators/alchemy_input_generator.hpp>
@@ -54,14 +55,14 @@
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
 
-#include <nil/blueprint/zkevm_bbf/zkevm.hpp>
-#include <nil/blueprint/zkevm_bbf/rw.hpp>
-//#include <nil/blueprint/zkevm_bbf/rw_small_field.hpp>
-#include <nil/blueprint/zkevm_bbf/copy.hpp>
-#include <nil/blueprint/zkevm_bbf/bytecode.hpp>
-#include <nil/blueprint/zkevm_bbf/keccak.hpp>
-#include <nil/blueprint/zkevm_bbf/exp.hpp>
-#include <nil/blueprint/zkevm_bbf/call_commit.hpp>
+// #include <nil/blueprint/zkevm_bbf/zkevm.hpp>
+// #include <nil/blueprint/zkevm_bbf/rw.hpp>
+// //#include <nil/blueprint/zkevm_bbf/rw_small_field.hpp>
+// #include <nil/blueprint/zkevm_bbf/copy.hpp>
+// #include <nil/blueprint/zkevm_bbf/bytecode.hpp>
+// #include <nil/blueprint/zkevm_bbf/keccak.hpp>
+// #include <nil/blueprint/zkevm_bbf/exp.hpp>
+// #include <nil/blueprint/zkevm_bbf/call_commit.hpp>
 
 #include <boost/log/core.hpp>
 #include <boost/log/trivial.hpp>
@@ -236,6 +237,7 @@ public:
         //         {7}, bytecode_assignment_input, max_bytecode, max_keccak_blocks
         //     );
         //     BOOST_ASSERT(result);
+
         //     std::cout << std::endl;
         // }
 
@@ -382,6 +384,23 @@ BOOST_AUTO_TEST_CASE(sp1_block_18884869) {
     complex_test<field_type>("alchemy/sp1_block_18884869/", max_sizes);
 }
 
+BOOST_AUTO_TEST_CASE(sp1_block_20526624) {
+    using field_type = typename algebra::curves::pallas::base_field_type;
+    l1_size_restrictions max_sizes;
+
+    max_sizes.max_keccak_blocks = 3;
+    max_sizes.max_bytecode = 300;
+    max_sizes.max_mpt = 0;
+    max_sizes.max_rw = 1000;
+    max_sizes.max_copy = 70;
+    max_sizes.max_zkevm_rows = 500;
+    max_sizes.max_exponentiations = 50;
+    max_sizes.max_exp_rows = 500;
+    max_sizes.max_call_commits = 500;
+
+    complex_test<field_type>("alchemy/sp1_block_20526624/", max_sizes);
+}
+
 BOOST_AUTO_TEST_CASE(sp1_block_20526626) {
     using field_type = typename algebra::curves::pallas::base_field_type;
     l1_size_restrictions max_sizes;
@@ -516,6 +535,24 @@ BOOST_AUTO_TEST_CASE(sp1_block_20528709) {
     max_sizes.max_call_commits = 500;
 
     complex_test<field_type>("alchemy/sp1_block_20528709/", max_sizes);
+}
+
+
+BOOST_AUTO_TEST_CASE(sp1_block_22140743) {
+    using field_type = typename algebra::curves::pallas::base_field_type;
+    l1_size_restrictions max_sizes;
+
+    max_sizes.max_keccak_blocks = 3;
+    max_sizes.max_bytecode = 300;
+    max_sizes.max_mpt = 0;
+    max_sizes.max_rw = 1000;
+    max_sizes.max_copy = 70;
+    max_sizes.max_zkevm_rows = 500;
+    max_sizes.max_exponentiations = 50;
+    max_sizes.max_exp_rows = 500;
+    max_sizes.max_call_commits = 500;
+
+    complex_test<field_type>("alchemy/sp1_block_22140743/", max_sizes);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
