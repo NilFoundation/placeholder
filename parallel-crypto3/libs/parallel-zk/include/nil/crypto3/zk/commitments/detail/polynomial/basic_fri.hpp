@@ -186,7 +186,9 @@ namespace nil {
                                                     step_list_in.end(), 0)),
                                   step_list(step_list_in),
                                   expand_factor(expand_factor),
-                                  max_step(max_step),
+                                  max_step(std::accumulate(step_list_in.begin(),
+                                                           step_list_in.end(),
+                                                           0)),
                                   degree_log(degree_log) {}
 
                             bool operator==(const params_type &rhs) const {
