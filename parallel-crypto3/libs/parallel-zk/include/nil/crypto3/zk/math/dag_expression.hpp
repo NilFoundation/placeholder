@@ -77,8 +77,12 @@ namespace nil {
             struct dag_addition {
                 operands_vector_type operands;
 
-                dag_addition(operands_vector_type operands) : operands(operands) {}
-                dag_addition(std::initializer_list<std::size_t> operands) : operands(operands) {}
+                dag_addition(operands_vector_type operands_) : operands(operands_) {
+                    std::sort(operands.begin(), operands.end());
+                }
+                dag_addition(std::initializer_list<std::size_t> operands_) : operands(operands_) {
+                    std::sort(operands.begin(), operands.end());
+                }
 
                 bool operator==(const dag_addition& other) const {
                     return operands == other.operands;
@@ -88,8 +92,12 @@ namespace nil {
             struct dag_multiplication {
                 operands_vector_type operands;
 
-                dag_multiplication(operands_vector_type operands) : operands(operands) {}
-                dag_multiplication(std::initializer_list<std::size_t> operands) : operands(operands) {}
+                dag_multiplication(operands_vector_type operands_) : operands(operands_) {
+                    std::sort(operands.begin(), operands.end());
+                }
+                dag_multiplication(std::initializer_list<std::size_t> operands_) : operands(operands_) {
+                    std::sort(operands.begin(), operands.end());
+                }
 
                 bool operator==(const dag_multiplication& other) const {
                     return operands == other.operands;
@@ -123,24 +131,31 @@ namespace nil {
                     const size_t add_seed      = 0x0c40bf797557a37b;
                     const size_t multiply_seed = 0x409879e79890132a;
                     const size_t negation_seed = 0x9c2250db3076ccc2;
-                    const size_t variable_seed = 0x4c8f509c18342c3e;
 
                     return std::visit([&](const dag_node<VariableType>& n) -> size_t {
                         if (std::holds_alternative<dag_constant<VariableType>>(n)) {
-                            return constant_seed ^ std::hash<assignment_type>()(std::get<dag_constant<VariableType>>(n).value);
+                            std::size_t seed = constant_seed;
+                            boost::hash_combine(seed, std::hash<assignment_type>()(std::get<dag_constant<VariableType>>(n).value));
+                            return seed;
                         } else if (std::holds_alternative<dag_variable<VariableType>>(n)) {
-                            return variable_seed ^ std::hash<VariableType>()(std::get<dag_variable<VariableType>>(n).variable);
+                            return std::hash<VariableType>()(std::get<dag_variable<VariableType>>(n).variable);
                         } else if (std::holds_alternative<dag_addition>(n)) {
                             size_t hash = std::accumulate(std::get<dag_addition>(n).operands.begin(), std::get<dag_addition>(n).operands.end(), add_seed, [](size_t a, size_t b) {
-                                return a ^ b;
+                                std::size_t seed = a;
+                                boost::hash_combine(seed, b);
+                                return seed;
                             });
                         } else if (std::holds_alternative<dag_multiplication>(n)) {
                             size_t hash = std::accumulate(std::get<dag_multiplication>(n).operands.begin(), std::get<dag_multiplication>(n).operands.end(), multiply_seed, [](size_t a, size_t b) {
-                                return a ^ b;
+                                std::size_t seed = a;
+                                boost::hash_combine(seed, b);
+                                return seed;
                             });
                             return hash;
                         } else if (std::holds_alternative<dag_negation>(n)) {
-                            return negation_seed ^ std::hash<std::size_t>()(std::get<dag_negation>(n).operand);
+                            std::size_t seed = negation_seed;
+                            boost::hash_combine(seed, std::hash<std::size_t>()(std::get<dag_negation>(n).operand));
+                            return seed;
                         }
                         return 0;
                     }, node);
