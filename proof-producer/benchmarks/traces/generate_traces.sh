@@ -8,7 +8,7 @@ fi
 
 # Compile sample contract
 SCRIPT_DIR=`dirname "$0"`
-solc -o $SCRIPT_DIR --bin --abi $SCRIPT_DIR/benchmark_data.sol --overwrite --no-cbor-metadata --metadata-hash none
+solc -o $SCRIPT_DIR --bin --abi $SCRIPT_DIR/benchmark_data.sol --overwrite --metadata-hash none
 
 # Generate block with hundred increment and hundred exp transactions
 $NIL_BIN/nil_block_generator init
