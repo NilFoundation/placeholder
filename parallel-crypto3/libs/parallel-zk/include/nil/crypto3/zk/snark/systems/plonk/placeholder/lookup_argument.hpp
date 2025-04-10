@@ -81,7 +81,7 @@ namespace nil {
                     using polynomial_dfs_variable_type = plonk_variable<polynomial_dfs_type>;
                     using simd_vector_variable_type = plonk_variable<simd_vector_type>;
                     using commitment_scheme_type = CommitmentSchemeTypePermutation;
-                    using dfs_cache_type = math::dfs_cache<FieldType>;
+                    using dfs_cache_type = dfs_cache<FieldType>;
 
                     static constexpr std::size_t argument_size = 4;
 
@@ -334,7 +334,7 @@ namespace nil {
                             else if( l_table.tag_index == PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED )
                                 lookup_tag = mask_assignment - lagrange0;
                             else if (l_table.tag_index == PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED)
-                                throw std::logic_error("not implemented");
+                                throw std::logic_error("You should not multiply with the selector for all rows.");
                             else
                                 lookup_tag = plonk_columns.selector(l_table.tag_index);
 
@@ -369,19 +369,20 @@ namespace nil {
                     ) {
                         PROFILE_SCOPE("Lookup argument build variable value map");
                         // Get out all the variables used and maximal degree of any expression in all possible lookup inputs
-                        std::set<simd_vector_variable_type> variables_set;
+                        std::set<polynomial_dfs_variable_type> variables_set;
 
                         for (const auto& expr: exprs) {
                             math::expression_for_each_variable_visitor<
                                 simd_vector_variable_type>
                                 visitor([&variables_set](const simd_vector_variable_type& var) {
-                                    variables_set.insert(var);
+                                    variables_set.insert(polynomial_dfs_variable_type(var));
                                 });
                             visitor.visit(expr);
                         }
                         dfs_cache.ensure_cache(variables_set, extended_domain_size);
                         for (const auto& variable : variables_set) {
-                            variable_values_out[variable] = dfs_cache.get(variable, extended_domain_size);
+                            variable_values_out[simd_vector_variable_type(variable)] =
+                                dfs_cache.get(variable, extended_domain_size);
                         }
                         SCOPED_LOG("Variables count: {}", variable_values_out.size());
                     }

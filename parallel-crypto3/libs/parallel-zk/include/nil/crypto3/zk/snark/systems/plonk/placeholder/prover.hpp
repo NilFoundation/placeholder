@@ -88,7 +88,7 @@ namespace nil {
                     using public_preprocessor_type = placeholder_public_preprocessor<FieldType, ParamsType>;
                     using private_preprocessor_type = placeholder_private_preprocessor<FieldType, ParamsType>;
 
-                    using dfs_cache_type = math::dfs_cache<FieldType>;
+                    using dfs_cache_type = dfs_cache<FieldType>;
 
                     constexpr static const std::size_t gate_parts = 1;
                     constexpr static const std::size_t permutation_parts = 3;
