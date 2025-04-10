@@ -38,12 +38,14 @@
 #include <unordered_map>
 #include <queue>
 #include <thread>
+#include <format>
 
 #include <nil/crypto3/math/algorithms/make_evaluation_domain.hpp>
 #include <nil/crypto3/math/domains/evaluation_domain.hpp>
 #include <nil/crypto3/math/polynomial/polynomial.hpp>
 #include <nil/crypto3/math/polynomial/shift.hpp>
 #include <nil/crypto3/math/polynomial/static_simd_vector.hpp>
+#include <nil/crypto3/math/polynomial/dfs_cache.hpp>
 
 #include <nil/crypto3/hash/sha2.hpp>
 
@@ -68,7 +70,7 @@ namespace nil {
             namespace snark {
                 template<typename FieldType, typename CommitmentSchemeTypePermutation, typename ParamsType>
                 class placeholder_lookup_argument_prover {
-                    static constexpr std::size_t mini_chunk_size = 16;
+                    static constexpr std::size_t mini_chunk_size = 64;
                     using transcript_hash_type = typename ParamsType::transcript_hash_type;
                     using transcript_type = transcript::fiat_shamir_heuristic_sequential<transcript_hash_type>;
                     using polynomial_dfs_type = math::polynomial_dfs<typename FieldType::value_type>;
@@ -79,7 +81,7 @@ namespace nil {
                     using polynomial_dfs_variable_type = plonk_variable<polynomial_dfs_type>;
                     using simd_vector_variable_type = plonk_variable<simd_vector_type>;
                     using commitment_scheme_type = CommitmentSchemeTypePermutation;
-
+                    using dfs_cache_type = math::dfs_cache<FieldType>;
 
                     static constexpr std::size_t argument_size = 4;
 
@@ -115,7 +117,7 @@ namespace nil {
                         theta = transcript.template challenge<FieldType>();
                     }
 
-                    prover_lookup_result prove_eval() {
+                    prover_lookup_result prove_eval(dfs_cache_type& dfs_cache) {
                         PROFILE_SCOPE("Lookup argument prove eval");
 
                         const auto& assignment_desc = preprocessed_data.common_data->desc;
@@ -123,8 +125,6 @@ namespace nil {
                         typename FieldType::value_type one = FieldType::value_type::one();
 
                         polynomial_dfs_type one_polynomial(0, basic_domain->m, one);
-                        polynomial_dfs_type zero_polynomial(
-                            0, basic_domain->m, FieldType::value_type::zero());
                         polynomial_dfs_type mask_assignment =
                             one_polynomial -  preprocessed_data.q_last - preprocessed_data.q_blind;
                         polynomial_dfs_type lagrange0 = preprocessed_data.common_data->lagrange_0;
@@ -134,7 +134,7 @@ namespace nil {
                         auto& lookup_value = *lookup_value_ptr;
 
                         std::unique_ptr<std::vector<polynomial_dfs_type>> lookup_input_ptr =
-                            prepare_lookup_input(mask_assignment, lagrange0);
+                            prepare_lookup_input(dfs_cache);
                         auto& lookup_input = *lookup_input_ptr;
 
                         // Lookup_input and lookup_value are ready
@@ -206,6 +206,7 @@ namespace nil {
                             PROFILE_SCOPE(
                                 "Lookup argument compute h constraint parts of size {}",
                                 hs.size());
+
                             parallel_for(
                                 0, hs.size(),
                                 [&hs, &h_constraint_parts, &h_challenges, &alpha,
@@ -332,6 +333,8 @@ namespace nil {
                                 lookup_tag = mask_assignment;
                             else if( l_table.tag_index == PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED )
                                 lookup_tag = mask_assignment - lagrange0;
+                            else if (l_table.tag_index == PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED)
+                                throw std::logic_error("not implemented");
                             else
                                 lookup_tag = plonk_columns.selector(l_table.tag_index);
 
@@ -360,73 +363,31 @@ namespace nil {
                             exprs,
                         const plonk_polynomial_dfs_table<FieldType>& assignments,
                         std::shared_ptr<math::evaluation_domain<FieldType>> domain,
-                        std::unordered_map<simd_vector_variable_type, polynomial_dfs_type>& variable_values_out,
+                        std::unordered_map<simd_vector_variable_type, std::shared_ptr<polynomial_dfs_type>>& variable_values_out,
                         size_t extended_domain_size,
-                        const polynomial_dfs_type &mask_polynomial,
-                        const polynomial_dfs_type &lagrange_0
+                        dfs_cache_type& dfs_cache
                     ) {
                         PROFILE_SCOPE("Lookup argument build variable value map");
                         // Get out all the variables used and maximal degree of any expression in all possible lookup inputs
-                        std::vector<simd_vector_variable_type> variables;
+                        std::set<simd_vector_variable_type> variables_set;
 
                         for (const auto& expr: exprs) {
                             math::expression_for_each_variable_visitor<
                                 simd_vector_variable_type>
-                                visitor([&variables, &variable_values_out](
-                                            const simd_vector_variable_type& var) {
-                                    // Create the structure of the map, so its values can be filled in parallel.
-                                    if (variable_values_out.find(var) == variable_values_out.end()) {
-                                        variable_values_out[var] = polynomial_dfs_type();
-                                        variables.push_back(var);
-                                    }
+                                visitor([&variables_set](const simd_vector_variable_type& var) {
+                                    variables_set.insert(var);
                                 });
                             visitor.visit(expr);
                         }
-
-                        std::shared_ptr<math::evaluation_domain<FieldType>> extended_domain =
-                            math::make_evaluation_domain<FieldType>(extended_domain_size);
-
-                        parallel_for(0, variable_values_out.size(),
-                            [&variables,&variable_values_out, &assignments, &domain, &extended_domain, extended_domain_size, &mask_polynomial, &lagrange_0](std::size_t i) {
-                                const simd_vector_variable_type& var = variables[i];
-
-                                // Convert the variable to polynomial_dfs variable type.
-                                polynomial_dfs_variable_type var_dfs(var.index, var.rotation, var.relative,
-                                    static_cast<typename polynomial_dfs_variable_type::column_type>(
-                                        static_cast<std::uint8_t>(var.type)));
-
-                                polynomial_dfs_type assignment;
-                                if (var.index ==
-                                        PLONK_SPECIAL_SELECTOR_ALL_USABLE_ROWS_SELECTED &&
-                                    var.type == simd_vector_variable_type::column_type::
-                                                    selector) {
-                                    assignment = mask_polynomial;
-                                } else if (
-                                    var.index ==
-                                        PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED &&
-                                    var.type == simd_vector_variable_type::column_type::
-                                                    selector) {
-                                    assignment = mask_polynomial - lagrange_0;
-                                } else if (var.index ==
-                                           PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED &&
-                                    var.type == simd_vector_variable_type::column_type::
-                                                    selector) {
-                                    //throw std::logic_error("not implemented");
-                                    assignment = polynomial_dfs_type::one();
-                                } else
-                                    assignment = assignments.get_variable_value(var_dfs, domain);
-
-                                assignment.resize(extended_domain_size, domain, extended_domain);
-                                variable_values_out[var] = std::move(assignment);
-                            },
-                            ThreadPool::PoolLevel::HIGH);
-
+                        dfs_cache.ensure_cache(variables_set, extended_domain_size);
+                        for (const auto& variable : variables_set) {
+                            variable_values_out[variable] = dfs_cache.get(variable, extended_domain_size);
+                        }
                         SCOPED_LOG("Variables count: {}", variable_values_out.size());
                     }
 
                     std::unique_ptr<std::vector<polynomial_dfs_type>> prepare_lookup_input(
-                        const polynomial_dfs_type &mask_assignment,
-                        const polynomial_dfs_type &lagrange0
+                        dfs_cache_type& dfs_cache
                     ) {
                         PROFILE_SCOPE("Lookup argument preparing lookup input");
                         using value_type = typename FieldType::value_type;
@@ -459,6 +420,7 @@ namespace nil {
                                         gate.tag_index, 0, false,
                                         simd_vector_variable_type::column_type::selector);
                                 }
+
                                 expressions.push_back(std::move(l));
                             }
                         }
@@ -495,12 +457,11 @@ namespace nil {
                             SCOPED_LOG("Extended domain size: {}, multiplier: {}",
                                        extended_domain_size, degree);
 
-                            std::unordered_map<simd_vector_variable_type,
-                                               polynomial_dfs_type>
+                            std::unordered_map<simd_vector_variable_type, std::shared_ptr<polynomial_dfs_type>>
                                 variable_values;
                             build_variable_value_map(
                                 batch, plonk_columns, basic_domain,
-                                variable_values, extended_domain_size, mask_assignment, lagrange0
+                                variable_values, extended_domain_size, dfs_cache
                             );
                             dag_expression<simd_vector_variable_type> dag_expr;
                             for (const auto &expr : batch) {
@@ -533,16 +494,15 @@ namespace nil {
                                                  j](const simd_vector_variable_type& var)
                                             -> simd_vector_type {
                                             return math::get_chunk<mini_chunk_size>(
-                                                variable_values[var], begin, j);
+                                                *variable_values[var], begin, j);
                                         };
-                                        const auto result_chunks =
-                                            dag_expr_copy.evaluate(eval_map);
+                                        dag_expr_copy.evaluate(eval_map);
                                         for (std::size_t idx = 0;
-                                             idx < result_chunks.size(); ++idx) {
+                                             idx < dag_expr_copy.get_result_size(); ++idx) {
                                             math::set_chunk<mini_chunk_size>(
                                                 (*lookup_input_ptr)[batch_index_map.at(
                                                     idx)],
-                                                begin, j, result_chunks[idx]);
+                                                begin, j, dag_expr_copy.get_result(idx));
                                         }
                                     }
                                 },

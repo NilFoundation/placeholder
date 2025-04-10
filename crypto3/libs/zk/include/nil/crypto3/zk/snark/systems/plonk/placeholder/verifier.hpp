@@ -574,6 +574,22 @@ namespace nil {
                                 evaluation_challenge * common_data.basic_domain->get_domain_element(1));
                         }
 
+                        {
+                            auto key = std::make_tuple(
+                                PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED, 0,
+                                plonk_variable<typename FieldType::value_type>::column_type::selector
+                            );
+                            columns_at_y[key] = FieldType::value_type::one();
+                        }
+                        { // ????
+                            auto key = std::make_tuple(
+                                PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED, 1,
+                                plonk_variable<typename FieldType::value_type>::column_type::selector
+                            );
+                            columns_at_y[key] = FieldType::value_type::one() - common_data.lagrange_0.evaluate(
+                                evaluation_challenge * common_data.basic_domain->get_domain_element(1));
+                        }
+
                         // 6. lookup argument
                         bool is_lookup_enabled = (constraint_system.lookup_gates().size() > 0);
                         std::array<typename FieldType::value_type, lookup_parts> lookup_argument;
