@@ -107,8 +107,10 @@ namespace nil {
 
                             if (var.index == PLONK_SPECIAL_SELECTOR_ALL_USABLE_ROWS_SELECTED && var.type == polynomial_dfs_variable_type::column_type::selector) {
                                 assignment = mask_polynomial;
-                            } else if (var.index ==  PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED && var.type == polynomial_dfs_variable_type::column_type::selector){
+                            } else if (var.index == PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED && var.type == polynomial_dfs_variable_type::column_type::selector){
                                 assignment = mask_polynomial - lagrange_0;
+                            } else if (var.index == PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED && var.type == polynomial_dfs_variable_type::column_type::selector){
+                                assignment = polynomial_dfs_type::one();
                             } else {
                                 assignment = assignments.get_variable_value(var, domain);
                             }
@@ -145,6 +147,7 @@ namespace nil {
                         std::vector<std::uint32_t> extended_domain_sizes;
                         std::vector<std::uint32_t> degree_limits;
                         std::uint32_t max_degree = std::pow(2, ceil(std::log2(max_gates_degree)));
+                        std::cout << "MAX GATE DEGREE " << max_degree << std::endl;
                         std::uint32_t max_domain_size = original_domain->m * max_degree;
 
                         SCOPED_LOG(
@@ -224,7 +227,8 @@ namespace nil {
                         std::array<polynomial_dfs_type, argument_size> F;
 
                         for (size_t i = 0; i < extended_domain_sizes.size(); ++i) {
-                            PROFILE_SCOPE("Gate argument evaluation on domain #{}", i + 1);
+                            PROFILE_SCOPE("Gate argument evaluation on domain #{}",
+                                          i + 1);
                             SCOPED_LOG("Constraint count: {}", constraint_counts[i]);
                             std::unordered_map<polynomial_dfs_variable_type, polynomial_dfs_type>
                                 variable_values;
