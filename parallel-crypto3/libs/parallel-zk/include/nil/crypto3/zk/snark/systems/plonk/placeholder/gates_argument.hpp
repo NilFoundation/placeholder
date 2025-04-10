@@ -89,10 +89,9 @@ namespace nil {
                         math::static_simd_vector<typename FieldType::value_type,
                                                  mini_chunk_size>;
                     using variable_type = plonk_variable<typename FieldType::value_type>;
-                    using polynomial_dfs_variable_type =
-                        plonk_variable<polynomial_dfs_type>;
+                    using polynomial_dfs_variable_type = plonk_variable<polynomial_dfs_type>;
                     using simd_vector_variable_type = plonk_variable<simd_vector_type>;
-                    using dfs_cache_type = math::dfs_cache<FieldType>;
+                    using dfs_cache_type = dfs_cache<FieldType>;
 
                     typedef detail::placeholder_policy<FieldType, ParamsType> policy_type;
 
@@ -110,19 +109,18 @@ namespace nil {
                         PROFILE_SCOPE("Gate argument build variable value map");
                         // Get out all the variables used and maximal degree of any
                         // expression in all possible lookup inputs
-                        std::set<simd_vector_variable_type> variables_set;
+                        std::set<polynomial_dfs_variable_type> variables_set;
 
-                        math::expression_for_each_variable_visitor<
-                            simd_vector_variable_type>
+                        math::expression_for_each_variable_visitor<simd_vector_variable_type>
                             visitor(
                                 [&variables_set](const simd_vector_variable_type& var) {
-                                    variables_set.insert(var);
+                                    variables_set.insert(polynomial_dfs_variable_type(var));
                                 });
                         visitor.visit(expr);
 
                         dfs_cache.ensure_cache(variables_set, extended_domain_size);
                         for (const auto& variable : variables_set) {
-                            variable_values_out[variable] =
+                            variable_values_out[simd_vector_variable_type(variable)] =
                                 dfs_cache.get(variable, extended_domain_size);
                         }
                         SCOPED_LOG("Variables count: {}", variable_values_out.size());
@@ -228,9 +226,9 @@ namespace nil {
                         std::array<polynomial_dfs_type, argument_size> F;
                         F[0] = polynomial_dfs_type::zero();
                         for (std::size_t i = 0; i < extended_domain_sizes.size(); ++i) {
-                            PROFILE_SCOPE("Gate argument evaluation on domain #{}",
-                                          i + 1);
+                            PROFILE_SCOPE("Gate argument evaluation on domain #{}", i);
                             SCOPED_LOG("Constraint count: {}", constraint_counts[i]);
+
                             std::unordered_map<simd_vector_variable_type,
                                                std::shared_ptr<polynomial_dfs_type>>
                                 variable_values;
@@ -258,8 +256,7 @@ namespace nil {
                                         auto count = math::count_chunks<mini_chunk_size>(
                                             end - begin);
                                         for (std::size_t j = 0; j < count; ++j) {
-                                            std::function<simd_vector_type(
-                                                const simd_vector_variable_type&)>
+                                            std::function<simd_vector_type(const simd_vector_variable_type&)>
                                                 eval_map =
                                                     [&variable_values, begin, end,
                                                      j](const simd_vector_variable_type&

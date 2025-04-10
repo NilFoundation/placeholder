@@ -676,14 +676,19 @@ namespace nil {
                 }
 
                 template<typename ContainerType>
-                void from_coefficients(const ContainerType &tmp) {
+                void from_coefficients(const ContainerType &tmp,
+                        std::shared_ptr<evaluation_domain<typename value_type::field_type>> domain = nullptr) {
                     typedef typename value_type::field_type FieldType;
                     size_t n = detail::power_of_two(tmp.size());
-                    value_type omega = unity_root<FieldType>(n);
                     _d = tmp.size() - 1;
                     val.assign(tmp.begin(), tmp.end());
                     val.resize(n, FieldValueType::zero());
-                    detail::basic_radix2_fft<FieldType>(val, omega);
+                    if (domain == nullptr) {
+                        value_type omega = unity_root<FieldType>(n);
+                        detail::basic_radix2_fft<FieldType>(val, omega);
+                    } else {
+                        domain->fft(this->val);
+                    }
                 }
 
                 std::vector<FieldValueType> coefficients(
