@@ -32,6 +32,7 @@
 
 #include <nil/blueprint/zkevm_bbf/types/zkevm_block.hpp>
 #include <nil/blueprint/zkevm_bbf/types/zkevm_transaction.hpp>
+#include <nil/blueprint/zkevm_bbf/types/block_loader.hpp>
 #include <nil/blueprint/zkevm_bbf/util.hpp>
 
 namespace nil {
@@ -43,11 +44,13 @@ namespace nil {
             public:
                 bool get_execution_status() const {return execution_status;}
             protected:
+                abstract_block_loader                                   *block_loader;
+
                 // Data preloaded data structures
                 std::set<zkevm_word_type>                               _existing_accounts;
                 std::map<zkevm_word_type, zkevm_account>                _accounts_initial_state; // Initial state; Update it after block.
                 std::map<zkevm_word_type, zkevm_account>                _accounts_current_state; // Initial state; Update it after block.
-                std::vector<zkevm_call_context>                          _call_stack;
+                std::vector<zkevm_call_context>                         _call_stack;
 
                 // Variables for current block
                 zkevm_block block;
@@ -103,6 +106,7 @@ namespace nil {
                     pc = 0;
                     caller = tx.from;
                     gas = tx.gas;
+                    call_context_value = call_value = tx.value;
                     decrease_gas(21000); // transaction cost
                     current_opcode = opcode_to_number(zkevm_opcode::start_transaction);
                     call_context_address = tx.to;
@@ -225,8 +229,14 @@ namespace nil {
 
                 virtual void execute_block(){
                     BOOST_LOG_TRIVIAL(trace) << "Basic execute block" << std::endl;
+                    block = block_loader->load_block();
                     this->start_block(); if (!execution_status) return;
                     for(std::size_t i = 0; i < block.tx_amount; i++){
+                        auto [_tx, __accounts_initial_state, __existing_accounts] = block_loader->load_transaction(i);
+                        tx = std::move(_tx);
+                        _accounts_current_state = _accounts_initial_state = std::move(__accounts_initial_state);
+                        _existing_accounts = std::move(__existing_accounts);
+
                         this->start_transaction();  if (!execution_status) return;
                         this->execute_transaction(); if (!execution_status) return;
                         this->end_transaction(); if (!execution_status) return;
@@ -1241,8 +1251,18 @@ namespace nil {
                     std::size_t n = std::size_t(stack.back()); stack.pop_back();
                     if(n == (block.number - 1)) {
                         stack.push_back(block.parent_hash);
-                    } else {
-                        BOOST_ASSERT(false);
+                    } else  {
+                        BOOST_LOG_TRIVIAL(trace) << "n = " << n;
+                        for( auto & [k,v]: block.old_blocks_hashes){
+                            BOOST_LOG_TRIVIAL(trace) << "block number " << k << " : " << std::hex << v << std::dec;
+                            if( k == n ) BOOST_LOG_TRIVIAL(trace) << "BINGO!";
+                        }
+                        BOOST_ASSERT( block.old_blocks_hashes.find(n) != block.old_blocks_hashes.end());
+                        // if( block.old_blocks_hashes.find(n) == block.old_blocks_hashes.end()){ {
+                        //     BOOST_LOG_TRIVIAL(trace) << " block number " << n << " was not loaded";
+                        // }
+                        //BOOST_ASSERT(old_blocks_hashes.find(n) == block.old_blocks_hashes.end());
+                        stack.push_back(block.old_blocks_hashes[n]);
                     }
                     pc++;
                     decrease_gas(20);
@@ -1514,7 +1534,52 @@ namespace nil {
                     is_start_call = true;
                 }
 
-                virtual void dummyprecompile() = 0;
+                virtual void dummyprecompile() {
+                    BOOST_LOG_TRIVIAL(trace) << "Dummy Precompile" << std::endl;
+                    zkevm_word_type precomp_gas = stack.back(); stack.pop_back(); // gas sometimes is -1. It's strange but it's not used after
+                    zkevm_word_type precomp_addr = stack.back(); stack.pop_back(); // addr
+                    std::size_t precomp_args_offset = std::size_t(stack.back()); stack.pop_back(); // args_offset
+                    std::size_t precomp_args_length = std::size_t(stack.back()); stack.pop_back(); // args_length
+                    std::size_t precomp_ret_offset = std::size_t(stack.back()); stack.pop_back(); // ret_offset
+                    std::size_t precomp_ret_length = std::size_t(stack.back()); stack.pop_back(); // ret_length
+                    std::size_t data_word_size = (precomp_args_length + 31) / 32;
+
+                    BOOST_LOG_TRIVIAL(trace) << "precomp_gas = " << precomp_gas << std::endl;
+                    BOOST_LOG_TRIVIAL(trace) << "precomp_addr = 0x" << std::hex << precomp_addr << std::dec << std::endl;
+                    BOOST_LOG_TRIVIAL(trace) << "precomp_args_offset = " << precomp_args_offset << std::endl;
+                    BOOST_LOG_TRIVIAL(trace) << "precomp_args_length = " << precomp_args_length << std::endl;
+                    BOOST_LOG_TRIVIAL(trace) << "precomp_ret_offset = " << precomp_ret_offset << std::endl;
+                    BOOST_LOG_TRIVIAL(trace) << "precomp_ret_length = " << precomp_ret_length << std::endl;
+
+                    // TODO: memory expansion gas cost
+                    std::size_t next_mem = memory.size();
+                    next_mem = std::max(next_mem, precomp_args_length == 0? 0: precomp_args_offset + precomp_args_length);
+                    next_mem = std::max(next_mem, precomp_ret_length == 0? 0: precomp_ret_offset + precomp_ret_length);
+                    std::size_t memory_expansion = memory_expansion_cost(next_mem, memory.size());
+                    if( next_mem > memory.size()){
+                        BOOST_LOG_TRIVIAL(trace) << "Memory expansion " << memory.size() << "=>" << next_mem << std::endl;
+                        memory.resize(next_mem, 0);
+                    }
+
+                    std::vector<std::uint8_t> precomp_input;
+                    for( std::size_t i = 0; i < precomp_args_length; i++){
+                        precomp_input.push_back(memory[precomp_args_offset+i]);
+                    }
+                    auto [status, last_opcode_gas_used, _returndata] = block_loader->compute_precompile(std::size_t(precomp_addr), precomp_input);
+                    gas -= (last_opcode_gas_used + 100);
+                    gas -= memory_expansion;
+                    returndata = _returndata;
+
+                    std::size_t real_ret_length = std::min(returndata.size(), precomp_ret_length);
+                    for( std::size_t i = 0; i < real_ret_length; i++){
+                        memory[precomp_ret_offset + i] = returndata[i];
+                    }
+
+                    stack.push_back(status);
+                    pc++;
+                    _call_stack.back().lastcall_returndataoffset = precomp_ret_offset;
+                    _call_stack.back().lastcall_returndatalength = precomp_ret_length;
+                };
                 virtual void staticcall(){
                     if( stack[stack.size() - 2] >= 0x1 && stack[stack.size() - 2] <= 0xa){
                         this->dummyprecompile();
@@ -1597,7 +1662,61 @@ namespace nil {
                     //returndata.resize(transfer_args_length, 0);
                 }
 
-                virtual void dummycallprecompile()=0;
+                virtual void dummycallprecompile(){
+                    BOOST_LOG_TRIVIAL(trace) << "Dummy call Precompile" << std::endl;
+                    // TODO: implement all precompiles. This function should never be called
+                    std::size_t precomp_gas = std::size_t(stack.back()); stack.pop_back(); // gas
+                    zkevm_word_type precomp_addr = stack.back(); stack.pop_back(); // addr
+                    zkevm_word_type precomp_value = stack.back(); stack.pop_back(); // value
+                    std::size_t precomp_args_offset = std::size_t(stack.back()); stack.pop_back(); // args_offset
+                    std::size_t precomp_args_length = std::size_t(stack.back()); stack.pop_back(); // args_length
+                    std::size_t precomp_ret_offset = std::size_t(stack.back()); stack.pop_back(); // ret_offset
+                    std::size_t precomp_ret_length = std::size_t(stack.back()); stack.pop_back(); // ret_length
+                    std::size_t data_word_size = (precomp_args_length + 31) / 32;
+
+                    BOOST_ASSERT( precomp_value == 0 );
+
+                    BOOST_LOG_TRIVIAL(trace) << "precomp_gas = " << precomp_gas << std::endl;
+                    BOOST_LOG_TRIVIAL(trace) << "precomp_addr = 0x" << std::hex << precomp_addr << std::dec << std::endl;
+                    BOOST_LOG_TRIVIAL(trace) << "precomp_args_offset = " << precomp_args_offset << std::endl;
+                    BOOST_LOG_TRIVIAL(trace) << "precomp_args_length = " << precomp_args_length << std::endl;
+                    BOOST_LOG_TRIVIAL(trace) << "precomp_ret_offset = " << precomp_ret_offset << std::endl;
+                    BOOST_LOG_TRIVIAL(trace) << "precomp_ret_length = " << precomp_ret_length << std::endl;
+
+                    // TODO: memory expansion gas cost
+                    std::size_t next_mem = memory.size();
+                    next_mem = std::max(next_mem, precomp_args_length == 0? 0: precomp_args_offset + precomp_args_length);
+                    next_mem = std::max(next_mem, precomp_ret_length == 0? 0: precomp_ret_offset + precomp_ret_length);
+                    std::size_t memory_expansion = memory_expansion_cost(next_mem, memory.size());
+                    if( next_mem > memory.size()){
+                        BOOST_LOG_TRIVIAL(trace) << "Memory expansion " << memory.size() << "=>" << next_mem << std::endl;
+                        memory.resize(next_mem, 0);
+                    }
+
+                    std::vector<std::uint8_t> precomp_input;
+                    for( std::size_t i = 0; i < precomp_args_length; i++){
+                        precomp_input.push_back(memory[precomp_args_offset+i]);
+                    }
+
+                    auto [status, last_opcode_gas_used, _returndata] = block_loader->compute_precompile(std::size_t(precomp_addr), precomp_input);
+                    returndata = _returndata;
+                    gas -= last_opcode_gas_used;
+                    gas -= 100;
+                    gas -= memory_expansion;
+                    for( std::size_t i = 0; i < returndata.size(); i++){
+                        memory[precomp_ret_offset + i] = returndata[i];
+                    }
+
+                    std::size_t real_ret_length = std::min(returndata.size(), precomp_ret_length);
+                    for( std::size_t i = 0; i < real_ret_length; i++){
+                        memory[precomp_ret_offset + i] = returndata[i];
+                    }
+
+                    stack.push_back(status);
+                    pc++;
+                    _call_stack.back().lastcall_returndataoffset = precomp_ret_offset;
+                    _call_stack.back().lastcall_returndatalength = precomp_ret_length;
+                }
 
                 virtual void call(){
                     if( stack[stack.size() - 2] >= 0x1 && stack[stack.size() - 2] <= 0xa){
@@ -1728,7 +1847,7 @@ namespace nil {
                 }
 
             public:
-                zkevm_basic_evm(){}
+                zkevm_basic_evm(abstract_block_loader *_block_loader):block_loader(_block_loader){}
                 virtual ~zkevm_basic_evm(){
                     _call_stack.clear();
                     _existing_accounts.clear();

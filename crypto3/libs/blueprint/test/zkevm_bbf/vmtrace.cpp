@@ -25,7 +25,7 @@
 #include <cstdlib>
 #include <string_view>
 #include <unordered_map>
-#define BOOST_TEST_MODULE blueprint_zkevm_alchemy_test
+#define BOOST_TEST_MODULE blueprint_zkevm_vmtrace_test
 
 #include <boost/assert.hpp>
 #include <boost/algorithm/string.hpp>
@@ -50,8 +50,8 @@
 #include <nil/blueprint/zkevm_bbf/types/state_operation.hpp>
 #include <nil/blueprint/zkevm_bbf/types/copy_event.hpp>
 #include <nil/blueprint/zkevm_bbf/types/zkevm_state.hpp>
-#include <nil/blueprint/zkevm_bbf/input_generators/alchemy_input_generator.hpp>
 
+#include <nil/blueprint/zkevm_bbf/loaders/vmtrace.hpp>
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
 
@@ -75,7 +75,6 @@
 #include <boost/log/utility/setup/common_attributes.hpp>
 #include <boost/log/attributes/value_extraction.hpp>
 #include <boost/log/utility/setup/console.hpp>
-
 
 #include "./circuit_test_fixture.hpp"
 
@@ -109,10 +108,16 @@ public:
         const l1_size_restrictions         &max_sizes
     ){
         {
-            nil::blueprint::bbf::zkevm_alchemy_input_generator circuit_inputs(path);
-            BOOST_LOG_TRIVIAL(trace) << "Circuit inputs generated";
-            BOOST_ASSERT(circuit_inputs.get_execution_status());
+            nil::blueprint::bbf::vmtrace_block_loader loader(path);
+            nil::blueprint::bbf::zkevm_vmtrace_trace_checker trace_checker(&loader);
+            BOOST_ASSERT(trace_checker.get_execution_status());
             BOOST_LOG_TRIVIAL(trace) << "Execution status";
+
+            // BOOST_LOG_TRIVIAL(trace) << "Circuit inputs generated";
+            // BOOST_ASSERT(circuit_inputs.get_execution_status());
+            // BOOST_LOG_TRIVIAL(trace) << "Execution status";
+
+            // std::cout << circuit_inputs.print_statistics();
         }
         std::cout << "Done" << std::endl;
         return;
@@ -296,7 +301,7 @@ BOOST_AUTO_TEST_CASE(sp1_block_18884864) {
     max_sizes.max_exp_rows = 500;
     max_sizes.max_call_commits = 500;
 
-    complex_test<field_type>("alchemy/sp1_block_18884864/", max_sizes);
+    complex_test<field_type>("vmtrace/sp1_block_18884864/", max_sizes);
 }
 
 BOOST_AUTO_TEST_CASE(sp1_block_18884865) {
@@ -313,7 +318,7 @@ BOOST_AUTO_TEST_CASE(sp1_block_18884865) {
     max_sizes.max_exp_rows = 500;
     max_sizes.max_call_commits = 500;
 
-    complex_test<field_type>("alchemy/sp1_block_18884865/", max_sizes);
+    complex_test<field_type>("vmtrace/sp1_block_18884865/", max_sizes);
 }
 
 BOOST_AUTO_TEST_CASE(sp1_block_18884866) {
@@ -330,7 +335,7 @@ BOOST_AUTO_TEST_CASE(sp1_block_18884866) {
     max_sizes.max_exp_rows = 500;
     max_sizes.max_call_commits = 500;
 
-    complex_test<field_type>("alchemy/sp1_block_18884866/", max_sizes);
+    complex_test<field_type>("vmtrace/sp1_block_18884866/", max_sizes);
 }
 
 BOOST_AUTO_TEST_CASE(sp1_block_18884867) {
@@ -347,7 +352,7 @@ BOOST_AUTO_TEST_CASE(sp1_block_18884867) {
     max_sizes.max_exp_rows = 500;
     max_sizes.max_call_commits = 500;
 
-    complex_test<field_type>("alchemy/sp1_block_18884867/", max_sizes);
+    complex_test<field_type>("vmtrace/sp1_block_18884867/", max_sizes);
 }
 
 BOOST_AUTO_TEST_CASE(sp1_block_18884868) {
@@ -364,7 +369,7 @@ BOOST_AUTO_TEST_CASE(sp1_block_18884868) {
     max_sizes.max_exp_rows = 500;
     max_sizes.max_call_commits = 500;
 
-    complex_test<field_type>("alchemy/sp1_block_18884868/", max_sizes);
+    complex_test<field_type>("vmtrace/sp1_block_18884868/", max_sizes);
 }
 
 BOOST_AUTO_TEST_CASE(sp1_block_18884869) {
@@ -381,7 +386,7 @@ BOOST_AUTO_TEST_CASE(sp1_block_18884869) {
     max_sizes.max_exp_rows = 500;
     max_sizes.max_call_commits = 500;
 
-    complex_test<field_type>("alchemy/sp1_block_18884869/", max_sizes);
+    complex_test<field_type>("vmtrace/sp1_block_18884869/", max_sizes);
 }
 
 BOOST_AUTO_TEST_CASE(sp1_block_20526624) {
@@ -398,7 +403,7 @@ BOOST_AUTO_TEST_CASE(sp1_block_20526624) {
     max_sizes.max_exp_rows = 500;
     max_sizes.max_call_commits = 500;
 
-    complex_test<field_type>("alchemy/sp1_block_20526624/", max_sizes);
+    complex_test<field_type>("vmtrace/sp1_block_20526624/", max_sizes);
 }
 
 BOOST_AUTO_TEST_CASE(sp1_block_20526626) {
@@ -415,7 +420,7 @@ BOOST_AUTO_TEST_CASE(sp1_block_20526626) {
     max_sizes.max_exp_rows = 500;
     max_sizes.max_call_commits = 500;
 
-    complex_test<field_type>("alchemy/sp1_block_20526626/", max_sizes);
+    complex_test<field_type>("vmtrace/sp1_block_20526626/", max_sizes);
 }
 
 BOOST_AUTO_TEST_CASE(sp1_block_20526627) {
@@ -432,7 +437,7 @@ BOOST_AUTO_TEST_CASE(sp1_block_20526627) {
     max_sizes.max_exp_rows = 500;
     max_sizes.max_call_commits = 500;
 
-    complex_test<field_type>("alchemy/sp1_block_20526627/", max_sizes);
+    complex_test<field_type>("vmtrace/sp1_block_20526627/", max_sizes);
 }
 
 BOOST_AUTO_TEST_CASE(sp1_block_20526628) {
@@ -449,7 +454,7 @@ BOOST_AUTO_TEST_CASE(sp1_block_20526628) {
     max_sizes.max_exp_rows = 500;
     max_sizes.max_call_commits = 500;
 
-    complex_test<field_type>("alchemy/sp1_block_20526628/", max_sizes);
+    complex_test<field_type>("vmtrace/sp1_block_20526628/", max_sizes);
 }
 
 BOOST_AUTO_TEST_CASE(sp1_block_20526629) {
@@ -466,7 +471,7 @@ BOOST_AUTO_TEST_CASE(sp1_block_20526629) {
     max_sizes.max_exp_rows = 500;
     max_sizes.max_call_commits = 500;
 
-    complex_test<field_type>("alchemy/sp1_block_20526629/", max_sizes);
+    complex_test<field_type>("vmtrace/sp1_block_20526629/", max_sizes);
 }
 
 BOOST_AUTO_TEST_CASE(sp1_block_20526630) {
@@ -483,7 +488,7 @@ BOOST_AUTO_TEST_CASE(sp1_block_20526630) {
     max_sizes.max_exp_rows = 500;
     max_sizes.max_call_commits = 500;
 
-    complex_test<field_type>("alchemy/sp1_block_20526630/", max_sizes);
+    complex_test<field_type>("vmtrace/sp1_block_20526630/", max_sizes);
 }
 
 BOOST_AUTO_TEST_CASE(sp1_block_20526631) {
@@ -500,7 +505,7 @@ BOOST_AUTO_TEST_CASE(sp1_block_20526631) {
     max_sizes.max_exp_rows = 500;
     max_sizes.max_call_commits = 500;
 
-    complex_test<field_type>("alchemy/sp1_block_20526630/", max_sizes);
+    complex_test<field_type>("vmtrace/sp1_block_20526630/", max_sizes);
 }
 
 BOOST_AUTO_TEST_CASE(sp1_block_20528708) {
@@ -517,7 +522,7 @@ BOOST_AUTO_TEST_CASE(sp1_block_20528708) {
     max_sizes.max_exp_rows = 500;
     max_sizes.max_call_commits = 500;
 
-    complex_test<field_type>("alchemy/sp1_block_20528708/", max_sizes);
+    complex_test<field_type>("vmtrace/sp1_block_20528708/", max_sizes);
 }
 
 BOOST_AUTO_TEST_CASE(sp1_block_20528709) {
@@ -534,7 +539,7 @@ BOOST_AUTO_TEST_CASE(sp1_block_20528709) {
     max_sizes.max_exp_rows = 500;
     max_sizes.max_call_commits = 500;
 
-    complex_test<field_type>("alchemy/sp1_block_20528709/", max_sizes);
+    complex_test<field_type>("vmtrace/sp1_block_20528709/", max_sizes);
 }
 
 
@@ -552,7 +557,7 @@ BOOST_AUTO_TEST_CASE(sp1_block_22140743) {
     max_sizes.max_exp_rows = 500;
     max_sizes.max_call_commits = 500;
 
-    complex_test<field_type>("alchemy/sp1_block_22140743/", max_sizes);
+    complex_test<field_type>("vmtrace/sp1_block_22140743/", max_sizes);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

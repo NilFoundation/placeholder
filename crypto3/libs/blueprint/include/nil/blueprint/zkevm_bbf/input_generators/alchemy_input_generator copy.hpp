@@ -36,6 +36,7 @@
 #include <nil/blueprint/zkevm_bbf/types/zkevm_state.hpp>
 #include <nil/blueprint/zkevm_bbf/types/zkevm_account.hpp>
 #include <nil/blueprint/zkevm_bbf/types/call_context.hpp>
+#include <nil/blueprint/zkevm_bbf/types/block_loader.hpp>
 
 #include <nil/blueprint/zkevm_bbf/util/ptree.hpp>
 
@@ -494,45 +495,6 @@ namespace nil {
                         for( const auto &ct: call_trace.get_child("calls") ){
                             load_call_trace(ct.second);
                         }
-                    }
-                }
-
-                void load_accounts(const boost::property_tree::ptree &prestate){
-                    BOOST_LOG_TRIVIAL(trace) << "Load accounts" ;
-                    _accounts_current_state.clear();
-                    _existing_accounts.clear();
-                    _accounts_initial_state.clear();
-
-                    for( std::size_t i = 1; i < 11; i++){
-                        _existing_accounts.insert(i);
-                    }
-                    for( auto &[account_address, account]: prestate){
-                        zkevm_account acc;
-                        acc.address = zkevm_word_from_string(account_address.data());
-                        if( account.get_child_optional("nonce") ){
-                            acc.seq_no = acc.ext_seq_no = std::size_t(zkevm_word_from_string(account.get_child("nonce").data()));
-                        } else {
-                            acc.seq_no = acc.ext_seq_no = 0;
-                        }
-                        if( account.get_child_optional("balance") ){
-                            acc.balance = zkevm_word_from_string(account.get_child("balance").data());
-                        } else {
-                            acc.balance = 0;
-                        }
-                        if( account.get_child_optional("storage") ){
-                            acc.storage = key_value_storage_from_ptree(account.get_child("storage"));
-                        }
-                        if( account.get_child_optional("code") )
-                            acc.bytecode = byte_vector_from_hex_string(account.get_child("code").data(), 2);
-                        if( acc.seq_no != 0 || acc.bytecode.size() != 0)
-                            _existing_accounts.insert(acc.address);
-                        acc.code_hash = zkevm_keccak_hash(acc.bytecode);
-                        _accounts_initial_state[acc.address] = acc;
-                        _accounts_current_state[acc.address] = acc;
-                        BOOST_LOG_TRIVIAL(trace)
-                            << "\t" << account_address.data()
-                            << " balance = " << std::hex << acc.balance << std::dec
-                            << " nonce = " << std::dec << acc.seq_no;
                     }
                 }
 

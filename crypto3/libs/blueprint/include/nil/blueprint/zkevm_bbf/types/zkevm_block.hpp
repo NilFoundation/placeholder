@@ -38,6 +38,8 @@ namespace nil {
                 zkevm_word_type parent_hash;
                 zkevm_word_type difficulty;
                 std::size_t     tx_amount;
+
+                std::map<std::size_t, zkevm_word_type> old_blocks_hashes;
             };
         } // namespace bbf
     } // namespace blueprint

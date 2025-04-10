@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------//
-// Copyright (c) 2024 Elena Tatuzova   <e.tatuzova@nil.foundation>
+// Copyright (c) 2025 Elena Tatuzova   <e.tatuzova@nil.foundation>
 //
 // MIT License
 //
@@ -25,34 +25,24 @@
 #pragma once
 #include <nil/crypto3/hash/type_traits.hpp>
 #include <nil/crypto3/hash/algorithm/hash.hpp>
-#include <boost/property_tree/ptree.hpp>
 
 #include <nil/blueprint/components/hashes/keccak/util.hpp> //Move needed utils to bbf
 #include <nil/blueprint/bbf/generic.hpp>
 
-#include <nil/blueprint/zkevm_bbf/types/hashed_buffers.hpp>
-#include <nil/blueprint/zkevm_bbf/types/short_rw_operation.hpp>
-#include <nil/blueprint/zkevm_bbf/types/state_rw_operation.hpp>
-#include <nil/blueprint/zkevm_bbf/types/copy_event.hpp>
-#include <nil/blueprint/zkevm_bbf/types/zkevm_state.hpp>
-#include <nil/blueprint/zkevm_bbf/types/call_commit.hpp>
-#include <nil/blueprint/zkevm_bbf/opcodes/zkevm_opcodes.hpp>
+#include <nil/blueprint/zkevm_bbf/types/zkevm_block.hpp>
+#include <nil/blueprint/zkevm_bbf/types/zkevm_transaction.hpp>
 
 namespace nil {
     namespace blueprint {
         namespace bbf {
-            class zkevm_abstract_input_generator{
+            class abstract_block_loader{
             public:
-                virtual zkevm_keccak_buffers keccaks() = 0;
-                virtual zkevm_keccak_buffers bytecodes() = 0;
-                virtual rw_operations_vector rw_operations() = 0;
-                virtual std::vector<copy_event> copy_events() = 0;
-                virtual std::vector<zkevm_state> zkevm_states() = 0;
-                virtual std::vector<std::pair<zkevm_word_type, zkevm_word_type>> exponentiations() = 0;
-                virtual std::map<std::size_t,zkevm_call_commit> call_commits() = 0;
+                virtual zkevm_block load_block() = 0;
+                virtual std::tuple<zkevm_transaction, std::map<zkevm_word_type, zkevm_account>, std::set<zkevm_word_type>> load_transaction(std::size_t i) = 0;
 
-                virtual ~zkevm_abstract_input_generator(){}
+                // TODO: implement precompiles and remove this function from interface
+                virtual std::tuple<zkevm_word_type, std::size_t, std::vector<std::uint8_t>> compute_precompile(zkevm_word_type address, std::vector<std::uint8_t> calldata) = 0;
             };
-        } // namespace bbf
-    } // namespace blueprint
-} // namespace nil
+        }
+    }
+}

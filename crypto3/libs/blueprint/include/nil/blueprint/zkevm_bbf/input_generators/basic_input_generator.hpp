@@ -100,6 +100,16 @@ namespace nil {
                 }
 
                 virtual void execute_opcode() override{
+                    _zkevm_states.push_back(zkevm_state(
+                        call_id,
+                        bytecode_hash,
+                        pc,
+                        current_opcode,
+                        stack.size(),
+                        memory.size(),
+                        gas,
+                        rw_counter
+                    ));
                     rw_counter++;
                     zkevm_basic_evm::execute_opcode();
                 }
@@ -116,6 +126,14 @@ namespace nil {
                     _accounts_initial_state.clear();
                     BOOST_LOG_TRIVIAL(trace) << "Destructor of zkevm_basic_input_generator";
                 }
+
+                std::string print_statistics (){
+                    std::stringstream ss;
+                    ss << "Opcodes amount = " << _zkevm_states.size() << std::endl;
+                    return ss.str();
+                }
+            protected:
+
             };
         } // namespace bbf
     } // namespace blueprint
