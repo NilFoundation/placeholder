@@ -77,24 +77,28 @@ namespace nil {
                 virtual std::vector<std::pair<zkevm_word_type, zkevm_word_type>> exponentiations(){return _exponentiations;}
 
 
-                zkevm_basic_input_generator(){
+                zkevm_basic_input_generator(abstract_block_loader *_loader): zkevm_basic_evm(_loader){
                     rw_counter = 1;
+                    zkevm_basic_evm::execute_block();
                 }
 
                 virtual void start_block() override{
                     block_id = tx_id = call_id = rw_counter++;
+                    BOOST_LOG_TRIVIAL(trace) << "START BLOCK " << block_id << std::endl;
                     zkevm_basic_evm::start_block();
                     _call_stack.back().call_id = block_id;
                 }
 
                 virtual void start_transaction() override{
                     tx_id = call_id = rw_counter++;
+                    BOOST_LOG_TRIVIAL(trace) << "START TRANSACTION " << tx_id << std::endl;
                     zkevm_basic_evm::start_transaction();
                     _call_stack.back().call_id = tx_id;
                 }
 
                 virtual void start_call() override{
                     call_id = rw_counter++;
+                    BOOST_LOG_TRIVIAL(trace) << "START CALL " << call_id << std::endl;
                     zkevm_basic_evm::start_call();
                     _call_stack.back().call_id = call_id;
                 }

@@ -43,6 +43,23 @@ namespace nil {
 
             public:
                 bool get_execution_status() const {return execution_status;}
+
+                virtual void execute_block(){
+                    block = block_loader->load_block();
+                    this->start_block(); if (!execution_status) return;
+                    for(std::size_t i = 0; i < block.tx_amount; i++){
+                        auto [_tx, __accounts_initial_state, __existing_accounts] = block_loader->load_transaction(i);
+                        tx = std::move(_tx);
+                        _accounts_current_state = _accounts_initial_state = std::move(__accounts_initial_state);
+                        _existing_accounts = std::move(__existing_accounts);
+
+                        this->start_transaction();  if (!execution_status) return;
+                        this->execute_transaction(); if (!execution_status) return;
+                        this->end_transaction(); if (!execution_status) return;
+                    }
+                    this->end_block(); if (!execution_status) return;
+                }
+
             protected:
                 abstract_block_loader                                   *block_loader;
 
@@ -124,7 +141,7 @@ namespace nil {
 
                     // TODO: fix it
                     if( tx.to == 0 ) {
-                        BOOST_LOG_TRIVIAL(trace) << "Deploying contract";
+                        BOOST_LOG_TRIVIAL(debug) << "Deploying contract";
                         decrease_gas(32000); // Deployment cost
 
                         std::vector<std::uint8_t> sender_bytes;
@@ -225,23 +242,6 @@ namespace nil {
                     returndata = {};
 
                     is_end_call = false;
-                }
-
-                virtual void execute_block(){
-                    BOOST_LOG_TRIVIAL(trace) << "Basic execute block" << std::endl;
-                    block = block_loader->load_block();
-                    this->start_block(); if (!execution_status) return;
-                    for(std::size_t i = 0; i < block.tx_amount; i++){
-                        auto [_tx, __accounts_initial_state, __existing_accounts] = block_loader->load_transaction(i);
-                        tx = std::move(_tx);
-                        _accounts_current_state = _accounts_initial_state = std::move(__accounts_initial_state);
-                        _existing_accounts = std::move(__existing_accounts);
-
-                        this->start_transaction();  if (!execution_status) return;
-                        this->execute_transaction(); if (!execution_status) return;
-                        this->end_transaction(); if (!execution_status) return;
-                    }
-                    this->end_block(); if (!execution_status) return;
                 }
 
                 virtual void execute_transaction(){

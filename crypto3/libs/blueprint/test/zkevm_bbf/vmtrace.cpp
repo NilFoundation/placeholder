@@ -52,6 +52,7 @@
 #include <nil/blueprint/zkevm_bbf/types/zkevm_state.hpp>
 
 #include <nil/blueprint/zkevm_bbf/loaders/vmtrace.hpp>
+#include <nil/blueprint/zkevm_bbf/input_generators/basic_input_generator.hpp>
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
 
@@ -96,12 +97,66 @@ public:
 
         sink->locked_backend()->add_stream(boost::shared_ptr< std::ostream >(&std::cout, boost::null_deleter()));
         sink->set_formatter(&my_formatter);
+        sink->locked_backend()->auto_flush(true);
         boost::log::core::get()->add_sink(sink);
+
+        std::size_t argc = boost::unit_test::framework::master_test_suite().argc;
+        auto &argv = boost::unit_test::framework::master_test_suite().argv;
+        boost::log::trivial::severity_level log_level = boost::log::trivial::info;
+
+        for( std::size_t i = 0; i < argc; i++ ){
+            std::string arg(argv[i]);
+            if( arg == "--log-level=trace"){
+                log_level = boost::log::trivial::trace;
+            }
+            if( arg == "--log-level=debug"){
+                log_level = boost::log::trivial::debug;
+            }
+            if( arg == "--log-level=info"){
+                log_level = boost::log::trivial::info;
+            }
+            if( arg == "--log-level=warning"){
+                log_level = boost::log::trivial::warning;
+            }
+            if( arg == "--log-level=error"){
+                log_level = boost::log::trivial::error;
+            }
+            if( arg == "--no-log" ){
+                log_level = boost::log::trivial::fatal;
+            }
+        }
+        sink->set_filter(
+            boost::log::trivial::severity >= log_level
+        );
     }
 };
 
-class zkEVMAlchemyTestFixture: public CircuitTestFixture {
+class zkEVMVmTraceTestFixture: public CircuitTestFixture {
+protected:
+    bool check_trace = false;
+    bool assign = true;
+    bool empty_machine_run = false;
 public:
+    zkEVMVmTraceTestFixture():CircuitTestFixture(){
+        std::size_t argc = boost::unit_test::framework::master_test_suite().argc;
+        auto &argv = boost::unit_test::framework::master_test_suite().argv;
+
+        for( std::size_t i = 0; i < argc; i++ ){
+            std::string arg(argv[i]);
+            if(arg == "--empty-machine-run" ) {
+                empty_machine_run = true;
+                assign = false;
+            }
+            if(arg == "--check-trace" ) {
+                check_trace = true;
+            }
+            if(arg == "--check-trace-only"){
+                check_trace = true;
+                assign = false;
+            }
+        }
+    }
+
     template <typename field_type>
     void complex_test(
         std::string                        path,
@@ -109,9 +164,21 @@ public:
     ){
         {
             nil::blueprint::bbf::vmtrace_block_loader loader(path);
-            nil::blueprint::bbf::zkevm_vmtrace_trace_checker trace_checker(&loader);
-            BOOST_ASSERT(trace_checker.get_execution_status());
-            BOOST_LOG_TRIVIAL(trace) << "Execution status";
+
+            if( empty_machine_run ){
+                nil::blueprint::bbf::zkevm_basic_evm evm((abstract_block_loader*)(&loader));
+                evm.execute_block();
+                BOOST_ASSERT(evm.get_execution_status());
+            }
+            if( check_trace){
+                nil::blueprint::bbf::zkevm_vmtrace_trace_checker trace_checker(&loader);
+                BOOST_ASSERT(trace_checker.get_execution_status());
+            }
+            if( !assign ) return;
+
+            nil::blueprint::bbf::zkevm_basic_input_generator circuit_inputs((abstract_block_loader*)(&loader));
+            BOOST_ASSERT(circuit_inputs.get_execution_status());
+            BOOST_LOG_TRIVIAL(trace) << circuit_inputs.print_statistics();
 
             // BOOST_LOG_TRIVIAL(trace) << "Circuit inputs generated";
             // BOOST_ASSERT(circuit_inputs.get_execution_status());
@@ -285,7 +352,7 @@ public:
 // Remember that in production sizes should be preset.
 // Here they are different for different tests just for fast and easy testing
 BOOST_GLOBAL_FIXTURE(zkEVMGlobalFixture);
-BOOST_FIXTURE_TEST_SUITE(zkevm_bbf_hardhat, zkEVMAlchemyTestFixture)
+BOOST_FIXTURE_TEST_SUITE(zkevm_bbf_hardhat, zkEVMVmTraceTestFixture)
 
 BOOST_AUTO_TEST_CASE(sp1_block_18884864) {
     using field_type = typename algebra::curves::pallas::base_field_type;

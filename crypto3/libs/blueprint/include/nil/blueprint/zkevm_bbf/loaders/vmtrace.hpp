@@ -70,6 +70,7 @@ namespace nil {
                 }
 
                 virtual zkevm_block load_block() override {
+                    BOOST_LOG_TRIVIAL(info) << "VmTrace:: Load block " << std::hex << block.hash  << std::dec << " tx_amount = " << block.tx_amount;
                     return block;
                 }
 
@@ -83,7 +84,7 @@ namespace nil {
 
                     auto current_tx_ptree = tx_list[tx_order];
                     std::string tx_hash_string = current_tx_ptree.get_child("tx_hash").data();
-                    BOOST_LOG_TRIVIAL(trace) << tx_order << "." << tx_hash_string << " " ;
+                    BOOST_LOG_TRIVIAL(info) << tx_order << ".VmTrace:: load transaction " << tx_hash_string;
                     tx_trace_tree = load_json_input(path + std::string("tx_" + tx_hash_string + ".json"));
 
                     load_accounts(current_tx_ptree.get_child("execution_trace.prestate_trace"));
@@ -352,7 +353,7 @@ namespace nil {
                     const boost::property_tree::ptree &opcode_description = trace_stack.back().first[trace_stack.back().second];
 
                     std::string indent; for(std::size_t i = 1; i < depth; i++ ) indent += "\t";
-                    BOOST_LOG_TRIVIAL(trace) << indent
+                    BOOST_LOG_TRIVIAL(debug) << indent
                         << opcode_from_number(opcode_number_from_str(opcode_description.get_child("op").data()))
                         << " tx_order = " << tx_order
                         << " call_order = " << call_id
