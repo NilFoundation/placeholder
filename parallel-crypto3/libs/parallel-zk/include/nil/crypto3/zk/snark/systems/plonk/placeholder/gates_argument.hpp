@@ -99,7 +99,6 @@ namespace nil {
 
                     static inline void build_variable_value_map(
                         const math::expression<simd_vector_variable_type>& expr,
-                        const plonk_polynomial_dfs_table<FieldType>& assignments,
                         std::shared_ptr<math::evaluation_domain<FieldType>> domain,
                         std::size_t extended_domain_size,
                         std::unordered_map<simd_vector_variable_type,
@@ -123,7 +122,7 @@ namespace nil {
                             variable_values_out[simd_vector_variable_type(variable)] =
                                 dfs_cache.get(variable, extended_domain_size);
                         }
-                        SCOPED_LOG("Variables count: {}", variable_values_out.size());
+                        SCOPED_LOG("Gate Argument Variables count: {}", variable_values_out.size());
                     }
 
                     static inline std::array<polynomial_dfs_type, argument_size>
@@ -234,7 +233,7 @@ namespace nil {
                                 variable_values;
 
                             build_variable_value_map(
-                                expressions[i], column_polynomials, original_domain,
+                                expressions[i], original_domain,
                                 extended_domain_sizes[i], variable_values,
                                 dfs_cache
                             );
@@ -271,8 +270,6 @@ namespace nil {
                                     },
                                     ThreadPool::PoolLevel::HIGH));
                             }
-
-                            PROFILE_SCOPE("Gate argument add to result");
 
                             F[0] += result;
                         }

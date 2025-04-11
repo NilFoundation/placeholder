@@ -47,6 +47,9 @@
 #include <nil/crypto3/zk/snark/arithmetization/plonk/constraint_system.hpp>
 
 namespace nil::crypto3::zk::snark {
+
+    // Currently we store the value of given variable without any rotations in the cache, to same memory.
+    // We may consider to save all the rotations, if that seems to be faster in the future.
     template<typename FieldType>
     struct dfs_cache {
         using value_type = typename FieldType::value_type;
@@ -77,7 +80,6 @@ namespace nil::crypto3::zk::snark {
                            var_and_size_pair_hash> cache;
 
         std::unordered_map<var_without_rotation_type, std::shared_ptr<polynomial_type>> ifft_cache;
-        std::unordered_map<var_without_rotation_type, std::int32_t> var_rotation;
 
         std::size_t column_size;
         std::shared_ptr<domain_type> domain;
@@ -116,25 +118,23 @@ namespace nil::crypto3::zk::snark {
                     "size");
             }
             ensure_domain(size);
-            std::vector<var_without_rotation_type> new_vars_ifft;
-            std::vector<std::int32_t> new_vars_ifft_rotation;
             std::set<var_without_rotation_type> new_vars_ifft_set;
+
             for (const auto &uncon_v : variables) {
                 var_without_rotation_type v(uncon_v);
 
                 if (is_cached_ifft(v) || new_vars_ifft_set.contains(v)) {
                     continue;
                 }
-                new_vars_ifft.push_back(v);
-                new_vars_ifft_rotation.push_back(uncon_v.rotation);
                 new_vars_ifft_set.insert(v);
                 ifft_cache[v] = nullptr;
-                var_rotation[v] = uncon_v.rotation;
             }
+
+            std::vector<var_without_rotation_type> new_vars_ifft(new_vars_ifft_set.begin(), new_vars_ifft_set.end());
 
             parallel_for(
                 0, new_vars_ifft.size(),
-                [&new_vars_ifft, &new_vars_ifft_rotation, this](std::size_t i) {
+                [&new_vars_ifft, this](std::size_t i) {
                     // We should cache the special selector values as well.
                     if (new_vars_ifft[i].type == var_without_rotation_type::column_type::selector && 
                         new_vars_ifft[i].index >= zk::snark::PLONK_MAX_SELECTOR_ID) {
@@ -156,21 +156,22 @@ namespace nil::crypto3::zk::snark {
                 },
                 ThreadPool::PoolLevel::HIGH);
 
-            std::vector<var_without_rotation_type> new_vars;
             std::set<var_without_rotation_type> new_vars_set;
             for (const auto &uncon_v : variables) {
                 var_without_rotation_type v(uncon_v);
                 if (is_cached(v, size) || new_vars_set.contains(v)) {
                     continue;
                 }
-                new_vars.push_back(v);
                 new_vars_set.insert(v);
                 cache[var_and_size_pair_type(v, size)] = nullptr;
             }
 
+            std::vector<var_without_rotation_type> new_vars(new_vars_set.begin(), new_vars_set.end());
+
             parallel_for(
                 0, new_vars.size(),
                 [&new_vars, size, this](std::size_t i) {
+                    // Here we take from ifft_cache the variable value without rotation.
                     auto value_dfs = std::make_shared<polynomial_dfs_type>();
                     value_dfs->from_coefficients(*ifft_cache[new_vars[i]], get_domain(size));
                     cache[std::make_pair(new_vars[i], size)] = value_dfs;
@@ -180,13 +181,13 @@ namespace nil::crypto3::zk::snark {
 
         // We have a column in the table for this variable.
         void ensure_ifft_cache_for_standard_variable(const var_without_rotation_type &var) {
-            auto og_column = table.get_variable_value_without_rotation(var);
+            auto original_column = table.get_variable_value_without_rotation(var);
             ifft_cache[var] = std::make_shared<polynomial_type>(std::move(
-                og_column.coefficients(domain)));
+                original_column.coefficients(domain)));
         }
 
         bool is_cached_ifft(const var_without_rotation_type& v) {
-            return var_rotation.contains(v);
+            return ifft_cache.contains(v);
         }
         bool is_cached(const var_without_rotation_type& v, std::size_t size) {
             const auto key = std::make_pair(v, size);
@@ -205,22 +206,12 @@ namespace nil::crypto3::zk::snark {
             if (old_result_it == cache.end()) {
                 throw std::logic_error("Variable values should be precomputed before accessed in cache.");
             }
-            auto cur_rotation = var_rotation[v];
-            if (cur_rotation == rotation) {
+            if (rotation == 0) {
                 return old_result_it->second;
             }
 
-            // means that we have already resized this column
-            // to the requested size need to just shift the
-            // cached result
-            auto new_rotation = rotation;
-            auto old_result = *old_result_it->second;
-
-            // note that scaling the shift value is performed
-            // by polynomial_shift
-            std::int32_t shift = new_rotation - cur_rotation;
             return std::make_shared<polynomial_dfs_type>(
-                math::polynomial_shift(old_result, shift, column_size));
+                math::polynomial_shift(*old_result_it->second, rotation, column_size));
         }
     };
 } // namespace nil::crypto3::zk::snark
