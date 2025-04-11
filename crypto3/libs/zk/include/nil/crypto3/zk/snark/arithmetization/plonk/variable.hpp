@@ -80,14 +80,22 @@ namespace nil {
                     bool relative;
                     column_type type;
 
-                    constexpr plonk_variable() : index(0), rotation(0), relative(false), type(column_type::uninitialized) {};
+                    constexpr plonk_variable() : index(0), rotation(0), relative(false), type(column_type::uninitialized) {}
 
                     constexpr plonk_variable(const std::size_t index,
                                              std::int32_t rotation,
                                              bool relative = true,
                                              column_type type = column_type::witness) :
                             index(index),
-                            rotation(rotation), relative(relative), type(type) {};
+                            rotation(rotation), relative(relative), type(type) {}
+
+                    // Allow conversions from any other variable type.
+                    template<typename AnotherAssignmentType>
+                    constexpr plonk_variable(const plonk_variable<AnotherAssignmentType>& other)
+                            : index(other.index)
+                            , rotation(other.rotation)
+                            , relative(other.relative)
+                            , type(static_cast<column_type>(other.type)) {}
 
                     math::expression<plonk_variable<AssignmentType>> pow(const std::size_t power) const {
                         return math::term<plonk_variable<AssignmentType>>(*this).pow(power);
@@ -205,10 +213,21 @@ namespace nil {
                     std::size_t index;
                     column_type type;
 
-                    constexpr plonk_variable_without_rotation() : index(0), type(column_type::uninitialized) {};
+                    constexpr plonk_variable_without_rotation()
+                        : index(0)
+                        , type(column_type::uninitialized) {}
+
                     plonk_variable_without_rotation(const plonk_variable_without_rotation&) = default;
-                    plonk_variable_without_rotation(const var& variable)
-                        :index(var.index), type(var.type) {}
+                    plonk_variable_without_rotation(const plonk_variable<AssignmentType>& var)
+                        : index(var.index)
+                        , type(static_cast<column_type>(var.type)) {}
+
+                    // Allow conversions from any other variable type.
+                    template<typename AnotherAssignmentType>
+                    constexpr plonk_variable_without_rotation(
+                        const plonk_variable_without_rotation<AnotherAssignmentType>& other)
+                            : index(other.index)
+                            , type(other.type) {}
 
                     auto operator<=>(plonk_variable_without_rotation const &) const = default;
                 };
