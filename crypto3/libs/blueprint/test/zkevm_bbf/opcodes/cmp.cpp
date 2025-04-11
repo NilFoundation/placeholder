@@ -28,29 +28,29 @@
 #include <boost/test/unit_test.hpp>
 
 #include <nil/crypto3/algebra/curves/pallas.hpp>
-#include <nil/crypto3/algebra/fields/arithmetic_params/pallas.hpp>
 #include <nil/crypto3/algebra/curves/vesta.hpp>
+#include <nil/crypto3/algebra/fields/arithmetic_params/pallas.hpp>
 #include <nil/crypto3/algebra/fields/arithmetic_params/vesta.hpp>
 #include <nil/crypto3/algebra/random_element.hpp>
 
 #include <nil/crypto3/hash/algorithm/hash.hpp>
-#include <nil/crypto3/hash/sha2.hpp>
 #include <nil/crypto3/hash/keccak.hpp>
+#include <nil/crypto3/hash/sha2.hpp>
 
-#include <nil/blueprint/zkevm_bbf/types/hashed_buffers.hpp>
-#include <nil/blueprint/zkevm_bbf/types/rw_operation.hpp>
-#include <nil/blueprint/zkevm_bbf/types/copy_event.hpp>
-#include <nil/blueprint/zkevm_bbf/types/zkevm_state.hpp>
 #include <nil/blueprint/zkevm_bbf/input_generators/opcode_tester.hpp>
 #include <nil/blueprint/zkevm_bbf/input_generators/opcode_tester_input_generator.hpp>
+#include <nil/blueprint/zkevm_bbf/types/copy_event.hpp>
+#include <nil/blueprint/zkevm_bbf/types/hashed_buffers.hpp>
+#include <nil/blueprint/zkevm_bbf/types/rw_operation.hpp>
+#include <nil/blueprint/zkevm_bbf/types/zkevm_state.hpp>
 
-#include <nil/blueprint/blueprint/plonk/circuit.hpp>
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
-#include <nil/blueprint/zkevm_bbf/zkevm.hpp>
-#include <nil/blueprint/zkevm_bbf/rw.hpp>
-#include <nil/blueprint/zkevm_bbf/copy.hpp>
+#include <nil/blueprint/blueprint/plonk/circuit.hpp>
 #include <nil/blueprint/zkevm_bbf/bytecode.hpp>
+#include <nil/blueprint/zkevm_bbf/copy.hpp>
 #include <nil/blueprint/zkevm_bbf/keccak.hpp>
+#include <nil/blueprint/zkevm_bbf/rw.hpp>
+#include <nil/blueprint/zkevm_bbf/zkevm.hpp>
 
 #include "./opcode_test_fixture.hpp"
 
@@ -152,9 +152,39 @@ BOOST_AUTO_TEST_CASE(cmp) {
         0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016_big_uint256);
     opcode_tester.push_opcode(zkevm_opcode::PUSH32, 0x1234567890_big_uint256);
     opcode_tester.push_opcode(zkevm_opcode::SLT);
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, 0x1234567890_big_uint256);
+    opcode_tester.push_opcode(
+        zkevm_opcode::PUSH32,
+        0xFb70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016_big_uint256);
+    opcode_tester.push_opcode(zkevm_opcode::SLT);
+    opcode_tester.push_opcode(
+        zkevm_opcode::PUSH32,
+        0xFb70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016_big_uint256);
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, 0xFb70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e015_big_uint256);
+    opcode_tester.push_opcode(zkevm_opcode::SLT);
+    opcode_tester.push_opcode(
+        zkevm_opcode::PUSH32,
+        0xFb70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016_big_uint256);
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, 0xF1234567890_big_uint256);
+    opcode_tester.push_opcode(zkevm_opcode::SLT);
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, 0x1234567890_big_uint256);
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32,
+                              0xFb70726fb8d3a24da9ff9647225a18412b8f010_big_uint256);
+    opcode_tester.push_opcode(zkevm_opcode::SGT);
+    opcode_tester.push_opcode(
+        zkevm_opcode::PUSH32,
+        0xFb70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016_big_uint256);
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, 0x1234567890_big_uint256);
+    opcode_tester.push_opcode(zkevm_opcode::SGT);
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, 0xFb70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e015_big_uint256);
+    opcode_tester.push_opcode(
+        zkevm_opcode::PUSH32,
+        0xFb70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016_big_uint256);
+    opcode_tester.push_opcode(zkevm_opcode::SGT);
     opcode_tester.push_opcode(zkevm_opcode::STOP);
 
-    max_sizes.max_keccak_blocks = 10;
+
+    max_sizes.max_keccak_blocks = 20;
     max_sizes.max_bytecode = 3000;
     max_sizes.max_mpt = 0;
     max_sizes.max_rw = 500;

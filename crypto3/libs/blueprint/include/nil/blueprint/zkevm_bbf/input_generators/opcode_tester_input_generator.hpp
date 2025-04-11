@@ -447,9 +447,9 @@ class zkevm_opcode_tester_input_generator : zkevm_abstract_input_generator {
             zkevm_word_type result;
             if( is_negative(a) && !is_negative(b) ){
                 result = 1;
-            } else if( is_negative(a) && is_negative(b) ){
-                result = a > b;
-            } else if( !is_negative(a) && !is_negative(b) ){
+            } else if( !is_negative(a) && is_negative(b) ){
+                result = 0;
+            } else {
                 result = a < b;
             }
             _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, result));
@@ -465,13 +465,14 @@ class zkevm_opcode_tester_input_generator : zkevm_abstract_input_generator {
             stack.pop_back();
             _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, b));
             zkevm_word_type result;
-            if( !is_negative(a) && is_negative(b) ){
+            if( is_negative(a) && !is_negative(b) ){
+                result = 0;
+            } else if( !is_negative(a) && is_negative(b) ){
                 result = 1;
-            } else if( is_negative(a) && is_negative(b) ){
-                result = a < b;
-            } else if( !is_negative(a) && !is_negative(b) ){
+            } else {
                 result = a > b;
             }
+
             _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, result));
             stack.push_back(result);
             pc++;
@@ -599,15 +600,15 @@ class zkevm_opcode_tester_input_generator : zkevm_abstract_input_generator {
             zkevm_word_type b = stack.back();
             stack.pop_back();
             _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, b));
-            zkevm_word_type input_a = stack.back();
+            zkevm_word_type a = stack.back();
             stack.pop_back();
             _rw_operations.push_back(stack_rw_operation(
-                        call_id, stack.size(), rw_counter++, false, input_a));
-            zkevm_word_type a = abs_word(input_a);
+                        call_id, stack.size(), rw_counter++, false, a));
             int shift = (b < 256) ? int(b) : 256;
             zkevm_word_type r = a >> shift;
-            zkevm_word_type result =
-                is_negative(a) ? ((r == 0) ? neg_one : negate_word(r)) : r;
+            zkevm_word_type sign_bit = a >> 255;              
+            zkevm_word_type mask = wrapping_sub(0, sign_bit) << (256 - shift);
+            zkevm_word_type result = r + mask;
             _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, result));
             stack.push_back(result);
             pc++;

@@ -314,6 +314,9 @@ BOOST_AUTO_TEST_CASE(byte_ops) {
     opcode_tester.push_opcode(zkevm_opcode::PUSH32, 0x33_big_uint256);
     opcode_tester.push_opcode(zkevm_opcode::PUSH32, 0x1_big_uint256);
     opcode_tester.push_opcode(zkevm_opcode::SAR);
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF6_big_uint256);
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, 0x1_big_uint256);
+    opcode_tester.push_opcode(zkevm_opcode::SAR);
     opcode_tester.push_opcode(zkevm_opcode::PUSH32, 0x33_big_uint256);
     opcode_tester.push_opcode(zkevm_opcode::PUSH32, 0x1_big_uint256);
     opcode_tester.push_opcode(zkevm_opcode::SHR);

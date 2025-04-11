@@ -102,9 +102,9 @@ namespace nil {
                                 lt = a[i] < b[i];
                                 gt = a[i] > b[i];
                                 if( scmp_operation == scmp_type::C_SLT ){
-                                    result = result + (is_negative_A * is_negative_B * gt + (1 - is_negative_A) * (1 - is_negative_B) * lt);
+                                    result = result + (is_negative_A * is_negative_B + (1 - is_negative_A) * (1 - is_negative_B)) * lt;
                                 } else {
-                                    result = result + (is_negative_A * is_negative_B * lt + (1 - is_negative_A) * (1 - is_negative_B) * gt);
+                                    result = result + (is_negative_A * is_negative_B + (1 - is_negative_A) * (1 - is_negative_B)) * gt;
                                 }
                                 break;
                             }
@@ -148,9 +148,9 @@ namespace nil {
                     constrain(gt + lt - s_sum);
                     constrain(result * (result - 1));
                     if( scmp_operation == scmp_type::C_SLT ){
-                       constrain(result - is_negative_A * (1 - is_negative_B) - is_negative_A * is_negative_B * gt - (1 - is_negative_A) * (1 - is_negative_B) * lt);
+                       constrain(result - is_negative_A * (1 - is_negative_B) - (is_negative_A * is_negative_B + (1 - is_negative_A) * (1 - is_negative_B)) * lt);
                     } else {
-                       constrain(result - is_negative_B * (1 - is_negative_A) - is_negative_A * is_negative_B * lt - (1 - is_negative_A) * (1 - is_negative_B) * gt);
+                       constrain(result - is_negative_B * (1 - is_negative_A) - (is_negative_A * is_negative_B + (1 - is_negative_A) * (1 - is_negative_B)) * gt);
                     }
                     std::vector<TYPE> zero_constraints(15);
                     for( std::size_t i = 0; i < 15; i++ ){
