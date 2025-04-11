@@ -87,9 +87,11 @@ BOOST_AUTO_TEST_CASE(dag_expression_test) {
         [&evaluation_map](const var &var) -> typename FieldType::value_type {
             return evaluation_map[var];
         };
-    auto dag_result = dag_expr.evaluate(eval_map);
+
+    // Evaluate call to Dag evaluates all the expressions, but stores the results inside.
+    dag_expr.evaluate(eval_map);
     auto classic_result = evaluator.evaluate();
-    BOOST_CHECK(classic_result == dag_result[0]);
+    BOOST_CHECK(classic_result == dag_expr.get_result(0));
 }
 
 BOOST_AUTO_TEST_CASE(dag_expression_test_random) {
@@ -110,7 +112,8 @@ BOOST_AUTO_TEST_CASE(dag_expression_test_random) {
         [&evaluation_map](const var &var) -> typename FieldType::value_type {
             return evaluation_map[var];
         };
-    auto dag_result = dag_expr.evaluate(eval_map);
+    // Evaluate call to Dag evaluates all the expressions, but stores the results inside.
+    dag_expr.evaluate(eval_map);
     math::expression_evaluator<var> evaluator(
         expr,
         [&evaluation_map](const var &var) -> const typename FieldType::value_type& {
@@ -118,8 +121,9 @@ BOOST_AUTO_TEST_CASE(dag_expression_test_random) {
         }
     );
     auto classic_result = evaluator.evaluate();
-    BOOST_CHECK(classic_result == dag_result[0]);
-    BOOST_CHECK(classic_result == dag_result[1]);
+    BOOST_CHECK(classic_result == dag_expr.get_result(0));
+    BOOST_CHECK(classic_result == dag_expr.get_result(1));
+
     // also check that the child nodes are the same: we don't redo the computation
     BOOST_CHECK(dag_expr.root_nodes[0] == dag_expr.root_nodes[1]);
 }
