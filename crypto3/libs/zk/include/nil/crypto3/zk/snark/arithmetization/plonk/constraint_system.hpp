@@ -213,6 +213,8 @@ namespace nil {
                         for (const auto& gate : _gates) {
                             for (const auto& constr : gate.constraints) {
                                 std::size_t deg = gates_visitor.compute_max_degree(constr);
+                                if (gate.selector_index == PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED)
+                                  deg = deg ? deg - 1 : 0;
                                 max_gates_degree = std::max(max_gates_degree, deg);
                             }
                         }

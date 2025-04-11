@@ -188,6 +188,30 @@ namespace nil {
                     }
                     return os;
                 }
+
+                /**
+                 * A non-relative variable with no rotation.
+                 */
+                template<typename AssignmentType>
+                class plonk_variable_without_rotation {
+
+                public:
+                    using assignment_type = AssignmentType;
+
+                    enum column_type : std::uint8_t {
+                        witness, public_input, constant, selector, uninitialized
+                    };
+
+                    std::size_t index;
+                    column_type type;
+
+                    constexpr plonk_variable_without_rotation() : index(0), type(column_type::uninitialized) {};
+                    plonk_variable_without_rotation(const plonk_variable_without_rotation&) = default;
+                    plonk_variable_without_rotation(const var& variable)
+                        :index(var.index), type(var.type) {}
+
+                    auto operator<=>(plonk_variable_without_rotation const &) const = default;
+                };
             }    // namespace snark
         }        // namespace zk
     }            // namespace crypto3
@@ -200,6 +224,15 @@ struct std::hash<nil::crypto3::zk::snark::plonk_variable<AssignmentType>> {
         boost::hash_combine(result, std::hash<std::int8_t>()(var.type));
         boost::hash_combine(result, std::hash<std::size_t>()(var.index));
         boost::hash_combine(result, std::hash<bool>()(var.relative));
+        return result;
+    }
+};
+
+template<typename AssignmentType>
+struct std::hash<nil::crypto3::zk::snark::plonk_variable_without_rotation<AssignmentType>> {
+    std::size_t operator()(const nil::crypto3::zk::snark::plonk_variable_without_rotation<AssignmentType> &var) const {
+        std::size_t result = std::hash<std::int32_t>()(var.index);
+        boost::hash_combine(result, std::hash<std::int8_t>()(var.type));
         return result;
     }
 };

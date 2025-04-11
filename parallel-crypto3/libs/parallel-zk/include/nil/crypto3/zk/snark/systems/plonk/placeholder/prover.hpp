@@ -32,7 +32,6 @@
 #error "You're mixing parallel and non-parallel crypto3 versions"
 #endif
 
-#include <chrono>
 #include <set>
 
 #include <nil/crypto3/math/polynomial/polynomial.hpp>
@@ -49,6 +48,7 @@
 #include <nil/crypto3/zk/snark/systems/plonk/placeholder/gates_argument.hpp>
 #include <nil/crypto3/zk/snark/systems/plonk/placeholder/params.hpp>
 #include <nil/crypto3/zk/snark/systems/plonk/placeholder/preprocessor.hpp>
+#include <nil/crypto3/math/polynomial/dfs_cache.hpp>
 
 #include <nil/crypto3/bench/scoped_profiler.hpp>
 
@@ -87,6 +87,8 @@ namespace nil {
 
                     using public_preprocessor_type = placeholder_public_preprocessor<FieldType, ParamsType>;
                     using private_preprocessor_type = placeholder_private_preprocessor<FieldType, ParamsType>;
+
+                    using dfs_cache_type = dfs_cache<FieldType>;
 
                     constexpr static const std::size_t gate_parts = 1;
                     constexpr static const std::size_t permutation_parts = 3;
@@ -140,6 +142,17 @@ namespace nil {
                     placeholder_proof<FieldType, ParamsType> process() {
                         PROFILE_SCOPE("Placeholder prover");
                         // BOOST_LOG_TRIVIAL(info) << "Running prover in multi-threaded mode.";
+                        polynomial_dfs_type mask_polynomial(
+                            0, preprocessed_public_data.common_data->basic_domain->m,
+                            typename FieldType::value_type(1u)
+                        );
+                        mask_polynomial -= preprocessed_public_data.q_last;
+                        mask_polynomial -= preprocessed_public_data.q_blind;
+                        dfs_cache_type dfs_cache(
+                            *_polynomial_table,
+                            mask_polynomial,
+                            preprocessed_public_data.common_data->lagrange_0
+                        );
 
                         SCOPED_LOG(
                             "Assignment table statistics: total columns: {}, witnesses: "
@@ -176,7 +189,7 @@ namespace nil {
 
                         // 5. lookup_argument
                         {
-                            auto lookup_argument_result = lookup_argument();
+                            auto lookup_argument_result = lookup_argument(dfs_cache);
                             _F_dfs[3] = std::move(lookup_argument_result.F_dfs[0]);
                             _F_dfs[4] = std::move(lookup_argument_result.F_dfs[1]);
                             _F_dfs[5] = std::move(lookup_argument_result.F_dfs[2]);
@@ -191,19 +204,12 @@ namespace nil {
 
                         // 6. circuit-satisfability
 
-                        polynomial_dfs_type mask_polynomial(
-                            0, preprocessed_public_data.common_data->basic_domain->m,
-                            typename FieldType::value_type(1u)
-                        );
-                        mask_polynomial -= preprocessed_public_data.q_last;
-                        mask_polynomial -= preprocessed_public_data.q_blind;
                         _F_dfs[7] = placeholder_gates_argument<FieldType, ParamsType>::prove_eval(
                             constraint_system, *_polynomial_table,
                             preprocessed_public_data.common_data->basic_domain,
                             preprocessed_public_data.common_data->max_gates_degree,
-                            mask_polynomial,
-                            preprocessed_public_data.common_data->lagrange_0,
-                            transcript
+                            transcript,
+                            dfs_cache
                         )[0];
 
                         _polynomial_table.reset(); // We don't need it anymore, release memory
@@ -315,13 +321,20 @@ namespace nil {
                         polynomial_type T_consolidated =
                             F_consolidated_normal / preprocessed_public_data.common_data->Z;
 
+                        // We can remove this check later, it's fairly fast and makes sure that prover succeeded.
+                        if (T_consolidated * preprocessed_public_data.common_data->Z != F_consolidated_normal) {
+                            BOOST_LOG_TRIVIAL(info) << "F_consolidated_normal = " << F_consolidated_normal << std::endl;
+                            BOOST_LOG_TRIVIAL(info) << "Z = " << preprocessed_public_data.common_data->Z << std::endl;
+                            throw std::logic_error("Can't divide F Consolidated on Z. Prover failed.");
+                        }
+
                         return T_consolidated;
                     }
 
-                    typename placeholder_lookup_argument_prover<
-                        FieldType, commitment_scheme_type,
-                        ParamsType>::prover_lookup_result
-                    lookup_argument() {
+                    typename placeholder_lookup_argument_prover<FieldType, commitment_scheme_type, ParamsType>::prover_lookup_result
+                    lookup_argument(dfs_cache_type& dfs_cache) {
+                        PROFILE_SCOPE("Lookup argument");
+
                         typename placeholder_lookup_argument_prover<
                             FieldType,
                             commitment_scheme_type,
@@ -341,7 +354,7 @@ namespace nil {
                                 transcript
                             );
 
-                            lookup_argument_result = lookup_argument_prover.prove_eval();
+                            lookup_argument_result = lookup_argument_prover.prove_eval(dfs_cache);
                             _proof.commitments[LOOKUP_BATCH] = lookup_argument_result.lookup_commitment;
                         }
                         return lookup_argument_result;
