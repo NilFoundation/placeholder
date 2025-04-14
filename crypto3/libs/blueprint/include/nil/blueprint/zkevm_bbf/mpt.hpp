@@ -70,7 +70,7 @@ public:
 
     static table_params get_minimal_requirements(std::size_t max_mpt_size) {
         return {
-            .witnesses = 44,
+            .witnesses = 65,
             .public_inputs = 0,
             .constants = 0,
             .rows = max_mpt_size
@@ -85,6 +85,8 @@ public:
         const input_type &input,
         std::size_t max_mpt_size) : generic_component<FieldType,stage>(context_object) {
 
+        using integral_type = typename FieldType::integral_type; 
+
         std::vector<TYPE> parent_hash_0(max_mpt_size);
         std::vector<TYPE> parent_hash_1(max_mpt_size);
         std::vector<TYPE> key_part(max_mpt_size);
@@ -93,13 +95,21 @@ public:
         std::vector<TYPE> depth(max_mpt_size);
         std::vector<TYPE> key_0(max_mpt_size);
         std::vector<TYPE> key_1(max_mpt_size);
+        std::vector<TYPE> is_padding(max_mpt_size);
 
         std::array<std::vector<TYPE>,16> child_0;
         std::array<std::vector<TYPE>,16> child_1;
+        std::array<std::vector<TYPE>,16> rlp_child;
+        std::array<std::vector<TYPE>,3> rlp_node;
 
         for(std::size_t i = 0; i < 16; i++) {
             child_0[i].resize(max_mpt_size);
             child_1[i].resize(max_mpt_size);
+            rlp_child[i].resize(max_mpt_size);
+        }
+
+        for(std::size_t i = 0; i < 3; i++) {
+            rlp_node[i].resize(max_mpt_size);
         }
 
         if constexpr (stage == GenerationStage::ASSIGNMENT) {
@@ -117,30 +127,149 @@ public:
                zkevm_word_type key_suffix = path_key;
                std::size_t accumulated_length = 0;
                std::size_t node_depth = 0;
-               zkevm_word_type parent_hash = 0;
+               std::vector<zkevm_word_type> parent_hash;
 
                for(auto &n : p.proof) {
                    std::cout << "node type = " << n.type << std::endl;
                    std::cout << "[" << std::endl;
 
-                   parent_hash_0[node_num] = w_lo<FieldType>(parent_hash);
-                   parent_hash_1[node_num] = w_hi<FieldType>(parent_hash);
-
                    std::size_t node_key_length = 0;
+                   std::size_t node_value_length = 0;
+                   std::size_t node_key_bytes, node_value_bytes;
+
                    if (n.type != branch) {
-                       zkevm_word_type first_value = n.value.at(0);
-                       while(first_value > 0) {
-                           first_value >>= 4;
-                           node_key_length++;
-                       }
-                       zkevm_word_type k0 = n.value.at(0) >> 4*(node_key_length - 1);
-                       if ((k0 == 1) || (k0 == 3)) {
-                           node_key_length--; // then we only skip the first hex symbol
-                       } else {
-                           node_key_length -= 2; // otherwise, the second hex is 0 and we skip it too
-                       }
+                        std::vector<uint8_t> hash_input; 
+                        zkevm_word_type first_value = n.value.at(0);
+                        while(first_value > 0) {
+                            first_value >>= 4;
+                            node_key_length++;
+                        }
+                        node_key_bytes = ceil(node_key_length/2);
+
+                        std::array<uint8_t,32> key_value = w_to_8(n.value.at(0));
+                        std::vector<uint8_t> byte_vector;
+                        size_t rlp_key_prefix;
+
+                        for(std::size_t i = (32 - node_key_bytes); i < 32; i++) {
+                            byte_vector.push_back(key_value[i]);
+                        }
+
+                        if (node_key_bytes != 1){
+                            rlp_key_prefix = 128 + node_key_bytes; 
+                            byte_vector.emplace(byte_vector.begin(), rlp_key_prefix); 
+                        }   
+                        else{
+                            rlp_key_prefix = 0;
+                        }    
+                        rlp_child[0][node_num] = rlp_key_prefix;
+                        
+                        hash_input.insert( hash_input.end(), byte_vector.begin(), byte_vector.end() );
+
+                        zkevm_word_type k0 = n.value.at(0) >> 4*(node_key_length - 1);
+                        if ((k0 == 1) || (k0 == 3)) {
+                            node_key_length--; // then we only skip the first hex symbol
+                        } else {
+                            node_key_length -= 2; // otherwise, the second hex is 0 and we skip it too
+                        } 
+                            
+                        if (n.type == extension) {
+                            size_t rlp_value_prefix,  rlp_node_prefix0, rlp_node_prefix1;
+                            std::array<uint8_t,32> node_value = w_to_8(n.value.at(1));
+
+                            std::vector<uint8_t> byte_vector(node_value.begin(), node_value.end());
+                            rlp_value_prefix = 128 + 32;
+                            rlp_child[1][node_num] = rlp_value_prefix;
+                            byte_vector.emplace(byte_vector.begin(), rlp_value_prefix); 
+                            hash_input.insert( hash_input.end(), byte_vector.begin(), byte_vector.end() );
+
+                            if (node_key_bytes + 34 <= 55){
+                                rlp_node_prefix0 = 192 + 34;
+                                rlp_node[0][node_num] = rlp_node_prefix0;
+                                hash_input.emplace(hash_input.begin(), rlp_node_prefix0);
+                            }
+                            else{
+                                rlp_node_prefix1 = node_key_bytes + 34;
+                                rlp_node_prefix0 = 247 + 1; 
+                                rlp_node[1][node_num] = rlp_node_prefix1;
+                                rlp_node[0][node_num] = rlp_node_prefix0;
+                                hash_input.emplace(hash_input.begin(), rlp_node_prefix1);
+                                hash_input.emplace(hash_input.begin(), rlp_node_prefix0);
+                            }
+                            zkevm_word_type hash_value = nil::blueprint::zkevm_keccak_hash(hash_input);
+                            parent_hash.push_back(hash_value);
+                        } 
+                        else{
+                            size_t rlp_value_prefix,  rlp_node_prefix0, rlp_node_prefix1;
+                            zkevm_word_type second_value = n.value.at(1);
+                            while(second_value > 0) {
+                                second_value >>= 4;
+                                node_value_length++;
+                            }
+                            node_value_bytes = ceil(node_value_length/2);
+                            
+                            std::array<uint8_t,32> node_value = w_to_8(n.value.at(1));
+                            std::vector<uint8_t> byte_vector;
+                            for(std::size_t i = (32 - node_value_bytes); i < 32; i++) {
+                                byte_vector.push_back(node_value[i]);
+                            }
+                            rlp_value_prefix = 128 + node_value_bytes;
+                            rlp_child[1][node_num] = rlp_value_prefix;
+                            rlp_node_prefix0 = 192 + node_key_bytes + node_value_bytes + 2;
+                            rlp_node[0][node_num] = rlp_node_prefix0;
+                            byte_vector.emplace(byte_vector.begin(), rlp_value_prefix); 
+                            hash_input.insert( hash_input.end(), byte_vector.begin(), byte_vector.end() );
+                            hash_input.emplace(hash_input.begin(), rlp_node_prefix0);
+
+                            zkevm_word_type hash_value = nil::blueprint::zkevm_keccak_hash(hash_input);
+                            parent_hash.push_back(hash_value);
+                        }
                    } else {
-                       node_key_length = 1;
+                       std::size_t count0 = 0;
+                       std::size_t size_of_branch, s0, s1;
+                       std::vector<uint8_t> hash_input; 
+                       size_t rlp_child_prefix, rlp_node_prefix0, rlp_node_prefix1, rlp_node_prefix2;
+                       for(std::size_t i = 0; i < 16; i++) {
+                            if (n.value.at(i) == 0){
+                                rlp_child_prefix = 128;
+                                hash_input.push_back(rlp_child_prefix);
+                                count0++;
+                            }
+                            else{
+                                rlp_child_prefix = 128 + 32;
+                                std::array<uint8_t,32> branch_value = w_to_8(n.value.at(i));
+                                std::vector<uint8_t> byte_vector(branch_value.begin(), branch_value.end());
+                                byte_vector.emplace(byte_vector.begin(), rlp_child_prefix); 
+                                hash_input.insert( hash_input.end(), byte_vector.begin(), byte_vector.end() );
+                            }
+                            rlp_child[i][node_num] = rlp_child_prefix;
+                       }
+                       hash_input.push_back(128); //this is the RLP(value) for the value (which is always 0) in branch nodes
+
+                       size_of_branch = count0 + 33*(16 - count0) + 1;
+
+                       if (count0 < 9){
+                            rlp_node_prefix2 = size_of_branch & 0xff;
+                            rlp_node_prefix1 = (size_of_branch - rlp_node_prefix2) >> 8;
+                            rlp_node_prefix0 = 247 + 2;
+                            hash_input.emplace(hash_input.begin(), rlp_node_prefix2);
+                            hash_input.emplace(hash_input.begin(), rlp_node_prefix1);
+                            hash_input.emplace(hash_input.begin(), rlp_node_prefix0);
+                       }
+                       else{
+                            rlp_node_prefix2 = 0;
+                            rlp_node_prefix1 = size_of_branch;
+                            rlp_node_prefix0 = 247 + 1;
+                            hash_input.emplace(hash_input.begin(), rlp_node_prefix1);
+                            hash_input.emplace(hash_input.begin(), rlp_node_prefix0);
+                       }
+                       rlp_node[2][node_num] = rlp_node_prefix2;
+                       rlp_node[1][node_num] = rlp_node_prefix1;
+                       rlp_node[0][node_num] = rlp_node_prefix0;
+                        
+                       zkevm_word_type hash_value = nil::blueprint::zkevm_keccak_hash(hash_input);
+                       parent_hash.push_back(hash_value);
+
+                       node_key_length = 1; 
                    }
                    key_length[node_num] = node_key_length;
                    std::cout << "Node key length = " << node_key_length << std::endl;
@@ -172,10 +301,25 @@ public:
                    std::cout << "]" << std::endl;
 
                    // TODO: code to update parent hash!
+                   parent_hash_0[node_num] = w_lo<FieldType>(parent_hash[node_num]);
+                   parent_hash_1[node_num] = w_hi<FieldType>(parent_hash[node_num]);
+                   is_padding[node_num] = 1; 
 
                    node_num++;
                    node_depth++;
                }
+           }
+
+           for(std::size_t i = 0; i < node_num - 1 ; i++) {  
+                if (node_type[i] != 1){
+                    BOOST_ASSERT_MSG(child_0[1][i] == parent_hash_0[i + 1], "hash_0 does not match");
+                    BOOST_ASSERT_MSG(child_1[1][i] == parent_hash_1[i + 1], "hash_0 does not match");
+                }
+                if (node_type[i] == 1){
+                    size_t key = static_cast<size_t>(key_part[i].data.base());
+                    BOOST_ASSERT_MSG(child_0[key][i] == parent_hash_0[i + 1], "hash_0 does not match");
+                    BOOST_ASSERT_MSG(child_1[key][i] == parent_hash_1[i + 1], "hash_0 does not match");
+                }
            }
         }
 
@@ -194,10 +338,22 @@ public:
                 allocate(child_0[j][i], 8 + 2*j,i);
                 allocate(child_1[j][i], 8 + 2*j + 1,i);
             }
+            // columns 40-42
+            for(std::size_t j = 0; j < 3; j++) {
+                allocate(rlp_node[j][i], 40 + j,i);
+            }
+            // columns 43-58
+            for(std::size_t j = 0; j < 16; j++) {
+                allocate(rlp_child[j][i], 43 + j,i);
+            }
+           allocate(is_padding[i],        59,i);
         }
-
+        
         if constexpr (stage == GenerationStage::CONSTRAINTS) {
            // constraints
+           for(std::size_t i = 1; i < max_mpt_size; i++) {
+               constrain(is_padding[i] * (depth[i] - depth[i - 1] - 1));
+           }
         }
 /*
         std::size_t START_OP = rw_op_to_num(rw_operation_type::start);
