@@ -75,6 +75,7 @@ template<typename FieldType,
 struct lookup_argument_test_runner {
     using field_type = FieldType;
     using curve_type = CurveType;
+    using polynomial_dfs_type = typename math::polynomial_dfs<typename FieldType::value_type>;
 
     struct placeholder_test_params {
         constexpr static const std::size_t lambda = 40;
@@ -95,6 +96,7 @@ struct lookup_argument_test_runner {
     using lpc_placeholder_params_type = nil::crypto3::zk::snark::placeholder_params<circuit_params, lpc_scheme_type>;
     using policy_type = zk::snark::detail::placeholder_policy<field_type, lpc_placeholder_params_type>;
     using circuit_type = circuit_description<field_type, placeholder_circuit_params<field_type>>;
+    using dfs_cache_type = dfs_cache<FieldType>;
 
     lookup_argument_test_runner(const circuit_type &circuit_in)
         : circuit(circuit_in), desc(circuit_in.table.witnesses().size(),
@@ -126,9 +128,22 @@ struct lookup_argument_test_runner {
         std::vector<std::uint8_t> init_blob{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
         transcript_type prover_transcript(init_blob);
 
+        polynomial_dfs_type mask_polynomial(
+            0, preprocessed_public_data.common_data->basic_domain->m,
+            typename FieldType::value_type(1u)
+        );
+        mask_polynomial -= preprocessed_public_data.q_last;
+        mask_polynomial -= preprocessed_public_data.q_blind;
+
+        dfs_cache_type dfs_cache(
+            polynomial_table,
+            mask_polynomial,
+            preprocessed_public_data.common_data->lagrange_0
+        );
+
         placeholder_lookup_argument_prover<field_type, lpc_scheme_type, lpc_placeholder_params_type> lookup_prover(
                 constraint_system, preprocessed_public_data, polynomial_table, lpc_scheme, prover_transcript);
-        auto prover_res = lookup_prover.prove_eval();
+        auto prover_res = lookup_prover.prove_eval(dfs_cache);
         auto omega = preprocessed_public_data.common_data->basic_domain->get_domain_element(1);
 
         // Challenge phase
