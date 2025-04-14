@@ -61,6 +61,7 @@ using namespace nil::crypto3::zk::snark;
 BOOST_AUTO_TEST_SUITE(placeholder_gate_argument)
     using curve_type = algebra::curves::bls12<381>;
     using field_type = typename curve_type::scalar_field_type;
+    using polynomial_dfs_type = typename math::polynomial_dfs<typename field_type::value_type>;
 
     struct placeholder_test_params {
         using merkle_hash_type = hashes::keccak_1600<256>;
@@ -90,6 +91,7 @@ BOOST_AUTO_TEST_SUITE(placeholder_gate_argument)
     using kzg_type = commitments::batched_kzg<curve_type, typename placeholder_test_params::transcript_hash_type>;
     using kzg_scheme_type = typename commitments::kzg_commitment_scheme<kzg_type>;
     using kzg_placeholder_params_type = nil::crypto3::zk::snark::placeholder_params<circuit_t_params, kzg_scheme_type>;
+    using dfs_cache_type = dfs_cache<field_type>;
 
     BOOST_FIXTURE_TEST_CASE(parallel_placeholder_gate_argument_test, test_tools::random_test_initializer<field_type>) {
         auto pi0 = alg_random_engines.template get_alg_engine<field_type>()();
@@ -144,12 +146,18 @@ BOOST_AUTO_TEST_SUITE(placeholder_gate_argument)
         mask_polynomial -= preprocessed_public_data.q_last;
         mask_polynomial -= preprocessed_public_data.q_blind;
 
+        dfs_cache_type dfs_cache(
+            polynomial_table,
+            mask_polynomial,
+            preprocessed_public_data.common_data->lagrange_0
+        );
+
         std::array<math::polynomial_dfs<typename field_type::value_type>, 1> prover_res =
                 placeholder_gates_argument<field_type, lpc_placeholder_params_type>::prove_eval(
                         constraint_system, polynomial_table, preprocessed_public_data.common_data->basic_domain,
                         preprocessed_public_data.common_data->max_gates_degree,
-                        mask_polynomial, preprocessed_public_data.common_data->lagrange_0,
-                        prover_transcript
+                        prover_transcript,
+                        dfs_cache
                 );
 
         // Challenge phase
