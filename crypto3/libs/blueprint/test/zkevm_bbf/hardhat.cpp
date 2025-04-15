@@ -56,7 +56,7 @@
 
 #include <nil/blueprint/zkevm_bbf/zkevm.hpp>
 #include <nil/blueprint/zkevm_bbf/rw.hpp>
-//#include <nil/blueprint/zkevm_bbf/rw_small_field.hpp>
+#include <nil/blueprint/zkevm_bbf/rw_small_field.hpp>
 #include <nil/blueprint/zkevm_bbf/copy.hpp>
 #include <nil/blueprint/zkevm_bbf/bytecode.hpp>
 #include <nil/blueprint/zkevm_bbf/keccak.hpp>
@@ -80,6 +80,7 @@ public:
 
         using integral_type = typename field_type::integral_type;
         using value_type = typename field_type::value_type;
+        using small_field_type = typename algebra::fields::babybear;
 
         integral_type base16 = integral_type(1) << 16;
 
@@ -113,6 +114,10 @@ public:
         typename nil::blueprint::bbf::rw<field_type,nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type rw_assignment_input;
         rw_assignment_input.rw_operations = circuit_inputs.rw_operations();
         rw_assignment_input.call_commits = circuit_inputs.call_commits();
+
+        typename nil::blueprint::bbf::rw_small_field<small_field_type,nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type rw_small_field_assignment_input;
+        rw_small_field_assignment_input.rw_operations = circuit_inputs.rw_operations();
+        rw_small_field_assignment_input.call_commits = circuit_inputs.call_commits();
 
         typename nil::blueprint::bbf::call_commit<field_type,nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type call_commit_assignment_input;
         call_commit_assignment_input.rw_operations = circuit_inputs.rw_operations();
@@ -202,23 +207,21 @@ public:
 
             const std::string rw_circuit = "rw";
             if (should_run_circuit(rw_circuit)) {
-                // std::cout << "circuit '" << rw_circuit << "'" << std::endl;
+                std::cout << "circuit '" << rw_circuit << "'" << std::endl;
 
-                // // Max_rw, Max_mpt
-                // result = test_bbf_component<field_type, nil::blueprint::bbf::rw>(
-                //     rw_circuit, {}, rw_assignment_input, max_rw, max_mpt,
-                //     max_call_commits);
-                // BOOST_ASSERT(result);
+                // Max_rw, Max_mpt
+                result = test_bbf_component<field_type, nil::blueprint::bbf::rw>(
+                    rw_circuit, {}, rw_assignment_input, max_rw, max_mpt,
+                    max_call_commits);
+                BOOST_ASSERT(result);
 
-            // using small_field_type = typename algebra::fields::babybear;
-            // // Max_rw, Max_mpt
-            // result = test_bbf_component<small_field_type, nil::blueprint::bbf::rw_small_field>(
-            //     rw_circuit,
-            //     {}, rw_assignment_input, max_rw, max_mpt
-            // );
-            // BOOST_ASSERT(result);
-            std::cout << std::endl;
-        }
+                // Max_rw, Max_mpt
+                result = test_bbf_component<small_field_type, nil::blueprint::bbf::rw_small_field>(
+                    rw_circuit, {}, rw_small_field_assignment_input, max_rw, max_mpt, 
+                    max_call_commits);
+                BOOST_ASSERT(result);
+                std::cout << std::endl;
+            }
 
         const std::string call_commit_circuit = "call_commit";
         if (should_run_circuit(call_commit_circuit)) {

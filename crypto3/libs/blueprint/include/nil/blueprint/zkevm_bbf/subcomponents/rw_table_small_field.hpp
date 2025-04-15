@@ -46,17 +46,171 @@ namespace nil {
                 using integral_type = nil::crypto3::multiprecision::big_uint<257>;
 
               public:
-                // For connection with upper-level circuits
+                // rw_table
                 std::vector<TYPE> op;
                 std::vector<std::vector<TYPE>> id;
                 std::vector<std::vector<TYPE>> address;
-                std::vector<std::vector<TYPE>> storage_key;
                 std::vector<TYPE> field_type;
+                std::vector<std::vector<TYPE>> storage_key;
                 std::vector<std::vector<TYPE>> rw_id;
                 std::vector<TYPE> is_write;
                 std::vector<std::vector<TYPE>> value;
+                std::vector<std::vector<TYPE>>
+                    value_before;  // For storage gas calculation, access_lists
+                std::vector<std::vector<TYPE>> call_id;
+                std::vector<std::vector<TYPE>> w_id_before;  // For call_commit proving
 
-                static std::size_t get_witness_amount() { return 49; }
+                static std::size_t get_witness_amount() { return 69; }
+
+                // static std::vector<TYPE> call_context_lookup(
+                //     TYPE call_id,
+                //     std::size_t field,
+                //     TYPE value_hi,
+                //     TYPE value_lo
+                // ){
+                //     return {
+                //         TYPE(rw_op_to_num(rw_operation_type::call_context)),
+                //         call_id,
+                //         TYPE(0),
+                //         TYPE(field), // field TYPE(0), // storage_key_hi TYPE(0), //
+                //         storage_key_lo call_id + field, // rw_counter TYPE(0), //
+                //         is_write value_hi, value_lo, TYPE(0), // value_before_hi
+                //         TYPE(0),                                               //
+                //         value_before_lo TYPE(0), // call_id TYPE(0) // w_id_before
+                //     };
+                // }
+
+                // static std::vector<TYPE> call_context_editable_lookup(
+                //     TYPE call_id,
+                //     std::size_t field,
+                //     TYPE rw_counter,
+                //     TYPE is_write,
+                //     TYPE value_hi,
+                //     TYPE value_lo
+                // ){
+                //     return {
+                //         TYPE(rw_op_to_num(rw_operation_type::call_context)),
+                //         call_id,
+                //         TYPE(0),
+                //         TYPE(field), // field TYPE(0), // storage_key_hi TYPE(0), //
+                //         storage_key_lo rw_counter, // rw_counter is_write, // is_write
+                //         value_hi,
+                //         value_lo,
+                //         TYPE(0),                                               //
+                //         value_before_hi TYPE(0), // value_before_lo TYPE(0), // call_id
+                //         TYPE(0)                                                //
+                //         w_id_before
+                //     };
+                // }
+
+                // static std::vector<TYPE> rw_item_lookup(
+                //     TYPE op,
+                //     TYPE id,
+                //     TYPE address,
+                //     TYPE field,
+                //     TYPE storage_key_hi,
+                //     TYPE storage_key_lo
+                // ){
+                //     return {op, id, address, field, storage_key_hi, storage_key_lo};
+                // }
+
+                // static std::vector<TYPE> stack_lookup(
+                //     TYPE call_id,
+                //     TYPE stack_pointer,
+                //     TYPE rw_counter,
+                //     TYPE is_write,
+                //     TYPE value_hi,
+                //     TYPE value_lo
+                // ){
+                //     return {
+                //         TYPE(rw_op_to_num(rw_operation_type::stack)),
+                //         call_id,
+                //         stack_pointer,
+                //         TYPE(0),                                               //
+                //         storage_key_hi TYPE(0), // storage_key_lo TYPE(0), // field
+                //         rw_counter,
+                //         is_write,
+                //         value_hi,
+                //         value_lo,
+                //         TYPE(0),                                               //
+                //         value_before_hi TYPE(0), // value_before_lo TYPE(0), // call_id
+                //         TYPE(0)                                                //
+                //         w_id_before
+                //     };
+                // }
+
+                // static std::vector<TYPE> memory_lookup(
+                //     TYPE call_id,
+                //     TYPE memory_address,
+                //     TYPE rw_counter,
+                //     TYPE is_write,
+                //     TYPE value_lo
+                // ){
+                //     return {
+                //         TYPE(rw_op_to_num(rw_operation_type::memory)),
+                //         call_id,
+                //         memory_address,
+                //         TYPE(0),              // storage_key_hi
+                //         TYPE(0),              // storage_key_lo
+                //         TYPE(0),              // field
+                //         rw_counter,
+                //         is_write,
+                //         TYPE(0),              // hi bytes are 0
+                //         value_lo,
+                //         TYPE(0),              // value_before_hi
+                //         TYPE(0),              // value_before_lo
+                //         TYPE(0),              // call_id
+                //         TYPE(0)               // w_id_before
+                //     };
+                // }
+
+                // static std::vector<TYPE> calldata_lookup(
+                //     TYPE call_id,
+                //     TYPE calldata_address,
+                //     TYPE rw_counter,
+                //     TYPE value_lo
+                // ){
+                //     return {
+                //         TYPE(rw_op_to_num(rw_operation_type::calldata)),
+                //         call_id,
+                //         calldata_address,
+                //         TYPE(0),              // storage_key_hi
+                //         TYPE(0),              // storage_key_lo
+                //         TYPE(0),              // field
+                //         rw_counter,
+                //         TYPE(0),              // calldata is readonly
+                //         TYPE(0),              // hi bytes are 0
+                //         value_lo,
+                //         TYPE(0),              // value_before_hi
+                //         TYPE(0),              // value_before_lo
+                //         TYPE(0),              // call_id
+                //         TYPE(0)               // w_id_before
+                //     };
+                // }
+
+                // static std::vector<TYPE> returndata_lookup(
+                //     TYPE call_id,
+                //     TYPE returndata_address,
+                //     TYPE rw_counter,
+                //     TYPE value_lo
+                // ){
+                //     return {
+                //         TYPE(rw_op_to_num(rw_operation_type::returndata)),
+                //         call_id,
+                //         returndata_address,
+                //         TYPE(0),              // storage_key_hi
+                //         TYPE(0),              // storage_key_lo
+                //         TYPE(0),              // field
+                //         rw_counter,
+                //         TYPE(0),              // calldata is readonly
+                //         TYPE(0),              // hi bytes are 0
+                //         value_lo,
+                //         TYPE(0),              // value_before_hi
+                //         TYPE(0),              // value_before_lo
+                //         TYPE(0),              // call_id
+                //         TYPE(0)               // w_id_before
+                //     };
+                // }
 
                 rw_table_small_field(context_type &context_object,
                                      const input_type &input, std::size_t max_rw_size,
@@ -65,34 +219,57 @@ namespace nil {
                       op(max_rw_size),
                       id(max_rw_size, std::vector<TYPE>(2)),
                       address(max_rw_size, std::vector<TYPE>(10)),
-                      storage_key(max_rw_size, std::vector<TYPE>(16)),
                       field_type(max_rw_size),
+                      storage_key(max_rw_size, std::vector<TYPE>(16)),
                       is_write(max_rw_size),
                       rw_id(max_rw_size, std::vector<TYPE>(2)),
-                      value(max_rw_size, std::vector<TYPE>(16)) {
+                      value(max_rw_size, std::vector<TYPE>(16)),
+                      value_before(max_rw_size, std::vector<TYPE>(16)),
+                      call_id(max_rw_size, std::vector<TYPE>(2)),
+                      w_id_before(max_rw_size, std::vector<TYPE>(2)) {
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
                         auto rw_trace = input;
-                        // std::cout << "RW assign size = " << rw_trace.size() <<
-                        // std::endl;
                         BOOST_ASSERT(rw_trace.size() <= max_rw_size);
+                        BOOST_ASSERT(rw_trace[0].op == rw_operation_type::start);
+
+                        std::map<std::size_t, std::pair<TYPE, TYPE>>
+                            state_value_before;  // For STATE type rw_id=>value_prev
                         for (std::size_t i = 0; i < rw_trace.size(); i++) {
                             // if( rw_trace[i].op != rw_operation_type::padding )
                             //     std::cout << "\t" << i << "." << rw_trace[i] <<
                             //     std::endl;
                             op[i] = rw_op_to_num(rw_trace[i].op);
                             id[i] = zkevm_word_to_field_element_flexible<FieldType>(
-                                rw_trace[i].call_id, 2);
+                                rw_trace[i].id, 2);
                             address[i] = zkevm_word_to_field_element_flexible<FieldType>(
                                 rw_trace[i].address, 10);
                             storage_key[i] = zkevm_word_to_field_element<FieldType>(
                                 rw_trace[i].storage_key);
-                            field_type[i] =
-                                0;  // TODO: fix it for different state updates
+                            field_type[i] = rw_trace[i].field;
                             rw_id[i] = zkevm_word_to_field_element_flexible<FieldType>(
                                 rw_trace[i].rw_counter, 2);
                             is_write[i] = rw_trace[i].is_write;
                             value[i] =
                                 zkevm_word_to_field_element<FieldType>(rw_trace[i].value);
+                            call_id[i] = zkevm_word_to_field_element_flexible<FieldType>(
+                                rw_trace[i].call_id, 2);
+
+                            if (i == 0) continue;
+                            bool is_first =
+                                op[i - 1] != op[i] || id[i - 1] != id[i] ||
+                                rw_trace[i - 1].address != rw_trace[i].address ||
+                                rw_trace[i - 1].storage_key !=
+                                    rw_trace[i - 1].storage_key ||
+                                field_type[i - 1] != field_type[i];
+
+                            if (rw_trace[i].op == rw_operation_type::state ||
+                                rw_trace[i].op == rw_operation_type::access_list) {
+                                value_before[i] = zkevm_word_to_field_element<FieldType>(
+                                    rw_trace[i].value_before);
+                                w_id_before[i] =
+                                    zkevm_word_to_field_element_flexible<FieldType>(
+                                        rw_trace[i].w_id_before, 2);
+                            }
                         }
                         for (std::size_t i = rw_trace.size(); i < max_rw_size; i++) {
                             op[i] = rw_op_to_num(rw_operation_type::padding);
@@ -115,11 +292,21 @@ namespace nil {
                         for (std::size_t j = 0; j < 16; j++) {
                             allocate(value[i][j], 33 + j, i);
                         }
+                        for (std::size_t j = 0; j < 16; j++) {
+                            allocate(value_before[i][j], 49 + j, i);
+                        }
+                        allocate(call_id[i][0], 65, i);
+                        allocate(call_id[i][1], 66, i);
+                        allocate(w_id_before[i][0], 67, i);
+                        allocate(w_id_before[i][1], 68, i);
                     }
                     if (register_dynamic_lookup) {
-                        std::vector<std::size_t> indices(48);
+                        std::vector<std::size_t> indices(68);
+                        std::vector<std::size_t> short_indices(48);
                         std::iota(indices.begin(), indices.end(), 0);
+                        std::iota(short_indices.begin(), short_indices.end(), 0);
                         lookup_table("zkevm_rw", indices, 0, max_rw_size);
+                        lookup_table("zkevm_rw_short", short_indices, 0, max_rw_size);
                     }
                 }
             };
