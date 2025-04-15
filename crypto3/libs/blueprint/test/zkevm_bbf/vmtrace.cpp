@@ -515,7 +515,7 @@ BOOST_AUTO_TEST_CASE(sp1_block_20526631) {
     max_sizes.max_exp_rows = 500;
     max_sizes.max_call_commits = 500;
 
-    complex_test<field_type>("vmtrace/sp1_block_20526630/", max_sizes);
+    complex_test<field_type>("vmtrace/sp1_block_20526631/", max_sizes);
 }
 
 BOOST_AUTO_TEST_CASE(sp1_block_20528708) {
