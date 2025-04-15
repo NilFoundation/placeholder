@@ -100,7 +100,7 @@ public:
 
             for(const auto &w : node) {
                 std::string hash_value = w.second.data();
-                // std::cout << "    value = " << hash_value << std::endl;
+                // std::cout << "    valueeee = " << hash_value << std::endl;
                 single_node.value.push_back(zkevm_word_from_string(hash_value));
             }
             // std::cout << "]" << std::endl;
@@ -125,6 +125,6 @@ public:
 BOOST_FIXTURE_TEST_SUITE(zkevm_bbf_mpt, zkEVMMPTTestFixture)
     using field_type = nil::crypto3::algebra::curves::alt_bn128_254::scalar_field_type;
 BOOST_AUTO_TEST_CASE(one_mpt_path) {
-    test_zkevm_mpt<field_type>("mpt_path_0.json", 50);
+    test_zkevm_mpt<field_type>("mpt_path_0.json", 5); 
 }
 BOOST_AUTO_TEST_SUITE_END()
