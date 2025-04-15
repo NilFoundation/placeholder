@@ -246,6 +246,12 @@ namespace nil::crypto3::math {
     static_simd_vector<FieldValueType, Size> get_chunk(
         const polynomial_dfs<FieldValueType>& poly, std::size_t offset,
         std::size_t number) {
+
+        // If we have a constant value, our polynomial will frequently have size = 1, but we still
+        // must return the chunk value.
+        if (poly.degree() == 0) {
+            return static_simd_vector<FieldValueType, Size>(poly[0]);
+        }
         static_simd_vector<FieldValueType, Size> result;
         for (std::size_t i = 0; i < Size; ++i) {
             if (offset + number * Size + i >= poly.size()) {
@@ -267,6 +273,7 @@ namespace nil::crypto3::math {
             poly[offset + number * Size + i] = chunk[i];
         }
     }
+
 }  // namespace nil::crypto3::math
 
 // As our operator== returns false for vectors with different sizes, the same will happen here,

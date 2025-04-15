@@ -43,22 +43,22 @@ namespace nil {
             public:
                 expression_max_degree_visitor() {}
 
-                std::uint32_t compute_max_degree(const math::expression<VariableType>& expr) {
+                std::uint32_t compute_max_degree(const math::expression<VariableType>& expr) const {
                     return boost::apply_visitor(*this, expr.get_expr());
                 }
 
-                std::uint32_t operator()(const math::term<VariableType>& term) {
+                std::uint32_t operator()(const math::term<VariableType>& term) const {
                     return term.get_vars().size();
                 }
 
                 std::uint32_t operator()(
-                        const math::pow_operation<VariableType>& pow) {
+                        const math::pow_operation<VariableType>& pow) const {
                     std::uint32_t result = boost::apply_visitor(*this, pow.get_expr().get_expr());
                     return result * pow.get_power();
                 }
 
                 std::uint32_t operator()(
-                        const math::binary_arithmetic_operation<VariableType>& op) {
+                        const math::binary_arithmetic_operation<VariableType>& op) const {
                     std::uint32_t left = boost::apply_visitor(*this, op.get_expr_left().get_expr());
                     std::uint32_t right = boost::apply_visitor(*this, op.get_expr_right().get_expr());
                     switch (op.get_op()) {

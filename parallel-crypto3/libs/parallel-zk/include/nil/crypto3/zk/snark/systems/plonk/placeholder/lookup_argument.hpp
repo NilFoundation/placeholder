@@ -45,11 +45,14 @@
 #include <nil/crypto3/math/polynomial/polynomial.hpp>
 #include <nil/crypto3/math/polynomial/shift.hpp>
 #include <nil/crypto3/math/polynomial/static_simd_vector.hpp>
-#include <nil/crypto3/math/polynomial/dfs_cache.hpp>
 
 #include <nil/crypto3/hash/sha2.hpp>
 
 #include <nil/crypto3/container/merkle/tree.hpp>
+
+#include <nil/crypto3/zk/math/expression.hpp>
+#include <nil/crypto3/zk/math/expression_visitors.hpp>
+#include <nil/crypto3/zk/math/centralized_expression_evaluator.hpp>
 
 #include <nil/crypto3/zk/transcript/fiat_shamir.hpp>
 #include <nil/crypto3/zk/snark/arithmetization/plonk/lookup_constraint.hpp>
@@ -70,18 +73,16 @@ namespace nil {
             namespace snark {
                 template<typename FieldType, typename CommitmentSchemeTypePermutation, typename ParamsType>
                 class placeholder_lookup_argument_prover {
-                    static constexpr std::size_t mini_chunk_size = 64;
+                    using value_type = typename FieldType::value_type;
+
                     using transcript_hash_type = typename ParamsType::transcript_hash_type;
                     using transcript_type = transcript::fiat_shamir_heuristic_sequential<transcript_hash_type>;
-                    using polynomial_dfs_type = math::polynomial_dfs<typename FieldType::value_type>;
-                    using simd_vector_type =
-                        math::static_simd_vector<typename FieldType::value_type,
-                                                 mini_chunk_size>;
-                    using variable_type = plonk_variable<typename FieldType::value_type>;
+                    using polynomial_dfs_type = math::polynomial_dfs<value_type>;
+                    using variable_type = plonk_variable<value_type>;
                     using polynomial_dfs_variable_type = plonk_variable<polynomial_dfs_type>;
-                    using simd_vector_variable_type = plonk_variable<simd_vector_type>;
                     using commitment_scheme_type = CommitmentSchemeTypePermutation;
-                    using dfs_cache_type = dfs_cache<FieldType>;
+                    using expression_type = expression<polynomial_dfs_variable_type>;
+                    using central_evaluator_type = CentralAssignmentTableExpressionEvaluator<FieldType>;
 
                     static constexpr std::size_t argument_size = 4;
 
@@ -95,15 +96,16 @@ namespace nil {
                     };
 
                     placeholder_lookup_argument_prover(
-                            const plonk_constraint_system<FieldType>
-                                &constraint_system,
+                            const plonk_constraint_system<FieldType> &constraint_system,
                             const typename placeholder_public_preprocessor<FieldType, ParamsType>::preprocessed_data_type
                                 &preprocessed_data,
+                            central_evaluator_type& central_expr_evaluator,
                             const plonk_polynomial_dfs_table<FieldType>& plonk_columns,
                             commitment_scheme_type &commitment_scheme,
                             transcript_type &transcript)
                         : constraint_system(constraint_system)
                         , preprocessed_data(preprocessed_data)
+                        , _central_expr_evaluator(central_expr_evaluator)
                         , plonk_columns(plonk_columns)
                         , commitment_scheme(commitment_scheme)
                         , transcript(transcript)
@@ -117,24 +119,26 @@ namespace nil {
                         theta = transcript.template challenge<FieldType>();
                     }
 
-                    prover_lookup_result prove_eval(dfs_cache_type& dfs_cache) {
+                    prover_lookup_result prove_eval() {
                         PROFILE_SCOPE("Lookup argument prove eval");
 
                         const auto& assignment_desc = preprocessed_data.common_data->desc;
 
-                        typename FieldType::value_type one = FieldType::value_type::one();
+                        value_type one = FieldType::value_type::one();
 
                         polynomial_dfs_type one_polynomial(0, basic_domain->m, one);
-                        polynomial_dfs_type mask_assignment =
-                            one_polynomial -  preprocessed_data.q_last - preprocessed_data.q_blind;
-                        polynomial_dfs_type lagrange0 = preprocessed_data.common_data->lagrange_0;
+
+                        // We wanted to collect all the expressions and evaluate them at once, but usage of transcript does not allow that.
+                        // So we are computing the required values for each prover step separately.
+                        _central_expr_evaluator.register_expressions(this->get_lookup_input_expressions());
+                        _central_expr_evaluator.register_expressions(this->get_lookup_value_expressions());
+                        _central_expr_evaluator.evaluate_all();
 
                         std::unique_ptr<std::vector<polynomial_dfs_type>> lookup_value_ptr =
-                            prepare_lookup_value(mask_assignment, lagrange0);
+                            get_lookup_values();
                         auto& lookup_value = *lookup_value_ptr;
 
-                        std::unique_ptr<std::vector<polynomial_dfs_type>> lookup_input_ptr =
-                            prepare_lookup_input(dfs_cache);
+                        std::unique_ptr<std::vector<polynomial_dfs_type>> lookup_input_ptr = get_lookup_input();
                         auto& lookup_input = *lookup_input_ptr;
 
                         // Lookup_input and lookup_value are ready
@@ -165,7 +169,7 @@ namespace nil {
                         typename commitment_scheme_type::commitment_type lookup_commitment = commitment_scheme.commit(LOOKUP_BATCH);
                         transcript(lookup_commitment);
 
-                        typename FieldType::value_type alpha = transcript.template challenge<FieldType>();
+                        value_type alpha = transcript.template challenge<FieldType>();
 
                         std::vector<polynomial_dfs_type> hs = compute_h_polys(reduced_input, alpha);
                         std::vector<polynomial_dfs_type> gs = compute_g_polys(reduced_value, counts, alpha);
@@ -191,11 +195,13 @@ namespace nil {
                         commitment_scheme.append_to_batch(PERMUTATION_BATCH, hs);
                         commitment_scheme.append_to_batch(PERMUTATION_BATCH, gs);
 
+                        // TODO(martun): Make sure we don't need to commit to permutation batch here, we are committing to it
+                        // in prover.hpp after lookup argument is ran.
                         std::array<polynomial_dfs_type, argument_size> F_dfs;
 
                         // Create a constraint for H_i(X) * (alpha - F_i(X)) + 1 == 0.
-                        typename FieldType::value_type h_challenge = transcript.template challenge<FieldType>();
-                        std::vector<typename FieldType::value_type> h_challenges;
+                        value_type h_challenge = transcript.template challenge<FieldType>();
+                        std::vector<value_type> h_challenges;
                         h_challenges.push_back(h_challenge);
                         for (size_t i = 1; i < hs.size(); ++i) {
                             h_challenges.push_back(h_challenges.back() * h_challenge);
@@ -221,8 +227,8 @@ namespace nil {
                         F_dfs[0] = polynomial_sum<FieldType>(std::move(h_constraint_parts));
 
                         // Create a constraint for G_i(X) * (alpha - t_i(X)) - m_i(X) == 0.
-                        typename FieldType::value_type g_challenge = transcript.template challenge<FieldType>();
-                        std::vector<typename FieldType::value_type> g_challenges;
+                        value_type g_challenge = transcript.template challenge<FieldType>();
+                        std::vector<value_type> g_challenges;
                         g_challenges.push_back(g_challenge);
                         for (size_t i = 1; i < gs.size(); ++i) {
                             g_challenges.push_back(g_challenges.back() * g_challenge);
@@ -283,7 +289,7 @@ namespace nil {
                     // Computes the helper polynomials H_i(X) = -1 / (alpha - c_i(X)) over the domain.
                     std::vector<polynomial_dfs_type> compute_h_polys(
                             const std::vector<polynomial_dfs_type>& lookup_input,
-                            const typename FieldType::value_type& alpha) {
+                            const value_type& alpha) {
                         PROFILE_SCOPE("Lookup argument computing polynomials H_i");
 
                         std::vector<polynomial_dfs_type> Hs = lookup_input;
@@ -299,7 +305,7 @@ namespace nil {
                     std::vector<polynomial_dfs_type> compute_g_polys(
                             const std::vector<polynomial_dfs_type>& lookup_value,
                             const std::vector<polynomial_dfs_type>& counts,
-                            const typename FieldType::value_type& alpha) {
+                            const value_type& alpha) {
                         PROFILE_SCOPE("Lookup argument computing polynomials G_i");
 
                         std::vector<polynomial_dfs_type> Gs = lookup_value;
@@ -318,37 +324,56 @@ namespace nil {
                         return Gs;
                     }
 
-                    std::unique_ptr<std::vector<polynomial_dfs_type>> prepare_lookup_value(
-                        const polynomial_dfs_type &mask_assignment,
-                        const polynomial_dfs_type &lagrange0
-                    ) {
+                    /** Returns all the expressions that are required for lookup value computation.
+                     */
+                    std::vector<expression_type> get_lookup_value_expressions() {
+                        PROFILE_SCOPE("Lookup argument preparing lookup value expressions");
+
+                        std::vector<expression_type> expressions;
+
+                        for (std::size_t t_id = 0; t_id < lookup_tables.size(); t_id++) {
+                            const plonk_lookup_table<FieldType> &l_table = lookup_tables[t_id];
+
+                            polynomial_dfs_variable_type lookup_tag(
+                                        l_table.tag_index, 0, false,
+                                        polynomial_dfs_variable_type::column_type::selector);
+
+                            for (size_t o_id = 0; o_id < l_table.lookup_options.size(); ++o_id) {
+                                for (std::size_t i = 0; i < l_table.columns_number; i++) {
+                                    expressions.push_back(lookup_tag * l_table.lookup_options[o_id][i]);
+                                }
+                            }
+                        }
+                        return expressions;
+                    }
+
+                    std::unique_ptr<std::vector<polynomial_dfs_type>> get_lookup_values() {
                         PROFILE_SCOPE("Lookup argument preparing lookup value");
 
-                        // Prepare lookup value
                         auto lookup_value_ptr = std::make_unique<std::vector<polynomial_dfs_type>>();
                         for (std::size_t t_id = 0; t_id < lookup_tables.size(); t_id++) {
                             const plonk_lookup_table<FieldType> &l_table = lookup_tables[t_id];
-                            polynomial_dfs_type lookup_tag;
-                            if(l_table.tag_index == PLONK_SPECIAL_SELECTOR_ALL_USABLE_ROWS_SELECTED )
-                                lookup_tag = mask_assignment;
-                            else if( l_table.tag_index == PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED )
-                                lookup_tag = mask_assignment - lagrange0;
-                            else if (l_table.tag_index == PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED)
-                                throw std::logic_error("You should not multiply with the selector for all rows.");
-                            else
-                                lookup_tag = plonk_columns.selector(l_table.tag_index);
+                            polynomial_dfs_variable_type lookup_tag_selector(
+                                        l_table.tag_index, 0, false,
+                                        polynomial_dfs_variable_type::column_type::selector);
 
+                            // Get the selector value in double size, since computations below
+                            // will resize everything to double size.
+                            polynomial_dfs_type lookup_tag = *_central_expr_evaluator.get(
+                                lookup_tag_selector,  _central_expr_evaluator.get_original_domain_size() * 2);
+                            
                             // Increase the size to fit the next table values.
                             std::size_t lookup_values_used = lookup_value_ptr->size();
                             lookup_value_ptr->resize(lookup_values_used + l_table.lookup_options.size());
 
                             parallel_for(0, l_table.lookup_options.size(),
-                                [&l_table, t_id, &lookup_tag, this, &mask_assignment, &lookup_value_ptr, lookup_values_used](std::size_t o_id) {
-                                    polynomial_dfs_type v = (typename FieldType::value_type(t_id + 1)) * lookup_tag;
-                                    typename FieldType::value_type theta_acc = this->theta;
+                                [&l_table, t_id, &lookup_tag, &lookup_tag_selector, this, &lookup_value_ptr, lookup_values_used]
+                                (std::size_t o_id) {
+                                    polynomial_dfs_type v = (value_type(t_id + 1)) * lookup_tag;
+                                    value_type theta_acc = this->theta;
                                     for (std::size_t i = 0; i < l_table.columns_number; i++) {
-                                        v += theta_acc * lookup_tag * plonk_columns.get_variable_value_without_rotation(
-                                            l_table.lookup_options[o_id][i]);
+                                        v += theta_acc * this->_central_expr_evaluator.get_expression_value(
+                                            lookup_tag_selector * l_table.lookup_options[o_id][i]);
                                         theta_acc *= this->theta;
                                     }
                                     (*lookup_value_ptr)[lookup_values_used + o_id] = v;
@@ -357,159 +382,56 @@ namespace nil {
                         return std::move(lookup_value_ptr);
                     }
 
-                    // TODO: deduplicate this code, it's almost the same as in the gate argument.
-                    static inline void build_variable_value_map(
-                        const std::vector<math::expression<simd_vector_variable_type>>&
-                            exprs,
-                        const plonk_polynomial_dfs_table<FieldType>& assignments,
-                        std::shared_ptr<math::evaluation_domain<FieldType>> domain,
-                        std::unordered_map<simd_vector_variable_type, std::shared_ptr<polynomial_dfs_type>>& variable_values_out,
-                        size_t extended_domain_size,
-                        dfs_cache_type& dfs_cache
-                    ) {
-                        PROFILE_SCOPE("Lookup argument build variable value map");
-                        // Get out all the variables used and maximal degree of any expression in all possible lookup inputs
-                        std::set<polynomial_dfs_variable_type> variables_set;
+                    /** Returns all the expressions that are required for lookup inputs.
+                     *  We don't use theta here, multiplication by theta powers will be done separately.
+                     */
+                    std::vector<expression_type> get_lookup_input_expressions() {
+                        PROFILE_SCOPE("Lookup argument preparing lookup input expressions");
 
-                        for (const auto& expr: exprs) {
-                            math::expression_for_each_variable_visitor<
-                                simd_vector_variable_type>
-                                visitor([&variables_set](const simd_vector_variable_type& var) {
-                                    variables_set.insert(polynomial_dfs_variable_type(var));
-                                });
-                            visitor.visit(expr);
-                        }
-                        dfs_cache.ensure_cache(variables_set, extended_domain_size);
-                        for (const auto& variable : variables_set) {
-                            variable_values_out[simd_vector_variable_type(variable)] =
-                                dfs_cache.get(variable, extended_domain_size);
-                        }
-                        SCOPED_LOG("Variables count: {}", variable_values_out.size());
-                    }
-
-                    std::unique_ptr<std::vector<polynomial_dfs_type>> prepare_lookup_input(
-                        dfs_cache_type& dfs_cache
-                    ) {
-                        PROFILE_SCOPE("Lookup argument preparing lookup input");
-                        using value_type = typename FieldType::value_type;
-
-                        auto lookup_input_ptr = std::make_unique<std::vector<polynomial_dfs_type>>();
-                        std::vector<expression<simd_vector_variable_type>> expressions;
-
-                        auto value_type_to_simd_vector =
-                            [](const typename variable_type::assignment_type& coeff) {
-                                return simd_vector_type(coeff);
+                        // Every constraint has variable type 'variable_type', but we want it to use
+                        // 'polynomial_dfs_variable_type' instead. The only difference is the coefficient type
+                        // inside a term. We want the coefficients to be dfs polynomials here.
+                        auto value_type_to_polynomial_dfs = [](
+                            const typename variable_type::assignment_type& coeff) {
+                                return polynomial_dfs_type(0, 1, coeff);
                             };
-
-                        math::expression_variable_type_converter<
-                            variable_type, simd_vector_variable_type>
-                            converter(value_type_to_simd_vector);
+                        math::expression_variable_type_converter<variable_type, polynomial_dfs_variable_type> converter(
+                            value_type_to_polynomial_dfs);
+ 
+                        std::vector<expression_type> expressions;
 
                         for (const auto &gate : lookup_gates) {
                             // Build all expressions
                             for (const auto& constraint : gate.constraints) {
-                                expression<simd_vector_variable_type> l =
-                                    value_type_to_simd_vector(constraint.table_id);
-                                simd_vector_type theta_acc =
-                                    value_type_to_simd_vector(this->theta);
+                                expression_type l = value_type_to_polynomial_dfs(constraint.table_id);
+                                value_type theta_acc = this->theta;
                                 for (const auto& expr : constraint.lookup_input) {
-                                    l += theta_acc * converter.convert(expr);
+                                    l += converter.convert(theta_acc * expr);
                                     theta_acc *= this->theta;
                                 }
                                 if (gate.tag_index != PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED) {
-                                    l *= simd_vector_variable_type(
+                                    l *= polynomial_dfs_variable_type(
                                         gate.tag_index, 0, false,
-                                        simd_vector_variable_type::column_type::selector);
+                                        polynomial_dfs_variable_type::column_type::selector);
                                 }
 
                                 expressions.push_back(std::move(l));
                             }
                         }
-                        lookup_input_ptr->resize(expressions.size());
+                        return expressions;
+                    }
 
-                        std::vector<std::vector<expression<simd_vector_variable_type>>> batched_expressions;
-                        std::vector<std::unordered_map<std::size_t, std::size_t>> batch_index_maps;
-                        // Group expressions into batches based on their degree
-                        for (std::size_t i = 0; i < expressions.size(); ++i) {
-                            math::expression_max_degree_visitor<simd_vector_variable_type> max_degree_visitor;
-                            std::size_t degree = max_degree_visitor.compute_max_degree(expressions[i]);
-                            // next power of 2
-                            std::size_t batch_index = std::max<std::size_t>(std::ceil(std::log2(degree)), 0);
-                            if (batch_index >= batched_expressions.size()) {
-                                batched_expressions.resize(batch_index + 1);
-                                batch_index_maps.resize(batch_index + 1);
-                            }
-                            const std::size_t curr_size = batched_expressions[batch_index].size();
-                            batch_index_maps[batch_index][curr_size] = i;
-                            batched_expressions[batch_index].push_back(expressions[i]);
+                    std::unique_ptr<std::vector<polynomial_dfs_type>> get_lookup_input() {
+                        PROFILE_SCOPE("Lookup argument preparing lookup input");
+
+                        std::vector<expression_type> exprs = get_lookup_input_expressions();
+                        
+                        auto lookup_input_ptr = std::make_unique<std::vector<polynomial_dfs_type>>();
+                        lookup_input_ptr->reserve(exprs.size());
+                        for (const auto& expr: exprs) {
+                            lookup_input_ptr->push_back(_central_expr_evaluator.get_expression_value(expr));
                         }
-
-                        for (std::size_t i = 0; i < batched_expressions.size(); i++) {
-                            const auto &batch = batched_expressions[i];
-                            if (batch.size() == 0) {
-                                continue;
-                            }
-                            PROFILE_SCOPE(
-                                "Lookup argument evaluation on batch #{}, {} expressions",
-                                i, batch.size());
-                            auto degree = std::pow(2, i);
-                            const size_t extended_domain_size = basic_domain->m * degree;
-
-                            SCOPED_LOG("Extended domain size: {}, multiplier: {}",
-                                       extended_domain_size, degree);
-
-                            std::unordered_map<simd_vector_variable_type, std::shared_ptr<polynomial_dfs_type>>
-                                variable_values;
-                            build_variable_value_map(
-                                batch, plonk_columns, basic_domain,
-                                variable_values, extended_domain_size, dfs_cache
-                            );
-                            dag_expression<simd_vector_variable_type> dag_expr;
-                            for (const auto &expr : batch) {
-                                dag_expr.add_expression(expr);
-                            }
-                            const auto& batch_index_map = batch_index_maps[i];
-                            parallel_for(0, batch.size(),
-                            [&lookup_input_ptr, &extended_domain_size, &batch_index_map]
-                                (std::size_t idx) {
-                                    (*lookup_input_ptr)[batch_index_map.at(idx)] =
-                                        polynomial_dfs_type(extended_domain_size - 1, extended_domain_size);
-                                }
-                            );
-
-                            PROFILE_SCOPE("Lookup argument expression evaluation");
-
-                            wait_for_all(parallel_run_in_chunks<void>(
-                                extended_domain_size,
-                                [&variable_values, &extended_domain_size, &expressions,
-                                 &lookup_input_ptr, &dag_expr,
-                                 &batch_index_map](std::size_t begin, std::size_t end) {
-                                    auto dag_expr_copy = dag_expr;
-                                    auto count =
-                                        math::count_chunks<mini_chunk_size>(end - begin);
-                                    for (std::size_t j = 0; j < count; ++j) {
-                                        std::function<simd_vector_type(
-                                            const simd_vector_variable_type&)>
-                                            eval_map =
-                                                [&variable_values, begin,
-                                                 j](const simd_vector_variable_type& var)
-                                            -> simd_vector_type {
-                                            return math::get_chunk<mini_chunk_size>(
-                                                *variable_values[var], begin, j);
-                                        };
-                                        dag_expr_copy.evaluate(eval_map);
-                                        for (std::size_t idx = 0;
-                                             idx < dag_expr_copy.get_result_size(); ++idx) {
-                                            math::set_chunk<mini_chunk_size>(
-                                                (*lookup_input_ptr)[batch_index_map.at(
-                                                    idx)],
-                                                begin, j, dag_expr_copy.get_result(idx));
-                                        }
-                                    }
-                                },
-                                ThreadPool::PoolLevel::HIGH));
-                        }
-                        return std::move(lookup_input_ptr);
+                        return lookup_input_ptr;
                     }
 
                     polynomial_dfs_type reduce_dfs_polynomial_domain(
@@ -543,7 +465,7 @@ namespace nil {
                     ) {
                         PROFILE_SCOPE("Count lookup input counts in lookup tables");
 
-                        std::unordered_map<typename FieldType::value_type, std::size_t> counts_map;
+                        std::unordered_map<value_type, std::size_t> counts_map;
                         for (std::size_t i = 0; i < reduced_input.size(); i++) {
                             for (std::size_t j = 0; j < usable_rows_amount; j++) {
                                 counts_map[reduced_input[i][j]]++;
@@ -562,6 +484,7 @@ namespace nil {
                         return result;
                     }
 
+                    central_evaluator_type& _central_expr_evaluator;
                     const plonk_constraint_system<FieldType> &constraint_system;
                     const typename placeholder_public_preprocessor<FieldType, ParamsType>::preprocessed_data_type& preprocessed_data;
                     const plonk_polynomial_dfs_table<FieldType>& plonk_columns;
@@ -570,17 +493,19 @@ namespace nil {
                     std::shared_ptr<math::evaluation_domain<FieldType>> basic_domain;
                     const std::vector<plonk_lookup_gate<FieldType, plonk_lookup_constraint<FieldType>>>& lookup_gates;
                     const std::vector<plonk_lookup_table<FieldType>>& lookup_tables;
-                    typename FieldType::value_type theta;
+                    value_type theta;
                     std::size_t lookup_chunks;
                     const size_t usable_rows_amount;
                 };
 
                 template<typename FieldType, typename CommitmentSchemeTypePermutation, typename ParamsType>
                 class placeholder_lookup_argument_verifier {
+                    using value_type = typename FieldType::value_type;
+
                     using transcript_hash_type = typename ParamsType::transcript_hash_type;
                     using transcript_type = transcript::fiat_shamir_heuristic_sequential<transcript_hash_type>;
-                    using polynomial_dfs_type = math::polynomial_dfs<typename FieldType::value_type>;
-                    using variable_type = plonk_variable<typename FieldType::value_type>;
+                    using polynomial_dfs_type = math::polynomial_dfs<value_type>;
+                    using variable_type = plonk_variable<value_type>;
                     using polynomial_dfs_variable_type = plonk_variable<polynomial_dfs_type>;
                     using commitment_scheme_type = CommitmentSchemeTypePermutation;
 
@@ -595,11 +520,11 @@ namespace nil {
                         const typename placeholder_public_preprocessor<FieldType, ParamsType>::preprocessed_data_type::common_data_type &common_data,
                         const plonk_constraint_system<FieldType> &constraint_system,
                         // sorted_batch_values. Pair value/shifted_value
-                        const std::vector<std::vector<typename FieldType::value_type>> &sorted,
+                        const std::vector<std::vector<value_type>> &sorted,
                         // Commitment
                         const typename CommitmentSchemeTypePermutation::commitment_type &lookup_commitment,
                         transcript_type &transcript,
-                        std::queue<typename FieldType::value_type>& queue
+                        std::queue<value_type>& queue
                     ) {
                         // Theta.
                         queue.push(transcript.template challenge<FieldType>());
@@ -620,17 +545,17 @@ namespace nil {
                                            Each polynomial 'counts' shows the number of times each value appears in the lookup inputs.
                      * \returns A list of lookup argument values that are used as a part of the final zero-check pprotocol.
                      */
-                    std::array<typename FieldType::value_type, argument_size> verify_eval(
+                    std::array<value_type, argument_size> verify_eval(
                         const typename placeholder_public_preprocessor<FieldType, ParamsType>::preprocessed_data_type::common_data_type &common_data,
-                        const std::vector<typename FieldType::value_type> &special_selector_values,
+                        const std::vector<value_type> &special_selector_values,
                         const plonk_constraint_system<FieldType> &constraint_system,
-                        const typename FieldType::value_type &challenge,
+                        const value_type &challenge,
                         typename policy_type::evaluation_map &evaluations,
-                        const std::vector<typename FieldType::value_type>& counts,
-                        const typename FieldType::value_type& U_value,
-                        const typename FieldType::value_type& U_shifted_value,
-                        const std::vector<typename FieldType::value_type>& hs,
-                        const std::vector<typename FieldType::value_type>& gs,
+                        const std::vector<value_type>& counts,
+                        const value_type& U_value,
+                        const value_type& U_shifted_value,
+                        const std::vector<value_type>& hs,
+                        const std::vector<value_type>& gs,
                         const typename CommitmentSchemeTypePermutation::commitment_type &lookup_commitment,
                         transcript_type &transcript = transcript_type()
                     ) {
@@ -638,30 +563,30 @@ namespace nil {
                             constraint_system.lookup_gates();
                         const std::vector<plonk_lookup_table<FieldType>> &lookup_tables = constraint_system.lookup_tables();
 
-                        std::array<typename FieldType::value_type, argument_size> F;
+                        std::array<value_type, argument_size> F;
                         // 1. Get theta
-                        typename FieldType::value_type theta = transcript.template challenge<FieldType>();
+                        value_type theta = transcript.template challenge<FieldType>();
 
                         // 2. Add commitments to transcript
                         transcript(lookup_commitment);
 
                         // 3. Calculate lookup_value compression
-                        typename FieldType::value_type one = FieldType::value_type::one();
+                        value_type one = FieldType::value_type::one();
 
                         auto mask_value = (one - (special_selector_values[1] + special_selector_values[2]));
 
-                        typename FieldType::value_type theta_acc = one;
-                        std::vector<typename FieldType::value_type> lookup_value;
-                        std::vector<typename FieldType::value_type> shifted_lookup_value;
+                        value_type theta_acc = one;
+                        std::vector<value_type> lookup_value;
+                        std::vector<value_type> shifted_lookup_value;
                         for (std::size_t t_id = 0; t_id < lookup_tables.size(); t_id++) {
                             const auto &table = lookup_tables[t_id];
-                            auto key = std::tuple(table.tag_index, 0, plonk_variable<typename FieldType::value_type>::column_type::selector);
-                            auto shifted_key = std::tuple(table.tag_index, 1, plonk_variable<typename FieldType::value_type>::column_type::selector);
-                            typename FieldType::value_type selector_value  = evaluations[key];
-                            typename FieldType::value_type shifted_selector_value  = evaluations[shifted_key];
+                            auto key = std::tuple(table.tag_index, 0, plonk_variable<value_type>::column_type::selector);
+                            auto shifted_key = std::tuple(table.tag_index, 1, plonk_variable<value_type>::column_type::selector);
+                            value_type selector_value  = evaluations[key];
+                            value_type shifted_selector_value  = evaluations[shifted_key];
                             for (std::size_t o_id = 0; o_id < table.lookup_options.size(); o_id++) {
-                                typename FieldType::value_type v = selector_value * (t_id + 1);
-                                typename FieldType::value_type shifted_v = shifted_selector_value * (t_id + 1);
+                                value_type v = selector_value * (t_id + 1);
+                                value_type shifted_v = shifted_selector_value * (t_id + 1);
 
                                 theta_acc = theta;
                                 BOOST_ASSERT(table.lookup_options[o_id].size() == table.columns_number);
@@ -678,14 +603,14 @@ namespace nil {
                         }
 
                         // 4. Calculate compressed lookup inputs
-                        std::vector<typename FieldType::value_type> lookup_input;
+                        std::vector<value_type> lookup_input;
                         for (std::size_t g_id = 0; g_id < lookup_gates.size(); g_id++) {
                             const auto &gate = lookup_gates[g_id];
-                            auto key = std::tuple(gate.tag_index, 0, plonk_variable<typename FieldType::value_type>::column_type::selector);
-                            typename FieldType::value_type selector_value = evaluations[key];
+                            auto key = std::tuple(gate.tag_index, 0, plonk_variable<value_type>::column_type::selector);
+                            value_type selector_value = evaluations[key];
                             for (std::size_t c_id = 0; c_id < gate.constraints.size(); c_id++) {
                                 const auto &constraint = gate.constraints[c_id];
-                                typename FieldType::value_type l = selector_value * constraint.table_id;
+                                value_type l = selector_value * constraint.table_id;
                                 theta_acc = theta;
                                 for (std::size_t k = 0; k < constraint.lookup_input.size(); k++) {
                                     l += selector_value * theta_acc * constraint.lookup_input[k].evaluate(evaluations);
@@ -695,13 +620,13 @@ namespace nil {
                             }
                         }
 
-                        typename FieldType::value_type alpha = transcript.template challenge<FieldType>();
+                        value_type alpha = transcript.template challenge<FieldType>();
 
-                        typename FieldType::value_type sum_H_G = std::accumulate(hs.begin(), hs.end(), FieldType::value_type::zero());
+                        value_type sum_H_G = std::accumulate(hs.begin(), hs.end(), FieldType::value_type::zero());
                         sum_H_G = std::accumulate(gs.begin(), gs.end(), sum_H_G);
 
-                        typename FieldType::value_type h_challenge = transcript.template challenge<FieldType>();
-                        typename FieldType::value_type h_challenge_acc = h_challenge;
+                        value_type h_challenge = transcript.template challenge<FieldType>();
+                        value_type h_challenge_acc = h_challenge;
 
                         F[0] = FieldType::value_type::zero();
                         for (size_t i = 0; i < hs.size(); ++i) {
@@ -710,8 +635,8 @@ namespace nil {
                         }
 
                         // Create a constraint for G_i(X) * (alpha - t_i(X)) - m_i(X) == 0.
-                        typename FieldType::value_type g_challenge = transcript.template challenge<FieldType>();
-                        typename FieldType::value_type g_challenge_acc = g_challenge;
+                        value_type g_challenge = transcript.template challenge<FieldType>();
+                        value_type g_challenge_acc = g_challenge;
 
                         for (size_t i = 0; i < gs.size(); ++i) {
                             F[0] += g_challenge_acc * (gs[i] * (alpha - lookup_value[i]) - counts[i]);
