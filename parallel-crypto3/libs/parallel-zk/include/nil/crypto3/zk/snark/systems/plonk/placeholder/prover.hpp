@@ -122,7 +122,7 @@ namespace nil {
                             : preprocessed_public_data(preprocessed_public_data)
                             , table_description(table_description)
                             , constraint_system(constraint_system)
-                            , _polynomial_table(std::make_unique<plonk_polynomial_dfs_table<FieldType>>(
+                            , _polynomial_table(std::make_shared<plonk_polynomial_dfs_table<FieldType>>(
                                 preprocessed_private_data.private_polynomial_table,
                                 preprocessed_public_data.public_polynomial_table
                             ))
@@ -475,7 +475,7 @@ namespace nil {
                     const plonk_constraint_system<FieldType> &constraint_system;
 
                     // Members created during proof generation.
-                    std::unique_ptr<plonk_polynomial_dfs_table<FieldType>> _polynomial_table;
+                    std::shared_ptr<plonk_polynomial_dfs_table<FieldType>> _polynomial_table;
                     placeholder_proof<FieldType, ParamsType> _proof;
                     std::array<polynomial_dfs_type, f_parts> _F_dfs;
                     bool _is_lookup_enabled;
