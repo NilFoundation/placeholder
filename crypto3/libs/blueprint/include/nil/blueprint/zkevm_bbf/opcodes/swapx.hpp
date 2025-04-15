@@ -28,7 +28,6 @@
 #include <algorithm>
 
 #include <nil/blueprint/zkevm_bbf/types/opcode.hpp>
-#include <nil/blueprint/zkevm_bbf/types/rw_operation.hpp>
 
 namespace nil {
     namespace blueprint {

@@ -75,7 +75,6 @@
 #include <nil/blueprint/zkevm_bbf/opcodes/stop.hpp>
 #include <nil/blueprint/zkevm_bbf/opcodes/exp.hpp>
 #include <nil/blueprint/zkevm_bbf/opcodes/keccak.hpp>
-
 #include <nil/blueprint/zkevm_bbf/opcodes/mcopy.hpp>
 #include <nil/blueprint/zkevm_bbf/opcodes/returndatasize.hpp>
 #include <nil/blueprint/zkevm_bbf/opcodes/returndatacopy.hpp>
@@ -205,6 +204,7 @@ namespace nil {
                 opcodes[zkevm_opcode::STATICCALL] = std::make_shared<zkevm_staticcall_operation<BlueprintFieldType>>();
                 opcodes[zkevm_opcode::EXTCODESIZE] = std::make_shared<zkevm_extcodesize_operation<BlueprintFieldType>>();
                 opcodes[zkevm_opcode::ADDRESS] = std::make_shared<zkevm_address_operation<BlueprintFieldType>>();
+                opcodes[zkevm_opcode::BALANCE] = std::make_shared<zkevm_address_operation<BlueprintFieldType>>();
 
                 // // DUP
                 opcodes[zkevm_opcode::DUP1] = std::make_shared<zkevm_dupx_operation<BlueprintFieldType>>(1);

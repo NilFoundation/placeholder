@@ -23,7 +23,7 @@
 //---------------------------------------------------------------------------//
 #pragma once
 
-#include<nil/blueprint/zkevm_bbf/types/rw_operation.hpp>
+#include<nil/blueprint/zkevm_bbf/types/short_rw_operation.hpp>
 
 namespace nil {
     namespace blueprint {
@@ -38,26 +38,19 @@ namespace nil {
                 using generic_component<FieldType, stage>::lookup_table;
             public:
                 using typename generic_component<FieldType,stage>::TYPE;
-                using input_type = typename std::conditional<stage==GenerationStage::ASSIGNMENT, rw_operations_vector, std::nullptr_t>::type;
+                using input_type = typename std::conditional<stage==GenerationStage::ASSIGNMENT, short_rw_operations_vector, std::nullptr_t>::type;
                 using integral_type =  nil::crypto3::multiprecision::big_uint<257>;
             public:
                 // rw_table
                 std::vector<TYPE> op;
                 std::vector<TYPE> id;
                 std::vector<TYPE> address;
-                std::vector<TYPE> field_type;
-                std::vector<TYPE> storage_key_hi;
-                std::vector<TYPE> storage_key_lo;
                 std::vector<TYPE> rw_id;
                 std::vector<TYPE> is_write;
                 std::vector<TYPE> value_hi;
                 std::vector<TYPE> value_lo;
-                std::vector<TYPE> value_before_hi;    // For storage gas calculation, access_lists
-                std::vector<TYPE> value_before_lo;
-                std::vector<TYPE> call_id;
-                std::vector<TYPE> w_id_before;    // For call_commit proving
 \
-                static std::size_t get_witness_amount(){ return 14; }
+                static std::size_t get_witness_amount(){ return 7; }
 
                 static std::vector<TYPE> call_context_lookup(
                     TYPE call_id,
@@ -66,20 +59,13 @@ namespace nil {
                     TYPE value_lo
                 ){
                     return {
-                        TYPE(rw_op_to_num(rw_operation_type::call_context)),
+                        TYPE(std::size_t(short_rw_operation_type::call_context)),
                         call_id,
-                        TYPE(0),
-                        TYPE(field),                                                          // field
-                        TYPE(0),                                                              // storage_key_hi
-                        TYPE(0),                                                              // storage_key_lo
-                        call_id + field,                                                      // rw_counter
-                        TYPE(0),                                                              // is_write
+                        TYPE(field),                                          // address
+                        call_id + field,                                      // rw_id
+                        TYPE(0),                                              // is_write
                         value_hi,
-                        value_lo,
-                        TYPE(0),                                               // value_before_hi
-                        TYPE(0),                                               // value_before_lo
-                        TYPE(0),                                               // call_id
-                        TYPE(0)                                                // w_id_before
+                        value_lo
                     };
                 }
 
@@ -92,32 +78,14 @@ namespace nil {
                     TYPE value_lo
                 ){
                     return {
-                        TYPE(rw_op_to_num(rw_operation_type::call_context)),
+                        TYPE(std::size_t(short_rw_operation_type::call_context)),
                         call_id,
-                        TYPE(0),
-                        TYPE(field),                                                          // field
-                        TYPE(0),                                                              // storage_key_hi
-                        TYPE(0),                                                              // storage_key_lo
-                        rw_counter,                                                      // rw_counter
-                        is_write,                                                              // is_write
+                        TYPE(field),                                                          // address
+                        rw_counter,                                                           // rw_id
+                        is_write,                                                             // is_write
                         value_hi,
-                        value_lo,
-                        TYPE(0),                                               // value_before_hi
-                        TYPE(0),                                               // value_before_lo
-                        TYPE(0),                                               // call_id
-                        TYPE(0)                                                // w_id_before
+                        value_lo
                     };
-                }
-
-                static std::vector<TYPE> rw_item_lookup(
-                    TYPE op,
-                    TYPE id,
-                    TYPE address,
-                    TYPE field,
-                    TYPE storage_key_hi,
-                    TYPE storage_key_lo
-                ){
-                    return {op, id, address, field, storage_key_hi, storage_key_lo};
                 }
 
                 static std::vector<TYPE> stack_lookup(
@@ -129,20 +97,13 @@ namespace nil {
                     TYPE value_lo
                 ){
                     return {
-                        TYPE(rw_op_to_num(rw_operation_type::stack)),
+                        TYPE(std::size_t(short_rw_operation_type::stack)),
                         call_id,
                         stack_pointer,
-                        TYPE(0),                                               // storage_key_hi
-                        TYPE(0),                                               // storage_key_lo
-                        TYPE(0),                                               // field
                         rw_counter,
                         is_write,
                         value_hi,
-                        value_lo,
-                        TYPE(0),                                               // value_before_hi
-                        TYPE(0),                                               // value_before_lo
-                        TYPE(0),                                               // call_id
-                        TYPE(0)                                                // w_id_before
+                        value_lo
                     };
                 }
 
@@ -154,20 +115,13 @@ namespace nil {
                     TYPE value_lo
                 ){
                     return {
-                        TYPE(rw_op_to_num(rw_operation_type::memory)),
+                        TYPE(std::size_t(short_rw_operation_type::memory)),
                         call_id,
                         memory_address,
-                        TYPE(0),              // storage_key_hi
-                        TYPE(0),              // storage_key_lo
-                        TYPE(0),              // field
                         rw_counter,
                         is_write,
-                        TYPE(0),              // hi bytes are 0
-                        value_lo,
-                        TYPE(0),              // value_before_hi
-                        TYPE(0),              // value_before_lo
-                        TYPE(0),              // call_id
-                        TYPE(0)               // w_id_before
+                        TYPE(0),              // value_hi
+                        value_lo
                     };
                 }
 
@@ -178,20 +132,13 @@ namespace nil {
                     TYPE value_lo
                 ){
                     return {
-                        TYPE(rw_op_to_num(rw_operation_type::calldata)),
+                        TYPE(std::size_t(short_rw_operation_type::calldata)),
                         call_id,
                         calldata_address,
-                        TYPE(0),              // storage_key_hi
-                        TYPE(0),              // storage_key_lo
-                        TYPE(0),              // field
                         rw_counter,
                         TYPE(0),              // calldata is readonly
                         TYPE(0),              // hi bytes are 0
-                        value_lo,
-                        TYPE(0),              // value_before_hi
-                        TYPE(0),              // value_before_lo
-                        TYPE(0),              // call_id
-                        TYPE(0)               // w_id_before
+                        value_lo
                     };
                 }
 
@@ -202,20 +149,13 @@ namespace nil {
                     TYPE value_lo
                 ){
                     return {
-                        TYPE(rw_op_to_num(rw_operation_type::returndata)),
+                        TYPE(std::size_t(short_rw_operation_type::returndata)),
                         call_id,
                         returndata_address,
-                        TYPE(0),              // storage_key_hi
-                        TYPE(0),              // storage_key_lo
-                        TYPE(0),              // field
                         rw_counter,
                         TYPE(0),              // calldata is readonly
                         TYPE(0),              // hi bytes are 0
-                        value_lo,
-                        TYPE(0),              // value_before_hi
-                        TYPE(0),              // value_before_lo
-                        TYPE(0),              // call_id
-                        TYPE(0)               // w_id_before
+                        value_lo
                     };
                 }
 
@@ -224,78 +164,41 @@ namespace nil {
                     op(max_rw_size),
                     id(max_rw_size),
                     address(max_rw_size),
-                    field_type(max_rw_size),
-                    storage_key_hi(max_rw_size),
-                    storage_key_lo(max_rw_size),
                     rw_id(max_rw_size),
                     is_write(max_rw_size),
                     value_hi(max_rw_size),
-                    value_lo(max_rw_size),
-                    value_before_hi(max_rw_size),
-                    value_before_lo(max_rw_size),
-                    call_id(max_rw_size),
-                    w_id_before(max_rw_size)
+                    value_lo(max_rw_size)
                 {
                     if constexpr  (stage == GenerationStage::ASSIGNMENT) {
                         auto rw_trace = input;
                         BOOST_ASSERT(rw_trace.size() <= max_rw_size);
-                        BOOST_ASSERT(rw_trace[0].op == rw_operation_type::start);
+                        BOOST_ASSERT(rw_trace[0].op == short_rw_operation_type::start);
 
                         std::map <std::size_t, std::pair<TYPE, TYPE>> state_value_before; // For STATE type rw_id=>value_prev
                         for( std::size_t i = 0; i < rw_trace.size(); i++ ){
-                            // if( rw_trace[i].op != rw_operation_type::padding )
-                            //     std::cout << "\t" << i << "." << rw_trace[i] << std::endl;
-                            op[i] = rw_op_to_num(rw_trace[i].op);
+                            op[i] = std::size_t(rw_trace[i].op);
                             id[i] = rw_trace[i].id;
                             address[i] = integral_type(rw_trace[i].address);
-                            storage_key_hi[i] = w_hi<FieldType>(rw_trace[i].storage_key);
-                            storage_key_lo[i] = w_lo<FieldType>(rw_trace[i].storage_key);
-                            field_type[i] = rw_trace[i].field;
                             is_write[i] = rw_trace[i].is_write;
                             rw_id[i] = rw_trace[i].rw_counter;
                             value_hi[i] = w_hi<FieldType>(rw_trace[i].value);
                             value_lo[i] = w_lo<FieldType>(rw_trace[i].value);
-                            call_id[i] = rw_trace[i].call_id;
-
-                            if( i == 0 ) continue;
-                            bool is_first =
-                                op[i-1] != op[i] ||
-                                id[i-1] != id[i] ||
-                                address[i-1] != address[i] ||
-                                storage_key_hi[i-1] != storage_key_hi[i] ||
-                                storage_key_lo[i-1] != storage_key_lo[i] ||
-                                field_type[i-1] != field_type[i];
-
-                            if( rw_trace[i].op == rw_operation_type::state ||
-                                rw_trace[i].op == rw_operation_type::access_list
-                            ) {
-                                value_before_hi[i] = w_hi<FieldType>(rw_trace[i].value_before);
-                                value_before_lo[i] = w_lo<FieldType>(rw_trace[i].value_before);
-                                w_id_before[i] = rw_trace[i].w_id_before;
-                            }
                         }
                         for( std::size_t i = rw_trace.size(); i < max_rw_size; i++ ){
-                            op[i] = rw_op_to_num(rw_operation_type::padding);
+                            op[i] = std::size_t(short_rw_operation_type::padding);
                         }
                     }
                     for( std::size_t i = 0; i < max_rw_size; i++ ){
-                        allocate(op[i], 0, i);
-                        allocate(id[i], 1, i);
-                        allocate(address[i], 2, i);
-                        allocate(field_type[i], 3, i);
-                        allocate(storage_key_hi[i], 4, i);
-                        allocate(storage_key_lo[i], 5, i);
-                        allocate(rw_id[i], 6, i);
-                        allocate(is_write[i], 7, i);
-                        allocate(value_hi[i], 8, i);
-                        allocate(value_lo[i], 9, i);
-                        allocate(value_before_hi[i], 10, i);
-                        allocate(value_before_lo[i], 11, i);
-                        allocate(call_id[i], 12, i);
-                        allocate(w_id_before[i], 13, i);
+                        std::size_t current_column = 0;
+                        allocate(op[i], current_column++, i);
+                        allocate(id[i], current_column++, i);
+                        allocate(address[i], current_column++, i);
+                        allocate(rw_id[i], current_column++, i);
+                        allocate(is_write[i], current_column++, i);
+                        allocate(value_hi[i], current_column++, i);
+                        allocate(value_lo[i], current_column++, i);
                     }
-                    lookup_table("zkevm_rw",std::vector<std::size_t>({0,1,2,3,4,5,6,7,8,9,10,11,12,13}),0,max_rw_size);
-                    lookup_table("zkevm_rw_short",std::vector<std::size_t>({0,1,2,3,4,5,6,7,8,9}),0,max_rw_size);
+                    lookup_table("zkevm_rw",std::vector<std::size_t>({0,1,2,3,4,5,6}),0,max_rw_size);
                 }
             };
          }

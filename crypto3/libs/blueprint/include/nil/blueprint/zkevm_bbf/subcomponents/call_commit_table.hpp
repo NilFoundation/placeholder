@@ -79,7 +79,7 @@ namespace nil {
                                 BOOST_ASSERT(row < max_call_commit_size);
                                 BOOST_ASSERT(ind == call_commit.call_id);
                                 call_id[row] = ind;
-                                op[row] = rw_op_to_num(call_commit.items[i].op);
+                                op[row] = std::size_t(call_commit.items[i].op);
                                 id[row] = call_commit.items[i].id;
                                 address[row] = integral_type(call_commit.items[i].address);
                                 storage_key_hi[row] = w_hi<FieldType>(call_commit.items[i].storage_key);

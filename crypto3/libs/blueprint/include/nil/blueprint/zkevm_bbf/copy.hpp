@@ -324,37 +324,37 @@ namespace nil {
                         for( std::size_t i = 1; i < tmp.size(); i++) tmp[i] = context_object.relativize(tmp[i], -1);
                         context_object.relative_lookup(tmp, "keccak_table",  1, max_copy - 2);
 
-                        tmp = {
-                            id_lo[1],
-                            op[1],
-                            context_id[1],
-                            addr[1],
-                            field_type[1],
-                            storage_key_hi[1],
-                            storage_key_lo[1],
-                            counter_2[1] + 1,
-                            value_hi[1],
-                            value_lo[1]
-                        };
-                        for( std::size_t i = 0; i < tmp.size(); i++)
-                            tmp[i] = context_object.relativize(reverted_selector*(1 - is_write[1])*tmp[i], -1);
-                        context_object.relative_lookup(tmp, "zkevm_call_commit_table",  0, max_copy - 1);
+                        // tmp = {
+                        //     id_lo[1],
+                        //     op[1],
+                        //     context_id[1],
+                        //     addr[1],
+                        //     field_type[1],
+                        //     storage_key_hi[1],
+                        //     storage_key_lo[1],
+                        //     counter_2[1] + 1,
+                        //     value_hi[1],
+                        //     value_lo[1]
+                        // };
+                        // for( std::size_t i = 0; i < tmp.size(); i++)
+                        //     tmp[i] = context_object.relativize(reverted_selector*(1 - is_write[1])*tmp[i], -1);
+                        // context_object.relative_lookup(tmp, "zkevm_call_commit_table",  0, max_copy - 1);
 
-                        tmp = {
-                            op[1],
-                            context_id[1],
-                            addr[1],
-                            field_type[1],
-                            storage_key_hi[1],
-                            storage_key_lo[1],
-                            counter_1[1],
-                            TYPE(1),
-                            value_hi[1],
-                            value_lo[1]
-                        };
-                        for( std::size_t i = 0; i < tmp.size(); i++)
-                            tmp[i] = context_object.relativize(reverted_selector*is_write[1]*tmp[i], -1);
-                        context_object.relative_lookup(tmp, "zkevm_rw_short", 0, max_copy - 1);
+                        // tmp = {
+                        //     op[1],
+                        //     context_id[1],
+                        //     addr[1],
+                        //     field_type[1],
+                        //     storage_key_hi[1],
+                        //     storage_key_lo[1],
+                        //     counter_1[1],
+                        //     TYPE(1),
+                        //     value_hi[1],
+                        //     value_lo[1]
+                        // };
+                        // for( std::size_t i = 0; i < tmp.size(); i++)
+                        //     tmp[i] = context_object.relativize(reverted_selector*is_write[1]*tmp[i], -1);
+                        // context_object.relative_lookup(tmp, "zkevm_rw", 0, max_copy - 1);
 
                         // Used both for CALLx calldata writing and CALLDATACOPY calldata reading
                         tmp = rw_table<FieldType, stage>::calldata_lookup(

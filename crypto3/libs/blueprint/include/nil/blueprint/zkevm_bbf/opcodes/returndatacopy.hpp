@@ -54,7 +54,7 @@ namespace nil {
                     using Word_Size = typename bbf::word_size<FieldType, stage>;
                     using Memory_Cost = typename bbf::memory_cost<FieldType, stage>;
 
-                    TYPE destOffset, offset, length, length_inv;
+                    TYPE destOffset, offset, length, length_inv, is_length_zero;
                     TYPE current_mem, next_mem,
                         memory_expansion_cost, memory_expansion_size, S;
                     TYPE lastcall_id;
@@ -68,6 +68,7 @@ namespace nil {
                         S = next_mem > current_mem;
                         length_inv = length == 0 ? 0: length.inversed();
                         lastcall_id = current_state.lastsubcall_id();
+                        is_length_zero = length == 0 ? 0: 1;
                     }
                     allocate(destOffset, 32, 0);
                     allocate(offset, 33, 0);
@@ -77,10 +78,12 @@ namespace nil {
                     allocate(S, 37, 0);
                     allocate(length_inv, 38, 0);
                     allocate(lastcall_id, 39, 0);
+                    allocate(is_length_zero, 40, 0);
 
                     // length_inv is correct
                     constrain(length * (length * length_inv - 1));
                     constrain(length_inv * (length * length_inv - 1));
+                    constrain(is_length_zero - length * length_inv);
 
                     constrain(S * (S - 1));
                     constrain(S * (next_mem - destOffset - length) +
@@ -156,23 +159,23 @@ namespace nil {
                             lastcall_id
                         ), "zkevm_rw");
                         lookup({
-                            length * length_inv,                                                         // is_first
+                            is_length_zero,                                                         // is_first
                             TYPE(0),                                                                     // is_write
-                            length * length_inv * TYPE(copy_op_to_num(copy_operand_type::returndata)),   // cp_type
+                            is_length_zero * TYPE(copy_op_to_num(copy_operand_type::returndata)),   // cp_type
                             TYPE(0),                                                                     // id_hi
-                            length * length_inv * lastcall_id,                              // id_lo
-                            length * length_inv * offset,                                   // counter_1
-                            length * length_inv * (current_state.rw_counter(0) + 4),        // counter_2
+                            is_length_zero * lastcall_id,                              // id_lo
+                            is_length_zero * offset,                                   // counter_1
+                            is_length_zero * (current_state.rw_counter(0) + 4),        // counter_2
                             length
                         }, "zkevm_copy");
                         lookup({
-                            length * length_inv,                                                      // is_first
-                            length * length_inv,                                                      // is_write
-                            length * length_inv * TYPE(copy_op_to_num(copy_operand_type::memory)),    // cp_type
+                            is_length_zero,                                                      // is_first
+                            is_length_zero,                                                      // is_write
+                            is_length_zero * TYPE(copy_op_to_num(copy_operand_type::memory)),    // cp_type
                             TYPE(0),                                                                  // id_hi
-                            length * length_inv * current_state.call_id(0),                           // id_lo
-                            length * length_inv * destOffset,                                             // counter_1
-                            length * length_inv * (current_state.rw_counter(0) + 4 + length),         // counter_2
+                            is_length_zero * current_state.call_id(0),                           // id_lo
+                            is_length_zero * destOffset,                                             // counter_1
+                            is_length_zero * (current_state.rw_counter(0) + 4 + length),         // counter_2
                             length
                         }, "zkevm_copy");
                     }

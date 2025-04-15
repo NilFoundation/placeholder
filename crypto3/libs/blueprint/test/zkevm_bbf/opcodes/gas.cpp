@@ -37,21 +37,6 @@
 #include <nil/crypto3/hash/sha2.hpp>
 #include <nil/crypto3/hash/keccak.hpp>
 
-#include <nil/blueprint/zkevm_bbf/types/hashed_buffers.hpp>
-#include <nil/blueprint/zkevm_bbf/types/rw_operation.hpp>
-#include <nil/blueprint/zkevm_bbf/types/copy_event.hpp>
-#include <nil/blueprint/zkevm_bbf/types/zkevm_state.hpp>
-#include <nil/blueprint/zkevm_bbf/input_generators/opcode_tester.hpp>
-#include <nil/blueprint/zkevm_bbf/input_generators/opcode_tester_input_generator.hpp>
-
-#include <nil/blueprint/blueprint/plonk/circuit.hpp>
-#include <nil/blueprint/blueprint/plonk/assignment.hpp>
-#include <nil/blueprint/zkevm_bbf/zkevm.hpp>
-#include <nil/blueprint/zkevm_bbf/rw.hpp>
-#include <nil/blueprint/zkevm_bbf/copy.hpp>
-#include <nil/blueprint/zkevm_bbf/bytecode.hpp>
-#include <nil/blueprint/zkevm_bbf/keccak.hpp>
-
 #include "./opcode_test_fixture.hpp"
 
 using namespace nil::crypto3;
@@ -59,6 +44,7 @@ using namespace nil::blueprint::bbf;
 
 // Remember that in production sizes should be preset.
 // Here they are different for different tests just for fast and easy testing
+BOOST_GLOBAL_FIXTURE(zkEVMGlobalFixture);
 BOOST_FIXTURE_TEST_SUITE(zkevm_opcode_test_suite, zkEVMOpcodeTestFixture)
 BOOST_AUTO_TEST_CASE(gas) {
     using field_type = typename algebra::curves::pallas::base_field_type;

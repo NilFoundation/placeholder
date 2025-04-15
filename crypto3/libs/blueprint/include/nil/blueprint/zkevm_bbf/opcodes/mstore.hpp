@@ -60,11 +60,11 @@ namespace nil {
                     std::vector<TYPE> value(32);
                     length = 32;
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                        std::cout << "\tASSIGNMENT implemented" << std::endl;
                         auto offsetess = w_to_16(current_state.stack_top())[15];
                         offset = offsetess;
                         current_mem = current_state.memory_size();
                         next_mem = std::max(offset + length, current_mem);
+                        BOOST_LOG_TRIVIAL(trace) << "\tCurrent memory size: " << current_mem << " next memory size: " << next_mem;
                         S = next_mem > current_mem;
                         auto bytes = w_to_8(current_state.stack_top(1));
                         for (std::size_t i = 0; i < 32; i++) {
@@ -72,12 +72,12 @@ namespace nil {
                         }
                     }
                     for (std::size_t i = 0; i < 16; i++) {
-                        allocate(value[i], i + 16,
-                                 0);  // Values are range-checked by RW circuit, so use
-                                      // non-range-checked columns
-                        allocate(value[i + 16], i + 16,
-                                 1);  // Values are range-checked by RW circuit, so use
-                                      // non-range-checked columns
+                        // Values are range-checked by RW circuit, so use
+                        // non-range-checked columns
+                        allocate(value[i], i + 16, 0);
+                        // Values are range-checked by RW circuit, so use
+                        // non-range-checked columns
+                        allocate(value[i + 16], i + 16, 1);
                     }
 
                     allocate(offset, 32, 0);
@@ -104,16 +104,11 @@ namespace nil {
                     memory_expansion_size =
                         (next_memory.word_size - current_memory.word_size) * 32;
                     if constexpr (stage == GenerationStage::CONSTRAINTS) {
-                        constrain(current_state.pc_next() - current_state.pc(1) -
-                                  1);  // PC transition
-                        constrain(current_state.gas(0) - current_state.gas_next() - 3 -
-                                  memory_expansion_cost);  // GAS transition
-                        constrain(current_state.stack_size(1) -
-                                  current_state.stack_size_next() -
-                                  2);  // stack_size transition
-                        constrain(current_state.memory_size_next() -
-                                  current_state.memory_size(0) -
-                                  memory_expansion_size);  // memory_size transition
+                        constrain(current_state.pc_next() - current_state.pc(1) - 1);  // PC transition
+                        constrain(current_state.gas(0) - current_state.gas_next() - 3 - memory_expansion_cost);  // GAS transition
+                        constrain(current_state.stack_size(1) - current_state.stack_size_next() - 2);  // stack_size transition
+                        constrain(current_state.memory_size(0) - current_mem);  // memory_size transition
+                        constrain(current_state.memory_size_next() - next_mem);  // memory_size transition
                         constrain(current_state.rw_counter_next() -
                                   current_state.rw_counter(1) -
                                   34);  // rw_counter transition
@@ -172,16 +167,14 @@ namespace nil {
                         FieldType, GenerationStage::ASSIGNMENT>::context_type &context,
                     const opcode_input_type<FieldType, GenerationStage::ASSIGNMENT>
                         &current_state) override {
-                    zkevm_mstore_bbf<FieldType, GenerationStage::ASSIGNMENT> bbf_obj(
-                        context, current_state);
+                    zkevm_mstore_bbf<FieldType, GenerationStage::ASSIGNMENT> bbf_obj(context, current_state);
                 }
                 virtual void fill_context(
                     typename generic_component<
                         FieldType, GenerationStage::CONSTRAINTS>::context_type &context,
                     const opcode_input_type<FieldType, GenerationStage::CONSTRAINTS>
                         &current_state) override {
-                    zkevm_mstore_bbf<FieldType, GenerationStage::CONSTRAINTS> bbf_obj(
-                        context, current_state);
+                    zkevm_mstore_bbf<FieldType, GenerationStage::CONSTRAINTS> bbf_obj(context, current_state);
                 }
                 virtual std::size_t rows_amount() override { return 2; }
             };

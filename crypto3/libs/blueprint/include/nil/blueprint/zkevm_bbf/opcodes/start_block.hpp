@@ -23,13 +23,13 @@ namespace nil {
                 zkevm_start_block_bbf(context_type &context_object, const opcode_input_type<FieldType, stage> &current_state):
                     generic_component<FieldType,stage>(context_object, false)
                 {
+                    // TODO: Append all block context rw operations
                     if constexpr( stage == GenerationStage::CONSTRAINTS ){
-                        // constrain(current_state.pc_next() - current_state.pc(0) - 1);                   // PC transition
-                        // constrain(current_state.gas(0) - current_state.gas_next() - 1);                 // GAS transition
-                        // constrain(current_state.stack_size(0) - current_state.stack_size_next());       // stack_size transition
-                        // constrain(current_state.memory_size(0) - current_state.memory_size_next());     // memory_size transition
-                        // constrain(current_state.rw_counter_next() - current_state.rw_counter(0));   // rw_counter transition
-                        // constrain(current_state.opcode_next() - next_opcode); // Next opcode restrictions
+                        constrain(current_state.pc(0));                                                 // PC transition
+                        constrain(current_state.gas(0));                                                // GAS transition
+                        constrain(current_state.stack_size(0));                                         // stack_size transition
+                        constrain(current_state.memory_size(0));                                        // memory_size transition
+                        constrain(current_state.rw_counter_next() - current_state.rw_counter(0) - block_context_fields_amount);       // rw_counter transition
                         constrain(current_state.rw_counter(0) - current_state.call_id(0));
                         constrain(
                             (current_state.opcode_next() - TYPE(std::size_t(opcode_to_number(zkevm_opcode::start_transaction)))) *

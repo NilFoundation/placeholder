@@ -24,12 +24,13 @@ namespace nil {
                     generic_component<FieldType,stage>(context_object, false)
                 {
                     if constexpr( stage == GenerationStage::CONSTRAINTS ){
-                        // constrain(current_state.pc_next() - current_state.pc(0) - 1);                   // PC transition
-                        // constrain(current_state.gas(0) - current_state.gas_next() - 1);                 // GAS transition
-                        // constrain(current_state.stack_size(0) - current_state.stack_size_next());       // stack_size transition
-                        // constrain(current_state.memory_size(0) - current_state.memory_size_next());     // memory_size transition
-                        // constrain(current_state.rw_counter_next() - current_state.rw_counter(0));   // rw_counter transition
-                        // constrain(current_state.opcode_next() - next_opcode); // Next opcode restrictions
+                        constrain(current_state.pc_next());                                                                     // PC transition
+                        // constrain(current_state.gas(0) - current_state.gas_next());                                          // GAS transition
+                        constrain(current_state.stack_size(0));                                                                 // stack_size transition
+                        constrain(current_state.stack_size(0) - current_state.stack_size_next());                               // stack_size transition
+                        constrain(current_state.memory_size(0));                                                                // memory_size transition
+                        constrain(current_state.memory_size(0) - current_state.memory_size_next());                             // memory_size transition
+                        constrain(current_state.rw_counter_next() - current_state.rw_counter(0) - tx_context_fields_amount);    // rw_counter transition
                         constrain(current_state.rw_counter(0) - current_state.call_id(0));
                     }
                 }

@@ -24,6 +24,7 @@ namespace nil {
                     generic_component<FieldType,stage>(context_object, false)
                 {
                     TYPE depth, depth_inv;
+
                     if constexpr( stage == GenerationStage::ASSIGNMENT ){
                         depth = current_state.depth() - 2;
                         depth_inv = depth == 0? 0: depth.inversed();
@@ -39,8 +40,11 @@ namespace nil {
                     TYPE next_opcode =
                         depth * depth_inv * TYPE(std::size_t(opcode_to_number(zkevm_opcode::end_call))) +
                         (1 - depth * depth_inv) * TYPE(std::size_t(opcode_to_number(zkevm_opcode::end_transaction)));
-                    std::cout << "Next opcode = " << std::hex << next_opcode << std::endl;
-                    std::cout << "Depth = " << depth << std::endl;
+
+                    if constexpr( stage == GenerationStage::ASSIGNMENT ){
+                        BOOST_LOG_TRIVIAL(trace) << "\tNext opcode = " << std::hex << next_opcode << std::endl;
+                        BOOST_LOG_TRIVIAL(trace) << "\tDepth = " << depth << std::endl;
+                    }
 
                     if constexpr( stage == GenerationStage::CONSTRAINTS ){
                         // constrain(current_state.pc_next() - current_state.pc(0) - 1);                   // PC transition
@@ -68,13 +72,13 @@ namespace nil {
                     typename generic_component<FieldType, GenerationStage::ASSIGNMENT>::context_type &context,
                     const opcode_input_type<FieldType, GenerationStage::ASSIGNMENT> &current_state
                 ) override  {
-                    zkevm_stop_bbf<FieldType, GenerationStage::ASSIGNMENT> bbf_obj(context, current_state);
+                    // zkevm_stop_bbf<FieldType, GenerationStage::ASSIGNMENT> bbf_obj(context, current_state);
                 }
                 virtual void fill_context(
                     typename generic_component<FieldType, GenerationStage::CONSTRAINTS>::context_type &context,
                     const opcode_input_type<FieldType, GenerationStage::CONSTRAINTS> &current_state
                 ) override  {
-                    zkevm_stop_bbf<FieldType, GenerationStage::CONSTRAINTS> bbf_obj(context, current_state);
+                    // zkevm_stop_bbf<FieldType, GenerationStage::CONSTRAINTS> bbf_obj(context, current_state);
                 }
                 virtual std::size_t rows_amount() override {
                     return 1;

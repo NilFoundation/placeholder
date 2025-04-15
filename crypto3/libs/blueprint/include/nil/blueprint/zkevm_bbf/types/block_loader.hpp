@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------//
-// Copyright (c) 2024 Elena Tatuzova   <e.tatuzova@nil.foundation>
+// Copyright (c) 2025 Elena Tatuzova   <e.tatuzova@nil.foundation>
 //
 // MIT License
 //
@@ -29,14 +29,20 @@
 #include <nil/blueprint/components/hashes/keccak/util.hpp> //Move needed utils to bbf
 #include <nil/blueprint/bbf/generic.hpp>
 
-#include <nil/blueprint/zkevm/util/ptree.hpp>
+#include <nil/blueprint/zkevm_bbf/types/zkevm_block.hpp>
+#include <nil/blueprint/zkevm_bbf/types/zkevm_transaction.hpp>
 
 namespace nil {
     namespace blueprint {
         namespace bbf {
-            struct block{
-                zkevm_word_type block_hash;
-            }
-        } // namespace bbf
-    } // namespace blueprint
-} // namespace nil
+            class abstract_block_loader{
+            public:
+                virtual zkevm_block load_block() = 0;
+                virtual std::tuple<zkevm_transaction, std::map<zkevm_word_type, zkevm_account>, std::set<zkevm_word_type>> load_transaction(std::size_t i) = 0;
+
+                // TODO: implement precompiles and remove this function from interface
+                virtual std::tuple<zkevm_word_type, std::size_t, std::vector<std::uint8_t>> compute_precompile(zkevm_word_type address, std::vector<std::uint8_t> calldata) = 0;
+            };
+        }
+    }
+}

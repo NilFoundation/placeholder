@@ -291,7 +291,7 @@ namespace nil {
 
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
                         zkevm_word_type input_b =
-                            current_state.stack_top(); 
+                            current_state.stack_top();
 
                         shift_power = is_shift_large *
                                       (static_cast<unsigned int>(1) << int(input_b % 16));
@@ -339,7 +339,7 @@ namespace nil {
                         a_64_chunks, b_64_chunks, r_64_chunks, q_64_chunks);
                     third_carryless =
                         third_carryless_construct<TYPE>(b_64_chunks, r_64_chunks);
-                    
+
 
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
                         // Calculate carries for first row
@@ -384,7 +384,7 @@ namespace nil {
                     for (std::size_t i = 0; i < chunk_amount; i++) {
                         constrain(b_is_zero * r_chunks[i]);
                     }
-                   
+
                     constrain(shift_power - is_shift_large * power_series);
                     for (std::size_t i = 0; i < chunk_amount; i++) {
                         allocate(indic_1[i], i + 2 * chunk_amount, 2);

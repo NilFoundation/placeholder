@@ -108,12 +108,9 @@ namespace nil {
                         constrain(
                             current_state.stack_size(1) -
                             current_state.stack_size_next());  // stack_size transition
-                        constrain(current_state.memory_size_next() -
-                                  current_state.memory_size(0) -
-                                  memory_expansion_size);  // memory_size transition
-                        constrain(current_state.rw_counter_next() -
-                                  current_state.rw_counter(1) -
-                                  34);  // rw_counter transition
+                        constrain(current_state.memory_size(0) - current_mem);  // memory_size transition
+                        constrain(current_state.memory_size_next() - next_mem);  // memory_size transition
+                        constrain(current_state.rw_counter_next() - current_state.rw_counter(1) - 34);  // rw_counter transition
 
                         auto V_128 = chunks8_to_chunks128<TYPE>(bytes);
                         std::vector<TYPE> tmp;

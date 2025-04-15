@@ -43,7 +43,7 @@ enum bitwise_type { B_AND, B_OR, B_XOR };
 *  PC: +1
 *  Memory: Unchanged
 *  Stack Input: a, b
-*  Stack Output: a & b / a | b / a ^ b  
+*  Stack Output: a & b / a | b / a ^ b
 *  Stack Read  Lookup: a, b
 *  Stack Write Lookup: a & b / a | b / a ^ b
 *  rw_counter: +3
@@ -60,7 +60,7 @@ class zkevm_bitwise_bbf : generic_component<FieldType, stage> {
   using typename generic_component<FieldType,stage>::TYPE;
 
   zkevm_bitwise_bbf(
-     context_type &context_object, const opcode_input_type<FieldType, stage> &current_state, 
+     context_type &context_object, const opcode_input_type<FieldType, stage> &current_state,
      bitwise_type bitwise_operation)
      : generic_component<FieldType,stage>(context_object, false) {
     std::vector<TYPE> A(32); // 8-bit chunks of a (stack top)
@@ -85,16 +85,16 @@ class zkevm_bitwise_bbf : generic_component<FieldType, stage> {
       }
     }
 
-    /* Layout:          range_checked_opcode_area                                                              
-            0     ...    7      8      ...    15     16      ...    23     24       ...    31      
+    /* Layout:          range_checked_opcode_area
+            0     ...    7      8      ...    15     16      ...    23     24       ...    31
         +------+------+------+------+------+------+-------+------+------+--------+------+-------+--
-        | A[0] |  ... | A[7] | B[0] |  ... | B[7] |AND[0] |  ... |AND[7] |XOR[0] |  ... |XOR[7] |  
+        | A[0] |  ... | A[7] | B[0] |  ... | B[7] |AND[0] |  ... |AND[7] |XOR[0] |  ... |XOR[7] |
         +------+------+------+------+------+------+-------+------+-------+-------+------+-------+--
-        | A[8] |  ... | A[15]| B[8] |  ... | B[15]|AND[8] |  ... |AND[15]|XOR[8] |  ... |XOR[15]|  
+        | A[8] |  ... | A[15]| B[8] |  ... | B[15]|AND[8] |  ... |AND[15]|XOR[8] |  ... |XOR[15]|
         +------+------+------+------+------+------+-------+------+-------+-------+------+-------+--
-        | A[16]|  ... | A[23]| B[16]|  ... | B[23]|AND[16]|  ... |AND[23]|XOR[16]|  ... |XOR[23]|  
+        | A[16]|  ... | A[23]| B[16]|  ... | B[23]|AND[16]|  ... |AND[23]|XOR[16]|  ... |XOR[23]|
         +------+------+------+------+------+------+-------+------+-------+-------+------+-------+--
-        | A[24]|  ... | A[31]| B[24]|  ... | B[31]|AND[24]|  ... |AND[31]|XOR[24]|  ... |XOR[31]|  
+        | A[24]|  ... | A[31]| B[24]|  ... | B[31]|AND[24]|  ... |AND[31]|XOR[24]|  ... |XOR[31]|
         +------+------+------+------+------+------+-------+------+-------+-------+------+-------+--
 
                         not_range_checked_opcode_area
@@ -142,7 +142,7 @@ class zkevm_bitwise_bbf : generic_component<FieldType, stage> {
     allocate(AND_128.first, 34, 0); allocate(AND_128.second, 34, 2);
     allocate(XOR_128.first, 35, 0); allocate(XOR_128.second, 35, 2);
 
-    TYPE OR0 = AND_128.first + XOR_128.first;  // 128-bit chunks of a|b 
+    TYPE OR0 = AND_128.first + XOR_128.first;  // 128-bit chunks of a|b
     TYPE OR1 = AND_128.second + XOR_128.second; // 128-bit chuns of a|b
 
     allocate(OR0, 36, 0); // implicit constraint OR0 - (AND_128.first + XOR_128.first)
@@ -160,60 +160,56 @@ class zkevm_bitwise_bbf : generic_component<FieldType, stage> {
       constrain(current_state.memory_size(3) - current_state.memory_size_next());     // memory_size transition
       constrain(current_state.rw_counter_next() - current_state.rw_counter(3) - 3);   // rw_counter transition
 
-      lookup({
-        TYPE(rw_op_to_num(rw_operation_type::stack)),
+      lookup(rw_table<FieldType, stage>::stack_lookup(
         current_state.call_id(1),
         current_state.stack_size(1) - 1,
-        TYPE(0),// storage_key_hi
-        TYPE(0),// storage_key_lo
-        TYPE(0),// field
         current_state.rw_counter(1),
         TYPE(0),// is_write
         A_128.first,// high bits of a
         A_128.second// low bits of a
-        }, "zkevm_rw");
+      ),"zkevm_rw");
 
-      lookup({
-        TYPE(rw_op_to_num(rw_operation_type::stack)),
+      lookup(rw_table<FieldType, stage>::stack_lookup(
         current_state.call_id(1),
         current_state.stack_size(1) - 2,
-        TYPE(0),// storage_key_hi
-        TYPE(0),// storage_key_lo
-        TYPE(0),// field
         current_state.rw_counter(1) + 1,
         TYPE(0),// is_write
         B_128.first,// high bits of b
         B_128.second// low bits of b
-      }, "zkevm_rw");
-
-      tmp = {
-        TYPE(rw_op_to_num(rw_operation_type::stack)),
-        current_state.call_id(1),
-        current_state.stack_size(1) - 2,
-        TYPE(0),// storage_key_hi
-        TYPE(0),// storage_key_lo
-        TYPE(0),// field
-        current_state.rw_counter(1) + 2,
-        TYPE(1)// is_write
-        };
+      ), "zkevm_rw");
 
         switch(bitwise_operation){
         case B_AND:
-            tmp.push_back(AND_128.first);// high bits of a&b
-            tmp.push_back(AND_128.second);// low bits of a&b
+            lookup(rw_table<FieldType, stage>::stack_lookup(
+              current_state.call_id(1),
+              current_state.stack_size(1) - 2,
+              current_state.rw_counter(1) + 2,
+              TYPE(1),       // is_write
+              AND_128.first, // high bits of a&b
+              AND_128.second // low bits of a&b
+            ), "zkevm_rw");
             break;
         case B_OR:
-            tmp.push_back(OR0);// high bits of a|b
-            tmp.push_back(OR1);// low bits of a|b 
+            lookup(rw_table<FieldType, stage>::stack_lookup(
+              current_state.call_id(1),
+              current_state.stack_size(1) - 2,
+              current_state.rw_counter(1) + 2,
+              TYPE(1),       // is_write
+              OR0,           // high bits of a|b
+              OR1            // low bits of a|b
+            ), "zkevm_rw");
             break;
         case B_XOR:
-            tmp.push_back(XOR_128.first);// high bits of a^b
-            tmp.push_back(XOR_128.second);// low bits of a^b
+            lookup(rw_table<FieldType, stage>::stack_lookup(
+              current_state.call_id(1),
+              current_state.stack_size(1) - 2,
+              current_state.rw_counter(1) + 2,
+              TYPE(1),           // is_write
+              XOR_128.first,     // high bits of a^b
+              XOR_128.second     // low bits of a^b
+            ), "zkevm_rw");
             break;
         }
-        lookup(tmp, "zkevm_rw");
-    } else {
-        std::cout << "\tASSIGNMENT implemented" << std::endl;
     }
   }
 };
@@ -222,7 +218,7 @@ template<typename FieldType>
 class zkevm_bitwise_operation : public opcode_abstract<FieldType> {
  public:
   zkevm_bitwise_operation(bitwise_type _bit_operation): bit_operation(_bit_operation) { }
- 
+
   virtual std::size_t rows_amount() override {
     // It may be three if we don't want to minimize lookup constraints amount.
     // It's a tradeoff between rows_amount and lookup constraints amount

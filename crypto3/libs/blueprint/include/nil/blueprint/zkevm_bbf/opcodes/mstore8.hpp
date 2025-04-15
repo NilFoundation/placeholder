@@ -61,7 +61,6 @@ namespace nil {
                     std::vector<TYPE> value(32);
                     length = 1;
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                        std::cout << "\tASSIGNMENT implemented" << std::endl;
                         auto offsetess = w_to_16(current_state.stack_top())[15];
                         offset = offsetess;
                         current_mem = current_state.memory_size();
@@ -113,9 +112,8 @@ namespace nil {
                         constrain(current_state.stack_size(1) -
                                   current_state.stack_size_next() -
                                   2);  // stack_size transition
-                        constrain(current_state.memory_size_next() -
-                                  current_state.memory_size(0) -
-                                  memory_expansion_size);  // memory_size transition
+                        constrain(current_state.memory_size(0) - current_mem);  // memory_size transition
+                        constrain(current_state.memory_size_next() - next_mem);  // memory_size transition
                         constrain(current_state.rw_counter_next() -
                                   current_state.rw_counter(1) -
                                   3);  // rw_counter transition

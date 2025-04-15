@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------//
-// Copyright (c) 2024 Elena Tatuzova <e.tatuzova@nil.foundation>
+// Copyright (c) 2025 Elena Tatuzova <e.tatuzova@nil.foundation>
 //
 // MIT License
 //
@@ -103,7 +103,7 @@ namespace nil {
 
                     RWTable rw_t = RWTable(rw_ct, input.rw_operations, max_rw, true);
                     CallCommitTable t = CallCommitTable(call_commit_ct, input.call_commits, max_call_commits);
-                    
+
                     const std::vector<TYPE> &call_id = t.call_id;
                     const std::vector<TYPE> &op = t.op;
                     const std::vector<TYPE> &id = t.id;
@@ -179,7 +179,7 @@ namespace nil {
                                 auto diff3 = call_commit.call_id - call_commit.items[i].w_id_before;
                                 diff2_chunk0[row] = (( diff3 & 0xFFFF0000) >> 16);
                                 diff2_chunk1[row] = ( diff3 & 0xFFFF );
-                                
+
                                 if( i == 0 ) {
                                     diff_ind[row] = 1;
                                     diff[row] = call_id_chunk0[row];
@@ -227,10 +227,8 @@ namespace nil {
                         allocate(diff2_chunk1[i], current_column++, i);
                     }
                     // Constraints for 0 row
-                    //A trace with only a pure function call does not have any items
-                    constrain((diff_ind[0] - 1) * call_id[0]);
-                    constrain((call_id[0] * call_id_inv[0] - 1) * call_id[0]);
-
+                    constrain(diff_ind[0] - 1);
+                    constrain(call_id[0] * call_id_inv[0] - 1);
 
                     if constexpr ( stage == GenerationStage::CONSTRAINTS) {
                         std::vector<TYPE> every;
@@ -308,9 +306,9 @@ namespace nil {
                         // reverted item types are state, access_list, transient_storage
                         every.push_back(
                             call_id[1] *
-                            (op[1] - rw_op_to_num(rw_operation_type::state)) *
-                            (op[1] - rw_op_to_num(rw_operation_type::access_list)) *
-                            (op[1] - rw_op_to_num(rw_operation_type::transient_storage))
+                            (op[1] - std::size_t(rw_operation_type::state)) *
+                            (op[1] - std::size_t(rw_operation_type::access_list)) *
+                            (op[1] - std::size_t(rw_operation_type::transient_storage))
                         );
 
                         // parent_id is correct
