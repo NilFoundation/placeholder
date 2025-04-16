@@ -207,3 +207,24 @@ message KeccakTraces {
     uint64 trace_idx = 2;
     string proto_hash = 3;
 }
+
+message FilterIndices {
+    Uint256 block_id = 1;
+    Uint256 tx_id = 2;
+    Uint256 index = 3;
+    Uint256 value = 4;
+    Uint256 type = 5;
+    Uint256 indice = 6;
+    Uint256 is_last = 7;
+    Uint256 is_block = 8;
+    Uint256 is_final = 9;
+    Uint256 hash = 10;
+    bytes buffer = 11;
+    repeated Uint256 filter = 12;
+}
+
+message FilterTraces {
+    repeated FilterIndices zkevm_filter_indices = 1;
+    uint64 trace_idx = 2;
+    string proto_hash = 3;
+}

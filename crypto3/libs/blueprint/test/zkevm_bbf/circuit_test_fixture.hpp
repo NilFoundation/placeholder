@@ -135,6 +135,8 @@ struct l1_size_restrictions{
     std::size_t max_state = 500;
     std::size_t max_bytecodes_amount = 50;
     std::size_t max_mpt;
+    std::size_t max_call_commits = 500;
+    std::size_t max_filter_indices;
 };
 
 std::vector<std::uint8_t> hex_string_to_bytes(std::string const &hex_string) {

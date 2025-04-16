@@ -59,6 +59,7 @@
 #include <nil/blueprint/zkevm_bbf/small_field/circuits/bytecode.hpp>
 #include <nil/blueprint/zkevm_bbf/small_field/circuits/zkevm.hpp>
 
+
 #include "../circuit_test_fixture.hpp"
 
 using namespace nil::crypto3;
@@ -93,6 +94,8 @@ public:
         std::size_t max_exp_rows = max_sizes.max_exp_rows;
         std::size_t max_state = max_sizes.max_state;
         std::size_t max_bytecodes_amount = max_sizes.max_bytecodes_amount;
+        std::size_t max_call_commits = max_sizes.max_call_commits;
+        std::size_t max_filter_indices = max_sizes.max_filter_indices;
 
         std::size_t instances_rw_8 = max_sizes.instances_rw_8;
         std::size_t instances_rw_256 = max_sizes.instances_rw_256;
@@ -270,5 +273,11 @@ public:
             BOOST_CHECK(result);
         }
 
+        result = test_bbf_component<BlueprintFieldType, nil::blueprint::bbf::tx_log>(
+            "tx_log",
+            {}, log_assignment_input, max_filter_indices, max_keccak_blocks
+        );
+        BOOST_ASSERT(result);
+        std::cout << std::endl;
     }
 };
