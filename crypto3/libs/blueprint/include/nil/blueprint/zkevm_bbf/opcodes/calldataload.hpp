@@ -87,14 +87,14 @@ namespace nil {
                         // Read 32 bytes from calldata
                         for( std::size_t i = 0; i < 32; i++ ){
                             if( i < 16 ){
-                                lookup(rw_table<FieldType, stage>::calldata_lookup(
+                                lookup(rw_table<FieldType, stage>::calldata_r_lookup(
                                     current_state.call_id(0),
                                     offset + i,
                                     current_state.rw_counter(0) + i + 1,
                                     bytes[i]
                                 ), "zkevm_rw");
                             } else {
-                                lookup(rw_table<FieldType, stage>::calldata_lookup(
+                                lookup(rw_table<FieldType, stage>::calldata_r_lookup(
                                     current_state.call_id(1),
                                     offset + i,
                                     current_state.rw_counter(1) + i + 1,

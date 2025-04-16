@@ -49,12 +49,24 @@ namespace nil {
                 zkevm_callvalue_bbf(context_type &context_object, const opcode_input_type<FieldType, stage> &current_state):
                     generic_component<FieldType,stage>(context_object, false)
                 {
+                    TYPE callvalue;
+                    if constexpr( stage == GenerationStage::ASSIGNMENT ){
+                        callvalue = current_state.call_context_value();
+                    }
+                    allocate(callvalue, 32, 0);
                     if constexpr( stage == GenerationStage::CONSTRAINTS ){
                         constrain(current_state.pc_next() - current_state.pc(0) - 1);                   // PC transition
                         constrain(current_state.gas(0) - current_state.gas_next() - 2);                 // GAS transition
                         constrain(current_state.stack_size_next() - current_state.stack_size(0) - 1);       // stack_size transition
                         constrain(current_state.memory_size(0) - current_state.memory_size_next());     // memory_size transition
                         constrain(current_state.rw_counter_next() - current_state.rw_counter(0) - 1);   // rw_counter transition
+
+                        lookup(rw_table<FieldType, stage>::call_context_lookup(
+                            current_state.call_id(0),
+                            std::size_t(call_context_field::call_context_value),
+                            TYPE(0),
+                            callvalue
+                        ), "zkevm_rw");
                     }
                 }
             };

@@ -44,20 +44,22 @@ namespace nil {
             public:
                 bool get_execution_status() const {return execution_status;}
 
-                virtual void execute_block(){
-                    block = block_loader->load_block();
-                    this->start_block(); if (!execution_status) return;
-                    for(std::size_t i = 0; i < block.tx_amount; i++){
-                        auto [_tx, __accounts_initial_state, __existing_accounts] = block_loader->load_transaction(i);
-                        tx = std::move(_tx);
-                        _accounts_current_state = _accounts_initial_state = std::move(__accounts_initial_state);
-                        _existing_accounts = std::move(__existing_accounts);
+                virtual void execute_blocks(){
+                    while( block_loader->are_there_more_blocks() ){
+                        block = block_loader->load_block();
+                        this->start_block(); if (!execution_status) return;
+                        for(std::size_t i = 0; i < block.tx_amount; i++){
+                            auto [_tx, __accounts_initial_state, __existing_accounts] = block_loader->load_transaction(i);
+                            tx = std::move(_tx);
+                            _accounts_current_state = _accounts_initial_state = std::move(__accounts_initial_state);
+                            _existing_accounts = std::move(__existing_accounts);
 
-                        this->start_transaction();  if (!execution_status) return;
-                        this->execute_transaction(); if (!execution_status) return;
-                        this->end_transaction(); if (!execution_status) return;
+                            this->start_transaction();  if (!execution_status) return;
+                            this->execute_transaction(); if (!execution_status) return;
+                            this->end_transaction(); if (!execution_status) return;
+                        }
+                        this->end_block(); if (!execution_status) return;
                     }
-                    this->end_block(); if (!execution_status) return;
                 }
 
             protected:
@@ -134,9 +136,9 @@ namespace nil {
                     _accounts_current_state[tx.from].balance -= tx.gasprice * tx.gas;
                     _accounts_current_state[tx.from].balance -= tx.blob_versioned_hashes.size() * 0x20000;
 
-                    BOOST_LOG_TRIVIAL(trace) << "From balance: " << std::hex << tx.from  << " = " << _accounts_current_state[tx.from].balance << std::dec;
-                    BOOST_LOG_TRIVIAL(trace) << "To balance: " << std::hex << tx.to  << " = " << _accounts_current_state[tx.to].balance << std::dec;
-                    BOOST_LOG_TRIVIAL(trace) << "Gas: " << std::hex << gas << std::dec;
+                    BOOST_LOG_TRIVIAL(trace) << "From balance: 0x" << std::hex << tx.from  << " = " << _accounts_current_state[tx.from].balance << std::dec;
+                    BOOST_LOG_TRIVIAL(trace) << "To balance: 0x" << std::hex << tx.to  << " = " << _accounts_current_state[tx.to].balance << std::dec;
+                    BOOST_LOG_TRIVIAL(trace) << "Gas: 0x" << std::hex << gas << std::dec;
 
                     calldata = tx.calldata;
                     for( auto &c: calldata){
@@ -252,6 +254,9 @@ namespace nil {
                     BOOST_LOG_TRIVIAL(trace) << "Basic execute transaction" << std::endl;
 
                     while (!is_end_call){
+                        zkevm_opcode op = (pc == bytecode.size())? zkevm_opcode::STOP: opcode_from_number(bytecode[pc]);
+                        current_opcode = opcode_to_number(op);
+                        std::string opcode = opcode_to_string(op);
                         this->execute_opcode(); if( !execution_status ) return;
                     }
                 }
@@ -336,6 +341,9 @@ namespace nil {
                     BOOST_LOG_TRIVIAL(trace) << "Basic execute call";
 
                     while (!is_end_call){
+                        zkevm_opcode op = (pc == bytecode.size())? zkevm_opcode::STOP: opcode_from_number(bytecode[pc]);
+                        current_opcode = opcode_to_number(op);
+                        std::string opcode = opcode_to_string(op);
                         this->execute_opcode(); if( !execution_status ) return;
                     }
                 }
@@ -381,9 +389,7 @@ namespace nil {
                     memory_size = memory.size();
                     stack_size = stack.size();
 
-                    zkevm_opcode op = (pc == bytecode.size())? zkevm_opcode::STOP: opcode_from_number(bytecode[pc]);
-                    current_opcode = opcode_to_number(op);
-                    std::string opcode = opcode_to_string(op);
+                    std::string opcode = opcode_to_string(opcode_from_number(current_opcode));
 
                     if(opcode == "STOP") { this->stop();}
                     else if( opcode == "RETURN" ) { this->return_opcode();}
@@ -668,7 +674,7 @@ namespace nil {
                     pc++;
                 }
 
-                void sload() {
+                virtual void sload() {
                     auto addr = stack.back(); stack.pop_back();
                     stack.push_back(_accounts_current_state[call_context_address].storage[addr]);
                     if( _call_stack.back().was_accessed.count({call_context_address, 0, addr}) == 0){
@@ -682,7 +688,7 @@ namespace nil {
                     pc++;
                 }
 
-                void sstore() {
+                virtual void sstore() {
                     auto addr = stack.back(); stack.pop_back();
                     auto value = stack.back(); stack.pop_back();
                     auto previous_value = _accounts_current_state[call_context_address].storage[addr];
@@ -1828,8 +1834,10 @@ namespace nil {
                 template <typename T>
                 bool check_equal( T a, T b, std::string message ){
                     bool condition = (a == b);
+                    std::stringstream es;
                     if( !condition ){
-                        error_message = message + " " + std::to_string(a) + " != " + std::to_string(b);
+                        es << message  << std::hex <<  " "  <<  a <<  " != " << b;
+                        error_message = es.str();
                         execution_status = false;
                         BOOST_LOG_TRIVIAL(error) << error_message;
                     }

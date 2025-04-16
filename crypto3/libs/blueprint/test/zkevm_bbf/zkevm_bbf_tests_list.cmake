@@ -1,5 +1,5 @@
 set(ZKEVM_BBF_TESTS_FILES
-    "${BLUEPRINT_TEST_ROOT}/zkevm_bbf/hardhat"
+    "${BLUEPRINT_TEST_ROOT}/zkevm_bbf/debugtt"
     "${BLUEPRINT_TEST_ROOT}/zkevm_bbf/vmtrace"
     "${BLUEPRINT_TEST_ROOT}/zkevm_bbf/rw"
     "${BLUEPRINT_TEST_ROOT}/zkevm_bbf/bytecode"

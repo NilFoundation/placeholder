@@ -79,7 +79,7 @@ namespace nil {
 
                 zkevm_basic_input_generator(abstract_block_loader *_loader): zkevm_basic_evm(_loader){
                     rw_counter = 1;
-                    zkevm_basic_evm::execute_block();
+                    zkevm_basic_evm::execute_blocks();
                     std::sort(_short_rw_operations.begin(), _short_rw_operations.end(), [](short_rw_operation a, short_rw_operation b){
                         return a < b;
                     });
@@ -93,12 +93,12 @@ namespace nil {
                         call_id,
                         bytecode_hash,
                         pc,
+                        opcode_to_number(zkevm_opcode::start_block),
                         stack.size(),
                         memory.size(),
                         gas,
                         rw_counter
                     ));
-                    _zkevm_states.back().set_current_opcode(opcode_to_number(zkevm_opcode::start_block));
                     zkevm_basic_evm::start_block();
                     rw_counter += block_context_fields_amount;
                     _call_stack.back().call_id = block_id;
@@ -112,12 +112,12 @@ namespace nil {
                         call_id,
                         bytecode_hash,
                         pc,
+                        opcode_to_number(zkevm_opcode::start_transaction),
                         stack.size(),
                         memory.size(),
                         gas,
                         rw_counter
                     ));
-                    _zkevm_states.back().set_current_opcode(opcode_to_number(zkevm_opcode::start_transaction));
                     zkevm_basic_evm::start_transaction();
                     if( _bytecode_hashes.count(bytecode_hash) == 0){
                         _keccaks.new_buffer(
@@ -128,7 +128,14 @@ namespace nil {
                         );
                         _bytecode_hashes.insert(bytecode_hash);
                     }
-                    rw_counter += tx_context_fields_amount;
+                    append_call_context_readonly_fields();
+                    rw_counter += call_context_readonly_field_amount + tx_context_fields_amount;
+
+                    for( std::size_t i = 0; i < calldata.size(); i++ ){
+                        _short_rw_operations.push_back(calldata_rw_operation(
+                            call_id, i,rw_counter++, true, calldata[i]
+                        ));
+                    }
                 }
 
                 virtual void start_call() override{
@@ -143,6 +150,7 @@ namespace nil {
                         call_id,
                         bytecode_hash,
                         pc,
+                        current_opcode,
                         stack.size(),
                         memory.size(),
                         gas,
@@ -152,9 +160,12 @@ namespace nil {
                 }
 
                 virtual void stop() override{
-                    _zkevm_states.back().set_current_opcode(current_opcode);
+
                     _zkevm_states.back().load_size_t_field(
                         zkevm_state_size_t_field::depth, depth
+                    );
+                    _zkevm_states.back().load_size_t_field(
+                        zkevm_state_size_t_field::bytecode_size, bytecode.size()
                     );
                     // _short_rw_operations.push_back(stack_rw_operation(
                     //     call_id,
@@ -167,7 +178,7 @@ namespace nil {
                 }
 
                 virtual void push_opcode( std::size_t x) override {
-                    _zkevm_states.back().set_current_opcode(current_opcode);
+
                     zkevm_basic_evm::push_opcode(x);
                     _zkevm_states.back().load_word_field(
                         zkevm_state_word_field::additional_input, stack.back()
@@ -182,7 +193,6 @@ namespace nil {
                 }
 
                 virtual void add() override{
-                    _zkevm_states.back().set_current_opcode(current_opcode);
                     _zkevm_states.back().load_stack(stack,2);
                     append_stack_reads(2);
                     zkevm_basic_evm::add();
@@ -190,7 +200,7 @@ namespace nil {
                 }
 
                 virtual void sub() override{
-                    _zkevm_states.back().set_current_opcode(current_opcode);
+
                     _zkevm_states.back().load_stack(stack,2);
                     append_stack_reads(2);
                     zkevm_basic_evm::sub();
@@ -198,7 +208,7 @@ namespace nil {
                 }
 
                 virtual void mul() override{
-                    _zkevm_states.back().set_current_opcode(current_opcode);
+
                     _zkevm_states.back().load_stack(stack,2);
                     append_stack_reads(2);
                     zkevm_basic_evm::mul();
@@ -206,7 +216,7 @@ namespace nil {
                 }
 
                 virtual void div() override{
-                    _zkevm_states.back().set_current_opcode(current_opcode);
+
                     _zkevm_states.back().load_stack(stack,2);
                     append_stack_reads(2);
                     zkevm_basic_evm::div();
@@ -214,7 +224,7 @@ namespace nil {
                 }
 
                 virtual void mod() override{
-                    _zkevm_states.back().set_current_opcode(current_opcode);
+
                     _zkevm_states.back().load_stack(stack,2);
                     append_stack_reads(2);
                     zkevm_basic_evm::mod();
@@ -222,7 +232,7 @@ namespace nil {
                 }
 
                 virtual void sdiv() override{
-                    _zkevm_states.back().set_current_opcode(current_opcode);
+
                     _zkevm_states.back().load_stack(stack,2);
                     append_stack_reads(2);
                     zkevm_basic_evm::sdiv();
@@ -230,7 +240,7 @@ namespace nil {
                 }
 
                 virtual void smod() override{
-                    _zkevm_states.back().set_current_opcode(current_opcode);
+
                     _zkevm_states.back().load_stack(stack,2);
                     append_stack_reads(2);
                     zkevm_basic_evm::smod();
@@ -238,7 +248,7 @@ namespace nil {
                 }
 
                 virtual void addmod() override{
-                    _zkevm_states.back().set_current_opcode(current_opcode);
+
                     _zkevm_states.back().load_stack(stack,3);
                     append_stack_reads(3);
                     zkevm_basic_evm::addmod();
@@ -246,7 +256,7 @@ namespace nil {
                 }
 
                 virtual void mulmod() override{
-                    _zkevm_states.back().set_current_opcode(current_opcode);
+
                     _zkevm_states.back().load_stack(stack,3);
                     append_stack_reads(3);
                     zkevm_basic_evm::mulmod();
@@ -254,7 +264,7 @@ namespace nil {
                 }
 
                 virtual void exp() override{
-                    _zkevm_states.back().set_current_opcode(current_opcode);
+
                     _zkevm_states.back().load_stack(stack,2);
                     _exponentiations.push_back({stack[stack.size() - 1], stack[stack.size() - 2]});
                     append_stack_reads(2);
@@ -264,7 +274,7 @@ namespace nil {
 
                 virtual void mload() override{
                     std::size_t offset = std::size_t(stack.back());
-                    _zkevm_states.back().set_current_opcode(current_opcode);
+
                     _zkevm_states.back().load_stack(stack,1);
                     _zkevm_states.back().load_memory(memory, offset, 32);
                     append_stack_reads(1);
@@ -283,7 +293,7 @@ namespace nil {
 
                 virtual void mstore() override{
                     std::size_t offset = std::size_t(stack.back());
-                    _zkevm_states.back().set_current_opcode(current_opcode);
+
                     _zkevm_states.back().load_stack(stack,2);
                     append_stack_reads(2);
                     zkevm_basic_evm::mstore();
@@ -300,7 +310,7 @@ namespace nil {
 
                 virtual void mstore8() override{
                     std::size_t offset = std::size_t(stack.back());
-                    _zkevm_states.back().set_current_opcode(current_opcode);
+
                     _zkevm_states.back().load_stack(stack,2);
                     append_stack_reads(2);
                     zkevm_basic_evm::mstore8();
@@ -313,8 +323,28 @@ namespace nil {
                     ));
                 }
 
+                virtual void sload() override{
+                    zkevm_word_type key = stack.back();
+                    _zkevm_states.back().load_stack(stack,1);
+                    append_stack_reads(1);
+                    _zkevm_states.back().load_word_field(
+                        zkevm_state_word_field::storage_key, key
+                    );
+                    _zkevm_states.back().load_word_field(
+                        zkevm_state_word_field::storage_value,
+                        _accounts_current_state[call_context_address].storage.count(key)?_accounts_current_state[call_context_address].storage[key]:0
+                    );
+                    zkevm_basic_evm::sload();
+                    append_stack_writes(1);
+                }
+
+                virtual void sstore() override{
+                    append_stack_reads(2);
+                    zkevm_basic_evm::sstore();
+                }
+
                 virtual void iszero() override{
-                    _zkevm_states.back().set_current_opcode(current_opcode);
+
                     _zkevm_states.back().load_stack(stack,1);
                     append_stack_reads(1);
                     zkevm_basic_evm::iszero();
@@ -322,7 +352,7 @@ namespace nil {
                 }
 
                 virtual void eq() override{
-                    _zkevm_states.back().set_current_opcode(current_opcode);
+
                     _zkevm_states.back().load_stack(stack,2);
                     append_stack_reads(2);
                     zkevm_basic_evm::eq();
@@ -330,7 +360,7 @@ namespace nil {
                 }
 
                 virtual void and_opcode() override{
-                    _zkevm_states.back().set_current_opcode(current_opcode);
+
                     _zkevm_states.back().load_stack(stack,2);
                     append_stack_reads(2);
                     zkevm_basic_evm::and_opcode();
@@ -338,7 +368,7 @@ namespace nil {
                 }
 
                 virtual void or_opcode() override{
-                    _zkevm_states.back().set_current_opcode(current_opcode);
+
                     _zkevm_states.back().load_stack(stack,2);
                     append_stack_reads(2);
                     zkevm_basic_evm::or_opcode();
@@ -346,7 +376,7 @@ namespace nil {
                 }
 
                 virtual void xor_opcode() override{
-                    _zkevm_states.back().set_current_opcode(current_opcode);
+
                     _zkevm_states.back().load_stack(stack,2);
                     append_stack_reads(2);
                     zkevm_basic_evm::xor_opcode();
@@ -354,7 +384,7 @@ namespace nil {
                 }
 
                 virtual void not_opcode() override{
-                    _zkevm_states.back().set_current_opcode(current_opcode);
+
                     _zkevm_states.back().load_stack(stack,1);
                     append_stack_reads(1);
                     zkevm_basic_evm::not_opcode();
@@ -362,7 +392,7 @@ namespace nil {
                 }
 
                 virtual void shr() override{
-                    _zkevm_states.back().set_current_opcode(current_opcode);
+
                     _zkevm_states.back().load_stack(stack,2);
                     append_stack_reads(2);
                     zkevm_basic_evm::shr();
@@ -370,7 +400,7 @@ namespace nil {
                 }
 
                 virtual void shl() override{
-                    _zkevm_states.back().set_current_opcode(current_opcode);
+
                     _zkevm_states.back().load_stack(stack,2);
                     append_stack_reads(2);
                     zkevm_basic_evm::shl();
@@ -378,7 +408,7 @@ namespace nil {
                 }
 
                 virtual void sar() override{
-                    _zkevm_states.back().set_current_opcode(current_opcode);
+
                     _zkevm_states.back().load_stack(stack,2);
                     append_stack_reads(2);
                     zkevm_basic_evm::sar();
@@ -386,7 +416,7 @@ namespace nil {
                 }
 
                 virtual void lt() override{
-                    _zkevm_states.back().set_current_opcode(current_opcode);
+
                     _zkevm_states.back().load_stack(stack,2);
                     append_stack_reads(2);
                     zkevm_basic_evm::lt();
@@ -394,7 +424,7 @@ namespace nil {
                 }
 
                 virtual void gt() override{
-                    _zkevm_states.back().set_current_opcode(current_opcode);
+
                     _zkevm_states.back().load_stack(stack,2);
                     append_stack_reads(2);
                     zkevm_basic_evm::gt();
@@ -402,7 +432,7 @@ namespace nil {
                 }
 
                 virtual void slt() override{
-                    _zkevm_states.back().set_current_opcode(current_opcode);
+
                     _zkevm_states.back().load_stack(stack,2);
                     append_stack_reads(2);
                     zkevm_basic_evm::slt();
@@ -410,7 +440,7 @@ namespace nil {
                 }
 
                 virtual void sgt() override{
-                    _zkevm_states.back().set_current_opcode(current_opcode);
+
                     _zkevm_states.back().load_stack(stack,2);
                     append_stack_reads(2);
                     zkevm_basic_evm::sgt();
@@ -418,7 +448,7 @@ namespace nil {
                 }
 
                 virtual void byte() override{
-                    _zkevm_states.back().set_current_opcode(current_opcode);
+
                     _zkevm_states.back().load_stack(stack,2);
                     append_stack_reads(2);
                     zkevm_basic_evm::byte();
@@ -426,7 +456,7 @@ namespace nil {
                 }
 
                 virtual void signextend() override{
-                    _zkevm_states.back().set_current_opcode(current_opcode);
+
                     _zkevm_states.back().load_stack(stack,2);
                     append_stack_reads(2);
                     zkevm_basic_evm::signextend();
@@ -434,39 +464,39 @@ namespace nil {
                 }
 
                 virtual void jump() override{
-                    _zkevm_states.back().set_current_opcode(current_opcode);
+
                     _zkevm_states.back().load_stack(stack,1);
                     append_stack_reads(1);
                     zkevm_basic_evm::jump();
                 }
 
                 virtual void jumpi() override{
-                    _zkevm_states.back().set_current_opcode(current_opcode);
+
                     _zkevm_states.back().load_stack(stack,2);
                     append_stack_reads(2);
                     zkevm_basic_evm::jumpi();
                 }
 
                 virtual void jumpdest() override{
-                    _zkevm_states.back().set_current_opcode(current_opcode);
+
                     zkevm_basic_evm::jumpdest();
                 }
 
                 virtual void pc_opcode() override{
-                    _zkevm_states.back().set_current_opcode(current_opcode);
+
                     zkevm_basic_evm::pc_opcode();
                     append_stack_writes(1);
                 }
 
                 virtual void gas_opcode() override{
-                    _zkevm_states.back().set_current_opcode(current_opcode);
+
                     zkevm_basic_evm::gas_opcode();
                     append_stack_writes(1);
                 }
 
                 // TODO: Add small test with debug_traceTransaction
                 virtual void msize_opcode() override{
-                    _zkevm_states.back().set_current_opcode(current_opcode);
+
                     zkevm_basic_evm::msize_opcode();
                     append_stack_writes(1);
                 }
@@ -475,7 +505,7 @@ namespace nil {
                     std::size_t offset = std::size_t(stack[stack.size() - 1]);
                     std::size_t length = std::size_t(stack[stack.size() - 2]);
 
-                    _zkevm_states.back().set_current_opcode(current_opcode);
+
                     _zkevm_states.back().load_stack(stack,2 + l);
                     append_stack_reads(2 + l);
                     zkevm_basic_evm::logx(l);
@@ -497,7 +527,7 @@ namespace nil {
                     std::size_t src = std::size_t(stack[stack.size() - 2]);
                     std::size_t length = std::size_t(stack[stack.size() - 3]);
 
-                    _zkevm_states.back().set_current_opcode(current_opcode);
+
                     _zkevm_states.back().load_stack(stack,3);
                     _zkevm_states.back().load_calldata(calldata, src, length);
                     append_stack_reads(3);
@@ -512,7 +542,7 @@ namespace nil {
 
                     for( std::size_t i = 0; i < length; i++){
                         _short_rw_operations.push_back(calldata_rw_operation(
-                            call_id, src + i, rw_counter++, src + i < calldata.size() ? calldata[src + i] : 0
+                            call_id, src + i, rw_counter++, false, src + i < calldata.size() ? calldata[src + i] : 0
                         ));
                     }
                     for( std::size_t i = 0; i < length; i++){
@@ -520,6 +550,126 @@ namespace nil {
                             call_id, dst + i, rw_counter++, true, memory[dst + i]
                         ));
                         cpy.push_byte(memory[dst+i]);
+                    }
+                    _copy_events.push_back(cpy);
+                }
+
+                virtual void dupx( std::size_t d) {
+                    _zkevm_states.back().load_stack(stack,d);
+                    _short_rw_operations.push_back(stack_rw_operation(
+                        call_id,
+                        stack.size() - d,
+                        rw_counter++,
+                        false,
+                        stack[stack.size() - d]
+                    ));
+                    zkevm_basic_evm::dupx(d);
+                    _short_rw_operations.push_back(stack_rw_operation(
+                        call_id,
+                        stack.size() - 1,
+                        rw_counter++,
+                        true,
+                        stack[stack.size() - 1]
+                    ));
+                }
+
+                virtual void swapx( std::size_t s) {
+                    _zkevm_states.back().load_stack(stack, s + 1);
+                    _short_rw_operations.push_back(stack_rw_operation(
+                        call_id,
+                        stack.size() - 1,
+                        rw_counter++,
+                        false,
+                        stack[stack.size() - 1]
+                    ));
+                    _short_rw_operations.push_back(stack_rw_operation(
+                        call_id,
+                        stack.size() - s - 1,
+                        rw_counter++,
+                        false,
+                        stack[stack.size() - s - 1]
+                    ));
+                    zkevm_basic_evm::swapx(s);
+                    _short_rw_operations.push_back(stack_rw_operation(
+                        call_id,
+                        stack.size() - s - 1,
+                        rw_counter++,
+                        true,
+                        stack[stack.size() - s - 1]
+                    ));
+                    _short_rw_operations.push_back(stack_rw_operation(
+                        call_id,
+                        stack.size() - 1,
+                        rw_counter++,
+                        true,
+                        stack[stack.size() - 1]
+                    ));
+                }
+
+                virtual void callvalue() override{
+                    _zkevm_states.back().load_word_field(zkevm_state_word_field::call_context_value, call_context_value);
+                    zkevm_basic_evm::callvalue();
+                    append_stack_writes(1);
+                }
+
+                virtual void calldatasize() override{
+                    _zkevm_states.back().load_size_t_field(zkevm_state_size_t_field::calldatasize, calldata.size());
+                    zkevm_basic_evm::calldatasize();
+                    append_stack_writes(1);
+                }
+
+                virtual void calldataload() override{
+                    std::size_t offset = std::size_t(stack.back());
+                    append_stack_reads(1);
+                    _zkevm_states.back().load_stack(stack,1);
+                    _zkevm_states.back().load_calldata(calldata, offset, 32);
+                    zkevm_basic_evm::calldataload();
+                    for( std::size_t i = 0; i < 32; i++){
+                        _short_rw_operations.push_back(calldata_rw_operation(
+                            call_id,
+                            offset + i,
+                            rw_counter++,
+                            false,
+                            calldata[offset + i]
+                        ));
+                    }
+                    append_stack_writes(1);
+                }
+
+                virtual void return_opcode() override{
+                    std::size_t offset = std::size_t(stack[stack.size() - 1]);
+                    std::size_t length = std::size_t(stack[stack.size() - 2]);
+
+                    _zkevm_states.back().load_stack(stack,2);
+                    _zkevm_states.back().load_size_t_field(zkevm_state_size_t_field::depth, depth);
+                    _zkevm_states.back().load_memory(memory, offset, length);
+                    append_stack_reads(2);
+                    zkevm_basic_evm::return_opcode();
+
+                    copy_event cpy = return_copy_event(
+                        call_id,
+                        offset,
+                        rw_counter,
+                        length
+                    );
+                    for( std::size_t i = 0; i < length; i++){
+                        _short_rw_operations.push_back(memory_rw_operation(
+                            call_id,
+                            offset + i,
+                            rw_counter++,
+                            false,
+                            memory[offset + i]
+                        ));
+                    }
+                    for( std::size_t i = 0; i < length; i++){
+                        _short_rw_operations.push_back(returndata_rw_operation(
+                            call_id,
+                            i,
+                            rw_counter++,
+                            true,
+                            returndata[i]
+                        ));
+                        cpy.push_byte(returndata[i]);
                     }
                     _copy_events.push_back(cpy);
                 }
@@ -535,12 +685,13 @@ namespace nil {
                         call_id,
                         bytecode_hash,
                         pc,
+                        opcode_to_number(zkevm_opcode::end_transaction),
                         stack.size(),
                         memory.size(),
                         gas,
                         rw_counter
                     ));
-                    _zkevm_states.back().set_current_opcode(current_opcode);
+
                 }
 
                 virtual void end_block() override{
@@ -549,12 +700,12 @@ namespace nil {
                         call_id,
                         bytecode_hash,
                         pc,
+                        opcode_to_number(zkevm_opcode::end_block),
                         stack.size(),
                         memory.size(),
                         gas,
                         rw_counter
                     ));
-                    _zkevm_states.back().set_current_opcode(current_opcode);
                 }
 
 
@@ -572,6 +723,38 @@ namespace nil {
                     return ss.str();
                 }
             protected:
+                void append_call_context_readonly_fields(){
+                    _short_rw_operations.push_back(call_context_header_operation(
+                        call_id,
+                        call_context_field::parent_id,
+                        depth == 2 ? block_id: _call_stack[_call_stack.size() - 2].call_id
+                    ));
+                    _short_rw_operations.push_back(call_context_header_operation(
+                        call_id,
+                        call_context_field::block_id,
+                        block_id
+                    ));
+                    _short_rw_operations.push_back(call_context_header_operation(
+                        call_id,
+                        call_context_field::tx_id,
+                        tx_id
+                    ));
+                    _short_rw_operations.push_back(call_context_header_operation(
+                        call_id,
+                        call_context_field::call_context_value,
+                        call_context_value
+                    ));
+                    _short_rw_operations.push_back(call_context_header_operation(
+                        call_id,
+                        call_context_field::calldata_size,
+                        calldata.size()
+                    ));
+                    _short_rw_operations.push_back(call_context_header_operation(
+                        call_id,
+                        call_context_field::depth,
+                        depth
+                    ));
+                }
                 void append_stack_reads(std::size_t r){
                     for( std::size_t i = 0; i < r; i++){
                         _short_rw_operations.push_back(stack_rw_operation(

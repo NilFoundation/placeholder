@@ -64,12 +64,14 @@ namespace nil {
                 // Grouped by call, no revertions
                 parent_id,
                 block_id,
+                tx_id,
+                call_context_value,
+                calldata_size,
+                depth,
                 lastcall_id,
                 lastcall_returndata_offset,
                 lastcall_returndata_length,
-                calldata_size,
                 returndata_size,
-                depth
             };
             static constexpr std::size_t call_context_readonly_field_amount = 12;
             static constexpr std::size_t call_context_fields_amount = 18;
@@ -154,6 +156,7 @@ namespace nil {
                 std::size_t id,
                 std::size_t address,
                 std::size_t rw_id,
+                bool is_write,
                 zkevm_word_type value
             ){
                 short_rw_operation r;
@@ -161,7 +164,7 @@ namespace nil {
                 r.id = id;
                 r.address = address;
                 r.rw_counter = rw_id;
-                r.is_write = false; // calldata is read-only
+                r.is_write = is_write; // Only first operation may be write
                 r.value = value;
                 return r;
             }
@@ -170,6 +173,7 @@ namespace nil {
                 std::size_t id,
                 std::size_t address,
                 std::size_t rw_id,
+                bool is_write,
                 zkevm_word_type value
             ){
                 short_rw_operation r;
@@ -177,12 +181,12 @@ namespace nil {
                 r.id = id;
                 r.address = address;
                 r.rw_counter = rw_id;
-                r.is_write = false; // returndata is read-only
+                r.is_write = is_write; // Only first operation may be write
                 r.value = value;
                 return r;
             }
 
-            short_rw_operation call_context_rw_operation(
+            short_rw_operation call_context_header_operation(
                 std::size_t call_id,
                 call_context_field field,
                 zkevm_word_type value

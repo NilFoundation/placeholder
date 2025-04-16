@@ -125,7 +125,7 @@ namespace nil {
                     };
                 }
 
-                static std::vector<TYPE> calldata_lookup(
+                static std::vector<TYPE> calldata_r_lookup(
                     TYPE call_id,
                     TYPE calldata_address,
                     TYPE rw_counter,
@@ -142,7 +142,25 @@ namespace nil {
                     };
                 }
 
-                static std::vector<TYPE> returndata_lookup(
+                static std::vector<TYPE> calldata_lookup(
+                    TYPE call_id,
+                    TYPE calldata_address,
+                    TYPE rw_counter,
+                    TYPE is_write,
+                    TYPE value_lo
+                ){
+                    return {
+                        TYPE(std::size_t(short_rw_operation_type::calldata)),
+                        call_id,
+                        calldata_address,
+                        rw_counter,
+                        TYPE(0),              // calldata is readonly
+                        is_write,             // hi bytes are 0
+                        value_lo
+                    };
+                }
+
+                static std::vector<TYPE> returndata_r_lookup(
                     TYPE call_id,
                     TYPE returndata_address,
                     TYPE rw_counter,
@@ -154,6 +172,24 @@ namespace nil {
                         returndata_address,
                         rw_counter,
                         TYPE(0),              // calldata is readonly
+                        TYPE(0),              // hi bytes are 0
+                        value_lo
+                    };
+                }
+
+                static std::vector<TYPE> returndata_lookup(
+                    TYPE call_id,
+                    TYPE returndata_address,
+                    TYPE rw_counter,
+                    TYPE is_write,
+                    TYPE value_lo
+                ){
+                    return {
+                        TYPE(std::size_t(short_rw_operation_type::returndata)),
+                        call_id,
+                        returndata_address,
+                        rw_counter,
+                        is_write,
                         TYPE(0),              // hi bytes are 0
                         value_lo
                     };

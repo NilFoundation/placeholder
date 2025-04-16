@@ -39,6 +39,7 @@ namespace nil {
             public:
                 virtual zkevm_block load_block() = 0;
                 virtual std::tuple<zkevm_transaction, std::map<zkevm_word_type, zkevm_account>, std::set<zkevm_word_type>> load_transaction(std::size_t i) = 0;
+                virtual bool are_there_more_blocks() = 0;
 
                 // TODO: implement precompiles and remove this function from interface
                 virtual std::tuple<zkevm_word_type, std::size_t, std::vector<std::uint8_t>> compute_precompile(zkevm_word_type address, std::vector<std::uint8_t> calldata) = 0;

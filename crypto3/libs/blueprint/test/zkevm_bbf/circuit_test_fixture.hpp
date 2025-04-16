@@ -139,17 +139,6 @@ std::vector<std::uint8_t> hex_string_to_bytes(std::string const &hex_string) {
     return bytes;
 }
 
-boost::property_tree::ptree load_hardhat_input(std::string path){
-    std::ifstream ss;
-    std::cout << "Open file " << std::string(TEST_DATA_DIR) + path << std::endl;
-    ss.open(std::string(TEST_DATA_DIR) + path);
-    boost::property_tree::ptree pt;
-    boost::property_tree::read_json(ss, pt);
-    ss.close();
-
-    return pt;
-}
-
 template <typename BlueprintFieldType>
 bool check_proof(
     const nil::blueprint::circuit<zk::snark::plonk_constraint_system<BlueprintFieldType>> &bp,

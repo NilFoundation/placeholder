@@ -54,10 +54,16 @@ namespace nil {
                 zkevm_transaction tx;
                 std::map<zkevm_word_type, zkevm_account> _accounts_initial_state;
                 std::set<zkevm_word_type>                _existing_accounts;
+                bool                                     _are_there_more_blocks = true;
             public:
                 virtual zkevm_block load_block() override {
                     BOOST_LOG_TRIVIAL(info) << "OpcodeTester:: Load block " << std::hex << block.hash  << std::dec << " tx_amount = " << block.tx_amount;
+                    _are_there_more_blocks = false;
                     return block;
+                }
+
+                virtual bool are_there_more_blocks() override{
+                    return _are_there_more_blocks;
                 }
 
                 virtual std::tuple<

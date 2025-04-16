@@ -49,9 +49,10 @@ namespace nil {
         namespace bbf {
             class vmtrace_block_loader : abstract_block_loader{
             protected:
+                zkevm_block                                                 block;
+
                 std::string                                                 path;
                 boost::property_tree::ptree                                 block_ptree;
-                zkevm_block                                                 block;
                 std::vector<boost::property_tree::ptree>                    tx_list;
                 std::map<zkevm_word_type, zkevm_account>                    _accounts_initial_state;
                 std::set<zkevm_word_type>                                   _existing_accounts;
@@ -59,6 +60,7 @@ namespace nil {
                 boost::property_tree::ptree                                 tx_trace_tree;
                 std::size_t                                                 current_tx;
                 std::map<std::size_t, zkevm_word_type>                      old_blocks_hashes;
+                bool                                                        _are_there_more_blocks = true;
             public:
                 const boost::property_tree::ptree &get_tx_list(std::size_t tx_order) const {
                     BOOST_ASSERT(tx_list.size() > tx_order);
@@ -71,7 +73,12 @@ namespace nil {
 
                 virtual zkevm_block load_block() override {
                     BOOST_LOG_TRIVIAL(info) << "VmTrace:: Load block " << std::hex << block.hash  << std::dec << " tx_amount = " << block.tx_amount;
+                    _are_there_more_blocks = false;
                     return block;
+                }
+
+                virtual bool are_there_more_blocks() override{
+                    return _are_there_more_blocks;
                 }
 
                 virtual std::tuple<
@@ -133,7 +140,6 @@ namespace nil {
                         }
                     }
 
-                    load_block();
                     tx_list.clear();
                     for( auto &[k,v]: block_ptree.get_child("transactions") ){
                         tx_list.push_back(v);
@@ -295,7 +301,7 @@ namespace nil {
                 std::size_t last_opcode_gas_used;
             public:
                 zkevm_vmtrace_trace_checker(vmtrace_block_loader *_loader):loader(_loader),zkevm_basic_evm((abstract_block_loader*)_loader){
-                    zkevm_basic_evm::execute_block();
+                    zkevm_basic_evm::execute_blocks();
                 }
 
                 void start_block() override {

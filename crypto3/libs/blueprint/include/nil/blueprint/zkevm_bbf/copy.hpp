@@ -361,6 +361,7 @@ namespace nil {
                             id_lo[1],
                             counter_1[1], // address
                             counter_2[1], // rw_counter
+                            is_write[1],
                             value_lo[1]
                         );
                         std::cout << "Calldata_lookup size " << tmp.size() << std::endl;
@@ -372,6 +373,7 @@ namespace nil {
                             id_lo[1],
                             counter_1[1], // address
                             counter_2[1], // rw_counter
+                            is_write[1],  // is_write
                             value_lo[1]
                         );
                         std::cout << "Returndata_lookup size " << tmp.size() << std::endl;

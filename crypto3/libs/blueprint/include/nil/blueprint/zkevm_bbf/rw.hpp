@@ -299,7 +299,8 @@ namespace nil {
                         TYPE blobhash_selector = op_selectors[1][std::size_t(short_rw_operation_type::blobhash) - 1];
                         TYPE padding_selector = op_selectors[1][std::size_t(short_rw_operation_type::padding) - 1];
 
-                        every_row_constraints.push_back(is_write[1] *(calldata_selector + returndata_selector + blobhash_selector + padding_selector));
+                        every_row_constraints.push_back((calldata_selector + returndata_selector) *  is_write[1] * (1 - is_first[1]) );
+                        every_row_constraints.push_back(is_write[1] *(blobhash_selector + padding_selector));
                         every_row_constraints.push_back(value_hi[1] *(calldata_selector + returndata_selector + memory_selector + padding_selector));
                         chunked_16_lookups.push_back(value_lo[1] * (calldata_selector + returndata_selector + memory_selector));
                         chunked_16_lookups.push_back((255 - value_lo[1]) * (calldata_selector + returndata_selector + memory_selector));

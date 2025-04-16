@@ -56,6 +56,7 @@ namespace nil {
 
                     TYPE offset, length, length_inv, depth, depth_inv, is_length_zero;
                     TYPE current_mem, next_mem, memory_expansion_cost, memory_expansion_size, S;
+
                     if constexpr( stage == GenerationStage::ASSIGNMENT ){
                         offset = w_lo<FieldType>(current_state.stack_top());
                         length = w_lo<FieldType>(current_state.stack_top(1));
@@ -92,8 +93,8 @@ namespace nil {
                     TYPE next_opcode =
                         depth * depth_inv * TYPE(std::size_t(opcode_to_number(zkevm_opcode::end_call))) +
                         (1 - depth * depth_inv) * TYPE(std::size_t(opcode_to_number(zkevm_opcode::end_transaction)));
-                    std::cout << "Next opcode = " << std::hex << next_opcode << std::endl;
-                    std::cout << "Depth = " << depth << std::endl;
+                    // // std::cout << "Next opcode = " << std::hex << next_opcode << std::endl;
+                    // // std::cout << "Depth = " << depth << std::endl;
                     allocate(next_opcode, 36, 1);
 
                     std::vector<std::size_t> memory_cost_lookup_area = {42, 43, 44,
@@ -111,14 +112,13 @@ namespace nil {
                     memory_expansion_size =
                         (next_memory.word_size - current_memory.word_size) * 32;
                     if constexpr( stage == GenerationStage::CONSTRAINTS ){
-                        // constrain(current_state.pc_next() - current_state.pc(0) - 1);                   // PC transition
-                        // constrain(current_state.gas(0) - current_state.gas_next()  - memory_expansion_cost)  // GAS transition
-                        // constrain(current_state.stack_size(0) - current_state.stack_size_next());       // stack_size transition
-                        // constrain(current_state.memory_size(0) - current_state.memory_size_next());     // memory_size transition
-                        // constrain(current_state.rw_counter_next() - current_state.rw_counter(0) - 2 - 2 * length); // rw_counter transition
+                        // constrain(current_state.pc_next() - current_state.pc(0) - 1);                           // PC transition
+                        constrain(current_state.gas(0) - current_state.gas_next()  - memory_expansion_cost);       // GAS transition
+                        // constrain(current_state.stack_size(0) - current_state.stack_size_next());               // stack_size transition
+                        // constrain(current_state.memory_size(0) - current_state.memory_size_next());             // memory_size transition
+                        constrain(current_state.rw_counter_next() - current_state.rw_counter(0) - 2 - 2 * length); // rw_counter transition
                         constrain(current_state.opcode_next() - next_opcode); // Next opcode restrictions
 
-                        std::vector<TYPE> tmp;
                         lookup(rw_table<FieldType, stage>::stack_lookup(
                             current_state.call_id(0),
                             current_state.stack_size(0) - 1,
@@ -130,7 +130,7 @@ namespace nil {
                         lookup(rw_table<FieldType, stage>::stack_lookup(
                             current_state.call_id(0),
                             current_state.stack_size(0) - 2,
-                            current_state.rw_counter(0) +1,
+                            current_state.rw_counter(0) + 1,
                             TYPE(0),// is_write
                             TYPE(0),// hi bytes are 0
                             length
@@ -139,9 +139,8 @@ namespace nil {
                             current_state.call_id(0),
                             std::size_t(call_context_field::depth),
                             TYPE(0),
-                            depth + 1
+                            depth + 2
                         ), "zkevm_rw");
-
                         lookup({
                             is_length_zero,                                                       // is_first
                             TYPE(0),                                                                   // is_write

@@ -23,7 +23,7 @@ namespace nil {
                     typename generic_component<FieldType, GenerationStage::CONSTRAINTS>::context_type &context,
                     const opcode_input_type<FieldType, GenerationStage::CONSTRAINTS> &current_state
                 ) override  {
-                    std::cout << "DUMMY CONTSTRAINT, REPLACE ME WITH SOME ACTUAL IMPL" << std::endl;
+                    BOOST_LOG_TRIVIAL(debug) << "DUMMY CONTSTRAINT, REPLACE ME WITH SOME ACTUAL IMPL";
                 }
                 virtual std::size_t rows_amount() override {
                     return 1;

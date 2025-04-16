@@ -134,28 +134,16 @@ public:
 
         bool result;
 
-        // // Max_rows, max_bytecode, max_rw
-        // result = test_bbf_component<BlueprintFieldType, nil::blueprint::bbf::zkevm>(
-        //     "zkevm",
-        //     {}, zkevm_assignment_input,
-        //     max_zkevm_rows,
-        //     max_copy,
-        //     max_rw,
-        //     max_exponentiations,
-        //     max_bytecode
-        // );
-        // BOOST_CHECK(result);
-        // std::cout << std::endl;
-
-        // std::cout << "Exp circuit" << std::endl;
-        // result = test_bbf_component<BlueprintFieldType, nil::blueprint::bbf::exponentiation>(
-        //     "exp",
-        //     {}, exp_assignment_input,
-        //     max_exp_rows,
-        //     max_exponentiations
-        // );
-        // BOOST_CHECK(result);
-        // std::cout << std::endl;
+        const std::string exp_circuit = "exp";
+        if (should_run_circuit(exp_circuit)) {
+            result = test_bbf_component<BlueprintFieldType, nil::blueprint::bbf::exponentiation>(
+                "exp",
+                {}, exp_assignment_input,
+                max_exp_rows,
+                max_exponentiations
+            );
+            BOOST_CHECK(result);
+        }
 
         // Max_bytecode, max_bytecode
         const std::string bytecode_circuit = "bytecode";
@@ -216,20 +204,6 @@ public:
         // //     max_rw, max_call_commits);
 
         // // Max_copy, Max_rw, Max_keccak, Max_bytecode
-        // result = test_bbf_component<BlueprintFieldType, nil::blueprint::bbf::copy>(
-        //     "copy",
-        //     {7}, copy_assignment_input,
-        //     max_copy, max_rw, max_keccak_blocks, max_bytecode, max_call_commits
-        // );
-        // BOOST_CHECK(result);
-        // std::cout << std::endl;
-
         // // Max_keccak
-        // result = test_bbf_component<BlueprintFieldType, nil::blueprint::bbf::zkevm_keccak>(
-        //     "keccak",
-        //     {}, keccak_assignment_input , max_keccak_blocks
-        // );
-        // BOOST_CHECK(result);
-        // std::cout << std::endl;
     }
 };

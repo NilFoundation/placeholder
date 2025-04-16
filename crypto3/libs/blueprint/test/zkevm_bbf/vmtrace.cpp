@@ -74,8 +74,8 @@ using namespace nil::blueprint::bbf;
 class zkEVMVmTraceTestFixture: public CircuitTestFixture {
 protected:
     bool check_trace = true;
-    bool assign = false;
     bool empty_machine_run = false;
+    bool assign = false;
 public:
     zkEVMVmTraceTestFixture():CircuitTestFixture(){
         std::size_t argc = boost::unit_test::framework::master_test_suite().argc;
@@ -110,7 +110,7 @@ public:
 
             if( empty_machine_run ){
                 nil::blueprint::bbf::zkevm_basic_evm evm((abstract_block_loader*)(&loader));
-                evm.execute_block();
+                evm.execute_blocks();
                 BOOST_ASSERT(evm.get_execution_status());
             }
             if( check_trace){

@@ -72,7 +72,7 @@ namespace nil {
                         }
                         for( std::size_t i = 0; i < 16; i++ ){
                             if( a[i] != b[i] ) {
-                                std::cout << "\tNOT equal" << std::endl;
+                                BOOST_LOG_TRIVIAL(trace) << "\tNOT equal" << std::endl;
                                 if( eq ) S[i] = 1;
                                 eq = false;
                                 diff = a[i] < b[i]? b[i] - a[i]: a[i] - b[i];
@@ -83,8 +83,8 @@ namespace nil {
                                 break;
                             }
                         }
-                        if( cmp_operation == cmp_type::C_LT ) std::cout << "\t" << current_state.stack_top() << "<" <<  current_state.stack_top(1) << " = " << result << std::endl;
-                        if( cmp_operation == cmp_type::C_GT ) std::cout << "\t" << current_state.stack_top() << ">" <<  current_state.stack_top(1) << " = " << result << std::endl;                    }
+                        if( cmp_operation == cmp_type::C_LT ) BOOST_LOG_TRIVIAL(trace) << "\t" << current_state.stack_top() << "<" <<  current_state.stack_top(1) << " = " << result << std::endl;
+                        if( cmp_operation == cmp_type::C_GT ) BOOST_LOG_TRIVIAL(trace) << "\t" << current_state.stack_top() << ">" <<  current_state.stack_top(1) << " = " << result << std::endl;                    }
                     TYPE s_sum;
                     for( std::size_t i = 0; i < 16; i++ ){
                         allocate(A[i], i, 0);

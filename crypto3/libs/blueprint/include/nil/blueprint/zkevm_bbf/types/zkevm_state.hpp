@@ -44,6 +44,7 @@ namespace nil {
                 virtual zkevm_word_type storage(zkevm_word_type key) const = 0;
                 virtual std::uint8_t    calldata(std::size_t addr) const = 0;
                 virtual std::uint8_t    returndata(std::size_t addr) const = 0;
+                virtual zkevm_word_type call_context_value() const = 0;
                 virtual std::size_t calldatasize() const = 0;
                 virtual std::size_t lastsubcall_id() const = 0;
                 virtual std::size_t lastcall_returndata_offset() const = 0;
@@ -66,13 +67,15 @@ namespace nil {
                 virtual std::size_t tx_id() const = 0;
                 virtual zkevm_word_type call_context_address() const = 0;
                 virtual std::size_t depth() const = 0;
+                virtual std::size_t bytecode_size() const = 0;
             };
 
             enum class zkevm_state_word_field: std::size_t {
                 storage_key = 0,
                 storage_value = 1,
                 call_context_address = 2,
-                additional_input = 3
+                additional_input = 3,
+                call_context_value = 4
             };
 
             enum class zkevm_state_size_t_field: std::size_t {
@@ -86,7 +89,8 @@ namespace nil {
                 block_id = 7,
                 tx_id = 8,
                 returndatasize = 9,
-                modified_items_amount = 10
+                modified_items_amount = 10,
+                bytecode_size = 11
             };
 
             class zkevm_state : public abstract_zkevm_state{
@@ -113,12 +117,13 @@ namespace nil {
                     std::size_t     __call_id,
                     zkevm_word_type __bytecode_hash,
                     std::size_t     __pc,
+                    std::size_t     __opcode,
                     std::size_t     __stack_size,
                     std::size_t     __memory_size,
                     std::size_t     __gas,
                     std::size_t     __rw_counter
                 ):  _bytecode_hash(__bytecode_hash),
-                    _opcode(0),
+                    _opcode(__opcode),
                     _pc(__pc),
                     _memory_size(__memory_size),
                     _stack_size(__stack_size),
@@ -126,9 +131,6 @@ namespace nil {
                     _rw_counter(__rw_counter),
                     _call_id(__call_id)
                 {}
-                void set_current_opcode(std::size_t __opcode){
-                    _opcode = __opcode;
-                }
                 void load_stack(const std::vector<zkevm_word_type> &_stack, std::size_t depth){
                     BOOST_ASSERT(stack.size() == 0);
                     if( depth > _stack.size() )
@@ -211,6 +213,10 @@ namespace nil {
                     BOOST_ASSERT( size_t_fields.count(zkevm_state_size_t_field::calldatasize) );
                     return size_t_fields.at(zkevm_state_size_t_field::calldatasize);
                 }
+                virtual zkevm_word_type call_context_value() const override{
+                    BOOST_ASSERT( word_fields.count(zkevm_state_word_field::call_context_value) );
+                    return word_fields.at(zkevm_state_word_field::call_context_value);
+                }
                 virtual std::size_t lastsubcall_id() const override{
                     BOOST_ASSERT( size_t_fields.count(zkevm_state_size_t_field::lastsubcall_id) );
                     return size_t_fields.at(zkevm_state_size_t_field::lastsubcall_id);
@@ -283,6 +289,10 @@ namespace nil {
                 virtual std::size_t depth() const override{
                     BOOST_ASSERT( size_t_fields.count(zkevm_state_size_t_field::depth) );
                     return size_t_fields.at(zkevm_state_size_t_field::depth);
+                }
+                virtual std::size_t bytecode_size() const override{
+                    BOOST_ASSERT( size_t_fields.count(zkevm_state_size_t_field::bytecode_size) );
+                    return size_t_fields.at(zkevm_state_size_t_field::bytecode_size);
                 }
             };
 
