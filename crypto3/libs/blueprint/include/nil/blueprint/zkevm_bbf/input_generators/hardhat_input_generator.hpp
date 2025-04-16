@@ -36,6 +36,7 @@
 #include <nil/blueprint/zkevm_bbf/types/zkevm_state.hpp>
 #include <nil/blueprint/zkevm_bbf/types/zkevm_account.hpp>
 #include <nil/blueprint/zkevm_bbf/types/call_context.hpp>
+#include <nil/blueprint/zkevm_bbf/types/log.hpp>
 
 #include <nil/blueprint/zkevm_bbf/types/zkevm_input_generator.hpp>
 #include <nil/blueprint/zkevm_bbf/opcodes/zkevm_opcodes.hpp>
@@ -43,6 +44,7 @@
 namespace nil {
     namespace blueprint {
         namespace bbf {
+        
             class zkevm_hardhat_input_generator:zkevm_abstract_input_generator{
             protected:
                 std::map<zkevm_word_type, zkevm_account>                _accounts_initial_state; // Initial state; Update it after block.
@@ -56,6 +58,7 @@ namespace nil {
                 std::vector<zkevm_state>                                 _zkevm_states;
                 std::vector<std::pair<zkevm_word_type, zkevm_word_type>> _exponentiations;
                 std::map<std::size_t,zkevm_call_commit>                   _call_commits;
+                std::vector<zkevm_log>                                    _logs;
                 std::map<std::tuple<rw_operation_type, zkevm_word_type, std::size_t, zkevm_word_type>, std::size_t>  last_write_rw_counter;
 
                 std::size_t     call_id;                // RW counter on start_call
@@ -297,6 +300,11 @@ namespace nil {
                     }
                 }
                 void execute_transaction(const boost::property_tree::ptree &tt){
+                    //log in execute_transaction
+                    //calculate filter
+                    //verify that block bloom is equal to the calculated bloom
+                    //verify that receipt
+                    //in log x operation
                     stack = {};
                     memory = {};
                     stack_next = {};
@@ -914,12 +922,27 @@ namespace nil {
                     _rw_operations.push_back(stack_rw_operation(call_id,  stack_next.size()-1, rw_counter++, true, stack_next[stack_next.size()-1]));
                 }
                 void logx( std::size_t l){
-                    _zkevm_states.push_back(simple_zkevm_state(get_basic_zkevm_state_part()));
+                    _zkevm_states.push_back(call_header_zkevm_state(get_basic_zkevm_state_part(), get_call_header_state_part()));
+                    // _zkevm_states.push_back(simple_zkevm_state(get_basic_zkevm_state_part()));
+                    std::size_t offset = std::size_t(stack[stack.size() - 1]);
+                    std::size_t length = std::size_t(stack[stack.size() - 2]);
                     _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-1, rw_counter++, false, stack[stack.size()-1]));
                     _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-2, rw_counter++, false, stack[stack.size()-2]));
                     for( std::size_t i = 0; i < l; i++){
                         _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-3-i, rw_counter++, false, stack[stack.size()-3-i]));
                     }
+                    //std::vector<std::uint8_t> data = std::vector<std::uint8_t>(memory.begin() + offset, memory.begin() + offset + length);
+                    // std::vector<std::uint8_t> data = std::vector<std::uint8_t>(memory.begin() + offset, memory.begin() + offset + length);
+                    // _rw_operations.push_back(memory_rw_operation(call_id, offset+i, rw_counter++, false, data));
+
+                    zkevm_word_type index = _logs.empty()? 0 : _logs.back().id != tx_id? 0 : _logs.back().index + 1;
+                    _logs.push_back({
+                        tx_id,
+                        index,
+                        call_context_address,
+                        // data,
+                        std::vector<zkevm_word_type>(stack.end() - 3 - l, stack.end() - 3)});
+                    
                 }
 
                 void call(){
@@ -1324,6 +1347,7 @@ namespace nil {
                 virtual zkevm_keccak_buffers keccaks() override {return _keccaks;}
                 virtual zkevm_keccak_buffers bytecodes() override { return _bytecodes;}
                 virtual rw_operations_vector rw_operations() override {return _rw_operations;}
+                virtual std::vector<zkevm_log> logs() override {return _logs;}
                 virtual std::map<std::size_t,zkevm_call_commit> call_commits() override {return _call_commits;}
                 virtual std::vector<copy_event> copy_events() override { return _copy_events;}
                 virtual std::vector<zkevm_state> zkevm_states() override{ return _zkevm_states;}

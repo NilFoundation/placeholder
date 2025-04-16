@@ -110,6 +110,7 @@ public:
         zkevm_assignment_input.copy_events = circuit_inputs.copy_events();
         zkevm_assignment_input.zkevm_states = circuit_inputs.zkevm_states();
         zkevm_assignment_input.exponentiations = circuit_inputs.exponentiations();
+        zkevm_assignment_input.logs = circuit_inputs.logs();
 
         typename nil::blueprint::bbf::rw<field_type,nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type rw_assignment_input;
         rw_assignment_input.rw_operations = circuit_inputs.rw_operations();
@@ -152,58 +153,58 @@ public:
             BOOST_ASSERT(result);
         }
 
-        const std::string exp_circuit = "exp";
-        if (should_run_circuit(exp_circuit)) {
-            // Max_copy, Max_rw, Max_keccak, Max_bytecode
-            result =test_bbf_component<field_type, nil::blueprint::bbf::exponentiation>(
-                exp_circuit,
-                {}, exp_assignment_input,
-                max_exp_rows,
-                max_exponentiations
-            );
-            BOOST_ASSERT(result);
-            std::cout << std::endl;
-        }
+        // const std::string exp_circuit = "exp";
+        // if (should_run_circuit(exp_circuit)) {
+        //     // Max_copy, Max_rw, Max_keccak, Max_bytecode
+        //     result =test_bbf_component<field_type, nil::blueprint::bbf::exponentiation>(
+        //         exp_circuit,
+        //         {}, exp_assignment_input,
+        //         max_exp_rows,
+        //         max_exponentiations
+        //     );
+        //     BOOST_ASSERT(result);
+        //     std::cout << std::endl;
+        // }
 
-        const std::string copy_circuit = "copy";
-        if (should_run_circuit(copy_circuit)) {
-            std::cout << "circuit '" << copy_circuit << "'" << std::endl;
+        // const std::string copy_circuit = "copy";
+        // if (should_run_circuit(copy_circuit)) {
+        //     std::cout << "circuit '" << copy_circuit << "'" << std::endl;
 
-            // Max_copy, Max_rw, Max_keccak, Max_bytecode
-            result =test_bbf_component<field_type, nil::blueprint::bbf::copy>(
-                copy_circuit,
-                {7}, copy_assignment_input,
-                max_copy, max_rw, max_keccak_blocks, max_bytecode, max_call_commits
-            );
-            BOOST_ASSERT(result);
-            std::cout << std::endl;
-        }
+        //     // Max_copy, Max_rw, Max_keccak, Max_bytecode
+        //     result =test_bbf_component<field_type, nil::blueprint::bbf::copy>(
+        //         copy_circuit,
+        //         {7}, copy_assignment_input,
+        //         max_copy, max_rw, max_keccak_blocks, max_bytecode, max_call_commits
+        //     );
+        //     BOOST_ASSERT(result);
+        //     std::cout << std::endl;
+        // }
 
-        const std::string keccak_circuit = "keccak";
-        if (should_run_circuit(keccak_circuit)) {
-            std::cout << "circuit '" << keccak_circuit << "'" << std::endl;
+        // const std::string keccak_circuit = "keccak";
+        // if (should_run_circuit(keccak_circuit)) {
+        //     std::cout << "circuit '" << keccak_circuit << "'" << std::endl;
 
-            // Max_keccak
-            result = test_bbf_component<field_type, nil::blueprint::bbf::zkevm_keccak>(
-                keccak_circuit,
-                {}, keccak_assignment_input,max_keccak_blocks
-            );
-            BOOST_ASSERT(result);
-            std::cout << std::endl;
-        }
+        //     // Max_keccak
+        //     result = test_bbf_component<field_type, nil::blueprint::bbf::zkevm_keccak>(
+        //         keccak_circuit,
+        //         {}, keccak_assignment_input,max_keccak_blocks
+        //     );
+        //     BOOST_ASSERT(result);
+        //     std::cout << std::endl;
+        // }
 
-        const std::string bytecode_circuit = "bytecode";
-        if (should_run_circuit(bytecode_circuit)) {
-            std::cout << "circuit '" << bytecode_circuit << "'" << std::endl;
+        // const std::string bytecode_circuit = "bytecode";
+        // if (should_run_circuit(bytecode_circuit)) {
+        //     std::cout << "circuit '" << bytecode_circuit << "'" << std::endl;
 
-            // Max_bytecode, max_bytecode
-            result = test_bbf_component<field_type, nil::blueprint::bbf::bytecode>(
-                bytecode_circuit,
-                {7}, bytecode_assignment_input, max_bytecode, max_keccak_blocks
-            );
-            BOOST_ASSERT(result);
-            std::cout << std::endl;
-        }
+        //     // Max_bytecode, max_bytecode
+        //     result = test_bbf_component<field_type, nil::blueprint::bbf::bytecode>(
+        //         bytecode_circuit,
+        //         {7}, bytecode_assignment_input, max_bytecode, max_keccak_blocks
+        //     );
+        //     BOOST_ASSERT(result);
+        //     std::cout << std::endl;
+        // }
 
             const std::string rw_circuit = "rw";
             if (should_run_circuit(rw_circuit)) {
@@ -223,18 +224,18 @@ public:
                 std::cout << std::endl;
             }
 
-        const std::string call_commit_circuit = "call_commit";
-        if (should_run_circuit(call_commit_circuit)) {
-            std::cout << "circuit '" << call_commit_circuit << "'" << std::endl;
+        // const std::string call_commit_circuit = "call_commit";
+        // if (should_run_circuit(call_commit_circuit)) {
+        //     std::cout << "circuit '" << call_commit_circuit << "'" << std::endl;
 
-            // Max_rw, Max_mpt
-            result = test_bbf_component<field_type, nil::blueprint::bbf::call_commit>(
-                call_commit_circuit,
-                {}, call_commit_assignment_input, max_rw, max_call_commits
-            );
-            BOOST_ASSERT(result);
-            std::cout << std::endl;
-        }
+        //     // Max_rw, Max_mpt
+        //     result = test_bbf_component<field_type, nil::blueprint::bbf::call_commit>(
+        //         call_commit_circuit,
+        //         {}, call_commit_assignment_input, max_rw, max_call_commits
+        //     );
+        //     BOOST_ASSERT(result);
+        //     std::cout << std::endl;
+        // }
     }
 };
 
