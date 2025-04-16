@@ -85,6 +85,16 @@ eval "$configurePhase" // automatically move to the build directory
 ninja <target>
 ```
 
+## Building on macOS
+
+On macOS you should use one of the clang-based derivations, for example
+
+```bash
+nix develop '.#develop-clang'
+```
+
+Make sure to use a derivation with sanitizer disabled (like `develop-clang`), because it does not work correctly on macOS.
+
 ## Contributing
 See [contributing](./docs/manual/contributing.md) for contribution guidelines.
 
