@@ -70,7 +70,7 @@ public:
 
     static table_params get_minimal_requirements(std::size_t max_mpt_size) {
         return {
-            .witnesses = 642,
+            .witnesses = 658,
             .public_inputs = 0,
             .constants = 0,
             .rows = max_mpt_size
@@ -95,9 +95,9 @@ public:
         std::vector<TYPE> node_type(max_mpt_size);
         std::vector<TYPE> depth(max_mpt_size);
         std::array<std::vector<TYPE>,32> key_prefix;
-        std::vector<TYPE> is_padding(max_mpt_size);
-
         std::array<std::vector<TYPE>,3> rlp_node;
+        std::vector<TYPE> is_padding(max_mpt_size);
+        std::array<std::vector<TYPE>,16> child_sum_inverse;
 
         for(std::size_t i = 0; i < 32; i++) {
             parent_hash[i].resize(max_mpt_size);
@@ -110,6 +110,7 @@ public:
 
         for(std::size_t i = 0; i < 16; i++) {
             rlp_child[i].resize(max_mpt_size);
+            child_sum_inverse[i].resize(max_mpt_size);
         }
 
         for(std::size_t i = 0; i < 3; i++) {
@@ -203,8 +204,7 @@ public:
                             for(std::size_t i = 0; i < 32; i++) {
                                 parent_hash[i][node_num] = hash_value_byte[i];
                             }
-                        }
-                        else{
+                        } else {
                             size_t rlp_value_prefix,  rlp_node_prefix0, rlp_node_prefix1;
                             zkevm_word_type second_value = n.value.at(1);
                             while(second_value > 0) {
@@ -375,11 +375,32 @@ public:
             allocate(is_padding[i],       641,i);
         }
 
+        std::array<std::vector<TYPE>,16> child_sum;     // these two are non-allocated expressions
+        std::array<std::vector<TYPE>,16> child_is_zero; // child_is_zero[j] = 1 if child[j] = 0...0, 0 otherwise
+        for(std::size_t j = 0; j < 16; j++) {
+            child_sum[j].resize(max_mpt_size);
+            child_is_zero[j].resize(max_mpt_size);
+        }
+
+        // constraints
+        for(std::size_t i = 0; i < max_mpt_size; i++) {
+            for(std::size_t j = 0; j < 16; j++) {
+                for(std::size_t b = 0; b < 32; b++) {
+                    child_sum[j][i] += child[j][b][i];
+                }
+                if constexpr (stage == GenerationStage::ASSIGNMENT) {
+                    child_sum_inverse[j][i] = child_sum[j][i].is_zero() ? 0 : child_sum[j][i].inversed();
+                }
+                allocate(child_sum_inverse[j][i], 642 + j, i);
+                child_is_zero[j][i] = 1 - child_sum_inverse[j][i] * child_sum[j][i];
+                constrain(child_sum[j][i] * child_is_zero[j][i]);
+            }
+
+            if (i > 0) constrain(is_padding[i] * (depth[i] - depth[i - 1] - 1));
+        }
+
         if constexpr (stage == GenerationStage::CONSTRAINTS) {
-           // constraints
-           for(std::size_t i = 1; i < max_mpt_size; i++) {
-               constrain(is_padding[i] * (depth[i] - depth[i - 1] - 1));
-           }
+           // some constraint-only stuff (for optimization)
         }
 /*
         std::size_t START_OP = rw_op_to_num(rw_operation_type::start);
