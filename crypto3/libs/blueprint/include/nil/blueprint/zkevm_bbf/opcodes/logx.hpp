@@ -109,18 +109,21 @@ namespace nil {
                     memory_expansion_size =
                         (next_memory.word_size - current_memory.word_size) * 32;
 
+                        // add 
+                        // memory read lookup
+                        // log table lookup
+
                     if constexpr (stage == GenerationStage::CONSTRAINTS) {
                         constrain(current_state.pc_next() - current_state.pc(0) - 1);  // PC transition
-                        // constrain(current_state.gas(0) - current_state.gas_next() -
-                        //           375 * (1 + x) - 8 * length -
-                        //           memory_expansion_cost);  // GAS transition
+                        constrain(current_state.gas(0) - current_state.gas_next() -
+                                  375 * (1 + x) - 8 * length -
+                                  memory_expansion_cost);  // GAS transition
                         constrain(current_state.stack_size(0) - current_state.stack_size_next() - 2 - x);  // stack_size transition
-                        // constrain(current_state.memory_size_next() -
-                        //           current_state.memory_size(0) -
-                        //           memory_expansion_size);  // memory_size transition
-                        // constrain(current_state.rw_counter_next() -
-                        //           current_state.rw_counter(0) - 2 - x -
-                        //           length);  // rw_counter transition
+                        constrain(current_state.memory_size_next() -
+                                  current_state.memory_size(0) -
+                                  memory_expansion_size);  // memory_size transition
+                        constrain(current_state.rw_counter_next() -
+                                  current_state.rw_counter(0) - 2 - x);  // rw_counter transition
                         std::vector<TYPE> tmp;
                         tmp = rw_table<FieldType, stage>::stack_lookup(
                             current_state.call_id(0),
