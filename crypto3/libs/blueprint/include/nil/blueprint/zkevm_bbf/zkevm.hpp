@@ -40,6 +40,7 @@
 #include <nil/blueprint/zkevm_bbf/subcomponents/rw_table.hpp>
 #include <nil/blueprint/zkevm_bbf/subcomponents/copy_table.hpp>
 #include <nil/blueprint/zkevm_bbf/subcomponents/exp_table.hpp>
+#include <nil/blueprint/zkevm_bbf/subcomponents/log_table.hpp>
 
 #include <nil/blueprint/zkevm_bbf/types/zkevm_state.hpp>
 
@@ -68,6 +69,7 @@ namespace nil {
                 using RWTable = rw_table<FieldType, stage>;
                 using ExpTable = exp_table<FieldType, stage>;
                 using CopyTable = copy_table<FieldType, stage>;
+                using LogTable = log_table<FieldType, stage>;
 
                 struct input_type {
                     TYPE rlc_challenge;
@@ -80,6 +82,7 @@ namespace nil {
                         std::vector<zkevm_state>, std::monostate
                     > zkevm_states;
                     ExpTable::input_type exponentiations;
+                    LogTable::input_type logs;
                 };
 
                 static table_params get_minimal_requirements(
@@ -100,6 +103,7 @@ namespace nil {
                                    + RWTable::get_witness_amount()
                                    + ExpTable::get_witness_amount()
                                    + CopyTable::get_witness_amount()
+                                   + LogTable::get_witness_amount()
                                    + 10,
                         .public_inputs = 1,
                         .constants = 5,
@@ -175,17 +179,27 @@ namespace nil {
                         copy_lookup_area.push_back(current_column++);
                     }
                     std::cout << std::endl;
+
+                    std::vector<std::size_t> log_lookup_area;
+                    std::cout << "Log_area: ";
+                    for( std::size_t i = 0; i < LogTable::get_witness_amount(); i++){
+                        std::cout << current_column << " ";
+                        log_lookup_area.push_back(current_column++);
+                    }
+                    std::cout << std::endl;
                     std::cout << std::endl;
 
                     context_type bytecode_ct = context_object.subcontext(bytecode_lookup_area,1,max_bytecode + 1);
                     context_type exp_ct = context_object.subcontext( exp_lookup_area, 1, max_exponentiations + 1);
                     context_type rw_ct = context_object.subcontext(rw_lookup_area,1,max_rw + 1);
                     context_type copy_ct = context_object.subcontext( copy_lookup_area, 1, max_copy + 1);
+                    context_type log_ct = context_object.subcontext( log_lookup_area, 1, max_zkevm_rows + 1);
 
                     BytecodeTable bc_t = BytecodeTable(bytecode_ct, input.bytecodes, max_bytecode);
                     ExpTable e_t = ExpTable(exp_ct, input.exponentiations, max_exponentiations);
                     RWTable rw_t = RWTable(rw_ct, input.rw_operations, max_rw, true);
                     CopyTable c_t = CopyTable(copy_ct, input.copy_events, max_copy, true);
+                    LogTable l_t = LogTable(log_ct, input.logs, max_zkevm_rows);
 
                     auto opcode_impls = get_opcode_implementations<FieldType>();
 
