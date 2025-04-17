@@ -589,6 +589,67 @@ BOOST_AUTO_TEST_CASE(lsb) {
 
 BOOST_AUTO_TEST_SUITE_END()
 
+BOOST_AUTO_TEST_SUITE(comparison)
+
+BOOST_AUTO_TEST_CASE(with_signed) {
+    BOOST_CHECK(!(7_big_uint7 == -10));
+    BOOST_CHECK(!(7_big_uint7 < -10));
+    BOOST_CHECK(7_big_uint7 > -10);
+    BOOST_CHECK(!(7_big_uint7 <= -10));
+    BOOST_CHECK(7_big_uint7 >= -10);
+
+    BOOST_CHECK(7_big_uint7 == 7);
+    BOOST_CHECK(!(7_big_uint7 == 5));
+
+    BOOST_CHECK(7_big_uint7 < 10);
+    BOOST_CHECK(!(7_big_uint7 < 5));
+    BOOST_CHECK(!(7_big_uint7 < 7));
+
+    BOOST_CHECK(!(7_big_uint7 > 10));
+    BOOST_CHECK(7_big_uint7 > 5);
+    BOOST_CHECK(!(7_big_uint7 > 7));
+
+    BOOST_CHECK(7_big_uint7 <= 10);
+    BOOST_CHECK(!(7_big_uint7 <= 5));
+    BOOST_CHECK(7_big_uint7 <= 7);
+
+    BOOST_CHECK(!(7_big_uint7 >= 10));
+    BOOST_CHECK(7_big_uint7 >= 5);
+    BOOST_CHECK(7_big_uint7 >= 7);
+}
+
+BOOST_AUTO_TEST_CASE(with_unsigned) {
+    BOOST_CHECK(7_big_uint7 == 7u);
+    BOOST_CHECK(!(7_big_uint7 == 5u));
+
+    BOOST_CHECK(7_big_uint7 < 10u);
+    BOOST_CHECK(!(7_big_uint7 < 5u));
+    BOOST_CHECK(!(7_big_uint7 < 7u));
+
+    BOOST_CHECK(!(7_big_uint7 > 10u));
+    BOOST_CHECK(7_big_uint7 > 5u);
+    BOOST_CHECK(!(7_big_uint7 > 7u));
+
+    BOOST_CHECK(7_big_uint7 <= 10u);
+    BOOST_CHECK(!(7_big_uint7 <= 5u));
+    BOOST_CHECK(7_big_uint7 <= 7u);
+
+    BOOST_CHECK(!(7_big_uint7 >= 10u));
+    BOOST_CHECK(7_big_uint7 >= 5u);
+    BOOST_CHECK(7_big_uint7 >= 7u);
+}
+
+BOOST_AUTO_TEST_CASE(with_bool) {
+    BOOST_CHECK(0_big_uint7 == false);
+    BOOST_CHECK(0_big_uint7 != true);
+    BOOST_CHECK(1_big_uint7 == true);
+    BOOST_CHECK(1_big_uint7 != false);
+    BOOST_CHECK(2_big_uint7 != false);
+    BOOST_CHECK(2_big_uint7 != true);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
 BOOST_AUTO_TEST_CASE(powm_test) {
     BOOST_CHECK_EQUAL(powm(2_big_uint7, 4_big_uint7, 5_big_uint7), 1_big_uint7);
     BOOST_CHECK_EQUAL(powm(2_big_uint7, 4_big_uint7, 5), 1);
