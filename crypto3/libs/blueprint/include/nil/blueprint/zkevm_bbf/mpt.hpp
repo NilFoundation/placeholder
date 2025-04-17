@@ -70,7 +70,7 @@ public:
 
     static table_params get_minimal_requirements(std::size_t max_mpt_size) {
         return {
-            .witnesses = 658,
+            .witnesses = 680,
             .public_inputs = 0,
             .constants = 0,
             .rows = max_mpt_size
@@ -98,6 +98,10 @@ public:
         std::array<std::vector<TYPE>,3> rlp_node;
         std::vector<TYPE> is_padding(max_mpt_size);
         std::array<std::vector<TYPE>,16> child_sum_inverse;
+        std::vector<TYPE> child0_length_bytes(max_mpt_size);
+        std::vector<TYPE> child1_length_bytes(max_mpt_size);
+        std::vector<TYPE> node_num_of_bytes(max_mpt_size);
+        std::array<std::vector<TYPE>,2> node_length;
 
         for(std::size_t i = 0; i < 32; i++) {
             parent_hash[i].resize(max_mpt_size);
@@ -115,6 +119,9 @@ public:
 
         for(std::size_t i = 0; i < 3; i++) {
             rlp_node[i].resize(max_mpt_size);
+        }
+        for(std::size_t i = 0; i < 2; i++) {
+            node_length[i].resize(max_mpt_size);
         }
 
         if constexpr (stage == GenerationStage::ASSIGNMENT) {
@@ -140,6 +147,7 @@ public:
                    std::size_t node_key_length = 0;
                    std::size_t node_value_length = 0;
                    std::size_t node_key_bytes, node_value_bytes;
+                   std::size_t total_value_length = 0;
 
                    if (n.type != branch) { // extension or leaf
                         std::vector<uint8_t> hash_input;
@@ -149,6 +157,7 @@ public:
                             node_key_length++;
                         }
                         node_key_bytes = ceil(node_key_length/2);
+                        child0_length_bytes[node_num] = node_key_bytes;
 
                         std::array<uint8_t,32> key_value = w_to_8(n.value.at(0));
                         std::vector<uint8_t> byte_vector;
@@ -183,12 +192,16 @@ public:
                             std::vector<uint8_t> byte_vector(node_value.begin(), node_value.end());
                             rlp_value_prefix = 128 + 32;
                             rlp_child[1][node_num] = rlp_value_prefix;
+                            child1_length_bytes[node_num] = 32;
                             byte_vector.emplace(byte_vector.begin(), rlp_value_prefix);
                             hash_input.insert( hash_input.end(), byte_vector.begin(), byte_vector.end() );
+                            total_value_length = hash_input.size();
 
                             if (node_key_bytes + 34 <= 55){
                                 rlp_node_prefix0 = 192 + 34;
                                 rlp_node[0][node_num] = rlp_node_prefix0;
+                                node_length[0][node_num] = total_value_length;
+                                node_num_of_bytes[node_num] = 1;
                                 hash_input.emplace(hash_input.begin(), rlp_node_prefix0);
                             }
                             else{
@@ -196,6 +209,8 @@ public:
                                 rlp_node_prefix0 = 247 + 1;
                                 rlp_node[1][node_num] = rlp_node_prefix1;
                                 rlp_node[0][node_num] = rlp_node_prefix0;
+                                node_length[0][node_num] = total_value_length;
+                                node_num_of_bytes[node_num] = 1;
                                 hash_input.emplace(hash_input.begin(), rlp_node_prefix1);
                                 hash_input.emplace(hash_input.begin(), rlp_node_prefix0);
                             }
@@ -212,6 +227,7 @@ public:
                                 node_value_length++;
                             }
                             node_value_bytes = ceil(node_value_length/2);
+                            child1_length_bytes[node_num] = node_value_bytes;
 
                             std::array<uint8_t,32> node_value = w_to_8(n.value.at(1));
                             std::vector<uint8_t> byte_vector;
@@ -224,7 +240,22 @@ public:
                             rlp_node[0][node_num] = rlp_node_prefix0;
                             byte_vector.emplace(byte_vector.begin(), rlp_value_prefix);
                             hash_input.insert( hash_input.end(), byte_vector.begin(), byte_vector.end() );
+                            total_value_length = hash_input.size();
                             hash_input.emplace(hash_input.begin(), rlp_node_prefix0);
+
+                            if (total_value_length <= 55){
+                                node_length[0][node_num] = total_value_length;
+                                node_num_of_bytes[node_num] = 1;
+                            }
+                            else if ( (total_value_length <= 256) && (total_value_length > 55) ){
+                                node_length[0][node_num] = total_value_length;
+                                node_num_of_bytes[node_num] = 1;
+                            }
+                            else{
+                                node_length[1][node_num] = total_value_length & 0xff;
+                                node_length[0][node_num] = (total_value_length - (total_value_length & 0xff)) >> 8;
+                                node_num_of_bytes[node_num] = 2;
+                            }
 
                             zkevm_word_type hash_value = nil::blueprint::zkevm_keccak_hash(hash_input);
                             std::array<std::uint8_t,32> hash_value_byte = w_to_8(hash_value);
@@ -260,6 +291,9 @@ public:
                             rlp_node_prefix2 = size_of_branch & 0xff;
                             rlp_node_prefix1 = (size_of_branch - rlp_node_prefix2) >> 8;
                             rlp_node_prefix0 = 247 + 2;
+                            node_length[1][node_num] = size_of_branch & 0xff;
+                            node_length[0][node_num] = (size_of_branch - rlp_node_prefix2) >> 8;
+                            node_num_of_bytes[node_num] = 2;
                             hash_input.emplace(hash_input.begin(), rlp_node_prefix2);
                             hash_input.emplace(hash_input.begin(), rlp_node_prefix1);
                             hash_input.emplace(hash_input.begin(), rlp_node_prefix0);
@@ -268,6 +302,8 @@ public:
                             rlp_node_prefix2 = 0;
                             rlp_node_prefix1 = size_of_branch;
                             rlp_node_prefix0 = 247 + 1;
+                            node_length[0][node_num] = size_of_branch;
+                            node_num_of_bytes[node_num] = 1;
                             hash_input.emplace(hash_input.begin(), rlp_node_prefix1);
                             hash_input.emplace(hash_input.begin(), rlp_node_prefix0);
                        }
@@ -327,6 +363,9 @@ public:
                }
            }
 
+           for(std::size_t i = 0; i < node_num ; i++) {
+                std::cout << "child0_length_bytes[" << i << "] = " << child0_length_bytes[i] << std::endl;
+           }
            for(std::size_t i = 0; i < node_num - 1 ; i++) {
                // in the only case we really need it, the key certainly fits into one (lowest) byte
                size_t key = static_cast<size_t>(key_part[31][i].data.base());
@@ -359,7 +398,7 @@ public:
                 allocate(key_part[j][i], 570 + j, i);
             }
             allocate(key_part_length[i], 602,i);
-
+            
             allocate(node_type[i],  603,i);
             allocate(depth[i],      604,i);
 
@@ -373,6 +412,12 @@ public:
                 allocate(rlp_node[j][i],637 + j,i);
             }
             allocate(is_padding[i],       641,i);
+            allocate(child0_length_bytes[i],       642,i);
+            allocate(child1_length_bytes[i],       643,i);
+            for(std::size_t j = 0; j < 2; j++) {
+                allocate(node_length[j][i], 644 + j, i);
+            }
+            allocate(node_num_of_bytes[i],       646,i);
         }
 
         std::array<std::vector<TYPE>,16> child_sum;     // these two are non-allocated expressions
@@ -391,11 +436,33 @@ public:
                 if constexpr (stage == GenerationStage::ASSIGNMENT) {
                     child_sum_inverse[j][i] = child_sum[j][i].is_zero() ? 0 : child_sum[j][i].inversed();
                 }
-                allocate(child_sum_inverse[j][i], 642 + j, i);
+                allocate(child_sum_inverse[j][i], 647 + j, i);
                 child_is_zero[j][i] = 1 - child_sum_inverse[j][i] * child_sum[j][i];
                 constrain(child_sum[j][i] * child_is_zero[j][i]);
+                
+                // constraints for branch node RLP
+                constrain(is_padding[i] * node_type[i] * (2 - node_type[i]) * (160 - rlp_child[j][i]) * (128 - rlp_child[j][i]) );
+                constrain(is_padding[i] * node_type[i] * (2 - node_type[i]) * (247 + node_num_of_bytes[i] - rlp_node[0][i]) );
+                constrain(is_padding[i] * node_type[i] * (2 - node_type[i]) * (node_length[0][i] - rlp_node[1][i]) );
+                constrain(is_padding[i] * node_type[i] * (2 - node_type[i]) * (node_length[1][i] - rlp_node[2][i]) );
             }
 
+            // constraints for extension node RLP
+            constrain(is_padding[i] * (1 - node_type[i]) * (2 - node_type[i]) * (rlp_child[0][i]) * (128 + child0_length_bytes[i] - rlp_child[0][i]) );
+            constrain(is_padding[i] * (1 - node_type[i]) * (2 - node_type[i]) * (160 - rlp_child[1][i]) );
+            constrain(is_padding[i] * (1 - node_type[i]) * (2 - node_type[i]) * (rlp_node[2][i]) );
+            constrain(is_padding[i] * (1 - node_type[i]) * (2 - node_type[i]) * (rlp_node[1][i]) * (node_length[0][i] - rlp_node[1][i]) );
+            constrain(is_padding[i] * (1 - node_type[i]) * (2 - node_type[i]) * (192 + node_length[0][i] - rlp_node[0][i]) * (247 + node_num_of_bytes[i] - rlp_node[0][i]) );
+            // constrain(is_padding[i] * (1 - node_type[i]) * (2 - node_type[i]) * (rlp_node[0][i]) );
+
+            // constraints for storage leaf RLP
+            constrain(is_padding[i] * node_type[i] * (1 - node_type[i]) * (rlp_child[0][i]) * (128 + child0_length_bytes[i] - rlp_child[0][i]) );
+            constrain(is_padding[i] * node_type[i] * (1 - node_type[i]) * (128 + child1_length_bytes[i] - rlp_child[1][i]) );
+            constrain(is_padding[i] * node_type[i] * (1 - node_type[i]) * (rlp_node[2][i]) * (node_length[1][i] - rlp_node[2][i]) );
+            constrain(is_padding[i] * node_type[i] * (1 - node_type[i]) * (rlp_node[2][i]) * (node_length[0][i] - rlp_node[1][i]) );
+            constrain(is_padding[i] * node_type[i] * (1 - node_type[i]) * (192 + node_length[0][i] - rlp_node[0][i]) * (247 + node_num_of_bytes[i] - rlp_node[0][i]) );
+
+            constrain(is_padding[i] * node_type[i] * (1 - node_type[i]) * (2 - node_type[i]));
             if (i > 0) constrain(is_padding[i] * (depth[i] - depth[i - 1] - 1));
         }
 
