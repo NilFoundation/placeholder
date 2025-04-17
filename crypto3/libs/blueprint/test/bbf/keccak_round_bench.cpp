@@ -273,7 +273,7 @@ void run_sweep_benchmarks(bool quick_mode = false, const std::string& output_fil
 
 BOOST_AUTO_TEST_SUITE(blueprint_plonk_test_suite)
 
-BOOST_AUTO_TEST_CASE(blueprint_plonk_hashes_keccak_round_sweep_benchmark) {
+BOOST_AUTO_TEST_CASE(blueprint_plonk_hashes_keccak_round_sweep_benchmark, *boost::unit_test::disabled()) {
     bool quick_mode = false;
     std::string output_file = "keccak_benchmarks.csv";
 
