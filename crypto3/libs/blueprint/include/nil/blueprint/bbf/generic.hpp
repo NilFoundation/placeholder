@@ -405,7 +405,7 @@ namespace nil {
                     }
                     std::size_t row = (min_row + max_row)/2;
 
-                    
+
 
                     std::optional<TYPE> C_rel = C.rotate(-row);
                     if (!C_rel) {
@@ -644,7 +644,7 @@ namespace nil {
                     lookup_constraints->at(key).second.set_row(stored_row);
                 }
 
-                void add_lookup_constraint(const std::string& table_name, const std::vector<TYPE> &C_rel, 
+                void add_lookup_constraint(const std::string& table_name, const std::vector<TYPE> &C_rel,
                         std::size_t start_row, std::size_t end_row) {
                     std::size_t stored_start_row = start_row - (is_fresh ? row_shift : 0);
                     std::size_t stored_end_row = end_row - (is_fresh ? row_shift : 0);
