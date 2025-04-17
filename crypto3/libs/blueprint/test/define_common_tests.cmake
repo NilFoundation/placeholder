@@ -16,6 +16,8 @@ set(COMMON_TEST_FILES
     "bbf/test_circuit_builder"
     "bbf/keccak_round"
     "bbf/keccak_dynamic"
+    "bbf/keccak_round_bench"
+    "bbf/keccak_permute_wide"
     "bbf/detail/range_check_multi"
     "bbf/detail/carry_on_addition"
     "bbf/detail/choice_function"
