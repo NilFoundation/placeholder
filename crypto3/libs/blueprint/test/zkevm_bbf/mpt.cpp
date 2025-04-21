@@ -55,7 +55,7 @@ class zkEVMMPTTestFixture: public CircuitTestFixture {
 public:
     boost::property_tree::ptree load_json_input(std::string path){
         std::ifstream ss;
-        //std::cout << "Open file " << std::string(TEST_DATA_DIR) + path << std::endl;
+        std::cout << "Open file " << std::string(TEST_DATA_DIR) + path << std::endl;
         ss.open(std::string(TEST_DATA_DIR) + path);
         if( !ss.is_open() ){
             std::cout << "Cannot open file " << std::string(TEST_DATA_DIR) + path << std::endl;
@@ -100,10 +100,21 @@ public:
 
             for(const auto &w : node) {
                 std::string hash_value = w.second.data();
-                // std::cout << "    valueeee = " << hash_value << std::endl;
-                single_node.value.push_back(zkevm_word_from_string(hash_value));
+                std::cout << "    valueeee = " << hash_value << std::endl;
+                std::vector<zkevm_word_type> value;
+                if (hash_value.length() % 2 == 1) {
+                    std::string highest_byte(1, hash_value[0]);
+                    value.push_back(zkevm_word_from_string(highest_byte));
+                    hash_value = hash_value.substr(1, hash_value.length()-1);
+                }
+                for (unsigned i = 0; i < hash_value.length(); i += 2) {
+                    value.push_back(zkevm_word_from_string(hash_value.substr(i, 2)));
+                }
+                
+                single_node.value.push_back(value);
             }
             // std::cout << "]" << std::endl;
+            
             single_path.proof.push_back(single_node);
         }
         if (single_path.proof.back().value.size() != 17){ // the last node is either a leaf node or a branch node (if leaf doesn't exist)

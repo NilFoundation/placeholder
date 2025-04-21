@@ -72,130 +72,157 @@ namespace nil {
 
                 std::size_t max_rows;
 
-                std::vector<TYPE> rlp_prefix    = std::vector<TYPE>(max_rows);
-                std::vector<TYPE> first_element = std::vector<TYPE>(max_rows);
-                std::vector<TYPE> len_high      = std::vector<TYPE>(max_rows);
-                std::vector<TYPE> len_low       = std::vector<TYPE>(max_rows);
-                // std::vector<TYPE> range_0_55    = std::vector<TYPE>(max_blocks);
-                // std::vector<TYPE> range_55_127  = std::vector<TYPE>(max_blocks);
-                // std::vector<TYPE> range_128_183 = std::vector<TYPE>(max_blocks);
-                // std::vector<TYPE> range_184_191 = std::vector<TYPE>(max_blocks);
-                // std::vector<TYPE> range_192_247 = std::vector<TYPE>(max_blocks);
-                // std::vector<TYPE> range_248_255 = std::vector<TYPE>(max_blocks);
+                std::vector<TYPE> rlp_prefix_0  = std::vector<TYPE>(max_rows);
+                std::vector<TYPE> rlp_prefix_1  = std::vector<TYPE>(max_rows);
+                std::vector<TYPE> rlp_prefix_2  = std::vector<TYPE>(max_rows);
+                // if `first_element_flag` is one, `first_element` should be equal to the actual first element. 
+                // otherwise `first_element` is zero and the actual first element can be arbitrary
+                std::vector<TYPE> first_element_flag  = std::vector<TYPE>(max_rows);
+                std::vector<TYPE> first_element       = std::vector<TYPE>(max_rows);
+                std::vector<TYPE> element_type        = std::vector<TYPE>(max_rows); // 0 for array (used in node encoding) and 1 for string (used in child encoding)
+                std::vector<TYPE> len_high            = std::vector<TYPE>(max_rows); // highest part of the length
+                std::vector<TYPE> len_low             = std::vector<TYPE>(max_rows); // lowest part of the length
+                std::vector<TYPE> rlp_prefix_1_is_zero    = std::vector<TYPE>(max_rows); // 0 if rlp_prefix_1 is zero, otherwise 1
+                std::vector<TYPE> rlp_prefix_2_is_zero    = std::vector<TYPE>(max_rows); // 0 if rlp_prefix_2 is zero, otherwise 1
 
                 static std::size_t get_witness_amount(){
-                    return 4;
+                    return 10;
                 }
 
                 rlp_table(context_type &context_object) :
-                    max_rows(14298),
+                    max_rows(2178),
                     generic_component<FieldType,stage>(context_object) {
                     size_t row_index = 0;
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                        // TYPE theta = input.rlc_challenge;
-                        for (size_t i = 0; i < 128; i++) {
-                            rlp_prefix[row_index] = 0;
+                        // string encoding with single bytes and value less than 128
+                        for (size_t i = 0; i <= 127; i++) {
+                            rlp_prefix_0[row_index] = 0;
+                            rlp_prefix_1[row_index] = 0;
+                            rlp_prefix_1_is_zero[row_index] = 1;
+                            rlp_prefix_2_is_zero[row_index] = 1;
                             first_element[row_index] = i;
+                            first_element_flag[row_index] = 1;
+                            element_type[row_index] = 1;
                             len_low[row_index] = 1;
                             len_high[row_index] = 0;
                             row_index++;
                         }
-                            // if (i <= 55) {
-                            //     range_0_55[i] = 1;
-                            //     range_55_127[i] = 0;
-                            //     range_128_183[i] = 0;
-                            //     range_184_191[i] = 0;
-                            //     range_192_247[i] = 0;
-                            //     range_248_255[i] = 0;
-                            // } else if (i <= 127) {
-                            //     range_0_55[i] = 0;
-                            //     range_55_127[i] = 1;
-                            //     range_128_183[i] = 0;
-                            //     range_184_191[i] = 0;
-                            //     range_192_247[i] = 0;
-                            //     range_248_255[i] = 0;
-                            // } else if (i <= 183) {
-                            //     range_0_55[i] = 0;
-                            //     range_55_127[i] = 0;
-                            //     range_128_183[i] = 1;
-                            //     range_184_191[i] = 0;
-                            //     range_192_247[i] = 0;
-                            //     range_248_255[i] = 0;
-                            // } else if (i <= 191) {
-                            //     range_0_55[i] = 0;
-                            //     range_55_127[i] = 0;
-                            //     range_128_183[i] = 0;
-                            //     range_184_191[i] = 1;
-                            //     range_192_247[i] = 0;
-                            //     range_248_255[i] = 0;
-                            // } else if (i <= 247) {
-                            //     range_0_55[i] = 0;
-                            //     range_55_127[i] = 0;
-                            //     range_128_183[i] = 0;
-                            //     range_184_191[i] = 0;
-                            //     range_192_247[i] = 1;
-                            //     range_248_255[i] = 0;
-                            // } else {
-                            //     range_0_55[i] = 0;
-                            //     range_55_127[i] = 0;
-                            //     range_128_183[i] = 0;
-                            //     range_184_191[i] = 0;
-                            //     range_192_247[i] = 0;
-                            //     range_248_255[i] = 1;
-                            // }
-                        // }
-                        for (size_t i = 0; i < 128; i++) {
-                            rlp_prefix[row_index] = 0x80 + 1;
-                            first_element[row_index] = i;
-                            len_low[row_index] = 2;
-                            len_high[row_index] = 0;
-                            row_index++;
-                        }
-                        for (size_t i = 3; i <= 55; i++) {
-                            for (size_t j = 0; j < 256; j++)
-                            {
-                                rlp_prefix[row_index] = 0xC0 + i;
-                                first_element[row_index] = j; // It can be arbitrary number
-                                len_low[row_index] = i;
-                                len_high[row_index] = 0;
-                                row_index++;
-                            }
-                        }
-                        for (size_t i = 56; i < 256; i++) {
-                            rlp_prefix[row_index] = 0xB7 + 1;
-                            first_element[row_index] = i;
+
+                        // string encoding with zero length
+                        rlp_prefix_0[row_index] = 0x80;
+                        rlp_prefix_1[row_index] = 0;
+                        rlp_prefix_1_is_zero[row_index] = 1;
+                        rlp_prefix_2_is_zero[row_index] = 1;
+                        first_element[row_index] = 0;
+                        first_element_flag[row_index] = 1;
+                        element_type[row_index] = 1;
+                        len_low[row_index] = 0;
+                        len_high[row_index] = 0;
+                        row_index++;
+
+                        // string encoding with 1 to 55 bytes length
+                        for (size_t i = 1; i <= 55; i++) {
+                            rlp_prefix_0[row_index] = 0x80 + i;
+                            rlp_prefix_1[row_index] = 0;
+                            rlp_prefix_2[row_index] = 0;
+                            rlp_prefix_1_is_zero[row_index] = 1;
+                            rlp_prefix_2_is_zero[row_index] = 1;
+                            first_element[row_index] = 0;
+                            first_element_flag[row_index] = 0;
+                            element_type[row_index] = 1;
                             len_low[row_index] = i;
                             len_high[row_index] = 0;
                             row_index++;
                         }
-                        for (size_t i = 256; i <= 529; i++) { // 529 is the maximum length of rlp encoded branch node
-                            rlp_prefix[row_index] = 0xB7 + 2;
-                            first_element[row_index] = i;
+
+                        // string encoding with length more than 55 (1024 is not enough for transaction and receipt rlp encoding)
+                        for (size_t i = 56; i <= 1024; i++) {
+                            if (i < 256) {
+                                rlp_prefix_0[row_index] = 0xB7 + 1;
+                                rlp_prefix_1[row_index] = i;
+                                rlp_prefix_2[row_index] = 0;
+                                rlp_prefix_1_is_zero[row_index] = 0;
+                                rlp_prefix_2_is_zero[row_index] = 1;
+                            } else {
+                                rlp_prefix_0[row_index] = 0xB7 + 2;
+                                rlp_prefix_1[row_index] = (i >> 8) & 0xFF;
+                                rlp_prefix_2[row_index] = i & 0xFF;
+                                rlp_prefix_1_is_zero[row_index] = 0;
+                                rlp_prefix_2_is_zero[row_index] = 0;
+                            }
+                            first_element[row_index] = 0;
+                            first_element_flag[row_index] = 0;
+                            element_type[row_index] = 1;
                             len_low[row_index] = i & 0xFF;
                             len_high[row_index] = (i >> 8) & 0xFF;
                             row_index++;
                         }
+
+                        // array encoding with length less than 55 bytes
+                        for (size_t i = 0; i <= 55; i++) {
+                            rlp_prefix_0[row_index] = 0xC0 + i;
+                            rlp_prefix_1[row_index] = 0;
+                            rlp_prefix_2[row_index] = 0;
+                            rlp_prefix_1_is_zero[row_index] = 1;
+                            rlp_prefix_2_is_zero[row_index] = 1;
+                            first_element[row_index] = 0;
+                            first_element_flag[row_index] = 0;
+                            element_type[row_index] = 0;
+                            len_low[row_index] = i;
+                            len_high[row_index] = 0;
+                            row_index++;
+                        }
+
+                        // array encoding with length more than 55 (1024 is not enough for transaction and receipt rlp encoding)
+                        for (size_t i = 56; i <= 1024; i++) {
+                            if (i < 256) {
+                                rlp_prefix_0[row_index] = 0xF7 + 1;
+                                rlp_prefix_1[row_index] = i;
+                                rlp_prefix_2[row_index] = 0;
+                                rlp_prefix_1_is_zero[row_index] = 0;
+                                rlp_prefix_2_is_zero[row_index] = 1;
+                            } else {
+                                rlp_prefix_0[row_index] = 0xF7 + 2;
+                                rlp_prefix_1[row_index] = (i >> 8) & 0xFF;
+                                rlp_prefix_2[row_index] = i & 0xFF;
+                                rlp_prefix_1_is_zero[row_index] = 0;
+                                rlp_prefix_2_is_zero[row_index] = 0;
+                            }
+                            first_element[row_index] = 0;
+                            first_element_flag[row_index] = 0;
+                            element_type[row_index] = 0;
+                            len_low[row_index] = i & 0xFF;
+                            len_high[row_index] = (i >> 8) & 0xFF;
+                            // if (rlp_prefix_1[row_index] == 0x7B) {
+                            //     std::cout << "jingo 0\t1\t2\tfirst elem\tfirst flag\ttype\tlenlow\tlenhigh\n" <<
+                            //                  std::hex << rlp_prefix_0[row_index] << std::dec << " " <<
+                            //                  std::hex << rlp_prefix_1[row_index] << std::dec << " " <<
+                            //                  std::hex << rlp_prefix_2[row_index] << std::dec << " " <<
+                            //                  std::hex << first_element[row_index] << std::dec << " " <<
+                            //                  std::hex << first_element_flag[row_index] << std::dec << " " <<
+                            //                  std::hex << element_type[row_index] << std::dec << " " <<
+                            //                  std::hex << len_low[row_index] << std::dec << " " <<
+                            //                  std::hex << len_high[row_index] << std::dec << " " << std::endl;
+                            // }
+                            row_index++;
+
+                        }
+
+                        for (size_t i = 0; i < row_index; i++)
+                        {
+                            allocate(rlp_prefix_0[i],       0, i);
+                            allocate(rlp_prefix_1[i],       1, i);
+                            allocate(rlp_prefix_2[i],       2, i);
+                            allocate(first_element[i],      3, i);
+                            allocate(first_element_flag[i], 4, i);
+                            allocate(element_type[i],       5, i);
+                            allocate(len_low[i],            6, i);
+                            allocate(len_high[i],           7, i);
+                            allocate(rlp_prefix_1_is_zero[i],   8, i);
+                            allocate(rlp_prefix_2_is_zero[i],   9, i);
+                        }
                     }
-                    for (size_t i = 0; i < row_index; i++)
-                    {
-                        allocate(rlp_prefix[i], 0, i);
-                        allocate(first_element[i], 1, i);
-                        allocate(len_low[i], 2, i);
-                        allocate(len_high[i], 3, i);
-                    }
-                    
-                    // for(std::size_t i = 0; i < max_blocks; i++) {
-                    //     allocate(number[i],        0, i);
-                    //     allocate(range_0_55[i],    1, i);
-                    //     allocate(range_55_127[i],  2, i);
-                    //     allocate(range_128_183[i], 3, i);
-                    //     allocate(range_184_191[i], 4, i);
-                    //     allocate(range_192_247[i], 5, i);
-                    //     allocate(range_248_255[i], 6, i);
-                    // }
-                    // declare dynamic lookup table
-                    // lookup_table("rlp_table",std::vector<std::size_t>({0, 1, 2, 3, 4, 5, 6}),0,max_blocks);
-                    lookup_table("rlp_table",std::vector<std::size_t>({0, 1, 2, 3}),0,max_rows);
+                    lookup_table("rlp_table",std::vector<std::size_t>({0, 1, 2, 3, 4, 5, 6, 7, 8, 9}),0,max_rows);
                 };
             };
         } // namespace bbf

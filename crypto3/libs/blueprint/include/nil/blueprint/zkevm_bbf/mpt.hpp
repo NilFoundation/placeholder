@@ -38,22 +38,9 @@ namespace nil::blueprint::bbf {
 
     enum mpt_node_type { extension = 0, branch = 1, leaf = 2 };
 
-    class mpt_helper {
-      public:
-        // Stack   trie: 64  bits
-        // Storage trie: 256 bits
-        // State   trie: 256 bits
-        std::array<uint8_t, 32> key;
-        std::array<uint8_t, 32> value;
-        virtual void encode_key() = 0;
-        virtual void encode_value() = 0;
-        virtual void denode_key() = 0;
-        virtual void decode_value() = 0;
-    };
-
     struct mpt_node {
         enum mpt_node_type type;
-        std::vector<zkevm_word_type> value;
+        std::vector<std::vector<zkevm_word_type>> value;
     };
 
     struct mpt_path {
@@ -86,10 +73,10 @@ namespace nil::blueprint::bbf {
 
         static table_params get_minimal_requirements(std::size_t max_mpt_size) {
             return {
-                    .witnesses = 1178,
+                    .witnesses = 13141,
                     .public_inputs = 0,
                     .constants = 0,
-                    .rows = max_mpt_size + 14298};
+                    .rows = max_mpt_size + 2178};
         }
 
         static void allocate_public_inputs(context_type &context, input_type &input,
@@ -110,22 +97,72 @@ namespace nil::blueprint::bbf {
             std::vector<std::array<TYPE, 32>> key(max_mpt_size);
             std::size_t node_num = 0;
 
-            std::array<std::vector<std::array<TYPE, 32 * 2>>, 16> child;
+            std::array<std::vector<std::array<TYPE, 110>>, 16> child;
+            std::array<std::vector<std::array<TYPE, 110>>, 16> child_hashes_low;
+            std::array<std::vector<std::array<TYPE, 110>>, 16> child_hashes_high;
+            std::array<std::vector<std::array<TYPE, 110>>, 16> child_hashes_indices;
+            std::array<std::vector<std::array<TYPE, 110>>, 16> child_hashes_indices_is_last_I;
+            std::array<std::vector<std::array<TYPE, 110>>, 16> child_hashes_indices_is_last_R;
+            std::array<std::vector<std::array<TYPE, 110>>, 16> child_is_last;
+
+            std::vector<std::array<std::uint8_t, 532>> hash_input(max_mpt_size);
             std::vector<std::array<TYPE, 532>> node_rlp_encoded(max_mpt_size);
+
+            std::vector<std::array<TYPE, 3>> node_rlp_prefix(max_mpt_size);
+            // the first rlp prefix is not last and its hash and index is known
+            std::vector<TYPE> node_rlp_second_prefix_is_last(max_mpt_size);
+            std::vector<TYPE> node_rlp_third_prefix_is_last(max_mpt_size);
+            std::vector<std::array<TYPE, 2>> node_rlp_prefix_hashes_low(max_mpt_size);
+            std::vector<std::array<TYPE, 2>> node_rlp_prefix_hashes_high(max_mpt_size);
+            std::vector<std::array<TYPE, 2>> node_rlp_prefix_hashes_indices(max_mpt_size);
+            std::vector<TYPE> node_rlp_len_low(max_mpt_size);
+            std::vector<TYPE> node_rlp_len_high(max_mpt_size);
+
+            std::vector<std::array<std::array<TYPE, 2>, 16>> child_rlp_prefix(max_mpt_size);
+            std::vector<std::array<std::array<TYPE, 2>, 16>> child_rlp_prefix_hashes_low(max_mpt_size);
+            std::vector<std::array<std::array<TYPE, 2>, 16>> child_rlp_prefix_hashes_high(max_mpt_size);
+            std::vector<std::array<std::array<TYPE, 2>, 16>> child_rlp_prefix_hashes_indices(max_mpt_size);
+            std::vector<std::array<TYPE, 16>> child_rlp_second_prefix_is_last(max_mpt_size);
 
             // lengths without considering rlp prefixes
             std::vector<std::array<TYPE, 16>> child_rlp_len_low(max_mpt_size);
             std::vector<std::array<TYPE, 16>> child_rlp_len_high(max_mpt_size);
-            std::vector<TYPE> node_rlp_len_low(max_mpt_size);
-            std::vector<TYPE> node_rlp_len_high(max_mpt_size);
-            
+            // first element flag for rlp lookup
+            std::vector<std::array<TYPE, 16>> child_rlp_first_element_flag(max_mpt_size);
+            std::vector<std::array<TYPE, 16>> child_rlp_first_element(max_mpt_size);
 
-            // std::array<std::vector<TYPE>,16> child_1;
+
             for (std::size_t i = 0; i < 16; i++) {
                 child[i].resize(max_mpt_size);
-                // child_1[i].resize(max_mpt_size);
+                child_hashes_low[i].resize(max_mpt_size);
+                child_hashes_high[i].resize(max_mpt_size);
+                child_hashes_indices[i].resize(max_mpt_size);
+                child_hashes_indices_is_last_I[i].resize(max_mpt_size);
+                child_hashes_indices_is_last_R[i].resize(max_mpt_size);
+                child_is_last[i].resize(max_mpt_size);
             }
+            
             if constexpr (stage == GenerationStage::ASSIGNMENT) {
+                for (std::size_t i = 0; i < 16; i++) {
+                    for (size_t j = 0; j < max_mpt_size; j++) {
+                        child_rlp_first_element_flag[j][i] = 0;
+                        for (size_t k = 0; k < 110; k++) {
+                            child_is_last[i][j][k] = 1;
+                        }
+                    }
+                }
+                for (size_t i = 0; i < max_mpt_size; i++) {
+                    node_rlp_second_prefix_is_last[i] = 1;
+                    // node_rlp_len_low_is_last[i] = 1;
+                    // node_rlp_len_high_is_last[i] = 1;
+                    for (size_t j = 0; j < 16; j++)
+                    {
+                        child_rlp_second_prefix_is_last[i][j] = 1;
+                        // child_rlp_len_low_is_last[i][j] = 1;
+                        // child_rlp_len_high_is_last[i][j] = 1;
+                    }
+                }
+
                 // assignment
                 for (auto &p : input) {  // enumerate paths
                     std::cout << "slot number = " << std::hex << p.slotNumber << std::dec
@@ -143,19 +180,21 @@ namespace nil::blueprint::bbf {
                     //    std::size_t node_depth = 0;
                     //    zkevm_word_type parent_hash = 0;
                     for (auto &n : p.proof) {
+                        
                         std::cout << "node type = " << n.type << std::endl;
                         std::cout << "[" << std::endl;
                         std::size_t node_key_length = 0;
                             //    parent_hash[node_num] = w_to_4(parent_hash);
                             //    parent_hash_1[node_num] = w_hi<FieldType>(parent_hash);
                             if (n.type != branch) {
-                                zkevm_word_type first_value = n.value.at(0);
-                                while (first_value > 0) {
-                                    first_value >>= 4;
+                                zkevm_word_type k0;
+                                if (n.value.at(0)[0] > 0x0F) {
+                                    k0 = n.value.at(0)[0] >> 4;
                                     node_key_length++;
                                 }
-                                zkevm_word_type k0 =
-                                    n.value.at(0) >> 4 * (node_key_length - 1);
+                                for (size_t i = 1; i < n.value.at(0).size(); i++) {
+                                    node_key_length += 2;
+                                }
                                 if ((k0 == 1) || (k0 == 3)) {
                                     node_key_length--;  // then we only skip the first hex
                                                         // symbol
@@ -200,11 +239,6 @@ namespace nil::blueprint::bbf {
                         }
                         r[node_num] =
                             1 - (2 - node_type[node_num]) * node_type_inv_2[node_num];
-                        std::cout << "this one " << std::hex << r[node_num] << std::dec
-                                  << std::endl;
-                        //    depth[node_num] = node_depth;
-                        //    key_0[node_num] = w_lo<FieldType>(path_key);
-                        //    key_1[node_num] = w_hi<FieldType>(path_key);
                         words = w_8(path_key);
                         for (size_t i = 0; i < 32; i++) {
                             key[node_num][i] = zkevm_word_type(words[i]);
@@ -213,34 +247,44 @@ namespace nil::blueprint::bbf {
 
                         std::size_t child_num = 0;
                         for (auto &v : n.value) {
-                            std::cout << "    value = " << std::hex << v << std::dec
-                                      << std::endl;
-                            if (child_num <
-                                16) {  // branch nodes have an empty 17-th value
-                                words = w_8(v);
-                                for (size_t i = 0; i < 32; i++) {
-                                    child[child_num][node_num][i] = words[i];
+                            std::cout <<"    value = ";
+                            if (child_num < 16) {  // branch nodes have an empty 17-th value
+                                for (size_t i = 0; i < v.size(); i++) {
+                                    if (v[i] <= 0x0F)
+                                        std::cout <<"0" << std::hex << v[i] << std::dec;
+                                    else
+                                        std::cout << std::hex << v[i] << std::dec;
+                                    child[child_num][node_num][i] = v[i];
+                                    child_is_last[child_num][node_num][i] = 0;
                                 }
-                                //    child_1[child_num][node_num] = w_hi<FieldType>(v);
+                                if (v.size() > 0) {
+                                    child_is_last[child_num][node_num][v.size() - 1] = 1;
+                                }
+                                if (v.size() == 0 || (v.size() == 1 && v[0] < 128)) {
+                                    if (v.size() == 1)
+                                        child_rlp_first_element[node_num][child_num] = v[0];
+                                    else
+                                        child_rlp_first_element[node_num][child_num] = 0;
+                                    child_rlp_first_element_flag[node_num][child_num] = 1;
+                                }
+                                std::cout << " size: " << v.size();
                             }
                             child_num++;
+                            std::cout << std::endl;
                         }
                         std::cout << "]" << std::endl;
 
                         if (n.type == leaf) {
-                            size_t key_length = 0;
-                            zkevm_word_type key = n.value.at(0);
-                            zkevm_word_type key_first_nibble = key;
-                            zkevm_word_type key_second_nibble;
-                            zkevm_word_type key_rlp_encoded_length;
-                            while (key > 0) {
-                                key >>= 8;
-                                key_length++;
+                            zkevm_word_type key_first_byte = n.value.at(0)[0];
+                            size_t key_length = n.value.at(0).size();
+                            zkevm_word_type key_first_nibble;
+                            if (key_first_byte > 0x0F) {
+                                key_first_nibble =  key_first_byte >> 4;
+                            } else {
+                                key_first_nibble = key_first_byte;
                             }
-                            key_first_nibble >>= (key_length - 1)*8;
-                            key_second_nibble = key_first_nibble & 0xF;
-                            key_first_nibble >>= 4;
-                            if (key_length == 1 && key <= 0x7F) {
+                            std::size_t key_rlp_encoded_length;
+                            if (key_length == 1 && key_first_byte <= 0x7F) {
                                 key_rlp_encoded_length = key_length;
                             } else if (key_length <= 32) {
                                 key_rlp_encoded_length = key_length + 1;
@@ -250,43 +294,81 @@ namespace nil::blueprint::bbf {
 
 
 
-                            size_t value_length = 0;
-                            zkevm_word_type value = n.value.at(1);
-                            zkevm_word_type value_rlp_encoded_length;
-                            while (value > 0) {
-                                value >>= 8;
-                                value_length++;
-                            }
-                            if (value_length == 1 && key <= 0x7F) {
+                            size_t value_length = n.value.at(1).size();
+                            TYPE value_first_byte = child[1][node_num][0];
+                            size_t value_rlp_encoded_length;
+                            
+                            if (value_length == 1 && value_first_byte <= 0x7F) {
                                 value_rlp_encoded_length = value_length;
-                            } else if (value_length <= 72) {
+                            } else if (value_length <= 55) {
                                 value_rlp_encoded_length = value_length + 1;
+                            } else if (value_length <= 110) {
+                                value_rlp_encoded_length = value_length + 2;
                             } else {
                                 // TODO throw error
                             }
-                            zkevm_word_type total_length = key_rlp_encoded_length + value_rlp_encoded_length;
+
+                            std::size_t total_length = key_rlp_encoded_length + value_rlp_encoded_length;
+                            std::cout << "total length " << total_length << " " << key_rlp_encoded_length << " " << value_rlp_encoded_length << " " << n.value.at(1).size() << std::endl;
                             std::size_t rlp_encoding_index = 0;
                             
                             if (total_length > 55) {
+
                                 std::size_t length_length = 0;
-                                zkevm_word_type temp = total_length;
+                                std::size_t temp = total_length;
+
                                 while(temp > 0) {
                                     temp >>= 8;
                                     length_length ++;
                                 }
+                                node_rlp_prefix[node_num][0] = 0xF7 + length_length;
+                                node_rlp_prefix[node_num][1] = total_length;
+                                node_rlp_prefix[node_num][2] = 0;
+                                node_rlp_prefix_hashes_indices[node_num][0] = rlp_encoding_index+1;
+
+                                node_rlp_second_prefix_is_last[node_num] = 0;
+                                node_rlp_third_prefix_is_last[node_num] = 1;
+
+                                hash_input[node_num][rlp_encoding_index] = 0xF7 + length_length;
                                 node_rlp_encoded[node_num][rlp_encoding_index ++] = 0xF7 + length_length;
-                                node_rlp_encoded[node_num][rlp_encoding_index ++] = length_length;
+                                hash_input[node_num][rlp_encoding_index] = total_length;
+                                node_rlp_encoded[node_num][rlp_encoding_index ++] = total_length;
                             } else {
+                                node_rlp_prefix[node_num][0] = 0xC0 + total_length;
+                                node_rlp_second_prefix_is_last[node_num] = 1;
+                                node_rlp_third_prefix_is_last[node_num] = 1;
+                                node_rlp_prefix_hashes_indices[node_num][0] = 0;
+
+                                hash_input[node_num][rlp_encoding_index] = uint8_t((0xC0 + total_length) & 0xFF);
                                 node_rlp_encoded[node_num][rlp_encoding_index ++] = 0xC0 + total_length;
                             }
 
-                            if (key_length == 1 && key > 0x7F || key_length <= 32) {
+                            node_rlp_len_low[node_num] = total_length & 0xFF;
+                            node_rlp_len_high[node_num] = (total_length >> 8) & 0xFF;
+
+                            if (key_length == 1) { // first byte of key in leaf nodes is always less than 0x7F due to leaf node encoding
+                                // TODO child_rlp_prefix_is_last[nodenum][0][0] must be true
+                                // child_rlp_prefix[node_num][0][0] = 0x80 + key_length;
+
+                                // hash_input[node_num][rlp_encoding_index] = uint8_t(0x80 + key_length);
+                                // node_rlp_encoded[node_num][rlp_encoding_index ++] = 0x80 + key_length;
+                            } else if (key_length <= 33) {
+                                child_rlp_prefix[node_num][0][0] = 0x80 + key_length;
+                                child_rlp_second_prefix_is_last[node_num][0] = 1;
+                                child_rlp_prefix_hashes_indices[node_num][0][0] = rlp_encoding_index;
+                                child_rlp_prefix_hashes_indices[node_num][0][1] = 0;
+
+                                hash_input[node_num][rlp_encoding_index] = uint8_t(0x80 + key_length);
                                 node_rlp_encoded[node_num][rlp_encoding_index ++] = 0x80 + key_length;
+
                             } else if (key_length > 33) {
                                 // TODO throw error
                             }
+
+                            child_rlp_len_low[node_num][0] = key_length;
+                            child_rlp_len_high[node_num][0] = 0;
                             // maximum lengths: 
-                            //      rlp encoded leaf node = 108 bytes
+                            //      rlp encoded leaf node = 144 + 2 bytes
                             //      key = 33 bytes
                             //      value = 108 bytes
                             //      rlp encoded key = 34 bytes
@@ -294,47 +376,224 @@ namespace nil::blueprint::bbf {
 
 
                             for (size_t j = 0; j < key_length; j++) {
-                                node_rlp_encoded[node_num][rlp_encoding_index ++ ] =
-                                    n.value.at(0) >> 8 * (key_length - j - 1) & 0xFF;
+                                zkevm_word_type kj = n.value.at(0)[j];
+                                hash_input[node_num][rlp_encoding_index] = uint8_t(kj);
+                                child_hashes_indices[0][node_num][j] = rlp_encoding_index;
+                                node_rlp_encoded[node_num][rlp_encoding_index ++ ] = kj;
                             }
-
-                            if (value_length == 1 && value > 0x7F || value_length <= 72) {
+                            if (value_length == 1 && value_first_byte <= 0x7F) {
+                                // TODO
+                            } else if (value_length <= 55) {
+                                child_rlp_prefix[node_num][1][0] = 0x80 + value_length;
+                                child_rlp_prefix_hashes_indices[node_num][1][0] = rlp_encoding_index;
+                                child_rlp_prefix_hashes_indices[node_num][1][1] = 0;
+                                hash_input[node_num][rlp_encoding_index] = uint8_t(0x80 + value_length);
                                 node_rlp_encoded[node_num][rlp_encoding_index ++] = 0x80 + value_length;
+                            } else if (value_length <= 110) {
+                                child_rlp_prefix[node_num][1][0] = 0xB8;
+                                child_rlp_prefix_hashes_indices[node_num][1][0] = rlp_encoding_index;
+                                child_rlp_prefix[node_num][1][1] = value_length;
+                                child_rlp_prefix_hashes_indices[node_num][1][1] = rlp_encoding_index+1;
+                                child_rlp_second_prefix_is_last[node_num][1] = 0;
+                                
+
+                                hash_input[node_num][rlp_encoding_index] = uint8_t(0xB8);
+                                node_rlp_encoded[node_num][rlp_encoding_index ++] = 0xB8;
+                                hash_input[node_num][rlp_encoding_index] = value_length;
+                                node_rlp_encoded[node_num][rlp_encoding_index ++] = value_length;
                             } else if (value_length > 110) {
                                 // TODO throw error
                             }
-                            for (size_t j = 0; j < value_length; j++) {
-                                node_rlp_encoded[node_num][rlp_encoding_index ++] =
-                                    n.value.at(1) >> 8 * (value_length - j - 1) &
-                                    0xFF;
-                            }
-                            node_rlp_len_low[node_num] = total_length & 0xFF;
-                            node_rlp_len_high[node_num] = (total_length >> 8) & 0xFF;
-                            child_rlp_len_low[node_num][0] = key_length; // key
-                            child_rlp_len_high[node_num][0] = 0;
+
                             child_rlp_len_low[node_num][1] = value_length;
                             child_rlp_len_high[node_num][1] = 0;
 
-
-
-
-
+                            for (size_t j = 0; j < value_length; j++) {
+                                zkevm_word_type kj = n.value.at(1)[j];
+                                hash_input[node_num][rlp_encoding_index] = uint8_t(kj);
+                                child_hashes_indices[1][node_num][j] = rlp_encoding_index;
+                                node_rlp_encoded[node_num][rlp_encoding_index ++] = kj;
+                            }
 
                             std::cout << "printing: " << std::endl;
                             for (size_t i = 0; i < rlp_encoding_index; i++)
                             {
-                                std::cout << std::hex << node_rlp_encoded[node_num][i] << std::dec << " ";
+                                if (node_rlp_encoded[node_num][i] <= 0xF)
+                                    std::cout << "0" << std::hex << node_rlp_encoded[node_num][i] << std::dec;
+                                else
+                                    std::cout << std::hex << node_rlp_encoded[node_num][i] << std::dec;
                             }
+                            std::vector<uint8_t> buffer(hash_input[node_num].begin(), hash_input[node_num].begin()+rlp_encoding_index);
+                            zkevm_word_type hash = nil::blueprint::zkevm_keccak_hash(buffer);
+                            TYPE hash_low = w_lo<FieldType>(hash);
+                            TYPE hash_high = w_hi<FieldType>(hash);
+                            std::cout << "\nnode hash = " << std::hex << hash << std::dec << std::endl;
                             std::cout << std::endl;
-                            
-                        }
 
+
+
+                            // rlp_encoding_index = 1;
+
+                            if (total_length > 55) {
+                                // node_rlp_prefix_hashes_low[node_num][0] = hash_low;
+                                // node_rlp_prefix_hashes_high[node_num][0] = hash_high;
+
+                                node_rlp_prefix_hashes_low[node_num][0] = hash_low;
+                                node_rlp_prefix_hashes_high[node_num][0] = hash_high;
+                                // node_rlp_prefix_hashes_indices[node_num][0] = rlp_encoding_index++;
+                            } 
+                            // else {
+                                // node_rlp_prefix_hashes_low[node_num][0] = hash_low;
+                                // node_rlp_prefix_hashes_high[node_num][0] = hash_high;
+                                // rlp_encoding_index++;
+                            // }
+                            // node_rlp_prefix_hashes_indices[node_num][1] = 0;
+                            node_rlp_prefix_hashes_low[node_num][1] = 0;
+                            node_rlp_prefix_hashes_high[node_num][1] = 0;
+
+                            if (key_length == 1 && key_first_byte > 0x7F || key_length <= 32) {
+                                child_rlp_prefix_hashes_low[node_num][0][0] = hash_low;
+                                child_rlp_prefix_hashes_high[node_num][0][0] = hash_high;
+                                // child_rlp_prefix_hashes_indices[node_num][0][0] = rlp_encoding_index++;
+                            }
+
+                            for (size_t j = 0; j < key_length; j++) {
+                                child_hashes_low[0][node_num][j] = hash_low;
+                                child_hashes_high[0][node_num][j] = hash_high;
+                                // child_hashes_indices[0][node_num][j] = rlp_encoding_index;
+                                // TYPE kj = (n.value.at(0) >> 8 * (key_length - j - 1)) & 0xFF;
+                                node_rlp_encoded[node_num][rlp_encoding_index ++ ] = child[0][node_num][j];
+                            }
+
+
+
+
+                            if (value_length == 1 && value_first_byte <= 0x7F) {
+                                // TODO
+                            } else if (value_length <= 55) {
+                                child_rlp_prefix_hashes_low[node_num][1][0] = hash_low;
+                                child_rlp_prefix_hashes_high[node_num][1][0] = hash_high;
+                                rlp_encoding_index++;
+                            } else if (value_length <= 110) {
+                                child_rlp_prefix_hashes_low[node_num][1][0] = hash_low;
+                                child_rlp_prefix_hashes_high[node_num][1][0] = hash_high;
+                                rlp_encoding_index++;
+                                child_rlp_prefix_hashes_low[node_num][1][1] = hash_low;
+                                child_rlp_prefix_hashes_high[node_num][1][1] = hash_high;
+                                rlp_encoding_index++;
+                            } else if (value_length > 110) {
+                                // TODO throw error
+                            }
+
+                            for (size_t j = 0; j < value_length; j++) {
+                                child_hashes_low[1][node_num][j] = hash_low;
+                                child_hashes_high[1][node_num][j] = hash_high;
+                                // child_hashes_indices[1][node_num][j] = rlp_encoding_index;
+                                // TYPE kj = (n.value.at(0) >> 8 * (key_length - j - 1)) & 0xFF;
+                                // node_rlp_encoded[node_num][rlp_encoding_index ++ ] = child[1][node_num][j];
+                            }
+
+
+                            for (size_t k = 0; k < 16; k++) {
+                                TYPE len = child_rlp_len_low[node_num][k] + child_rlp_len_high[node_num][k] * 0x100;
+                                for (size_t j = 0; j < 110; j++) {
+                                    if ( child_hashes_indices[k][node_num][j] - child_hashes_indices[k][node_num][0] == len - 1) {
+                                        child_hashes_indices_is_last_I[k][node_num][j] = 0;
+                                    } else {
+                                        child_hashes_indices_is_last_I[k][node_num][j] = 
+                                            (len - 1 - (child_hashes_indices[k][node_num][j] - child_hashes_indices[k][node_num][0])).inversed();
+                                    }
+                                    child_hashes_indices_is_last_R[k][node_num][j] = 1 - 
+                                        (len - 1 - (child_hashes_indices[k][node_num][j] - child_hashes_indices[k][node_num][0])) 
+                                        * child_hashes_indices_is_last_I[k][node_num][j];
+                                    // if (k < 2 && j > 0) {
+                                    //     std::cout << "is last " << len << " " << j << " " << child_is_last[k][node_num][j] << " "
+                                    //         << child_hashes_indices_is_last_R[k][node_num][j] << std::endl;
+                                    // }
+                                }
+                            }
+
+                 
+
+
+                            std::cout << "rlp prefix:" << std::endl;
+                            std::cout << "\tdata\thash_lower\t\t\t\thash_higher\t\t\t\tindex\n";
+
+                            std::cout << "\t" << std::hex << node_rlp_prefix[node_num][0] << std::dec << "\t"
+                                      << std::hex << hash_low << std::dec << "\t"
+                                      << std::hex << hash_high << std::dec << "\t"
+                                      << std::hex << 0 << std::dec << std::endl;
+                            std::cout << "\t" << std::hex << node_rlp_prefix[node_num][1] << std::dec << "\t"
+                                      << std::hex << node_rlp_prefix_hashes_low[node_num][0] << std::dec << "\t"
+                                      << std::hex << node_rlp_prefix_hashes_high[node_num][0] << std::dec << "\t"
+                                      << std::hex << node_rlp_prefix_hashes_indices[node_num][0] << std::dec << std::endl;
+                            std::cout << "\t" << std::hex << node_rlp_prefix[node_num][2] << std::dec << "\t"
+                                      << std::hex << node_rlp_prefix_hashes_low[node_num][1] << std::dec << "\t"
+                                      << std::hex << node_rlp_prefix_hashes_high[node_num][1] << std::dec << "\t"
+                                      << std::hex << node_rlp_prefix_hashes_indices[node_num][1] << std::dec << std::endl;
+                            
+                            std::cout << "node rlp second prefix is last:\n "
+                                      << std::hex << node_rlp_second_prefix_is_last[node_num] << std::dec << std::endl;
+                            std::cout << "node rlp len low and high: \n"
+                                      << std::hex << node_rlp_len_low[node_num] << std::dec << "\t"
+                                      << std::hex << node_rlp_len_high[node_num] << std::dec << std::endl;
+                            
+                            std::cout << "key prefix: \n\tdata\thash_low\t\t\t\thash_high\t\t\t\tindex\n\t";
+                            std::cout << std::hex << child_rlp_prefix[node_num][0][0] << std::dec << "\t"
+                                      << std::hex << child_rlp_prefix_hashes_low[node_num][0][0] << std::dec << "\t"
+                                      << std::hex << child_rlp_prefix_hashes_high[node_num][0][0] << std::dec << "\t"
+                                      << std::hex << child_rlp_prefix_hashes_indices[node_num][0][0] << std::dec << std::endl;
+                            std::cout << "second is last\tlen_low\tlen_high\tfirst_element_flag\tfirst_element\n\t";
+                            std::cout << std::hex << child_rlp_second_prefix_is_last[node_num][0] << std::dec << "\t"
+                                      << std::hex << child_rlp_len_low[node_num][0] << std::dec << "\t"
+                                      << std::hex << child_rlp_len_high[node_num][0] << std::dec << "\t\t"
+                                      << std::hex << child_rlp_first_element_flag[node_num][0] << std::dec << "\t\t"
+                                      << std::hex << child_rlp_first_element[node_num][0] << std::dec << std::endl;
+
+
+                            std::cout << "key: \n\tdata\thash_low\t\t\t\thash_high\t\t\t\tindex\n";
+                            for (size_t i = 0; i < key_length; i++) {
+                                std::cout << "\t"
+                                          << std::hex << child[0][node_num][i] << std::dec << "\t" 
+                                          << std::hex << child_hashes_low[0][node_num][i] << std::dec << "\t"
+                                          << std::hex << child_hashes_high[0][node_num][i] << std::dec << "\t" 
+                                          << std::hex << child_hashes_indices[0][node_num][i] << std::dec << std::endl;
+                            }
+                            
+
+
+                            std::cout << "value prefix: \n\tdata\thash_low\t\t\t\thash_high\t\t\t\tindex\n";
+                            std::cout << "\t" << std::hex << child_rlp_prefix[node_num][1][0] << std::dec << "\t" 
+                                      << std::hex << child_rlp_prefix_hashes_low[node_num][1][0] << std::dec << "\t"
+                                      << std::hex << child_rlp_prefix_hashes_high[node_num][1][0] << std::dec << "\t" 
+                                      << std::hex << child_rlp_prefix_hashes_indices[node_num][1][0] << std::dec << std::endl;
+                            std::cout << "\t" << std::hex << child_rlp_prefix[node_num][1][1] << std::dec << "\t" 
+                                      << std::hex << child_rlp_prefix_hashes_low[node_num][1][1] << std::dec << "\t" 
+                                      << std::hex << child_rlp_prefix_hashes_high[node_num][1][1] << std::dec << "\t" 
+                                      << std::hex << child_rlp_prefix_hashes_indices[node_num][1][1] << std::dec << std::endl;
+
+                            std::cout << "second is last\tlen_low\tlen_high\tfirst_element_flag\tfirst_element\n\t";
+                            std::cout << std::hex << child_rlp_second_prefix_is_last[node_num][11] << std::dec << "\t"
+                                      << std::hex << child_rlp_len_low[node_num][1] << std::dec << "\t"
+                                      << std::hex << child_rlp_len_high[node_num][1] << std::dec << "\t"
+                                      << std::hex << child_rlp_first_element_flag[node_num][1] << std::dec << "\t\t"
+                                      << std::hex << child_rlp_first_element[node_num][1] << std::dec << std::endl;
+                            std::cout << "value: \n";
+                            for (size_t i = 0; i < value_length; i++) {
+                                std::cout << i << " " << std::hex << child[1][node_num][i] << std::dec << "\t" 
+                                          << std::hex << child_hashes_low[1][node_num][i] << std::dec << "\t" 
+                                          << std::hex << child_hashes_high[1][node_num][i] << std::dec << "\t" 
+                                          << std::hex << child_hashes_indices[1][node_num][i] << std::dec << std::endl;
+                            }
+                        }
 
                         node_num++;
                         //    node_depth++;
                     }
                 }
+
             }
+
             // allocation
             for (std::size_t i = 0; i < max_mpt_size; i++) {
                 size_t column_index = 0;
@@ -345,41 +604,87 @@ namespace nil::blueprint::bbf {
                 for (std::size_t j = 0; j < 32; j++) {
                     allocate(key_part[i][j], column_index++, i);
                 }
-
                 allocate(key_length[i], column_index++, i);
                 allocate(node_type[i], column_index++, i);
                 for (std::size_t j = 0; j < 32; j++) {
                     allocate(key[i][j], column_index++, i);
                 }
-
-                for (std::size_t j = 0; j < 16; j++) {
-                    for (std::size_t k = 0; k < 32; k++) {
-                        allocate(child[j][i][k], column_index++, i);
-                    }
-                    allocate(child_rlp_len_low[i][j], column_index ++, i);
-                    allocate(child_rlp_len_high[i][j], column_index ++, i);
-
-                }
-                for (size_t j = 0; j < 532; j++) {
-                    allocate(node_rlp_encoded[i][j], column_index++, i);
-
-                }
-                allocate(node_rlp_len_low[i], column_index ++, i);
-
-                allocate(node_rlp_len_high[i], column_index ++, i);
-
-                
                 allocate(node_type_inv_2[i], column_index++, i);
                 allocate(r[i], column_index++, i);
+
+                // node
+                
+                // rlp len
+                allocate(node_rlp_len_low[i], column_index ++, i);
+                allocate(node_rlp_len_high[i], column_index ++, i);
+                // prefix
+                allocate(node_rlp_prefix[i][0], column_index ++, i);
+                allocate(node_rlp_second_prefix_is_last[i], column_index ++, i);
+                allocate(node_rlp_third_prefix_is_last[i], column_index ++, i);
+                allocate(node_rlp_prefix[i][1], column_index ++, i);
+                allocate(node_rlp_prefix_hashes_low[i][0], column_index ++, i);
+                allocate(node_rlp_prefix_hashes_high[i][0], column_index ++, i);
+                allocate(node_rlp_prefix_hashes_indices[i][0], column_index ++, i);
+                allocate(node_rlp_prefix[i][2], column_index ++, i);
+                allocate(node_rlp_prefix_hashes_low[i][1], column_index ++, i);
+                allocate(node_rlp_prefix_hashes_high[i][1], column_index ++, i);
+                allocate(node_rlp_prefix_hashes_indices[i][1], column_index ++, i);
+                //encoding
+                for (size_t j = 0; j < 532; j++) {
+                    allocate(node_rlp_encoded[i][j], column_index++, i);
+                }
+
+                // children
+                for (std::size_t j = 0; j < 16; j++) {
+                    // rlp len
+                    allocate(child_rlp_len_low[i][j], column_index ++, i);
+                    allocate(child_rlp_len_high[i][j], column_index ++, i);
+                    // prefix
+                    allocate(child_rlp_prefix[i][j][0], column_index++, i);
+                    allocate(child_rlp_prefix_hashes_low[i][j][0], column_index++, i);
+                    allocate(child_rlp_prefix_hashes_high[i][j][0], column_index++, i);
+                    allocate(child_rlp_prefix_hashes_indices[i][j][0], column_index++, i);
+                    allocate(child_rlp_prefix[i][j][1], column_index++, i);
+                    allocate(child_rlp_prefix_hashes_low[i][j][1], column_index++, i);
+                    allocate(child_rlp_prefix_hashes_high[i][j][1], column_index++, i);
+                    allocate(child_rlp_prefix_hashes_indices[i][j][1], column_index++, i);
+                    allocate(child_rlp_second_prefix_is_last[i][j], column_index++, i);
+
+                    // encoding
+                    for (std::size_t k = 0; k < 110; k++) {
+                        allocate(child[j][i][k], column_index++, i);
+                        allocate(child_is_last[j][i][k], column_index++, i);
+                        allocate(child_hashes_low[j][i][k], column_index++, i);
+                        allocate(child_hashes_high[j][i][k], column_index++, i);
+                        allocate(child_hashes_indices[j][i][k], column_index++, i);
+                        allocate(child_hashes_indices_is_last_I[j][i][k], column_index++, i);
+                        allocate(child_hashes_indices_is_last_R[j][i][k], column_index++, i);
+                    }
+                }
+
             }
 
             for (std::size_t i = 0; i < RLPTable::get_witness_amount(); i++) {
                 rlp_lookup_area.push_back(i);
             }
             context_type rlp_ct = context_object.subcontext(
-                rlp_lookup_area, 5, 14298);
+                rlp_lookup_area, 5, 2178);
 
             RLPTable rlpt = RLPTable(rlp_ct);
+
+
+            // std::cout << "node types \n";
+            // for (size_t i = 0; i < max_mpt_size; i++) {
+            //     std::cout << node_type[i] << " " << node_type[i] * (1 - node_type[i]) * (2 - node_type[i]) << "\n";
+            // }
+            // std::cout << std::hex << node_rlp_prefix[4][0] << std::dec << " " <<
+            // std::hex << node_rlp_prefix[4][1] << std::dec << " " <<
+            // std::hex << node_rlp_prefix[4][2] << std::dec << " " <<
+            // std::hex << 0 << std::dec << " " <<
+            // std::hex << 0 << std::dec << " " <<
+            // std::hex << 0 << std::dec << " " <<
+            // std::hex << node_rlp_len_low[4] << std::dec << " " <<
+            // std::hex << node_rlp_len_high[4] << std::dec << std::endl;
 
 
             if constexpr (stage == GenerationStage::CONSTRAINTS) {
@@ -395,9 +700,98 @@ namespace nil::blueprint::bbf {
 
 
 
-                std::vector<TYPE> tmp = {node_rlp_encoded[4][0], node_rlp_encoded[4][1], node_rlp_len_low[4], node_rlp_len_high[4]};
-                lookup(tmp, "rlp_table");
-                tmp = {node_rlp_encoded[4][0], node_rlp_encoded[4][1], node_rlp_len_low[4], node_rlp_len_high[4]};
+                std::vector<TYPE> node_rlp_lookup = {
+                    node_rlp_prefix[4][0], 
+                    node_rlp_prefix[4][1],
+                    node_rlp_prefix[4][2],
+                    0,
+                    0,
+                    0,
+                    node_rlp_len_low[4], 
+                    node_rlp_len_high[4],
+                    node_rlp_second_prefix_is_last[4],
+                    node_rlp_third_prefix_is_last[4]
+                };
+
+                std::vector<TYPE> key_rlp_lookup = {
+                    child_rlp_prefix[4][0][0],
+                    child_rlp_prefix[4][0][1],
+                    0,
+                    child_rlp_first_element[4][0],
+                    child_rlp_first_element_flag[4][0],
+                    1,
+                    child_rlp_len_low[4][0], 
+                    child_rlp_len_high[4][0],
+                    // 1,
+                    child_rlp_second_prefix_is_last[4][0],
+                    1
+                };
+
+                std::vector<TYPE> value_rlp_lookup = {
+                    child_rlp_prefix[4][1][0],
+                    child_rlp_prefix[4][1][1],
+                    0,
+                    child_rlp_first_element[4][1],
+                    child_rlp_first_element_flag[4][1],
+                    1,
+                    child_rlp_len_low[4][1], 
+                    child_rlp_len_high[4][1],
+                    child_rlp_second_prefix_is_last[4][1],
+                    1
+                };
+                lookup(node_rlp_lookup, "rlp_table");
+                lookup(key_rlp_lookup, "rlp_table");
+                lookup(value_rlp_lookup, "rlp_table");
+                constrain(child_rlp_second_prefix_is_last[4][1] * (1 - child_rlp_second_prefix_is_last[4][1]));
+
+                constrain(-(node_rlp_len_low[4] + 0x100 * node_rlp_len_high[4])
+                          + child_rlp_len_low[4][0] + 0x100 * child_rlp_len_high[4][0] 
+                          + child_rlp_len_low[4][1] + 0x100 * child_rlp_len_high[4][1] 
+                          + 3 - child_rlp_second_prefix_is_last[4][1]);
+
+                // node first rlp prefix is keccak 0 index
+                constrain(node_rlp_prefix_hashes_indices[4][0] - (1 - node_rlp_second_prefix_is_last[4]));
+                constrain(node_rlp_prefix_hashes_indices[4][1] * node_rlp_third_prefix_is_last[4] + (2-node_rlp_prefix_hashes_indices[4][1])*(1-node_rlp_third_prefix_is_last[4]));
+                for (size_t k = 0; k < 2; k++) {
+                    if (k == 0) {
+                        constrain(child_rlp_prefix_hashes_indices[4][k][0] - 1 - (1 - node_rlp_second_prefix_is_last[4]) + (1 - node_rlp_third_prefix_is_last[4]));
+                    } else {
+                        constrain(child_rlp_prefix_hashes_indices[4][k][0] - 
+                            (child_rlp_len_low[4][k-1] + child_rlp_len_high[4][k-1] * 0x100 + child_rlp_prefix_hashes_indices[4][k-1][0] + 1 - child_rlp_second_prefix_is_last[4][k-1] + 1));
+                    }
+                    constrain(child_rlp_prefix_hashes_indices[4][k][1] - (1 - child_rlp_second_prefix_is_last[4][k])*(child_rlp_prefix_hashes_indices[4][k][0] + 1));
+                    constrain(child_hashes_indices[k][4][0] - (1 - child_rlp_second_prefix_is_last[4][k]) - child_rlp_prefix_hashes_indices[4][k][0] - 1);
+                    for (size_t i = 1; i < 110; i++) {
+                        constrain((1 - child_is_last[k][4][i]) * child_is_last[k][4][i]);
+    
+                        constrain((1 - child_is_last[k][4][i]) * child_is_last[k][4][i-1]);
+                        constrain(child_hashes_indices_is_last_R[k][4][i] - (1 - 
+                            child_hashes_indices_is_last_I[k][4][i] * ((child_rlp_len_low[4][k] + child_rlp_len_high[4][k] * 0x100) - (child_hashes_indices[k][4][i] - child_hashes_indices[k][4][0] + 1))));
+                        constrain(((child_rlp_len_low[4][k] + child_rlp_len_high[4][k] * 0x100) - (child_hashes_indices[k][4][i] - child_hashes_indices[k][4][0] + 1))*child_hashes_indices_is_last_R[k][4][i]);
+                        constrain(child_is_last[k][4][i] - child_hashes_indices_is_last_R[k][4][i] - child_is_last[k][4][i-1]);
+                        constrain(child_hashes_indices[k][4][i] * child_is_last[k][4][i-1]);
+                        constrain((child_hashes_indices[k][4][i] - child_hashes_indices[k][4][i-1] - 1) * (1 - child_is_last[k][4][i-1]));
+                    } 
+                }
+                
+                // constrain(child_rlp_prefix_hashes_indices[4][0][1] - (1 - child_rlp_second_prefix_is_last[4][0])*(child_rlp_prefix_hashes_indices[4][0][0] + 1));
+                // constrain(child_hashes_indices[0][4][0] - (1 - child_rlp_second_prefix_is_last[4][0]) - child_rlp_prefix_hashes_indices[4][0][0] - 1);
+                // for (size_t i = 1; i < 110; i++) {
+                //     constrain((1 - child_is_last[0][4][i]) * child_is_last[0][4][i]);
+
+                //     constrain((1 - child_is_last[0][4][i]) * child_is_last[0][4][i-1]);
+                //     constrain(child_hashes_indices_is_last_R[0][4][i] - (1 - 
+                //         child_hashes_indices_is_last_I[0][4][i] * ((child_rlp_len_low[4][0] + child_rlp_len_high[4][0] * 0x100) - (child_hashes_indices[0][4][i] - child_hashes_indices[0][4][0] + 1))));
+                //     constrain(((child_rlp_len_low[4][0] + child_rlp_len_high[4][0] * 0x100) - (child_hashes_indices[0][4][i] - child_hashes_indices[0][4][0] + 1))*child_hashes_indices_is_last_R[0][4][i]);
+                //     constrain(child_is_last[0][4][i] - child_hashes_indices_is_last_R[0][4][i] - child_is_last[0][4][i-1]);
+                //     constrain(child_hashes_indices[0][4][i] * child_is_last[0][4][i-1]);
+                //     constrain((child_hashes_indices[0][4][i] - child_hashes_indices[0][4][i-1] - 1) * (1 - child_is_last[0][4][i-1]));
+                // }
+
+                  
+
+
+                // tmp = {node_rlp_encoded[4][0], node_rlp_encoded[4][1], node_rlp_len_low[4], node_rlp_len_high[4]};
                 // constraints
                 //    for (size_t i = 0; i < max_mpt_size; i++) {
                 //     for(std::size_t j = 0; j < 16; j++) {
@@ -425,696 +819,6 @@ namespace nil::blueprint::bbf {
                 //         // allocate(child_0[j][i], 6 + 2*j,i);
                 //         // allocate(child_1[j][i], 6 + 2*j + 1,i);
                 //     }
-
-                //     constrain(node_rlp_encoded[i][0] = 0xf);
-                //     constrain(node_rlp_encoded[i][1] = 0x9);
-                //     constrain(node_rlp_encoded[i][2] = 0x0);
-                //     constrain(node_rlp_encoded[i][3] = 0x2);
-                //     constrain(node_rlp_encoded[i][4] = 0x1);
-                //     constrain(node_rlp_encoded[i][5] = 0x1);
-                //     constrain(1 - child_active[i][j][0]);
-
-                //     for (size_t j = 6; j < 1064; j++)
-                //     {
-                //         for (size_t k = 0; k < 16; k++)
-                //         {
-                //             intermediary[i][j] += child_active[i][j][k] *
-                //             child_next_nibble[i][j][k]; constrain(child_active[i][j][k]
-                //             * (1 - child_active[i][j][k]));
-                //         }
-                //         constrain(sum(child_active[i][j]) = 1);
-                //         constrain(node_rlp_encoded[i][j] = intermediary[i][j]);
-                //     }
-
-                // }
-
-                /*
-                        std::size_t START_OP = rw_op_to_num(rw_operation_type::start);
-                        std::size_t STACK_OP = rw_op_to_num(rw_operation_type::stack);
-                        std::size_t MEMORY_OP = rw_op_to_num(rw_operation_type::memory);
-                        std::size_t STORAGE_OP = rw_op_to_num(rw_operation_type::storage);
-                        std::size_t TRANSIENT_STORAGE_OP =
-                   rw_op_to_num(rw_operation_type::transient_storage); std::size_t
-                   CALL_CONTEXT_OP = rw_op_to_num(rw_operation_type::call_context);
-                        std::size_t ACCOUNT_OP = rw_op_to_num(rw_operation_type::account);
-                        std::size_t TX_REFUND_OP =
-                   rw_op_to_num(rw_operation_type::tx_refund_op); std::size_t
-                   TX_ACCESS_LIST_ACCOUNT_OP =
-                   rw_op_to_num(rw_operation_type::tx_access_list_account); std::size_t
-                   TX_ACCESS_LIST_ACCOUNT_STORAGE_OP =
-                   rw_op_to_num(rw_operation_type::tx_access_list_account_storage);
-                        std::size_t TX_LOG_OP = rw_op_to_num(rw_operation_type::tx_log);
-                        std::size_t TX_RECEIPT_OP =
-                   rw_op_to_num(rw_operation_type::tx_receipt); std::size_t PADDING_OP =
-                   rw_op_to_num(rw_operation_type::padding);
-
-                        PROFILE_SCOPE("Rw circuit constructor, total time");
-                        std::vector<std::size_t> rw_table_area;
-                        for( std::size_t i = 0; i < rw_table_type::get_witness_amount();
-                   i++ ) rw_table_area.push_back(i);
-
-                        context_type rw_table_ct =
-                   context_object.subcontext(rw_table_area,0,max_rw_size); rw_table_type
-                   t(rw_table_ct, input, max_rw_size, false);
-
-                        const std::vector<TYPE>  &op = t.op;
-                        const std::vector<TYPE>  &id = t.id;
-                        const std::vector<TYPE>  &address = t.address;
-                        const std::vector<TYPE>  &storage_key_hi = t.storage_key_hi;
-                        const std::vector<TYPE>  &storage_key_lo = t.storage_key_lo;
-                        const std::vector<TYPE>  &field_type = t.field_type;
-                        const std::vector<TYPE>  &rw_id = t.rw_id;
-                        const std::vector<TYPE>  &is_write = t.is_write;
-                        const std::vector<TYPE>  &value_hi = t.value_hi;
-                        const std::vector<TYPE>  &value_lo = t.value_lo;
-
-                        std::vector<std::array<TYPE,op_bits_amount>> op_bits(max_rw_size);
-                        std::vector<std::array<TYPE,diff_index_bits_amount>>
-                   diff_index_bits(max_rw_size); std::vector<TYPE> is_first(max_rw_size);
-                        std::vector<std::array<TYPE,chunks_amount>> chunks(max_rw_size);
-                        std::vector<TYPE> diff(max_rw_size);
-                        std::vector<TYPE> inv_diff(max_rw_size);
-                        std::vector<TYPE> value_before_hi(max_rw_size);
-                        std::vector<TYPE> value_before_lo(max_rw_size);
-                        std::vector<TYPE> state_root_hi(max_rw_size);
-                        std::vector<TYPE> state_root_lo(max_rw_size);
-                        std::vector<TYPE> state_root_before_hi(max_rw_size);
-                        std::vector<TYPE> state_root_before_lo(max_rw_size);
-                        std::vector<TYPE> is_last(max_rw_size);
-                        std::vector<TYPE> sorted;
-                        std::vector<TYPE> sorted_prev;
-
-                        if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                            auto rw_trace = input;
-                            std::cout << "RW trace.size = " << rw_trace.size() <<
-                   std::endl; for( std::size_t i = 0; i < rw_trace.size(); i++ ){
-                                integral_type mask = (1 << op_bits_amount);
-                                for( std::size_t j = 0; j < op_bits_amount; j++){
-                                    mask >>= 1;
-                                    op_bits[i][j] =
-                   (((static_cast<unsigned>(rw_trace[i].op) & mask) == 0) ? 0 : 1);
-                                }
-                                std::size_t cur_chunk = 0;
-                                // id
-                                mask = 0xffff0000;
-                                chunks[i][cur_chunk++] = (mask &
-                   integral_type(rw_trace[i].call_id)) >> 16; mask = 0xffff;
-                                chunks[i][cur_chunk++] = (mask &
-                   integral_type(rw_trace[i].call_id));
-
-                                // address
-                                mask = 0xffff;
-                                mask <<= (16 * 9);
-                                for( std::size_t j = 0; j < address_chunks_amount; j++){
-                                    chunks[i][cur_chunk++] = (((mask &
-                   integral_type(rw_trace[i].address)) >> (16 * (9-j)))); mask >>= 16;
-                                }
-
-                                // storage_key
-                                mask = 0xffff;
-                                mask <<= (16 * 15);
-                                for( std::size_t j = 0; j < storage_key_chunks_amount;
-                   j++){ chunks[i][cur_chunk++] = (((mask &
-                   integral_type(rw_trace[i].storage_key)) >> (16 * (15-j)))); mask >>=
-                   16;
-                                }
-
-                                // rw_id
-                                mask = 0xffff;
-                                mask <<= 16;
-                                chunks[i][cur_chunk++] = (mask & rw_trace[i].rw_counter)
-                   >> 16; mask >>= 16; chunks[i][cur_chunk++] = (mask &
-                   rw_trace[i].rw_counter);
-
-                                sorted_prev = sorted;
-                                sorted = {op[i]};
-                                for( std::size_t j = 0; j < chunks_amount; j++ ){
-                                    sorted.push_back(chunks[i][j]);
-                                    if( j == 12 ) sorted.push_back(field_type[i]);
-                                }
-
-                                if( i == 0) continue;
-                                std::size_t diff_ind;
-                                for( diff_ind= 0; diff_ind < chunks_amount; diff_ind++ ){
-                                    if(sorted[diff_ind] != sorted_prev[diff_ind]) break;
-                                }
-                                if( op[i] != START_OP && op[i] != PADDING_OP && diff_ind <
-                   30){ is_first[i] = 1; if(i != 0) is_last[i-1] = 1;
-                                }
-                                if( diff_ind > 30 ){
-                                    value_before_hi[i] =
-                   w_hi<FieldType>(rw_trace[i].initial_value); value_before_lo[i] =
-                   w_lo<FieldType>(rw_trace[i].initial_value); } else { value_before_hi[i]
-                   = value_before_hi[i-1]; value_before_lo[i] = value_before_lo[i-1];
-                                }
-                                mask = (1 << diff_index_bits_amount);
-                                for( std::size_t j = 0; j < diff_index_bits_amount; j++){
-                                    mask >>= 1;
-                                    diff_index_bits[i][j] = (((diff_ind & mask) == 0) ? 0
-                   : 1);
-                                }
-                                diff[i] = sorted[diff_ind] - sorted_prev[diff_ind];
-                                inv_diff[i] = diff[i] == 0? 0: diff[i].inversed();
-                            }
-                            for( std::size_t i = rw_trace.size(); i < max_rw_size; i++ ){
-                                integral_type mask = (1 << op_bits_amount);
-                                for( std::size_t j = 0; j < op_bits_amount; j++){
-                                    mask >>= 1;
-                                    op_bits[i][j] = (((PADDING_OP & mask) == 0) ? 0 : 1);
-                                }
-                            }
-                        }
-                        for( std::size_t i = 0; i < max_rw_size; i++){
-                            if( i % 20 == 0)  std::cout << "."; std::cout.flush();
-                            std::size_t cur_column = rw_table_type::get_witness_amount();
-                            for( std::size_t j = 0; j < op_bits_amount; j++){
-                                allocate(op_bits[i][j], ++cur_column, i);
-                            };
-
-                            for( std::size_t k = 0; k < chunks_amount; k++){
-                                allocate(chunks[i][k], ++cur_column, i);
-                            }
-                            for( std::size_t j = 0; j < diff_index_bits_amount; j++){
-                                allocate(diff_index_bits[i][j], ++cur_column, i);
-                            }
-                            allocate(value_before_hi[i], ++cur_column, i);
-                            allocate(value_before_lo[i], ++cur_column, i);
-                            allocate(diff[i], ++cur_column, i); lookup(diff[i],
-                   "chunk_16_bits/full"); allocate(inv_diff[i], ++cur_column, i);
-                            allocate(is_first[i], ++cur_column, i);
-                            allocate(is_last[i], ++cur_column, i);
-                            allocate(state_root_hi[i], ++cur_column, i);
-                            allocate(state_root_lo[i], ++cur_column, i);
-                            allocate(state_root_before_hi[i], ++cur_column, i);
-                            allocate(state_root_before_lo[i], ++cur_column, i);
-                        }
-                        std::cout << std::endl;
-                        if constexpr (stage == GenerationStage::CONSTRAINTS) {
-                            std::vector<TYPE> every_row_constraints;
-                            std::vector<TYPE> non_first_row_constraints;
-                            std::vector<TYPE> chunked_16_lookups;
-                            for( std::size_t j = 0; j < diff_index_bits_amount; j++){
-                                every_row_constraints.push_back(context_object.relativize(diff_index_bits[1][j]
-                   * (diff_index_bits[1][j] - 1), -1));
-                            }
-                            for( std::size_t k = 0; k < chunks_amount; k++){
-                                chunked_16_lookups.push_back(context_object.relativize(chunks[1][k],
-                   -1));
-                            }
-                            TYPE op_bit_composition;
-                            for( std::size_t j = 0; j < op_bits_amount; j++){
-                                every_row_constraints.push_back(context_object.relativize(op_bits[1][j]
-                   * (op_bits[1][j] - 1), -1)); if(j == 0) { op_bit_composition =
-                   op_bits[1][j]; } else { op_bit_composition *= 2; op_bit_composition +=
-                   op_bits[1][j];
-                                }
-                            }
-                            every_row_constraints.push_back(context_object.relativize(op_bit_composition
-                   - op[1], -1));
-
-                            TYPE id_composition;
-                            std::size_t cur_chunk = 0;
-                            id_composition = chunks[1][cur_chunk++]; id_composition *=
-                   (1<<16); id_composition += chunks[1][cur_chunk++];
-                            every_row_constraints.push_back(context_object.relativize(id[1]
-                   - id_composition, -1));
-
-                            TYPE addr_composition;
-                            addr_composition = chunks[1][cur_chunk++]; addr_composition *=
-                   (1<<16); //1 addr_composition += chunks[1][cur_chunk++];
-                   addr_composition *= (1<<16); //2 addr_composition +=
-                   chunks[1][cur_chunk++]; addr_composition *= (1<<16); //3
-                            addr_composition += chunks[1][cur_chunk++]; addr_composition
-                   *= (1<<16); //4 addr_composition += chunks[1][cur_chunk++];
-                   addr_composition *= (1<<16); //5 addr_composition +=
-                   chunks[1][cur_chunk++]; addr_composition *= (1<<16); //6
-                            addr_composition += chunks[1][cur_chunk++]; addr_composition
-                   *= (1<<16); //7 addr_composition += chunks[1][cur_chunk++];
-                   addr_composition *= (1<<16); //8 addr_composition +=
-                   chunks[1][cur_chunk++]; addr_composition *= (1<<16); //9
-                            addr_composition += chunks[1][cur_chunk++];
-                            every_row_constraints.push_back(context_object.relativize(address[1]
-                   - addr_composition, -1));
-
-                            TYPE storage_key_hi_comp;
-                            storage_key_hi_comp = chunks[1][cur_chunk++];
-                   storage_key_hi_comp *= (1<<16); //1 storage_key_hi_comp +=
-                   chunks[1][cur_chunk++]; storage_key_hi_comp *= (1<<16); //2
-                            storage_key_hi_comp += chunks[1][cur_chunk++];
-                   storage_key_hi_comp *= (1<<16); //3 storage_key_hi_comp +=
-                   chunks[1][cur_chunk++]; storage_key_hi_comp *= (1<<16); //4
-                            storage_key_hi_comp += chunks[1][cur_chunk++];
-                   storage_key_hi_comp *= (1<<16); //5 storage_key_hi_comp +=
-                   chunks[1][cur_chunk++]; storage_key_hi_comp *= (1<<16); //6
-                            storage_key_hi_comp += chunks[1][cur_chunk++];
-                   storage_key_hi_comp *= (1<<16); //7 storage_key_hi_comp +=
-                   chunks[1][cur_chunk++];
-                            every_row_constraints.push_back(context_object.relativize(storage_key_hi[1]
-                   - storage_key_hi_comp, -1));
-
-                            TYPE storage_key_lo_comp;
-                            storage_key_lo_comp = chunks[1][cur_chunk++];
-                   storage_key_lo_comp *= (1<<16); //1 storage_key_lo_comp +=
-                   chunks[1][cur_chunk++]; storage_key_lo_comp *= (1<<16); //2
-                            storage_key_lo_comp += chunks[1][cur_chunk++];
-                   storage_key_lo_comp *= (1<<16); //3 storage_key_lo_comp +=
-                   chunks[1][cur_chunk++]; storage_key_lo_comp *= (1<<16); //4
-                            storage_key_lo_comp += chunks[1][cur_chunk++];
-                   storage_key_lo_comp *= (1<<16); //5 storage_key_lo_comp +=
-                   chunks[1][cur_chunk++]; storage_key_lo_comp *= (1<<16); //6
-                            storage_key_lo_comp += chunks[1][cur_chunk++];
-                   storage_key_lo_comp *= (1<<16); //7 storage_key_lo_comp +=
-                   chunks[1][cur_chunk++];
-                            every_row_constraints.push_back(context_object.relativize(storage_key_lo[1]
-                   - storage_key_lo_comp, -1));
-
-                            TYPE rw_id_composition;
-                            rw_id_composition = chunks[1][cur_chunk++]; rw_id_composition
-                   *= (1<<16); rw_id_composition += chunks[1][cur_chunk++];
-                            every_row_constraints.push_back(context_object.relativize(rw_id[1]
-                   - rw_id_composition, -1));
-
-                            sorted_prev = {op[0]};
-                            sorted = {op[1]};
-                            for( std::size_t j = 0; j < chunks_amount; j++ ){
-                                sorted_prev.push_back(chunks[0][j]);
-                                sorted.push_back(chunks[1][j]);
-                                if( j == 12 ) {
-                                    sorted_prev.push_back(field_type[0]);
-                                    sorted.push_back(field_type[1]);
-                                }
-                            }
-
-                            TYPE start_selector = bit_tag_selector(op_bits[1], START_OP);
-                            TYPE stack_selector = bit_tag_selector(op_bits[1], STACK_OP);
-                            TYPE memory_selector = bit_tag_selector(op_bits[1],
-                   MEMORY_OP); TYPE storage_selector = bit_tag_selector(op_bits[1],
-                   STORAGE_OP); TYPE transient_storage_selector =
-                   bit_tag_selector(op_bits[1], TRANSIENT_STORAGE_OP); TYPE
-                   call_context_selector = bit_tag_selector(op_bits[1], CALL_CONTEXT_OP);
-                            TYPE account_selector = bit_tag_selector(op_bits[1],
-                   ACCOUNT_OP); TYPE tx_refund_selector = bit_tag_selector(op_bits[1],
-                   TX_REFUND_OP); TYPE tx_access_list_account_selector =
-                   bit_tag_selector(op_bits[1], TX_ACCESS_LIST_ACCOUNT_OP); TYPE
-                   tx_access_list_account_storage_selector = bit_tag_selector(op_bits[1],
-                   TX_ACCESS_LIST_ACCOUNT_STORAGE_OP); TYPE tx_log_selector =
-                   bit_tag_selector(op_bits[1], TX_LOG_OP); TYPE tx_receipt_selector =
-                   bit_tag_selector(op_bits[1], TX_RECEIPT_OP); TYPE padding_selector =
-                   bit_tag_selector(op_bits[1], PADDING_OP);
-
-                            for( std::size_t diff_ind = 0; diff_ind < sorted.size();
-                   diff_ind++ ){ TYPE diff_ind_selector =
-                   bit_tag_selector<diff_index_bits_amount>(diff_index_bits[1], diff_ind);
-                                for(std::size_t less_diff_ind = 0; less_diff_ind <
-                   diff_ind; less_diff_ind++){
-                                    non_first_row_constraints.push_back(context_object.relativize((op[1]
-                   - PADDING_OP) * diff_ind_selector *
-                   (sorted[less_diff_ind]-sorted_prev[less_diff_ind]),-1));
-                                }
-                                non_first_row_constraints.push_back(
-                   context_object.relativize((op[1] - PADDING_OP) * diff_ind_selector *
-                   (sorted[diff_ind] - sorted_prev[diff_ind] - diff[1]), -1));
-                            }
-
-                            every_row_constraints.push_back(context_object.relativize(is_write[1]
-                   * (is_write[1]-1), -1));
-                            every_row_constraints.push_back(context_object.relativize(is_first[1]
-                   * (is_first[1]-1), -1));
-                            every_row_constraints.push_back(context_object.relativize((diff[1]
-                   * inv_diff[1] - 1) * diff[1], -1));
-                            every_row_constraints.push_back(context_object.relativize((diff[1]
-                   * inv_diff[1] - 1) * inv_diff[1], -1));
-                            every_row_constraints.push_back(context_object.relativize(is_first[1]
-                   * (is_first[1] - 1), -1));
-                            every_row_constraints.push_back(context_object.relativize(is_last[1]
-                   * (is_last[1] - 1), -1));
-                            every_row_constraints.push_back(context_object.relativize((op[1]
-                   - START_OP) * (op[1] - PADDING_OP) * (is_first[1] - 1) *
-                   (diff_index_bits[1][0] - 1), -1));
-                            every_row_constraints.push_back(context_object.relativize((op[1]
-                   - START_OP) * (op[1] - PADDING_OP) * (is_first[1] - 1) *
-                   (diff_index_bits[1][1] - 1), -1));
-                            every_row_constraints.push_back(context_object.relativize((op[1]
-                   - START_OP) * (op[1] - PADDING_OP) * (is_first[1] - 1) *
-                   (diff_index_bits[1][2] - 1), -1));
-                            every_row_constraints.push_back(context_object.relativize((op[1]
-                   - START_OP) * (op[1] - PADDING_OP) * (is_first[1] - 1) *
-                   (diff_index_bits[1][3] - 1), -1));
-
-                            non_first_row_constraints.push_back(context_object.relativize((op[0]
-                   - START_OP) * (op[0] - PADDING_OP)
-                                * is_last[0] * diff_index_bits[1][0]
-                                * diff_index_bits[1][1] * diff_index_bits[1][2]
-                                * diff_index_bits[1][3], -1));
-                            every_row_constraints.push_back(context_object.relativize((op[1]
-                   - START_OP) * (op[1] - PADDING_OP) * (is_first[1] - 1) *
-                   (value_before_hi[1] - value_before_hi[0]), -1));
-                            every_row_constraints.push_back(context_object.relativize((op[1]
-                   - START_OP) * (op[1] - PADDING_OP) * (is_first[1] - 1) *
-                   (value_before_lo[1] - value_before_lo[0]), -1));
-
-
-                    //                     // Specific constraints for START
-                            std::map<std::size_t, std::vector<TYPE>> special_constraints;
-                            special_constraints[START_OP].push_back(context_object.relativize(start_selector
-                   * storage_key_hi[1], -1));
-                            special_constraints[START_OP].push_back(context_object.relativize(start_selector
-                   * storage_key_lo[1], -1));
-                            special_constraints[START_OP].push_back(context_object.relativize(start_selector
-                   * id[1], -1));
-                            special_constraints[START_OP].push_back(context_object.relativize(start_selector
-                   * address[1], -1));
-                            special_constraints[START_OP].push_back(context_object.relativize(start_selector
-                   * field_type[1], -1));
-                            special_constraints[START_OP].push_back(context_object.relativize(start_selector
-                   * rw_id[1], -1));
-                            special_constraints[START_OP].push_back(context_object.relativize(start_selector
-                   * value_before_hi[1], -1));
-                            special_constraints[START_OP].push_back(context_object.relativize(start_selector
-                   * value_before_lo[1], -1));
-                            special_constraints[START_OP].push_back(context_object.relativize(start_selector
-                   * state_root_hi[1], -1));
-                            special_constraints[START_OP].push_back(context_object.relativize(start_selector
-                   * state_root_lo[1], -1));
-                            special_constraints[START_OP].push_back(context_object.relativize(start_selector
-                   * state_root_before_hi[1], -1));
-                            special_constraints[START_OP].push_back(context_object.relativize(start_selector
-                   * state_root_before_lo[1], -1));
-
-                            // Specific constraints for STACK
-                            special_constraints[STACK_OP].push_back(context_object.relativize(stack_selector
-                   * field_type[1], -1));
-                            special_constraints[STACK_OP].push_back(context_object.relativize(stack_selector
-                   * is_first[1] * (1 - is_write[1]), -1));  // 4. First stack operation
-                   is obviously write
-                            //if(i!=0) {
-                                non_first_row_constraints.push_back(context_object.relativize(stack_selector
-                   * (address[1] - address[0]) * (is_write[1] - 1), -1)); // 5. First
-                   operation is always write
-                                non_first_row_constraints.push_back(context_object.relativize(stack_selector
-                   * (1 - is_first[1]) * (address[1] - address[0]) * (address[1] -
-                   address[0] - 1), -1));      // 6. Stack pointer always grows and only
-                   by one
-                                non_first_row_constraints.push_back(context_object.relativize(stack_selector
-                   * (1 - is_first[1]) * (state_root_hi[1] - state_root_before_hi[0]),
-                   -1));
-                                non_first_row_constraints.push_back(context_object.relativize(stack_selector
-                   * (1 - is_first[1]) * (state_root_lo[1] - state_root_before_lo[0]),
-                   -1));
-                            //}
-                            special_constraints[STACK_OP].push_back(context_object.relativize(stack_selector
-                   * storage_key_hi[1], -1));
-                            special_constraints[STACK_OP].push_back(context_object.relativize(stack_selector
-                   * storage_key_lo[1], -1));
-                            special_constraints[STACK_OP].push_back(context_object.relativize(stack_selector
-                   * value_before_hi[1], -1));
-                            special_constraints[STACK_OP].push_back(context_object.relativize(stack_selector
-                   * value_before_lo[1], -1));
-                            chunked_16_lookups.push_back(context_object.relativize(stack_selector
-                   * address[1], -1));
-                            chunked_16_lookups.push_back(context_object.relativize(1023 -
-                   stack_selector * address[1], -1));
-
-                            // Specific constraints for MEMORY
-                            // address is 32 bit
-                            //if( i != 0 )
-                                non_first_row_constraints.push_back(context_object.relativize(memory_selector
-                   * (is_first[1] - 1) * (is_write[1] - 1) * (value_lo[1] - value_lo[0]),
-                   -1));       // 4. for read operations value is equal to previous value
-                            special_constraints[MEMORY_OP].push_back(context_object.relativize(memory_selector
-                   * value_hi[1], -1));
-                            special_constraints[MEMORY_OP].push_back(context_object.relativize(memory_selector
-                   * is_first[1] * (is_write[1] - 1) * value_lo[1], -1));
-                            special_constraints[MEMORY_OP].push_back(context_object.relativize(memory_selector
-                   * field_type[1], -1));
-                            special_constraints[MEMORY_OP].push_back(context_object.relativize(memory_selector
-                   * storage_key_hi[1], -1));
-                            special_constraints[MEMORY_OP].push_back(context_object.relativize(memory_selector
-                   * storage_key_lo[1], -1));
-                            special_constraints[MEMORY_OP].push_back(context_object.relativize(memory_selector
-                   * value_before_hi[1], -1));
-                            special_constraints[MEMORY_OP].push_back(context_object.relativize(memory_selector
-                   * value_before_lo[1], -1));
-                            special_constraints[MEMORY_OP].push_back(context_object.relativize(memory_selector
-                   * (1 - is_first[1]) * (state_root_hi[1] - state_root_before_hi[1]),
-                   -1));
-                            special_constraints[MEMORY_OP].push_back(context_object.relativize(memory_selector
-                   * (1 - is_first[1]) * (state_root_lo[1] - state_root_before_lo[1]),
-                   -1));
-                            chunked_16_lookups.push_back(context_object.relativize(memory_selector
-                   * value_lo[1], -1));
-                            chunked_16_lookups.push_back(context_object.relativize(255 -
-                   memory_selector * value_lo[1], -1));
-
-
-                            // Specific constraints for STORAGE
-                            // lookup to MPT circuit
-                            // field is 0
-                            special_constraints[STORAGE_OP].push_back(context_object.relativize(storage_selector
-                   * field_type[1], -1));
-                            //lookup_constrain({"MPT table", {
-                            //    storage_selector * addr,
-                            //    storage_selector * field,
-                            //    storage_selector * storage_key_hi,
-                            //    storage_selector * storage_key_lo,
-                            //    storage_selector * value_before_hi,
-                            //    storage_selector * value_before_lo,
-                            //    storage_selector * value_hi,
-                            //    storage_selector * value_lo,
-                            //    storage_selector * state_root_hi,
-                            //    storage_selector * state_root_lo
-                            //}});
-
-                            // Specific constraints for TRANSIENT_STORAGE
-                            // field is 0
-                            special_constraints[TRANSIENT_STORAGE_OP].push_back(context_object.relativize(transient_storage_selector
-                   * field_type[1], -1));
-
-                            // Specific constraints for CALL_CONTEXT
-                            // address, storage_key, initial_value, value_prev are 0
-                            // state_root = state_root_prev
-                            // range_check for field_flag
-                            special_constraints[CALL_CONTEXT_OP].push_back(context_object.relativize(call_context_selector
-                   * address[1], -1));
-                            special_constraints[CALL_CONTEXT_OP].push_back(context_object.relativize(call_context_selector
-                   * storage_key_hi[1], -1));
-                            special_constraints[CALL_CONTEXT_OP].push_back(context_object.relativize(call_context_selector
-                   * storage_key_lo[1], -1));
-                            special_constraints[CALL_CONTEXT_OP].push_back(context_object.relativize(call_context_selector
-                   * (1 - is_first[1]) * (state_root_hi[1] - state_root_before_hi[1]),
-                   -1));
-                            special_constraints[CALL_CONTEXT_OP].push_back(context_object.relativize(call_context_selector
-                   * (1 - is_first[1]) * (state_root_lo[1] - state_root_before_lo[1]),
-                   -1));
-                            special_constraints[CALL_CONTEXT_OP].push_back(context_object.relativize(call_context_selector
-                   * value_before_hi[1], -1));
-                            special_constraints[CALL_CONTEXT_OP].push_back(context_object.relativize(call_context_selector
-                   * value_before_lo[1], -1));
-
-                            // Specific constraints for ACCOUNT_OP
-                            // id, storage_key 0
-                            // field_tag -- Range
-                            // MPT lookup for last access
-                            // value and value_prev consistency
-                            special_constraints[ACCOUNT_OP].push_back(context_object.relativize(account_selector
-                   * id[1], -1));
-                            special_constraints[ACCOUNT_OP].push_back(context_object.relativize(account_selector
-                   * storage_key_hi[1], -1));
-                            special_constraints[ACCOUNT_OP].push_back(context_object.relativize(account_selector
-                   * storage_key_lo[1], -1));
-                            //lookup_constrain({"MPT table", {
-                            //    storage_selector * is_last * addr,
-                            //    storage_selector * is_last * field,
-                            //    storage_selector * is_last * storage_key_hi,
-                            //    storage_selector * is_last * storage_key_lo,
-                            //    storage_selector * is_last * value_before_hi,
-                            //    storage_selector * is_last * value_before_lo,
-                            //    storage_selector * is_last * value_hi,
-                            //    storage_selector * is_last * value_lo,
-                            //    storage_selector * is_last * state_root_hi,
-                            //    storage_selector * is_last * state_root_lo,
-                            //    storage_selector * is_last * state_root_before_hi,
-                            //    storage_selector * is_last * state_root_before_lo
-                            //}});
-
-                            // Specific constraints for TX_REFUND_OP
-                            // address, field_tag and storage_key are 0
-                            // state_root eqauls state_root_prev
-                            // initial_value is 0
-                            // if first access is Read then value = 0
-                            special_constraints[TX_REFUND_OP].push_back(context_object.relativize(tx_refund_selector
-                   * address[1], -1));
-                            special_constraints[TX_REFUND_OP].push_back(context_object.relativize(tx_refund_selector
-                   * field_type[1], -1));
-                            special_constraints[TX_REFUND_OP].push_back(context_object.relativize(tx_refund_selector
-                   * storage_key_hi[1], -1));
-                            special_constraints[TX_REFUND_OP].push_back(context_object.relativize(tx_refund_selector
-                   * storage_key_lo[1], -1));
-                            special_constraints[TX_REFUND_OP].push_back(context_object.relativize(tx_refund_selector
-                   * is_first[1] * (1-is_write[1]) * value_hi[1], -1));
-                            special_constraints[TX_REFUND_OP].push_back(context_object.relativize(tx_refund_selector
-                   * is_first[1] * (1-is_write[1]) * value_lo[1], -1));
-                            special_constraints[TX_REFUND_OP].push_back(context_object.relativize(tx_refund_selector
-                   * (state_root_hi[1] - state_root_before_hi[1]), -1));
-                            special_constraints[TX_REFUND_OP].push_back(context_object.relativize(tx_refund_selector
-                   * (state_root_lo[1] - state_root_before_lo[1]), -1));
-
-                            // Specific constraints for TX_ACCESS_LIST_ACCOUNT_OP
-                            // field_tag and storage_key are 0
-                            // value is boolean
-                            // initial_value is 0
-                            // state_root eqauls state_root_prev
-                            // value column at previous rotation equals value_prev at
-                   current rotation
-                            special_constraints[TX_ACCESS_LIST_ACCOUNT_OP].push_back(context_object.relativize(tx_access_list_account_selector
-                   * field_type[1], -1));
-                            special_constraints[TX_ACCESS_LIST_ACCOUNT_OP].push_back(context_object.relativize(tx_access_list_account_selector
-                   * storage_key_hi[1], -1));
-                            special_constraints[TX_ACCESS_LIST_ACCOUNT_OP].push_back(context_object.relativize(tx_access_list_account_selector
-                   * storage_key_lo[1], -1));
-                            special_constraints[TX_ACCESS_LIST_ACCOUNT_OP].push_back(context_object.relativize(tx_access_list_account_selector
-                   * value_hi[1], -1));
-                            special_constraints[TX_ACCESS_LIST_ACCOUNT_OP].push_back(context_object.relativize(tx_access_list_account_selector
-                   * value_lo[1] * (1 - value_lo[1]), -1));
-                            special_constraints[TX_ACCESS_LIST_ACCOUNT_OP].push_back(context_object.relativize(tx_access_list_account_selector
-                   * (state_root_hi[1] - state_root_before_hi[1]), -1));
-                            special_constraints[TX_ACCESS_LIST_ACCOUNT_OP].push_back(context_object.relativize(tx_access_list_account_selector
-                   * (state_root_lo[1] - state_root_before_lo[1]), -1));
-                            //if(i != 0)
-                                non_first_row_constraints.push_back(context_object.relativize(tx_access_list_account_selector
-                   * (1 - is_first[1]) * (value_hi[0] - value_before_hi[1]), -1));
-                            //if(i != 0)
-                                non_first_row_constraints.push_back(context_object.relativize(tx_access_list_account_selector
-                   * (1 - is_first[1]) * (value_lo[0] - value_before_lo[1]), -1));
-
-                            // Specific constraints for
-                            //    field_tag is 0
-                            //    value is boolean
-                            //    initial_value is 0
-                            //    state_root equals state_root_prev
-                            //    value column at previous rotation equals value_prev at
-                   current rotation
-                            special_constraints[TX_ACCESS_LIST_ACCOUNT_STORAGE_OP].push_back(context_object.relativize(tx_access_list_account_selector
-                   * field_type[1], -1));
-                            special_constraints[TX_ACCESS_LIST_ACCOUNT_STORAGE_OP].push_back(context_object.relativize(tx_access_list_account_selector
-                   * value_hi[1], -1));
-                            special_constraints[TX_ACCESS_LIST_ACCOUNT_STORAGE_OP].push_back(context_object.relativize(tx_access_list_account_selector
-                   * value_lo[1] * (1 - value_lo[1]), -1));
-                            special_constraints[TX_ACCESS_LIST_ACCOUNT_STORAGE_OP].push_back(context_object.relativize(tx_access_list_account_selector
-                   * (state_root_hi[1] - state_root_before_hi[1]), -1));
-                            special_constraints[TX_ACCESS_LIST_ACCOUNT_STORAGE_OP].push_back(context_object.relativize(tx_access_list_account_selector
-                   * (state_root_lo[1] - state_root_before_lo[1]), -1));
-                            //if(i != 0)
-                                non_first_row_constraints.push_back(context_object.relativize(tx_access_list_account_selector
-                   * (1 - is_first[1]) * (value_hi[0] - value_before_hi[1]), -1));
-                            //if(i != 0)
-                                non_first_row_constraints.push_back(context_object.relativize(tx_access_list_account_selector
-                   * (1 - is_first[1]) * (value_lo[0] - value_before_lo[1]), -1));
-
-
-                            // Specific constraints for TX_LOG_OP
-                            //  is_write is true
-                            //  initial_value is 0
-                            //  state_root eqauls state_root_prev
-                            //  value_prev equals initial_value
-                            //  address 64 bits
-                            special_constraints[TX_LOG_OP].push_back(context_object.relativize(tx_log_selector
-                   * (1 - is_write[1]), -1));
-                            special_constraints[TX_LOG_OP].push_back(context_object.relativize(tx_log_selector
-                   * (state_root_hi[1] - state_root_before_hi[1]), -1));
-                            special_constraints[TX_LOG_OP].push_back(context_object.relativize(tx_log_selector
-                   * (state_root_lo[1] - state_root_before_lo[1]), -1));
-                            special_constraints[TX_LOG_OP].push_back(context_object.relativize(tx_log_selector
-                   * value_before_hi[1], -1));
-                            special_constraints[TX_LOG_OP].push_back(context_object.relativize(tx_log_selector
-                   * value_before_lo[1], -1));
-
-                            // Specific constraints for TX_RECEIPT_OP
-                            // address and storage_key are 0
-                            //  field_tag is boolean (according to EIP-658)
-                            //  tx_id increases by 1 and value increases as well if tx_id
-                   changes
-                            //  tx_id is 1 if it's the first row and tx_id is in 11 bits
-                   range
-                            //  state root is the same
-                            //  value_prev is 0 and initial_value is 0
-                            special_constraints[TX_RECEIPT_OP].push_back(context_object.relativize(tx_receipt_selector
-                   * address[1], -1));
-                            special_constraints[TX_RECEIPT_OP].push_back(context_object.relativize(tx_receipt_selector
-                   * storage_key_hi[1], -1));
-                            special_constraints[TX_RECEIPT_OP].push_back(context_object.relativize(tx_receipt_selector
-                   * storage_key_lo[1], -1));
-
-                            // Specific constraints for PADDING
-                            special_constraints[PADDING_OP].push_back(context_object.relativize(padding_selector
-                   * address[1], -1));
-                            special_constraints[PADDING_OP].push_back(context_object.relativize(padding_selector
-                   * storage_key_hi[1], -1));
-                            special_constraints[PADDING_OP].push_back(context_object.relativize(padding_selector
-                   * storage_key_lo[1], -1));
-                            special_constraints[PADDING_OP].push_back(context_object.relativize(padding_selector
-                   * id[1], -1));
-                            special_constraints[PADDING_OP].push_back(context_object.relativize(padding_selector
-                   * address[1], -1));
-                            special_constraints[PADDING_OP].push_back(context_object.relativize(padding_selector
-                   * field_type[1], -1));
-                            special_constraints[PADDING_OP].push_back(context_object.relativize(padding_selector
-                   * rw_id[1], -1));
-                            special_constraints[PADDING_OP].push_back(context_object.relativize(padding_selector
-                   * state_root_hi[1], -1));
-                            special_constraints[PADDING_OP].push_back(context_object.relativize(padding_selector
-                   * state_root_lo[1], -1));
-                            special_constraints[PADDING_OP].push_back(context_object.relativize(padding_selector
-                   * state_root_before_hi[1], -1));
-                            special_constraints[PADDING_OP].push_back(context_object.relativize(padding_selector
-                   * state_root_before_lo[1], -1));
-                            special_constraints[PADDING_OP].push_back(context_object.relativize(padding_selector
-                   * value_hi[1], -1));
-                            special_constraints[PADDING_OP].push_back(context_object.relativize(padding_selector
-                   * value_lo[1], -1));
-                            special_constraints[PADDING_OP].push_back(context_object.relativize(padding_selector
-                   * value_before_hi[1], -1));
-                            special_constraints[PADDING_OP].push_back(context_object.relativize(padding_selector
-                   * value_before_lo[1], -1));
-
-                            std::size_t max_constraints = 0;
-                            for(const auto&[k,constr] : special_constraints){
-                                if( constr.size() > max_constraints) max_constraints =
-                   constr.size();
-                            }
-                            for( std::size_t i = 0; i < max_constraints; i++ ){
-                                TYPE constraint;
-                                for(const auto&[k,constr] : special_constraints){
-                                    if( constr.size() > i ) constraint += constr[i];
-                                }
-                                every_row_constraints.push_back(constraint);
-                            }
-
-                            {
-                                PROFILE_SCOPE("RW circuit constraints row definition")
-                                std::vector<std::size_t> every_row;
-                                std::vector<std::size_t> non_first_row;
-                                for( std::size_t i = 0; i < max_rw_size; i++){
-                                    every_row.push_back(i);
-                                    if( i!= 0 ) non_first_row.push_back(i);
-                                }
-                                for( auto& constraint: every_row_constraints){
-                                    context_object.relative_constrain(constraint, 0,
-                   max_rw_size-1);
-                                }
-                                for( auto &constraint:chunked_16_lookups ){
-                                    std::vector<TYPE> tmp = {constraint};
-                                    context_object.relative_lookup(tmp,
-                   "chunk_16_bits/full", 0, max_rw_size-1);
-                                }
-                                for( auto &constraint: non_first_row_constraints ){
-                                    context_object.relative_constrain(constraint, 1,
-                   max_rw_size - 1);
-                                }
-                            }
-                        }
-                        std::cout << std::endl;
-                */
             }
         }
     };
