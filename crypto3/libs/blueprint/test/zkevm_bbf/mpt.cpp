@@ -91,9 +91,9 @@ public:
         for(const auto &v : proof_path) {
             boost::property_tree::ptree node = v.second;
 
-            mpt_node single_node = {extension, {}};
+            mpt_node single_node = {EXTENSION, {}};
             if (node.size() == 17) {
-                single_node.type = branch;
+                single_node.type = BRANCH;
             }
 
             // std::cout << "[" << std::endl;
@@ -118,7 +118,7 @@ public:
             single_path.proof.push_back(single_node);
         }
         if (single_path.proof.back().value.size() != 17){ // the last node is either a leaf node or a branch node (if leaf doesn't exist)
-            single_path.proof.back().type = leaf; 
+            single_path.proof.back().type = LEAF; 
         }
         paths.push_back(single_path);
 
