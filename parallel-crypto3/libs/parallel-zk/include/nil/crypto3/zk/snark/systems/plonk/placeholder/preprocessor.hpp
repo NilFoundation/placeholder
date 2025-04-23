@@ -444,7 +444,7 @@ namespace nil {
                             s.insert(0);
                         }
 
-                        math::expression_for_each_variable_visitor<variable_type> visitor(
+                        expression_for_each_variable_visitor<variable_type> visitor(
                             [&table_description, &result](const variable_type& var) {
                                 result[table_description.global_index(var)].insert(var.rotation);
                             }

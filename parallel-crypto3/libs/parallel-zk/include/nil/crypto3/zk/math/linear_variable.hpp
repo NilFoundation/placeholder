@@ -35,89 +35,85 @@
 
 #include <vector>
 
-namespace nil {
-    namespace crypto3 {
-        namespace math {
+namespace nil::crypto3::zk::snark {
 
-            /**
-             * Forward declaration.
-             */
-            template<typename VariableType>
-            class linear_term;
+    /**
+     * Forward declaration.
+     */
+    template<typename VariableType>
+    class linear_term;
 
-            /**
-             * Forward declaration.
-             */
-            template<typename VariableType>
-            class linear_combination;
+    /**
+     * Forward declaration.
+     */
+    template<typename VariableType>
+    class linear_combination;
 
-            /********************************* Variable **********************************/
+    /********************************* Variable **********************************/
 
-            /**
-             * A variable represents a formal expression of the form "x_{index}".
-             */
-            template<typename FieldType>
-            class linear_variable {
+    /**
+     * A variable represents a formal expression of the form "x_{index}".
+     */
+    template<typename FieldType>
+    class linear_variable {
 
-                using variable_type = linear_variable<FieldType>;
-            public:
+        using variable_type = linear_variable<FieldType>;
+    public:
 
-                using field_type = FieldType;
-                using value_type = typename FieldType::value_type;
-                using index_type = std::size_t;
-                std::size_t index;
+        using field_type = FieldType;
+        using value_type = typename FieldType::value_type;
+        using index_type = std::size_t;
+        std::size_t index;
 
-                linear_variable(const std::size_t index = 0) : index(index) {};
+        linear_variable(const std::size_t index = 0) : index(index) {};
 
-                linear_term<variable_type>
-                    operator*(const typename FieldType::value_type &field_coeff) const {
-                    return linear_term<variable_type>(*this) * field_coeff;
-                }
+        linear_term<variable_type>
+            operator*(const typename FieldType::value_type &field_coeff) const {
+            return linear_term<variable_type>(*this) * field_coeff;
+        }
 
-                linear_combination<variable_type>
-                    operator+(const linear_combination<variable_type> &other) const {
-                    linear_combination<variable_type> result;
+        linear_combination<variable_type>
+            operator+(const linear_combination<variable_type> &other) const {
+            linear_combination<variable_type> result;
 
-                    result.add_term(*this);
-                    result.terms.insert(result.terms.begin(), other.terms.begin(), other.terms.end());
+            result.add_term(*this);
+            result.terms.insert(result.terms.begin(), other.terms.begin(), other.terms.end());
 
-                    return result;
-                }
+            return result;
+        }
 
-                linear_combination<variable_type>
-                    operator-(const linear_combination<variable_type> &other) const {
-                    return (*this) + (-other);
-                }
+        linear_combination<variable_type>
+            operator-(const linear_combination<variable_type> &other) const {
+            return (*this) + (-other);
+        }
 
-                linear_term<variable_type> operator-() const {
-                    return linear_term<FieldType>(*this) * (-FieldType::value_type::one());
-                }
+        linear_term<variable_type> operator-() const {
+            return linear_term<FieldType>(*this) * (-FieldType::value_type::one());
+        }
 
-                bool operator==(const linear_variable &other) const {
-                    return (this->index == other.index);
-                }
-            };
+        bool operator==(const linear_variable &other) const {
+            return (this->index == other.index);
+        }
+    };
 
-            template<typename FieldType>
-            linear_term<linear_variable<FieldType>> operator*(const typename FieldType::value_type &field_coeff,
-                                                    const linear_variable<FieldType> &var) {
-                return var * field_coeff;
-            }
+    template<typename FieldType>
+    linear_term<linear_variable<FieldType>> operator*(const typename FieldType::value_type &field_coeff,
+                                            const linear_variable<FieldType> &var) {
+        return var * field_coeff;
+    }
 
-            template<typename FieldType>
-            linear_combination<linear_variable<FieldType>> operator+(const typename FieldType::value_type &field_coeff,
-                                                           const linear_variable<FieldType> &var) {
-                return var + field_coeff;
-            }
+    template<typename FieldType>
+    linear_combination<linear_variable<FieldType>> operator+(const typename FieldType::value_type &field_coeff,
+                                                   const linear_variable<FieldType> &var) {
+        return var + field_coeff;
+    }
 
-            template<typename FieldType>
-            linear_combination<linear_variable<FieldType>> operator-(const typename FieldType::value_type &field_coeff,
-                                                           const linear_variable<FieldType> &var) {
-                return linear_combination<linear_variable<FieldType>>(field_coeff) - var;
-            }
+    template<typename FieldType>
+    linear_combination<linear_variable<FieldType>> operator-(const typename FieldType::value_type &field_coeff,
+                                                   const linear_variable<FieldType> &var) {
+        return linear_combination<linear_variable<FieldType>>(field_coeff) - var;
+    }
 
-        }    // namespace math
-    }            // namespace crypto3
-}    // namespace nil
+} // namespace nil::crypto3::zk::snark
 
 #endif    // CRYPTO3_ZK_MATH_LINEAR_VARIABLE_HPP

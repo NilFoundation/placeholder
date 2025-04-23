@@ -22,8 +22,6 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-// TODO: We will move this file to ZK!
-
 #ifndef PARALLEL_CRYPTO3_ZK_POLYNOMIAL_DFS_CACHE_HPP
 #define PARALLEL_CRYPTO3_ZK_POLYNOMIAL_DFS_CACHE_HPP
 
@@ -40,7 +38,9 @@
 
 #include <boost/functional/hash.hpp>
 
+#include <nil/crypto3/math/algorithms/make_evaluation_domain.hpp>
 #include <nil/crypto3/math/domains/evaluation_domain.hpp>
+#include <nil/crypto3/math/polynomial/polynomial.hpp>
 #include <nil/crypto3/math/polynomial/polynomial_dfs.hpp>
 #include <nil/crypto3/zk/snark/arithmetization/plonk/variable.hpp>
 #include <nil/crypto3/zk/snark/arithmetization/plonk/assignment.hpp>
@@ -53,9 +53,9 @@ namespace nil::crypto3::zk::snark {
     template<typename FieldType>
     struct dfs_cache {
         using value_type = typename FieldType::value_type;
-        using polynomial_type = polynomial<value_type>;
-        using polynomial_dfs_type = polynomial_dfs<value_type>;
-        using domain_type = evaluation_domain<FieldType>;
+        using polynomial_type = math::polynomial<value_type>;
+        using polynomial_dfs_type = math::polynomial_dfs<value_type>;
+        using domain_type = math::evaluation_domain<FieldType>;
         using plonk_polynomial_dfs_table = zk::snark::plonk_polynomial_dfs_table<FieldType>;
         using variable_type = zk::snark::plonk_variable<polynomial_dfs_type>;
         using var_without_rotation_type = zk::snark::plonk_variable_without_rotation<polynomial_dfs_type>;
@@ -89,11 +89,11 @@ namespace nil::crypto3::zk::snark {
 
         dfs_cache(std::shared_ptr<plonk_polynomial_dfs_table> table,
                   const polynomial_dfs_type& mask_assignment, const polynomial_dfs_type& lagrange_0)
-            : table(table),
-              mask_assignment(mask_assignment),
-              lagrange_0(lagrange_0),
-              original_domain_size(mask_assignment.size()),
-              domain(get_domain(original_domain_size)) {}
+            : table(table)
+            , mask_assignment(mask_assignment)
+            , lagrange_0(lagrange_0)
+            , original_domain_size(mask_assignment.size())
+            , domain(get_domain(original_domain_size)) {}
 
         dfs_cache(const dfs_cache&) = default;
         dfs_cache &operator=(const dfs_cache&) = default;
@@ -104,7 +104,7 @@ namespace nil::crypto3::zk::snark {
 
         void ensure_domain(std::size_t size) {
             if (!domain_cache.contains(size)) {
-                domain_cache[size] = make_evaluation_domain<FieldType>(size);
+                domain_cache[size] = math::make_evaluation_domain<FieldType>(size);
             }
         }
 
@@ -113,7 +113,7 @@ namespace nil::crypto3::zk::snark {
             if (it != domain_cache.end()) {
                 return it->second;
             }
-            auto new_domain = make_evaluation_domain<FieldType>(size);
+            auto new_domain = math::make_evaluation_domain<FieldType>(size);
             domain_cache[size] = new_domain;
             return new_domain;
         }
@@ -149,11 +149,11 @@ namespace nil::crypto3::zk::snark {
                         new_vars_ifft[i].index >= zk::snark::PLONK_MAX_SELECTOR_ID) {
 
                         if (new_vars_ifft[i].index == PLONK_SPECIAL_SELECTOR_ALL_USABLE_ROWS_SELECTED )
-                            ifft_cache[new_vars_ifft[i]] = std::make_shared<polynomial_type>(std::move(
-                                mask_assignment.coefficients(domain)));
+                            ifft_cache[new_vars_ifft[i]] = std::make_shared<polynomial_type>(
+                                mask_assignment.coefficients(domain));
                         else if (new_vars_ifft[i].index == PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED)
-                            ifft_cache[new_vars_ifft[i]] = std::make_shared<polynomial_type>(std::move(
-                                (mask_assignment - lagrange_0).coefficients(domain)));
+                            ifft_cache[new_vars_ifft[i]] = std::make_shared<polynomial_type>(
+                                (mask_assignment - lagrange_0).coefficients(domain));
                         else if (new_vars_ifft[i].index == PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED)
                             throw std::logic_error("You should not multiply with the selector for all rows.");
                         else
@@ -171,18 +171,20 @@ namespace nil::crypto3::zk::snark {
             for (const auto &v_with_rotation : variables) {
                 if (is_cached(v_with_rotation, size))
                     continue;
-                if (v_with_rotation.rotation != 0)
-                   new_variables_with_rotation.push_back(v_with_rotation); 
 
                 var_without_rotation_type v(v_with_rotation);
                 variable_type v_no_rotataion = v_with_rotation;
                 v_no_rotataion.rotation = 0;
-                if (is_cached(v_no_rotataion, size) || new_vars_set.contains(v)) {
-                    continue;
+
+                if (v_with_rotation.rotation != 0) {
+                    new_variables_with_rotation.push_back(v_with_rotation);
+                    cache[var_and_size_pair_type(v, size)][v_with_rotation.rotation] = nullptr;
                 }
-                new_vars_set.insert(v);
-                cache[var_and_size_pair_type(v, size)][0] = nullptr;
-                cache[var_and_size_pair_type(v, size)][v_with_rotation.rotation] = nullptr;
+
+                if (!is_cached(v_no_rotataion, size) && !new_vars_set.contains(v)) {
+                    new_vars_set.insert(v);
+                    cache[var_and_size_pair_type(v, size)][0] = nullptr;
+                }
             }
 
             std::vector<var_without_rotation_type> new_vars(new_vars_set.begin(), new_vars_set.end());
@@ -203,8 +205,10 @@ namespace nil::crypto3::zk::snark {
                 [&new_variables_with_rotation, size, this](std::size_t i) {
                     auto v_with_rotation = new_variables_with_rotation[i];
                     var_without_rotation_type v(v_with_rotation);
-                    cache[var_and_size_pair_type(v, size)][v_with_rotation.rotation] = std::make_shared<polynomial_dfs_type>(
-                        math::polynomial_shift(*cache[var_and_size_pair_type(v, size)][0], v_with_rotation.rotation, this->original_domain_size));
+                    cache[var_and_size_pair_type(v, size)][v_with_rotation.rotation] = 
+                        std::make_shared<polynomial_dfs_type>(
+                            math::polynomial_shift(*cache[var_and_size_pair_type(v, size)][0],
+                                v_with_rotation.rotation, this->original_domain_size));
                 },
                 ThreadPool::PoolLevel::HIGH);
         }
@@ -212,8 +216,8 @@ namespace nil::crypto3::zk::snark {
         // We have a column in the table for this variable.
         void ensure_ifft_cache_for_standard_variable(const var_without_rotation_type &var) {
             auto original_column = table->get_variable_value_without_rotation(var);
-            ifft_cache[var] = std::make_shared<polynomial_type>(std::move(
-                original_column.coefficients(domain)));
+            ifft_cache[var] = std::make_shared<polynomial_type>(
+                original_column.coefficients(domain));
         }
 
         bool is_cached_ifft(const var_without_rotation_type& v) const {
