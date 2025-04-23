@@ -58,7 +58,7 @@ namespace nil {
 
 
             struct copied_data_item{
-                short_rw_operation_type op;
+                rw_operation_type op;
                 std::size_t context_id;
                 zkevm_word_type address;
                 std::size_t field_type;
@@ -80,7 +80,7 @@ namespace nil {
                 std::size_t         length;
 
                 std::size_t get_op(std::size_t i) const {
-                    if( bytes.size() != 0 ) return std::size_t(short_rw_operation_type::memory);
+                    if( bytes.size() != 0 ) return std::size_t(rw_operation_type::memory);
                     BOOST_ASSERT(i < values.size());
                     return std::size_t(values[i].op);
                 }

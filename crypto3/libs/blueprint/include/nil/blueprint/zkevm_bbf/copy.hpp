@@ -27,7 +27,6 @@
 #include <nil/blueprint/zkevm_bbf/subcomponents/bytecode_table.hpp>
 #include <nil/blueprint/zkevm_bbf/subcomponents/rw_table.hpp>
 #include <nil/blueprint/zkevm_bbf/subcomponents/copy_table.hpp>
-#include <nil/blueprint/zkevm_bbf/subcomponents/call_commit_table.hpp>
 
 namespace nil {
     namespace blueprint {
@@ -46,7 +45,7 @@ namespace nil {
                 using RWTable = rw_table<FieldType, stage>;
                 using KeccakTable = keccak_table<FieldType, stage>;
                 using CopyTable = copy_table<FieldType, stage>;
-                using CallCommitTable = call_commit_table<FieldType, stage>;
+                using StateTable = state_table<FieldType, stage>;
 
                 using typename generic_component<FieldType, stage>::table_params;
                 using typename generic_component<FieldType,stage>::TYPE;
@@ -59,7 +58,7 @@ namespace nil {
                     KeccakTable::private_input_type keccak_buffers;
                     RWTable::input_type rw_operations;
                     CopyTable::input_type copy_events;
-                    CallCommitTable::input_type call_commits;
+                    StateTable::input_type state_operations;
                 };
 
                 static constexpr std::size_t copy_advice_amount = 25;
@@ -69,7 +68,7 @@ namespace nil {
                     std::size_t max_rw,
                     std::size_t max_keccak_blocks,
                     std::size_t max_bytecode,
-                    std::size_t max_call_commits
+                    std::size_t max_state
                 ) {
                     return {
                         .witnesses = copy_advice_amount
@@ -77,11 +76,11 @@ namespace nil {
                                    + RWTable::get_witness_amount()
                                    + KeccakTable::get_witness_amount()
                                    + CopyTable::get_witness_amount()
-                                   + CallCommitTable::get_witness_amount(),
+                                   + StateTable::get_witness_amount(),
                         .public_inputs = 1,
-                        .constants = 3,
+                        .constants = 0,
                         .rows = std::max(
-                            max_call_commits,
+                            max_state,
                             std::max(
                                 std::max(max_copy, max_rw + 1),
                                 std::max(max_keccak_blocks + 1, max_bytecode + 1)
@@ -96,7 +95,7 @@ namespace nil {
                     std::size_t max_rw,
                     std::size_t max_keccak_blocks,
                     std::size_t max_bytecode,
-                    std::size_t max_call_commits
+                    std::size_t max_state
                 ) {
                     context.allocate(input.rlc_challenge, 0, 0, column_type::public_input);
                 }
@@ -107,7 +106,7 @@ namespace nil {
                     std::size_t max_rw,
                     std::size_t max_keccak_blocks,
                     std::size_t max_bytecode,
-                    std::size_t max_call_commits
+                    std::size_t max_state
                 ) :generic_component<FieldType,stage>(context_object) {
                     auto zerohash = zkevm_keccak_hash({});
                     std::cout << "Copy assignment and circuit construction" << std::endl;
@@ -130,22 +129,22 @@ namespace nil {
                     for( std::size_t i = 0; i < RWTable::get_witness_amount(); i++){
                         rw_lookup_area.push_back(current_column++);
                     }
-                    std::vector<std::size_t> call_commit_lookup_area;
-                    for( std::size_t i = 0; i < CallCommitTable::get_witness_amount(); i++){
-                        call_commit_lookup_area.push_back(current_column++);
+                    std::vector<std::size_t> state_lookup_area;
+                    for( std::size_t i = 0; i < StateTable::get_witness_amount(); i++){
+                        state_lookup_area.push_back(current_column++);
                     }
 
                     context_type bytecode_ct = context_object.subcontext(bytecode_lookup_area,0,max_bytecode);
                     context_type keccak_ct = context_object.subcontext( keccak_lookup_area, 0, max_keccak_blocks);
                     context_type rw_ct = context_object.subcontext(rw_lookup_area, 0, max_rw);
                     context_type copy_ct = context_object.subcontext( copy_lookup_area, 0, max_copy);
-                    context_type call_commit_ct = context_object.subcontext( call_commit_lookup_area, 0, max_call_commits);
+                    context_type state_ct = context_object.subcontext( state_lookup_area, 0, max_state);
 
                     BytecodeTable bc_t = BytecodeTable(bytecode_ct, input.bytecodes, max_bytecode);
                     KeccakTable k_t = KeccakTable(keccak_ct, {input.rlc_challenge, input.keccak_buffers}, max_keccak_blocks);
                     RWTable rw_t = RWTable(rw_ct, input.rw_operations, max_rw, true);
                     CopyTable c_t = CopyTable(copy_ct, input.copy_events, max_copy, false);
-                    CallCommitTable cc_t = CallCommitTable(call_commit_ct, input.call_commits, max_call_commits);
+                    StateTable cc_t = StateTable(state_ct, input.state_operations, max_state);
 
 
                     const std::vector<TYPE> is_first = c_t.is_first;
@@ -222,7 +221,7 @@ namespace nil {
                     }
                     for( std::size_t i = 0; i < max_copy; i++){
                         std::size_t current_column = BytecodeTable::get_witness_amount() + KeccakTable::get_witness_amount()
-                        + RWTable::get_witness_amount() + CallCommitTable::get_witness_amount() + CopyTable::get_witness_amount();
+                        + RWTable::get_witness_amount() + StateTable::get_witness_amount() + CopyTable::get_witness_amount();
 
                         for(std::size_t j = 0; j < copy_operand_types_amount - 1; j++){ // Without padding
                             allocate(type_selector[i][j], current_column++, i);

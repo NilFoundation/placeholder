@@ -51,8 +51,19 @@ namespace nil {
                         for(std::size_t i = 0; i < block.tx_amount; i++){
                             auto [_tx, __accounts_initial_state, __existing_accounts] = block_loader->load_transaction(i);
                             tx = std::move(_tx);
-                            _accounts_current_state = _accounts_initial_state = std::move(__accounts_initial_state);
-                            _existing_accounts = std::move(__existing_accounts);
+                            // State before block
+                            if( i == 0 ){
+                                _block_initial_state = __accounts_initial_state;
+                            }
+                            if( __accounts_initial_state.size() != 0 ){
+                                _accounts_initial_state.clear();
+                                _accounts_current_state.clear();
+                                _existing_accounts.clear();
+                                _accounts_initial_state = _accounts_current_state = std::move(__accounts_initial_state);
+                                _existing_accounts = std::move(__existing_accounts);
+                            } else {
+                                _accounts_initial_state = _accounts_current_state;
+                            }
 
                             this->start_transaction();  if (!execution_status) return;
                             this->execute_transaction(); if (!execution_status) return;
@@ -67,6 +78,7 @@ namespace nil {
 
                 // Data preloaded data structures
                 std::set<zkevm_word_type>                               _existing_accounts;
+                std::map<zkevm_word_type, zkevm_account>                _block_initial_state;
                 std::map<zkevm_word_type, zkevm_account>                _accounts_initial_state; // Initial state; Update it after block.
                 std::map<zkevm_word_type, zkevm_account>                _accounts_current_state; // Initial state; Update it after block.
                 std::vector<zkevm_call_context>                         _call_stack;
@@ -136,14 +148,18 @@ namespace nil {
                     _accounts_current_state[tx.from].balance -= tx.gasprice * tx.gas;
                     _accounts_current_state[tx.from].balance -= tx.blob_versioned_hashes.size() * 0x20000;
 
+                    calldata = tx.calldata;
+                    std::size_t zeroes = 0;
+                    for( auto &c: calldata){
+                        if( c == 0 ) zeroes++;
+                        decrease_gas(c==0 ? 4: 16); // calldata cost
+                    }
+                    BOOST_LOG_TRIVIAL(trace) << "Calldata: " << byte_vector_to_sparse_hex_string(calldata);
+                    BOOST_LOG_TRIVIAL(trace) << "Calldata zeroes = " << zeroes << " : ";
+
                     BOOST_LOG_TRIVIAL(trace) << "From balance: 0x" << std::hex << tx.from  << " = " << _accounts_current_state[tx.from].balance << std::dec;
                     BOOST_LOG_TRIVIAL(trace) << "To balance: 0x" << std::hex << tx.to  << " = " << _accounts_current_state[tx.to].balance << std::dec;
                     BOOST_LOG_TRIVIAL(trace) << "Gas: 0x" << std::hex << gas << std::dec;
-
-                    calldata = tx.calldata;
-                    for( auto &c: calldata){
-                        decrease_gas(c==0 ? 4: 16); // calldata cost
-                    }
 
                     // TODO: fix it
                     if( tx.to == 0 ) {
@@ -226,6 +242,7 @@ namespace nil {
                     _call_stack.back().was_accessed.insert({tx.from, 1, 0});
                     _call_stack.back().call_value = call_value;
                     _call_stack.back().call_context_value = call_context_value;
+                    _call_stack.back().state = _accounts_current_state;
 
                     // Precompiles are always warm
                     for( std::size_t i = 1; i < 11; i++){
@@ -263,7 +280,6 @@ namespace nil {
 
                 virtual void start_call(){
                     BOOST_LOG_TRIVIAL(trace) << "Basic start call";
-
                     if( !call_is_create &&  !call_is_create2 ){
                         bytecode = _accounts_current_state[call_addr].bytecode;
                         bytecode_hash = zkevm_keccak_hash(bytecode);
@@ -283,12 +299,12 @@ namespace nil {
                     _call_stack.back().caller = caller;
                     _call_stack.back().call_context_address = call_context_address;
                     _call_stack.back().was_accessed = _call_stack[_call_stack.size() - 2].was_accessed;
-                    _call_stack.back().was_written = _call_stack[_call_stack.size() - 2].was_written;
                     _call_stack.back().transient_storage = _call_stack[_call_stack.size() - 2].transient_storage;
                     _call_stack.back().call_value = call_value;
                     _call_stack.back().call_context_value = call_context_value;
                     _call_stack.back().call_is_create = call_is_create;
                     _call_stack.back().call_is_create2 = call_is_create2;
+                    _call_stack.back().state = _accounts_current_state;
 
                     calldata.clear();
                     for( std::size_t i = 0; i < call_args_length; i++){
@@ -720,7 +736,6 @@ namespace nil {
 
                     _accounts_current_state[call_context_address].storage[addr] = value;
                     _call_stack.back().was_accessed.insert({call_context_address, 0, addr});
-                    _call_stack.back().was_written.insert({call_context_address, 0, addr});
 
                     decrease_gas(cost);
                     pc++;
@@ -730,7 +745,6 @@ namespace nil {
                     call_status = 1;
                     if( _call_stack.size() > 2){
                         _call_stack[_call_stack.size()-2].was_accessed.insert(_call_stack.back().was_accessed.begin(), _call_stack.back().was_accessed.end());
-                        _call_stack[_call_stack.size()-2].was_written.insert(_call_stack.back().was_written.begin(), _call_stack.back().was_written.end());
                         for( auto & [k,v]: _call_stack.back().transient_storage){
                             _call_stack[_call_stack.size()-2].transient_storage[k] = v;
                         }
@@ -765,7 +779,6 @@ namespace nil {
 
                     if( _call_stack.size() > 2){
                         _call_stack[_call_stack.size()-2].was_accessed.insert(_call_stack.back().was_accessed.begin(), _call_stack.back().was_accessed.end());
-                        _call_stack[_call_stack.size()-2].was_written.insert(_call_stack.back().was_written.begin(), _call_stack.back().was_written.end());
                         for( auto & [k,v]: _call_stack.back().transient_storage){
                             _call_stack[_call_stack.size()-2].transient_storage[k] = v;
                         }
@@ -789,6 +802,7 @@ namespace nil {
                         returndata.push_back(memory[offset+i]);
                     }
 
+                    _accounts_current_state = _call_stack[_call_stack.size() - 2].state;
                     call_status = 0;
                     is_end_call = true;
                 }
@@ -796,6 +810,7 @@ namespace nil {
                 virtual void invalid(){
                     returndata.clear();
                     call_status = 0;
+                    _accounts_current_state = _call_stack[_call_stack.size() - 2].state;
                     is_end_call = true;
                 }
 
@@ -1488,7 +1503,6 @@ namespace nil {
                     _accounts_current_state[addr].balance += _accounts_current_state[call_context_address].balance;
                     _accounts_current_state[call_context_address].balance = 0;
                     _call_stack[_call_stack.size()-2].was_accessed.insert(_call_stack.back().was_accessed.begin(), _call_stack.back().was_accessed.end());
-                    _call_stack[_call_stack.size()-2].was_written.insert(_call_stack.back().was_written.begin(), _call_stack.back().was_written.end());
                     for( auto & [k,v]: _call_stack.back().transient_storage){
                         _call_stack[_call_stack.size()-2].transient_storage[k] = v;
                     }
@@ -1801,20 +1815,25 @@ namespace nil {
                     std::size_t returndataoffset = _call_stack.back().lastcall_returndataoffset; // caller CALL opcode parameters
                     std::size_t returndatalength = _call_stack.back().lastcall_returndatalength; // caller CALL opcode parameters
 
+                    pc = 0;
                     stack.clear();
                     memory.clear();
                     returndata.clear();
                     calldata.clear();
-                    _accounts_current_state.clear();
-                    _accounts_initial_state.clear();
-                    _existing_accounts.clear();
+                    // _accounts_current_state.clear();
+                    // _accounts_initial_state.clear();
+                    // _existing_accounts.clear();
                 }
 
                 virtual void end_block(){
                     depth--;
+                    pc = 0;
+                    gas = 0;
                     current_opcode = opcode_to_number(zkevm_opcode::end_block);
                     stack.clear();
                     memory.clear();
+                    calldata.clear();
+                    returndata.clear();
                     _call_stack.pop_back();
                     _accounts_current_state.clear();
                     _existing_accounts.clear();
@@ -1827,6 +1846,7 @@ namespace nil {
                     // TODO: It's only gas error!
                     gas = 0;
                     call_status = 0;
+                    _accounts_current_state = _call_stack[_call_stack.size() - 2].state;
                     is_end_call = true;
                 }
 

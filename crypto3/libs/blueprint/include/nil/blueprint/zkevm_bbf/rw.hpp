@@ -32,7 +32,6 @@
 
 #include <nil/blueprint/bbf/generic.hpp>
 #include <nil/blueprint/zkevm_bbf/subcomponents/rw_table.hpp>
-#include <nil/blueprint/zkevm_bbf/subcomponents/call_commit_table.hpp>
 
 namespace nil {
     namespace blueprint {
@@ -51,8 +50,6 @@ namespace nil {
                 using typename generic_component<FieldType,stage>::TYPE;
 
                 using rw_table_type = rw_table<FieldType, stage>;
-                using call_commit_table_type = call_commit_table<FieldType, stage>;
-
                 using input_type = typename rw_table_type::input_type;
                 using value = typename FieldType::value_type;
                 using integral_type = nil::crypto3::multiprecision::big_uint<257>;
@@ -90,15 +87,14 @@ namespace nil {
                 rw(context_type &context_object, const input_type &input,
                     std::size_t max_rw_size
                 ) :generic_component<FieldType,stage>(context_object) {
-                    BOOST_LOG_TRIVIAL(info) << "RW table constructor";
-                    std::size_t START_OP = std::size_t(short_rw_operation_type::start);
-                    std::size_t STACK_OP = std::size_t(short_rw_operation_type::stack);
-                    std::size_t MEMORY_OP = std::size_t(short_rw_operation_type::memory);
-                    std::size_t CALL_CONTEXT_OP = std::size_t(short_rw_operation_type::call_context);
-                    std::size_t CALLDATA_OP = std::size_t(short_rw_operation_type::calldata);
-                    std::size_t RETURNDATA_OP = std::size_t(short_rw_operation_type::returndata);
-                    std::size_t BLOBHASH_OP = std::size_t(short_rw_operation_type::blobhash);
-                    std::size_t PADDING_OP = std::size_t(short_rw_operation_type::padding);
+                    std::size_t START_OP = std::size_t(rw_operation_type::start);
+                    std::size_t STACK_OP = std::size_t(rw_operation_type::stack);
+                    std::size_t MEMORY_OP = std::size_t(rw_operation_type::memory);
+                    std::size_t CALL_CONTEXT_OP = std::size_t(rw_operation_type::call_context);
+                    std::size_t CALLDATA_OP = std::size_t(rw_operation_type::calldata);
+                    std::size_t RETURNDATA_OP = std::size_t(rw_operation_type::returndata);
+                    std::size_t BLOBHASH_OP = std::size_t(rw_operation_type::blobhash);
+                    std::size_t PADDING_OP = std::size_t(rw_operation_type::padding);
 
                     std::vector<std::size_t> rw_table_area;
                     for( std::size_t i = 0; i < rw_table_type::get_witness_amount(); i++ ) rw_table_area.push_back(i);
@@ -136,12 +132,23 @@ namespace nil {
                     std::vector<TYPE> sorted;
                     std::vector<TYPE> sorted_prev;
 
+                    std::map<rw_operation_type, std::size_t> op_selector_indices;
+                    std::size_t index = 0;
+                    op_selector_indices[rw_operation_type::call_context] = index++;
+                    op_selector_indices[rw_operation_type::stack] = index++;
+                    op_selector_indices[rw_operation_type::memory] = index++;
+                    op_selector_indices[rw_operation_type::calldata] = index++;
+                    op_selector_indices[rw_operation_type::returndata] = index++;
+                    op_selector_indices[rw_operation_type::blobhash] = index++;
+                    op_selector_indices[rw_operation_type::padding] = index++;
+
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
                         auto rw_trace = input;
-                        std::cout << "RW trace.size = " << rw_trace.size() << std::endl;
+                        BOOST_LOG_TRIVIAL(trace) << "RW trace.size = " << rw_trace.size() << std::endl;
+
                         for( std::size_t i = 0; i < rw_trace.size(); i++ ){
                             // First operations is always start i.e. 0
-                            if (i != 0 ) op_selectors[i][std::size_t(rw_trace[i].op) - 1] = 1;
+                            if( i != 0 ) op_selectors[i][op_selector_indices[rw_trace[i].op]] = 1;
                             std::size_t cur_chunk = 0;
                             // id
                             std::size_t mask = 0xffff0000;
@@ -192,7 +199,7 @@ namespace nil {
                         inv_diff[rw_trace.size()] = diff[rw_trace.size()] == 0? 0: diff[rw_trace.size()].inversed();
                         is_diff_non_zero[rw_trace.size()] = diff[rw_trace.size()] == 0? 0 : 1;
                         for( std::size_t i = rw_trace.size(); i < max_rw_size; i++ ){
-                            op_selectors[i][std::size_t(short_rw_operation_type::padding) - 1] = 1;
+                            op_selectors[i][op_selector_indices[rw_operation_type::padding]] = 1;
                         }
                     }
 
@@ -233,9 +240,13 @@ namespace nil {
 
                         TYPE op_constraint;
                         TYPE op_selectors_sum;
+                        BOOST_ASSERT(op_selector_indices.size() == op_selectors_amount);
+
+                        for( auto &[k,v]:op_selector_indices){
+                            op_constraint += op_selectors[1][v] * TYPE(std::size_t(k));
+                        }
                         for( std::size_t j = 0; j < op_selectors_amount; j++ ){
                             op_selectors_sum += op_selectors[1][j];
-                            op_constraint += op_selectors[1][j] * (j+1);
                             every_row_constraints.push_back(op_selectors[1][j] * (op_selectors[1][j] - 1));
                         }
                         non_first_row_constraints.push_back(op_selectors_sum - 1); // Start selector is busy
@@ -264,7 +275,6 @@ namespace nil {
                         non_first_row_constraints.push_back(is_last[1] * (1 - is_first[2]));
                         non_first_row_constraints.push_back(is_first[1] - is_first_constraint);
                         non_first_row_constraints.push_back(diff[1] * inv_diff[1] - is_diff_non_zero[1]);
-                        non_first_row_constraints.push_back((1 - op_selectors[1][std::size_t(short_rw_operation_type::padding) - 1]) * (1 - is_diff_non_zero[1]));
 
                         TYPE id_composition;
                         std::size_t cur_chunk = 0;
@@ -291,16 +301,17 @@ namespace nil {
                         non_first_row_constraints.push_back((1 - is_first[1] ) * (1 - is_write[1]) * (value_lo[1] - value_lo[0]));
 
                         // TYPE start_selector; // Not used
-                        TYPE stack_selector = op_selectors[1][std::size_t(short_rw_operation_type::stack) - 1];
-                        TYPE memory_selector = op_selectors[1][std::size_t(short_rw_operation_type::memory) - 1];
-                        TYPE call_context_selector = op_selectors[1][std::size_t(short_rw_operation_type::call_context) - 1];
-                        TYPE calldata_selector = op_selectors[1][std::size_t(short_rw_operation_type::calldata) - 1];
-                        TYPE returndata_selector = op_selectors[1][std::size_t(short_rw_operation_type::returndata) - 1];
-                        TYPE blobhash_selector = op_selectors[1][std::size_t(short_rw_operation_type::blobhash) - 1];
-                        TYPE padding_selector = op_selectors[1][std::size_t(short_rw_operation_type::padding) - 1];
+                        TYPE call_context_selector = op_selectors[1][op_selector_indices[rw_operation_type::call_context]];
+                        TYPE stack_selector = op_selectors[1][op_selector_indices[rw_operation_type::stack]];
+                        TYPE memory_selector = op_selectors[1][op_selector_indices[rw_operation_type::memory]];
+                        TYPE calldata_selector = op_selectors[1][op_selector_indices[rw_operation_type::calldata]];
+                        TYPE returndata_selector = op_selectors[1][op_selector_indices[rw_operation_type::returndata]];
+                        TYPE blobhash_selector = op_selectors[1][op_selector_indices[rw_operation_type::blobhash]];
+                        TYPE padding_selector = op_selectors[1][op_selector_indices[rw_operation_type::padding]];
 
                         every_row_constraints.push_back((calldata_selector + returndata_selector) *  is_write[1] * (1 - is_first[1]) );
                         every_row_constraints.push_back(is_write[1] *(blobhash_selector + padding_selector));
+                        non_first_row_constraints.push_back((1 - padding_selector) * (1 - is_diff_non_zero[1]));
                         every_row_constraints.push_back(value_hi[1] *(calldata_selector + returndata_selector + memory_selector + padding_selector));
                         chunked_16_lookups.push_back(value_lo[1] * (calldata_selector + returndata_selector + memory_selector));
                         chunked_16_lookups.push_back((255 - value_lo[1]) * (calldata_selector + returndata_selector + memory_selector));

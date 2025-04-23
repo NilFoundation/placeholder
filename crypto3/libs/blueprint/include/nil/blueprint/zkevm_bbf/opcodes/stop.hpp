@@ -34,6 +34,10 @@ namespace nil {
                         depth_inv = depth == 0? 0: depth.inversed();
                         bytecode_length = current_state.bytecode_size();
                         is_from_bytecode = current_state.pc() == current_state.bytecode_size()? 0: 1;
+                        diff_inv = current_state.pc() == current_state.bytecode_size()? 0: (current_state.pc() - bytecode_length).inversed();
+
+                        BOOST_LOG_TRIVIAL(trace) << "\tdepth = " << depth << " bytecode_length = " << bytecode_length
+                                                 << " is_from_bytecode = " << is_from_bytecode;
                     }
                     allocate(is_from_bytecode, 0, 0);
                     allocate(depth, 32, 0);
@@ -59,21 +63,24 @@ namespace nil {
                         // constrain(current_state.gas(0) - current_state.gas_next() - 1);                 // GAS transition
                         // constrain(current_state.stack_size(0) - current_state.stack_size_next());       // stack_size transition
                         // constrain(current_state.memory_size(0) - current_state.memory_size_next());     // memory_size transition
-                        // constrain(current_state.rw_counter_next() - current_state.rw_counter(0));   // rw_counter transition
-                        constrain(current_state.opcode_next() - next_opcode); // Next opcode restrictions
-                        lookup(rw_table<FieldType, stage>::call_context_lookup(
-                            current_state.call_id(0),
-                            std::size_t(call_context_field::depth),
-                            TYPE(0),
-                            depth + 1
-                        ), "zkevm_rw");
+                        constrain(current_state.rw_counter_next() - current_state.rw_counter(0) - 1);   // rw_counter transition
 
+                        constrain(current_state.opcode_next() - next_opcode); // Next opcode restrictions
                         // depth is correct
                         lookup(rw_table<FieldType, stage>::call_context_lookup(
                             current_state.call_id(0),
                             std::size_t(call_context_field::depth),
                             TYPE(0),
                             depth + 2
+                        ), "zkevm_rw");
+
+                        lookup(rw_table<FieldType, stage>::call_context_editable_lookup(
+                            current_state.call_id(0),
+                            std::size_t(call_context_field::call_status),
+                            current_state.rw_counter(0),
+                            TYPE(1), // is_write
+                            TYPE(0),
+                            TYPE(1)
                         ), "zkevm_rw");
 
                         // bytecode_lenght is correct

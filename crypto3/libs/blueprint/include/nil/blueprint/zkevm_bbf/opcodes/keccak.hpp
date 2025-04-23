@@ -66,12 +66,7 @@ namespace nil {
                         is_length_zero = length == 0? 0: 1;
                         std::size_t start_offset = std::size_t(current_state.stack_top());
                         std::size_t l = std::size_t(current_state.stack_top(1));
-                        std::vector<std::uint8_t> buffer;
-                        for (std::size_t i = 0; i < l; i++) {
-                            buffer.push_back(
-                                std::uint8_t(current_state.memory(start_offset + i)));
-                        }
-                        auto hash_value = zkevm_keccak_hash(buffer);
+                        auto hash_value = current_state.keccak_result();
                         hash_hi = w_hi<FieldType>(hash_value);
                         hash_lo = w_lo<FieldType>(hash_value);
 

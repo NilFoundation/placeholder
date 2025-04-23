@@ -37,7 +37,7 @@
 #include <nil/blueprint/zkevm_bbf/types/zkevm_state.hpp>
 #include <nil/blueprint/zkevm_bbf/types/zkevm_account.hpp>
 #include <nil/blueprint/zkevm_bbf/types/call_context.hpp>
-#include <nil/blueprint/zkevm_bbf/types/call_commit.hpp>
+
 #include <nil/blueprint/zkevm_bbf/types/zkevm_block.hpp>
 #include <nil/blueprint/zkevm_bbf/types/zkevm_transaction.hpp>
 
@@ -62,16 +62,15 @@ namespace nil {
                 std::vector<copy_event>                                  _copy_events;
                 std::vector<zkevm_state>                                 _zkevm_states;
                 std::vector<std::pair<zkevm_word_type, zkevm_word_type>> _exponentiations;
-                std::map<std::size_t,zkevm_call_commit>                   _call_commits;
+                std::map<zkevm_word_type, zkevm_account>               _accounts;
 
                 std::set<zkevm_word_type>                                 _bytecode_hashes;
-                //std::map<std::tuple<rw_operation_type, zkevm_word_type, std::size_t, zkevm_word_type>, std::size_t>  last_write_rw_counter;
+                std::vector<std::map<std::tuple<rw_operation_type, zkevm_word_type, std::size_t, zkevm_word_type>, std::size_t>> last_state_counter_stack;
             public:
                 virtual zkevm_keccak_buffers keccaks()  {return _keccaks;}
                 virtual zkevm_keccak_buffers bytecodes()  { return _bytecodes;}
                 virtual state_operations_vector state_operations()  {return _state_operations;}
                 virtual short_rw_operations_vector short_rw_operations()  {return _short_rw_operations;}
-                virtual std::map<std::size_t,zkevm_call_commit> call_commits() {return _call_commits;}
                 virtual std::vector<copy_event> copy_events() { return _copy_events;}
                 virtual std::vector<zkevm_state> zkevm_states() { return _zkevm_states;}
                 virtual std::vector<std::pair<zkevm_word_type, zkevm_word_type>> exponentiations(){return _exponentiations;}
@@ -83,7 +82,9 @@ namespace nil {
                     std::sort(_short_rw_operations.begin(), _short_rw_operations.end(), [](short_rw_operation a, short_rw_operation b){
                         return a < b;
                     });
-
+                    std::sort(_state_operations.begin(), _state_operations.end(), [](state_operation a, state_operation b){
+                        return a < b;
+                    });
                 }
 
                 virtual void start_block() override{
@@ -100,14 +101,31 @@ namespace nil {
                         rw_counter
                     ));
                     zkevm_basic_evm::start_block();
+                    last_state_counter_stack.push_back({});
                     rw_counter += block_context_fields_amount;
                     _call_stack.back().call_id = block_id;
+                    {
+                        state_operation s;
+                        s.op = rw_operation_type::call_context;
+                        s.id = call_id;
+                        s.address = std::size_t(state_call_context_fields::parent_id);
+                        s.field = 0;
+                        s.storage_key = 0;
+                        s.rw_counter = call_id;
+                        s.is_write = false;
+                        s.initial_value = 0;
+                        s.call_initial_value = 0;
+                        s.previous_value = 0;
+                        s.value = 0;
+                        s.parent_id = 0;
+                        s.grandparent_id = 0;
+                        _state_operations.push_back(s);
+                    }
                 }
 
                 virtual void start_transaction() override{
                     tx_id = call_id = rw_counter;
                     BOOST_LOG_TRIVIAL(trace) << "START TRANSACTION " << tx_id << std::endl;
-                    _call_stack.back().call_id = tx_id;
                     _zkevm_states.push_back(zkevm_state(
                         call_id,
                         bytecode_hash,
@@ -119,6 +137,8 @@ namespace nil {
                         rw_counter
                     ));
                     zkevm_basic_evm::start_transaction();
+                    _call_stack.back().call_id = tx_id;
+                    last_state_counter_stack.push_back({});
                     if( _bytecode_hashes.count(bytecode_hash) == 0){
                         _keccaks.new_buffer(
                             bytecode
@@ -136,13 +156,62 @@ namespace nil {
                             call_id, i,rw_counter++, true, calldata[i]
                         ));
                     }
+                    {
+                        state_operation s;
+                        s.op = rw_operation_type::call_context;
+                        s.id = call_id;
+                        s.address = std::size_t(state_call_context_fields::parent_id);
+                        s.field = 0;
+                        s.storage_key = 0;
+                        s.rw_counter = call_id;
+                        s.is_write = false;
+                        s.initial_value = 0;
+                        s.call_initial_value = 0;
+                        s.previous_value = block_id;
+                        s.value = block_id;
+                        s.parent_id = block_id;
+                        s.grandparent_id = 0;
+                        _state_operations.push_back(s);
+                    }
                 }
 
                 virtual void start_call() override{
                     call_id = rw_counter++;
                     BOOST_LOG_TRIVIAL(trace) << "START CALL " << call_id << std::endl;
                     zkevm_basic_evm::start_call();
+                    last_state_counter_stack.push_back({});
                     _call_stack.back().call_id = call_id;
+                    {
+                        state_operation s;
+                        s.op = rw_operation_type::call_context;
+                        s.id = call_id;
+                        s.address = std::size_t(state_call_context_fields::parent_id);
+                        s.field = 0;
+                        s.storage_key = 0;
+                        s.rw_counter = call_id;
+                        s.is_write = false;
+                        s.initial_value = 0;
+                        s.call_initial_value = 0;
+                        s.previous_value = _call_stack[_call_stack.size() - 2].call_id;
+                        s.value = _call_stack[_call_stack.size() - 2].call_id;
+                        s.parent_id = _call_stack[_call_stack.size() - 2].call_id;
+                        s.grandparent_id = _call_stack[_call_stack.size() - 3].call_id;
+                        _state_operations.push_back(s);
+                    }
+                }
+
+                virtual void call() override{
+                    zkevm_basic_evm::call();
+                }
+
+                virtual void delegatecall() override{
+                    BOOST_LOG_TRIVIAL(fatal) << "Delegatecall is not supported yet" << std::endl;
+                    BOOST_ASSERT(false);
+                }
+
+                virtual void staticcall() override{
+                    BOOST_LOG_TRIVIAL(fatal) << "Staticcall is not supported yet" << std::endl;
+                    BOOST_ASSERT(false);
                 }
 
                 virtual void execute_opcode() override{
@@ -167,13 +236,12 @@ namespace nil {
                     _zkevm_states.back().load_size_t_field(
                         zkevm_state_size_t_field::bytecode_size, bytecode.size()
                     );
-                    // _short_rw_operations.push_back(stack_rw_operation(
-                    //     call_id,
-                    //     stack.size() - 1,
-                    //     rw_counter++,
-                    //     true,
-                    //     stack.back()
-                    // ));
+                    _short_rw_operations.push_back(call_context_w_operation(
+                        call_id,
+                        call_context_field::call_status,
+                        rw_counter++,
+                        1
+                    ));
                     zkevm_basic_evm::stop();
                 }
 
@@ -327,19 +395,113 @@ namespace nil {
                     zkevm_word_type key = stack.back();
                     _zkevm_states.back().load_stack(stack,1);
                     append_stack_reads(1);
-                    _zkevm_states.back().load_word_field(
-                        zkevm_state_word_field::storage_key, key
-                    );
+                    _zkevm_states.back().load_word_field(zkevm_state_word_field::call_context_address, call_context_address);
+                    _zkevm_states.back().load_word_field(zkevm_state_word_field::storage_key, key);
                     _zkevm_states.back().load_word_field(
                         zkevm_state_word_field::storage_value,
                         _accounts_current_state[call_context_address].storage.count(key)?_accounts_current_state[call_context_address].storage[key]:0
                     );
+                    _zkevm_states.back().load_word_field(
+                        zkevm_state_word_field::initial_storage_value,
+                        _call_stack[1].state[call_context_address].storage[key]
+                    );
+                    _zkevm_states.back().load_size_t_field(
+                        zkevm_state_size_t_field::was_accessed, _call_stack.back().was_accessed.count({call_context_address, 0, key})
+                    );
+                    {
+                        last_state_counter_stack.back()[{rw_operation_type::access_list, call_context_address, 0, key}] = rw_counter;
+                        state_operation s;
+                        s.op = rw_operation_type::access_list;
+                        s.id = call_id;
+                        s.address = call_context_address;
+                        s.field = 0;
+                        s.storage_key = key;
+                        s.rw_counter = rw_counter++;
+                        s.is_write = true;
+                        s.initial_value = 0;
+                        s.call_initial_value = depth == 2? 0: _call_stack[_call_stack.size() - 2].was_accessed.count({call_context_address, 0, key});
+                        s.previous_value = _call_stack[_call_stack.size() - 1].was_accessed.count({call_context_address, 0, key});
+                        s.value = 1;
+                        s.parent_id = _call_stack[_call_stack.size() - 2].call_id;
+                        s.grandparent_id = depth == 2? 0: _call_stack[_call_stack.size() - 3].call_id;
+                        _state_operations.push_back(s);
+                    }
+                    {
+                        last_state_counter_stack.back()[{rw_operation_type::state, call_context_address, 0, key}] = rw_counter;
+                        state_operation s;
+                        s.op = rw_operation_type::state;
+                        s.id = call_id;
+                        s.address = call_context_address;
+                        s.field = 0;
+                        s.storage_key = key;
+                        s.rw_counter = rw_counter++;
+                        s.is_write = false;
+                        s.initial_value = _call_stack[1].state[call_context_address].storage[key];
+                        s.call_initial_value = depth == 2? _call_stack[1].state[call_context_address].storage[key]: _call_stack.back().state[call_context_address].storage[key];
+                        s.previous_value = _accounts_current_state[call_context_address].storage[key];
+                        s.value = _accounts_current_state[call_context_address].storage[key];
+                        s.parent_id = _call_stack[_call_stack.size() - 2].call_id;
+                        s.grandparent_id = depth == 2? 0: _call_stack[_call_stack.size() - 3].call_id;
+                        _state_operations.push_back(s);
+                    }
                     zkevm_basic_evm::sload();
                     append_stack_writes(1);
                 }
 
                 virtual void sstore() override{
+                    zkevm_word_type key = stack[stack.size() - 1];
+                    zkevm_word_type value = stack[stack.size() - 2];
+                    _zkevm_states.back().load_word_field(zkevm_state_word_field::call_context_address, call_context_address);
+                    _zkevm_states.back().load_word_field(zkevm_state_word_field::storage_key, key);
+                    _zkevm_states.back().load_word_field(
+                        zkevm_state_word_field::storage_value,
+                        _accounts_current_state[call_context_address].storage.count(key)?_accounts_current_state[call_context_address].storage[key]:0
+                    );
+                    _zkevm_states.back().load_word_field(
+                        zkevm_state_word_field::initial_storage_value,
+                        _call_stack[1].state[call_context_address].storage[key]
+                    );
+                    _zkevm_states.back().load_size_t_field(
+                        zkevm_state_size_t_field::was_accessed, _call_stack.back().was_accessed.count({call_context_address, 0, key})
+                    );
+                    _zkevm_states.back().load_stack(stack,2);
                     append_stack_reads(2);
+                    {
+                        last_state_counter_stack.back()[{rw_operation_type::access_list, call_context_address, 0, key}] = rw_counter;
+                        state_operation s;
+                        s.op = rw_operation_type::access_list;
+                        s.id = call_id;
+                        s.address = call_context_address;
+                        s.field = 0;
+                        s.storage_key = key;
+                        s.rw_counter = rw_counter++;
+                        s.is_write = true;
+                        s.initial_value =  0;
+                        s.call_initial_value = depth == 2?  0 : _call_stack[_call_stack.size() - 2].was_accessed.count({call_context_address, 0, key});
+                        s.previous_value = _call_stack[_call_stack.size() - 1].was_accessed.count({call_context_address, 0, key});
+                        s.value = 1;
+                        s.parent_id = _call_stack[_call_stack.size() - 2].call_id;
+                        s.grandparent_id = depth == 2? 0: _call_stack[_call_stack.size() - 3].call_id;
+                        _state_operations.push_back(s);
+                    }
+                    {
+                        last_state_counter_stack.back()[{rw_operation_type::state, call_context_address, 0, key}] = rw_counter;
+                        state_operation s;
+                        s.op = rw_operation_type::state;
+                        s.id = call_id;
+                        s.address = call_context_address;
+                        s.field = 0;
+                        s.storage_key = key;
+                        s.rw_counter = rw_counter++;
+                        s.is_write = true;
+                        s.initial_value = _call_stack[1].state[call_context_address].storage[key];
+                        s.call_initial_value = depth == 2? _accounts_initial_state[call_context_address].storage[key]: _call_stack.back().state[call_context_address].storage[key];
+                        s.previous_value = _accounts_current_state[call_context_address].storage[key];
+                        s.value = value;
+                        s.parent_id = _call_stack[_call_stack.size() - 2].call_id;
+                        s.grandparent_id = depth == 2? 0: _call_stack[_call_stack.size() - 3].call_id;
+                        _state_operations.push_back(s);
+                    }
                     zkevm_basic_evm::sstore();
                 }
 
@@ -630,9 +792,46 @@ namespace nil {
                             offset + i,
                             rw_counter++,
                             false,
-                            calldata[offset + i]
+                            offset+i < calldata.size() ? calldata[offset+i] : 0
                         ));
                     }
+                    append_stack_writes(1);
+                }
+
+                virtual void keccak() override{
+                    std::size_t offset = std::size_t(stack[stack.size() - 1]);
+                    std::size_t length = std::size_t(stack[stack.size() - 2]);
+
+                    _zkevm_states.back().load_stack(stack,2);
+                    append_stack_reads(2);
+                    zkevm_basic_evm::keccak();
+                    _zkevm_states.back().load_word_field(
+                        zkevm_state_word_field::keccak_result,
+                        stack.back()
+                    );
+
+                    copy_event cpy = keccak_copy_event(
+                        call_id,
+                        offset,
+                        rw_counter,
+                        stack.back(),
+                        length
+                    );
+
+                    std::vector<std::uint8_t> buffer;
+                    for( std::size_t i = 0; i < length; i++){
+                        _short_rw_operations.push_back(memory_rw_operation(
+                            call_id,
+                            offset + i,
+                            rw_counter++,
+                            false,
+                            memory[offset + i]
+                        ));
+                        cpy.push_byte(memory[offset + i]);
+                        buffer.push_back(memory[offset + i]);
+                    }
+                    _copy_events.push_back(cpy);
+                    _keccaks.new_buffer(buffer);
                     append_stack_writes(1);
                 }
 
@@ -671,15 +870,24 @@ namespace nil {
                         ));
                         cpy.push_byte(returndata[i]);
                     }
+                    // Write call_status in call_context
+                    _short_rw_operations.push_back(call_context_w_operation(
+                        call_id,
+                        call_context_field::call_status,
+                        rw_counter++,
+                        1
+                    ));
                     _copy_events.push_back(cpy);
                 }
 
                 virtual void end_call() override{
+                    after_call_last_state_operation_update();
                     zkevm_basic_evm::end_call();
                     call_id = _call_stack.back().call_id;
                 }
 
                 virtual void end_transaction() override{
+                    after_call_last_state_operation_update();
                     zkevm_basic_evm::end_transaction();
                     _zkevm_states.push_back(zkevm_state(
                         call_id,
@@ -691,7 +899,6 @@ namespace nil {
                         gas,
                         rw_counter
                     ));
-
                 }
 
                 virtual void end_block() override{
@@ -706,6 +913,24 @@ namespace nil {
                         gas,
                         rw_counter
                     ));
+                    {
+                        state_operation s;
+                        s.op = rw_operation_type::call_context;
+                        s.id = block_id;
+                        s.address = std::size_t(state_call_context_fields::modified_items);
+                        s.field = 0;
+                        s.storage_key = 0;
+                        s.rw_counter = block_id + std::size_t(state_call_context_fields::modified_items);
+                        s.is_write = false;
+                        s.initial_value = last_state_counter_stack.back().size();
+                        s.call_initial_value = last_state_counter_stack.back().size();
+                        s.previous_value = last_state_counter_stack.back().size();
+                        s.value = last_state_counter_stack.back().size();
+                        s.parent_id = 0;
+                        s.grandparent_id = 0;
+                        _state_operations.push_back(s);
+                    }
+                    last_state_counter_stack.pop_back();
                 }
 
 
@@ -720,6 +945,32 @@ namespace nil {
                 std::string print_statistics (){
                     std::stringstream ss;
                     ss << "Opcodes amount = " << _zkevm_states.size() << std::endl;
+                    std::map<zkevm_opcode, std::size_t> opcode_count;
+                    for(auto &op: _zkevm_states){
+                        zkevm_opcode c= opcode_from_number(op.opcode());
+                        if( opcode_count.count(c) ) opcode_count[c]++; else opcode_count[c] = 1;
+                    }
+                    for( auto &[k,v] : opcode_count){
+                        ss << "\tOpcode " << opcode_to_string(k) << " = " << v << std::endl;
+                    }
+                    ss << "RW operations amount = " << _short_rw_operations.size() << std::endl;
+                    ss << "State operations amount = " << _state_operations.size() << std::endl;
+                    std::map<rw_operation_type, std::size_t> rw_count;
+                    for(auto &op: _state_operations){
+                        if( rw_count.count(op.op) ) rw_count[op.op]++; else rw_count[op.op] = 1;
+                    }
+                    for( auto &op: _short_rw_operations){
+                        if( rw_count.count(op.op) ) rw_count[op.op]++; else rw_count[op.op] = 1;
+                    }
+                    for( auto &[k,v] : rw_count){
+                        ss << "\tRW operation " << rw_operation_type_to_string(k) << " = " << v << std::endl;
+                    }
+                    ss << "Copy events amount = " << _copy_events.size() << std::endl;
+                    std::size_t copy_full_length = 0;
+                    for(auto &cpy: _copy_events){
+                        copy_full_length += cpy.length;
+                    }
+                    ss << "Full length of copy events = " << copy_full_length << std::endl;
                     return ss.str();
                 }
             protected:
@@ -743,6 +994,11 @@ namespace nil {
                         call_id,
                         call_context_field::call_context_value,
                         call_context_value
+                    ));
+                    _short_rw_operations.push_back(call_context_header_operation(
+                        call_id,
+                        call_context_field::call_context_address,
+                        call_context_address
                     ));
                     _short_rw_operations.push_back(call_context_header_operation(
                         call_id,
@@ -776,6 +1032,79 @@ namespace nil {
                             stack[stack.size() - w + i]
                         ));
                     }
+                }
+            protected:
+                void after_call_last_state_operation_update(){
+                    {
+                        state_operation s;
+                        s.op = rw_operation_type::call_context;
+                        s.id = call_id;
+                        s.address = std::size_t(state_call_context_fields::modified_items);
+                        s.field = 0;
+                        s.storage_key = 0;
+                        s.rw_counter = call_id + std::size_t(state_call_context_fields::modified_items);
+                        s.is_write = false;
+                        s.initial_value = last_state_counter_stack.back().size();
+                        s.call_initial_value = last_state_counter_stack.back().size();
+                        s.previous_value = last_state_counter_stack.back().size();
+                        s.value = last_state_counter_stack.back().size();
+                        s.parent_id = _call_stack[_call_stack.size() - 2].call_id;
+                        s.grandparent_id = depth <= 3? 0: _call_stack[_call_stack.size() - 4].call_id;
+                        _state_operations.push_back(s);
+                    }
+                    for( auto &[k,v]: last_state_counter_stack.back() ){
+                        auto op = std::get<0>(k);
+                        auto addr = std::get<1>(k);
+                        auto f = std::get<2>(k);
+                        auto st_k = std::get<3>(k);
+                        std::size_t rw_id = v;
+                        std::size_t parent_id = _call_stack[_call_stack.size() - 2].call_id;
+                        std::size_t grandparent_id = depth == 2 ? 0: _call_stack[_call_stack.size() - 3].call_id;
+                        std::size_t grandgrandparent_id = depth <= 3? 0: _call_stack[_call_stack.size() - 4].call_id;
+                        state_operation s;
+                        BOOST_LOG_TRIVIAL(trace) << "Call_id = " << call_id << " parent_id = " << parent_id;
+
+                        s.op = op;
+                        s.address = addr;
+                        s.field = f;
+                        s.storage_key = st_k;
+                        s.id = parent_id;
+                        s.rw_counter = rw_id;
+                        s.is_write = true;
+                        s.parent_id = grandparent_id;
+                        s.grandparent_id = grandgrandparent_id;
+
+                        switch(op){
+                        case rw_operation_type::access_list:
+                        {
+                            s.initial_value = 0;
+                            s.call_initial_value = depth == 2? 0: _call_stack[_call_stack.size() - 2].was_accessed.count({addr, 0, st_k});
+                            s.previous_value = s.call_initial_value;
+                            s.value = _call_stack.back().was_accessed.count({addr, 0, st_k});
+                            break;
+                        }
+                        case rw_operation_type::state:
+                        {
+                            s.initial_value = _block_initial_state[addr].storage[st_k];
+                            s.call_initial_value = _call_stack[0].state[addr].storage[st_k];
+                            s.previous_value = depth == 2? _accounts_initial_state[addr].storage[st_k]: _call_stack.back().state[addr].storage[st_k];
+                            s.value = _accounts_current_state[addr].storage[st_k];
+                            break;
+                        }
+                        case rw_operation_type::transient_storage:
+                            BOOST_LOG_TRIVIAL(fatal) << "Implement me" << std::endl;
+                            BOOST_ASSERT(false);
+                            break;
+                        default:
+                            BOOST_LOG_TRIVIAL(fatal) << "Wrong stack operation" << std::endl;
+                            BOOST_ASSERT(false);
+                        }
+                        if( depth > 2 || op == rw_operation_type::state ) {
+                            _state_operations.push_back(s);
+                            last_state_counter_stack[last_state_counter_stack.size() - 2][k] = v;
+                        }
+                    }
+                    last_state_counter_stack.pop_back();
                 }
             };
         } // namespace bbf

@@ -116,7 +116,7 @@ namespace nil {
                         constrain(current_state.gas(0) - current_state.gas_next()  - memory_expansion_cost);       // GAS transition
                         // constrain(current_state.stack_size(0) - current_state.stack_size_next());               // stack_size transition
                         // constrain(current_state.memory_size(0) - current_state.memory_size_next());             // memory_size transition
-                        constrain(current_state.rw_counter_next() - current_state.rw_counter(0) - 2 - 2 * length); // rw_counter transition
+                        constrain(current_state.rw_counter_next() - current_state.rw_counter(0) - 3 - 2 * length); // rw_counter transition
                         constrain(current_state.opcode_next() - next_opcode); // Next opcode restrictions
 
                         lookup(rw_table<FieldType, stage>::stack_lookup(
@@ -161,6 +161,16 @@ namespace nil {
                             is_length_zero * (current_state.rw_counter(0) + length + 2),             // counter_2
                             length
                         }, "zkevm_copy");
+                        lookup({
+                            rw_table<FieldType, stage>::call_context_editable_lookup(
+                                current_state.call_id(0),
+                                std::size_t(call_context_field::call_status),
+                                current_state.rw_counter(0) + 2 * length + 2,
+                                TYPE(1), // is_write
+                                TYPE(0),
+                                TYPE(1)
+                            )
+                        }, "zkevm_rw");
                     }
                 }
             };

@@ -59,7 +59,7 @@ namespace nil {
                     TYPE value_lo
                 ){
                     return {
-                        TYPE(std::size_t(short_rw_operation_type::call_context)),
+                        TYPE(std::size_t(rw_operation_type::call_context)),
                         call_id,
                         TYPE(field),                                          // address
                         call_id + field,                                      // rw_id
@@ -78,7 +78,7 @@ namespace nil {
                     TYPE value_lo
                 ){
                     return {
-                        TYPE(std::size_t(short_rw_operation_type::call_context)),
+                        TYPE(std::size_t(rw_operation_type::call_context)),
                         call_id,
                         TYPE(field),                                                          // address
                         rw_counter,                                                           // rw_id
@@ -97,7 +97,7 @@ namespace nil {
                     TYPE value_lo
                 ){
                     return {
-                        TYPE(std::size_t(short_rw_operation_type::stack)),
+                        TYPE(std::size_t(rw_operation_type::stack)),
                         call_id,
                         stack_pointer,
                         rw_counter,
@@ -115,7 +115,7 @@ namespace nil {
                     TYPE value_lo
                 ){
                     return {
-                        TYPE(std::size_t(short_rw_operation_type::memory)),
+                        TYPE(std::size_t(rw_operation_type::memory)),
                         call_id,
                         memory_address,
                         rw_counter,
@@ -132,7 +132,7 @@ namespace nil {
                     TYPE value_lo
                 ){
                     return {
-                        TYPE(std::size_t(short_rw_operation_type::calldata)),
+                        TYPE(std::size_t(rw_operation_type::calldata)),
                         call_id,
                         calldata_address,
                         rw_counter,
@@ -150,7 +150,7 @@ namespace nil {
                     TYPE value_lo
                 ){
                     return {
-                        TYPE(std::size_t(short_rw_operation_type::calldata)),
+                        TYPE(std::size_t(rw_operation_type::calldata)),
                         call_id,
                         calldata_address,
                         rw_counter,
@@ -167,7 +167,7 @@ namespace nil {
                     TYPE value_lo
                 ){
                     return {
-                        TYPE(std::size_t(short_rw_operation_type::returndata)),
+                        TYPE(std::size_t(rw_operation_type::returndata)),
                         call_id,
                         returndata_address,
                         rw_counter,
@@ -185,7 +185,7 @@ namespace nil {
                     TYPE value_lo
                 ){
                     return {
-                        TYPE(std::size_t(short_rw_operation_type::returndata)),
+                        TYPE(std::size_t(rw_operation_type::returndata)),
                         call_id,
                         returndata_address,
                         rw_counter,
@@ -208,7 +208,7 @@ namespace nil {
                     if constexpr  (stage == GenerationStage::ASSIGNMENT) {
                         auto rw_trace = input;
                         BOOST_ASSERT(rw_trace.size() <= max_rw_size);
-                        BOOST_ASSERT(rw_trace[0].op == short_rw_operation_type::start);
+                        BOOST_ASSERT(rw_trace[0].op == rw_operation_type::start);
 
                         std::map <std::size_t, std::pair<TYPE, TYPE>> state_value_before; // For STATE type rw_id=>value_prev
                         for( std::size_t i = 0; i < rw_trace.size(); i++ ){
@@ -221,7 +221,7 @@ namespace nil {
                             value_lo[i] = w_lo<FieldType>(rw_trace[i].value);
                         }
                         for( std::size_t i = rw_trace.size(); i < max_rw_size; i++ ){
-                            op[i] = std::size_t(short_rw_operation_type::padding);
+                            op[i] = std::size_t(rw_operation_type::padding);
                         }
                     }
                     for( std::size_t i = 0; i < max_rw_size; i++ ){

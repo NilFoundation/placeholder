@@ -63,6 +63,7 @@ namespace nil {
                 debugtt_block_loader(std::string path){
                     tree = load_debugtt_input(path);
                     for( auto &[k,v]: tree ){
+                        BOOST_LOG_TRIVIAL(trace) << "Key: " << k << std::endl;
                         block_list.push_back({zkevm_word_from_string(k), v});
                     }
                     blocks_amount = block_list.size();
@@ -163,9 +164,12 @@ namespace nil {
                         }
                     }
 
+                    opcode_trace.clear();
                     for( auto &[k,v]: tx_list[i].get_child("trace.structLogs")){
                         opcode_trace.push_back(v);
                     }
+                    if ( i!= 0 )
+                        return {tx, {}, {}};
                     return {tx, _accounts_initial_state, _existing_accounts};
                 }
                 virtual bool are_there_more_blocks() {
@@ -257,7 +261,18 @@ namespace nil {
                     if( !check_equal<std::size_t>(stack.size(), opcode_description.get_child("stack").size(), "Wrong stack size") ) return;
                     std::size_t d = 0;
                     for( const auto &v: opcode_description.get_child("stack") ){
-                        if( !check_equal<zkevm_word_type>(stack[d], zkevm_word_from_string(v.second.data()), "Wrong stack") ) return;
+                        if( !check_equal<zkevm_word_type>(stack[d], zkevm_word_from_string(v.second.data()), "Wrong stack") ) {
+                            std::size_t ind = 0;
+                            for( const auto &v: opcode_description.get_child("stack") ){
+                                BOOST_LOG_TRIVIAL(error)
+                                    << "Stack[" << ind << "] = "
+                                    << std::hex << stack[ind]
+                                    << " != " << v.second.data()
+                                    << std::dec;
+                                ind++;
+                            }
+                            return;
+                        }
                         d++;
                     }
 

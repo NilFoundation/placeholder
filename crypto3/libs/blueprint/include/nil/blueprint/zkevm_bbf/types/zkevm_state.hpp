@@ -42,6 +42,7 @@ namespace nil {
                 virtual zkevm_word_type stack_top(std::size_t depth = 0) const = 0;
                 virtual std::uint8_t    memory(std::size_t addr) const = 0;
                 virtual zkevm_word_type storage(zkevm_word_type key) const = 0;
+                virtual zkevm_word_type initial_storage(zkevm_word_type key) const = 0;
                 virtual std::uint8_t    calldata(std::size_t addr) const = 0;
                 virtual std::uint8_t    returndata(std::size_t addr) const = 0;
                 virtual zkevm_word_type call_context_value() const = 0;
@@ -68,6 +69,7 @@ namespace nil {
                 virtual zkevm_word_type call_context_address() const = 0;
                 virtual std::size_t depth() const = 0;
                 virtual std::size_t bytecode_size() const = 0;
+                virtual zkevm_word_type keccak_result() const = 0;
             };
 
             enum class zkevm_state_word_field: std::size_t {
@@ -75,7 +77,9 @@ namespace nil {
                 storage_value = 1,
                 call_context_address = 2,
                 additional_input = 3,
-                call_context_value = 4
+                call_context_value = 4,
+                initial_storage_value = 5,
+                keccak_result = 6
             };
 
             enum class zkevm_state_size_t_field: std::size_t {
@@ -152,24 +156,26 @@ namespace nil {
                 }
                 void load_calldata(const std::vector<std::uint8_t> &_cdata, std::size_t offset, std::size_t length){
                     BOOST_ASSERT(_calldata.size() == 0);
+                    _calldata.resize(length, 0);
+
                     calldata_offset = offset;
-                    if( offset >= _cdata.size() ) {
-                        _calldata.resize(length, 0);
-                        return;
-                    }
-                    _calldata.insert(_calldata.end(), _cdata.begin() + offset, _cdata.begin() + std::min(_cdata.size(), offset + length));
-                    if( _cdata.size() < offset + length){
-                        _calldata.resize(offset + length, 0);
-                    }
+                    if( offset >= _cdata.size() ) return;
+
+                    for(std::size_t i = 0; i < std::min(_cdata.size() - offset, length); i++ )
+                        _calldata[i] = _cdata[offset+i];
                 }
+
                 void load_returndata(const std::vector<std::uint8_t> &_rdata, std::size_t offset, std::size_t length){
                     BOOST_ASSERT(_returndata.size() == 0);
-                    _returndata.insert(_returndata.end(), _rdata.begin() + offset, _rdata.begin() + std::min(_rdata.size(), offset + length));
-                    if( _rdata.size() < offset + length){
-                        _returndata.resize(offset + length, 0);
-                    }
+                    _returndata.resize(length, 0);
+
                     returndata_offset = offset;
+                    if( offset >= _rdata.size() ) return;
+
+                    for(std::size_t i = 0; i < std::min(_rdata.size() - offset, length); i++ )
+                        _returndata[i] = _rdata[offset+i];
                 }
+
                 void load_word_field(zkevm_state_word_field k, zkevm_word_type v){
                     BOOST_ASSERT( word_fields.count(k) == 0);
                     word_fields[k] = v;
@@ -185,12 +191,24 @@ namespace nil {
                     BOOST_ASSERT( depth < stack.size());
                     return stack.at(stack.size() - 1 - depth);
                 }
+                virtual zkevm_word_type initial_storage(zkevm_word_type key) const override{
+                    BOOST_ASSERT(word_fields.count(zkevm_state_word_field::storage_key));
+                    BOOST_ASSERT(word_fields.count(zkevm_state_word_field::initial_storage_value));
+                    BOOST_ASSERT(word_fields.at(zkevm_state_word_field::storage_key) == key);
+                    return word_fields.at(zkevm_state_word_field::initial_storage_value);
+                }
                 virtual zkevm_word_type storage(zkevm_word_type key) const override{
                     BOOST_ASSERT(word_fields.count(zkevm_state_word_field::storage_key));
                     BOOST_ASSERT(word_fields.count(zkevm_state_word_field::storage_value));
                     BOOST_ASSERT(word_fields.at(zkevm_state_word_field::storage_key) == key);
                     return word_fields.at(zkevm_state_word_field::storage_value);
                 }
+
+                virtual zkevm_word_type keccak_result() const override{
+                    BOOST_ASSERT(word_fields.count(zkevm_state_word_field::keccak_result));
+                    return word_fields.at(zkevm_state_word_field::keccak_result);
+                }
+
                 virtual std::uint8_t memory(std::size_t addr) const override{
                     if( addr < memory_offset) {
                         BOOST_LOG_TRIVIAL(fatal) << "Memory address is out of range! Address = " << addr << " memory_offset = " << memory_offset;
@@ -239,6 +257,8 @@ namespace nil {
                     return size_t_fields.at(zkevm_state_size_t_field::modified_items_amount);
                 }
                 virtual bool was_accessed(zkevm_word_type address, std::size_t field, zkevm_word_type key) const override{
+                    BOOST_ASSERT(word_fields.at(zkevm_state_word_field::storage_key) == key);
+                    BOOST_ASSERT(word_fields.at(zkevm_state_word_field::call_context_address) == address);
                     BOOST_ASSERT( size_t_fields.count(zkevm_state_size_t_field::was_accessed) );
                     return size_t_fields.at(zkevm_state_size_t_field::was_accessed);
                 }

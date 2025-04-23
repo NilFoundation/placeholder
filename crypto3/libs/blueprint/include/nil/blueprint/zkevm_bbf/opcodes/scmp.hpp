@@ -96,7 +96,6 @@ namespace nil {
                                 // !is_negative_A && !is_negative_B && lt => A > B;
                                 //                                  && gt => A < B;
                                 //result = scmp_operation == scmp_type::C_SLT ? a[i] < b[i]: a[i] > b[i];
-                                std::cout << "\tNot equal" << std::endl;
                                 diff = a[i] < b[i]? b[i] - a[i]: a[i] - b[i];
                                 diff_inv = diff.inversed();
                                 lt = a[i] < b[i];

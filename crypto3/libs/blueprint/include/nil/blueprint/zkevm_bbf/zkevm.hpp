@@ -38,11 +38,11 @@
 #include <nil/blueprint/zkevm_bbf/subcomponents/keccak_table.hpp>
 #include <nil/blueprint/zkevm_bbf/subcomponents/bytecode_table.hpp>
 #include <nil/blueprint/zkevm_bbf/subcomponents/rw_table.hpp>
+#include <nil/blueprint/zkevm_bbf/subcomponents/state_table.hpp>
 #include <nil/blueprint/zkevm_bbf/subcomponents/copy_table.hpp>
 #include <nil/blueprint/zkevm_bbf/subcomponents/exp_table.hpp>
 
 #include <nil/blueprint/zkevm_bbf/types/zkevm_state.hpp>
-
 #include <nil/blueprint/zkevm_bbf/opcodes/zkevm_opcodes.hpp>
 
 namespace nil {
@@ -68,6 +68,7 @@ namespace nil {
                 using RWTable = rw_table<FieldType, stage>;
                 using ExpTable = exp_table<FieldType, stage>;
                 using CopyTable = copy_table<FieldType, stage>;
+                using StateTable = state_table<FieldType, stage>;
 
                 struct input_type {
                     TYPE rlc_challenge;
@@ -75,6 +76,7 @@ namespace nil {
                     KeccakTable::private_input_type keccak_buffers;
                     RWTable::input_type rw_operations;
                     CopyTable::input_type copy_events;
+                    StateTable::input_type state_operations;
                     std::conditional_t<
                         stage == GenerationStage::ASSIGNMENT,
                         std::vector<zkevm_state>, std::monostate
@@ -87,34 +89,46 @@ namespace nil {
                     std::size_t max_copy,
                     std::size_t max_rw,
                     std::size_t max_exponentations,
-                    std::size_t max_bytecode
+                    std::size_t max_bytecode,
+                    std::size_t max_state
                 ) {
                     std::size_t implemented_opcodes_amount = get_implemented_opcodes_list().size();
                     std::cout << "Implemented opcodes amount = " << implemented_opcodes_amount << std::endl;
-
-                    return {
-                        .witnesses = state::get_items_amout()
+                    std::size_t witnesses = state::get_items_amout()
                             + (implemented_opcodes_amount + 3) / 4
                             + max_opcode_height / 2
                             + opcode_columns_amount
                             + BytecodeTable::get_witness_amount()
                             + RWTable::get_witness_amount()
                             + ExpTable::get_witness_amount()
-                            + CopyTable::get_witness_amount(),
+                            + CopyTable::get_witness_amount()
+                            + StateTable::get_witness_amount();
+                    BOOST_LOG_TRIVIAL(info) << "ZKEVM circuit witness amount = " << witnesses;
+
+                    return {
+                        .witnesses = witnesses,
                         .public_inputs = 1,
                         .constants = 0,
                         .rows = std::max(
-                            max_zkevm_rows, std::max(
-                                std::max(max_copy, max_rw), std::max(max_exponentations, max_bytecode)
-                            ) + 1
+                            std::max(max_zkevm_rows, max_state),
+                            std::max(
+                                std::max(max_copy, max_rw),
+                                std::max(max_exponentations, max_bytecode)
+                            )
                         )
                     };
                 }
 
                 static void allocate_public_inputs(
-                        context_type &context, input_type &input,
-                        std::size_t max_zkevm_rows, std::size_t max_copy, std::size_t max_rw,
-                        std::size_t max_exponentations, std::size_t max_bytecode) {
+                    context_type &context,
+                    input_type &input,
+                    std::size_t max_zkevm_rows,
+                    std::size_t max_copy,
+                    std::size_t max_rw,
+                    std::size_t max_exponentations,
+                    std::size_t max_bytecode,
+                    std::size_t max_state
+                ) {
                     context.allocate(input.rlc_challenge, 0, 0, column_type::public_input);
                 }
 
@@ -125,7 +139,8 @@ namespace nil {
                     std::size_t max_copy,
                     std::size_t max_rw,
                     std::size_t max_exponentiations,
-                    std::size_t max_bytecode
+                    std::size_t max_bytecode,
+                    std::size_t max_state
                 ) :generic_component<FieldType,stage>(context_object), implemented_opcodes(get_implemented_opcodes_list()) {
                     std::size_t implemented_opcodes_amount = implemented_opcodes.size();
                     std::size_t opcode_selectors_amount = std::ceil(float(implemented_opcodes_amount)/4);
@@ -137,55 +152,70 @@ namespace nil {
                     std::vector<std::vector<TYPE>> opcode_row_selectors(max_zkevm_rows, std::vector<TYPE>(opcode_row_selectors_amount));
 
                     std::vector<std::size_t> opcode_area;
-                    // std::cout << "Opcode_area: ";
+                    std::stringstream os;
+                    os << "Opcode_area: ";
                     for( std::size_t i = 0; i < opcode_columns_amount; i++){
-                        // std::cout << current_column << " ";
+                        os << current_column << " ";
                         opcode_area.push_back(current_column++);
                     }
-                    // std::cout << std::endl;
+                    BOOST_LOG_TRIVIAL(trace) << os.str();
 
                     std::vector<std::size_t> bytecode_lookup_area;
-                    // std::cout << "Bytecode_area: ";
+                    std::stringstream bs;
+                    bs << "Bytecode area: ";
                     for( std::size_t i = 0; i < BytecodeTable::get_witness_amount(); i++){
-                        // std::cout << current_column << " ";
+                        bs << current_column << " ";
                         bytecode_lookup_area.push_back(current_column++);
                     }
-                    // std::cout << std::endl;
+                    BOOST_LOG_TRIVIAL(trace) << bs.str();
 
                     std::vector<std::size_t> exp_lookup_area;
-                    // std::cout << "Exponentiation_area: ";
+                    std::stringstream es;
+                    es << "Exponentiation area: ";
                     for( std::size_t i = 0; i < ExpTable::get_witness_amount(); i++){
-                        // std::cout << current_column << " ";
+                        es << current_column << " ";
                         exp_lookup_area.push_back(current_column++);
                     }
-                    // std::cout << std::endl;
+                    BOOST_LOG_TRIVIAL(trace) << es.str();
 
                     std::vector<std::size_t> rw_lookup_area;
-                    // std::cout << "RW_area: ";
+                    std::stringstream rs;
+                    rs << "RW area: ";
                     for( std::size_t i = 0; i < RWTable::get_witness_amount(); i++){
-                        // std::cout << current_column << " ";
+                        rs << current_column << " ";
                         rw_lookup_area.push_back(current_column++);
                     }
-                    // std::cout << std::endl;
+                    BOOST_LOG_TRIVIAL(trace) << rs.str();
 
                     std::vector<std::size_t> copy_lookup_area;
-                    // std::cout << "Copy_area: ";
+                    std::stringstream cs;
+                    cs << "Copy area: ";
                     for( std::size_t i = 0; i < CopyTable::get_witness_amount(); i++){
-                        // std::cout << current_column << " ";
+                        cs << current_column << " ";
                         copy_lookup_area.push_back(current_column++);
                     }
-                    // std::cout << std::endl;
-                    // std::cout << std::endl;
+                    BOOST_LOG_TRIVIAL(trace) << cs.str();
 
-                    context_type bytecode_ct = context_object.subcontext(bytecode_lookup_area,1,max_bytecode + 1);
-                    context_type exp_ct = context_object.subcontext( exp_lookup_area, 1, max_exponentiations + 1);
-                    context_type rw_ct = context_object.subcontext(rw_lookup_area,1,max_rw + 1);
-                    context_type copy_ct = context_object.subcontext( copy_lookup_area, 1, max_copy + 1);
+                    std::vector<std::size_t> state_lookup_area;
+                    std::stringstream ss;
+                    ss << "State area: ";
+                    for( std::size_t i = 0; i < StateTable::get_witness_amount(); i++){
+                        ss << current_column << " ";
+                        state_lookup_area.push_back(current_column++);
+                    }
+                    BOOST_LOG_TRIVIAL(trace) << ss.str();
+
+                    context_type bytecode_ct = context_object.subcontext(bytecode_lookup_area,0,max_bytecode);
+                    context_type exp_ct = context_object.subcontext( exp_lookup_area, 0, max_exponentiations);
+                    context_type rw_ct = context_object.subcontext(rw_lookup_area,0,max_rw);
+                    context_type copy_ct = context_object.subcontext( copy_lookup_area, 0, max_copy);
+                    context_type state_ct = context_object.subcontext( state_lookup_area, 0, max_state);
 
                     BytecodeTable bc_t = BytecodeTable(bytecode_ct, input.bytecodes, max_bytecode);
                     ExpTable e_t = ExpTable(exp_ct, input.exponentiations, max_exponentiations);
                     RWTable rw_t = RWTable(rw_ct, input.rw_operations, max_rw, true);
                     CopyTable c_t = CopyTable(copy_ct, input.copy_events, max_copy, true);
+                    StateTable s_t = StateTable(state_ct, input.state_operations, max_state);
 
                     auto opcode_impls = get_opcode_implementations<FieldType>();
 
@@ -201,7 +231,7 @@ namespace nil {
                                     << "Opcode not found " << current_opcode
                                     << " with number 0x" << std::hex << current_state.opcode() << std::dec
                                     << " skip it" << std::endl;
-                                //BOOST_ASSERT(false);
+                                BOOST_ASSERT(false);
                                 continue;
                             }
                             std::size_t current_opcode_bare_rows_amount = opcode_impls[current_opcode]->rows_amount();

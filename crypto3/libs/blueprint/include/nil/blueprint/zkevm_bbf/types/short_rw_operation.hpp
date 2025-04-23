@@ -30,24 +30,12 @@
 #include <nil/blueprint/bbf/generic.hpp>
 
 #include <nil/blueprint/zkevm_bbf/types/zkevm_word.hpp>
+#include <nil/blueprint/zkevm_bbf/types/rw_operation_type.hpp>
 #include <nil/blueprint/zkevm_bbf/util/ptree.hpp>
 
 namespace nil {
     namespace blueprint {
         namespace bbf {
-            enum class short_rw_operation_type: std::uint8_t {
-                // Grouped by call, no revertions
-                start = 0,
-                stack = 1,
-                memory = 2,
-                call_context = 3,
-                calldata = 4,
-                returndata = 5,
-                blobhash = 6,
-                padding = 7
-            };
-            static constexpr std::size_t short_rw_operation_types_amount = 8;
-
             enum class block_context_field: std::uint8_t {
                 // Grouped by call, no revertions
                 number = 0
@@ -66,18 +54,20 @@ namespace nil {
                 block_id,
                 tx_id,
                 call_context_value,
+                call_context_address,
                 calldata_size,
                 depth,
                 lastcall_id,
                 lastcall_returndata_offset,
                 lastcall_returndata_length,
                 returndata_size,
+                call_status
             };
             static constexpr std::size_t call_context_readonly_field_amount = 12;
             static constexpr std::size_t call_context_fields_amount = 18;
 
             struct short_rw_operation{
-                short_rw_operation_type op = short_rw_operation_type::start;           // operation type
+                rw_operation_type op = rw_operation_type::start;           // operation type
                 std::size_t             id = 0;
                 std::size_t             address = 0;
                 std::size_t             rw_counter = 0;
@@ -95,14 +85,14 @@ namespace nil {
 
             // For testing purposes
             std::ostream& operator<<(std::ostream& os, const short_rw_operation& obj){
-                if(obj.op == short_rw_operation_type::start )                           os << "START         : ";
-                if(obj.op == short_rw_operation_type::stack )                           os << "STACK         : ";
-                if(obj.op == short_rw_operation_type::memory )                          os << "MEMORY        : ";
-                if(obj.op == short_rw_operation_type::call_context )                    os << "CALL_CONTEXT  : ";
-                if(obj.op == short_rw_operation_type::calldata )                        os << "CALLDATA      : ";
-                if(obj.op == short_rw_operation_type::returndata )                      os << "RETURNDATA    : ";
-                if(obj.op == short_rw_operation_type::blobhash )                        os << "BLOBHASH      : ";
-                if(obj.op == short_rw_operation_type::padding )                         os << "PADDING       : ";
+                if(obj.op == rw_operation_type::start )                           os << "START         : ";
+                if(obj.op == rw_operation_type::stack )                           os << "STACK         : ";
+                if(obj.op == rw_operation_type::memory )                          os << "MEMORY        : ";
+                if(obj.op == rw_operation_type::call_context )                    os << "CALL_CONTEXT  : ";
+                if(obj.op == rw_operation_type::calldata )                        os << "CALLDATA      : ";
+                if(obj.op == rw_operation_type::returndata )                      os << "RETURNDATA    : ";
+                if(obj.op == rw_operation_type::blobhash )                        os << "BLOBHASH      : ";
+                if(obj.op == rw_operation_type::padding )                         os << "PADDING       : ";
 
                 os  << " id = " << obj.id
                     << " rw_id = " << obj.rw_counter
@@ -125,7 +115,7 @@ namespace nil {
                 BOOST_ASSERT(address < 1024);
 
                 short_rw_operation r;
-                r.op = short_rw_operation_type::stack;
+                r.op = rw_operation_type::stack;
                 r.id = id;
                 r.address = address;
                 r.rw_counter = rw_id;
@@ -143,7 +133,7 @@ namespace nil {
                 zkevm_word_type value
             ){
                 short_rw_operation r;
-                r.op = short_rw_operation_type::memory;
+                r.op = rw_operation_type::memory;
                 r.id = id;
                 r.address = address;
                 r.rw_counter = rw_id;
@@ -160,7 +150,7 @@ namespace nil {
                 zkevm_word_type value
             ){
                 short_rw_operation r;
-                r.op = short_rw_operation_type::calldata;
+                r.op = rw_operation_type::calldata;
                 r.id = id;
                 r.address = address;
                 r.rw_counter = rw_id;
@@ -177,7 +167,7 @@ namespace nil {
                 zkevm_word_type value
             ){
                 short_rw_operation r;
-                r.op = short_rw_operation_type::returndata;
+                r.op = rw_operation_type::returndata;
                 r.id = id;
                 r.address = address;
                 r.rw_counter = rw_id;
@@ -192,7 +182,7 @@ namespace nil {
                 zkevm_word_type value
             ){
                 short_rw_operation r;
-                r.op = short_rw_operation_type::call_context;
+                r.op = rw_operation_type::call_context;
                 r.id = call_id;
                 r.address = std::uint8_t(field);
                 r.rw_counter = call_id + std::uint8_t(field);
@@ -210,9 +200,10 @@ namespace nil {
                     field == call_context_field::lastcall_id
                     || field == call_context_field::lastcall_returndata_offset
                     || field == call_context_field::lastcall_returndata_length
+                    || field == call_context_field::call_status
                 );
                 short_rw_operation r;
-                r.op = short_rw_operation_type::call_context;
+                r.op = rw_operation_type::call_context;
                 r.id = call_id;
                 r.address = std::uint8_t(field);
                 r.is_write = true;
@@ -233,7 +224,7 @@ namespace nil {
                     || field == call_context_field::lastcall_returndata_length
                 );
                 short_rw_operation r;
-                r.op = short_rw_operation_type::call_context;
+                r.op = rw_operation_type::call_context;
                 r.id = call_id;
                 r.address = std::uint8_t(field);
                 r.is_write = false;

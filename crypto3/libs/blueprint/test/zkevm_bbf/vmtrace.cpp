@@ -145,7 +145,7 @@ public:
         // std::size_t max_zkevm_rows = max_sizes.max_zkevm_rows;
         // std::size_t max_exponentiations = max_sizes.max_exponentiations;
         // std::size_t max_exp_rows = max_sizes.max_exp_rows;
-        // std::size_t max_call_commits = max_sizes.max_call_commits;
+        // std::size_t max_state = max_sizes.max_state;
 
         // typename copy<field_type, GenerationStage::ASSIGNMENT>::input_type copy_assignment_input;
         // copy_assignment_input.rlc_challenge = 7;
@@ -223,7 +223,7 @@ public:
         //     result =test_bbf_component<field_type, nil::blueprint::bbf::copy>(
         //         copy_circuit,
         //         {7}, copy_assignment_input,
-        //         max_copy, max_rw, max_keccak_blocks, max_bytecode, max_call_commits
+        //         max_copy, max_rw, max_keccak_blocks, max_bytecode, max_state
         //     );
         //     BOOST_ASSERT(result);
         //     std::cout << std::endl;
@@ -263,7 +263,7 @@ public:
         //     // Max_rw, Max_mpt
         //     result = test_bbf_component<field_type, nil::blueprint::bbf::rw>(
         //         rw_circuit,
-        //         {}, rw_assignment_input, max_rw, max_mpt, max_call_commits
+        //         {}, rw_assignment_input, max_rw, max_mpt, max_state
         //     );
         //     BOOST_ASSERT(result);
 
@@ -284,7 +284,7 @@ public:
         //     // Max_rw, Max_mpt
         //     result = test_bbf_component<field_type, nil::blueprint::bbf::call_commit>(
         //         call_commit_circuit,
-        //         {}, call_commit_assignment_input, max_rw, max_call_commits
+        //         {}, call_commit_assignment_input, max_rw, max_state
         //     );
         //     BOOST_ASSERT(result);
         //     std::cout << std::endl;
@@ -309,7 +309,7 @@ BOOST_AUTO_TEST_CASE(sp1_block_18884864) {
     max_sizes.max_zkevm_rows = 500;
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
-    max_sizes.max_call_commits = 500;
+    max_sizes.max_state = 500;
 
     complex_test<field_type>("vmtrace/sp1_block_18884864/", max_sizes);
 }
@@ -326,7 +326,7 @@ BOOST_AUTO_TEST_CASE(sp1_block_18884865) {
     max_sizes.max_zkevm_rows = 500;
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
-    max_sizes.max_call_commits = 500;
+    max_sizes.max_state = 500;
 
     complex_test<field_type>("vmtrace/sp1_block_18884865/", max_sizes);
 }
@@ -343,7 +343,7 @@ BOOST_AUTO_TEST_CASE(sp1_block_18884866) {
     max_sizes.max_zkevm_rows = 500;
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
-    max_sizes.max_call_commits = 500;
+    max_sizes.max_state = 500;
 
     complex_test<field_type>("vmtrace/sp1_block_18884866/", max_sizes);
 }
@@ -360,7 +360,7 @@ BOOST_AUTO_TEST_CASE(sp1_block_18884867) {
     max_sizes.max_zkevm_rows = 500;
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
-    max_sizes.max_call_commits = 500;
+    max_sizes.max_state = 500;
 
     complex_test<field_type>("vmtrace/sp1_block_18884867/", max_sizes);
 }
@@ -377,7 +377,7 @@ BOOST_AUTO_TEST_CASE(sp1_block_18884868) {
     max_sizes.max_zkevm_rows = 500;
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
-    max_sizes.max_call_commits = 500;
+    max_sizes.max_state = 500;
 
     complex_test<field_type>("vmtrace/sp1_block_18884868/", max_sizes);
 }
@@ -394,7 +394,7 @@ BOOST_AUTO_TEST_CASE(sp1_block_18884869) {
     max_sizes.max_zkevm_rows = 500;
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
-    max_sizes.max_call_commits = 500;
+    max_sizes.max_state = 500;
 
     complex_test<field_type>("vmtrace/sp1_block_18884869/", max_sizes);
 }
@@ -411,7 +411,7 @@ BOOST_AUTO_TEST_CASE(sp1_block_20526624) {
     max_sizes.max_zkevm_rows = 500;
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
-    max_sizes.max_call_commits = 500;
+    max_sizes.max_state = 500;
 
     complex_test<field_type>("vmtrace/sp1_block_20526624/", max_sizes);
 }
@@ -428,7 +428,7 @@ BOOST_AUTO_TEST_CASE(sp1_block_20526626) {
     max_sizes.max_zkevm_rows = 500;
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
-    max_sizes.max_call_commits = 500;
+    max_sizes.max_state = 500;
 
     complex_test<field_type>("vmtrace/sp1_block_20526626/", max_sizes);
 }
@@ -445,7 +445,7 @@ BOOST_AUTO_TEST_CASE(sp1_block_20526627) {
     max_sizes.max_zkevm_rows = 500;
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
-    max_sizes.max_call_commits = 500;
+    max_sizes.max_state = 500;
 
     complex_test<field_type>("vmtrace/sp1_block_20526627/", max_sizes);
 }
@@ -462,7 +462,7 @@ BOOST_AUTO_TEST_CASE(sp1_block_20526628) {
     max_sizes.max_zkevm_rows = 500;
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
-    max_sizes.max_call_commits = 500;
+    max_sizes.max_state = 500;
 
     complex_test<field_type>("vmtrace/sp1_block_20526628/", max_sizes);
 }
@@ -479,7 +479,7 @@ BOOST_AUTO_TEST_CASE(sp1_block_20526629) {
     max_sizes.max_zkevm_rows = 500;
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
-    max_sizes.max_call_commits = 500;
+    max_sizes.max_state = 500;
 
     complex_test<field_type>("vmtrace/sp1_block_20526629/", max_sizes);
 }
@@ -496,7 +496,7 @@ BOOST_AUTO_TEST_CASE(sp1_block_20526630) {
     max_sizes.max_zkevm_rows = 500;
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
-    max_sizes.max_call_commits = 500;
+    max_sizes.max_state = 500;
 
     complex_test<field_type>("vmtrace/sp1_block_20526630/", max_sizes);
 }
@@ -513,7 +513,7 @@ BOOST_AUTO_TEST_CASE(sp1_block_20526631) {
     max_sizes.max_zkevm_rows = 500;
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
-    max_sizes.max_call_commits = 500;
+    max_sizes.max_state = 500;
 
     complex_test<field_type>("vmtrace/sp1_block_20526631/", max_sizes);
 }
@@ -530,7 +530,7 @@ BOOST_AUTO_TEST_CASE(sp1_block_20528708) {
     max_sizes.max_zkevm_rows = 500;
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
-    max_sizes.max_call_commits = 500;
+    max_sizes.max_state = 500;
 
     complex_test<field_type>("vmtrace/sp1_block_20528708/", max_sizes);
 }
@@ -547,7 +547,7 @@ BOOST_AUTO_TEST_CASE(sp1_block_20528709) {
     max_sizes.max_zkevm_rows = 500;
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
-    max_sizes.max_call_commits = 500;
+    max_sizes.max_state = 500;
 
     complex_test<field_type>("vmtrace/sp1_block_20528709/", max_sizes);
 }
@@ -565,7 +565,7 @@ BOOST_AUTO_TEST_CASE(sp1_block_22140743) {
     max_sizes.max_zkevm_rows = 500;
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
-    max_sizes.max_call_commits = 500;
+    max_sizes.max_state = 500;
 
     complex_test<field_type>("vmtrace/sp1_block_22140743/", max_sizes);
 }
