@@ -131,7 +131,10 @@ namespace nil {
                         // We wanted to collect all the expressions and evaluate them at once, but usage of transcript does not allow that.
                         // So we are computing the required values for each prover step separately.
                         _central_expr_evaluator.register_expressions(this->get_lookup_input_expressions());
-                        _central_expr_evaluator.register_expressions(this->get_lookup_value_expressions());
+                        auto [lookup_value_expressions, lookup_tags] = this->get_lookup_value_expressions();
+                        _central_expr_evaluator.register_expressions(lookup_value_expressions);
+                        // We use these lookup tags in double sized evaluation domain.
+                        _central_expr_evaluator.ensure_cache(lookup_tags, _central_expr_evaluator.get_original_domain_size() * 2);
                         _central_expr_evaluator.evaluate_all();
 
                         std::unique_ptr<std::vector<polynomial_dfs_type>> lookup_value_ptr =
@@ -326,10 +329,11 @@ namespace nil {
 
                     /** Returns all the expressions that are required for lookup value computation.
                      */
-                    std::vector<expression_type> get_lookup_value_expressions() {
+                    std::pair<std::vector<expression_type>, std::set<polynomial_dfs_variable_type>> get_lookup_value_expressions() {
                         PROFILE_SCOPE("Lookup argument preparing lookup value expressions");
 
                         std::vector<expression_type> expressions;
+                        std::set<polynomial_dfs_variable_type> lookup_tags;
 
                         for (std::size_t t_id = 0; t_id < lookup_tables.size(); t_id++) {
                             const plonk_lookup_table<FieldType> &l_table = lookup_tables[t_id];
@@ -338,13 +342,14 @@ namespace nil {
                                         l_table.tag_index, 0, false,
                                         polynomial_dfs_variable_type::column_type::selector);
 
+                            lookup_tags.insert(lookup_tag);
                             for (size_t o_id = 0; o_id < l_table.lookup_options.size(); ++o_id) {
                                 for (std::size_t i = 0; i < l_table.columns_number; i++) {
                                     expressions.push_back(lookup_tag * l_table.lookup_options[o_id][i]);
                                 }
                             }
                         }
-                        return expressions;
+                        return {expressions, lookup_tags};
                     }
 
                     std::unique_ptr<std::vector<polynomial_dfs_type>> get_lookup_values() {
@@ -354,12 +359,12 @@ namespace nil {
                         for (std::size_t t_id = 0; t_id < lookup_tables.size(); t_id++) {
                             const plonk_lookup_table<FieldType> &l_table = lookup_tables[t_id];
                             polynomial_dfs_variable_type lookup_tag_selector(
-                                        l_table.tag_index, 0, false,
-                                        polynomial_dfs_variable_type::column_type::selector);
+                                l_table.tag_index, 0, false,
+                                polynomial_dfs_variable_type::column_type::selector);
 
                             // Get the selector value in double size, since computations below
                             // will resize everything to double size.
-                            polynomial_dfs_type lookup_tag = *_central_expr_evaluator.get(
+                            std::shared_ptr<polynomial_dfs_type> lookup_tag = _central_expr_evaluator.get(
                                 lookup_tag_selector,  _central_expr_evaluator.get_original_domain_size() * 2);
                             
                             // Increase the size to fit the next table values.
@@ -369,7 +374,7 @@ namespace nil {
                             parallel_for(0, l_table.lookup_options.size(),
                                 [&l_table, t_id, &lookup_tag, &lookup_tag_selector, this, &lookup_value_ptr, lookup_values_used]
                                 (std::size_t o_id) {
-                                    polynomial_dfs_type v = (value_type(t_id + 1)) * lookup_tag;
+                                    polynomial_dfs_type v = (value_type(t_id + 1)) * (*lookup_tag);
                                     value_type theta_acc = this->theta;
                                     for (std::size_t i = 0; i < l_table.columns_number; i++) {
                                         v += theta_acc * this->_central_expr_evaluator.get_expression_value(
@@ -395,7 +400,7 @@ namespace nil {
                             const typename variable_type::assignment_type& coeff) {
                                 return polynomial_dfs_type(0, 1, coeff);
                             };
-                        math::expression_variable_type_converter<variable_type, polynomial_dfs_variable_type> converter(
+                        expression_variable_type_converter<variable_type, polynomial_dfs_variable_type> converter(
                             value_type_to_polynomial_dfs);
  
                         std::vector<expression_type> expressions;

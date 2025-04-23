@@ -83,7 +83,6 @@ namespace nil::crypto3::zk::snark {
         using public_preprocessor_type = placeholder_public_preprocessor<FieldType, ParamsType>;
         using private_preprocessor_type = placeholder_private_preprocessor<FieldType, ParamsType>;
 
-        using dfs_cache_type = dfs_cache<FieldType>;
         using central_evaluator_type = CentralAssignmentTableExpressionEvaluator<FieldType>;
         using lookup_argument_type = placeholder_lookup_argument_prover<FieldType, commitment_scheme_type, ParamsType>;
 

@@ -77,7 +77,7 @@ BOOST_AUTO_TEST_CASE(dag_expression_test) {
     dag_expression<var> dag_expr;
     dag_expr.add_expression(expr);
     auto evaluation_map = make_evaluation_map(dag_expr);
-    math::expression_evaluator<var> evaluator(
+    expression_evaluator<var> evaluator(
         expr,
         [&evaluation_map](const var &var) -> typename FieldType::value_type& {
             return evaluation_map[var];
@@ -114,7 +114,7 @@ BOOST_AUTO_TEST_CASE(dag_expression_test_random) {
         };
     // Evaluate call to Dag evaluates all the expressions, but stores the results inside.
     dag_expr.evaluate(eval_map);
-    math::expression_evaluator<var> evaluator(
+    expression_evaluator<var> evaluator(
         expr,
         [&evaluation_map](const var &var) -> const typename FieldType::value_type& {
             return evaluation_map[var];
@@ -138,7 +138,7 @@ BOOST_AUTO_TEST_CASE(dag_expression_test_degree) {
     dag_expression<var> dag_expr;
     dag_expr.add_expression(expr);
 
-    math::expression_max_degree_visitor<var> visitor;
+    expression_max_degree_visitor<var> visitor;
     std::size_t expr_degree = visitor.compute_max_degree(expr);
     std::size_t dag_degree = dag_expr.calc_degree();
     BOOST_CHECK(expr_degree == dag_degree);

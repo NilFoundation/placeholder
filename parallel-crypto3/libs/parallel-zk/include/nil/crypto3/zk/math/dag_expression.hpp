@@ -156,10 +156,10 @@ namespace nil::crypto3::zk::snark {
         using node_type = dag_node<VariableType>;
         using assignment_type = typename VariableType::assignment_type;
 
-        using math_expression_type = math::expression<VariableType>;
-        using term_type = math::term<VariableType>;
-        using pow_operation_type = math::pow_operation<VariableType>;
-        using binary_arithmetic_operation_type = math::binary_arithmetic_operation<VariableType>;
+        using math_expression_type = expression<VariableType>;
+        using term_type = term<VariableType>;
+        using pow_operation_type = pow_operation<VariableType>;
+        using binary_arithmetic_operation_type = binary_arithmetic_operation<VariableType>;
 
         using map_type = boost::bimaps::bimap<
             boost::bimaps::unordered_set_of<node_type, dag_node_hash<VariableType>>,
@@ -188,7 +188,7 @@ namespace nil::crypto3::zk::snark {
             return root_nodes.size();
         }
         size_t get_nodes_count() const {
-            return root_nodes.size();
+            return nodes.size();
         }
         const map_type& get_node_map() const {
             return node_map;

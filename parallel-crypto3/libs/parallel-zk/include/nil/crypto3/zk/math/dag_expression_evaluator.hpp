@@ -38,8 +38,10 @@
 #include <boost/bimap/unordered_set_of.hpp>
 #include <boost/container/small_vector.hpp>
 
-#include <nil/crypto3/zk/math/expression.hpp>
+#include <nil/crypto3/math/polynomial/static_simd_vector.hpp>
 #include <nil/crypto3/math/polynomial/polynomial_dfs.hpp>
+
+#include <nil/crypto3/zk/math/expression.hpp>
 #include <nil/crypto3/zk/math/dag_expression.hpp>
 
 #include <nil/crypto3/bench/scoped_profiler.hpp>
@@ -92,6 +94,7 @@ namespace nil::crypto3::zk::snark {
                 [this, &_cached_assignment_table, &result, extended_domain_size](
                     std::size_t begin, std::size_t end) {
                     auto count = math::count_chunks<mini_chunk_size>(end - begin);
+
                     std::vector<simd_vector_type> assignment_segments(this->_expr.get_nodes_count());
                     for (std::size_t j = 0; j < count; ++j) {
                         this->compute_dag_segment_values(
@@ -120,34 +123,33 @@ namespace nil::crypto3::zk::snark {
         void compute_dag_segment_values(std::vector<simd_vector_type>& assignment_segments,
                                         const cached_assignment_table_type& _cached_assignment_table,
                                         size_t extended_domain_size, size_t begin, size_t j) {
+            size_t k = 0;
             for (const auto& [node, index] : _expr.get_node_map().right) {
                 if (std::holds_alternative<dag_constant<polynomial_dfs_variable_type>>(node)) {
-                    assignment_segments.emplace_back(
-                        math::get_chunk<mini_chunk_size>(
-                            std::get<dag_constant<polynomial_dfs_variable_type>>(node).value, begin, j));
+                    assignment_segments[k] = math::get_chunk<mini_chunk_size>(
+                            std::get<dag_constant<polynomial_dfs_variable_type>>(node).value, begin, j);
                 } else if (std::holds_alternative<dag_variable<polynomial_dfs_variable_type>>(node)) {
-                    assignment_segments.emplace_back(get_variable_value_chunk(
+                    assignment_segments[k] = get_variable_value_chunk(
                         _cached_assignment_table,
                         std::get<dag_variable<polynomial_dfs_variable_type>>(node).variable,
-                        extended_domain_size, begin, j));
+                        extended_domain_size, begin, j);
                 } else if (std::holds_alternative<dag_addition>(node)) {
                     const auto& add = std::get<dag_addition>(node);
-                    assignment_segments.emplace_back(assignment_segments[add.operands[0]]);
-                    auto& result = assignment_segments.back();
+                    assignment_segments[k] = assignment_segments[add.operands[0]];
                     for (std::size_t i = 1; i < add.operands.size(); i++) {
-                        result += assignment_segments[add.operands[i]];
+                        assignment_segments[k] += assignment_segments[add.operands[i]];
                     }
                 } else if (std::holds_alternative<dag_multiplication>(node)) {
                     const auto& mul = std::get<dag_multiplication>(node);
-                    assignment_segments.emplace_back(assignment_segments[mul.operands[0]]);
-                    auto& result = assignment_segments.back();
+                    assignment_segments[k] = assignment_segments[mul.operands[0]];
                     for (std::size_t i = 1; i < mul.operands.size(); i++) {
-                        result *= assignment_segments[mul.operands[i]];
+                        assignment_segments[k] *= assignment_segments[mul.operands[i]];
                     }
                 } else if (std::holds_alternative<dag_negation>(node)) {
-                    assignment_segments.emplace_back(
-                        -assignment_segments[std::get<dag_negation>(node).operand]);
+                    assignment_segments[k] = 
+                        -assignment_segments[std::get<dag_negation>(node).operand];
                 }
+                ++k;
             }
         }
 

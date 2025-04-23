@@ -36,7 +36,6 @@
 #include <nil/crypto3/math/polynomial/polynomial.hpp>
 #include <nil/crypto3/math/polynomial/polynomial_dfs.hpp>
 #include <nil/crypto3/math/polynomial/shift.hpp>
-#include <nil/crypto3/math/polynomial/static_simd_vector.hpp>
 
 #include <nil/crypto3/zk/math/dfs_cache.hpp>
 #include <nil/crypto3/zk/math/expression.hpp>
@@ -73,11 +72,8 @@ namespace nil::crypto3::zk::snark {
         using cached_assignment_table_type = dfs_cache<FieldType>;
 
         static constexpr std::size_t mini_chunk_size = 64;
-        using simd_vector_type = math::static_simd_vector<
-            value_type, mini_chunk_size>;
         using variable_type = plonk_variable<value_type>;
         using polynomial_dfs_variable_type = plonk_variable<polynomial_dfs_type>;
-        using simd_vector_variable_type = plonk_variable<simd_vector_type>;
         using expr_type = expression<polynomial_dfs_variable_type>;
 
         CentralAssignmentTableExpressionEvaluator(
@@ -90,6 +86,10 @@ namespace nil::crypto3::zk::snark {
         // Call to this function must resize all the columns to size D * degree, where D is the size of original domain.
         void cache_all_columns_for_degree(size_t degree) {
             _cached_assignment_table.cache_all_columns_for_degree(degree);
+        }
+
+        void ensure_cache(const std::set<polynomial_dfs_variable_type> &variables, std::size_t size) {
+            _cached_assignment_table.ensure_cache(variables, size);
         }
 
         // Rememebers the expression to evaluate later.
@@ -158,11 +158,11 @@ namespace nil::crypto3::zk::snark {
             // so later we can prepare the cache.
             std::set<polynomial_dfs_variable_type> variables_set_half_degree;
             std::set<polynomial_dfs_variable_type> variables_set_full_degree;
-            math::expression_for_each_variable_visitor<polynomial_dfs_variable_type> half_degree_visitor(
+            expression_for_each_variable_visitor<polynomial_dfs_variable_type> half_degree_visitor(
                 [&variables_set_half_degree](const polynomial_dfs_variable_type& var) {
                     variables_set_half_degree.insert(var);
             });
-            math::expression_for_each_variable_visitor<polynomial_dfs_variable_type> full_degree_visitor(
+            expression_for_each_variable_visitor<polynomial_dfs_variable_type> full_degree_visitor(
                 [&variables_set_full_degree](const polynomial_dfs_variable_type& var) {
                     variables_set_full_degree.insert(var);
             });
@@ -213,8 +213,9 @@ namespace nil::crypto3::zk::snark {
                 throw std::logic_error("Can't return expression value before evaluation is done.");
             }
             auto [dag_type, index] = _registered_expr_to_result_id_map.at(expr);
-            if (dag_type == DAG_Type::HALF_DEGREE)
+            if (dag_type == DAG_Type::HALF_DEGREE) {
                 return _results_half_degree.at(index);
+            }
             return _results_full_degree.at(index);
         }
 
@@ -226,7 +227,8 @@ namespace nil::crypto3::zk::snark {
             auto [dag_type, index] = _registered_expr_to_result_id_map[expr];
             if (dag_type == DAG_Type::HALF_DEGREE)
                 _results_half_degree[index] = polynomial_dfs_type();
-            _results_full_degree[index] = polynomial_dfs_type();
+            else
+                _results_full_degree[index] = polynomial_dfs_type();
         }
 
     private:
@@ -235,7 +237,6 @@ namespace nil::crypto3::zk::snark {
             std::size_t max_degree = 0;
             for (const auto& expr: exprs) {
                 std::size_t degree = _max_degree_visitor.compute_max_degree(expr);
-std::cout << "Degree of " << expr << " is " << degree << std::endl;
                 max_degree = std::max<std::size_t>(max_degree, degree);
             }
             return max_degree;
@@ -264,7 +265,7 @@ std::cout << "Degree of " << expr << " is " << degree << std::endl;
         std::vector<polynomial_dfs_type> _results_full_degree;
         
         // Used to compute the maximal degree of a given expression.    
-        math::expression_max_degree_visitor<polynomial_dfs_variable_type> _max_degree_visitor;
+        expression_max_degree_visitor<polynomial_dfs_variable_type> _max_degree_visitor;
 
         // We need a zero, because sometimes we are asked to evaluate an empty expression.
         polynomial_dfs_type zero = polynomial_dfs_type::zero();

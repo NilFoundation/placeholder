@@ -87,14 +87,12 @@ namespace nil {
                     static inline size_t get_gate_argument_max_degree(
                             const constraint_system_type& constraint_system) {
                         size_t max_degree = 0;
-                        math::expression_max_degree_visitor<variable_type> visitor;
+                        expression_max_degree_visitor<variable_type> visitor;
 
-std::cout << "Computing max degree of gate argument" << std::endl;
                         const auto& gates = constraint_system.gates();
                         for (const auto& gate : gates) {
                             for (const auto& constraint : gate.constraints) {
                                 size_t constraint_degree = visitor.compute_max_degree(constraint);
-std::cout << constraint << std::endl;
                                 if (gate.selector_index != PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED)
                                     constraint_degree += 1; // selector multiplication.
                                 max_degree = std::max<size_t>(max_degree, constraint_degree);
@@ -113,7 +111,7 @@ std::cout << constraint << std::endl;
                         std::vector<expression_type> expressions(2);
 
                         size_t max_degree = get_gate_argument_max_degree(constraint_system);
-                        math::expression_max_degree_visitor<variable_type> visitor;
+                        expression_max_degree_visitor<variable_type> visitor;
 
                         // Every constraint has variable type 'variable_type', but we want it to use
                         // 'polynomial_dfs_variable_type' instead. The only difference is the coefficient type
@@ -122,7 +120,7 @@ std::cout << constraint << std::endl;
                             const typename variable_type::assignment_type& coeff) {
                                 return polynomial_dfs_type(0, 1, coeff);
                             };
-                        math::expression_variable_type_converter<variable_type, polynomial_dfs_variable_type> converter(
+                        expression_variable_type_converter<variable_type, polynomial_dfs_variable_type> converter(
                             value_type_to_polynomial_dfs);
 
                         auto theta_acc = value_type::one();
@@ -167,7 +165,6 @@ std::cout << constraint << std::endl;
                         PROFILE_SCOPE("Gate argument prove eval");
 
                         std::vector<expression_type> exprs = get_gate_argument_expressions(constraint_system, theta);
-std::cout << "Gate argument expressions are " << exprs[0] << std::endl << exprs[1] << std::endl;
 
                         central_expr_evaluator.register_expressions(exprs);
                         central_expr_evaluator.evaluate_all();
