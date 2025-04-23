@@ -420,7 +420,9 @@ namespace nil::crypto3::multiprecision {
         }
 
         template<typename T,
-                 std::enable_if_t<std::is_integral_v<T> && std::is_signed_v<T>, int> = 0>
+                 std::enable_if_t<std::is_integral_v<T> && !std::is_same_v<T, bool> &&
+                                      std::is_signed_v<T>,
+                                  int> = 0>
         constexpr std::strong_ordering operator<=>(const T& b) const noexcept {
             if (b < 0) {
                 return std::strong_ordering::greater;
@@ -428,8 +430,10 @@ namespace nil::crypto3::multiprecision {
             return *this <=> static_cast<std::make_unsigned_t<T>>(b);
         }
 
-        template<typename T, std::enable_if_t<
-                                 std::is_integral_v<T> && std::is_unsigned_v<T>, int> = 0>
+        template<typename T,
+                 std::enable_if_t<std::is_integral_v<T> && !std::is_same_v<T, bool> &&
+                                      std::is_unsigned_v<T>,
+                                  int> = 0>
         constexpr std::strong_ordering operator<=>(const T& b) const noexcept {
             static_assert(sizeof(T) <= sizeof(double_limb_type));
             std::size_t s = used_limbs();
@@ -448,9 +452,14 @@ namespace nil::crypto3::multiprecision {
             }
         }
 
-        template<typename T, std::enable_if_t<is_integral_v<T>, int> = 0>
+        template<typename T,
+                 std::enable_if_t<is_integral_v<T> && !std::is_same_v<T, bool>, int> = 0>
         friend constexpr bool operator==(const big_uint& a, const T& b) noexcept {
             return (a <=> b) == 0;
+        }
+
+        friend constexpr bool operator==(const big_uint& a, bool b) noexcept {
+            return a == static_cast<limb_type>(b);
         }
 
         NIL_CO3_MP_FORCEINLINE constexpr bool is_zero() const noexcept {

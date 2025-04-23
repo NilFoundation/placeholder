@@ -87,7 +87,7 @@ BOOST_AUTO_TEST_SUITE(lpc_performance_test_suite)
 
 void lpc_test_case(std::size_t steps)
 {
-        PROFILE_SCOPE("LPC step list test " + std::to_string(steps));
+        PROFILE_SCOPE("LPC step list test {}", steps);
         typedef algebra::curves::bls12<381> curve_type;
         typedef typename curve_type::scalar_field_type FieldType;
 
