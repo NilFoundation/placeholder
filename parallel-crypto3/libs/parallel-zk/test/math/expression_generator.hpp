@@ -32,6 +32,8 @@
 
 #include <nil/crypto3/random/algebraic_engine.hpp>
 
+using namespace nil::crypto3::zk::snark;
+
 template<typename VariableType>
 VariableType generate_random_local_var(
     boost::random::mt19937 &random_engine
@@ -55,7 +57,7 @@ VariableType generate_random_local_var(
 }
 
 template<typename VariableType>
-nil::crypto3::expression<VariableType> generate_random_constraint(
+expression<VariableType> generate_random_constraint(
     const std::size_t max_degree,
     const std::size_t max_linear_comb_size,
     boost::random::mt19937& random_engine
@@ -80,7 +82,7 @@ nil::crypto3::expression<VariableType> generate_random_constraint(
         }
     } else if (max_degree == 1) {
         nil::crypto3::random::algebraic_engine<field_type> engine(random_engine);
-        nil::crypto3::expression<VariableType> linear_comb;
+        expression<VariableType> linear_comb;
         const std::size_t linear_comb_size =
             boost::random::uniform_int_distribution<std::size_t>(1, max_linear_comb_size)(random_engine);
         for (std::size_t i = 0; i < linear_comb_size; i++) {

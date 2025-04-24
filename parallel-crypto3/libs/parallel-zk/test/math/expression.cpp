@@ -42,7 +42,7 @@
 #include <nil/crypto3/zk/snark/arithmetization/plonk/variable.hpp>
 
 using namespace nil::crypto3;
-using namespace nil::crypto3::math;
+using namespace nil::crypto3::zk::snark;
 
 BOOST_AUTO_TEST_SUITE(parallel_expression_tests_suite)
 

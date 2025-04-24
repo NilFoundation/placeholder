@@ -766,18 +766,17 @@ namespace nil {
                                      const polynomial_dfs<FieldValueType, Allocator>& poly) {
                 if (poly.degree() == 0) {
                     // If all it contains is a constant, print the constant, so it's more readable.
-                    os << *poly.begin();
+                    os << std::hex << std::showbase << *poly.begin() << std::dec;
                 } else {
                     os << "[Polynomial DFS, size " << poly.size()
-                       << " degree " << poly.degree() << " values ";
-                    os << std::hex;
-                    for(auto it = poly.begin(); it != poly.end(); ++it) {
-                        os << "0x" << it->data;
-                        if (it != std::prev(poly.end())) {
+                       << " degree " << poly.degree() << " values "
+                       << std::hex << std::showbase;
+                    for (auto it = poly.begin(); it != poly.end(); ++it) {
+                        if (it != poly.begin())
                             os << ", ";
-                        }
+                        os << it->data;
                     }
-                    os << std::dec << "]";
+                    os << "]" << std::dec;
                 }
                 return os;
             }

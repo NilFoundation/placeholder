@@ -119,27 +119,6 @@ namespace nil::crypto3::zk::snark {
             _state = State::ADDING_EXPRESSIONS;
         }
 
-        // Divids the given expressions into 2 sets, the ones with degree <= D/2, and the rest. Then returns sums.
-        // We will only look at the expressions in the provided vector to determine the maximal degree value of D.
-        std::pair<expr_type, expr_type> split_expressions_and_sum(const std::vector<expr_type>& exprs) {
-            std::size_t max_degree = get_max_degree(exprs);
-            // Round the max degree up to nearest power of 2.
-            max_degree = std::pow(2, ceil(std::log2(max_degree)));
-
-            expr_type low_degree_sum;
-            expr_type high_degree_sum;
-
-            for (const auto& expr: exprs) {
-                std::size_t degree = _max_degree_visitor.compute_max_degree(expr);
-                if (degree <= max_degree / 2) {
-                    low_degree_sum += expr;
-                } else {
-                    high_degree_sum += expr;
-                }
-            }
-            return {low_degree_sum, high_degree_sum};
-        }
-
         // You should call this only once and after all expressions have been registered.
         // Returns all expression values in the same order as they were registered.
         void evaluate_all() {
