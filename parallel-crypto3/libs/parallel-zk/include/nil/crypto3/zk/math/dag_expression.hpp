@@ -242,7 +242,7 @@ namespace nil::crypto3::zk::snark {
                         last_result_index = current.result_index;
                         stack.pop();
                     } else if (type_num == 1) { // pow
-                        std::throw_with_nested(std::runtime_error("Power operation is not supported"));
+                        throw std::runtime_error("Power operation is not supported");
                     } else if (type_num == 2) { // binary arithmetic operation
                         const auto& binary_op = boost::get<binary_arithmetic_operation_type>(current.expr->get_expr());
                         const auto& left = binary_op.get_expr_left();

@@ -279,8 +279,8 @@ namespace nil::crypto3::math {
     std::ostream& operator<<(std::ostream& os,const static_simd_vector<FieldValueType, Size>& chunk) {
         os << "[";
         for (std::size_t i = 0; i < Size; ++i) {
-            os << std::hex;
-            os << "0x" << chunk[i];
+            os << std::hex << std::showbase;
+            os << chunk[i];
             if (i != Size - 1) {
                 os << ", "; 
             }

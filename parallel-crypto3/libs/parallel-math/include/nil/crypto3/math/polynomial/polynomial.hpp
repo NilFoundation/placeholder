@@ -616,17 +616,18 @@ namespace nil {
                                      const polynomial<FieldValueType, Allocator>& poly) {
                 if (poly.degree() == 0) {
                     // If all it contains is a constant, print the constant, so it's more readable.
-                    os << *poly.begin();
+                    os << std::hex << std::showbase << *poly.begin() << std::dec;
                 } else {
-                    os << "[Polynomial, size " << poly.size() << " values ";
+                    os << "[Polynomial, size " << poly.size() << " values " << std::hex << std::showbase;
                     for (auto it = poly.begin(); it != poly.end(); ++it) {
-                        os << "0x" << std::hex << it->data << ", ";
+                        if (it != poly.begin())
+                            os << ", ";
+                        os << it->data;
                     }
-                    os << "]";
+                    os << "]" << std::dec;
                 }
                 return os;
             }
-
         }    // namespace math
     }        // namespace crypto3
 }    // namespace nil
