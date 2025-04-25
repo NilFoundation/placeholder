@@ -317,8 +317,8 @@ namespace nil::crypto3::zk::snark {
 
             // We can remove this check later, it's fairly fast and makes sure that prover succeeded.
             if (T_consolidated * preprocessed_public_data.common_data->Z != F_consolidated_normal) {
-                BOOST_LOG_TRIVIAL(info) << "F_consolidated_normal = " << F_consolidated_normal << std::endl;
-                BOOST_LOG_TRIVIAL(info) << "Z = " << preprocessed_public_data.common_data->Z << std::endl;
+                //BOOST_LOG_TRIVIAL(info) << "F_consolidated_normal = " << F_consolidated_normal << std::endl;
+                //BOOST_LOG_TRIVIAL(info) << "Z = " << preprocessed_public_data.common_data->Z << std::endl;
                 throw std::logic_error("Can't divide F Consolidated on Z. Prover failed.");
             }
 

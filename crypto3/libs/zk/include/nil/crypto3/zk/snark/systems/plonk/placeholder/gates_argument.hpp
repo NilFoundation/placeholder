@@ -78,7 +78,7 @@ namespace nil {
                     constexpr static const std::size_t argument_size = 1;
 
                     static inline void build_variable_value_map(
-                        const math::expression<polynomial_dfs_variable_type>& expr,
+                        const expression<polynomial_dfs_variable_type>& expr,
                         const plonk_polynomial_dfs_table<FieldType>& assignments,
                         std::shared_ptr<math::evaluation_domain<FieldType>> domain,
                         std::size_t extended_domain_size,
@@ -90,7 +90,7 @@ namespace nil {
 
                         std::unordered_map<polynomial_dfs_variable_type, size_t> variable_counts;
 
-                        math::expression_for_each_variable_visitor<polynomial_dfs_variable_type> visitor(
+                        expression_for_each_variable_visitor<polynomial_dfs_variable_type> visitor(
                             [&variable_counts](const polynomial_dfs_variable_type& var) {
                                 variable_counts[var]++;
                         });
@@ -160,17 +160,17 @@ namespace nil {
                         degree_limits.push_back(max_degree / 2);
                         extended_domain_sizes.push_back(max_domain_size / 2);
 
-                        std::vector<math::expression<polynomial_dfs_variable_type>> expressions(extended_domain_sizes.size());
+                        std::vector<expression<polynomial_dfs_variable_type>> expressions(extended_domain_sizes.size());
 
                         auto theta_acc = FieldType::value_type::one();
 
                         // Every constraint has variable type 'variable_type', but we want it to use
                         // 'polynomial_dfs_variable_type' instead. The only difference is the coefficient type
                         // inside a term. We want the coefficients to be dfs polynomials here.
-                        math::expression_variable_type_converter<variable_type, polynomial_dfs_variable_type> converter(
+                        expression_variable_type_converter<variable_type, polynomial_dfs_variable_type> converter(
                             value_type_to_polynomial_dfs);
 
-                        math::expression_max_degree_visitor<variable_type> visitor;
+                        expression_max_degree_visitor<variable_type> visitor;
 
                         std::vector<std::size_t> constraint_counts(
                             extended_domain_sizes.size());
@@ -180,7 +180,7 @@ namespace nil {
                             PROFILE_SCOPE("Gate argument build expression");
                             for (const auto& gate : gates) {
                                 std::vector<
-                                    math::expression<polynomial_dfs_variable_type>>
+                                    expression<polynomial_dfs_variable_type>>
                                     gate_results(extended_domain_sizes.size());
 
                                 for (const auto& constraint : gate.constraints) {
@@ -241,7 +241,7 @@ namespace nil {
 
                             PROFILE_SCOPE("Gate argument evaluation");
 
-                            math::cached_expression_evaluator<polynomial_dfs_variable_type> evaluator(
+                            cached_expression_evaluator<polynomial_dfs_variable_type> evaluator(
                                 expressions[i], [&assignments=variable_values, domain_size=extended_domain_sizes[i]]
                                 (const polynomial_dfs_variable_type &var) -> const polynomial_dfs_type& {
                                     return assignments[var];
