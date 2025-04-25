@@ -55,29 +55,29 @@ namespace nil {
                 /************************* PLONK constraint ***********************************/
 
                 template<typename FieldType, typename VariableType = plonk_variable<typename FieldType::value_type>>
-                class plonk_constraint : public math::expression<VariableType> {
+                class plonk_constraint : public expression<VariableType> {
                 public:
                     typedef FieldType field_type;
                     typedef VariableType variable_type;
-                    typedef math::expression<VariableType> base_type;
+                    typedef expression<VariableType> base_type;
 
                     plonk_constraint()
-                        : math::expression<VariableType>(VariableType::assignment_type::zero()) {
+                        : expression<VariableType>(VariableType::assignment_type::zero()) {
                     };
 
-                    plonk_constraint(const VariableType &var) : math::expression<VariableType>(var) {
+                    plonk_constraint(const VariableType &var) : expression<VariableType>(var) {
                     }
 
-                    plonk_constraint(const math::expression<VariableType> &nlc) :
-                        math::expression<VariableType>(nlc) {
+                    plonk_constraint(const expression<VariableType> &nlc) :
+                        expression<VariableType>(nlc) {
                     }
 
-                    plonk_constraint(const math::term<VariableType> &nlt) :
-                        math::expression<VariableType>(nlt) {
+                    plonk_constraint(const term<VariableType> &nlt) :
+                        expression<VariableType>(nlt) {
                     }
 
-                    plonk_constraint(const std::vector<math::term<VariableType>> &terms) :
-                        math::expression<VariableType>(VariableType::assignment_type::zero()) {
+                    plonk_constraint(const std::vector<term<VariableType>> &terms) :
+                        expression<VariableType>(VariableType::assignment_type::zero()) {
                         for (const auto& term : terms) {
                             (*this) += term;
                         }
@@ -87,23 +87,23 @@ namespace nil {
                     template<class NumericType>
                     plonk_constraint(const NumericType& coeff,
                             typename std::enable_if<std::is_integral<NumericType>::value, NumericType>::type* = nullptr)
-                        : math::expression<VariableType>(coeff) {
+                        : expression<VariableType>(coeff) {
                     }
 
                     // Constructor for big_uint.
                     template<std::size_t Bits>
                     plonk_constraint(const nil::crypto3::multiprecision::big_uint<Bits> &coeff)
-                        : math::expression<VariableType>(coeff) {
+                        : expression<VariableType>(coeff) {
                     }
 
                     plonk_constraint(const typename VariableType::assignment_type &coeff)
-                        : math::expression<VariableType>(coeff) {
+                        : expression<VariableType>(coeff) {
                     }
 
                     typename VariableType::assignment_type
                         evaluate(std::size_t row_index,
                                  const plonk_assignment_table<FieldType> &assignments) const {
-                        math::expression_evaluator<VariableType> evaluator(
+                        expression_evaluator<VariableType> evaluator(
                             *this,
                             [&assignments, row_index](const VariableType &var) -> const typename VariableType::assignment_type& {
                                 std::size_t rows_amount = assignments.rows_amount();
@@ -132,13 +132,13 @@ namespace nil {
                         using polynomial_variable_type = plonk_variable<polynomial_type>;
 
                         // Convert scalar values to polynomials inside the expression.
-                        math::expression_variable_type_converter<VariableType, polynomial_variable_type> converter;
+                        expression_variable_type_converter<VariableType, polynomial_variable_type> converter;
                         auto converted_expression = converter.convert(*this);
 
                         // For each variable with a rotation pre-compute its value.
                         std::unordered_map<polynomial_variable_type, polynomial_type> rotated_variable_values;
 
-                        math::expression_for_each_variable_visitor<polynomial_variable_type> visitor(
+                        expression_for_each_variable_visitor<polynomial_variable_type> visitor(
                             [&rotated_variable_values, &assignments, &domain](const polynomial_variable_type& var) {
                                 if (var.rotation == 0)
                                     return;
@@ -146,7 +146,7 @@ namespace nil {
                         });
                         visitor.visit(converted_expression);
 
-                        math::expression_evaluator<polynomial_variable_type> evaluator(
+                        expression_evaluator<polynomial_variable_type> evaluator(
                             converted_expression,
                             [&domain, &assignments, &rotated_variable_values]
                             (const VariableType &var) -> const polynomial_type& {
@@ -165,7 +165,7 @@ namespace nil {
                         using polynomial_dfs_variable_type = plonk_variable<polynomial_dfs_type>;
 
                         // Convert scalar values to polynomials inside the expression.
-                        math::expression_variable_type_converter<variable_type, polynomial_dfs_variable_type> converter(
+                        expression_variable_type_converter<variable_type, polynomial_dfs_variable_type> converter(
                             [&assignments](const typename VariableType::assignment_type& coeff) {
                                 polynomial_dfs_type(0, assignments.rows_amount(), coeff);
                             });
@@ -175,7 +175,7 @@ namespace nil {
                         // For each variable with a rotation pre-compute its value.
                         std::unordered_map<polynomial_dfs_variable_type, polynomial_dfs_type> rotated_variable_values;
 
-                        math::expression_for_each_variable_visitor<polynomial_dfs_variable_type> visitor(
+                        expression_for_each_variable_visitor<polynomial_dfs_variable_type> visitor(
                             [&rotated_variable_values, &assignments, &domain](const polynomial_dfs_variable_type& var) {
                                 if (var.rotation == 0)
                                     return ;
@@ -183,7 +183,7 @@ namespace nil {
                         });
                         visitor.visit(converted_expression);
 
-                        math::expression_evaluator<polynomial_dfs_variable_type> evaluator(
+                        expression_evaluator<polynomial_dfs_variable_type> evaluator(
                             converted_expression,
                             [&domain, &assignments, &rotated_variable_values]
                             (const polynomial_dfs_variable_type &var) -> const polynomial_dfs_type& {
@@ -200,7 +200,7 @@ namespace nil {
                     typename VariableType::assignment_type
                         evaluate(detail::plonk_evaluation_map<VariableType> &assignments) const {
 
-                        math::expression_evaluator<VariableType> evaluator(
+                        expression_evaluator<VariableType> evaluator(
                             *this,
                             [&assignments](const VariableType &var) -> const typename VariableType::assignment_type& {
                                 std::tuple<std::size_t, int, typename VariableType::column_type> key =
@@ -214,15 +214,15 @@ namespace nil {
                     }
 
                     bool is_absolute() const {
-                        return nil::crypto3::math::expression_relativity_check_visitor<VariableType>::is_absolute(*this);
+                        return expression_relativity_check_visitor<VariableType>::is_absolute(*this);
                     }
                     bool is_relative() const {
-                        return nil::crypto3::math::expression_relativity_check_visitor<VariableType>::is_relative(*this);
+                        return expression_relativity_check_visitor<VariableType>::is_relative(*this);
                     }
 
                     // Returns the rotated version, or nullptr if it can't be rotated.
                     std::optional<plonk_constraint> rotate(int32_t shift) const {
-                        auto result = nil::crypto3::math::expression_relativize_visitor<VariableType>::relativize(
+                        auto result = expression_relativize_visitor<VariableType>::relativize(
                             *this, shift);
                         if (!result)
                             return std::nullopt;

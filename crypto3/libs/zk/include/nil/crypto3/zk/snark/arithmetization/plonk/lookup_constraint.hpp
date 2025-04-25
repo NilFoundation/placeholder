@@ -162,7 +162,7 @@ namespace nil {
                 public:
                     using field_type = FieldType;
                     using variable_type = VariableType;
-                    using term = math::term<VariableType>;
+                    using term_type = term<VariableType>;
                     using constraint_type = plonk_constraint<FieldType>;
 
                     std::size_t table_id;

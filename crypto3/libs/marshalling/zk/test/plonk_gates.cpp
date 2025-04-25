@@ -77,20 +77,20 @@ PlonkVariable generate_random_plonk_variable() {
 }
 
 template<typename FieldType, typename PlonkVariable>
-nil::crypto3::math::term<PlonkVariable> generate_random_plonk_term(std::size_t vars_n) {
+nil::crypto3::zk::snark::term<PlonkVariable> generate_random_plonk_term(std::size_t vars_n) {
     std::vector<PlonkVariable> vars;
     for (std::size_t i = 0; i < vars_n; i++) {
         vars.emplace_back(generate_random_plonk_variable<PlonkVariable>());
     }
-    return nil::crypto3::math::term<PlonkVariable>(vars, nil::crypto3::algebra::random_element<FieldType>());
+    return nil::crypto3::zk::snark::term<PlonkVariable>(vars, nil::crypto3::algebra::random_element<FieldType>());
 }
 
 template<typename FieldType, typename PlonkVariable>
-nil::crypto3::math::expression<PlonkVariable>
+nil::crypto3::zk::snark::expression<PlonkVariable>
 generate_random_plonk_expression(std::size_t vars_n, std::size_t depth) {
     if( depth == 0 ){
         auto term = generate_random_plonk_term<FieldType, PlonkVariable>(vars_n);
-        return nil::crypto3::math::expression<PlonkVariable>(term).pow(rand() % 5 + 1);
+        return nil::crypto3::zk::snark::expression<PlonkVariable>(term).pow(rand() % 5 + 1);
     }
     auto expr1 = generate_random_plonk_expression<FieldType, PlonkVariable>(vars_n, depth - 1);
     auto expr2 = generate_random_plonk_expression<FieldType, PlonkVariable>(vars_n, depth - 1);
@@ -239,7 +239,7 @@ void test_plonk_term(std::size_t vars_n) {
     using namespace nil::crypto3::marshalling;
 
     using variable_type = nil::crypto3::zk::snark::plonk_variable<typename Field::value_type>;
-    using value_type = nil::crypto3::math::term<variable_type>;
+    using value_type = nil::crypto3::zk::snark::term<variable_type>;
     using value_marshalling_type =
             typename types::term<nil::crypto3::marshalling::field_type<Endianness>, value_type>::type;
 
@@ -268,7 +268,7 @@ void test_expression(std::size_t vars_n, std::size_t terms_n) {
     using namespace nil::crypto3::marshalling;
 
     using variable_type = nil::crypto3::zk::snark::plonk_variable<typename Field::value_type>;
-    using value_type = nil::crypto3::math::expression<variable_type>;
+    using value_type = nil::crypto3::zk::snark::expression<variable_type>;
     using value_marshalling_type =
             typename types::expression<nil::crypto3::marshalling::field_type<Endianness>, value_type>::type;
 

@@ -70,7 +70,7 @@ namespace nil {
             using columns_rotations_type = std::vector<std::set<int>>;
 
             // Detect whether combination is a polynomial over one variable
-            bool detect_polynomial(crypto3::math::non_linear_combination<variable_type> const& comb) {
+            bool detect_polynomial(crypto3::zk::snark::non_linear_combination<variable_type> const& comb) {
                 std::unordered_set<variable_type> comb_vars;
 
                 for (auto it = std::begin(comb); it != std::cend(comb); ++it ) {
@@ -84,7 +84,7 @@ namespace nil {
             }
 
             // Detect whether term is a power of one variable. If such, return this power
-            std::size_t term_is_power(crypto3::math::term<variable_type> const& term) {
+            std::size_t term_is_power(crypto3::zk::snark::term<variable_type> const& term) {
                 const auto &vars = term.get_vars();
                 auto var = std::cbegin(vars);
 
@@ -114,7 +114,7 @@ namespace nil {
             ){
                 std::stringstream result;
 
-                crypto3::math::expression_to_non_linear_combination_visitor<variable_type> visitor;
+                crypto3::zk::snark::expression_to_non_linear_combination_visitor<variable_type> visitor;
                 auto comb = visitor.convert(constraint);
 
                 if (_deduce_horner && detect_polynomial(comb)) {
@@ -190,7 +190,7 @@ namespace nil {
                 using variable_type = nil::crypto3::zk::snark::plonk_variable<typename PlaceholderParams::field_type::value_type>;
                 std::stringstream result;
 
-                crypto3::math::expression_to_non_linear_combination_visitor<variable_type> visitor;
+                crypto3::zk::snark::expression_to_non_linear_combination_visitor<variable_type> visitor;
                 auto comb = visitor.convert(constraint);
                 result << "\t\tsum = 0;" << std::endl;
                 for( auto it = std::cbegin(comb); it != std::cend(comb); ++it ){

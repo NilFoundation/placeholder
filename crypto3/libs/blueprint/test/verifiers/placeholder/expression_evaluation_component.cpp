@@ -82,7 +82,7 @@ void test(std::vector<typename BlueprintFieldType::value_type> &public_input,
         BOOST_ASSERT(input_var.index == 0);
         return public_input[input_var.rotation];
     };
-    expression_evaluator<var> evaluator(constraint, get_var_value);
+    nil::crypto3::zk::snark::expression_evaluator<var> evaluator(constraint, get_var_value);
     value_type expected_res = evaluator.evaluate();
 
     typename component_type::input_type instance_input = {var_map};

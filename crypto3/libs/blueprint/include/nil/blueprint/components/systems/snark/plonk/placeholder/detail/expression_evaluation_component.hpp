@@ -126,15 +126,15 @@ namespace nil {
                         auto res1 = boost::apply_visitor(*this, op.get_expr_left().get_expr());
                         auto res2 = boost::apply_visitor(*this, op.get_expr_right().get_expr());
                         switch (op.get_op()) {
-                            case crypto3::math::ArithmeticOperator::ADD:
+                            case nil::crypto3::zk::snark::ArithmeticOperator::ADD:
                                 return assignment_table.template add_input_to_batch<addition_component_type>(
                                             {res1, res2},
                                             generate_assignment_call).output;
-                            case crypto3::math::ArithmeticOperator::SUB:
+                            case nil::crypto3::zk::snark::ArithmeticOperator::SUB:
                                 return assignment_table.template add_input_to_batch<subtraction_component_type>(
                                             {res1, res2},
                                             generate_assignment_call).output;
-                            case crypto3::math::ArithmeticOperator::MULT:
+                            case nil::crypto3::zk::snark::ArithmeticOperator::MULT:
                                 return assignment_table.template add_input_to_batch<multiplication_component_type>(
                                             {res1, res2},
                                             generate_assignment_call).output;
