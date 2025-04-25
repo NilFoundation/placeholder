@@ -47,6 +47,7 @@ namespace nil {
 
                 constexpr static const std::size_t chunk_amount = 16;
                 constexpr static const std::size_t carry_amount = 16 / 3 + 1;
+                // Some powers of two
                 constexpr static const value_type two_16 = 65536;
                 constexpr static const value_type two_32 = 4294967296;
                 constexpr static const value_type two_48 = 281474976710656;
@@ -61,12 +62,14 @@ namespace nil {
                 using typename generic_component<FieldType, stage>::context_type;
 
                 template<typename T, typename V = T>
+                // Reconstruct a 64-bit element from four 16-bit chunks
                 T chunk_sum_64(const std::vector<V> &chunks, const unsigned char chunk_idx) const {
                     BOOST_ASSERT(chunk_idx < 4);
                     return chunks[4 * chunk_idx] + chunks[4 * chunk_idx + 1] * two_16 +
                            chunks[4 * chunk_idx + 2] * two_32 + chunks[4 * chunk_idx + 3] * two_48;
                 }
 
+                // From 64-bit chunks of a, b, r, q, compute the part of r*b - q - a with combined chunk coefficients 2^0 and 2^64
                 template<typename T>
                 T first_carryless_construct(const std::vector<T> &a_64_chunks,
                                             const std::vector<T> &b_64_chunks,
@@ -78,6 +81,7 @@ namespace nil {
                            a_64_chunks[0] - two_64 * a_64_chunks[1];
                 }
 
+                // From 64-bit chunks of a, b, r, q, compute the part of r*b - q - a with chunk coefficients 2^128 and 2^192
                 template<typename T>
                 T second_carryless_construct(const std::vector<T> &a_64_chunks,
                                              const std::vector<T> &b_64_chunks,
@@ -92,6 +96,8 @@ namespace nil {
                 }
 
                 template<typename T>
+                // From 64-bit chunks of a, b, r, q, compute the part of r*b - q - a with chunk coefficients 2^256 and 2^320 (we don't need a, q because they have already been fully consumed in previous chunks)
+                // No need for a 4th carryless construct for chunk coefficient 2^384, i.e. r_64_chunks[3] * b_64_chunks[3]?
                 T third_carryless_construct(const std::vector<T> &b_64_chunks,
                                             const std::vector<T> &r_64_chunks) const {
                     return (r_64_chunks[1] * b_64_chunks[3] + r_64_chunks[2] * b_64_chunks[2] +
@@ -100,6 +106,7 @@ namespace nil {
                                (r_64_chunks[2] * b_64_chunks[3] + r_64_chunks[3] * b_64_chunks[2]);
                 }
 
+                // Given 16-bit chunks of a, b, r, compute a + b - r, and take out whatever overflows 48-bits as a carry to the next one.
                 TYPE carry_on_addition_constraint(TYPE a_0, TYPE a_1, TYPE a_2, TYPE b_0, TYPE b_1,
                                                   TYPE b_2, TYPE r_0, TYPE r_1, TYPE r_2,
                                                   TYPE last_carry, TYPE result_carry,
@@ -116,6 +123,7 @@ namespace nil {
                     }
                     return res;
                 };
+                // Similar to the above, but only one 16-bit chunk per value. 
                 TYPE last_carry_on_addition_constraint(TYPE a_0, TYPE b_0, TYPE r_0,
                                                        TYPE last_carry, TYPE result_carry) {
                     TYPE res = (last_carry + a_0 + b_0 - r_0 - result_carry * two_16);
@@ -160,13 +168,17 @@ namespace nil {
                     std::vector<TYPE> q_out_chunks(chunk_amount);
 
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
+                        // Note that these are not really values in the circuit, because they are too big to fit into a single cell.
                         zkevm_word_type a = current_state.stack_top();
                         zkevm_word_type b = current_state.stack_top(1);
                         zkevm_word_type N = current_state.stack_top(2);
 
+                        // Result of a + b, split, separating whatever overflows 256 bits.
                         auto s_full = nil::crypto3::multiprecision::big_uint<257>(a) + b;
                         zkevm_word_type s = s_full.truncate<256>();
                         s_overflow = s_full.bit_test(256);
+
+                        // Quotient r and remainder q of division by N (the choice of notation is unfortunate)
                         auto r_full = N != 0u ? s_full / N : 0u;
                         r_overflow = r_full.bit_test(256);
                         zkevm_word_type r = r_full.truncate<256>();
@@ -176,6 +188,7 @@ namespace nil {
                             N != 0u ? q : 0u;  // according to EVM spec s % 0 = 0
                         zkevm_word_type v = wrapping_sub(q, N);
 
+                        // Split all values involved in 16-bit chunks
                         a_chunks = zkevm_word_to_field_element<FieldType>(a);
                         b_chunks = zkevm_word_to_field_element<FieldType>(b);
                         N_chunks = zkevm_word_to_field_element<FieldType>(N);
@@ -184,6 +197,7 @@ namespace nil {
                         q_chunks = zkevm_word_to_field_element<FieldType>(q);
                         v_chunks = zkevm_word_to_field_element<FieldType>(v);
                         q_out_chunks = zkevm_word_to_field_element<FieldType>(q_out);
+                        // Reconstruct 64-bit chunks for s, N, r, q.
                         // note that we don't assign 64-chunks for s/N, as we can build them
                         // from 16-chunks with constraints under the same logic we only assign
                         // the 16-bit chunks for carries
@@ -194,6 +208,7 @@ namespace nil {
                             q_64_chunks.push_back(chunk_sum_64<value_type>(q_chunks, i));
                         }
                     }
+                    // Compute the three less significant 128-bit chunks of rN + q - s (kind of, they are "chunks with overflow")
                     first_carryless = first_carryless_construct<TYPE>(s_64_chunks, N_64_chunks,
                                                                         r_64_chunks, q_64_chunks);
                     second_carryless = second_carryless_construct<TYPE>(s_64_chunks, N_64_chunks,
