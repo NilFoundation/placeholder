@@ -224,7 +224,7 @@ namespace nil {
                     std::function<void(var)> variable_extractor = [&variable_set](var variable) {
                         variable_set.insert(variable);
                     };
-                    nil::crypto3::math::expression_for_each_variable_visitor<var> visitor(variable_extractor);
+                    nil::crypto3::zk::snark::expression_for_each_variable_visitor<var> visitor(variable_extractor);
                     for (const auto &constraint : gate.constraints) {
                         visitor.visit(constraint);
                     }
@@ -236,7 +236,7 @@ namespace nil {
                     std::function<void(var)> variable_extractor = [&variable_set](var variable) {
                         variable_set.insert(variable);
                     };
-                    nil::crypto3::math::expression_for_each_variable_visitor<var> visitor(variable_extractor);
+                    nil::crypto3::zk::snark::expression_for_each_variable_visitor<var> visitor(variable_extractor);
                     for (const auto &lookup_constraint : lookup_gate.constraints) {
                         for (const auto &lookup_input : lookup_constraint.lookup_input) {
                             visitor.visit(lookup_input);
@@ -317,7 +317,7 @@ namespace nil {
                 std::function<void(var)> variable_extractor = [&variable_set](var variable) {
                     variable_set.insert(variable);
                 };
-                nil::crypto3::math::expression_for_each_variable_visitor<var> visitor(variable_extractor);
+                nil::crypto3::zk::snark::expression_for_each_variable_visitor<var> visitor(variable_extractor);
                 for (const auto &constraint : gate.constraints) {
                     visitor.visit(constraint);
                 }
@@ -331,7 +331,7 @@ namespace nil {
                 std::function<void(var)> variable_extractor = [&variable_set](var variable) {
                     variable_set.insert(variable);
                 };
-                nil::crypto3::math::expression_for_each_variable_visitor<var> visitor(variable_extractor);
+                nil::crypto3::zk::snark::expression_for_each_variable_visitor<var> visitor(variable_extractor);
                 for (const auto &lookup_constraint : lookup_gate.constraints) {
                     for (const auto &lookup_input : lookup_constraint.lookup_input) {
                         visitor.visit(lookup_input);

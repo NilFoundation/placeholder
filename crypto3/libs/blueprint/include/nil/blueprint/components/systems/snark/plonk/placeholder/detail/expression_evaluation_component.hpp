@@ -68,11 +68,11 @@ namespace nil {
                           generate_assignment_call(_generate_assignment_call)
                     {}
 
-                    var visit(const nil::crypto3::math::expression<var> &expr) {
+                    var visit(const nil::crypto3::zk::snark::expression<var> &expr) {
                         return boost::apply_visitor(*this, expr.get_expr());
                     }
 
-                    var operator()(const nil::crypto3::math::term<var>& term) {
+                    var operator()(const nil::crypto3::zk::snark::term<var>& term) {
                         var result;
                         const std::size_t term_size = term.get_vars().size();
                         if (term_size == 0) {
@@ -96,7 +96,7 @@ namespace nil {
                         return result;
                     }
 
-                    var operator()(const nil::crypto3::math::pow_operation<var>& pow) {
+                    var operator()(const nil::crypto3::zk::snark::pow_operation<var>& pow) {
                         int power = pow.get_power();
                         BOOST_ASSERT(power > 0);
                         var expr_res = boost::apply_visitor(*this, pow.get_expr().get_expr());
@@ -122,7 +122,7 @@ namespace nil {
                                 generate_assignment_call).output;
                     }
 
-                    var operator()(const nil::crypto3::math::binary_arithmetic_operation<var>& op) {
+                    var operator()(const nil::crypto3::zk::snark::binary_arithmetic_operation<var>& op) {
                         auto res1 = boost::apply_visitor(*this, op.get_expr_left().get_expr());
                         auto res2 = boost::apply_visitor(*this, op.get_expr_right().get_expr());
                         switch (op.get_op()) {

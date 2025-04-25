@@ -112,7 +112,7 @@ namespace nil {
                         std::function<void(var)> variable_extractor = [&variable_set](var variable) {
                             variable_set.insert(variable);
                         };
-                        nil::crypto3::math::expression_for_each_variable_visitor<var> visitor(variable_extractor);
+                        nil::crypto3::zk::snark::expression_for_each_variable_visitor<var> visitor(variable_extractor);
                         visitor.visit(constraint);
 
                         for (const auto &variable : variable_set) {

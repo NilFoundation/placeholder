@@ -35,15 +35,15 @@ namespace nil {
     namespace blueprint {
         template<typename BlueprintFieldType>
         class gate_mover : public boost::static_visitor<
-                nil::crypto3::math::expression<nil::crypto3::zk::snark::plonk_variable<typename BlueprintFieldType::value_type>>> {
+                nil::crypto3::zk::snark::expression<nil::crypto3::zk::snark::plonk_variable<typename BlueprintFieldType::value_type>>> {
 
             using var = nil::crypto3::zk::snark::plonk_variable<typename BlueprintFieldType::value_type>;
             std::function<var(var)> var_mover;
         public:
-            using expression = nil::crypto3::math::expression<var>;
-            using term_type = nil::crypto3::math::term<var>;
-            using pow_operation = nil::crypto3::math::pow_operation<var>;
-            using binary_arithmetic_operation = nil::crypto3::math::binary_arithmetic_operation<var>;
+            using expression = nil::crypto3::zk::snark::expression<var>;
+            using term_type = nil::crypto3::zk::snark::term<var>;
+            using pow_operation = nil::crypto3::zk::snark::pow_operation<var>;
+            using binary_arithmetic_operation = nil::crypto3::zk::snark::binary_arithmetic_operation<var>;
 
             gate_mover(std::function<var(var)> var_mover_) : var_mover(var_mover_) {}
 
@@ -74,11 +74,11 @@ namespace nil {
                 expression right =
                     boost::apply_visitor(*this, op.get_expr_right().get_expr());
                 switch (op.get_op()) {
-                    case nil::crypto3::math::ArithmeticOperator::ADD:
+                    case nil::crypto3::zk::snark::ArithmeticOperator::ADD:
                         return left + right;
-                    case nil::crypto3::math::ArithmeticOperator::SUB:
+                    case nil::crypto3::zk::snark::ArithmeticOperator::SUB:
                         return left - right;
-                    case nil::crypto3::math::ArithmeticOperator::MULT:
+                    case nil::crypto3::zk::snark::ArithmeticOperator::MULT:
                         return left * right;
                     default:
                         __builtin_unreachable();
