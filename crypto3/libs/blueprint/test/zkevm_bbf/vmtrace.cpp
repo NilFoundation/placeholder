@@ -106,28 +106,25 @@ public:
         const l1_size_restrictions         &max_sizes
     ){
         {
-            nil::blueprint::bbf::vmtrace_block_loader loader(path);
-
             if( empty_machine_run ){
+                nil::blueprint::bbf::vmtrace_block_loader loader(path);
                 nil::blueprint::bbf::zkevm_basic_evm evm((abstract_block_loader*)(&loader));
                 evm.execute_blocks();
                 BOOST_ASSERT(evm.get_execution_status());
             }
             if( check_trace){
+                nil::blueprint::bbf::vmtrace_block_loader loader(path);
                 nil::blueprint::bbf::zkevm_vmtrace_trace_checker trace_checker(&loader);
                 BOOST_ASSERT(trace_checker.get_execution_status());
             }
             if( !assign ) return;
 
+            nil::blueprint::bbf::vmtrace_block_loader loader(path);
             nil::blueprint::bbf::zkevm_basic_input_generator circuit_inputs((abstract_block_loader*)(&loader));
             BOOST_ASSERT(circuit_inputs.get_execution_status());
             BOOST_LOG_TRIVIAL(trace) << circuit_inputs.print_statistics();
 
-            // BOOST_LOG_TRIVIAL(trace) << "Circuit inputs generated";
-            // BOOST_ASSERT(circuit_inputs.get_execution_status());
-            // BOOST_LOG_TRIVIAL(trace) << "Execution status";
-
-            // std::cout << circuit_inputs.print_statistics();
+            std::cout << circuit_inputs.print_statistics();
         }
         std::cout << "Done" << std::endl;
         return;

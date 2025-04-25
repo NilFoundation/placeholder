@@ -50,18 +50,18 @@ namespace nil {
 
             enum class call_context_field: std::uint8_t {
                 // Grouped by call, no revertions
-                parent_id,
-                block_id,
-                tx_id,
-                call_context_value,
-                call_context_address,
-                calldata_size,
-                depth,
-                lastcall_id,
-                lastcall_returndata_offset,
-                lastcall_returndata_length,
-                returndata_size,
-                call_status
+                parent_id = 0,
+                block_id = 1,
+                tx_id = 2,
+                call_context_value = 3,
+                call_context_address = 4,
+                calldata_size = 5,
+                depth = 6,
+                returndata_size = 7,
+                lastcall_id = 8,
+                lastcall_returndata_offset = 9,
+                lastcall_returndata_length = 10,
+                call_status = 11
             };
             static constexpr std::size_t call_context_readonly_field_amount = 12;
             static constexpr std::size_t call_context_fields_amount = 18;

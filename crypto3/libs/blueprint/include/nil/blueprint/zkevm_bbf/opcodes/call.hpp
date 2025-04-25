@@ -31,8 +31,8 @@ namespace nil {
                         auto argLength = current_state.stack_top(4);
                         auto retOffset = current_state.stack_top(5);
                         auto retLength = current_state.stack_top(6);
-                        std::cout
-                            << "\t CALL: gas=" << gas
+                        BOOST_LOG_TRIVIAL(trace)
+                            << "\tCALL: gas=" << gas
                             << std::hex << " address=0x" << address << std::dec
                             << " value=" << value
                             << " argOffset=" << argOffset

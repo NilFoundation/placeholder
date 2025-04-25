@@ -351,6 +351,7 @@ namespace nil {
                     pc = 0;
                     depth++;
                     is_start_call = false;
+
                 }
 
                 virtual void execute_call(){
@@ -366,6 +367,14 @@ namespace nil {
 
                 virtual void end_call(){
                     BOOST_LOG_TRIVIAL(trace) << "Basic end call";
+
+                    if( _call_stack.size() > 2){
+                        _call_stack[_call_stack.size()-2].was_accessed.insert(_call_stack.back().was_accessed.begin(), _call_stack.back().was_accessed.end());
+                        for( auto & [k,v]: _call_stack.back().transient_storage){
+                            _call_stack[_call_stack.size()-2].transient_storage[k] = v;
+                        }
+                    }
+
                     pc = _call_stack.back().call_pc + 1;
                     gas = _call_stack.back().before_call_gas - (call_gas - gas);
                     memory = _call_stack.back().memory;
@@ -381,6 +390,7 @@ namespace nil {
 
                     _call_stack.pop_back();
                     bytecode = _call_stack.back().bytecode;
+                    bytecode_hash = zkevm_keccak_hash(bytecode);
                     calldata = _call_stack.back().calldata;
                     caller = _call_stack.back().caller;
                     call_context_address = _call_stack.back().call_context_address;
@@ -727,12 +737,14 @@ namespace nil {
                         BOOST_LOG_TRIVIAL(trace) << "WARM " << (is_clean?"CLEAN":"DIRTY") << "  {" << std::hex << call_context_address << ", " << addr << "} "
                         << std::hex << previous_value << " => " << value << std::dec;
                     }
-                    BOOST_LOG_TRIVIAL(trace) << "is_equal = " << is_equal << std::endl;
-                    BOOST_LOG_TRIVIAL(trace) << "was_zero = " << was_zero << std::endl;
+                    BOOST_LOG_TRIVIAL(trace) << "is_equal = " << is_equal;
+                    BOOST_LOG_TRIVIAL(trace) << "was_zero = " << was_zero;
 
                     std::size_t cost = 100 + is_cold * 2100
                         + is_clean * (1 - is_equal) * was_zero * 19900
                         + is_clean * (1 - is_equal) * (1 - was_zero) * 2800;
+
+                    BOOST_LOG_TRIVIAL(trace) << "gas_cost = " << cost;
 
                     _accounts_current_state[call_context_address].storage[addr] = value;
                     _call_stack.back().was_accessed.insert({call_context_address, 0, addr});
@@ -743,12 +755,6 @@ namespace nil {
 
                 virtual void stop(){
                     call_status = 1;
-                    if( _call_stack.size() > 2){
-                        _call_stack[_call_stack.size()-2].was_accessed.insert(_call_stack.back().was_accessed.begin(), _call_stack.back().was_accessed.end());
-                        for( auto & [k,v]: _call_stack.back().transient_storage){
-                            _call_stack[_call_stack.size()-2].transient_storage[k] = v;
-                        }
-                    }
                     returndata.clear();
                     is_end_call = true;
                 }
@@ -776,14 +782,6 @@ namespace nil {
                     } else {
                         call_status = 1;
                     }
-
-                    if( _call_stack.size() > 2){
-                        _call_stack[_call_stack.size()-2].was_accessed.insert(_call_stack.back().was_accessed.begin(), _call_stack.back().was_accessed.end());
-                        for( auto & [k,v]: _call_stack.back().transient_storage){
-                            _call_stack[_call_stack.size()-2].transient_storage[k] = v;
-                        }
-                    }
-
                     is_end_call = true;
                 }
 
@@ -802,7 +800,9 @@ namespace nil {
                         returndata.push_back(memory[offset+i]);
                     }
 
-                    _accounts_current_state = _call_stack[_call_stack.size() - 2].state;
+                    _accounts_current_state = _call_stack[_call_stack.size() - 1].state;
+                    _call_stack.back().was_accessed = _call_stack[_call_stack.size() - 2].was_accessed;
+                    _call_stack.back().transient_storage = _call_stack[_call_stack.size() - 2].transient_storage;
                     call_status = 0;
                     is_end_call = true;
                 }
@@ -811,6 +811,8 @@ namespace nil {
                     returndata.clear();
                     call_status = 0;
                     _accounts_current_state = _call_stack[_call_stack.size() - 2].state;
+                    _call_stack.back().was_accessed = _call_stack[_call_stack.size() - 2].was_accessed;
+                    _call_stack.back().transient_storage = _call_stack[_call_stack.size() - 2].transient_storage;
                     is_end_call = true;
                 }
 
@@ -1847,16 +1849,21 @@ namespace nil {
                     gas = 0;
                     call_status = 0;
                     _accounts_current_state = _call_stack[_call_stack.size() - 2].state;
+                    _call_stack.back().was_accessed = _call_stack[_call_stack.size() - 2].was_accessed;
+                    _call_stack.back().transient_storage = _call_stack[_call_stack.size() - 2].transient_storage;
                     is_end_call = true;
                 }
 
             protected:
                 template <typename T>
-                bool check_equal( T a, T b, std::string message ){
+                bool check_equal( T a, T b, std::string message, bool print_hex = true ){
                     bool condition = (a == b);
                     std::stringstream es;
                     if( !condition ){
-                        es << message  << std::hex <<  " "  <<  a <<  " != " << b;
+                        if( print_hex )
+                            es << message << std::hex <<  " "  <<  a <<  " != " << b << std::dec;
+                        else
+                            es << message <<  " "  <<  a <<  " != " << b;
                         error_message = es.str();
                         execution_status = false;
                         BOOST_LOG_TRIVIAL(error) << error_message;
@@ -1877,6 +1884,13 @@ namespace nil {
                         this->gas_error();
                     } else {
                         gas -= cost;
+                    }
+                }
+                void print_accounts_current_state(){
+                    for( auto &[addr, acc]:_accounts_current_state){
+                        for( auto &[k,v]: acc.storage){
+                            BOOST_LOG_TRIVIAL(trace) << "{" << std::hex <<  addr << ", " << k << "} = " << v << std::dec;
+                        }
                     }
                 }
 

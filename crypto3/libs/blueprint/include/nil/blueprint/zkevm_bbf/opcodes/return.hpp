@@ -116,7 +116,7 @@ namespace nil {
                         constrain(current_state.gas(0) - current_state.gas_next()  - memory_expansion_cost);       // GAS transition
                         // constrain(current_state.stack_size(0) - current_state.stack_size_next());               // stack_size transition
                         // constrain(current_state.memory_size(0) - current_state.memory_size_next());             // memory_size transition
-                        constrain(current_state.rw_counter_next() - current_state.rw_counter(0) - 3 - 2 * length); // rw_counter transition
+                        //constrain(current_state.rw_counter_next() - current_state.rw_counter(0) - 3 - 2 * length); // rw_counter transition
                         constrain(current_state.opcode_next() - next_opcode); // Next opcode restrictions
 
                         lookup(rw_table<FieldType, stage>::stack_lookup(

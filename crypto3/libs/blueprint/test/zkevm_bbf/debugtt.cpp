@@ -281,27 +281,9 @@ BOOST_AUTO_TEST_CASE(minimal_math) {
 
     complex_test<field_type>("minimal_math.json", max_sizes);
 }
-/*
-BOOST_AUTO_TEST_CASE(small_log) {
-    using field_type = typename algebra::curves::pallas::base_field_type;
-    auto [bytecodes, pts] = load_debugtt_input("small_log/");
-    l1_size_restrictions max_sizes;
-
-    max_sizes.max_keccak_blocks = 10;
-    max_sizes.max_bytecode = 3000;
-    max_sizes.max_mpt = 0;
-    max_sizes.max_rw = 500;
-    max_sizes.max_copy = 500;
-    max_sizes.max_zkevm_rows = 500;
-    max_sizes.max_exponentiations = 50;
-    max_sizes.max_exp_rows = 500;
-
-    complex_test<field_type>(bytecodes, pts, max_sizes);
-}
 
 BOOST_AUTO_TEST_CASE(call_counter) {
     using field_type = typename algebra::curves::pallas::base_field_type;
-    auto pt = load_debugtt_input("call_counter.json");
     l1_size_restrictions max_sizes;
 
     max_sizes.max_keccak_blocks = 10;
@@ -314,12 +296,11 @@ BOOST_AUTO_TEST_CASE(call_counter) {
     max_sizes.max_exp_rows = 500;
     max_sizes.max_state = 500;
 
-    complex_test<field_type>(pt, max_sizes);
+    complex_test<field_type>("call_counter.json", max_sizes);
 }
 
 BOOST_AUTO_TEST_CASE(delegatecall_counter) {
     using field_type = typename algebra::curves::pallas::base_field_type;
-    auto pt = load_debugtt_input("delegatecall.json");
     l1_size_restrictions max_sizes;
 
     max_sizes.max_keccak_blocks = 10;
@@ -332,9 +313,9 @@ BOOST_AUTO_TEST_CASE(delegatecall_counter) {
     max_sizes.max_exp_rows = 500;
     max_sizes.max_state = 500;
 
-    complex_test<field_type>(pt, max_sizes);
+    complex_test<field_type>("delegatecall.json", max_sizes);
 }
-*/
+
 BOOST_AUTO_TEST_CASE(counter) {
     using field_type = typename algebra::curves::pallas::base_field_type;
     l1_size_restrictions max_sizes;
@@ -369,27 +350,26 @@ BOOST_AUTO_TEST_CASE(keccak) {
     complex_test<field_type>("keccak.json", max_sizes);
 }
 
-// BOOST_AUTO_TEST_CASE(call_keccak) {
-//     using field_type = typename algebra::curves::pallas::base_field_type;
-//     l1_size_restrictions max_sizes;
+BOOST_AUTO_TEST_CASE(call_keccak) {
+    using field_type = typename algebra::curves::pallas::base_field_type;
+    l1_size_restrictions max_sizes;
 
-//     max_sizes.max_keccak_blocks = 10;
-//     max_sizes.max_bytecode = 3000;
-//     max_sizes.max_mpt = 0;
-//     max_sizes.max_rw = 5000;
-//     max_sizes.max_copy = 500;
-//     max_sizes.max_zkevm_rows = 2000;
-//     max_sizes.max_exponentiations = 50;
-//     max_sizes.max_exp_rows = 500;
-//     max_sizes.max_state = 500;
+    max_sizes.max_keccak_blocks = 10;
+    max_sizes.max_bytecode = 3000;
+    max_sizes.max_mpt = 0;
+    max_sizes.max_rw = 5000;
+    max_sizes.max_copy = 500;
+    max_sizes.max_zkevm_rows = 2000;
+    max_sizes.max_exponentiations = 50;
+    max_sizes.max_exp_rows = 500;
+    max_sizes.max_state = 500;
 
-//     complex_test<field_type>("call_keccak.json", max_sizes);
-// }
+    complex_test<field_type>("call_keccak.json", max_sizes);
+}
 
-/*
+
 BOOST_AUTO_TEST_CASE(indexed_log) {
     using field_type = typename algebra::curves::pallas::base_field_type;
-    auto pt = load_debugtt_input("indexed_log.json");
     l1_size_restrictions max_sizes;
 
     max_sizes.max_keccak_blocks = 10;
@@ -402,12 +382,11 @@ BOOST_AUTO_TEST_CASE(indexed_log) {
     max_sizes.max_exp_rows = 500;
     max_sizes.max_state = 500;
 
-    complex_test<field_type>(pt, max_sizes);
+    complex_test<field_type>("indexed_log.json", max_sizes);
 }
 
 BOOST_AUTO_TEST_CASE(cold_sstore) {
     using field_type = typename algebra::curves::pallas::base_field_type;
-    auto pt = load_debugtt_input("cold_sstore.json");
     l1_size_restrictions max_sizes;
 
     max_sizes.max_keccak_blocks = 10;
@@ -420,9 +399,9 @@ BOOST_AUTO_TEST_CASE(cold_sstore) {
     max_sizes.max_exp_rows = 500;
     max_sizes.max_state = 500;
 
-    complex_test<field_type>(pt, max_sizes);
+    complex_test<field_type>("cold_sstore.json", max_sizes);
 }
-
+/*
 BOOST_AUTO_TEST_CASE(try_catch) {
     using field_type = typename algebra::curves::pallas::base_field_type;
     auto pt = load_debugtt_input("try_catch.json");
@@ -626,23 +605,6 @@ BOOST_AUTO_TEST_CASE(calldatacopy) {
     max_sizes.max_zkevm_rows = 500;
     max_sizes.max_exponentiations = 10;
     max_sizes.max_exp_rows = 100;
-
-    complex_test<field_type>(bytecodes, pts, max_sizes);
-}
-
-BOOST_AUTO_TEST_CASE(logger) {
-    using field_type = typename algebra::curves::pallas::base_field_type;
-    auto [bytecodes, pts] = load_debugtt_input("logger/");
-    l1_size_restrictions max_sizes;
-
-    max_sizes.max_keccak_blocks = 25;
-    max_sizes.max_bytecode = 300;
-    max_sizes.max_mpt = 0;
-    max_sizes.max_rw = 500;
-    max_sizes.max_copy = 200;
-    max_sizes.max_zkevm_rows = 500;
-    max_sizes.max_exponentiations = 25;
-    max_sizes.max_exp_rows = 500;
 
     complex_test<field_type>(bytecodes, pts, max_sizes);
 }

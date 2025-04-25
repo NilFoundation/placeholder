@@ -241,10 +241,10 @@ namespace nil {
                             }
                             if( is_last[i-1] != 0 && id[i] != id[i-1] ) modified_items_selector[i - 1] = 1;
                             BOOST_LOG_TRIVIAL(trace)
-                                << "\tdiff_ind = " << diff_ind
-                                << ": "  << sorted[diff_ind]
-                                << " - " << sorted_prev[diff_ind]
-                                << " = " << diff[i]
+                                // << "\t\t\t\t\t\tdiff_ind = " << diff_ind
+                                // << ": "  << sorted[diff_ind]
+                                // << " - " << sorted_prev[diff_ind]
+                                // << " = " << diff[i]
                                 << " is_first = " << is_first[i]
                                 << " counter = " << counter[i]
                                 << " parent_id = " << parent_id[i]

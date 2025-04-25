@@ -225,6 +225,18 @@ namespace nil {
                     if( !execution_status ) return;
                 }
 
+                virtual void start_call() override{
+                    BOOST_LOG_TRIVIAL(trace) << "START CALL";
+                    zkevm_basic_evm::start_call();
+                    executed_opcode++;
+                }
+
+                virtual void end_call() override{
+                    BOOST_LOG_TRIVIAL(trace) << "END CALL";
+                    zkevm_basic_evm::end_call();
+                    executed_opcode--;
+                }
+
                 virtual void execute_opcode() override{
                     const auto &opcode_description = opcode_trace[executed_opcode];
 
@@ -237,9 +249,9 @@ namespace nil {
                         << " gas = " << gas
                         << " call_context_address = " << std::hex << call_context_address << std::dec;
 
-                    if( !check_equal<std::size_t>(pc, atoi(opcode_description.get_child("pc").data().c_str()) , "Wrong pc ") ) return;
-                    if( !check_equal<std::size_t>(depth-1, atoi(opcode_description.get_child("depth").data().c_str()) , "Wrong depth ") ) return;
-                    if( !check_equal<std::size_t>(gas, atoi(opcode_description.get_child("gas").data().c_str()) , "Wrong gas ") ) return;
+                    if( !check_equal<std::size_t>(pc, atoi(opcode_description.get_child("pc").data().c_str()) , "Wrong pc ", false) ) return;
+                    if( !check_equal<std::size_t>(depth-1, atoi(opcode_description.get_child("depth").data().c_str()) , "Wrong depth ", false) ) return;
+                    if( !check_equal<std::size_t>(gas, atoi(opcode_description.get_child("gas").data().c_str()) , "Wrong gas ", false) ) return;
 
                     if( !check(
                         pc == bytecode.size() ||

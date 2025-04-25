@@ -44,7 +44,7 @@ namespace nil {
 
             struct state_operation{
                 state_operation(){};
-                rw_operation_type    op = rw_operation_type::start;           // operation type
+                rw_operation_type       op = rw_operation_type::start;           // operation type
                 std::size_t             id = 0;
                 zkevm_word_type         address = 0;                                  // account_address (160 bits)
                 std::uint8_t            field = 0;

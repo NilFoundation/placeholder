@@ -84,8 +84,8 @@ namespace nil {
                         auto previous_v = w_to_16(current_state.storage(current_state.stack_top()));
                         auto v = w_to_16(current_state.stack_top(1));
 
-                        TYPE initial_V_hi = w_hi<FieldType>(current_state.storage(current_state.stack_top()));
-                        TYPE initial_V_lo = w_lo<FieldType>(current_state.storage(current_state.stack_top()));
+                        TYPE initial_V_hi = w_hi<FieldType>(current_state.initial_storage(current_state.stack_top()));
+                        TYPE initial_V_lo = w_lo<FieldType>(current_state.initial_storage(current_state.stack_top()));
                         TYPE previous_V_hi = w_hi<FieldType>(current_state.storage(current_state.stack_top()));
                         TYPE previous_V_lo = w_lo<FieldType>(current_state.storage(current_state.stack_top()));
                         TYPE V_hi = w_hi<FieldType>(current_state.stack_top(1));
@@ -110,7 +110,7 @@ namespace nil {
 
                         is_equal_hi = (previous_V_hi == V_hi);
                         is_equal_lo = (previous_V_lo == V_lo);
-                        is_equal = is_equal_hi * is_equal_lo;
+                        is_equal = is_equal_hi*is_equal_lo;
 
                         D_hi_inv = (initial_V_hi - previous_V_hi) == 0? 0: (initial_V_hi - previous_V_hi).inversed();
                         D_lo_inv = (initial_V_lo - previous_V_lo) == 0? 0: (initial_V_lo - previous_V_lo).inversed();
@@ -162,24 +162,24 @@ namespace nil {
                     constrain(previous_V_sum_inv * (previous_V_sum_expr * previous_V_sum_inv - 1));
                     constrain(was_zero + previous_V_sum_expr * previous_V_sum_inv - 1);
 
-                    // constrain(R_hi_inv * ((previous_V_128.first - V_128.first) * R_hi_inv - 1));
-                    // constrain((previous_V_128.first - V_128.first) * ((previous_V_128.first - V_128.first) * R_hi_inv - 1));
-                    // constrain(is_equal_hi - (1 - (previous_V_128.first - V_128.first) * R_hi_inv));
+                    constrain(R_hi_inv * ((previous_V_128.first - V_128.first) * R_hi_inv - 1));
+                    constrain((previous_V_128.first - V_128.first) * ((previous_V_128.first - V_128.first) * R_hi_inv - 1));
+                    constrain(is_equal_hi - (1 - (previous_V_128.first - V_128.first) * R_hi_inv));
 
-                    // constrain(R_lo_inv * ((previous_V_128.second - V_128.second) * R_lo_inv - 1));
-                    // constrain((previous_V_128.second - V_128.second) * ((previous_V_128.second - V_128.second) * R_lo_inv - 1));
-                    // constrain(is_equal_lo - (1 - (previous_V_128.second - V_128.second) * R_lo_inv));
+                    constrain(R_lo_inv * ((previous_V_128.second - V_128.second) * R_lo_inv - 1));
+                    constrain((previous_V_128.second - V_128.second) * ((previous_V_128.second - V_128.second) * R_lo_inv - 1));
+                    constrain(is_equal_lo - (1 - (previous_V_128.second - V_128.second) * R_lo_inv));
 
-                    // constrain(D_hi_inv * ((initial_V_128.first - previous_V_128.first) * D_hi_inv - 1));
-                    // constrain((initial_V_128.first - previous_V_128.first) * ((initial_V_128.first - previous_V_128.first) * D_hi_inv - 1));
-                    // constrain(is_clean_hi - (1 - (initial_V_128.first - previous_V_128.first) * D_hi_inv));
+                    constrain(D_hi_inv * ((initial_V_128.first - previous_V_128.first) * D_hi_inv - 1));
+                    constrain((initial_V_128.first - previous_V_128.first) * ((initial_V_128.first - previous_V_128.first) * D_hi_inv - 1));
+                    constrain(is_clean_hi - (1 - (initial_V_128.first - previous_V_128.first) * D_hi_inv));
 
-                    // constrain(D_lo_inv * ((initial_V_128.second - previous_V_128.second) * D_lo_inv - 1));
-                    // constrain((initial_V_128.second - previous_V_128.second) * ((initial_V_128.second - previous_V_128.second) * D_lo_inv - 1));
-                    // constrain(is_clean_lo - (1 - (initial_V_128.second - previous_V_128.second) * D_lo_inv));
+                    constrain(D_lo_inv * ((initial_V_128.second - previous_V_128.second) * D_lo_inv - 1));
+                    constrain((initial_V_128.second - previous_V_128.second) * ((initial_V_128.second - previous_V_128.second) * D_lo_inv - 1));
+                    constrain(is_clean_lo - (1 - (initial_V_128.second - previous_V_128.second) * D_lo_inv));
 
-                    // constrain(is_equal - is_equal_hi * is_equal_lo);
-                    // constrain(is_clean - is_clean_hi * is_clean_lo);
+                    constrain(is_equal - is_equal_hi * is_equal_lo);
+                    constrain(is_clean - is_clean_hi * is_clean_lo);
 
                     TYPE gas_cost =
                         100 +                                             // is_clean anyway

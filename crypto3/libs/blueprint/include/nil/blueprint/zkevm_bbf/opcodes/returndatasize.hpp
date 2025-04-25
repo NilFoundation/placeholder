@@ -54,6 +54,7 @@ namespace nil {
                     if constexpr( stage == GenerationStage::ASSIGNMENT ){
                         lastcall_id = current_state.lastsubcall_id();
                         returndata_size = current_state.returndatasize();
+                        BOOST_LOG_TRIVIAL(trace) << "\tlastcall_id = " <<  lastcall_id << " returndata_size = " << returndata_size;
                     }
                     allocate(lastcall_id, 32, 0);
                     allocate(returndata_size, 33, 0);
@@ -75,26 +76,23 @@ namespace nil {
                             lastcall_id
                         ), "zkevm_rw");
 
-                        // CALLDATASIZE is correct for current call_id
-                        lookup(rw_table<FieldType, stage>::call_context_lookup(
-                            lastcall_id,
-                            std::size_t(call_context_field::returndata_size),
-                            TYPE(0),
-                            returndata_size
-                        ), "zkevm_rw");
+                        // // CALLDATASIZE is correct for current call_id
+                        // lookup(rw_table<FieldType, stage>::call_context_lookup(
+                        //     lastcall_id,
+                        //     std::size_t(call_context_field::returndata_size),
+                        //     TYPE(0),
+                        //     returndata_size
+                        // ), "zkevm_rw");
 
-                        // calldatasize was successfully written to stack
-                        lookup(rw_table<FieldType, stage>::stack_lookup(
-                            current_state.call_id(0),
-                            current_state.stack_size(0),
-                            current_state.rw_counter(0)+1,
-                            TYPE(1),                                               // is_write
-                            TYPE(0),
-                            returndata_size
-                        ), "zkevm_rw");
-
-                    } else {
-                        std::cout << "\tSTATE transition implemented" << std::endl;
+                        // // calldatasize was successfully written to stack
+                        // lookup(rw_table<FieldType, stage>::stack_lookup(
+                        //     current_state.call_id(0),
+                        //     current_state.stack_size(0),
+                        //     current_state.rw_counter(0)+1,
+                        //     TYPE(1),                                               // is_write
+                        //     TYPE(0),
+                        //     returndata_size
+                        // ), "zkevm_rw");
                     }
                 }
             };
