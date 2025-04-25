@@ -109,7 +109,7 @@ namespace nil {
                     std::size_t max_state
                 ) :generic_component<FieldType,stage>(context_object) {
                     auto zerohash = zkevm_keccak_hash({});
-                    std::cout << "Copy assignment and circuit construction" << std::endl;
+                    BOOST_LOG_TRIVIAL(trace) << "Copy assignment and circuit construction" << std::endl;
 
                     // Allocate places for dynamic lookups
                     std::size_t current_column = 0;
@@ -202,7 +202,7 @@ namespace nil {
                                 type_selector[current_row][copy_op_to_num(cp.source_type) - 1] = 1;
                                 type_selector[current_row + 1][copy_op_to_num(cp.destination_type) - 1] = 1;
 
-                                std::cout << "\t\t" << current_row << ". "
+                                BOOST_LOG_TRIVIAL(trace) << "\t\t" << current_row << ". "
                                     << std::hex
                                     << cp.source_id << " " << counter_1[current_row] << " " << counter_2[current_row] << "    "
                                     << cp.destination_id << " " << counter_1[current_row+1] << " " << counter_2[current_row+1] << "    "
@@ -215,8 +215,8 @@ namespace nil {
                                 current_row += 2;
                             }
                             is_last[current_row - 1] = 1;
-                            std::cout << std::endl;
-                            std::cout << "\tFor bytes size = " << cp.size() << " last row is " << current_row - 1 << std::endl;
+                            BOOST_LOG_TRIVIAL(trace) << std::endl;
+                            BOOST_LOG_TRIVIAL(trace) << "\tFor bytes size = " << cp.size() << " last row is " << current_row - 1 << std::endl;
                         }
                     }
                     for( std::size_t i = 0; i < max_copy; i++){
@@ -310,7 +310,7 @@ namespace nil {
                             is_write[1],  // is_write
                             value_lo[1]
                         );
-                        std::cout << "Memory_lookup size " << tmp.size() << std::endl;
+                        BOOST_LOG_TRIVIAL(trace) << "Memory_lookup size " << tmp.size() << std::endl;
                         for( std::size_t i = 0; i < tmp.size(); i++) tmp[i] = context_object.relativize(memory_selector*tmp[i], -1);
                         context_object.relative_lookup(tmp, "zkevm_rw", 0, max_copy - 1);
 
@@ -363,7 +363,7 @@ namespace nil {
                             is_write[1],
                             value_lo[1]
                         );
-                        std::cout << "Calldata_lookup size " << tmp.size() << std::endl;
+                        BOOST_LOG_TRIVIAL(trace) << "Calldata_lookup size " << tmp.size() << std::endl;
                         for( std::size_t i = 0; i < tmp.size(); i++) tmp[i] = context_object.relativize(calldata_selector*tmp[i], -1);
                         context_object.relative_lookup(tmp, "zkevm_rw", 0, max_copy - 1);
 
@@ -375,7 +375,7 @@ namespace nil {
                             is_write[1],  // is_write
                             value_lo[1]
                         );
-                        std::cout << "Returndata_lookup size " << tmp.size() << std::endl;
+                        BOOST_LOG_TRIVIAL(trace) << "Returndata_lookup size " << tmp.size() << std::endl;
                         for( std::size_t i = 0; i < tmp.size(); i++) tmp[i] = context_object.relativize(returndata_selector*tmp[i], -1);
                         context_object.relative_lookup(tmp, "zkevm_rw", 0, max_copy - 1);
 

@@ -54,13 +54,11 @@ namespace nil {
                 std::vector<TYPE> value_lo;                     // 9
                 std::vector<TYPE> previous_value_hi;            // 10
                 std::vector<TYPE> previous_value_lo;            // 11
-                std::vector<TYPE> call_initial_value_hi;        // 12
-                std::vector<TYPE> call_initial_value_lo;        // 13
-                std::vector<TYPE> initial_value_hi;             // 14
-                std::vector<TYPE> initial_value_lo;             // 15
-                std::vector<TYPE> counter;                      // 16
+                std::vector<TYPE> initial_value_hi;             // 12
+                std::vector<TYPE> initial_value_lo;             // 13
+                std::vector<TYPE> is_original;                  // 14
 
-                static std::size_t get_witness_amount(){ return 18; }
+                static std::size_t get_witness_amount(){ return 15; }
 
                 state_table(context_type &context_object, const input_type &input, std::size_t max_state)
                     :generic_component<FieldType,stage>(context_object),
@@ -76,11 +74,9 @@ namespace nil {
                     value_lo(max_state),
                     previous_value_hi(max_state),
                     previous_value_lo(max_state),
-                    call_initial_value_hi(max_state),
-                    call_initial_value_lo(max_state),
                     initial_value_hi(max_state),
                     initial_value_lo(max_state),
-                    counter(max_state)
+                    is_original(max_state)
                 {
                     BOOST_LOG_TRIVIAL(trace) << "State table";
                     auto &state_trace = input;
@@ -100,23 +96,9 @@ namespace nil {
                             value_lo[i] = w_lo<FieldType>(state_trace[i].value);
                             previous_value_hi[i] = w_hi<FieldType>(state_trace[i].previous_value);
                             previous_value_lo[i] = w_lo<FieldType>(state_trace[i].previous_value);
-                            call_initial_value_hi[i] = w_hi<FieldType>(state_trace[i].call_initial_value);
-                            call_initial_value_lo[i] = w_lo<FieldType>(state_trace[i].call_initial_value);
                             initial_value_hi[i] = w_hi<FieldType>(state_trace[i].initial_value);
                             initial_value_lo[i] = w_lo<FieldType>(state_trace[i].initial_value);
-                            if( i == 0 ) continue;
-                            if( state_trace[i].op == rw_operation_type::call_context ){
-                                counter[i] = 0;
-                            } else if( op[i] == op[i-1] &&
-                                address[i] == address[i-1] &&
-                                field_type[i] == field_type[i-1] &&
-                                storage_key_hi[i] == storage_key_hi[i-1] &&
-                                storage_key_lo[i] == storage_key_lo[i-1]
-                            ){
-                                counter[i] = counter[i-1];
-                            } else {
-                                counter[i] = counter[i-1] + 1;
-                            }
+                            if( i!=0 ) is_original[i] = state_trace[i].is_original? 1 : 0;
                         }
                         for( std::size_t i = state_trace.size(); i < max_state; i++ ){
                             op[i] = std::size_t(rw_operation_type::padding);
@@ -124,26 +106,23 @@ namespace nil {
                     }
                     for( std::size_t i = 0; i < max_state; i++ ){
                         std::size_t current_column = 0;
-                        allocate(op[i], current_column++, i);
-                        allocate(id[i], current_column++, i);
-                        allocate(address[i], current_column++, i);
-                        allocate(field_type[i], current_column++, i);
-                        allocate(storage_key_hi[i], current_column++, i);
-                        allocate(storage_key_lo[i], current_column++, i);
-                        allocate(rw_id[i], current_column++, i);
-                        allocate(is_write[i], current_column++, i);
-                        allocate(value_hi[i], current_column++, i);
-                        allocate(value_lo[i], current_column++, i);
-                        allocate(previous_value_hi[i], current_column++, i);
-                        allocate(previous_value_lo[i], current_column++, i);
-                        allocate(call_initial_value_hi[i], current_column++, i);
-                        allocate(call_initial_value_lo[i], current_column++, i);
-                        allocate(initial_value_hi[i], current_column++, i);
-                        allocate(initial_value_lo[i], current_column++, i);
-                        allocate(counter[i], current_column++, i);
+                        allocate(is_original[i], current_column++, i);          //0
+                        allocate(op[i], current_column++, i);                   //1
+                        allocate(id[i], current_column++, i);                   //2
+                        allocate(address[i], current_column++, i);              //3
+                        allocate(field_type[i], current_column++, i);           //4
+                        allocate(storage_key_hi[i], current_column++, i);       //5
+                        allocate(storage_key_lo[i], current_column++, i);       //6
+                        allocate(rw_id[i], current_column++, i);                //7
+                        allocate(is_write[i], current_column++, i);             //8
+                        allocate(value_hi[i], current_column++, i);             //9
+                        allocate(value_lo[i], current_column++, i);             //10
+                        allocate(previous_value_hi[i], current_column++, i);    //11
+                        allocate(previous_value_lo[i], current_column++, i);    //12
+                        allocate(initial_value_hi[i], current_column++, i);     //13
+                        allocate(initial_value_lo[i], current_column++, i);     //14
                     }
-                    lookup_table("zkevm_state",std::vector<std::size_t>({0,1,2,3,4,5,6,7,8,9,10,11}),0,max_state);
-                    lookup_table("zkevm_state_opcode",std::vector<std::size_t>({0,1,2,3,4,5,6,7,8,9,10,11,14,15}),0,max_state);
+                    lookup_table("zkevm_state_opcode",std::vector<std::size_t>({0,1,2,3,4,5,6,7,8,9,10,11,12,13,14}),0,max_state);
                 }
             };
          }

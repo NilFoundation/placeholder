@@ -57,29 +57,36 @@ namespace nil {
                     using Word_Size = typename bbf::word_size<FieldType, stage>;
                     using Memory_Cost = typename bbf::memory_cost<FieldType, stage>;
 
-                    TYPE destOffset, offset, length, current_mem, next_mem,
-                        memory_expansion_cost, memory_expansion_size, S;
+                    TYPE dest_offset, offset, length, current_mem, next_mem,
+                        memory_expansion_cost, memory_expansion_size, S, length_inv, is_length_non_zero;
 
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                        destOffset = w_lo<FieldType>(current_state.stack_top());
+                        dest_offset = w_lo<FieldType>(current_state.stack_top());
                         offset = w_lo<FieldType>(current_state.stack_top(1));
                         length = w_lo<FieldType>(current_state.stack_top(2));
                         current_mem = current_state.memory_size();
                         next_mem = length.is_zero()
                                        ? current_mem
-                                       : std::max(destOffset + length, current_mem);
+                                       : std::max(dest_offset + length, current_mem);
                         S = next_mem > current_mem;
+                        length_inv = length == 0? 0: length.inversed();
+                        is_length_non_zero = length == 0? 0: 1;
                     }
-                    allocate(destOffset, 32, 0);
+                    allocate(dest_offset, 32, 0);
                     allocate(offset, 33, 0);
                     allocate(length, 34, 0);
                     allocate(current_mem, 35, 0);
                     allocate(next_mem, 36, 0);
                     allocate(S, 37, 0);
+                    allocate(length_inv, 38, 0);
+                    allocate(is_length_non_zero, 0,0);
+
+                    constrain(is_length_non_zero - length_inv * length);
+                    constrain(length_inv * (1 - is_length_non_zero));
+                    constrain(length * (1 - is_length_non_zero));
 
                     constrain(S * (S - 1));
-                    constrain(S * (next_mem - destOffset - length) +
-                              (1 - S) * (next_mem - current_mem));
+                    constrain(S * (next_mem - dest_offset - length) + (1 - S) * (next_mem - current_mem));
 
                     std::vector<std::size_t> word_size_lookup_area = {32, 33, 34};
                     allocate(memory_expansion_cost, 35, 1);
@@ -120,36 +127,50 @@ namespace nil {
                         constrain(current_state.rw_counter_next() -
                                   current_state.rw_counter(0) - 3 - length);
                         // rw_counter transition
-                        std::vector<TYPE> tmp;
-                        tmp = rw_table<FieldType, stage>::stack_lookup(
+                        lookup( rw_table<FieldType, stage>::stack_lookup(
                             current_state.call_id(0),
                             current_state.stack_size(0) - 1,
                             current_state.rw_counter(0),
                             TYPE(0),  // is_write
                             TYPE(0),
-                            destOffset
-                        );
-                        lookup(tmp, "zkevm_rw");
-                        tmp = rw_table<FieldType, stage>::stack_lookup(
+                            dest_offset
+                        ), "zkevm_rw");
+                        lookup( rw_table<FieldType, stage>::stack_lookup(
                             current_state.call_id(0),
                             current_state.stack_size(0) - 2,
                             current_state.rw_counter(0) + 1,
                             TYPE(0),  // is_write
                             TYPE(0),
                             offset
-                        );
-                        lookup(tmp, "zkevm_rw");
-                        tmp = rw_table<FieldType, stage>::stack_lookup(
+                        ), "zkevm_rw");
+                        lookup( rw_table<FieldType, stage>::stack_lookup(
                             current_state.call_id(0),
                             current_state.stack_size(0) - 3,
                             current_state.rw_counter(0) + 2,
                             TYPE(0),  // is_write
                             TYPE(0),
                             length
-                        );
-                        lookup(tmp, "zkevm_rw");
-                    } else {
-                        std::cout << "\tSTATE transition implemented" << std::endl;
+                        ), "zkevm_rw");
+                        lookup({
+                            is_length_non_zero,                                            // is_first
+                            TYPE(0),                                                       // is_write
+                            is_length_non_zero * TYPE(copy_op_to_num(copy_operand_type::bytecode)),    // cp_type
+                            current_state.bytecode_hash_hi(0),                             // id_hi
+                            current_state.bytecode_hash_lo(0),                             // id_lo
+                            is_length_non_zero * offset,                                   // counter_1
+                            0,                                                             // counter_2
+                            length
+                        }, "zkevm_copy");
+                        lookup({
+                            is_length_non_zero,                                            // is_first
+                            TYPE(1),                                                       // is_write
+                            is_length_non_zero * TYPE(copy_op_to_num(copy_operand_type::memory)),    // cp_type
+                            TYPE(0),                                                       // id_hi
+                            current_state.call_id(0),                                      // id_lo
+                            is_length_non_zero * dest_offset,                              // counter_1
+                            current_state.rw_counter(0)+3,                                 // counter_2
+                            length
+                        }, "zkevm_copy");
                     }
                 }
             };

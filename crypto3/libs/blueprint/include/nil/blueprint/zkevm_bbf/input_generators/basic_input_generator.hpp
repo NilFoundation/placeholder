@@ -119,6 +119,7 @@ namespace nil {
                         s.value = 0;
                         s.parent_id = 0;
                         s.grandparent_id = 0;
+                        s.call_id = call_id;
                         _state_operations.push_back(s);
                     }
                 }
@@ -171,6 +172,7 @@ namespace nil {
                         s.value = block_id;
                         s.parent_id = block_id;
                         s.grandparent_id = 0;
+                        s.call_id = call_id;
                         _state_operations.push_back(s);
                     }
                     print_accounts_current_state();
@@ -220,6 +222,7 @@ namespace nil {
                         s.value = _call_stack[_call_stack.size() - 2].call_id;
                         s.parent_id = _call_stack[_call_stack.size() - 2].call_id;
                         s.grandparent_id = _call_stack[_call_stack.size() - 3].call_id;
+                        s.call_id = call_id;
                         _state_operations.push_back(s);
                     }
                     for( std::size_t i = 0; i < calldata.size(); i++ ){
@@ -503,6 +506,7 @@ namespace nil {
                         s.value = 1;
                         s.parent_id = _call_stack[_call_stack.size() - 2].call_id;
                         s.grandparent_id = depth == 2? 0: _call_stack[_call_stack.size() - 3].call_id;
+                        s.call_id = call_id;
                         _state_operations.push_back(s);
                     }
                     {
@@ -521,6 +525,7 @@ namespace nil {
                         s.value = _accounts_current_state[call_context_address].storage[key];
                         s.parent_id = _call_stack[_call_stack.size() - 2].call_id;
                         s.grandparent_id = depth == 2? 0: _call_stack[_call_stack.size() - 3].call_id;
+                        s.call_id = call_id;
                         _state_operations.push_back(s);
                     }
                     zkevm_basic_evm::sload();
@@ -561,6 +566,7 @@ namespace nil {
                         s.value = 1;
                         s.parent_id = _call_stack[_call_stack.size() - 2].call_id;
                         s.grandparent_id = depth == 2? 0: _call_stack[_call_stack.size() - 3].call_id;
+                        s.call_id = call_id;
                         _state_operations.push_back(s);
                     }
                     {
@@ -579,6 +585,7 @@ namespace nil {
                         s.value = value;
                         s.parent_id = _call_stack[_call_stack.size() - 2].call_id;
                         s.grandparent_id = depth == 2? 0: _call_stack[_call_stack.size() - 3].call_id;
+                        s.call_id = call_id;
                         _state_operations.push_back(s);
                     }
                     zkevm_basic_evm::sstore();
@@ -828,6 +835,32 @@ namespace nil {
                             _call_stack.back().lastcall_id, src + i, rw_counter++, false, src + i < returndata.size() ? returndata[src + i] : 0
                         ));
                     }
+                    for( std::size_t i = 0; i < length; i++){
+                        _short_rw_operations.push_back(memory_rw_operation(
+                            call_id, dst + i, rw_counter++, true, memory[dst + i]
+                        ));
+                        cpy.push_byte(memory[dst+i]);
+                    }
+                    _copy_events.push_back(cpy);
+                }
+
+                virtual void codecopy() {
+                    std::size_t dst = std::size_t(stack[stack.size() - 1]);
+                    std::size_t src = std::size_t(stack[stack.size() - 2]);
+                    std::size_t length = std::size_t(stack[stack.size() - 3]);
+
+                    _zkevm_states.back().load_stack(stack, 3);
+                    append_stack_reads(3);
+
+                    zkevm_basic_evm::codecopy();
+                    copy_event cpy = codecopy_copy_event(
+                        bytecode_hash,
+                        src,
+                        call_id,
+                        dst,
+                        rw_counter,
+                        length
+                    );
                     for( std::size_t i = 0; i < length; i++){
                         _short_rw_operations.push_back(memory_rw_operation(
                             call_id, dst + i, rw_counter++, true, memory[dst + i]
@@ -1121,6 +1154,7 @@ namespace nil {
                         s.value = last_state_counter_stack.back().size();
                         s.parent_id = 0;
                         s.grandparent_id = 0;
+                        s.call_id = block_id;
                         _state_operations.push_back(s);
                     }
                     last_state_counter_stack.pop_back();
@@ -1243,6 +1277,7 @@ namespace nil {
                         s.value = last_state_counter_stack.back().size();
                         s.parent_id = _call_stack[_call_stack.size() - 2].call_id;
                         s.grandparent_id = depth < 3? 0: _call_stack[_call_stack.size() - 3].call_id;
+                        s.call_id = call_id;
                         _state_operations.push_back(s);
                     }
                     for( auto &[k,v]: last_state_counter_stack.back() ){
@@ -1258,6 +1293,7 @@ namespace nil {
                         BOOST_LOG_TRIVIAL(trace) << "Call_id = " << call_id << " parent_id = " << parent_id;
 
                         s.op = op;
+                        s.is_original = false;      // This operation is not presented in the timeline
                         s.address = addr;
                         s.field = f;
                         s.storage_key = st_k;
@@ -1266,6 +1302,7 @@ namespace nil {
                         s.is_write = true;
                         s.parent_id = grandparent_id;
                         s.grandparent_id = grandgrandparent_id;
+                        s.call_id = call_id;
 
                         switch(op){
                         case rw_operation_type::access_list:

@@ -284,8 +284,24 @@ namespace nil {
                 return cpy;
             }
 
-            copy_event codecopy_copy_event(){
+            copy_event codecopy_copy_event(
+                zkevm_word_type bytecode_hash,
+                std::size_t src_offset,
+                std::size_t call_id,
+                std::size_t dst_offset,
+                std::size_t rw_counter,
+                std::size_t length
+            ){
                 copy_event cpy;
+                cpy.source_type = copy_operand_type::bytecode;
+                cpy.source_id = bytecode_hash;
+                cpy.src_counter_1 = src_offset; // Before copy reading
+                cpy.src_counter_2 = 0;
+                cpy.destination_type = copy_operand_type::memory;
+                cpy.destination_id = call_id;
+                cpy.dst_counter_1 = dst_offset; // Before copy writing
+                cpy.dst_counter_2 = rw_counter;
+                cpy.length = length;
                 return cpy;
             }
         } // namespace bbf

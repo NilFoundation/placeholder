@@ -54,38 +54,38 @@ namespace nil {
                     using Word_Size = typename bbf::word_size<FieldType, stage>;
                     using Memory_Cost = typename bbf::memory_cost<FieldType, stage>;
 
-                    TYPE destOffset, offset, length, current_mem, next_mem,
-                        memory_expansion_cost, memory_expansion_size, S, length_inv, is_length_zero;
+                    TYPE dest_offset, offset, length, current_mem, next_mem,
+                        memory_expansion_cost, memory_expansion_size, S, length_inv, is_length_non_zero;
 
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                        destOffset = w_lo<FieldType>(current_state.stack_top());
+                        dest_offset = w_lo<FieldType>(current_state.stack_top());
                         offset = w_lo<FieldType>(current_state.stack_top(1));
                         length = w_lo<FieldType>(current_state.stack_top(2));
                         current_mem = current_state.memory_size();
                         next_mem = length.is_zero()
                                        ? current_mem
-                                       : std::max(destOffset + length, current_mem);
+                                       : std::max(dest_offset + length, current_mem);
                         S = next_mem > current_mem;
                         length_inv = (length == 0 ? 0 : length.inversed());
-                        is_length_zero = length == 0 ? 0 : 1;
+                        is_length_non_zero = length == 0 ? 0 : 1;
                     }
-                    allocate(destOffset, 32, 0);
+                    allocate(dest_offset, 32, 0);
                     allocate(offset, 33, 0);
                     allocate(length, 34, 0);
                     allocate(current_mem, 35, 0);
                     allocate(next_mem, 36, 0);
                     allocate(S, 37, 0);
                     allocate(length_inv, 38, 0);
-                    allocate(is_length_zero, 0, 0);
+                    allocate(is_length_non_zero, 0, 0);
 
                     // Length_inv is correct
                     constrain(length * (length * length_inv - 1));
                     constrain(length_inv * (length * length_inv - 1));
-                    constrain(is_length_zero - length * length_inv);
+                    constrain(is_length_non_zero - length * length_inv);
 
                     // Memory expansion correctness
                     constrain(S * (S - 1));
-                    constrain(S * (next_mem - destOffset - length) +
+                    constrain(S * (next_mem - dest_offset - length) +
                               (1 - S) * (next_mem - current_mem));
 
                     std::vector<std::size_t> word_size_lookup_area = {32, 33, 34};
@@ -127,7 +127,7 @@ namespace nil {
                             current_state.rw_counter(0),
                             TYPE(0),  // is_write
                             TYPE(0),
-                            destOffset
+                            dest_offset
                         ), "zkevm_rw");
                         lookup(rw_table<FieldType, stage>::stack_lookup(
                             current_state.call_id(0),
@@ -147,23 +147,23 @@ namespace nil {
                         ), "zkevm_rw");
                         // Lookup to copy table only if length != 0
                         lookup({
-                            is_length_zero,                                            // is_first
+                            is_length_non_zero,                                            // is_first
                             TYPE(0),                                                        // is_write
-                            is_length_zero * TYPE(copy_op_to_num(copy_operand_type::calldata)),    // cp_type
+                            is_length_non_zero * TYPE(copy_op_to_num(copy_operand_type::calldata)),    // cp_type
                             TYPE(0),                                                        // id_hi
-                            is_length_zero * current_state.call_id(0),                 // id_lo
-                            is_length_zero * offset,                                   // counter_1
-                            is_length_zero * (current_state.rw_counter(0) + 3),        // counter_2
+                            is_length_non_zero * current_state.call_id(0),                 // id_lo
+                            is_length_non_zero * offset,                                   // counter_1
+                            is_length_non_zero * (current_state.rw_counter(0) + 3),        // counter_2
                             length
                         }, "zkevm_copy");
                         lookup({
-                            is_length_zero,                                            // is_first
-                            is_length_zero,                                            // is_write
-                            is_length_zero * TYPE(copy_op_to_num(copy_operand_type::memory)),    // cp_type
+                            is_length_non_zero,                                            // is_first
+                            is_length_non_zero,                                            // is_write
+                            is_length_non_zero * TYPE(copy_op_to_num(copy_operand_type::memory)),    // cp_type
                             TYPE(0),                                                        // id_hi
-                            is_length_zero * current_state.call_id(0),                 // id_lo
-                            is_length_zero * destOffset,                                   // counter_1
-                            is_length_zero * (current_state.rw_counter(0) + length + 3),        // counter_2
+                            is_length_non_zero * current_state.call_id(0),                 // id_lo
+                            is_length_non_zero * dest_offset,                                   // counter_1
+                            is_length_non_zero * (current_state.rw_counter(0) + length + 3),        // counter_2
                             length
                         }, "zkevm_copy");
                     }

@@ -224,8 +224,9 @@ namespace nil {
                             V_128.second
                         ), "zkevm_rw");
 
-                        // 3. Check whether it's worm or hot access
+                        // 3. Check whether is it warm or cold access
                         lookup({
+                            TYPE(1),                                               // It's original change, not call_commit
                             TYPE(std::size_t(rw_operation_type::access_list)),
                             current_state.call_id(0),                              // All state changes are grouped by block
                             call_context_address_hi * two_128 + call_context_address_lo,
@@ -244,6 +245,7 @@ namespace nil {
 
                         // 4. Write new value to storage
                         lookup({
+                            TYPE(1),                                               // It's original change, not call_commit
                             TYPE(std::size_t(rw_operation_type::state)),
                             current_state.call_id(0),                          // All state changes are grouped by block
                             call_context_address_hi * two_128 + call_context_address_lo,

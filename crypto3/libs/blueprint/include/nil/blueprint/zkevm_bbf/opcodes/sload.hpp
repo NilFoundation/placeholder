@@ -114,6 +114,7 @@ namespace nil {
                         ), "zkevm_rw");
 
                         lookup({
+                            TYPE(1),                                               // It's original change, not call_commit
                             TYPE(std::size_t(rw_operation_type::access_list)),
                             current_state.call_id(0),                              // All state changes are grouped by block
                             call_context_address_hi * two_128 + call_context_address_lo,
@@ -131,8 +132,9 @@ namespace nil {
                         }, "zkevm_state_opcode");
 
                         lookup({
+                            TYPE(1),                                               // It's original change, not call_commit
                             TYPE(std::size_t(rw_operation_type::state)),
-                            current_state.call_id(0),                          // All state changes are grouped by block
+                            current_state.call_id(0),                              // All state changes are grouped by block
                             call_context_address_hi * two_128 + call_context_address_lo,
                             TYPE(0),                                               // field
                             K_hi,                                                  // storage_key_hi

@@ -56,7 +56,7 @@ namespace nil {
 
                 static constexpr std::size_t diff_index_selectors_amount = 32;
                 static constexpr std::size_t chunks_amount = 30;
-                static constexpr std::size_t helpers_amount = 16;
+                static constexpr std::size_t helpers_amount = 19;
                 static constexpr std::size_t op_selectors_amount = state_operation_types_amount - 1;
 
                 static table_params get_minimal_requirements(
@@ -113,10 +113,40 @@ namespace nil {
                     std::size_t CALL_CONTEXT_OP = std::size_t(rw_operation_type::call_context);
                     std::size_t PADDING_OP = std::size_t(rw_operation_type::padding);
 
-                    std::vector<std::size_t> state_table_area;
-                    for( std::size_t i = 0; i < state_table_type::get_witness_amount(); i++ ) state_table_area.push_back(i);
-                    context_type state_table_ct = context_object.subcontext(state_table_area,0,max_state);
+                    std::vector<std::size_t> table_subcomponent_area;
+
+                    for( std::size_t i = 0; i < state_table_type::get_witness_amount(); i++ ) table_subcomponent_area.push_back(i);
+                    context_type state_table_ct = context_object.subcontext(table_subcomponent_area,0,max_state);
                     state_table_type t(state_table_ct, input, max_state);
+
+                    std::vector<std::size_t> state_table_area;
+                    state_table_area.push_back(table_subcomponent_area[0]); // is_original
+                    state_table_area.push_back(table_subcomponent_area[1]); // op
+                    state_table_area.push_back(table_subcomponent_area[2]); // id
+                    state_table_area.push_back(table_subcomponent_area[3]); // address
+                    state_table_area.push_back(table_subcomponent_area[4]); // field_type
+                    state_table_area.push_back(table_subcomponent_area[5]); // storage_key_hi
+                    state_table_area.push_back(table_subcomponent_area[6]); // storage_key_lo
+                    state_table_area.push_back(table_subcomponent_area[7]); // rw_id
+                    state_table_area.push_back(table_subcomponent_area[8]); // is_write
+                    state_table_area.push_back(table_subcomponent_area[9]); // value_hi
+                    state_table_area.push_back(table_subcomponent_area[10]); // value_lo
+                    state_table_area.push_back(table_subcomponent_area[11]); // previous_value_hi
+                    state_table_area.push_back(table_subcomponent_area[12]); // previous_value_lo
+                    state_table_area.push_back(state_table_type::get_witness_amount()); // call_id
+                    lookup_table("zkevm_state",state_table_area, 0, max_state);
+
+                    std::vector<std::size_t> parent_table_area;
+                    parent_table_area.push_back(table_subcomponent_area[1]); // op
+                    parent_table_area.push_back(table_subcomponent_area[2]); // id
+                    parent_table_area.push_back(table_subcomponent_area[3]); // address
+                    parent_table_area.push_back(table_subcomponent_area[4]); // field_type
+                    parent_table_area.push_back(table_subcomponent_area[5]); // storage_key_hi
+                    parent_table_area.push_back(table_subcomponent_area[6]); // storage_key_lo
+                    parent_table_area.push_back(table_subcomponent_area[7]); // rw_id
+                    parent_table_area.push_back(state_table_type::get_witness_amount()+1); // parent_id
+                    parent_table_area.push_back(state_table_type::get_witness_amount()+2); // update_parent_selector
+                    lookup_table("zkevm_state_parent",parent_table_area, 0, max_state);
 
                     const std::vector<TYPE> &op = t.op;
                     const std::vector<TYPE> &id = t.id;
@@ -130,15 +160,17 @@ namespace nil {
                     const std::vector<TYPE> &value_lo = t.value_lo;
                     const std::vector<TYPE> &previous_value_hi = t.previous_value_hi;
                     const std::vector<TYPE> &previous_value_lo = t.previous_value_lo;
-                    const std::vector<TYPE> &call_initial_value_hi = t.call_initial_value_hi;
-                    const std::vector<TYPE> &call_initial_value_lo = t.call_initial_value_lo;
                     const std::vector<TYPE> &initial_value_hi = t.initial_value_hi;
                     const std::vector<TYPE> &initial_value_lo = t.initial_value_lo;
-                    const std::vector<TYPE> &counter = t.counter;
+                    const std::vector<TYPE> &is_original = t.is_original;
 
                     std::vector<std::array<TYPE, op_selectors_amount>> op_selectors(max_state);
                     std::vector<std::array<TYPE, diff_index_selectors_amount>> diff_index_selectors(max_state);
                     std::vector<std::array<TYPE, chunks_amount>> chunks(max_state);
+
+                    std::vector<TYPE> call_id(max_state);
+                    std::vector<TYPE> parent_id(max_state);             // 0 for block
+                    std::vector<TYPE> update_parent_selector(max_state);
 
                     std::vector<TYPE> diff(max_state);
                     std::vector<TYPE> diff_inv(max_state);
@@ -147,14 +179,15 @@ namespace nil {
                     std::vector<TYPE> is_first(max_state);
                     std::vector<TYPE> not_is_first_and_read(max_state);
                     std::vector<TYPE> is_first_and_read(max_state);
-                    std::vector<TYPE> parent_id(max_state);             // 0 for block
                     std::vector<TYPE> parent_id_inv(max_state);
                     std::vector<TYPE> is_not_block(max_state);
                     std::vector<TYPE> grandparent_id(max_state);        // 0 for block and for transaction
                     std::vector<TYPE> grandparent_id_inv(max_state);
                     std::vector<TYPE> is_not_block_and_not_transaction(max_state);
-                    std::vector<TYPE> update_parent_selector(max_state);
                     std::vector<TYPE> modified_items_selector(max_state);
+                    std::vector<TYPE> call_initial_value_hi(max_state);
+                    std::vector<TYPE> call_initial_value_lo(max_state);
+                    std::vector<TYPE> counter(max_state);
 
                     std::map<rw_operation_type, std::size_t> op_selector_indices;
                     std::size_t index = 0;
@@ -225,8 +258,11 @@ namespace nil {
                             is_last[i-1] = i-1 == 0? 0: is_first[i];
                             is_first_and_read[i] = is_first[i] * (1 - is_write[i]);
                             not_is_first_and_read[i] = (1 - is_first[i]) * (1 - is_write[i]);
+                            call_id[i] = state_trace[i].call_id;
                             parent_id[i] = state_trace[i].parent_id;
                             parent_id_inv[i] = parent_id[i] == 0? 0: parent_id[i].inversed();
+                            call_initial_value_hi[i] = w_hi<FieldType>(state_trace[i].call_initial_value);
+                            call_initial_value_lo[i] = w_lo<FieldType>(state_trace[i].call_initial_value);
                             is_not_block[i] = parent_id[i] == 0? 0: 1;
                             grandparent_id[i] = state_trace[i].grandparent_id;
                             grandparent_id_inv[i] = grandparent_id[i] == 0? 0: grandparent_id[i].inversed();
@@ -240,15 +276,19 @@ namespace nil {
                                 update_parent_selector[i - 1] = 1;
                             }
                             if( is_last[i-1] != 0 && id[i] != id[i-1] ) modified_items_selector[i - 1] = 1;
-                            BOOST_LOG_TRIVIAL(trace)
-                                // << "\t\t\t\t\t\tdiff_ind = " << diff_ind
-                                // << ": "  << sorted[diff_ind]
-                                // << " - " << sorted_prev[diff_ind]
-                                // << " = " << diff[i]
-                                << " is_first = " << is_first[i]
-                                << " counter = " << counter[i]
-                                << " parent_id = " << parent_id[i]
-                                << " grandparent_id = " << grandparent_id[i];
+
+                            if( state_trace[i].op == rw_operation_type::call_context ){
+                                counter[i] = 0;
+                            } else if( op[i] == op[i-1] &&
+                                address[i] == address[i-1] &&
+                                field_type[i] == field_type[i-1] &&
+                                storage_key_hi[i] == storage_key_hi[i-1] &&
+                                storage_key_lo[i] == storage_key_lo[i-1]
+                            ){
+                                counter[i] = counter[i-1];
+                            } else {
+                                counter[i] = counter[i-1] + 1;
+                            }
                         }
                         // TODO: Process empty trace correctly
                         is_last[state_trace.size() - 1] = 1;
@@ -269,30 +309,35 @@ namespace nil {
 
                     for( std::size_t i = 0; i < max_state; i++ ){
                         std::size_t cur_column = state_table_type::get_witness_amount();
+                        allocate(call_id[i], cur_column++, i);
+                        allocate(parent_id[i], cur_column++, i);
+                        allocate(update_parent_selector[i], cur_column++, i);
+
                         for( std::size_t j = 0; j < op_selectors_amount; j++){
-                            allocate(op_selectors[i][j], ++cur_column, i);
+                            allocate(op_selectors[i][j], cur_column++, i);
                         };
                         for( std::size_t k = 0; k < chunks_amount; k++){
-                            allocate(chunks[i][k], ++cur_column, i);
+                            allocate(chunks[i][k], cur_column++, i);
                         }
                         for( std::size_t j = 0; j < diff_index_selectors_amount; j++){
-                            allocate(diff_index_selectors[i][j], ++cur_column, i);
+                            allocate(diff_index_selectors[i][j], cur_column++, i);
                         }
-                        allocate(diff[i], ++cur_column, i);
-                        allocate(diff_inv[i], ++cur_column, i);
-                        allocate(is_diff_non_zero[i], ++cur_column, i);
-                        allocate(is_first[i], ++cur_column, i);
-                        allocate(is_last[i], ++cur_column, i);
-                        allocate(is_first_and_read[i], ++cur_column, i);
-                        allocate(not_is_first_and_read[i], ++cur_column, i);
-                        allocate(parent_id[i], ++cur_column, i);
-                        allocate(parent_id_inv[i], ++cur_column, i);
-                        allocate(is_not_block[i], ++cur_column, i);
-                        allocate(grandparent_id[i], ++cur_column, i);
-                        allocate(grandparent_id_inv[i], ++cur_column, i);
-                        allocate(is_not_block_and_not_transaction[i], ++cur_column, i);
-                        allocate(update_parent_selector[i], ++cur_column, i);
-                        allocate(modified_items_selector[i], ++cur_column, i);
+                        allocate(diff[i], cur_column++, i);
+                        allocate(diff_inv[i], cur_column++, i);
+                        allocate(is_diff_non_zero[i], cur_column++, i);
+                        allocate(is_first[i], cur_column++, i);
+                        allocate(is_last[i], cur_column++, i);
+                        allocate(is_first_and_read[i], cur_column++, i);
+                        allocate(not_is_first_and_read[i], cur_column++, i);
+                        allocate(parent_id_inv[i], cur_column++, i);
+                        allocate(is_not_block[i], cur_column++, i);
+                        allocate(grandparent_id[i], cur_column++, i);
+                        allocate(grandparent_id_inv[i], cur_column++, i);
+                        allocate(is_not_block_and_not_transaction[i], cur_column++, i);
+                        allocate(modified_items_selector[i], cur_column++, i);
+                        allocate(call_initial_value_hi[i], cur_column++, i);
+                        allocate(call_initial_value_lo[i], cur_column++, i);
+                        allocate(counter[i], cur_column++, i);
                     }
 
                     constrain(op[0] - START_OP);
@@ -445,9 +490,13 @@ namespace nil {
                         non_first_row_constraints.push_back(
                             modified_items_selector[0] - is_last[0] * ( diff_index_selectors[1][0] + diff_index_selectors[1][1] + padding_selector)
                         );
+                        every_row_constraints.push_back(is_original[1] * (id[1] - call_id[1]));
+                        every_row_constraints.push_back(is_original[1] * (1 - is_original[1]));
+                        every_row_constraints.push_back(is_original[1] * (1 - filled_selector));
 
                         // Parent lookup
                         std::vector<TYPE> parent_lookup = {
+                            filled_selector,
                             filled_selector * TYPE(std::size_t(rw_operation_type::call_context)),
                             filled_selector * id[1],
                             filled_selector * TYPE(std::size_t(state_call_context_fields::parent_id)),
@@ -459,9 +508,11 @@ namespace nil {
                             TYPE(0),
                             filled_selector * parent_id[1],
                             TYPE(0),
-                            filled_selector * parent_id[1]
+                            filled_selector * parent_id[1],
+                            filled_selector * id[1]
                         };
                         std::vector<TYPE> grandparent_lookup = {
+                            is_not_block[1],
                             is_not_block[1] * TYPE(std::size_t(rw_operation_type::call_context)),
                             is_not_block[1] * parent_id[1],
                             is_not_block[1] * TYPE(std::size_t(state_call_context_fields::parent_id)),
@@ -473,9 +524,11 @@ namespace nil {
                             TYPE(0),
                             is_not_block[1] * grandparent_id[1],
                             TYPE(0),
-                            is_not_block[1] * grandparent_id[1]
+                            is_not_block[1] * grandparent_id[1],
+                            is_not_block[1] * parent_id[1]
                         };
                         std::vector<TYPE> update_parent_lookup = {
+                            TYPE(0),
                             op[1],
                             parent_id[1],
                             address[1],
@@ -487,9 +540,11 @@ namespace nil {
                             value_hi[1],
                             value_lo[1],
                             call_initial_value_hi[1],
-                            call_initial_value_lo[1]
+                            call_initial_value_lo[1],
+                            id[1]
                         };
                         std::vector<TYPE> modified_items_lookup = {
+                            TYPE(1),
                             TYPE(std::size_t(rw_operation_type::call_context)),
                             id[1],
                             TYPE(std::size_t(state_call_context_fields::modified_items)),
@@ -501,7 +556,19 @@ namespace nil {
                             TYPE(0),
                             counter[1],
                             TYPE(0),
-                            counter[1]
+                            counter[1],
+                            id[1]
+                        };
+                        std::vector<TYPE> child_lookup = {
+                            op[1],
+                            call_id[1],
+                            address[1],
+                            field_type[1],
+                            storage_key_hi[1],
+                            storage_key_lo[1],
+                            rw_id[1],
+                            id[1],
+                            TYPE(1)
                         };
                         for( std::size_t i = 0; i < parent_lookup.size(); i++){
                             parent_lookup[i] = context_object.relativize(parent_lookup[i], -1);
@@ -509,10 +576,15 @@ namespace nil {
                             update_parent_lookup[i] = context_object.relativize(update_parent_lookup[i] * update_parent_selector[1], -1);
                             modified_items_lookup[i] = context_object.relativize(modified_items_lookup[i] * modified_items_selector[1], -1);
                         }
+                        for( std::size_t i = 0; i < child_lookup.size(); i++){
+                            child_lookup[i] = context_object.relativize((filled_selector - is_original[1]) * child_lookup[i], -1);
+                        }
+
                         context_object.relative_lookup(parent_lookup, "zkevm_state", 0, max_state-1);
                         context_object.relative_lookup(grandparent_lookup, "zkevm_state", 0, max_state-1);
                         context_object.relative_lookup(update_parent_lookup, "zkevm_state", 0, max_state-1);
                         context_object.relative_lookup(modified_items_lookup, "zkevm_state", 0, max_state-1);
+                        context_object.relative_lookup(child_lookup, "zkevm_state_parent", 0, max_state-1);
 
                         for( std::size_t i = 0; i < chunks_amount; i++){
                             chunked_16_lookups.push_back(chunks[1][i]);

@@ -45,6 +45,7 @@ namespace nil {
             struct state_operation{
                 state_operation(){};
                 rw_operation_type       op = rw_operation_type::start;           // operation type
+                bool                    is_original = true;
                 std::size_t             id = 0;
                 zkevm_word_type         address = 0;                                  // account_address (160 bits)
                 std::uint8_t            field = 0;
@@ -58,6 +59,7 @@ namespace nil {
                 zkevm_word_type         value = 0;
                 std::size_t             parent_id = 0;
                 std::size_t             grandparent_id = 0;
+                std::size_t             call_id = 0;
                 //zkevm_word_type         initial_root = 0;    // uncomment when MPT will be supported
                 //zkevm_word_type         root = 0;
 
@@ -80,7 +82,10 @@ namespace nil {
                 if(obj.op == rw_operation_type::call_context )                    os << "CALL_CONTEXT: ";
                 if(obj.op == rw_operation_type::padding )                         os << "PADDING     : ";
 
-                os  << " id = " << obj.id
+                os
+                    << (obj.is_original? std::string("original   ") : std::string("call_commit"))
+                    << " id = " << obj.grandparent_id << "=>" << obj.parent_id << "=>" << obj.id
+                    << " call_id = " << obj.call_id
                     << " rw_id = " << obj.rw_counter
                     << " addr = " << std::hex
                     << obj.address << std::dec
