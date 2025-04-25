@@ -76,7 +76,7 @@ public:
     ) {
         using input_type = typename mpt<field_type, GenerationStage::ASSIGNMENT>::input_type;
 
-        input_type paths;
+        input_type input;
 
         boost::property_tree::ptree src_data = load_json_input(data_source);
 
@@ -120,13 +120,14 @@ public:
         if (single_path.proof.back().value.size() != 17){ // the last node is either a leaf node or a branch node (if leaf doesn't exist)
             single_path.proof.back().type = LEAF; 
         }
-        paths.push_back(single_path);
+        input.paths.push_back(single_path);
+        input.rlc_challenge = 53;
 
 
         bool result = test_bbf_component<field_type, mpt>(
             "mpt",                 //  Circuit name
             {} ,                   //  Public input
-            paths,                 //  Assignment input (paths to prove)
+            input,                 //  Assignment input (paths to prove)
             max_mpt_size           //  Maximum size of mpt circuit
         );
         BOOST_CHECK((!check_satisfiability && !generate_proof) || result == expected_result); // Max_rw, Max_mpt

@@ -25,6 +25,7 @@
 
 #include <nil/crypto3/bench/scoped_profiler.hpp>
 #include <nil/crypto3/zk/snark/arithmetization/plonk/constraint_system.hpp>
+#include <nil/blueprint/zkevm_bbf/types/hashed_buffers.hpp>
 
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
@@ -33,6 +34,7 @@
 #include <nil/blueprint/bbf/generic.hpp>
 #include <nil/blueprint/zkevm_bbf/util.hpp>
 #include <nil/blueprint/zkevm_bbf/subcomponents/rlp_table.hpp>
+#include <nil/blueprint/zkevm_bbf/subcomponents/keccak_table.hpp>
 
 namespace nil::blueprint::bbf {
 
@@ -48,12 +50,11 @@ namespace nil::blueprint::bbf {
         std::vector<mpt_node> proof;
     };
 
-    class mpt_paths_vector : public std::vector<mpt_path> {};
-
     template<typename FieldType, GenerationStage stage>
     class mpt : public generic_component<FieldType, stage> {
         using typename generic_component<FieldType, stage>::context_type;
         using RLPTable = typename bbf::rlp_table<FieldType, stage>;
+        using KeccakTable = typename bbf::keccak_table<FieldType, stage>;
         using generic_component<FieldType, stage>::allocate;
         using generic_component<FieldType, stage>::copy_constrain;
         using generic_component<FieldType, stage>::constrain;
@@ -64,16 +65,21 @@ namespace nil::blueprint::bbf {
         using typename generic_component<FieldType, stage>::table_params;
         using typename generic_component<FieldType, stage>::TYPE;
 
-        using input_type =
-            typename std::conditional<stage == GenerationStage::ASSIGNMENT,
-                                      mpt_paths_vector, std::nullptr_t>::type;
+        struct input_type {
+            std::vector<mpt_path> paths;
+            TYPE rlc_challenge;
+        };
+
+        // using input_type =
+        //     typename std::conditional<stage == GenerationStage::ASSIGNMENT,
+        //                                 _input_type, std::nullptr_t>::type;
 
         using value = typename FieldType::value_type;
         using integral_type = nil::crypto3::multiprecision::big_uint<257>;
 
         static table_params get_minimal_requirements(std::size_t max_mpt_size) {
             return {
-                    .witnesses = 13141-532,
+                    .witnesses = 1452,
                     .public_inputs = 0,
                     .constants = 0,
                     .rows = max_mpt_size + 2178};
@@ -84,35 +90,34 @@ namespace nil::blueprint::bbf {
 
         struct leaf_rlp_data{
             std::vector<std::array<std::array<TYPE, 110>, 2>> data;
-            std::vector<std::array<std::array<TYPE, 110>, 2>> hashes_low;
-            std::vector<std::array<std::array<TYPE, 110>, 2>> hashes_high;
-            std::vector<std::array<std::array<TYPE, 110>, 2>> hashes_indices;
-            std::vector<std::array<std::array<TYPE, 110>, 2>> hashes_indices_is_last_I;
-            std::vector<std::array<std::array<TYPE, 110>, 2>> hashes_indices_is_last_R;
+            std::vector<std::array<std::array<TYPE, 110>, 2>> index;
+            std::vector<std::array<std::array<TYPE, 110>, 2>> index_is_last_I;
+            std::vector<std::array<std::array<TYPE, 110>, 2>> index_is_last_R;
             std::vector<std::array<std::array<TYPE, 110>, 2>> is_last;
-            std::vector<std::array<std::array<TYPE, 2>,   2>> rlp_prefix;
-            std::vector<std::array<std::array<TYPE, 2>,   2>> rlp_prefix_hashes_low;
-            std::vector<std::array<std::array<TYPE, 2>,   2>> rlp_prefix_hashes_high;
-            std::vector<std::array<std::array<TYPE, 2>,   2>> rlp_prefix_hashes_indices;
-            std::vector<std::array<TYPE, 2>> rlp_second_prefix_is_last;
+            std::vector<std::array<std::array<TYPE, 110>, 2>> rlc;
+            std::vector<std::array<std::array<TYPE, 2>,   2>> prefix;
+            std::vector<std::array<std::array<TYPE, 2>,   2>> prefix_index;
+            std::vector<std::array<std::array<TYPE, 2>,   2>> prefix_rlc;
+            std::vector<std::array<TYPE, 2>> second_prefix_is_last;
             // lengths without considering rlp prefixes
-            std::vector<std::array<TYPE, 2>> rlp_len_low;
-            std::vector<std::array<TYPE, 2>> rlp_len_high;
+            std::vector<std::array<TYPE, 2>> len_low;
+            std::vector<std::array<TYPE, 2>> len_high;
             // first element flag for rlp lookup
-            std::vector<std::array<TYPE, 2>> rlp_first_element_flag;
-            std::vector<std::array<TYPE, 2>> rlp_first_element;
+            std::vector<std::array<TYPE, 2>> first_element_flag;
+            std::vector<std::array<TYPE, 2>> first_element;
         };
 
         struct node_rlp_data {
             std::vector<std::array<TYPE, 3>> prefix;
+            std::vector<std::array<TYPE, 3>> prefix_rlc;
             // the first rlp prefix is not last and its hash and index is known
             std::vector<TYPE> second_prefix_is_last;
             std::vector<TYPE> third_prefix_is_last;
-            std::vector<std::array<TYPE, 2>> prefix_hashes_low;
-            std::vector<std::array<TYPE, 2>> prefix_hashes_high;
-            std::vector<std::array<TYPE, 2>> prefix_hashes_indices;
+            std::vector<std::array<TYPE, 2>> prefix_index;
             std::vector<TYPE> len_low;
             std::vector<TYPE> len_high;
+            std::vector<TYPE> hash_low;
+            std::vector<TYPE> hash_high;
 
         };
 
@@ -120,36 +125,36 @@ namespace nil::blueprint::bbf {
             node.prefix.resize(max_mpt_size);
             node.second_prefix_is_last.resize(max_mpt_size);
             node.third_prefix_is_last.resize(max_mpt_size);
-            node.prefix_hashes_low.resize(max_mpt_size);
-            node.prefix_hashes_high.resize(max_mpt_size);
-            node.prefix_hashes_indices.resize(max_mpt_size);
+            node.prefix_index.resize(max_mpt_size);
+            node.prefix_rlc.resize(max_mpt_size);
             node.len_low.resize(max_mpt_size);
             node.len_high.resize(max_mpt_size);
+            node.hash_low.resize(max_mpt_size);
+            node.hash_high.resize(max_mpt_size);
         }
 
         void initialize_leaf_rlp_data(leaf_rlp_data &leaf, std::size_t max_mpt_size ) {
             leaf.data.resize(max_mpt_size);
-            leaf.hashes_low.resize(max_mpt_size);
-            leaf.hashes_high.resize(max_mpt_size);
-            leaf.hashes_indices.resize(max_mpt_size);
-            leaf.hashes_indices_is_last_I.resize(max_mpt_size);
-            leaf.hashes_indices_is_last_R.resize(max_mpt_size);
+            leaf.index.resize(max_mpt_size);
+            leaf.rlc.resize(max_mpt_size);
+            leaf.index_is_last_I.resize(max_mpt_size);
+            leaf.index_is_last_R.resize(max_mpt_size);
             leaf.is_last.resize(max_mpt_size);
-            leaf.rlp_prefix.resize(max_mpt_size);
-            leaf.rlp_prefix_hashes_low.resize(max_mpt_size);
-            leaf.rlp_prefix_hashes_high.resize(max_mpt_size);
-            leaf.rlp_prefix_hashes_indices.resize(max_mpt_size);
-            leaf.rlp_second_prefix_is_last.resize(max_mpt_size);
-            leaf.rlp_len_low.resize(max_mpt_size);
-            leaf.rlp_len_high.resize(max_mpt_size);
-            leaf.rlp_first_element_flag.resize(max_mpt_size);
-            leaf.rlp_first_element.resize(max_mpt_size);
+            leaf.prefix.resize(max_mpt_size);
+            leaf.prefix_index.resize(max_mpt_size);
+            leaf.prefix_rlc.resize(max_mpt_size);
+            leaf.second_prefix_is_last.resize(max_mpt_size);
+            leaf.len_low.resize(max_mpt_size);
+            leaf.len_high.resize(max_mpt_size);
+            leaf.first_element_flag.resize(max_mpt_size);
+            leaf.first_element.resize(max_mpt_size);
         }
 
         mpt(context_type &context_object, const input_type &input,
             std::size_t max_mpt_size)
             : generic_component<FieldType, stage>(context_object) {
 
+            std::vector<std::size_t> keccak_lookup_area;
             std::vector<std::size_t> rlp_lookup_area;
             std::vector<std::array<TYPE, 32>> parent_hash(max_mpt_size);
             std::vector<std::array<TYPE, 32>> key_part(max_mpt_size);
@@ -160,10 +165,12 @@ namespace nil::blueprint::bbf {
             std::vector<TYPE> depth(max_mpt_size);
             std::vector<std::array<TYPE, 32>> key(max_mpt_size);
             std::size_t node_num = 0;
+            typename KeccakTable::private_input_type keccak_buffers;
 
             std::array<std::vector<std::array<TYPE, 110>>, 16> child;
             leaf_rlp_data leaf;
             node_rlp_data node;
+            // TYPE rlc_challenge = 53;
 
 
             for (std::size_t i = 0; i < 16; i++) {
@@ -175,7 +182,7 @@ namespace nil::blueprint::bbf {
             if constexpr (stage == GenerationStage::ASSIGNMENT) {
                 for (std::size_t i = 0; i < max_mpt_size; i++) {
                     for (size_t j = 0; j < 2; j++) {
-                        leaf.rlp_first_element_flag[i][j] = 0;
+                        leaf.first_element_flag[i][j] = 0;
                         for (size_t k = 0; k < 110; k++) {
                             leaf.is_last[i][j][k] = 1;
                         }
@@ -183,18 +190,14 @@ namespace nil::blueprint::bbf {
                 }
                 for (size_t i = 0; i < max_mpt_size; i++) {
                     node.second_prefix_is_last[i] = 1;
-                    // node.len_low_is_last[i] = 1;
-                    // node.len_high_is_last[i] = 1;
                     for (size_t j = 0; j < 2; j++)
                     {
-                        leaf.rlp_second_prefix_is_last[i][j] = 1;
-                        // child_rlp_len_low_is_last[i][j] = 1;
-                        // child_rlp_len_high_is_last[i][j] = 1;
+                        leaf.second_prefix_is_last[i][j] = 1;
                     }
                 }
 
                 // assignment
-                for (auto &p : input) {  // enumerate paths
+                for (auto &p : input.paths) {  // enumerate paths
                     std::cout << "slot number = " << std::hex << p.slotNumber << std::dec
                               << std::endl;
 
@@ -297,10 +300,10 @@ namespace nil::blueprint::bbf {
                                     }
                                     if (v.size() == 0 || (v.size() == 1 && v[0] < 128)) {
                                         if (v.size() == 1)
-                                            leaf.rlp_first_element[node_num][child_num] = v[0];
+                                            leaf.first_element[node_num][child_num] = v[0];
                                         else
-                                            leaf.rlp_first_element[node_num][child_num] = 0;
-                                        leaf.rlp_first_element_flag[node_num][child_num] = 1;
+                                            leaf.first_element[node_num][child_num] = 0;
+                                        leaf.first_element_flag[node_num][child_num] = 1;
                                     }
                                     std::cout << " size: " << v.size();
                                 }
@@ -316,24 +319,32 @@ namespace nil::blueprint::bbf {
                             std::size_t total_length = get_leaf_key_length(key) + get_leaf_key_length(value);
                             std::size_t rlp_encoding_index;
                             std::vector<std::uint8_t> hash_input(532);
-                            encode_node_data(node_num, node, total_length, rlp_encoding_index, hash_input);
-                            encode_leaf_data(node_num, leaf, key, value, rlp_encoding_index, hash_input);
+                            TYPE rlc_accumulator;
+                            encode_node_data(node_num, node, total_length, rlp_encoding_index, hash_input, rlc_accumulator, input.rlc_challenge);
+                            encode_leaf_data(node_num, leaf, key, value, rlp_encoding_index, hash_input, rlc_accumulator, input.rlc_challenge);
                             zkevm_word_type hash = calculate_keccak(hash_input, rlp_encoding_index);
-                            std::cout << "\nnode hash = " << std::hex << hash << std::dec << std::endl;
-                            std::cout << std::endl;
-                            update_node_hashes(node_num, node, hash, total_length);
-                            update_leaf_hashes(node_num, leaf, hash, key, value);
+                            std::cout << "node hash: " << std::hex << hash << std::dec << std::endl;
+                            std::cout << "rlc: " << rlc_accumulator<< std::endl;
+                            std::vector<uint8_t> buffer(hash_input.begin(), hash_input.begin() + rlp_encoding_index);
+                            keccak_buffers.new_buffer(buffer);
+                            store_node_hash(node_num, node, hash);
                             print_leaf_node(node_num, node, leaf,
                                 hash,
-                                get_leaf_key_length(key),
-                                get_leaf_key_length(value)
+                                key.size(),
+                                value.size()
                             );
+                            std::cout << "innnn " << 
+                            std::hex << node.hash_high[node_num] + 1 - 1 << std::dec << " "
+                            << 
+                            std::hex << node.hash_low[node_num] + 1 - 1 << std::dec << " "
+                            <<
+                    leaf.rlc[node_num][1][109]
+                             << std::endl;
                         }
                         node_num++;
                         //    node_depth++;
                     }
                 }
-
             }
 
             // allocation
@@ -359,71 +370,59 @@ namespace nil::blueprint::bbf {
                 // rlp len
                 allocate(node.len_low[i], column_index ++, i);
                 allocate(node.len_high[i], column_index ++, i);
+                allocate(node.hash_low[i], column_index ++, i);
+                allocate(node.hash_high[i], column_index ++, i);
                 // prefix
                 allocate(node.prefix[i][0], column_index ++, i);
+                allocate(node.prefix_rlc[i][0], column_index ++, i);
                 allocate(node.second_prefix_is_last[i], column_index ++, i);
                 allocate(node.third_prefix_is_last[i], column_index ++, i);
                 allocate(node.prefix[i][1], column_index ++, i);
-                allocate(node.prefix_hashes_low[i][0], column_index ++, i);
-                allocate(node.prefix_hashes_high[i][0], column_index ++, i);
-                allocate(node.prefix_hashes_indices[i][0], column_index ++, i);
+                allocate(node.prefix_rlc[i][1], column_index ++, i);
+                allocate(node.prefix_index[i][0], column_index ++, i);
                 allocate(node.prefix[i][2], column_index ++, i);
-                allocate(node.prefix_hashes_low[i][1], column_index ++, i);
-                allocate(node.prefix_hashes_high[i][1], column_index ++, i);
-                allocate(node.prefix_hashes_indices[i][1], column_index ++, i);
+                allocate(node.prefix_rlc[i][2], column_index ++, i);
+                allocate(node.prefix_index[i][1], column_index ++, i);
 
                 // children
                 for (std::size_t j = 0; j < 2; j++) {
                     // rlp len
-                    allocate(leaf.rlp_len_low[i][j], column_index ++, i);
-                    allocate(leaf.rlp_len_high[i][j], column_index ++, i);
+                    allocate(leaf.len_low[i][j], column_index ++, i);
+                    allocate(leaf.len_high[i][j], column_index ++, i);
                     // prefix
-                    allocate(leaf.rlp_prefix[i][j][0], column_index++, i);
-                    allocate(leaf.rlp_prefix_hashes_low[i][j][0], column_index++, i);
-                    allocate(leaf.rlp_prefix_hashes_high[i][j][0], column_index++, i);
-                    allocate(leaf.rlp_prefix_hashes_indices[i][j][0], column_index++, i);
-                    allocate(leaf.rlp_prefix[i][j][1], column_index++, i);
-                    allocate(leaf.rlp_prefix_hashes_low[i][j][1], column_index++, i);
-                    allocate(leaf.rlp_prefix_hashes_high[i][j][1], column_index++, i);
-                    allocate(leaf.rlp_prefix_hashes_indices[i][j][1], column_index++, i);
-                    allocate(leaf.rlp_second_prefix_is_last[i][j], column_index++, i);
+                    allocate(leaf.prefix[i][j][0], column_index++, i);
+                    allocate(leaf.prefix_rlc[i][j][0], column_index++, i);
+                    allocate(leaf.prefix_index[i][j][0], column_index++, i);
+                    allocate(leaf.prefix[i][j][1], column_index++, i);
+                    allocate(leaf.prefix_rlc[i][j][1], column_index++, i);
+                    allocate(leaf.prefix_index[i][j][1], column_index++, i);
+                    allocate(leaf.second_prefix_is_last[i][j], column_index++, i);
 
                     // encoding
                     for (std::size_t k = 0; k < 110; k++) {
                         allocate(leaf.data[i][j][k], column_index++, i);
+                        allocate(leaf.rlc[i][j][k], column_index++, i);
                         allocate(leaf.is_last[i][j][k], column_index++, i);
-                        allocate(leaf.hashes_low[i][j][k], column_index++, i);
-                        allocate(leaf.hashes_high[i][j][k], column_index++, i);
-                        allocate(leaf.hashes_indices[i][j][k], column_index++, i);
-                        allocate(leaf.hashes_indices_is_last_I[i][j][k], column_index++, i);
-                        allocate(leaf.hashes_indices_is_last_R[i][j][k], column_index++, i);
+                        allocate(leaf.index[i][j][k], column_index++, i);
+                        allocate(leaf.index_is_last_I[i][j][k], column_index++, i);
+                        allocate(leaf.index_is_last_R[i][j][k], column_index++, i);
                     }
                 }
 
             }
 
+
             for (std::size_t i = 0; i < RLPTable::get_witness_amount(); i++) {
                 rlp_lookup_area.push_back(i);
             }
-            context_type rlp_ct = context_object.subcontext(
-                rlp_lookup_area, 5, 2178);
-
+            context_type rlp_ct = context_object.subcontext(rlp_lookup_area, 5, 2178);
             RLPTable rlpt = RLPTable(rlp_ct);
 
-
-            // std::cout << "node types \n";
-            // for (size_t i = 0; i < max_mpt_size; i++) {
-            //     std::cout << node_type[i] << " " << node_type[i] * (1 - node_type[i]) * (2 - node_type[i]) << "\n";
-            // }
-            // std::cout << std::hex << node.prefix[4][0] << std::dec << " " <<
-            // std::hex << node.prefix[4][1] << std::dec << " " <<
-            // std::hex << node.prefix[4][2] << std::dec << " " <<
-            // std::hex << 0 << std::dec << " " <<
-            // std::hex << 0 << std::dec << " " <<
-            // std::hex << 0 << std::dec << " " <<
-            // std::hex << node.len_low[4] << std::dec << " " <<
-            // std::hex << node.len_high[4] << std::dec << std::endl;
-
+            for( std::size_t i = 0; i < KeccakTable::get_witness_amount(); i++){
+                keccak_lookup_area.push_back(i);
+            }
+            context_type keccak_ct = context_object.subcontext( keccak_lookup_area, 2178+5, 1 + 1);
+            KeccakTable k_t = KeccakTable(keccak_ct, {input.rlc_challenge, keccak_buffers}, 1);
 
             if constexpr (stage == GenerationStage::CONSTRAINTS) {
                 for (size_t i = 0; i < max_mpt_size; i++) {
@@ -436,103 +435,128 @@ namespace nil::blueprint::bbf {
                                                                 // first-nibble isntead
                 }
 
+                std::size_t leaf_num = 4;
 
+                std::size_t leaf_data_size = leaf.data[leaf_num][0].size();
 
                 std::vector<TYPE> node_rlp_lookup = {
-                    node.prefix[4][0], 
-                    node.prefix[4][1],
-                    node.prefix[4][2],
+                    node.prefix[leaf_num][0], 
+                    node.prefix[leaf_num][1],
+                    node.prefix[leaf_num][2],
                     0,
                     0,
                     0,
-                    node.len_low[4], 
-                    node.len_high[4],
-                    node.second_prefix_is_last[4],
-                    node.third_prefix_is_last[4]
+                    node.len_low[leaf_num], 
+                    node.len_high[leaf_num],
+                    node.second_prefix_is_last[leaf_num],
+                    node.third_prefix_is_last[leaf_num]
                 };
 
                 std::vector<TYPE> key_rlp_lookup = {
-                    leaf.rlp_prefix[4][0][0],
-                    leaf.rlp_prefix[4][0][1],
+                    leaf.prefix[leaf_num][0][0],
+                    leaf.prefix[leaf_num][0][1],
                     0,
-                    leaf.rlp_first_element[4][0],
-                    leaf.rlp_first_element_flag[4][0],
+                    leaf.first_element[leaf_num][0],
+                    leaf.first_element_flag[leaf_num][0],
                     1,
-                    leaf.rlp_len_low[4][0], 
-                    leaf.rlp_len_high[4][0],
+                    leaf.len_low[leaf_num][0], 
+                    leaf.len_high[leaf_num][0],
                     // 1,
-                    leaf.rlp_second_prefix_is_last[4][0],
+                    leaf.second_prefix_is_last[leaf_num][0],
                     1
                 };
 
                 std::vector<TYPE> value_rlp_lookup = {
-                    leaf.rlp_prefix[4][1][0],
-                    leaf.rlp_prefix[4][1][1],
+                    leaf.prefix[leaf_num][1][0],
+                    leaf.prefix[leaf_num][1][1],
                     0,
-                    leaf.rlp_first_element[4][1],
-                    leaf.rlp_first_element_flag[4][1],
+                    leaf.first_element[leaf_num][1],
+                    leaf.first_element_flag[leaf_num][1],
                     1,
-                    leaf.rlp_len_low[4][1], 
-                    leaf.rlp_len_high[4][1],
-                    leaf.rlp_second_prefix_is_last[4][1],
+                    leaf.len_low[leaf_num][1], 
+                    leaf.len_high[leaf_num][1],
+                    leaf.second_prefix_is_last[leaf_num][1],
                     1
+                };
+
+                std::vector<TYPE> keccak_lookup = {
+                    1,
+                    leaf.rlc[leaf_num][1][leaf_data_size-1],
+                    node.hash_high[leaf_num],
+                    node.hash_low[leaf_num]
                 };
                 lookup(node_rlp_lookup, "rlp_table");
                 lookup(key_rlp_lookup, "rlp_table");
                 lookup(value_rlp_lookup, "rlp_table");
-                constrain(leaf.rlp_second_prefix_is_last[4][1] * (1 - leaf.rlp_second_prefix_is_last[4][1]));
+                lookup(keccak_lookup, "keccak_table");
+                constrain(node.second_prefix_is_last[leaf_num]*(1 - node.second_prefix_is_last[leaf_num]));
+                constrain(node.prefix[leaf_num][1] * node.second_prefix_is_last[leaf_num]);
+                constrain(node.prefix[leaf_num][2] * node.third_prefix_is_last[leaf_num]);
+                constrain(leaf.second_prefix_is_last[leaf_num][1] * (1 - leaf.second_prefix_is_last[leaf_num][1]));
+                constrain(leaf.second_prefix_is_last[leaf_num][0] * (1 - leaf.second_prefix_is_last[leaf_num][0]));
+                constrain(node.prefix_rlc[leaf_num][0] - 
+/* total length */      ((1 + 1 - node.second_prefix_is_last[leaf_num] + 1 - node.third_prefix_is_last[leaf_num] + node.len_low[leaf_num] + 0x100 * node.len_high[leaf_num])
+                        * 53 + node.prefix[leaf_num][0]));
 
-                constrain(-(node.len_low[4] + 0x100 * node.len_high[4])
-                          + leaf.rlp_len_low[4][0] + 0x100 * leaf.rlp_len_high[4][0] 
-                          + leaf.rlp_len_low[4][1] + 0x100 * leaf.rlp_len_high[4][1] 
-                          + 3 - leaf.rlp_second_prefix_is_last[4][1]);
+                constrain(node.prefix_rlc[leaf_num][1] - ((1 - node.second_prefix_is_last[leaf_num]) * (node.prefix_rlc[leaf_num][0] * 53 + node.prefix[leaf_num][1]) + node.second_prefix_is_last[leaf_num] * node.prefix_rlc[leaf_num][0]));
+                constrain(node.prefix_rlc[leaf_num][2] - ((1 - node.third_prefix_is_last[leaf_num]) *  (node.prefix_rlc[leaf_num][1] * 53 + node.prefix[leaf_num][2]) + node.third_prefix_is_last[leaf_num] * node.prefix_rlc[leaf_num][1]));
+
+                constrain(-(node.len_low[leaf_num] + 0x100 * node.len_high[leaf_num])
+                          + leaf.len_low[leaf_num][0] + 0x100 * leaf.len_high[leaf_num][0] 
+                          + leaf.len_low[leaf_num][1] + 0x100 * leaf.len_high[leaf_num][1] 
+                          + 3 - leaf.second_prefix_is_last[leaf_num][1]);
 
                 // node first rlp prefix is always keccak 0 index
-                constrain(node.prefix_hashes_indices[4][0] - (1 - node.second_prefix_is_last[4]));
-                constrain(node.prefix_hashes_indices[4][1] * node.third_prefix_is_last[4] + (2-node.prefix_hashes_indices[4][1])*(1-node.third_prefix_is_last[4]));
+                constrain(node.prefix_index[leaf_num][0] - (1 - node.second_prefix_is_last[leaf_num]));
+                constrain(node.prefix_index[leaf_num][1] * node.third_prefix_is_last[leaf_num] + (2-node.prefix_index[leaf_num][1])*(1-node.third_prefix_is_last[leaf_num]));
                 for (size_t k = 0; k < 2; k++) {
                     if (k == 0) {
-                        constrain(leaf.rlp_prefix_hashes_indices[4][k][0] - 1 - (1 - node.second_prefix_is_last[4]) + (1 - node.third_prefix_is_last[4]));
+                        constrain(leaf.prefix_index[leaf_num][k][0] - 1 - (1 - node.second_prefix_is_last[leaf_num]) + (1 - node.third_prefix_is_last[leaf_num]));
+                        constrain(leaf.prefix_rlc[leaf_num][k][0] - (node.prefix_rlc[leaf_num][2] * 53 + leaf.prefix[leaf_num][0][0]));
                     } else {
-                        constrain(leaf.rlp_prefix_hashes_indices[4][k][0] - 
-                            (leaf.rlp_len_low[4][k-1] + leaf.rlp_len_high[4][k-1] * 0x100 + leaf.rlp_prefix_hashes_indices[4][k-1][0] + 1 - leaf.rlp_second_prefix_is_last[4][k-1] + 1));
+                        constrain(leaf.prefix_index[leaf_num][k][0] - 
+                            (leaf.len_low[leaf_num][k-1] + leaf.len_high[leaf_num][k-1] * 0x100 + leaf.prefix_index[leaf_num][k-1][0] + 1 - leaf.second_prefix_is_last[leaf_num][k-1] + 1));
+                        constrain(leaf.prefix_rlc[leaf_num][k][0] - (leaf.rlc[leaf_num][k-1][leaf_data_size-1] * 53 + leaf.prefix[leaf_num][k][0]));
                     }
-                    constrain(leaf.rlp_prefix_hashes_indices[4][k][1] - (1 - leaf.rlp_second_prefix_is_last[4][k])*(leaf.rlp_prefix_hashes_indices[4][k][0] + 1));
-                    constrain(leaf.hashes_indices[4][k][0] - (1 - leaf.rlp_second_prefix_is_last[4][k]) - leaf.rlp_prefix_hashes_indices[4][k][0] - 1);
+                    constrain(leaf.prefix_index[leaf_num][k][1] - (1 - leaf.second_prefix_is_last[leaf_num][k]) * (leaf.prefix_index[leaf_num][k][0] + 1));
+                    constrain(leaf.prefix_rlc[leaf_num][k][1] - ((1 - leaf.second_prefix_is_last[leaf_num][k]) * (leaf.prefix_rlc[leaf_num][k][0] * 53 + leaf.prefix[leaf_num][k][1]) + leaf.second_prefix_is_last[leaf_num][k] * leaf.prefix_rlc[leaf_num][k][0]));
+                    constrain(leaf.index[leaf_num][k][0] - (1 - leaf.second_prefix_is_last[leaf_num][k]) - leaf.prefix_index[leaf_num][k][0] - 1);
+                    constrain(leaf.rlc[leaf_num][k][0] - (leaf.prefix_rlc[leaf_num][k][1] * 53 + leaf.data[leaf_num][k][0]));
 
-                    constrain(leaf.data[4][k][0] * leaf.is_last[4][k][0]);
-                    for (size_t i = 1; i < 110; i++) {
-                        constrain((1 - leaf.is_last[4][k][i]) * leaf.is_last[4][k][i]);
+                    constrain(leaf.data[leaf_num][k][0] * leaf.is_last[leaf_num][k][0]);
+                    for (size_t i = 1; i < leaf_data_size; i++) {
+                        constrain((1 - leaf.is_last[leaf_num][k][i]) * leaf.is_last[leaf_num][k][i]);
     
-                        constrain((1 - leaf.is_last[4][k][i]) * leaf.is_last[4][k][i-1]);
-                        constrain(leaf.hashes_indices_is_last_R[4][k][i] - (1 - 
-                            leaf.hashes_indices_is_last_I[4][k][i] * ((leaf.rlp_len_low[4][k] + leaf.rlp_len_high[4][k] * 0x100) - (leaf.hashes_indices[4][k][i] - leaf.hashes_indices[4][k][0] + 1))));
-                        constrain(((leaf.rlp_len_low[4][k] + leaf.rlp_len_high[4][k] * 0x100) - (leaf.hashes_indices[4][k][i] - leaf.hashes_indices[4][k][0] + 1)) * leaf.hashes_indices_is_last_R[4][k][i]);
-                        constrain(leaf.is_last[4][k][i] - leaf.hashes_indices_is_last_R[4][k][i] - leaf.is_last[4][k][i-1]);
-                        constrain(leaf.hashes_indices[4][k][i] * leaf.is_last[4][k][i-1]);
-                        constrain((leaf.hashes_indices[4][k][i] - leaf.hashes_indices[4][k][i-1] - 1) * (1 - leaf.is_last[4][k][i-1]));
-                        constrain(leaf.data[4][k][i] * leaf.is_last[4][k][i-1]);
+                        constrain((1 - leaf.is_last[leaf_num][k][i]) * leaf.is_last[leaf_num][k][i-1]);
+                        constrain(leaf.index_is_last_R[leaf_num][k][i] - (1 - 
+                            leaf.index_is_last_I[leaf_num][k][i] * ((leaf.len_low[leaf_num][k] + leaf.len_high[leaf_num][k] * 0x100) - (leaf.index[leaf_num][k][i] - leaf.index[leaf_num][k][0] + 1))));
+                        constrain(((leaf.len_low[leaf_num][k] + leaf.len_high[leaf_num][k] * 0x100) - (leaf.index[leaf_num][k][i] - leaf.index[leaf_num][k][0] + 1)) * leaf.index_is_last_R[leaf_num][k][i]);
+                        constrain(leaf.is_last[leaf_num][k][i] - leaf.index_is_last_R[leaf_num][k][i] - leaf.is_last[leaf_num][k][i-1]);
+                        constrain(leaf.index[leaf_num][k][i] * leaf.is_last[leaf_num][k][i-1]);
+                        constrain((leaf.index[leaf_num][k][i] - leaf.index[leaf_num][k][i-1] - 1) * (1 - leaf.is_last[leaf_num][k][i-1]));
+                        constrain(leaf.data[leaf_num][k][i] * leaf.is_last[leaf_num][k][i-1]);
+                        constrain(leaf.rlc[leaf_num][k][i] - (leaf.is_last[leaf_num][k][i-1] * leaf.rlc[leaf_num][k][i-1] + (1 - leaf.is_last[leaf_num][k][i-1]) * (leaf.rlc[leaf_num][k][i-1] * 53 + leaf.data[leaf_num][k][i])));
                     }
                 }
-                
-                // constrain(child_rlp_prefix_hashes_indices[4][0][1] - (1 - child_rlp_second_prefix_is_last[4][0])*(child_rlp_prefix_hashes_indices[4][0][0] + 1));
-                // constrain(child_hashes_indices[0][4][0] - (1 - child_rlp_second_prefix_is_last[4][0]) - child_rlp_prefix_hashes_indices[4][0][0] - 1);
+
+                // constrain(child_prefix_index[4][0][1] - (1 - child_second_prefix_is_last[4][0])*(child_prefix_index[4][0][0] + 1));
+                // constrain(child_index[0][4][0] - (1 - child_second_prefix_is_last[4][0]) - child_prefix_index[4][0][0] - 1);
                 // for (size_t i = 1; i < 110; i++) {
                 //     constrain((1 - child_is_last[0][4][i]) * child_is_last[0][4][i]);
 
                 //     constrain((1 - child_is_last[0][4][i]) * child_is_last[0][4][i-1]);
-                //     constrain(child_hashes_indices_is_last_R[0][4][i] - (1 - 
-                //         child_hashes_indices_is_last_I[0][4][i] * ((child_rlp_len_low[4][0] + child_rlp_len_high[4][0] * 0x100) - (child_hashes_indices[0][4][i] - child_hashes_indices[0][4][0] + 1))));
-                //     constrain(((child_rlp_len_low[4][0] + child_rlp_len_high[4][0] * 0x100) - (child_hashes_indices[0][4][i] - child_hashes_indices[0][4][0] + 1))*child_hashes_indices_is_last_R[0][4][i]);
-                //     constrain(child_is_last[0][4][i] - child_hashes_indices_is_last_R[0][4][i] - child_is_last[0][4][i-1]);
-                //     constrain(child_hashes_indices[0][4][i] * child_is_last[0][4][i-1]);
-                //     constrain((child_hashes_indices[0][4][i] - child_hashes_indices[0][4][i-1] - 1) * (1 - child_is_last[0][4][i-1]));
+                //     constrain(child_index_is_last_R[0][4][i] - (1 - 
+                //         child_index_is_last_I[0][4][i] * ((child_len_low[4][0] + child_len_high[4][0] * 0x100) - (child_index[0][4][i] - child_index[0][4][0] + 1))));
+                //     constrain(((child_len_low[4][0] + child_len_high[4][0] * 0x100) - (child_index[0][4][i] - child_index[0][4][0] + 1))*child_index_is_last_R[0][4][i]);
+                //     constrain(child_is_last[0][4][i] - child_index_is_last_R[0][4][i] - child_is_last[0][4][i-1]);
+                //     constrain(child_index[0][4][i] * child_is_last[0][4][i-1]);
+                //     constrain((child_index[0][4][i] - child_index[0][4][i-1] - 1) * (1 - child_is_last[0][4][i-1]));
                 // }
 
                   
 
 
-                // tmp = {node_rlp_encoded[4][0], node_rlp_encoded[4][1], node_rlp_len_low[4], node_rlp_len_high[4]};
+                // tmp = {node_rlp_encoded[4][0], node_rlp_encoded[4][1], node_len_low[4], node_len_high[4]};
                 // constraints
                 //    for (size_t i = 0; i < max_mpt_size; i++) {
                 //     for(std::size_t j = 0; j < 16; j++) {
@@ -590,7 +614,7 @@ namespace nil::blueprint::bbf {
             return get_rlp_encoded_length(value_first_byte, value_length);
         }
 
-        void encode_node_data(std::size_t node_num, node_rlp_data &node, std::size_t total_length, std::size_t &rlp_encoding_index, std::vector<std::uint8_t> &hash_input) {
+        void encode_node_data(std::size_t node_num, node_rlp_data &node, std::size_t total_length, std::size_t &rlp_encoding_index, std::vector<std::uint8_t> &hash_input, TYPE &rlc_accumulator, TYPE rlc_challenge) {
             rlp_encoding_index = 0;
             if (total_length > 55) {
                 std::size_t length_length = 0;
@@ -603,41 +627,58 @@ namespace nil::blueprint::bbf {
                 node.prefix[node_num][0] = 0xF7 + length_length;
                 node.prefix[node_num][1] = total_length;
                 node.prefix[node_num][2] = 0;
-                node.prefix_hashes_indices[node_num][0] = rlp_encoding_index+1;
+                node.prefix_index[node_num][0] = rlp_encoding_index+1;
 
                 node.second_prefix_is_last[node_num] = 0;
                 node.third_prefix_is_last[node_num] = 1;
 
                 hash_input[rlp_encoding_index++] = 0xF7 + length_length;
                 hash_input[rlp_encoding_index++] = total_length;
+
+                node.prefix_rlc[node_num][0] = (total_length+2) * rlc_challenge + node.prefix[node_num][0];
+                rlc_accumulator = node.prefix_rlc[node_num][0];
+                node.prefix_rlc[node_num][1] = rlc_accumulator * rlc_challenge + node.prefix[node_num][1];
+                rlc_accumulator = node.prefix_rlc[node_num][1];
+                node.prefix_rlc[node_num][2] = rlc_accumulator;
             } else {
                 node.prefix[node_num][0] = 0xC0 + total_length;
                 node.second_prefix_is_last[node_num] = 1;
                 node.third_prefix_is_last[node_num] = 1;
-                node.prefix_hashes_indices[node_num][0] = 0;
+                node.prefix_index[node_num][0] = 0;
 
                 hash_input[rlp_encoding_index++] = uint8_t((0xC0 + total_length) & 0xFF);
+                node.prefix_rlc[node_num][0] = (total_length+1) * rlc_challenge + node.prefix[node_num][0];
+                rlc_accumulator = node.prefix_rlc[node_num][0];
+                node.prefix_rlc[node_num][1] = rlc_accumulator;
+                node.prefix_rlc[node_num][2] = rlc_accumulator;
             }
 
             node.len_low[node_num] = total_length & 0xFF;
             node.len_high[node_num] = (total_length >> 8) & 0xFF;
         }
 
-        void encode_leaf_data(std::size_t node_num, leaf_rlp_data &leaf, std::vector<zkevm_word_type> key, std::vector<zkevm_word_type> value, std::size_t& rlp_encoding_index, std::vector<std::uint8_t> &hash_input) {
+        void store_node_hash(std::size_t node_num, node_rlp_data &node, zkevm_word_type hash) {
+            node.hash_low[node_num] = w_lo<FieldType>(hash);
+            node.hash_high[node_num] = w_hi<FieldType>(hash);
+        }
+
+        void encode_leaf_data(std::size_t node_num, leaf_rlp_data &leaf, std::vector<zkevm_word_type> key, std::vector<zkevm_word_type> value, std::size_t& rlp_encoding_index, std::vector<std::uint8_t> &hash_input, TYPE &rlc_accumulator, TYPE rlc_challenge) {
             if (key.size() == 1) { // first byte of key in leaf nodes is always less than 0x7F due to leaf node encoding
-                // TODO child_rlp_prefix_is_last[nodenum][0][0] must be true
+                // TODO child_prefix_is_last[nodenum][0][0] must be true
             } else if (key.size() <= 33) {
-                leaf.rlp_prefix[node_num][0][0] = 0x80 + key.size();
-                leaf.rlp_second_prefix_is_last[node_num][0] = 1;
-                leaf.rlp_prefix_hashes_indices[node_num][0][0] = rlp_encoding_index;
-                leaf.rlp_prefix_hashes_indices[node_num][0][1] = 0;
+                leaf.prefix[node_num][0][0] = 0x80 + key.size();
+                leaf.second_prefix_is_last[node_num][0] = 1;
+                leaf.prefix_index[node_num][0][0] = rlp_encoding_index;
 
                 hash_input[rlp_encoding_index++] = uint8_t(0x80 + key.size());
 
+                leaf.prefix_rlc[node_num][0][0] = rlc_accumulator * rlc_challenge + leaf.prefix[node_num][0][0];
+                rlc_accumulator = leaf.prefix_rlc[node_num][0][0];
+                leaf.prefix_rlc[node_num][0][1] = rlc_accumulator;
             }
 
-            leaf.rlp_len_low[node_num][0] = key.size();
-            leaf.rlp_len_high[node_num][0] = 0;
+            leaf.len_low[node_num][0] = key.size();
+            leaf.len_high[node_num][0] = 0;
             // maximum lengths: 
             //      rlp encoded leaf node = 144 + 2 bytes
             //      key = 33 bytes
@@ -647,33 +688,70 @@ namespace nil::blueprint::bbf {
 
 
             for (size_t j = 0; j < key.size(); j++) {
-                leaf.hashes_indices[node_num][0][j] = rlp_encoding_index;
+                leaf.index[node_num][0][j] = rlp_encoding_index;
                 hash_input[rlp_encoding_index++] = uint8_t(key[j]);
+
+                leaf.rlc[node_num][0][j] = rlc_accumulator * rlc_challenge + leaf.data[node_num][0][j];
+                rlc_accumulator = leaf.rlc[node_num][0][j];
             }
+            for (size_t j = key.size(); j < leaf.rlc[node_num][0].size(); j++) {
+                leaf.rlc[node_num][0][j] = rlc_accumulator;
+            }
+            
             if (value.size() == 1 && value[0] <= 0x7F) {
                 // TODO
             } else if (value.size() <= 55) {
-                leaf.rlp_prefix[node_num][1][0] = 0x80 + value.size();
-                leaf.rlp_prefix_hashes_indices[node_num][1][0] = rlp_encoding_index;
-                leaf.rlp_prefix_hashes_indices[node_num][1][1] = 0;
+                leaf.prefix[node_num][1][0] = 0x80 + value.size();
+                leaf.prefix_index[node_num][1][0] = rlp_encoding_index;
                 hash_input[rlp_encoding_index++] = uint8_t(0x80 + value.size());
+
+                leaf.prefix_rlc[node_num][1][0] = rlc_accumulator * rlc_challenge + leaf.prefix[node_num][1][0];
+                rlc_accumulator = leaf.prefix_rlc[node_num][1][0];
+                leaf.prefix_rlc[node_num][1][1] = rlc_accumulator;
             } else {
-                leaf.rlp_prefix[node_num][1][0] = 0xB8;
-                leaf.rlp_prefix_hashes_indices[node_num][1][0] = rlp_encoding_index;
-                leaf.rlp_prefix[node_num][1][1] = value.size();
-                leaf.rlp_prefix_hashes_indices[node_num][1][1] = rlp_encoding_index+1;
-                leaf.rlp_second_prefix_is_last[node_num][1] = 0;
+                leaf.prefix[node_num][1][0] = 0xB8;
+                leaf.prefix_index[node_num][1][0] = rlp_encoding_index;
+                leaf.prefix[node_num][1][1] = value.size();
+                leaf.prefix_index[node_num][1][1] = rlp_encoding_index+1;
+                leaf.second_prefix_is_last[node_num][1] = 0;
                 
                 hash_input[rlp_encoding_index++] = uint8_t(0xB8);
                 hash_input[rlp_encoding_index++] = value.size();
+
+                leaf.prefix_rlc[node_num][1][0] = rlc_accumulator * rlc_challenge + leaf.prefix[node_num][1][0];
+                rlc_accumulator = leaf.prefix_rlc[node_num][1][0];
+                leaf.prefix_rlc[node_num][1][1] = rlc_accumulator * rlc_challenge + leaf.prefix[node_num][1][1];
+                rlc_accumulator = leaf.prefix_rlc[node_num][1][1];
             }
 
-            leaf.rlp_len_low[node_num][1] = value.size();
-            leaf.rlp_len_high[node_num][1] = 0;
+            leaf.len_low[node_num][1] = value.size();
+            leaf.len_high[node_num][1] = 0;
 
             for (size_t j = 0; j < value.size(); j++) {
-                leaf.hashes_indices[node_num][1][j] = rlp_encoding_index;
+                leaf.index[node_num][1][j] = rlp_encoding_index;
                 hash_input[rlp_encoding_index++] = uint8_t(value[j]);
+
+                leaf.rlc[node_num][1][j] = rlc_accumulator * rlc_challenge + leaf.data[node_num][1][j];
+                rlc_accumulator = leaf.rlc[node_num][1][j];
+            }
+            for (size_t j = value.size(); j < leaf.rlc[node_num][1].size(); j++) {
+                leaf.rlc[node_num][1][j] = rlc_accumulator;
+            }
+
+
+            for (size_t k = 0; k < 2; k++) {
+                TYPE len = leaf.len_low[node_num][k] + leaf.len_high[node_num][k] * 0x100;
+                for (size_t j = 0; j < 110; j++) {
+                    if ( leaf.index[node_num][k][j] - leaf.index[node_num][k][0] == len - 1) {
+                        leaf.index_is_last_I[node_num][k][j] = 0;
+                    } else {
+                        leaf.index_is_last_I[node_num][k][j] = 
+                            (len - 1 - (leaf.index[node_num][k][j] - leaf.index[node_num][k][0])).inversed();
+                    }
+                    leaf.index_is_last_R[node_num][k][j] = 1 - 
+                        (len - 1 - (leaf.index[node_num][k][j] - leaf.index[node_num][k][0])) 
+                        * leaf.index_is_last_I[node_num][k][j];
+                }
             }
         }
 
@@ -683,83 +761,21 @@ namespace nil::blueprint::bbf {
             return hash;
         }
 
-        void update_node_hashes(std::size_t node_num, node_rlp_data &node, zkevm_word_type hash, std::size_t total_length) {
-            TYPE hash_low = w_lo<FieldType>(hash);
-            TYPE hash_high = w_hi<FieldType>(hash);
-            if (total_length > 55) {
-                node.prefix_hashes_low[node_num][0] = hash_low;
-                node.prefix_hashes_high[node_num][0] = hash_high;
-            }
-            node.prefix_hashes_low[node_num][1] = 0;
-            node.prefix_hashes_high[node_num][1] = 0;
-        }
-
-        void update_leaf_hashes(std::size_t node_num, leaf_rlp_data &leaf, zkevm_word_type hash, std::vector<zkevm_word_type> key, std::vector<zkevm_word_type> value) {
-            TYPE hash_low = w_lo<FieldType>(hash);
-            TYPE hash_high = w_hi<FieldType>(hash);
-            if (key.size() == 1 && key[0] > 0x7F || key.size() <= 32) {
-                leaf.rlp_prefix_hashes_low[node_num][0][0] = hash_low;
-                leaf.rlp_prefix_hashes_high[node_num][0][0] = hash_high;
-            }
-
-            for (size_t j = 0; j < key.size(); j++) {
-                leaf.hashes_low[node_num][0][j] = hash_low;
-                leaf.hashes_high[node_num][0][j] = hash_high;
-            }
-
-            if (value.size() == 1 && value[0] <= 0x7F) {
-                // TODO
-            } else if (value.size() <= 55) {
-                leaf.rlp_prefix_hashes_low[node_num][1][0] = hash_low;
-                leaf.rlp_prefix_hashes_high[node_num][1][0] = hash_high;
-            } else {
-                leaf.rlp_prefix_hashes_low[node_num][1][0] = hash_low;
-                leaf.rlp_prefix_hashes_high[node_num][1][0] = hash_high;
-                leaf.rlp_prefix_hashes_low[node_num][1][1] = hash_low;
-                leaf.rlp_prefix_hashes_high[node_num][1][1] = hash_high;
-            }
-
-            for (size_t j = 0; j < value.size(); j++) {
-                leaf.hashes_low[node_num][1][j] = hash_low;
-                leaf.hashes_high[node_num][1][j] = hash_high;
-            }
-
-
-            for (size_t k = 0; k < 2; k++) {
-                TYPE len = leaf.rlp_len_low[node_num][k] + leaf.rlp_len_high[node_num][k] * 0x100;
-                for (size_t j = 0; j < 110; j++) {
-                    if ( leaf.hashes_indices[node_num][k][j] - leaf.hashes_indices[node_num][k][0] == len - 1) {
-                        leaf.hashes_indices_is_last_I[node_num][k][j] = 0;
-                    } else {
-                        leaf.hashes_indices_is_last_I[node_num][k][j] = 
-                            (len - 1 - (leaf.hashes_indices[node_num][k][j] - leaf.hashes_indices[node_num][k][0])).inversed();
-                    }
-                    leaf.hashes_indices_is_last_R[node_num][k][j] = 1 - 
-                        (len - 1 - (leaf.hashes_indices[node_num][k][j] - leaf.hashes_indices[node_num][k][0])) 
-                        * leaf.hashes_indices_is_last_I[node_num][k][j];
-                }
-            }
-        }
-
-        void print_leaf_node(std::size_t node_num, node_rlp_data &node, leaf_rlp_data &leaf, zkevm_word_type hash, std::size_t key_length, std::size_t value_length) {
+        void print_leaf_node(std::size_t node_num, node_rlp_data &node, leaf_rlp_data &leaf, zkevm_word_type hash, size_t key_data_len, size_t value_data_len) {
             TYPE hash_low = w_lo<FieldType>(hash);
             TYPE hash_high = w_hi<FieldType>(hash);
 
             std::cout << "rlp prefix:" << std::endl;
-            std::cout << "\tdata\thash_high\t\t\t\thash_low\t\t\t\tindex\n";
+            std::cout << "\tdata\tindex\n";
 
             std::cout << "\t" << std::hex << node.prefix[node_num][0] << std::dec << "\t"
                       << std::hex << hash_high << std::dec << "\t"
                       << std::hex << hash_low << std::dec << "\t"
                       << std::hex << 0 << std::dec << std::endl;
             std::cout << "\t" << std::hex << node.prefix[node_num][1] << std::dec << "\t"
-                      << std::hex << node.prefix_hashes_low[node_num][0] << std::dec << "\t"
-                      << std::hex << node.prefix_hashes_high[node_num][0] << std::dec << "\t"
-                      << std::hex << node.prefix_hashes_indices[node_num][0] << std::dec << std::endl;
+                      << std::hex << node.prefix_index[node_num][0] << std::dec << std::endl;
             std::cout << "\t" << std::hex << node.prefix[node_num][2] << std::dec << "\t"
-                      << std::hex << node.prefix_hashes_low[node_num][1] << std::dec << "\t"
-                      << std::hex << node.prefix_hashes_high[node_num][1] << std::dec << "\t"
-                      << std::hex << node.prefix_hashes_indices[node_num][1] << std::dec << std::endl;
+                      << std::hex << node.prefix_index[node_num][1] << std::dec << std::endl;
             
             std::cout << "node rlp second prefix is last:\n "
                       << std::hex << node.second_prefix_is_last[node_num] << std::dec << std::endl;
@@ -767,50 +783,41 @@ namespace nil::blueprint::bbf {
                       << std::hex << node.len_low[node_num] << std::dec << "\t"
                       << std::hex << node.len_high[node_num] << std::dec << std::endl;
             
-            std::cout << "key prefix: \n\tdata\thash_high\t\t\t\thash_low\t\t\t\tindex\n\t";
-            std::cout << std::hex << leaf.rlp_prefix[node_num][0][0] << std::dec << "\t"
-                      << std::hex << leaf.rlp_prefix_hashes_high[node_num][0][0] << std::dec << "\t"
-                      << std::hex << leaf.rlp_prefix_hashes_low[node_num][0][0] << std::dec << "\t"
-                      << std::hex << leaf.rlp_prefix_hashes_indices[node_num][0][0] << std::dec << std::endl;
+            std::cout << "key prefix: \n\tdata\tindex\n\t";
+            std::cout << std::hex << leaf.prefix[node_num][0][0] << std::dec << "\t"
+                      << std::hex << leaf.prefix_index[node_num][0][0] << std::dec << std::endl;
             std::cout << "second is last\tlen_low\tlen_high\tfirst_element_flag\tfirst_element\n\t";
-            std::cout << std::hex << leaf.rlp_second_prefix_is_last[node_num][0] << std::dec << "\t"
-                      << std::hex << leaf.rlp_len_low[node_num][0] << std::dec << "\t"
-                      << std::hex << leaf.rlp_len_high[node_num][0] << std::dec << "\t\t"
-                      << std::hex << leaf.rlp_first_element_flag[node_num][0] << std::dec << "\t\t"
-                      << std::hex << leaf.rlp_first_element[node_num][0] << std::dec << std::endl;
+            std::cout << std::hex << leaf.second_prefix_is_last[node_num][0] << std::dec << "\t"
+                      << std::hex << leaf.len_low[node_num][0] << std::dec << "\t"
+                      << std::hex << leaf.len_high[node_num][0] << std::dec << "\t\t"
+                      << std::hex << leaf.first_element_flag[node_num][0] << std::dec << "\t\t"
+                      << std::hex << leaf.first_element[node_num][0] << std::dec << std::endl;
 
 
-            std::cout << "key: \n\tdata\thash_high\t\t\t\thash_low\t\t\t\tindex\n";
-            for (size_t i = 0; i < key_length; i++) {
+            std::cout << "key:\n\tdata\tindex\n";
+            for (size_t i = 0; i < key_data_len; i++) {
                 std::cout << "\t"
                           << std::hex << leaf.data[node_num][0][i] << std::dec << "\t" 
-                          << std::hex << leaf.hashes_high[node_num][0][i] << std::dec << "\t"
-                          << std::hex << leaf.hashes_low[node_num][0][i] << std::dec << "\t" 
-                          << std::hex << leaf.hashes_indices[node_num][0][i] << std::dec << std::endl;
+                          << std::hex << leaf.index[node_num][0][i] << std::dec << std::endl;
             }
         
-            std::cout << "value prefix: \n\tdata\thash_high\t\t\t\thash_low\t\t\t\tindex\n";
-            std::cout << "\t" << std::hex << leaf.rlp_prefix[node_num][1][0] << std::dec << "\t" 
-                      << std::hex << leaf.rlp_prefix_hashes_high[node_num][1][0] << std::dec << "\t"
-                      << std::hex << leaf.rlp_prefix_hashes_low[node_num][1][0] << std::dec << "\t" 
-                      << std::hex << leaf.rlp_prefix_hashes_indices[node_num][1][0] << std::dec << std::endl;
-            std::cout << "\t" << std::hex << leaf.rlp_prefix[node_num][1][1] << std::dec << "\t" 
-                      << std::hex << leaf.rlp_prefix_hashes_high[node_num][1][1] << std::dec << "\t" 
-                      << std::hex << leaf.rlp_prefix_hashes_low[node_num][1][1] << std::dec << "\t" 
-                      << std::hex << leaf.rlp_prefix_hashes_indices[node_num][1][1] << std::dec << std::endl;
+            std::cout << "value prefix: \n\tdata\tindex\n";
+            std::cout << "\t" << std::hex << leaf.prefix[node_num][1][0] << std::dec << "\t" 
+                      << std::hex << leaf.prefix_index[node_num][1][0] << std::dec << std::endl;
+            std::cout << "\t" << std::hex << leaf.prefix[node_num][1][1] << std::dec << "\t"  
+                      << std::hex << leaf.prefix_index[node_num][1][1] << std::dec << std::endl;
 
             std::cout << "second is last\tlen_high\tlen_low\tfirst_element_flag\tfirst_element\n\t";
-            std::cout << std::hex << leaf.rlp_second_prefix_is_last[node_num][1] << std::dec << "\t"
-                      << std::hex << leaf.rlp_len_high[node_num][1] << std::dec << "\t"
-                      << std::hex << leaf.rlp_len_low[node_num][1] << std::dec << "\t"
-                      << std::hex << leaf.rlp_first_element_flag[node_num][1] << std::dec << "\t\t"
-                      << std::hex << leaf.rlp_first_element[node_num][1] << std::dec << std::endl;
+            std::cout << std::hex << leaf.second_prefix_is_last[node_num][1] << std::dec << "\t"
+                      << std::hex << leaf.len_high[node_num][1] << std::dec << "\t"
+                      << std::hex << leaf.len_low[node_num][1] << std::dec << "\t"
+                      << std::hex << leaf.first_element_flag[node_num][1] << std::dec << "\t\t"
+                      << std::hex << leaf.first_element[node_num][1] << std::dec << std::endl;
             std::cout << "value: \n";
-            for (size_t i = 0; i < value_length; i++) {
-                std::cout << i << " " << std::hex << leaf.data[node_num][1][i] << std::dec << "\t" 
-                          << std::hex << leaf.hashes_high[node_num][1][i] << std::dec << "\t" 
-                          << std::hex << leaf.hashes_low[node_num][1][i] << std::dec << "\t" 
-                          << std::hex << leaf.hashes_indices[node_num][1][i] << std::dec << std::endl;
+            for (size_t i = 0; i < value_data_len; i++) {
+                std::cout << "\t"
+                          << std::hex << leaf.data[node_num][1][i] << std::dec << "\t" 
+                          << std::hex << leaf.index[node_num][1][i] << std::dec << std::endl;
             }
         }
     };
