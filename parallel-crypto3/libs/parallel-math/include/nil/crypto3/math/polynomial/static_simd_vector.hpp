@@ -69,6 +69,27 @@ namespace nil::crypto3::math {
 
         static_simd_vector(std::initializer_list<value_type> il) : val(il) {}
 
+        static_simd_vector(const static_simd_vector& other) {
+            //static_assert(std::is_trivially_copyable_v<FieldValueType>,
+            //      "fast_copy only works for trivially copyable types");
+
+            // Copy Size * sizeof(FieldValueType) bytes:
+            std::memcpy(val.data(),
+                other.val.data(),
+                Size * sizeof(FieldValueType));
+        }
+
+        static_simd_vector& operator=(const static_simd_vector& other) {
+            //static_assert(std::is_trivially_copyable_v<FieldValueType>,
+            //      "fast_copy only works for trivially copyable types");
+
+            // Copy Size * sizeof(FieldValueType) bytes:
+            std::memcpy(this->val.data(),
+                other.val.data(),
+                Size * sizeof(FieldValueType));
+            return *this;
+        }
+
         container_type& get_storage() { return val; }
         const container_type& get_storage() const { return val; }
 

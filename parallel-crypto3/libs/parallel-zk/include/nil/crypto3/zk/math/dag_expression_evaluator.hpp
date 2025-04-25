@@ -123,8 +123,9 @@ namespace nil::crypto3::zk::snark {
         void compute_dag_chunk_values(std::vector<simd_vector_type>& assignment_chunks,
                                       const cached_assignment_table_type& _cached_assignment_table,
                                       size_t extended_domain_size, size_t begin, size_t j) {
-            size_t k = 0;
-            for (const auto& [node, index] : _expr.get_node_map().right) {
+            const auto& nodes = _expr.get_nodes();
+            for (size_t k = 0; k < nodes.size(); ++k) {
+                const auto& node = nodes[k]; 
                 if (std::holds_alternative<dag_constant<polynomial_dfs_variable_type>>(node)) {
                     assignment_chunks[k] = math::get_chunk<mini_chunk_size>(
                             std::get<dag_constant<polynomial_dfs_variable_type>>(node).value, begin, j);

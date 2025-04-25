@@ -27,6 +27,8 @@
 #ifndef CRYPTO3_SCOPED_PROFILER_HPP
 #define CRYPTO3_SCOPED_PROFILER_HPP
 
+#define PROFILING_ENABLED
+
 #include <atomic>
 #include <chrono>
 #include <iomanip>

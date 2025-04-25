@@ -46,6 +46,7 @@
 #include <nil/crypto3/zk/snark/arithmetization/plonk/assignment.hpp>
 
 #include <nil/crypto3/zk/snark/arithmetization/plonk/assignment.hpp>
+#include <nil/crypto3/bench/scoped_profiler.hpp>
 
 namespace nil::crypto3::zk::snark {
 
@@ -89,6 +90,7 @@ namespace nil::crypto3::zk::snark {
         }
 
         void ensure_cache(const std::set<polynomial_dfs_variable_type> &variables, std::size_t size) {
+            PROFILE_SCOPE("Central ensure cache");
             _cached_assignment_table.ensure_cache(variables, size);
         }
 
@@ -122,6 +124,7 @@ namespace nil::crypto3::zk::snark {
         // You should call this only once and after all expressions have been registered.
         // Returns all expression values in the same order as they were registered.
         void evaluate_all() {
+            PROFILE_SCOPE("Central evaluate all");
             if (_state != State::ADDING_EXPRESSIONS) {
                 throw std::logic_error("Can't evaluate again after evaluation is done.");
             }
@@ -146,22 +149,28 @@ namespace nil::crypto3::zk::snark {
                     variables_set_full_degree.insert(var);
             });
 
+            dag_expression_builder<polynomial_dfs_variable_type> _dag_expr_builder_full_degree;
+            dag_expression_builder<polynomial_dfs_variable_type> _dag_expr_builder_half_degree;
 
             // Split expressions into 2 sets, thoese with degree <= D/2, and the rest.
             for (const auto& expr: _registered_exprs) {
                 std::size_t degree = _max_degree_visitor.compute_max_degree(expr);
                 if (degree <= max_degree / 2) {
-                    _dag_expr_half_degree.add_expression(expr);
+                    _dag_expr_builder_half_degree.add_expression(expr);
                     half_degree_visitor.visit(expr);
                     _registered_expr_to_result_id_map[expr] = {
-                        DAG_Type::HALF_DEGREE, _dag_expr_half_degree.get_root_nodes_count() - 1};
+                        DAG_Type::HALF_DEGREE, _dag_expr_builder_half_degree.get_expression_count() - 1};
                 } else {
-                    _dag_expr_full_degree.add_expression(expr);
+                    _dag_expr_builder_full_degree.add_expression(expr);
                     full_degree_visitor.visit(expr);
                     _registered_expr_to_result_id_map[expr] = {
-                        DAG_Type::MAX_DEGREE, _dag_expr_full_degree.get_root_nodes_count() - 1};
+                        DAG_Type::MAX_DEGREE, _dag_expr_builder_full_degree.get_expression_count() - 1};
                 }
             }
+
+            // Create both DAGs.
+            _dag_expr_full_degree = _dag_expr_builder_full_degree.build();
+            _dag_expr_half_degree = _dag_expr_builder_half_degree.build();
 
             // Prepare the cache for calculation, precompute all variable values in required sizes.
             const size_t extended_domain_size = _cached_assignment_table.original_domain_size * max_degree;

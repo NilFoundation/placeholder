@@ -423,7 +423,6 @@ namespace nil {
                 precommit(const math::polynomial_dfs<typename FRI::field_type::value_type> &f,
                           std::shared_ptr<math::evaluation_domain<typename FRI::field_type>> D,
                           const std::size_t fri_step) {
-                    PROFILE_SCOPE("FRI precommit dfs");
                     if (f.size() != D->size()) {
                         throw std::runtime_error("Polynomial size does not match the domain size in FRI precommit.");
                     }
@@ -789,11 +788,9 @@ namespace nil {
                             // Calculate next f
                             if constexpr (std::is_same<math::polynomial_dfs<typename FRI::field_type::value_type>,
                                     PolynomialType>::value) {
-                                PROFILE_SCOPE("Fold polynomial dfs");
                                 f = commitments::detail::fold_polynomial<typename FRI::field_type>(f, alpha,
                                                                                                    fri_params.D[t]);
                             } else {
-                                PROFILE_SCOPE("Fold polynomial");
                                 f = commitments::detail::fold_polynomial<typename FRI::field_type>(f, alpha);
                             }
                         }
