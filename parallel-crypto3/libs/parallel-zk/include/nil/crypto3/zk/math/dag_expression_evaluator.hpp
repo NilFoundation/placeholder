@@ -95,13 +95,13 @@ namespace nil::crypto3::zk::snark {
                     std::size_t begin, std::size_t end) {
                     auto count = math::count_chunks<mini_chunk_size>(end - begin);
 
-                    std::vector<simd_vector_type> assignment_segments(this->_expr.get_nodes_count());
+                    std::vector<simd_vector_type> assignment_chunks(this->_expr.get_nodes_count());
                     for (std::size_t j = 0; j < count; ++j) {
-                        this->compute_dag_segment_values(
-                            assignment_segments, _cached_assignment_table, extended_domain_size, begin, j);
+                        this->compute_dag_chunk_values(
+                            assignment_chunks, _cached_assignment_table, extended_domain_size, begin, j);
 
                         for (std::size_t k = 0; k < this->_expr.get_root_nodes_count(); ++k) {
-                            math::set_chunk(result[k], begin, j, assignment_segments[this->_expr.get_root_node(k)]);
+                            math::set_chunk(result[k], begin, j, assignment_chunks[this->_expr.get_root_node(k)]);
                         }
                     }
                 },
@@ -114,40 +114,40 @@ namespace nil::crypto3::zk::snark {
     private:
 
         // TODO(martun): change this function to use a visitor class.
-        /** \brief Computes all the values of DAG assignments for the given segment.
+        /** \brief Computes all the values of DAG assignments for the given chunk.
          *  This function is called from multiple threads
          *  to compute the final results for the whole DAG.
          *
-         *  \param[out] assignment_segments - Computed values for the current segment for each DAG node.
+         *  \param[out] assignment_chunks - Computed values for the current chunk for each DAG node.
          */
-        void compute_dag_segment_values(std::vector<simd_vector_type>& assignment_segments,
-                                        const cached_assignment_table_type& _cached_assignment_table,
-                                        size_t extended_domain_size, size_t begin, size_t j) {
+        void compute_dag_chunk_values(std::vector<simd_vector_type>& assignment_chunks,
+                                      const cached_assignment_table_type& _cached_assignment_table,
+                                      size_t extended_domain_size, size_t begin, size_t j) {
             size_t k = 0;
             for (const auto& [node, index] : _expr.get_node_map().right) {
                 if (std::holds_alternative<dag_constant<polynomial_dfs_variable_type>>(node)) {
-                    assignment_segments[k] = math::get_chunk<mini_chunk_size>(
+                    assignment_chunks[k] = math::get_chunk<mini_chunk_size>(
                             std::get<dag_constant<polynomial_dfs_variable_type>>(node).value, begin, j);
                 } else if (std::holds_alternative<dag_variable<polynomial_dfs_variable_type>>(node)) {
-                    assignment_segments[k] = get_variable_value_chunk(
+                    assignment_chunks[k] = get_variable_value_chunk(
                         _cached_assignment_table,
                         std::get<dag_variable<polynomial_dfs_variable_type>>(node).variable,
                         extended_domain_size, begin, j);
                 } else if (std::holds_alternative<dag_addition>(node)) {
                     const auto& add = std::get<dag_addition>(node);
-                    assignment_segments[k] = assignment_segments[add.operands[0]];
+                    assignment_chunks[k] = assignment_chunks[add.operands[0]];
                     for (std::size_t i = 1; i < add.operands.size(); i++) {
-                        assignment_segments[k] += assignment_segments[add.operands[i]];
+                        assignment_chunks[k] += assignment_chunks[add.operands[i]];
                     }
                 } else if (std::holds_alternative<dag_multiplication>(node)) {
                     const auto& mul = std::get<dag_multiplication>(node);
-                    assignment_segments[k] = assignment_segments[mul.operands[0]];
+                    assignment_chunks[k] = assignment_chunks[mul.operands[0]];
                     for (std::size_t i = 1; i < mul.operands.size(); i++) {
-                        assignment_segments[k] *= assignment_segments[mul.operands[i]];
+                        assignment_chunks[k] *= assignment_chunks[mul.operands[i]];
                     }
                 } else if (std::holds_alternative<dag_negation>(node)) {
-                    assignment_segments[k] = 
-                        -assignment_segments[std::get<dag_negation>(node).operand];
+                    assignment_chunks[k] = 
+                        -assignment_chunks[std::get<dag_negation>(node).operand];
                 }
                 ++k;
             }

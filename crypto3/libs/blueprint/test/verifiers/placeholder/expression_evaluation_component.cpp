@@ -137,7 +137,7 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_expression_evaluation_component_random_test
         std::set<var> variable_set;
         std::function<void(var)> variable_extractor =
             [&variable_set](var variable) { variable_set.insert(variable); };
-        nil::crypto3::math::expression_for_each_variable_visitor<var> visitor(variable_extractor);
+        nil::crypto3::zk::snark::expression_for_each_variable_visitor<var> visitor(variable_extractor);
         visitor.visit(constraint);
         std::unordered_map<var, var> var_map;
         std::size_t rotation = 0;
