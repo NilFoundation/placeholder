@@ -30,8 +30,6 @@
 #include <variant>
 #include <stack>
 
-#include <boost/bimap/bimap.hpp>
-#include <boost/bimap/unordered_set_of.hpp>
 #include <boost/container/small_vector.hpp>
 
 #include <nil/crypto3/zk/math/expression.hpp>
@@ -45,37 +43,33 @@ namespace nil::crypto3::zk::snark {
         using assignment_type = typename VariableType::assignment_type;
         assignment_type value;
 
-        dag_constant(assignment_type value) : value(value) {}
+        dag_constant(const assignment_type& value)
+            : value(value) {}
 
-        bool operator==(const dag_constant& other) const {
-            return value == other.value;
-        }
+        bool operator==(const dag_constant& other) const = default;
     };
 
     template<typename VariableType>
     struct dag_variable {
         VariableType variable;
 
-        dag_variable(VariableType variable) : variable(variable) {}
+        dag_variable(const VariableType& variable)
+            : variable(variable) {}
 
-        bool operator==(const dag_variable& other) const {
-            return variable == other.variable;
-        }
+        bool operator==(const dag_variable& other) const = default;
     };
 
     struct dag_addition {
         dag_operands_vector_type operands;
 
-        dag_addition(dag_operands_vector_type operands_) : operands(operands_) {
+        dag_addition(const dag_operands_vector_type& operands_) : operands(operands_) {
             std::sort(operands.begin(), operands.end());
         }
         dag_addition(std::initializer_list<std::size_t> operands_) : operands(operands_) {
             std::sort(operands.begin(), operands.end());
         }
 
-        bool operator==(const dag_addition& other) const {
-            return operands == other.operands;
-        }
+        bool operator==(const dag_addition& other) const = default;
     };
 
     struct dag_multiplication {
@@ -88,19 +82,16 @@ namespace nil::crypto3::zk::snark {
             std::sort(operands.begin(), operands.end());
         }
 
-        bool operator==(const dag_multiplication& other) const {
-            return operands == other.operands;
-        }
+        bool operator==(const dag_multiplication& other) const = default;
     };
 
     struct dag_negation {
         std::size_t operand;
 
-        dag_negation(std::size_t operand) : operand(operand) {}
+        dag_negation(std::size_t operand)
+            : operand(operand) {}
 
-        bool operator==(const dag_negation& other) const {
-            return operand == other.operand;
-        }
+        bool operator==(const dag_negation& other) const = default;
     };
 
     template<typename VariableType>
@@ -112,46 +103,72 @@ namespace nil::crypto3::zk::snark {
         dag_negation
     >;
 
+    // Used for counting max degree of an expression.
     template<typename VariableType>
-    struct dag_node_hash {
+    class dag_node_hashing_visitor : public boost::static_visitor<std::size_t> {
+    public:
         using assignment_type = typename VariableType::assignment_type;
-        std::size_t operator()(const dag_node<VariableType> &node) const {
-            const size_t constant_seed = 0x1;
-            const size_t add_seed      = 0x2;
-            const size_t multiply_seed = 0x3;
-            const size_t negation_seed = 0x4;
 
-            return std::visit([&](const dag_node<VariableType>& n) -> size_t {
-                if (std::holds_alternative<dag_constant<VariableType>>(n)) {
-                    std::size_t seed = constant_seed;
-                    boost::hash_combine(seed, std::hash<assignment_type>()(std::get<dag_constant<VariableType>>(n).value));
-                    return seed;
-                } else if (std::holds_alternative<dag_variable<VariableType>>(n)) {
-                    return std::hash<VariableType>()(std::get<dag_variable<VariableType>>(n).variable);
-                } else if (std::holds_alternative<dag_addition>(n)) {
-                    size_t hash = std::accumulate(std::get<dag_addition>(n).operands.begin(), std::get<dag_addition>(n).operands.end(), add_seed, [](size_t a, size_t b) {
-                        std::size_t seed = a;
-                        boost::hash_combine(seed, b);
-                        return seed;
-                    });
-                } else if (std::holds_alternative<dag_multiplication>(n)) {
-                    size_t hash = std::accumulate(std::get<dag_multiplication>(n).operands.begin(), std::get<dag_multiplication>(n).operands.end(), multiply_seed, [](size_t a, size_t b) {
-                        std::size_t seed = a;
-                        boost::hash_combine(seed, b);
-                        return seed;
-                    });
-                } else if (std::holds_alternative<dag_negation>(n)) {
-                    std::size_t seed = negation_seed;
-                    boost::hash_combine(seed, std::hash<std::size_t>()(std::get<dag_negation>(n).operand));
-                    return seed;
-                }
-                return 0;
-            }, node);
+        static const size_t constant_seed = 0x1;
+        static const size_t add_seed      = 0x2;
+        static const size_t multiply_seed = 0x3;
+        static const size_t negation_seed = 0x4;
+
+        dag_node_hashing_visitor() = default;
+
+        std::size_t operator()(const dag_constant<VariableType>& n) const {
+            std::size_t seed = constant_seed;
+            boost::hash_combine(seed, std::hash<assignment_type>()(n.value));
+            return seed;
+        }
+
+        std::size_t operator()(const dag_variable<VariableType>& n) const {
+            return std::hash<VariableType>()(n.variable);
+        }
+
+        std::size_t operator()(const dag_addition& n) const {
+            return std::accumulate(n.operands.begin(), n.operands.end(), add_seed, [](size_t a, size_t b) {
+                std::size_t seed = a;
+                boost::hash_combine(seed, b);
+                return seed;
+            });
+        }
+        std::size_t operator()(const dag_multiplication& n) const {
+            return std::accumulate(n.operands.begin(), n.operands.end(), multiply_seed, [](size_t a, size_t b) {
+                std::size_t seed = a;
+                boost::hash_combine(seed, b);
+                return seed;
+            });
+        }
+        std::size_t operator()(const dag_negation& n) const {
+            std::size_t seed = negation_seed;
+            boost::hash_combine(seed, n.operand);
+            return seed;
         }
     };
 
+} // namespace nil::crypto3::zk::snark
+
+// Define the hash of a dag_node, so we can use it in dag_expression.
+template<typename VariableType>
+struct std::hash<nil::crypto3::zk::snark::dag_node<VariableType>> {
+
+    nil::crypto3::zk::snark::dag_node_hashing_visitor<VariableType> visitor;
+
+    std::size_t operator()(const nil::crypto3::zk::snark::dag_node<VariableType> &node) const {
+        return std::visit(visitor, node);
+    }
+};
+
+namespace nil::crypto3::zk::snark {
+
     template<typename VariableType>
-    struct dag_expression {
+    class dag_expression_builder;
+ 
+    template<typename VariableType>
+    class dag_expression {
+    public:
+        friend class dag_expression_builder<VariableType>;
 
         using node_type = dag_node<VariableType>;
         using assignment_type = typename VariableType::assignment_type;
@@ -161,169 +178,125 @@ namespace nil::crypto3::zk::snark {
         using pow_operation_type = pow_operation<VariableType>;
         using binary_arithmetic_operation_type = binary_arithmetic_operation<VariableType>;
 
-        using map_type = boost::bimaps::bimap<
-            boost::bimaps::unordered_set_of<node_type, dag_node_hash<VariableType>>,
-            boost::bimaps::set_of<size_t>
-        >;
-
         dag_expression() = default;
-
-        dag_expression(const math_expression_type& expression) {
-            std::size_t root_node = convert_expression(expression);
-            root_nodes.push_back(root_node);
-        }
-
-        void add_expression(const math_expression_type& expression) {
-            std::size_t root_node = convert_expression(expression);
-            root_nodes.push_back(root_node);
-        }
-
-        void visit_const(std::function<void(const node_type&)> visitor) const {
-            for (const auto& node : nodes) {
-                visitor(node);
-            }
-        }
 
         size_t get_root_nodes_count() const {
             return root_nodes.size();
         }
+
         size_t get_nodes_count() const {
             return nodes.size();
         }
-        const map_type& get_node_map() const {
-            return node_map;
+
+        const std::vector<node_type>& get_nodes() const {
+            return nodes;
         }
+
         std::size_t get_root_node(std::size_t i) const {
             return root_nodes[i];
         }
 
     private:
 
-        map_type node_map;
+        std::unordered_map<node_type, size_t> node_map;
         std::vector<std::size_t> root_nodes;
         std::vector<node_type> nodes;
 
-        std::size_t convert_expression(const math_expression_type& expression) {
-            struct stack_item {
-                const math_expression_type* expr;
-                std::size_t result_index;
-                enum class State { Initial, ProcessingLeft, ProcessingRight } state;
-                std::size_t left_node;
-            };
-            std::stack<stack_item> stack;
-            stack.push({&expression, 0, stack_item::State::Initial, 0});
-
-            std::size_t last_result_index = 0;
-
-            while (!stack.empty()) {
-                auto& current = stack.top();
-
-                if (current.state == stack_item::State::Initial) {
-                    auto type_num = current.expr->get_expr().which();
-                    if (type_num == 0) { // term
-                        const auto& term = boost::get<term_type>(current.expr->get_expr());
-                        dag_operands_vector_type children;
-                        // first insert coefficient
-                        // note that multiplying by one is superfluous, so we skip it when we can
-                        if (term.get_vars().size() == 0 || term.get_coeff() != assignment_type::one()) {
-                            auto const_idx = register_node(dag_constant<VariableType>{term.get_coeff()});
-                            children.push_back(const_idx);
-                        }
-                        // then insert variables
-                        for (const auto& variable : term.get_vars()) {
-                            auto var_idx = register_node(dag_variable<VariableType>{variable});
-                            children.push_back(var_idx);
-                        }
-                        if (children.size() > 1) {
-                            current.result_index = register_node(dag_multiplication{children});
-                        } else {
-                            current.result_index = children.front();
-                        }
-                        last_result_index = current.result_index;
-                        stack.pop();
-                    } else if (type_num == 1) { // pow
-                        throw std::runtime_error("Power operation is not supported");
-                    } else if (type_num == 2) { // binary arithmetic operation
-                        const auto& binary_op = boost::get<binary_arithmetic_operation_type>(current.expr->get_expr());
-                        const auto& left = binary_op.get_expr_left();
-                        // Process left expression first
-                        current.state = stack_item::State::ProcessingLeft;
-                        stack.push({&left, 0, stack_item::State::Initial, 0});
-                    } else {
-                        throw std::runtime_error("Unknown expression type");
-                    }
-                } else if (current.state == stack_item::State::ProcessingLeft) {
-                    // Left expression has been processed, get its result
-                    current.left_node = last_result_index;
-
-                    const auto& binary_op = boost::get<binary_arithmetic_operation_type>(current.expr->get_expr());
-                    const auto& right = binary_op.get_expr_right();
-
-                    using operation_type = binary_arithmetic_operation_type::ArithmeticOperatorType;
-                    if (binary_op.get_op() == operation_type::SUB) {
-                        auto right_type = right.get_expr().which();
-                        if (right_type == 0) {
-                            auto right_term = boost::get<term_type>(right.get_expr());
-                            // try to remove the negations of zero
-                            if (right_term.get_coeff() == assignment_type::zero()) {
-                                current.result_index = current.left_node;
-                                last_result_index = current.result_index;
-                                stack.pop();
-                                continue;
-                            }
-                            if (right_term.get_vars().size() == 0) {
-                                // this means that we have to negate the non-zero constant and add it to the left node
-                                auto coeff = right_term.get_coeff();
-                                auto neg_coeff = -coeff;
-                                auto negated_right_node = register_node(dag_constant<VariableType>{neg_coeff});
-                                current.result_index = register_node(dag_addition{current.left_node, negated_right_node});
-                                last_result_index = current.result_index;
-                                stack.pop();
-                                continue;
-                            }
-                        }
-                    }
-                    // Process right expression
-                    current.state = stack_item::State::ProcessingRight;
-                    stack.push({&right, 0, stack_item::State::Initial, 0});
-                } else if (current.state == stack_item::State::ProcessingRight) {
-                    // Both left and right expressions have been processed
-                    std::size_t right_node = last_result_index;
-
-                    const auto& binary_op = boost::get<binary_arithmetic_operation_type>(current.expr->get_expr());
-                    using operation_type = binary_arithmetic_operation_type::ArithmeticOperatorType;
-
-                    if (binary_op.get_op() == operation_type::ADD) {
-                        current.result_index = register_node(dag_addition{current.left_node, right_node});
-                    } else if (binary_op.get_op() == operation_type::MULT) {
-                        current.result_index = register_node(dag_multiplication{current.left_node, right_node});
-                    } else if (binary_op.get_op() == operation_type::SUB) {
-                        auto neg = register_node(dag_negation{right_node});
-                        current.result_index = register_node(dag_addition{current.left_node, neg});
-                    } else {
-                        throw std::runtime_error("Unknown binary arithmetic operation");
-                    }
-
-                    last_result_index = current.result_index;
-                    stack.pop();
-                }
-            }
-
-            return last_result_index;
-        }
-
         size_t register_node(const node_type& node) {
-            auto it = node_map.left.find(node);
-            if (it != node_map.left.end()) {
+            auto it = node_map.find(node);
+            if (it != node_map.end()) {
                 return it->second;
             }
             size_t index = nodes.size();
             nodes.push_back(node);
-            node_map.left.insert(std::make_pair(node, index));
+            node_map[node] = index;
             return index;
         }
     };
 
+    // This class stores all registered expressions, then runs over them as a visitor and
+    // builds a DAG for them.
+    template<typename VariableType>
+    class dag_expression_builder : public boost::static_visitor<std::size_t> {
+    public:
+        using node_type = dag_node<VariableType>;
+        using assignment_type = typename VariableType::assignment_type;
+
+        using math_expression_type = expression<VariableType>;
+        using term_type = term<VariableType>;
+        using pow_operation_type = pow_operation<VariableType>;
+        using binary_arithmetic_operation_type = binary_arithmetic_operation<VariableType>;
+
+        dag_expression_builder() = default;
+
+        std::size_t get_expression_count() const {
+            return expressions.size();
+        }
+
+        void add_expression(const math_expression_type& expression) {
+            expressions.push_back(expression);
+        }
+
+        void add_expression(math_expression_type&& expr) {
+            expressions.push_back(std::move(expr));
+        }
+
+        dag_expression<VariableType> build() {
+            for (const auto& expr: expressions) {
+                std::size_t root_node = boost::apply_visitor(*this, expr.get_expr());
+                result.root_nodes.push_back(root_node);
+            }
+            return std::move(result);
+        }
+
+        std::size_t operator()(const term<VariableType>& t) {
+            dag_operands_vector_type children;
+            if (t.get_vars().size() == 0 || t.get_coeff() != assignment_type::one()) {
+                auto const_idx = result.register_node(dag_constant<VariableType>{t.get_coeff()});
+                children.push_back(const_idx);
+            }
+            // then insert variables
+            for (const auto& variable : t.get_vars()) {
+                auto var_idx = result.register_node(dag_variable<VariableType>{variable});
+                children.push_back(var_idx);
+            }
+            if (children.size() > 1)
+                return result.register_node(dag_multiplication{children});
+            return children.front();
+        }
+
+        std::size_t operator()(
+                const pow_operation<VariableType>& pow) {
+            throw std::runtime_error("Power operation is not supported");
+        }
+
+        std::size_t operator()(const binary_arithmetic_operation<VariableType>& op) {
+            std::size_t left = boost::apply_visitor(*this, op.get_expr_left().get_expr());
+            std::size_t right = boost::apply_visitor(*this, op.get_expr_right().get_expr());
+
+            switch (op.get_op()) {
+                case ArithmeticOperator::ADD:
+                    return result.register_node(dag_addition{left, right});
+                case ArithmeticOperator::SUB:
+                    return result.register_node(dag_addition{
+                        left, result.register_node(dag_negation{right})});
+                case ArithmeticOperator::MULT:
+                    return result.register_node(dag_multiplication{left, right});
+            }
+            throw std::invalid_argument("ArithmeticOperator not found");
+        }
+
+    private:
+        // We will store all the expressions that are registered here.
+        std::vector<math_expression_type> expressions;
+
+        // Used for the visitors. Once build() is called, the dag is temporarily created here,
+        // then moved out and returned.
+        dag_expression<VariableType> result;
+    };
+
 } // namespace nil::crypto3::zk::snark
+
+
 
 #endif // PARALLEL_CRYPTO3_ZK_MATH_DAG_EXPRESSION_HPP
