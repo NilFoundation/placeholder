@@ -351,7 +351,7 @@ namespace nil {
                     constrain(all_states[0].opcode - opcode_to_number(zkevm_opcode::start_block), "First opcode is start_block");
                     constrain(all_states[0].is_even - 1);
                     if constexpr (stage == GenerationStage::CONSTRAINTS) {
-                        nil::crypto3::math::expression_max_degree_visitor<nil::crypto3::zk::snark::plonk_variable<typename FieldType::value_type>> gates_visitor;
+                        nil::crypto3::zk::snark::expression_max_degree_visitor<nil::crypto3::zk::snark::plonk_variable<typename FieldType::value_type>> gates_visitor;
                         std::vector<TYPE> tmp;
 
                         tmp = {context_object.relativize(all_states[1].gas_hi, -1)};

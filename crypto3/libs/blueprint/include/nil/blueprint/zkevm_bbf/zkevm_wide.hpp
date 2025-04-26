@@ -314,7 +314,7 @@ namespace nil {
                     // First opcode is START_BLOCK
                     constrain(all_states[0].opcode - opcode_to_number(zkevm_opcode::start_block), "First opcode is start_block");
                     if constexpr (stage == GenerationStage::CONSTRAINTS) {
-                        nil::crypto3::math::expression_max_degree_visitor<nil::crypto3::zk::snark::plonk_variable<typename FieldType::value_type>> gates_visitor;
+                        nil::crypto3::zk::snark::expression_max_degree_visitor<nil::crypto3::zk::snark::plonk_variable<typename FieldType::value_type>> gates_visitor;
 
                         // Range checks
                         context_object.relative_lookup({context_object.relativize(all_states[1].gas_hi, -1)}, "chunk_16_bits/full", 0, max_zkevm_rows-1);

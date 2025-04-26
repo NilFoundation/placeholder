@@ -473,6 +473,80 @@ namespace nil {
                     ));
                 }
 
+                virtual void tload() override{
+                    std::size_t key = std::size_t(stack.back());
+                    _zkevm_states.back().load_stack(stack,1);
+                    append_stack_reads(1);
+                    _zkevm_states.back().load_word_field(zkevm_state_word_field::call_context_address, call_context_address);
+                    _zkevm_states.back().load_word_field(zkevm_state_word_field::storage_key, key);
+                    _zkevm_states.back().load_word_field(
+                        zkevm_state_word_field::storage_value,
+                        _call_stack.back().transient_storage.count({call_context_address,key})?_call_stack.back().transient_storage[{call_context_address,key}]:0
+                    );
+                    _zkevm_states.back().load_word_field(
+                        zkevm_state_word_field::initial_storage_value, 0
+                    );
+                    zkevm_basic_evm::tload();
+                    {
+                        last_state_counter_stack.back()[{rw_operation_type::transient_storage, call_context_address, 0, key}] = rw_counter;
+                        state_operation s;
+                        s.is_original = true;
+                        s.op = rw_operation_type::transient_storage;
+                        s.id = call_id;
+                        s.address = call_context_address;
+                        s.field = 0;
+                        s.storage_key = key;
+                        s.rw_counter = rw_counter++;
+                        s.is_write = false;
+                        s.initial_value = 0;
+                        s.call_initial_value = depth == 2? 0: _call_stack[_call_stack.size() - 2].transient_storage[{call_context_address, key}];
+                        s.previous_value = _call_stack.back().transient_storage[{call_context_address, key}];
+                        s.value = _call_stack.back().transient_storage[{call_context_address, key}];
+                        s.parent_id = _call_stack[_call_stack.size() - 2].call_id;
+                        s.grandparent_id = depth == 2? 0: _call_stack[_call_stack.size() - 3].call_id;
+                        s.call_id = call_id;
+                        _state_operations.push_back(s);
+                    }
+                    append_stack_writes(1);
+                }
+
+                virtual void tstore() override{
+                    zkevm_word_type key = stack[stack.size() - 1];
+                    zkevm_word_type value = stack[stack.size() - 2];
+                    _zkevm_states.back().load_stack(stack,2);
+                    append_stack_reads(2);
+                    _zkevm_states.back().load_word_field(zkevm_state_word_field::call_context_address, call_context_address);
+                    _zkevm_states.back().load_word_field(zkevm_state_word_field::storage_key, key);
+                    _zkevm_states.back().load_word_field(
+                        zkevm_state_word_field::storage_value,
+                        _call_stack.back().transient_storage.count({call_context_address,key})?_call_stack.back().transient_storage[{call_context_address,key}]:0
+                    );
+                    _zkevm_states.back().load_word_field(
+                        zkevm_state_word_field::initial_storage_value, 0
+                    );
+                    {
+                        last_state_counter_stack.back()[{rw_operation_type::transient_storage, call_context_address, 0, key}] = rw_counter;
+                        state_operation s;
+                        s.is_original = true;
+                        s.op = rw_operation_type::transient_storage;
+                        s.id = call_id;
+                        s.address = call_context_address;
+                        s.field = 0;
+                        s.storage_key = key;
+                        s.rw_counter = rw_counter++;
+                        s.is_write = true;
+                        s.initial_value = 0;
+                        s.call_initial_value = depth == 2? 0: _call_stack[_call_stack.size() - 2].transient_storage[{call_context_address, key}];
+                        s.previous_value = _call_stack.back().transient_storage[{call_context_address, key}];
+                        s.value = value;
+                        s.parent_id = _call_stack[_call_stack.size() - 2].call_id;
+                        s.grandparent_id = depth == 2? 0: _call_stack[_call_stack.size() - 3].call_id;
+                        s.call_id = call_id;
+                        _state_operations.push_back(s);
+                    }
+                    zkevm_basic_evm::tstore();
+                }
+
                 virtual void sload() override{
                     zkevm_word_type key = stack.back();
                     _zkevm_states.back().load_stack(stack,1);
@@ -799,7 +873,7 @@ namespace nil {
                         ));
                         cpy.push_byte(memory[dst+i]);
                     }
-                    _copy_events.push_back(cpy);
+                    if( length > 0 ) _copy_events.push_back(cpy);
                 }
 
                 virtual void returndatacopy() override {
@@ -808,7 +882,6 @@ namespace nil {
                     std::size_t length = std::size_t(stack[stack.size() - 3]);
 
                     _zkevm_states.back().load_stack(stack,3);
-                    //_zkevm_states.back().load_returndata(returndata, src, length);
                     _zkevm_states.back().load_size_t_field(zkevm_state_size_t_field::lastsubcall_id, _call_stack.back().lastcall_id);
                     append_stack_reads(3);
                     zkevm_basic_evm::returndatacopy();
@@ -841,7 +914,7 @@ namespace nil {
                         ));
                         cpy.push_byte(memory[dst+i]);
                     }
-                    _copy_events.push_back(cpy);
+                    if( length > 0 ) _copy_events.push_back(cpy);
                 }
 
                 virtual void codecopy() {
@@ -867,7 +940,7 @@ namespace nil {
                         ));
                         cpy.push_byte(memory[dst+i]);
                     }
-                    _copy_events.push_back(cpy);
+                    if( length > 0 ) _copy_events.push_back(cpy);
                 }
 
                 virtual void dupx( std::size_t d) {
@@ -984,8 +1057,13 @@ namespace nil {
                         cpy.push_byte(memory[offset + i]);
                         buffer.push_back(memory[offset + i]);
                     }
-                    _copy_events.push_back(cpy);
+                    if( length > 0 ) _copy_events.push_back(cpy);
                     _keccaks.new_buffer(buffer);
+                    append_stack_writes(1);
+                }
+
+                virtual void extcodesize() override{
+                    zkevm_basic_evm::extcodesize();
                     append_stack_writes(1);
                 }
 
@@ -1046,7 +1124,7 @@ namespace nil {
                         rw_counter++,
                         1
                     ));
-                    _copy_events.push_back(cpy);
+                    if( length > 0 ) _copy_events.push_back(cpy);
                 }
 
                 virtual void end_call() override{
@@ -1108,7 +1186,7 @@ namespace nil {
                         ));
                         cpy.push_byte(memory[_call_stack.back().lastcall_returndataoffset + i]);
                     }
-                    _copy_events.push_back(cpy);
+                    if( real_length > 0 ) _copy_events.push_back(cpy);
                     append_stack_writes(1);
                 }
 
@@ -1322,8 +1400,10 @@ namespace nil {
                             break;
                         }
                         case rw_operation_type::transient_storage:
-                            BOOST_LOG_TRIVIAL(fatal) << "Implement me" << std::endl;
-                            BOOST_ASSERT(false);
+                            s.initial_value = 0;
+                            s.call_initial_value = depth == 2? 0: _call_stack[_call_stack.size() - 3].transient_storage[{addr, st_k}];
+                            s.previous_value = depth == 2? 0: _call_stack[_call_stack.size() - 2].transient_storage[{addr, st_k}];;
+                            s.value = _call_stack.back().transient_storage[{addr,st_k}];
                             break;
                         default:
                             BOOST_LOG_TRIVIAL(fatal) << "Wrong stack operation" << std::endl;

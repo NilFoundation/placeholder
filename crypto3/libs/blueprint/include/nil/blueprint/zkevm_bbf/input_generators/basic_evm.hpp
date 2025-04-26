@@ -1242,7 +1242,7 @@ namespace nil {
                 }
                 virtual void msize_opcode() {
                     decrease_gas(2);
-                    stack.push_back(memory.size());
+                    stack.push_back(((memory.size() + 31)/32)*32);
                     pc++;
                 }
 

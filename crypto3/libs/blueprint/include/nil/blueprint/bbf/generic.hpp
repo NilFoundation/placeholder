@@ -447,7 +447,7 @@ namespace nil {
                         throw std::logic_error(ss.str());
                     }
 
-                    auto [has_vars, min_row, max_row] = nil::crypto3::math::expression_row_range_visitor<var>::row_range(C_rel);
+                    auto [has_vars, min_row, max_row] = nil::crypto3::zk::snark::expression_row_range_visitor<var>::row_range(C_rel);
                     if (!has_vars) {
                         BOOST_LOG_TRIVIAL(error) << "Constraint '" << name << "' has no variables!\n";
                     }

@@ -471,8 +471,8 @@ namespace nil {
                         non_first_row_constraints.push_back(filled_selector * (1 - is_first[1]) * (call_initial_value_lo[1] - call_initial_value_lo[0]));
                         non_first_row_constraints.push_back(filled_selector * (1 - is_first[1]) * (initial_value_hi[1] - initial_value_hi[0]));
                         non_first_row_constraints.push_back(filled_selector * (1 - is_first[1]) * (initial_value_lo[1] - initial_value_lo[0]));
-                        every_row_constraints.push_back(is_first_and_read[1] * (access_list_selector + transient_storage_selector) * value_hi[1]);
-                        every_row_constraints.push_back(is_first_and_read[1] * (access_list_selector + transient_storage_selector) * value_lo[1]);
+                        // every_row_constraints.push_back(is_first_and_read[1] * (access_list_selector + transient_storage_selector) * value_hi[1]);
+                        // every_row_constraints.push_back(is_first_and_read[1] * (access_list_selector + transient_storage_selector) * value_lo[1]);
                         every_row_constraints.push_back(access_list_selector * value_hi[1]);
                         every_row_constraints.push_back(access_list_selector * value_lo[1] * (1 - value_lo[1]) );
                         non_first_row_constraints.push_back(call_context_selector * counter[1]);

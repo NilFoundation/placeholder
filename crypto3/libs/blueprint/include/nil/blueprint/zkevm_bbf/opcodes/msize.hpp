@@ -27,29 +27,37 @@ namespace nil {
                     generic_component<FieldType,stage>(context_object, false)
                 {
                     using integral_type = typename FieldType::integral_type;
-                    // TYPE memory_words;
-                    // if constexpr( stage == GenerationStage::ASSIGNMENT ){
-                    //     memory_words = integral_type(current_state.memory_size()) / 32;
-                    // }
-                    // allocate(memory_words, 0, 0);
+                    TYPE memory_words;
+                    TYPE diff;
+                    TYPE diff31;
+                    if constexpr( stage == GenerationStage::ASSIGNMENT ){
+                        memory_words = integral_type(current_state.memory_size() + 21) / 32;
+                        diff = memory_words * 32 - current_state.memory_size();
+                        diff31 = 31 - diff;
+                    }
+                    allocate(memory_words, 0, 0);
+                    allocate(diff, 1, 0);
+                    allocate(diff31, 2, 0);
 
                     if constexpr( stage == GenerationStage::CONSTRAINTS ){
+                        constrain(current_state.memory_size(0) + diff - memory_words * 32);
+                        constrain(diff + diff31 - 31);
+
                         constrain(current_state.pc_next() - current_state.pc(0) - 1);                   // PC transition
                         constrain(current_state.gas(0) - current_state.gas_next() - 2);                 // GAS transition
                         constrain(current_state.stack_size(0) - current_state.stack_size_next() + 1);       // stack_size transition
                         constrain(current_state.memory_size(0) - current_state.memory_size_next());     // memory_size transition
                         constrain(current_state.rw_counter_next() - current_state.rw_counter(0) - 1);   // rw_counter transition
                         constrain(current_state.memory_size_next()  - current_state.memory_size(0));
-                        std::vector<TYPE> tmp;
-                        tmp = rw_table<FieldType, stage>::stack_lookup(
+
+                        lookup(rw_table<FieldType, stage>::stack_lookup(
                             current_state.call_id(0),
                             current_state.stack_size(0),
                             current_state.rw_counter(0),
                             TYPE(1),// is_write
                             0,
-                            current_state.memory_size(0)
-                        );
-                        lookup(tmp, "zkevm_rw");
+                            memory_words * 32
+                        ), "zkevm_rw");
                     }
                 }
             };
