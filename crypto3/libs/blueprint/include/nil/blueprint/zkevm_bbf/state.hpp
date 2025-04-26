@@ -50,9 +50,13 @@ namespace nil {
                 using typename generic_component<FieldType,stage>::TYPE;
 
                 using state_table_type = state_table<FieldType, stage>;
-                using input_type = typename state_table_type::input_type;
                 using value = typename FieldType::value_type;
                 using integral_type = nil::crypto3::multiprecision::big_uint<257>;
+
+                struct input_type{
+                    typename state_table_type::input_type state_trace;
+                    typename std::conditional<stage==GenerationStage::ASSIGNMENT, std::map<std::size_t, zkevm_call_state_data>, std::nullptr_t>::type call_state_data;
+                };
 
                 static constexpr std::size_t diff_index_selectors_amount = 32;
                 static constexpr std::size_t chunks_amount = 30;
@@ -117,7 +121,7 @@ namespace nil {
 
                     for( std::size_t i = 0; i < state_table_type::get_witness_amount(); i++ ) table_subcomponent_area.push_back(i);
                     context_type state_table_ct = context_object.subcontext(table_subcomponent_area,0,max_state);
-                    state_table_type t(state_table_ct, input, max_state);
+                    state_table_type t(state_table_ct, input.state_trace, max_state);
 
                     std::vector<std::size_t> state_table_area;
                     state_table_area.push_back(table_subcomponent_area[0]); // is_original
@@ -198,7 +202,7 @@ namespace nil {
                     op_selector_indices[rw_operation_type::padding] = index++;
 
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                        auto state_trace = input;
+                        auto &state_trace = input.state_trace;
 
                         BOOST_LOG_TRIVIAL(trace) << "State trace.size = " << state_trace.size() << std::endl;
                         std::vector<TYPE> sorted;

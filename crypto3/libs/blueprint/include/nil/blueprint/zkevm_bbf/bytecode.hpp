@@ -186,14 +186,16 @@ namespace nil {
 
                         std::vector<TYPE> tmp = {context_object.relativize(tag[0] * value[0], -1)};
                         context_object.relative_lookup(tmp, "byte_range_table/full", 0, max_bytecode_size - 1);
-                        tmp = {context_object.relativize(std::vector<TYPE>({value[0] * is_opcode[0], 
-                                                                            push_size[0] * is_opcode[0], 
+                        tmp = {context_object.relativize(std::vector<TYPE>({value[0] * is_opcode[0],
+                                                                            push_size[0] * is_opcode[0],
                                                                             is_opcode[0]}), -1)};
                         context_object.relative_lookup(tmp, "zkevm_opcodes/full", 0, max_bytecode_size - 1);
-                        tmp = {context_object.relativize(std::vector<TYPE>({tag[1] + 1 - tag[1], //TODO: update math::expression constructor with constant parameter
-                                                                            tag[0] * (1 - tag[1]) * value_rlc[0],
-                                                                            tag[0] * (1 - tag[1]) * hash_hi[0] + (1 - tag[0] * (1 - tag[1])) * w_hi<FieldType>(zerohash),
-                                                                            tag[0] * (1 - tag[1]) * hash_lo[0] + (1 - tag[0] * (1 - tag[1])) * w_lo<FieldType>(zerohash)}), -1)};
+                        tmp = {context_object.relativize(std::vector<TYPE>({
+                            tag[1] + 1 - tag[1],
+                            tag[0] * (1 - tag[1]) * value_rlc[0],
+                            tag[0] * (1 - tag[1]) * hash_hi[0] + (1 - tag[0] * (1 - tag[1])) * w_hi<FieldType>(zerohash),
+                            tag[0] * (1 - tag[1]) * hash_lo[0] + (1 - tag[0] * (1 - tag[1])) * w_lo<FieldType>(zerohash)
+                        }), -1  )};
                         context_object.relative_lookup(tmp, "keccak_table", 1, max_bytecode_size - 1);
                     }
                 };

@@ -100,8 +100,8 @@ namespace nil {
                             is_from_bytecode * current_state.pc(0),
                             is_from_bytecode * current_state.opcode(0),
                             is_from_bytecode,
-                            is_from_bytecode * current_state.bytecode_hash_hi(0) + (1 - is_from_bytecode) * w_hi<FieldType>(zerohash),
-                            is_from_bytecode * current_state.bytecode_hash_lo(0) + (1 - is_from_bytecode) * w_lo<FieldType>(zerohash)
+                            is_from_bytecode * current_state.bytecode_hash_hi(0),
+                            is_from_bytecode * current_state.bytecode_hash_lo(0)
                         }, "zkevm_bytecode");
                     }
                 }

@@ -84,7 +84,7 @@ BOOST_AUTO_TEST_CASE(pushx_strings) {
 
     l1_size_restrictions max_sizes;
 
-    max_sizes.max_keccak_blocks = 10;
+    max_sizes.max_keccak_blocks = 20;
     max_sizes.max_bytecode = 3000;
     max_sizes.max_mpt = 0;
     max_sizes.max_rw = 500;
@@ -157,7 +157,7 @@ BOOST_AUTO_TEST_CASE(pushx) {
 
     l1_size_restrictions max_sizes;
 
-    max_sizes.max_keccak_blocks = 10;
+    max_sizes.max_keccak_blocks = 20;
     max_sizes.max_bytecode = 3000;
     max_sizes.max_mpt = 0;
     max_sizes.max_rw = 500;

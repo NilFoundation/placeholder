@@ -45,7 +45,6 @@ namespace nil {
                 using RWTable = rw_table<FieldType, stage>;
                 using KeccakTable = keccak_table<FieldType, stage>;
                 using CopyTable = copy_table<FieldType, stage>;
-                using StateTable = state_table<FieldType, stage>;
 
                 using typename generic_component<FieldType, stage>::table_params;
                 using typename generic_component<FieldType,stage>::TYPE;
@@ -58,7 +57,6 @@ namespace nil {
                     KeccakTable::private_input_type keccak_buffers;
                     RWTable::input_type rw_operations;
                     CopyTable::input_type copy_events;
-                    StateTable::input_type state_operations;
                 };
 
                 static constexpr std::size_t copy_advice_amount = 25;
@@ -67,24 +65,19 @@ namespace nil {
                     std::size_t max_copy,
                     std::size_t max_rw,
                     std::size_t max_keccak_blocks,
-                    std::size_t max_bytecode,
-                    std::size_t max_state
+                    std::size_t max_bytecode
                 ) {
                     return {
                         .witnesses = copy_advice_amount
                                    + BytecodeTable::get_witness_amount()
                                    + RWTable::get_witness_amount()
                                    + KeccakTable::get_witness_amount()
-                                   + CopyTable::get_witness_amount()
-                                   + StateTable::get_witness_amount(),
+                                   + CopyTable::get_witness_amount(),
                         .public_inputs = 1,
                         .constants = 0,
-                        .rows = std::max(
-                            max_state,
-                            std::max(
-                                std::max(max_copy, max_rw + 1),
-                                std::max(max_keccak_blocks + 1, max_bytecode + 1)
-                            )
+                        .rows =  std::max(
+                            std::max(max_copy, max_rw),
+                            std::max(max_keccak_blocks, max_bytecode)
                         )
                     };
                 }
@@ -94,8 +87,7 @@ namespace nil {
                     std::size_t max_copy,
                     std::size_t max_rw,
                     std::size_t max_keccak_blocks,
-                    std::size_t max_bytecode,
-                    std::size_t max_state
+                    std::size_t max_bytecode
                 ) {
                     context.allocate(input.rlc_challenge, 0, 0, column_type::public_input);
                 }
@@ -105,8 +97,7 @@ namespace nil {
                     std::size_t max_copy,
                     std::size_t max_rw,
                     std::size_t max_keccak_blocks,
-                    std::size_t max_bytecode,
-                    std::size_t max_state
+                    std::size_t max_bytecode
                 ) :generic_component<FieldType,stage>(context_object) {
                     auto zerohash = zkevm_keccak_hash({});
                     BOOST_LOG_TRIVIAL(trace) << "Copy assignment and circuit construction" << std::endl;
@@ -129,23 +120,16 @@ namespace nil {
                     for( std::size_t i = 0; i < RWTable::get_witness_amount(); i++){
                         rw_lookup_area.push_back(current_column++);
                     }
-                    std::vector<std::size_t> state_lookup_area;
-                    for( std::size_t i = 0; i < StateTable::get_witness_amount(); i++){
-                        state_lookup_area.push_back(current_column++);
-                    }
 
                     context_type bytecode_ct = context_object.subcontext(bytecode_lookup_area,0,max_bytecode);
                     context_type keccak_ct = context_object.subcontext( keccak_lookup_area, 0, max_keccak_blocks);
                     context_type rw_ct = context_object.subcontext(rw_lookup_area, 0, max_rw);
                     context_type copy_ct = context_object.subcontext( copy_lookup_area, 0, max_copy);
-                    context_type state_ct = context_object.subcontext( state_lookup_area, 0, max_state);
 
                     BytecodeTable bc_t = BytecodeTable(bytecode_ct, input.bytecodes, max_bytecode);
                     KeccakTable k_t = KeccakTable(keccak_ct, {input.rlc_challenge, input.keccak_buffers}, max_keccak_blocks);
                     RWTable rw_t = RWTable(rw_ct, input.rw_operations, max_rw, true);
                     CopyTable c_t = CopyTable(copy_ct, input.copy_events, max_copy, false);
-                    StateTable cc_t = StateTable(state_ct, input.state_operations, max_state);
-
 
                     const std::vector<TYPE> is_first = c_t.is_first;
                     const std::vector<TYPE> is_write = c_t.is_write;
@@ -220,8 +204,9 @@ namespace nil {
                         }
                     }
                     for( std::size_t i = 0; i < max_copy; i++){
-                        std::size_t current_column = BytecodeTable::get_witness_amount() + KeccakTable::get_witness_amount()
-                        + RWTable::get_witness_amount() + StateTable::get_witness_amount() + CopyTable::get_witness_amount();
+                        std::size_t current_column =
+                            BytecodeTable::get_witness_amount() + KeccakTable::get_witness_amount()
+                                + RWTable::get_witness_amount() + CopyTable::get_witness_amount();
 
                         for(std::size_t j = 0; j < copy_operand_types_amount - 1; j++){ // Without padding
                             allocate(type_selector[i][j], current_column++, i);
