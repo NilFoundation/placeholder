@@ -82,7 +82,7 @@ void test(std::vector<typename BlueprintFieldType::value_type> &public_input,
         BOOST_ASSERT(input_var.index == 0);
         return public_input[input_var.rotation];
     };
-    expression_evaluator<var> evaluator(constraint, get_var_value);
+    nil::crypto3::zk::snark::expression_evaluator<var> evaluator(constraint, get_var_value);
     value_type expected_res = evaluator.evaluate();
 
     typename component_type::input_type instance_input = {var_map};
@@ -137,7 +137,7 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_expression_evaluation_component_random_test
         std::set<var> variable_set;
         std::function<void(var)> variable_extractor =
             [&variable_set](var variable) { variable_set.insert(variable); };
-        nil::crypto3::math::expression_for_each_variable_visitor<var> visitor(variable_extractor);
+        nil::crypto3::zk::snark::expression_for_each_variable_visitor<var> visitor(variable_extractor);
         visitor.visit(constraint);
         std::unordered_map<var, var> var_map;
         std::size_t rotation = 0;

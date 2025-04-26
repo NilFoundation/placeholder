@@ -65,11 +65,11 @@ namespace nil {
                     typedef plonk_lookup_table<FieldType> lookup_table_type;
                     typedef std::vector<lookup_table_type> lookup_tables_type;
                     typedef std::vector<plonk_variable<typename FieldType::value_type>> public_input_gate_type;
-                    typedef math::expression_max_degree_visitor<variable_type> degree_visitor_type;
-                    typedef math::expression<variable_type> expression_type;
-                    typedef math::term<variable_type> term_type;
-                    typedef math::binary_arithmetic_operation<variable_type> binary_operation_type;
-                    typedef math::pow_operation<variable_type> pow_operation_type;
+                    typedef expression_max_degree_visitor<variable_type> degree_visitor_type;
+                    typedef expression<variable_type> expression_type;
+                    typedef term<variable_type> term_type;
+                    typedef binary_arithmetic_operation<variable_type> binary_operation_type;
+                    typedef pow_operation<variable_type> pow_operation_type;
                     typedef std::vector<std::size_t> public_input_sizes_type;
                     typedef FieldType field_type;
 
@@ -209,7 +209,7 @@ namespace nil {
 
                     std::size_t max_gates_degree() const {
                         std::size_t max_gates_degree = 0;
-                        math::expression_max_degree_visitor<variable_type> gates_visitor;
+                        expression_max_degree_visitor<variable_type> gates_visitor;
                         for (const auto& gate : _gates) {
                             for (const auto& constr : gate.constraints) {
                                 std::size_t deg = gates_visitor.compute_max_degree(constr);
@@ -223,7 +223,7 @@ namespace nil {
 
                     std::size_t max_lookup_gates_degree() const {
                         std::size_t max_lookup_gates_degree = 0;
-                        math::expression_max_degree_visitor<variable_type> lookup_visitor;
+                        expression_max_degree_visitor<variable_type> lookup_visitor;
                         for (const auto& gate :_lookup_gates) {
                             for (const auto& constr : gate.constraints) {
                                 for (const auto& li : constr.lookup_input) {
@@ -267,7 +267,7 @@ namespace nil {
                         }
 
                         using VariableType = plonk_variable<typename FieldType::value_type>;
-                        typedef math::expression_max_degree_visitor<VariableType> degree_visitor_type;
+                        typedef expression_max_degree_visitor<VariableType> degree_visitor_type;
                         std::vector<std::size_t> lookup_parts;
                         degree_visitor_type lookup_visitor;
 

@@ -267,7 +267,7 @@ namespace nil {
                                     variable_set.insert(variable);
                                 }
                             };
-                        nil::crypto3::math::expression_for_each_variable_visitor<var> visitor(variable_extractor);
+                        nil::crypto3::zk::snark::expression_for_each_variable_visitor<var> visitor(variable_extractor);
                         for (const auto &constraint : gate.constraints) {
                             visitor.visit(constraint);
                         }
@@ -289,7 +289,7 @@ namespace nil {
                                     variable_set.insert(variable);
                                 }
                             };
-                        nil::crypto3::math::expression_for_each_variable_visitor<var> visitor(variable_extractor);
+                        nil::crypto3::zk::snark::expression_for_each_variable_visitor<var> visitor(variable_extractor);
                         for (const auto &lookup_constraint : gate.constraints) {
                             for (const auto &constraint : lookup_constraint.lookup_input) {
                                 visitor.visit(constraint);

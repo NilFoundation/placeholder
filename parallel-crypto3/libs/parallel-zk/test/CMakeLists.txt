@@ -58,7 +58,7 @@ set(TESTS_NAMES
     "commitment/proof_of_work"
 
     "math/expression"
-    "math/dag_expression"
+    "math/dag_expression_evaluator"
 
     "systems/plonk/placeholder/placeholder_circuits"
     "systems/plonk/placeholder/placeholder_circuits_dFRI"

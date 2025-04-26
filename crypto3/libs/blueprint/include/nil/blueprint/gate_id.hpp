@@ -178,7 +178,7 @@ namespace nil {
         private:
             using value_type = typename BlueprintFieldType::value_type;
             using var = nil::crypto3::zk::snark::plonk_variable<value_type>;
-            using expression_type = nil::crypto3::math::expression<var>;
+            using expression_type = nil::crypto3::zk::snark::expression<var>;
             using value_set_type = value_set<BlueprintFieldType>;
             using constraint_type = nil::crypto3::zk::snark::plonk_constraint<BlueprintFieldType>;
             using gate_type = crypto3::zk::snark::plonk_gate<BlueprintFieldType, constraint_type>;
@@ -190,11 +190,11 @@ namespace nil {
             std::size_t selector_index;
         public:
             std::pair<value_type, value_type> eval_constraint(const constraint_type& constraint) const {
-                nil::crypto3::math::expression_evaluator<var> evaluator_1(
+                nil::crypto3::zk::snark::expression_evaluator<var> evaluator_1(
                     constraint,
                     [this](const var &var) -> const value_type& { return this->values.get_first_value(var); });
 
-                nil::crypto3::math::expression_evaluator<var> evaluator_2(
+                nil::crypto3::zk::snark::expression_evaluator<var> evaluator_2(
                     constraint,
                     [this](const var &var) -> const value_type& { return this->values.get_second_value(var); });
                 return {evaluator_1.evaluate(), evaluator_2.evaluate()};
@@ -276,7 +276,7 @@ namespace nil {
         private:
             using value_type = typename BlueprintFieldType::value_type;
             using var = nil::crypto3::zk::snark::plonk_variable<value_type>;
-            using expression_type = nil::crypto3::math::expression<var>;
+            using expression_type = nil::crypto3::zk::snark::expression<var>;
             using value_set_type = value_set<BlueprintFieldType>;
             using constraint_type = nil::crypto3::zk::snark::plonk_lookup_constraint<BlueprintFieldType>;
             using gate_type = crypto3::zk::snark::plonk_lookup_gate<BlueprintFieldType, constraint_type>;
@@ -290,12 +290,12 @@ namespace nil {
             std::pair<value_type, value_type> eval_constraint(const constraint_type& constraint) const {
                 value_type value_1 = BlueprintFieldType::value_type::zero(), value_2 = BlueprintFieldType::value_type::zero();
                 for (std::size_t i = 0; i < constraint.lookup_input.size(); i++) {
-                    nil::crypto3::math::expression_evaluator<var> evaluator_1(
+                    nil::crypto3::zk::snark::expression_evaluator<var> evaluator_1(
                         constraint.lookup_input[i],
                         [this](const var &var) -> const value_type& { 
                             return this->values.get_first_value(var);
                         });
-                    nil::crypto3::math::expression_evaluator<var> evaluator_2(
+                    nil::crypto3::zk::snark::expression_evaluator<var> evaluator_2(
                         constraint.lookup_input[i],
                         [this](const var &var) -> const value_type& {
                             return this->values.get_second_value(var);
