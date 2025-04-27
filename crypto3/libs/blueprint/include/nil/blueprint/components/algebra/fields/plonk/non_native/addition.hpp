@@ -193,8 +193,9 @@ namespace nil {
                         typename ed25519_field_type::integral_type(eddsa_r.to_integral());
                     typename ed25519_field_type::extended_integral_type eddsa_p = ed25519_field_type::modulus;
 
-                    // On the following like values like eddsa_a.data are of modular type. We do not allow converting them to
-                    // integral types of different precision, so we first need to convert them to integral type, then extend.
+                    // On the following like values like eddsa_aare of modular type. We do
+                    // not allow converting them to integral types of different precision,
+                    // so we first need to convert them to integral type, then extend.
                     typename ed25519_field_type::extended_integral_type integral_eddsa_q =
                         (typename ed25519_field_type::extended_integral_type(
                              typename ed25519_field_type::integral_type(
@@ -304,8 +305,9 @@ namespace nil {
                     typename ed25519_field_type::integral_type(eddsa_r.to_integral());
                 typename ed25519_field_type::extended_integral_type eddsa_p = ed25519_field_type::modulus;
 
-                // On the following like values like eddsa_a.data are of modular type. We do not allow converting them to
-                // integral types of different precision, so we first need to convert them to integral type, then extend.
+                // On the following like values like eddsa_aare of modular type. We do not
+                // allow converting them to integral types of different precision, so we
+                // first need to convert them to integral type, then extend.
                 typename ed25519_field_type::extended_integral_type integral_eddsa_q =
                     (typename ed25519_field_type::extended_integral_type(
                          typename ed25519_field_type::integral_type(
