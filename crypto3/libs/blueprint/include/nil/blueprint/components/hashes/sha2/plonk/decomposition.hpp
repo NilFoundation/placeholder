@@ -239,8 +239,9 @@ namespace nil {
                 using component_type = plonk_native_decomposition<BlueprintFieldType>;
 
                 std::size_t row = start_row_index;
-                std::array<typename BlueprintFieldType::value_type, 2> data = {var_value(assignment, instance_input.data[0]).data,
-                                                                                var_value(assignment, instance_input.data[1]).data};
+                std::array<typename BlueprintFieldType::value_type, 2> data = {
+                    var_value(assignment, instance_input.data[0]),
+                    var_value(assignment, instance_input.data[1])};
 
                 std::array<typename BlueprintFieldType::value_type, 8> output = component_type::calculate(data);
                 for (std::size_t i = 0; i < 8; i++) {

@@ -42,7 +42,7 @@ namespace nil {
             template<typename FieldParams>
             inline bool sgn0(const element_fp2<FieldParams> &e) {
                 bool sign_0 = e.data[0].to_integral().bit_test(0);
-                bool zero_0 = e.data[0].data.is_zero();
+                bool zero_0 = e.data[0].is_zero();
                 bool sign_1 = e.data[1].to_integral().bit_test(0);
                 return sign_0 || (zero_0 && sign_1);
             }

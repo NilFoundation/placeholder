@@ -703,10 +703,9 @@ namespace nil {
                         for (auto [lower_witness, upper_witness] : witnesses) {
                             for (std::uint32_t j = lower_witness; j <= upper_witness; j++) {
                                 os << std::setw(width)
-                                   << (i < this->_private_table->witness_column_size(j) ?
-                                           this->_private_table->witness(j)[i] :
-                                           0)
-                                          .data
+                                   << (i < this->_private_table->witness_column_size(j)
+                                           ? this->_private_table->witness(j)[i]
+                                           : 0)
                                    << " ";
                             }
                         }
@@ -714,10 +713,10 @@ namespace nil {
                         for (auto [lower_public_input, upper_public_input] : public_inputs) {
                             for (std::uint32_t j = lower_public_input; j <= upper_public_input; j++) {
                                 os << std::setw(width)
-                                   << (i < this->_public_table->public_input_column_size(j) ?
-                                           this->_public_table->public_input(j)[i] :
-                                           0)
-                                          .data
+                                   << (i < this->_public_table->public_input_column_size(
+                                               j)
+                                           ? this->_public_table->public_input(j)[i]
+                                           : 0)
                                    << " ";
                             }
                         }
@@ -725,10 +724,9 @@ namespace nil {
                         for (auto [lower_constant, upper_constant] : constants) {
                             for (std::uint32_t j = lower_constant; j <= upper_constant; j++) {
                                 os << std::setw(width)
-                                   << (i < this->_public_table->constant_column_size(j) ?
-                                           this->_public_table->constant(j)[i] :
-                                           0)
-                                          .data
+                                   << (i < this->_public_table->constant_column_size(j)
+                                           ? this->_public_table->constant(j)[i]
+                                           : 0)
                                    << " ";
                             }
                         }
@@ -736,10 +734,9 @@ namespace nil {
                         for (auto [lower_selector, upper_selector] : selectors) {
                             // Selectors only need a single bit, so we do not renew the size here
                             for (std::uint32_t j = lower_selector; j <= upper_selector; j++) {
-                                os << (i < this->_public_table->selector_column_size(j) ?
-                                           this->_public_table->selector(j)[i] :
-                                           0)
-                                          .data
+                                os << (i < this->_public_table->selector_column_size(j)
+                                           ? this->_public_table->selector(j)[i]
+                                           : 0)
                                    << " ";
                             }
                         }
