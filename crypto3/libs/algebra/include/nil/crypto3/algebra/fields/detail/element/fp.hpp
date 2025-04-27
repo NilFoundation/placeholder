@@ -77,6 +77,10 @@ namespace nil {
                         constexpr element_fp(const element_fp &&B) BOOST_NOEXCEPT
                                 : data(std::move(B.data)) {}
 
+                        typename field_type::integral_type to_integral() const {
+                            return data.base();
+                        }
+
                         // Creating a zero is a fairly slow operation and is called very often, so we must return a
                         // reference to the same static object every time.
                         constexpr static const element_fp &zero();
