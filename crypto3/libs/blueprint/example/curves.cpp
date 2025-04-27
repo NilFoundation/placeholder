@@ -34,12 +34,12 @@ using namespace nil::crypto3::algebra;
 
 template<typename FieldParams>
 void print_field_element(typename fields::detail::element_fp<FieldParams> e) {
-    std::cout << e.data << std::endl;
+    std::cout << e << std::endl;
 }
 
 template<typename FpCurveGroupElement>
 void print_fp_curve_group_element(FpCurveGroupElement e) {
-    std::cout << e.X.data << " " << e.Y.data << " " << e.Z.data << std::endl;
+    std::cout << e.X << " " << e.Y << " " << e.Z << std::endl;
 }
 
 template<typename CurveType>

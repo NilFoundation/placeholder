@@ -76,7 +76,8 @@ std::vector<typename BlueprintFieldType::value_type>
         integral_type relay_value = integral_type(message[0].data);
         for (int i = 1; i < message.size(); ++i) {
             integral_type mask = (integral_type(1) << (64 - shift)) - 1;
-            integral_type left_part = integral_type(message[i].data.base() >> (64 - shift));
+            integral_type left_part =
+                integral_type(message[i].to_integral() >> (64 - shift));
             integral_type right_part = integral_type(message[i].data) & mask;
             result.push_back(value_type((relay_value << shift) + left_part));
             relay_value = right_part;

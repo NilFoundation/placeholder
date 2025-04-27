@@ -77,10 +77,11 @@ void test_exponentiation(std::vector<typename FieldType::value_type> public_inpu
 	    typename component_type::result_type &real_res) {
             #ifdef BLUEPRINT_PLONK_PROFILING_ENABLED
             std::cout << "exponentiation test: " << "\n";
-            std::cout << "input   : " << public_input[0].data << " " << public_input[1].data << "\n";
-            std::cout << "expected: " << expected_res.data    << "\n";
-            std::cout << "real    : " << var_value(assignment, real_res.output).data << "\n\n";
-            #endif
+            std::cout << "input   : " << public_input[0] << " " << public_input[1]
+                      << "\n";
+            std::cout << "expected: " << expected_res << "\n";
+            std::cout << "real    : " << var_value(assignment, real_res.output) << "\n\n";
+#endif
             assert(expected_res == var_value(assignment, real_res.output));
     };
 

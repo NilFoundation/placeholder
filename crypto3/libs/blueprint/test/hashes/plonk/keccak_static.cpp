@@ -145,7 +145,8 @@ std::vector<typename BlueprintFieldType::value_type>
         integral_type relay_value = integral_type(message[0].data);
         for (int i = 1; i < message.size(); ++i) {
             integral_type mask = (integral_type(1) << (64 - shift)) - 1;
-            integral_type left_part = integral_type(message[i].data.base() >> (64 - shift));
+            integral_type left_part =
+                integral_type(message[i].to_integral() >> (64 - shift));
             integral_type right_part = integral_type(message[i].data) & mask;
             result.push_back(value_type((relay_value << shift) + left_part));
             relay_value = right_part;
@@ -341,7 +342,7 @@ auto test_keccak_inner(std::vector<typename BlueprintFieldType::value_type> mess
     std::cout << "message:\n";
     for (int i = 0; i < num_blocks; ++i) {
         public_input.push_back(message[i]);
-        std::cout << std::hex <<  message[i].data << std::dec << " ";
+        std::cout << std::hex << message[i] << std::dec << " ";
     }
     std::cout << std::endl;
 
@@ -354,9 +355,10 @@ auto test_keccak_inner(std::vector<typename BlueprintFieldType::value_type> mess
     auto result_check = [expected_result](AssignmentType &assignment, typename component_type::result_type &real_res) {
         assert(expected_result.size() == real_res.final_inner_state.size());
         for (int i = 0; i < expected_result.size(); ++i) {
-//            std::cout << "res:\n"
-//                      << expected_result[i].data << "\n"
-//                      << var_value(assignment, real_res.final_inner_state[i]).data << std::endl;
+            //            std::cout << "res:\n"
+            //                      << expected_result[i] << "\n"
+            //                      << var_value(assignment,
+            //                      real_res.final_inner_state[i]) << std::endl;
             assert(expected_result[i] == var_value(assignment, real_res.final_inner_state[i]));
         }
     };

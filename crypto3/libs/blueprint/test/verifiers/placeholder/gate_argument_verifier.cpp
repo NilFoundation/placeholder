@@ -82,10 +82,12 @@ void test(std::vector<typename BlueprintFieldType::value_type> &public_input,
     }
     typename component_type::input_type instance_input = {theta, constraints, selectors};
 
-    auto result_check = [expected_res](AssignmentType &assignment, typename component_type::result_type &real_res) {
-        std::cout << "F: 0x" << std::hex << var_value(assignment, real_res.output).data << std::endl;
+    auto result_check = [expected_res](AssignmentType &assignment,
+                                       typename component_type::result_type &real_res) {
+        std::cout << "F: 0x" << std::hex << var_value(assignment, real_res.output)
+                  << std::endl;
         assert(var_value(assignment, real_res.output) == expected_res);
-        // std::cout << "expected F: " << expected_res.data << std::endl;
+        // std::cout << "expected F: " << expected_res << std::endl;
     };
     if (signature.size() == 1 && signature[0] == 1) {
         crypto3::test_component<component_type, BlueprintFieldType, hash_type, Lambda>(

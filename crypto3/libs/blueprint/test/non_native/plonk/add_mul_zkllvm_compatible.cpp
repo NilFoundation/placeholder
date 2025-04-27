@@ -121,7 +121,7 @@ void test_mul(typename CurveType::base_field_type::value_type b_val,
                 std::cerr << std::hex << Tx << std::dec << '\n';
                 std::cerr << std::hex << Ty << std::dec << '\n';
                 std::cerr << "Scalar(hex form):\n";
-                std::cerr << std::hex << b_val.data << std::dec << '\n'<< std::endl;
+                std::cerr << std::hex << b_val << std::dec << '\n' << std::endl;
             }
             BOOST_CHECK_EQUAL(value_type((Px >> 66 * i) & mask), var_value(assignment, real_res.output.x[i]));
             BOOST_CHECK_EQUAL(value_type((Py >> 66 * i) & mask), var_value(assignment, real_res.output.y[i]));

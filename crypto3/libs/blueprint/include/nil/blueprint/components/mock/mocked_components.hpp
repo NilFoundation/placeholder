@@ -247,44 +247,49 @@ namespace nil {
                         component_type(witnesses, constants, public_inputs) {}; \
 
             // for BitsAmount < 256
-            #define UNSIGNED_SMALL_OP_COMPONENT(COMPONENT_NAME, OP) \
-                template<typename ArithmetizationType, typename BlueprintFieldType, unsigned BitsAmount> \
-                class COMPONENT_NAME; \
- \
-                template<typename BlueprintFieldType, unsigned BitsAmount> \
-                class COMPONENT_NAME< \
-                    crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>, \
-                    BlueprintFieldType, BitsAmount> : public mocked_component_base< \
-                        crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>, \
-                        detail::two_var_type<BlueprintFieldType>, \
-                        detail::one_var_type<BlueprintFieldType>> { \
-                public: \
-                    using component_type = mocked_component_base< \
-                        crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>, \
-                        detail::two_var_type<BlueprintFieldType>, \
-                        detail::one_var_type<BlueprintFieldType>>; \
- \
-                    typedef boost::multiprecision::number< \
-                        boost::multiprecision::backends::cpp_int_modular_backend<BitsAmount>> uint_type; \
- \
-                    BOILERPLATING(COMPONENT_NAME) \
- \
-                    std::array<value_type, result_type::result_size> result_values_calculator( \
-                        const assignment<crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>> \
-                            &assignment, \
-                        const input_type &instance_input) const override { \
- \
- /*TODO(martun): on the next line we are converting 255-bit number to 8/32/64 bit numbers, probably losing some bits*/\
-                        uint_type a = static_cast<uint_type>(var_value(assignment, instance_input.a).data.base()), \
-                                  b = static_cast<uint_type>(var_value(assignment, instance_input.b).data.base()); \
-                        return {value_type(OP(a, b))}; \
-                    } \
- \
-                    result_type result_builder(const std::size_t start_row_index) const override { \
- \
-                        return var(0, start_row_index, false); \
-                    } \
-                }; \
+#define UNSIGNED_SMALL_OP_COMPONENT(COMPONENT_NAME, OP)                                  \
+    template<typename ArithmetizationType, typename BlueprintFieldType,                  \
+             unsigned BitsAmount>                                                        \
+    class COMPONENT_NAME;                                                                \
+                                                                                         \
+    template<typename BlueprintFieldType, unsigned BitsAmount>                           \
+    class COMPONENT_NAME<                                                                \
+        crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>,                 \
+        BlueprintFieldType, BitsAmount>                                                  \
+        : public mocked_component_base<                                                  \
+              crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>,           \
+              detail::two_var_type<BlueprintFieldType>,                                  \
+              detail::one_var_type<BlueprintFieldType>> {                                \
+      public:                                                                            \
+        using component_type = mocked_component_base<                                    \
+            crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>,             \
+            detail::two_var_type<BlueprintFieldType>,                                    \
+            detail::one_var_type<BlueprintFieldType>>;                                   \
+                                                                                         \
+        typedef boost::multiprecision::number<                                           \
+            boost::multiprecision::backends::cpp_int_modular_backend<BitsAmount>>        \
+            uint_type;                                                                   \
+                                                                                         \
+        BOILERPLATING(COMPONENT_NAME)                                                    \
+                                                                                         \
+        std::array<value_type, result_type::result_size> result_values_calculator(       \
+            const assignment<                                                            \
+                crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>>         \
+                &assignment,                                                             \
+            const input_type &instance_input) const override {                           \
+            /*TODO(martun): on the next line we are converting 255-bit number to 8/32/64 \
+             * bit numbers, probably losing some bits*/                                  \
+            uint_type a = static_cast<uint_type>(                                        \
+                          var_value(assignment, instance_input.a).to_integral()),        \
+                      b = static_cast<uint_type>(                                        \
+                          var_value(assignment, instance_input.b).to_integral());        \
+            return {value_type(OP(a, b))};                                               \
+        }                                                                                \
+                                                                                         \
+        result_type result_builder(const std::size_t start_row_index) const override {   \
+            return var(0, start_row_index, false);                                       \
+        }                                                                                \
+    };
 
             // for BitsAmount < 256
             #define SIGNED_SMALL_OP_COMPONENT(COMPONENT_NAME, OP) \

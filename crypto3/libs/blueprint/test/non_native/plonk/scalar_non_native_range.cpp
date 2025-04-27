@@ -65,11 +65,13 @@ void test_scalar_non_native_range(std::vector<typename BlueprintFieldType::value
 
     typename component_type::input_type instance_input = {var(0, 0, false, var::column_type::public_input)};
 
-    auto result_check = [public_input](AssignmentType &assignment, typename component_type::result_type &real_res) {
+    auto result_check = [public_input](AssignmentType &assignment,
+                                       typename component_type::result_type &real_res) {
 #ifdef BLUEPRINT_PLONK_PROFILING_ENABLED
         std::cout << std::hex
-                  << "________________________________________________________________________________________\ninput: "
-                  << public_input[0].data << std::endl;
+                  << "___________________________________________________________________"
+                     "_____________________\ninput: "
+                  << public_input[0] << std::endl;
 #endif
     };
 

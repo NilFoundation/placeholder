@@ -175,7 +175,7 @@ void test(std::vector<typename BlueprintFieldType::value_type> &public_input,
             assert(var_value(assignment, real_res.output[i]) == expected_res[i]);
         }
 
-        // std::cout << "expected F: " << expected_res.data << std::endl;
+        // std::cout << "expected F: " << expected_res << std::endl;
     };
 
     crypto3::test_component<component_type, BlueprintFieldType, hash_type, Lambda>(

@@ -172,8 +172,8 @@ void test_division_remainder_random_inputs() {
         x = value_type(x_integral);
         y = value_type(y_integral);
 
-        //std::cout << "x = " << x.data << std::endl;
-        //std::cout << "y = " << y.data << std::endl;
+        // std::cout << "x = " << x << std::endl;
+        // std::cout << "y = " << y << std::endl;
 
         test_division_remainder<BlueprintFieldType, WitnessesAmount, R, CheckInputs>(x, y);
         test_division_remainder<BlueprintFieldType, WitnessesAmount, R, CheckInputs>(y, x);

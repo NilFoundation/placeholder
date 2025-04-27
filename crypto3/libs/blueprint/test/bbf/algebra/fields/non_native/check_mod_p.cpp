@@ -60,7 +60,7 @@ void test_mod_p_check(
     if (to_pass && expect_output) {
 #ifdef BLUEPRINT_PLONK_PROFILING_ENABLED
         std::cout << "Expected output: " << std::dec << overflow << std::endl;
-        std::cout << "Real output:     " << std::dec << A.output.data << std::endl;
+        std::cout << "Real output:     " << std::dec << A.output << std::endl;
 #endif
         assert(overflow == A.output.data);
     }

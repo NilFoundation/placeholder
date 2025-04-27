@@ -1998,7 +1998,7 @@ namespace nil {
                 }
                 // std::cout << "A_1:\n";
                 // for (int i = 0; i < 25; ++i) {
-                //     std::cout << A_1[i].data << " ";
+                //     std::cout << A_1[i] << " ";
                 // }
                 // std::cout << "\n";
 
@@ -2053,7 +2053,7 @@ namespace nil {
                 config_index += 5;
                 // std::cout << "C:\n";
                 // for (int i = 0; i < 5; ++i) {
-                //     std::cout << C[i].data << " ";
+                //     std::cout << C[i] << " ";
                 // }
                 // std::cout << "\n";
 
@@ -2131,7 +2131,7 @@ namespace nil {
                 config_index += 5;
                 // std::cout << "C_rot:\n";
                 // for (int i = 0; i < 5; ++i) {
-                //     std::cout << C_rot[i].data << " ";
+                //     std::cout << C_rot[i] << " ";
                 // }
                 // std::cout << "\n";
 
@@ -2179,7 +2179,7 @@ namespace nil {
                 config_index += 25;
                 // std::cout << "A_2:\n";
                 // for (int i = 0; i < 25; ++i) {
-                //     std::cout << A_2[i].data << " ";
+                //     std::cout << A_2[i] << " ";
                 // }
                 // std::cout << "\n";
 
@@ -2337,9 +2337,9 @@ namespace nil {
                     }
 
                 }
-                // std::cout << "result:\n" << A_4.data << " ";
+                // std::cout << "result:\n" << A_4 << " ";
                 // for (int i = 1; i < 25; ++i) {
-                //     std::cout << A_3[i].data << " ";
+                //     std::cout << A_3[i] << " ";
                 // }
                 // std::cout << "\n";
 

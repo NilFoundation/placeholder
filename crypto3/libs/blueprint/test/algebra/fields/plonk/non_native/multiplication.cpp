@@ -100,27 +100,34 @@ void test_field_mul(const std::vector<typename BlueprintFieldType::value_type> &
                      "________________________________________________\n";
         std::cout << "input   : ";
         for (std::size_t i = 0; i < 4; i++) {
-            std::cout << x[3 - i].data << " ";
+            std::cout << x[3 - i] << " ";
         }
-        std::cout << "(" << glue_non_native<BlueprintFieldType, NonNativeFieldType>(x).data << ")\n";
+        std::cout << "(" << glue_non_native<BlueprintFieldType, NonNativeFieldType>(x)
+                  << ")\n";
 
         std::cout << "          ";
         for (std::size_t i = 0; i < 4; i++) {
-            std::cout << y[3 - i].data << " ";
+            std::cout << y[3 - i] << " ";
         }
-        std::cout << "(" << glue_non_native<BlueprintFieldType, NonNativeFieldType>(y).data << ")\n";
+        std::cout << "(" << glue_non_native<BlueprintFieldType, NonNativeFieldType>(y)
+                  << ")\n";
 
         std::cout << "expected: ";
         for (std::size_t i = 0; i < 4; i++) {
-            std::cout << expected_chunks[3 - i].data << " ";
+            std::cout << expected_chunks[3 - i] << " ";
         }
-        std::cout << "(" << glue_non_native<BlueprintFieldType, NonNativeFieldType>(expected_chunks).data << ")\n";
+        std::cout << "("
+                  << glue_non_native<BlueprintFieldType, NonNativeFieldType>(
+                         expected_chunks)
+                  << ")\n";
 
         std::cout << "real    : ";
         for (std::size_t i = 0; i < 4; i++) {
-            std::cout << real_chunks[3 - i].data << " ";
+            std::cout << real_chunks[3 - i] << " ";
         }
-        std::cout << "(" << glue_non_native<BlueprintFieldType, NonNativeFieldType>(real_chunks).data << ")\n";
+        std::cout << "("
+                  << glue_non_native<BlueprintFieldType, NonNativeFieldType>(real_chunks)
+                  << ")\n";
 #endif
 
         for (std::size_t i = 0; i < 4; i++) {

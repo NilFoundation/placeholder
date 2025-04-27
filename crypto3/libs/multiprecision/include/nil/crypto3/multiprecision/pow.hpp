@@ -78,6 +78,6 @@ namespace nil::crypto3::multiprecision {
             std::decay_t<decltype(detail::as_big_uint(unsigned_or_throw(m)))>::Bits>;
         return static_cast<std::decay_t<T3>>(
             pow(big_mod_t(std::forward<T1>(b), std::forward<T3>(m)), std::forward<T2>(e))
-                .base());
+                .to_integral());
     }
 }  // namespace nil::crypto3::multiprecision

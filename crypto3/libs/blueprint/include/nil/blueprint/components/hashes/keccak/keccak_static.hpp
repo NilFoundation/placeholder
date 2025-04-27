@@ -674,18 +674,20 @@ namespace nil {
                 for (int i = 0; i < component.num_round_calls; i++) {
                     for (int j = 0; j < 24; j++) {
                         // if (i + j != 0) {
-                        //     std::cout << "prev: " << prev_row << " vs curr" << cur_row << std::endl;
-                        //     for (int k = 0; k < 5; k++) {
-                        //         auto ind1 = (j == 1) ? rotate_rows_tf[k] : rotate_rows_ff[k];
-                        //         auto ind2 = rotate_rows_ff[k];
+                        //     std::cout << "prev: " << prev_row << " vs curr" << cur_row
+                        //     << std::endl; for (int k = 0; k < 5; k++) {
+                        //         auto ind1 = (j == 1) ? rotate_rows_tf[k] :
+                        //         rotate_rows_ff[k]; auto ind2 = rotate_rows_ff[k];
                         //         std::cout << ind1 << " , " << ind2 << std::endl;
                         //         std::cout
-                        //             << var_value(assignment, var(component.C(0), prev_row + ind1, false)).data <<
-                        //             "  vs  "
-                        //             << var_value(assignment, var(component.C(0), cur_row + ind2, false)).data <<
-                        //             std::endl;
-                        //         bp.add_copy_constraint({var(component.C(0), prev_row + ind1, false),
-                        //                                 var(component.C(0), cur_row + ind2, false)});
+                        //             << var_value(assignment, var(component.C(0),
+                        //             prev_row + ind1, false)) << "  vs  "
+                        //             << var_value(assignment, var(component.C(0),
+                        //             cur_row + ind2, false)) << std::endl;
+                        //         bp.add_copy_constraint({var(component.C(0), prev_row +
+                        //         ind1, false),
+                        //                                 var(component.C(0), cur_row +
+                        //                                 ind2, false)});
                         //     }
                         //     prev_row = cur_row;
                         // }

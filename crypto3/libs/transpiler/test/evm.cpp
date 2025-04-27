@@ -197,7 +197,7 @@ namespace {
         const typename nil::crypto3::algebra::fields::detail::element_fp2<FieldParams> &e,
         bool endline = true
     ) {
-        os << e.data[0].data << ", " << e.data[1].data;
+        os << e.data[0] << ", " << e.data[1].data;
         if (endline) {
             os << std::endl;
         }

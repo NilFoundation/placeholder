@@ -86,8 +86,8 @@ auto test_range_check(typename BlueprintFieldType::value_type input,
     typename component_type::input_type instance_input = {x};
 
     #ifdef BLUEPRINT_PLONK_PROFILING_ENABLED
-    std::cout << "range_check_test_input: " << std::hex << public_input[0].data << "\n";
-    #endif
+    std::cout << "range_check_test_input: " << std::hex << public_input[0] << "\n";
+#endif
 
     auto result_check = [](AssignmentType &assignment, typename component_type::result_type &real_res) {};
     const bool expected_to_pass = input < value_type(2).pow(R);

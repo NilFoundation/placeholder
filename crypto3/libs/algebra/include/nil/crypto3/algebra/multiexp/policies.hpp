@@ -116,11 +116,11 @@ namespace nil {
 
                         for (std::size_t i = 0; i < length; i++) {
                             // Should be
-                            // std::size_t bn_exponents_i_msb = exponents[i].data.base().msb() + 1;
+                            // std::size_t bn_exponents_i_msb = exponents[i].to_integral().msb() + 1;
                             // But msb doesn't work for zero value
                             std::size_t bn_exponents_i_msb = 1;
                             if (exponents[i] != field_value_type::zero()) {
-                                bn_exponents_i_msb = exponents[i].data.base().msb() + 1;
+                                bn_exponents_i_msb = exponents[i].to_integral().msb() + 1;
                             }
                             num_bits = std::max(num_bits, bn_exponents_i_msb);
                         }
@@ -143,7 +143,7 @@ namespace nil {
                             for (std::size_t i = 0; i < length; i++) {
                                 std::size_t id = 0;
                                 for (std::size_t j = 0; j < c; j++) {
-                                    if (exponents[i].data.base().bit_test(k * c + j)) {
+                                    if (exponents[i].to_integral().bit_test(k * c + j)) {
                                         id |= 1 << j;
                                     }
                                 }

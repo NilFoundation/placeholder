@@ -76,11 +76,12 @@ void test_unified_addition(std::vector<typename CurveType::base_field_type::valu
         typename component_type::result_type &real_res) {
         #ifdef BLUEPRINT_PLONK_PROFILING_ENABLED
         std::cout << "unified_addition test: " << "\n";
-        std::cout << "input   : " << public_input[0].data << " " << public_input[1].data << "\n";
-        std::cout << "input   : " << public_input[2].data << " " << public_input[3].data << "\n";
-        std::cout << "expected: " << expected_res.X.data << " " << expected_res.Y.data << "\n";
-        std::cout << "real    : " << var_value(assignment, real_res.X).data << " " << var_value(assignment, real_res.Y).data << "\n\n";
-        #endif
+        std::cout << "input   : " << public_input[0] << " " << public_input[1] << "\n";
+        std::cout << "input   : " << public_input[2] << " " << public_input[3] << "\n";
+        std::cout << "expected: " << expected_res.X << " " << expected_res.Y << "\n";
+        std::cout << "real    : " << var_value(assignment, real_res.X) << " "
+                  << var_value(assignment, real_res.Y) << "\n\n";
+#endif
         BOOST_CHECK(expected_res.X == var_value(assignment, real_res.X));
         BOOST_CHECK(expected_res.Y == var_value(assignment, real_res.Y));
     };

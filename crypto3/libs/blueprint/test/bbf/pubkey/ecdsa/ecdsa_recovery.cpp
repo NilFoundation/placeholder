@@ -97,11 +97,11 @@ void test_ecdsa_recovery(
             pow <<= bit_size_chunk;
         }
 #ifdef BLUEPRINT_PLONK_PROFILING_ENABLED
-        std::cout << "expected: " << QA.X.data << " " << QA.Y.data << "\n";
+        std::cout << "expected: " << QA.X << " " << QA.Y << "\n";
         std::cout << "real    : " << xQA << " " << yQA << "\n";
         std::cout << "c = " << A.c << "\n\n";
 #endif
-        bool pass = QA.X.data == xQA && QA.Y.data == yQA && A.c == TYPE(1);
+        bool pass = QA.X == xQA && QA.Y == yQA && A.c == TYPE(1);
         BOOST_TEST(pass == to_pass);
     };
 

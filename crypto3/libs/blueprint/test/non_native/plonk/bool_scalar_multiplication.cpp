@@ -101,39 +101,48 @@ void test_bool_scalar_multiplication(const std::vector<typename BlueprintFieldTy
                     "____________________________________________\n";
         std::cout << "input  x: ";
         for (std::size_t i = 0; i < 4; i++) {
-            std::cout << x[3 - i].data << " ";
+            std::cout << x[3 - i] << " ";
         }
-        std::cout << "(" << glue_non_native<BlueprintFieldType, NonNativeFieldType>(x).data << ")\n";
+        std::cout << "(" << glue_non_native<BlueprintFieldType, NonNativeFieldType>(x)
+                  << ")\n";
 
         std::cout << "       y: ";
         for (std::size_t i = 0; i < 4; i++) {
-            std::cout << y[3 - i].data << " ";
+            std::cout << y[3 - i] << " ";
         }
-        std::cout << "(" << glue_non_native<BlueprintFieldType, NonNativeFieldType>(y).data << ")\n";
+        std::cout << "(" << glue_non_native<BlueprintFieldType, NonNativeFieldType>(y)
+                  << ")\n";
 
-        std::cout << "    bool: " << public_input[8].data << "\n";
+        std::cout << "    bool: " << public_input[8] << "\n";
 
         std::cout << "expected: ";
         for (std::size_t i = 0; i < 4; i++) {
-            std::cout << expected_x[3 - i].data << " ";
+            std::cout << expected_x[3 - i] << " ";
         }
-        std::cout << "(" << glue_non_native<BlueprintFieldType, NonNativeFieldType>(expected_x).data << ")\n";
+        std::cout << "("
+                  << glue_non_native<BlueprintFieldType, NonNativeFieldType>(expected_x)
+                  << ")\n";
         std::cout << "          ";
         for (std::size_t i = 0; i < 4; i++) {
-            std::cout << expected_y[3 - i].data << " ";
+            std::cout << expected_y[3 - i] << " ";
         }
-        std::cout << "(" << glue_non_native<BlueprintFieldType, NonNativeFieldType>(expected_y).data << ")\n";
+        std::cout << "("
+                  << glue_non_native<BlueprintFieldType, NonNativeFieldType>(expected_y)
+                  << ")\n";
 
         std::cout << "real    : ";
         for (std::size_t i = 0; i < 4; i++) {
-            std::cout << real_x[3 - i].data << " ";
+            std::cout << real_x[3 - i] << " ";
         }
-        std::cout << "(" << glue_non_native<BlueprintFieldType, NonNativeFieldType>(real_x).data << ")\n";
+        std::cout << "("
+                  << glue_non_native<BlueprintFieldType, NonNativeFieldType>(real_x)
+                  << ")\n";
         std::cout << "          ";
         for (std::size_t i = 0; i < 4; i++) {
-            std::cout << real_y[3 - i].data << " ";
+            std::cout << real_y[3 - i] << " ";
         }
-    // std::cout << "(" << glue_non_native<BlueprintFieldType, NonNativeFieldType>(real_y).data << ")" << std::endl;
+        // std::cout << "(" << glue_non_native<BlueprintFieldType,
+        // NonNativeFieldType>(real_y) << ")" << std::endl;
 #endif
         if (expected_to_pass) {
             for (std::size_t i = 0; i < 4; i++) {

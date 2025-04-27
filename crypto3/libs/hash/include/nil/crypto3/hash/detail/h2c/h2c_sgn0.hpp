@@ -36,14 +36,14 @@ namespace nil {
 
             template<typename FieldParams>
             inline bool sgn0(const element_fp<FieldParams> &e) {
-                return e.data.base().bit_test(0);
+                return e.to_integral().bit_test(0);
             }
 
             template<typename FieldParams>
             inline bool sgn0(const element_fp2<FieldParams> &e) {
-                bool sign_0 = e.data[0].data.base().bit_test(0);
+                bool sign_0 = e.data[0].to_integral().bit_test(0);
                 bool zero_0 = e.data[0].data.is_zero();
-                bool sign_1 = e.data[1].data.base().bit_test(0);
+                bool sign_1 = e.data[1].to_integral().bit_test(0);
                 return sign_0 || (zero_0 && sign_1);
             }
         }    // namespace hashes

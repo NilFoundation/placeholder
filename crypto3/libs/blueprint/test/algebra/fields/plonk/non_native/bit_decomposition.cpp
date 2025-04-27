@@ -75,25 +75,26 @@ void test_bit_decomposition(typename BlueprintFieldType::value_type input,
 
     bool expected_to_pass = input < value_type(2).pow(BitsAmount);
 
-    auto result_check = [&expected_res, input, expected_to_pass](AssignmentType &assignment,
-        typename component_type::result_type &real_res) {
-            #ifdef BLUEPRINT_PLONK_PROFILING_ENABLED
-            std::cout << "input: " << std::hex << public_input[0].data << "\n";
-            for (std::size_t i = 0; i < expected_res.size(); i++){
-                std::cout << expected_res[i].data;
-            }
-            std::cout << std::endl;
+    auto result_check = [&expected_res, input, expected_to_pass](
+                            AssignmentType &assignment,
+                            typename component_type::result_type &real_res) {
+#ifdef BLUEPRINT_PLONK_PROFILING_ENABLED
+        std::cout << "input: " << std::hex << public_input[0] << "\n";
+        for (std::size_t i = 0; i < expected_res.size(); i++) {
+            std::cout << expected_res[i].data;
+        }
+        std::cout << std::endl;
 
-            for (std::size_t i = 0; i < real_res.output.size(); i++){
-                std::cout << var_value(assignment, real_res.output[i]).data;
-            }
-            std::cout << std::endl;
+        for (std::size_t i = 0; i < real_res.output.size(); i++) {
+            std::cout << var_value(assignment, real_res.output[i]).data;
+        }
+        std::cout << std::endl;
             #endif
-            if (expected_to_pass) {
-                for (std::size_t i = 0; i < real_res.output.size(); i++) {
-                    assert(expected_res[i] == var_value(assignment, real_res.output[i]));
-                }
+        if (expected_to_pass) {
+            for (std::size_t i = 0; i < real_res.output.size(); i++) {
+                assert(expected_res[i] == var_value(assignment, real_res.output[i]));
             }
+        }
     };
 
     std::array<std::uint32_t, WitnessColumns> witnesses;

@@ -119,7 +119,7 @@ void fields_fp2_basic_math_examples() {
 
     std::cout << "ee value: " << ee << std::endl;
 
-    std::cout << "Non residue: " << e1.non_residue.data << std::endl;
+    std::cout << "Non residue: " << e1.non_residue << std::endl;
 
     std::cout << "Field element values: " << std::endl;
     std::cout << "e1 value: " << e1 << std::endl;
@@ -187,7 +187,7 @@ void fields_fp3_basic_math_examples() {
 
     std::cout << "ee value: " << ee << std::endl;
 
-    std::cout << "Non residue: " << e1.non_residue.data << std::endl;
+    std::cout << "Non residue: " << e1.non_residue << std::endl;
 
     std::cout << "Field element values: " << std::endl;
     std::cout << "e1 value: " << e1 << std::endl;

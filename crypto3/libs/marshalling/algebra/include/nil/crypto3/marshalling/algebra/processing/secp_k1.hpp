@@ -115,7 +115,7 @@ namespace nil {
                         typename group_type::curve_type::template g1_type<typename algebra::curves::coordinates::affine, form>::value_type
                             point_affine = point.to_affine();
 
-                        *iter++ = (point_affine.Y.data.base() & 1u) == 0u ? 0x02 : 0x03;
+                        *iter++ = (point_affine.Y.to_integral() & 1u) == 0u ? 0x02 : 0x03;
                         multiprecision::processing::write_data<params_type::bit_length(), endianness>(
                                 static_cast<typename group_value_type::field_type::integral_type>(point_affine.X.data),
                                 iter);
@@ -171,7 +171,8 @@ namespace nil {
 
                         g1_field_value_type y_mod = y2_mod.sqrt();
 
-                        const chunk_type expected_prefix = (y_mod.data.base() & 1u) == 0u ? 0x02 : 0x03;
+                        const chunk_type expected_prefix =
+                            (y_mod.to_integral() & 1u) == 0u ? 0x02 : 0x03;
 
                         if (expected_prefix == prefix) {
                             point = group_value_type(x_mod, y_mod);

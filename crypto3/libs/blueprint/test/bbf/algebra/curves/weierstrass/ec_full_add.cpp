@@ -125,8 +125,8 @@ void test_ec_full_add(
             pow <<= bit_size_chunk;
         }
 #ifdef BLUEPRINT_PLONK_PROFILING_ENABLED
-        std::cout << "Expected xR - yR: " << std::dec << expected_xR.data << " - "
-                  << expected_yR.data << std::endl;
+        std::cout << "Expected xR - yR: " << std::dec << expected_xR << " - "
+                  << expected_yR << std::endl;
         std::cout << "Real res xR - yR:  " << std::dec << xR << " - " << yR << std::endl;
 #endif
         assert(xR == expected_xR.data);

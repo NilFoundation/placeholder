@@ -447,12 +447,14 @@ namespace nil {
                 // }
 
                 // template<typename FieldValueType>
-                // typename std::enable_if<algebra::is_field_element<FieldValueType>::value &&
+                // typename
+                // std::enable_if<algebra::is_field_element<FieldValueType>::value &&
                 //                             !(algebra::is_extended_field_element<FieldValueType>::value),
                 //                         int>::type
                 //     compare_field_data(const FieldValueType &field_elem1,
                 //                        const FieldValueType &field_elem2) {
-                //     return (field_elem1.data < field_elem2.data) ? -1 : ((field_elem1.data > field_elem2.data) ? 1 : 0);
+                //     return (field_elem1.to_integral()  < field_elem2.data) ? -1 :
+                //     ((field_elem1.to_integral()  > field_elem2.data) ? 1 : 0);
                 // }
 
                 // template<typename FieldValueType>
