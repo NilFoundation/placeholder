@@ -51,14 +51,16 @@ void test_ec_two_t_plus_q(
     NON_NATIVE_TYPE xT = 0, yT = 0, xQ = 0, yQ = 0;
 
     for (std::size_t i = 0; i < num_chunks; ++i) {
-        xT += non_native_integral_type(integral_type(public_input[i].data)) * pow;
-        yT += non_native_integral_type(integral_type(public_input[i + num_chunks].data)) *
+        xT +=
+            non_native_integral_type(integral_type(public_input[i].to_integral())) * pow;
+        yT += non_native_integral_type(
+                  integral_type(public_input[i + num_chunks].to_integral())) *
               pow;
         xQ += non_native_integral_type(
-                  integral_type(public_input[i + 2 * num_chunks].data)) *
+                  integral_type(public_input[i + 2 * num_chunks].to_integral())) *
               pow;
         yQ += non_native_integral_type(
-                  integral_type(public_input[i + 3 * num_chunks].data)) *
+                  integral_type(public_input[i + 3 * num_chunks].to_integral())) *
               pow;
         pow <<= bit_size_chunk;
     }
@@ -94,17 +96,17 @@ void test_ec_two_t_plus_q(
         non_native_integral_type yR = 0;
         pow = 1;
         for (std::size_t i = 0; i < num_chunks; i++) {
-            xR += non_native_integral_type(integral_type(A.xR[i].data)) * pow;
-            yR += non_native_integral_type(integral_type(A.yR[i].data)) * pow;
+            xR += non_native_integral_type(integral_type(A.xR[i].to_integral())) * pow;
+            yR += non_native_integral_type(integral_type(A.yR[i].to_integral())) * pow;
             pow <<= bit_size_chunk;
         }
 #ifdef BLUEPRINT_PLONK_PROFILING_ENABLED
-        std::cout << "Expected xR - yR: " << std::dec << expected_xR.data << " - "
-                  << expected_yR.data << std::endl;
+        std::cout << "Expected xR - yR: " << std::dec << expected_xR << " - "
+                  << expected_yR << std::endl;
         std::cout << "Real res xR - yR:  " << std::dec << xR << " - " << yR << std::endl;
 #endif
-        assert(xR == expected_xR.data);
-        assert(yR == expected_yR.data);
+        assert(xR == expected_xR.to_integral());
+        assert(yR == expected_yR.to_integral());
     };
 
     if constexpr (std::is_same_v<NonNativeFieldType,
@@ -175,10 +177,10 @@ void ec_two_t_plus_q_tests() {
         Q = Q * d;
 
         public_input.resize(7 * num_chunks);
-        foreign_integral_type xT = foreign_integral_type(T.X.data);
-        foreign_integral_type yT = foreign_integral_type(T.Y.data);
-        foreign_integral_type xQ = foreign_integral_type(Q.X.data);
-        foreign_integral_type yQ = foreign_integral_type(Q.Y.data);
+        foreign_integral_type xT = foreign_integral_type(T.X.to_integral());
+        foreign_integral_type yT = foreign_integral_type(T.Y.to_integral());
+        foreign_integral_type xQ = foreign_integral_type(Q.X.to_integral());
+        foreign_integral_type yQ = foreign_integral_type(Q.Y.to_integral());
         for (std::size_t j = 0; j < num_chunks; j++) {
             public_input[j] = value_type(xT & mask);
             xT >>= bit_size_chunk;

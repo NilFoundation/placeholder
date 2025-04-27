@@ -247,98 +247,109 @@ namespace nil {
                         component_type(witnesses, constants, public_inputs) {}; \
 
             // for BitsAmount < 256
-            #define UNSIGNED_SMALL_OP_COMPONENT(COMPONENT_NAME, OP) \
-                template<typename ArithmetizationType, typename BlueprintFieldType, unsigned BitsAmount> \
-                class COMPONENT_NAME; \
- \
-                template<typename BlueprintFieldType, unsigned BitsAmount> \
-                class COMPONENT_NAME< \
-                    crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>, \
-                    BlueprintFieldType, BitsAmount> : public mocked_component_base< \
-                        crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>, \
-                        detail::two_var_type<BlueprintFieldType>, \
-                        detail::one_var_type<BlueprintFieldType>> { \
-                public: \
-                    using component_type = mocked_component_base< \
-                        crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>, \
-                        detail::two_var_type<BlueprintFieldType>, \
-                        detail::one_var_type<BlueprintFieldType>>; \
- \
-                    typedef boost::multiprecision::number< \
-                        boost::multiprecision::backends::cpp_int_modular_backend<BitsAmount>> uint_type; \
- \
-                    BOILERPLATING(COMPONENT_NAME) \
- \
-                    std::array<value_type, result_type::result_size> result_values_calculator( \
-                        const assignment<crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>> \
-                            &assignment, \
-                        const input_type &instance_input) const override { \
- \
- /*TODO(martun): on the next line we are converting 255-bit number to 8/32/64 bit numbers, probably losing some bits*/\
-                        uint_type a = static_cast<uint_type>(var_value(assignment, instance_input.a).data.base()), \
-                                  b = static_cast<uint_type>(var_value(assignment, instance_input.b).data.base()); \
-                        return {value_type(OP(a, b))}; \
-                    } \
- \
-                    result_type result_builder(const std::size_t start_row_index) const override { \
- \
-                        return var(0, start_row_index, false); \
-                    } \
-                }; \
+#define UNSIGNED_SMALL_OP_COMPONENT(COMPONENT_NAME, OP)                                  \
+    template<typename ArithmetizationType, typename BlueprintFieldType,                  \
+             unsigned BitsAmount>                                                        \
+    class COMPONENT_NAME;                                                                \
+                                                                                         \
+    template<typename BlueprintFieldType, unsigned BitsAmount>                           \
+    class COMPONENT_NAME<                                                                \
+        crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>,                 \
+        BlueprintFieldType, BitsAmount>                                                  \
+        : public mocked_component_base<                                                  \
+              crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>,           \
+              detail::two_var_type<BlueprintFieldType>,                                  \
+              detail::one_var_type<BlueprintFieldType>> {                                \
+      public:                                                                            \
+        using component_type = mocked_component_base<                                    \
+            crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>,             \
+            detail::two_var_type<BlueprintFieldType>,                                    \
+            detail::one_var_type<BlueprintFieldType>>;                                   \
+                                                                                         \
+        typedef boost::multiprecision::number<                                           \
+            boost::multiprecision::backends::cpp_int_modular_backend<BitsAmount>>        \
+            uint_type;                                                                   \
+                                                                                         \
+        BOILERPLATING(COMPONENT_NAME)                                                    \
+                                                                                         \
+        std::array<value_type, result_type::result_size> result_values_calculator(       \
+            const assignment<                                                            \
+                crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>>         \
+                &assignment,                                                             \
+            const input_type &instance_input) const override {                           \
+            /*TODO(martun): on the next line we are converting 255-bit number to 8/32/64 \
+             * bit numbers, probably losing some bits*/                                  \
+            uint_type a = static_cast<uint_type>(                                        \
+                          var_value(assignment, instance_input.a).to_integral()),        \
+                      b = static_cast<uint_type>(                                        \
+                          var_value(assignment, instance_input.b).to_integral());        \
+            return {value_type(OP(a, b))};                                               \
+        }                                                                                \
+                                                                                         \
+        result_type result_builder(const std::size_t start_row_index) const override {   \
+            return var(0, start_row_index, false);                                       \
+        }                                                                                \
+    };
 
             // for BitsAmount < 256
-            #define SIGNED_SMALL_OP_COMPONENT(COMPONENT_NAME, OP) \
-                template<typename ArithmetizationType, typename BlueprintFieldType, unsigned BitsAmount> \
-                class COMPONENT_NAME; \
- \
-                template<typename BlueprintFieldType, unsigned BitsAmount> \
-                class COMPONENT_NAME< \
-                    crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>, \
-                    BlueprintFieldType, BitsAmount> : public mocked_component_base< \
-                        crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>, \
-                        detail::two_signed_var_type<BlueprintFieldType, BitsAmount>, \
-                        detail::signed_var_type<BlueprintFieldType, BitsAmount>> { \
-                public: \
-                    using component_type = mocked_component_base< \
-                        crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>, \
-                        detail::two_signed_var_type<BlueprintFieldType, BitsAmount>, \
-                        detail::signed_var_type<BlueprintFieldType, BitsAmount>>; \
- \
-                    typedef boost::multiprecision::number< \
-                        boost::multiprecision::cpp_int_backend<BitsAmount, BitsAmount, \
-                            boost::multiprecision::signed_magnitude, \
-                            boost::multiprecision::unchecked, void>> int_type; \
-                    typedef boost::multiprecision::number< \
-                        boost::multiprecision::cpp_int_backend<BitsAmount, BitsAmount, \
-                            boost::multiprecision::unsigned_magnitude, \
-                            boost::multiprecision::unchecked, void>> uint_type; \
-                    typedef boost::multiprecision::number< \
-                        boost::multiprecision::backends::cpp_int_modular_backend<BitsAmount>> modular_uint_type; \
- \
-                    BOILERPLATING(COMPONENT_NAME) \
- \
-                    std::array<value_type, result_type::result_size> result_values_calculator( \
-                        const assignment<crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>> \
-                            &assignment, \
-                        const input_type &instance_input) const override { \
- \
-                        int_type a = static_cast<int_type>(var_value(assignment, instance_input.a[1]).data), \
-                                 b = static_cast<int_type>(var_value(assignment, instance_input.b[1]).data); \
-                        int_type sign_a = var_value(assignment, instance_input.a[0]) == 0 ? 1 : -1, \
-                                 sign_b = var_value(assignment, instance_input.b[0]) == 0 ? 1 : -1; \
-                        int_type result = OP((sign_a * a), (sign_b * b)); \
-/*On the following line we need to convert from signed to unsigned boost::cpp_int, then to our cpp_int_modular, then change the size, then to value_type.*/\
-                        return {value_type(result.sign() >= 0 ? 0 : 1), \
-                                value_type(typename BlueprintFieldType::integral_type(typename modular_uint_type::backend_type( \
-                                    uint_type(boost::multiprecision::abs(result)))))}; \
-                    } \
- \
-                    result_type result_builder(const std::size_t start_row_index) const override { \
- \
-                        return {var(0, start_row_index, false), \
-                                var(1, start_row_index, false)}; \
-                    } \
-                }; \
+#define SIGNED_SMALL_OP_COMPONENT(COMPONENT_NAME, OP)                                   \
+    template<typename ArithmetizationType, typename BlueprintFieldType,                 \
+             unsigned BitsAmount>                                                       \
+    class COMPONENT_NAME;                                                               \
+                                                                                        \
+    template<typename BlueprintFieldType, unsigned BitsAmount>                          \
+    class COMPONENT_NAME<                                                               \
+        crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>,                \
+        BlueprintFieldType, BitsAmount>                                                 \
+        : public mocked_component_base<                                                 \
+              crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>,          \
+              detail::two_signed_var_type<BlueprintFieldType, BitsAmount>,              \
+              detail::signed_var_type<BlueprintFieldType, BitsAmount>> {                \
+      public:                                                                           \
+        using component_type = mocked_component_base<                                   \
+            crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>,            \
+            detail::two_signed_var_type<BlueprintFieldType, BitsAmount>,                \
+            detail::signed_var_type<BlueprintFieldType, BitsAmount>>;                   \
+                                                                                        \
+        typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<   \
+            BitsAmount, BitsAmount, boost::multiprecision::signed_magnitude,            \
+            boost::multiprecision::unchecked, void>>                                    \
+            int_type;                                                                   \
+        typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<   \
+            BitsAmount, BitsAmount, boost::multiprecision::unsigned_magnitude,          \
+            boost::multiprecision::unchecked, void>>                                    \
+            uint_type;                                                                  \
+        typedef boost::multiprecision::number<                                          \
+            boost::multiprecision::backends::cpp_int_modular_backend<BitsAmount>>       \
+            modular_uint_type;                                                          \
+                                                                                        \
+        BOILERPLATING(COMPONENT_NAME)                                                   \
+                                                                                        \
+        std::array<value_type, result_type::result_size> result_values_calculator(      \
+            const assignment<                                                           \
+                crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>>        \
+                &assignment,                                                            \
+            const input_type &instance_input) const override {                          \
+            int_type a = static_cast<int_type>(                                         \
+                         var_value(assignment, instance_input.a[1]).to_integral()),     \
+                     b = static_cast<int_type>(                                         \
+                         var_value(assignment, instance_input.b[1]).to_integral());     \
+            int_type sign_a = var_value(assignment, instance_input.a[0]) == 0 ? 1 : -1, \
+                     sign_b = var_value(assignment, instance_input.b[0]) == 0 ? 1 : -1; \
+            int_type result = OP((sign_a * a), (sign_b * b));                           \
+            /*On the following line we need to convert from signed to unsigned          \
+             * boost::cpp_int, then to our cpp_int_modular, then change the size, then  \
+             * to value_type.*/                                                         \
+            return {value_type(result.sign() >= 0 ? 0 : 1),                             \
+                    value_type(typename BlueprintFieldType::integral_type(              \
+                        typename modular_uint_type::backend_type(                       \
+                            uint_type(boost::multiprecision::abs(result)))))};          \
+        }                                                                               \
+                                                                                        \
+        result_type result_builder(const std::size_t start_row_index) const override {  \
+            return {var(0, start_row_index, false), var(1, start_row_index, false)};    \
+        }                                                                               \
+    };
 
             template<typename ArithmetizationType, typename BlueprintFieldType, unsigned BitsAmount>
             class signed_abs_component_small;
@@ -379,211 +390,238 @@ namespace nil {
             };
 
             // for BitsAmount == 256
-            #define UNSIGNED_BIG_OP_COMPONENT(COMPONENT_NAME, OP) \
-                template<typename ArithmetizationType, typename BlueprintFieldType> \
-                class COMPONENT_NAME; \
- \
-                template<typename BlueprintFieldType> \
-                class COMPONENT_NAME< \
-                    crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>, \
-                    BlueprintFieldType> : public mocked_component_base< \
-                        crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>, \
-                        detail::two_pair_var_type<BlueprintFieldType>, \
-                        detail::pair_var_type<BlueprintFieldType>> { \
-                public: \
-                    using component_type = mocked_component_base< \
-                        crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>, \
-                        detail::two_pair_var_type<BlueprintFieldType>, \
-                        detail::pair_var_type<BlueprintFieldType>>; \
- \
-                    typedef boost::multiprecision::number< \
-                        boost::multiprecision::backends::cpp_int_modular_backend<256>> uint_type; \
- \
-                    BOILERPLATING(COMPONENT_NAME) \
- \
-                    std::array<value_type, result_type::result_size> result_values_calculator( \
-                        const assignment<crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>> \
-                            &assignment, \
-                        const input_type &instance_input) const override { \
- \
-                        static const uint_type two_128 = \
-                            boost::multiprecision::pow(uint_type(2), 128); \
-                        static const uint_type top_mask = ((uint_type(1) << 128) - 1) << 128; \
-                        static const uint_type bottom_mask = (uint_type(1) << 128) - 1; \
-                        uint_type \
-                            a = static_cast<uint_type>(var_value(assignment, instance_input.a[0]).data) * two_128 + \
-                                static_cast<uint_type>(var_value(assignment, instance_input.a[1]).data), \
-                            b = static_cast<uint_type>(var_value(assignment, instance_input.b[0]).data) * two_128 + \
-                                static_cast<uint_type>(var_value(assignment, instance_input.b[1]).data); \
-                        uint_type result = OP(a, b); \
-                        uint_type result_top = (top_mask & result) >> 128; \
-                        uint_type result_bottom = bottom_mask & result; \
-                        return { \
-                            value_type(typename value_type::integral_type(result_top)), \
-                            value_type(typename value_type::integral_type(result_bottom))}; \
-                    } \
- \
-                    result_type result_builder(const std::size_t start_row_index) const override { \
- \
-                        return {var(0, start_row_index, false), \
-                                var(1, start_row_index, false)}; \
-                    } \
-                }; \
+#define UNSIGNED_BIG_OP_COMPONENT(COMPONENT_NAME, OP)                                  \
+    template<typename ArithmetizationType, typename BlueprintFieldType>                \
+    class COMPONENT_NAME;                                                              \
+                                                                                       \
+    template<typename BlueprintFieldType>                                              \
+    class COMPONENT_NAME<                                                              \
+        crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>,               \
+        BlueprintFieldType>                                                            \
+        : public mocked_component_base<                                                \
+              crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>,         \
+              detail::two_pair_var_type<BlueprintFieldType>,                           \
+              detail::pair_var_type<BlueprintFieldType>> {                             \
+      public:                                                                          \
+        using component_type = mocked_component_base<                                  \
+            crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>,           \
+            detail::two_pair_var_type<BlueprintFieldType>,                             \
+            detail::pair_var_type<BlueprintFieldType>>;                                \
+                                                                                       \
+        typedef boost::multiprecision::number<                                         \
+            boost::multiprecision::backends::cpp_int_modular_backend<256>>             \
+            uint_type;                                                                 \
+                                                                                       \
+        BOILERPLATING(COMPONENT_NAME)                                                  \
+                                                                                       \
+        std::array<value_type, result_type::result_size> result_values_calculator(     \
+            const assignment<                                                          \
+                crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>>       \
+                &assignment,                                                           \
+            const input_type &instance_input) const override {                         \
+            static const uint_type two_128 =                                           \
+                boost::multiprecision::pow(uint_type(2), 128);                         \
+            static const uint_type top_mask = ((uint_type(1) << 128) - 1) << 128;      \
+            static const uint_type bottom_mask = (uint_type(1) << 128) - 1;            \
+            uint_type                                                                  \
+                a = static_cast<uint_type>(                                            \
+                        var_value(assignment, instance_input.a[0]).to_integral()) *    \
+                        two_128 +                                                      \
+                    static_cast<uint_type>(                                            \
+                        var_value(assignment, instance_input.a[1]).to_integral()),     \
+                b = static_cast<uint_type>(                                            \
+                        var_value(assignment, instance_input.b[0]).to_integral()) *    \
+                        two_128 +                                                      \
+                    static_cast<uint_type>(                                            \
+                        var_value(assignment, instance_input.b[1]).to_integral());     \
+            uint_type result = OP(a, b);                                               \
+            uint_type result_top = (top_mask & result) >> 128;                         \
+            uint_type result_bottom = bottom_mask & result;                            \
+            return {value_type(typename value_type::integral_type(result_top)),        \
+                    value_type(typename value_type::integral_type(result_bottom))};    \
+        }                                                                              \
+                                                                                       \
+        result_type result_builder(const std::size_t start_row_index) const override { \
+            return {var(0, start_row_index, false), var(1, start_row_index, false)};   \
+        }                                                                              \
+    };
 
             // for BitsAmount == 256
-            #define UNSIGNED_BIG_OP_BOOL_COMPONENT(COMPONENT_NAME, OP) \
-                template<typename ArithmetizationType, typename BlueprintFieldType> \
-                class COMPONENT_NAME; \
- \
-                template<typename BlueprintFieldType> \
-                class COMPONENT_NAME< \
-                    crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>, \
-                    BlueprintFieldType> : public mocked_component_base< \
-                        crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>, \
-                        detail::two_pair_var_type<BlueprintFieldType>, \
-                        detail::one_var_type<BlueprintFieldType>> { \
-                public: \
-                    using component_type = mocked_component_base< \
-                        crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>, \
-                        detail::two_pair_var_type<BlueprintFieldType>, \
-                        detail::one_var_type<BlueprintFieldType>>; \
- \
-                    typedef boost::multiprecision::number< \
-                        boost::multiprecision::backends::cpp_int_modular_backend<256>> uint_type; \
- \
-                    BOILERPLATING(COMPONENT_NAME) \
- \
-                    std::array<value_type, result_type::result_size> result_values_calculator( \
-                        const assignment<crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>> \
-                            &assignment, \
-                        const input_type &instance_input) const override { \
- \
-                        static const uint_type two_128 = \
-                            boost::multiprecision::pow(uint_type(2), 128); \
-                        uint_type \
-                            a = static_cast<uint_type>(var_value(assignment, instance_input.a[0]).data) * two_128 + \
-                                static_cast<uint_type>(var_value(assignment, instance_input.a[1]).data), \
-                            b = static_cast<uint_type>(var_value(assignment, instance_input.b[0]).data) * two_128 + \
-                                static_cast<uint_type>(var_value(assignment, instance_input.b[1]).data); \
-                        uint_type result = OP(a, b); \
-                        return {value_type(result)}; \
-                    } \
- \
-                    result_type result_builder(const std::size_t start_row_index) const override { \
- \
-                        return {var(0, start_row_index, false)}; \
-                    } \
-                }; \
+#define UNSIGNED_BIG_OP_BOOL_COMPONENT(COMPONENT_NAME, OP)                             \
+    template<typename ArithmetizationType, typename BlueprintFieldType>                \
+    class COMPONENT_NAME;                                                              \
+                                                                                       \
+    template<typename BlueprintFieldType>                                              \
+    class COMPONENT_NAME<                                                              \
+        crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>,               \
+        BlueprintFieldType>                                                            \
+        : public mocked_component_base<                                                \
+              crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>,         \
+              detail::two_pair_var_type<BlueprintFieldType>,                           \
+              detail::one_var_type<BlueprintFieldType>> {                              \
+      public:                                                                          \
+        using component_type = mocked_component_base<                                  \
+            crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>,           \
+            detail::two_pair_var_type<BlueprintFieldType>,                             \
+            detail::one_var_type<BlueprintFieldType>>;                                 \
+                                                                                       \
+        typedef boost::multiprecision::number<                                         \
+            boost::multiprecision::backends::cpp_int_modular_backend<256>>             \
+            uint_type;                                                                 \
+                                                                                       \
+        BOILERPLATING(COMPONENT_NAME)                                                  \
+                                                                                       \
+        std::array<value_type, result_type::result_size> result_values_calculator(     \
+            const assignment<                                                          \
+                crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>>       \
+                &assignment,                                                           \
+            const input_type &instance_input) const override {                         \
+            static const uint_type two_128 =                                           \
+                boost::multiprecision::pow(uint_type(2), 128);                         \
+            uint_type                                                                  \
+                a = static_cast<uint_type>(                                            \
+                        var_value(assignment, instance_input.a[0]).to_integral()) *    \
+                        two_128 +                                                      \
+                    static_cast<uint_type>(                                            \
+                        var_value(assignment, instance_input.a[1]).to_integral()),     \
+                b = static_cast<uint_type>(                                            \
+                        var_value(assignment, instance_input.b[0]).to_integral()) *    \
+                        two_128 +                                                      \
+                    static_cast<uint_type>(                                            \
+                        var_value(assignment, instance_input.b[1]).to_integral());     \
+            uint_type result = OP(a, b);                                               \
+            return {value_type(result)};                                               \
+        }                                                                              \
+                                                                                       \
+        result_type result_builder(const std::size_t start_row_index) const override { \
+            return {var(0, start_row_index, false)};                                   \
+        }                                                                              \
+    };
 
             // for BitsAmount == 256
-            #define SIGNED_BIG_OP_COMPONENT(COMPONENT_NAME, OP) \
-                template<typename ArithmetizationType, typename BlueprintFieldType> \
-                class COMPONENT_NAME; \
- \
-                template<typename BlueprintFieldType> \
-                class COMPONENT_NAME< \
-                    crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>, \
-                    BlueprintFieldType> : public mocked_component_base< \
-                        crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>, \
-                        detail::two_signed_pair_var_type<BlueprintFieldType>, \
-                        detail::signed_pair_var_type<BlueprintFieldType>> { \
-                public: \
-                    using component_type = mocked_component_base< \
-                        crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>, \
-                        detail::two_signed_pair_var_type<BlueprintFieldType>, \
-                        detail::signed_pair_var_type<BlueprintFieldType>>; \
- \
-                    typedef boost::multiprecision::number< \
-                        boost::multiprecision::cpp_int_backend<256, 256, \
-                        boost::multiprecision::signed_magnitude, \
-                        boost::multiprecision::unchecked, void>> int_type; \
-                    typedef boost::multiprecision::number< \
-                        boost::multiprecision::cpp_int_backend<256, 256, \
-                        boost::multiprecision::unsigned_magnitude, \
-                        boost::multiprecision::unchecked, void>> uint_type; \
-                    typedef boost::multiprecision::number< \
-                        boost::multiprecision::backends::cpp_int_modular_backend<256>> modular_uint_type; \
- \
-                    BOILERPLATING(COMPONENT_NAME) \
- \
-                    std::array<value_type, result_type::result_size> result_values_calculator( \
-                        const assignment<crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>> \
-                            &assignment, \
-                        const input_type &instance_input) const override { \
- \
-                        static const int_type two_128 = \
-                            boost::multiprecision::pow(int_type(2), 128); \
-                        static const int_type top_mask = ((int_type(1) << 128) - 1) << 128; \
-                        static const int_type bottom_mask = (int_type(1) << 128) - 1; \
-                        int_type \
-                            a = (var_value(assignment, instance_input.a[0]) == 0 ? 1 : -1) * \
-                                static_cast<int_type>(var_value(assignment, instance_input.a[1]).data) * two_128 + \
-                                static_cast<int_type>(var_value(assignment, instance_input.a[2]).data), \
-                            b = (var_value(assignment, instance_input.b[0]) == 0 ? 1 : -1) * \
-                                static_cast<int_type>(var_value(assignment, instance_input.b[1]).data) * two_128 + \
-                                static_cast<int_type>(var_value(assignment, instance_input.b[2]).data); \
-                        int_type result = OP(a, b); \
-                        int_type result_top = (top_mask & result) >> 128; \
-                        int_type result_bottom = bottom_mask & result; \
-                        modular_uint_type result_top_modular = typename modular_uint_type::backend_type(uint_type(result_top)); \
-                        modular_uint_type result_bottom_modular = typename modular_uint_type::backend_type(uint_type(result_bottom)); \
-                        return {value_type(result.sign() >= 0 ? 0 : 1), \
-                                value_type(result_top_modular), value_type(result_bottom_modular)}; \
-                    } \
- \
-                    result_type result_builder(const std::size_t start_row_index) const override { \
- \
-                        return {var(0, start_row_index, false), \
-                                var(1, start_row_index, false), \
-                                var(2, start_row_index, false)}; \
-                    } \
-                }; \
+#define SIGNED_BIG_OP_COMPONENT(COMPONENT_NAME, OP)                                     \
+    template<typename ArithmetizationType, typename BlueprintFieldType>                 \
+    class COMPONENT_NAME;                                                               \
+                                                                                        \
+    template<typename BlueprintFieldType>                                               \
+    class COMPONENT_NAME<                                                               \
+        crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>,                \
+        BlueprintFieldType>                                                             \
+        : public mocked_component_base<                                                 \
+              crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>,          \
+              detail::two_signed_pair_var_type<BlueprintFieldType>,                     \
+              detail::signed_pair_var_type<BlueprintFieldType>> {                       \
+      public:                                                                           \
+        using component_type = mocked_component_base<                                   \
+            crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>,            \
+            detail::two_signed_pair_var_type<BlueprintFieldType>,                       \
+            detail::signed_pair_var_type<BlueprintFieldType>>;                          \
+                                                                                        \
+        typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<   \
+            256, 256, boost::multiprecision::signed_magnitude,                          \
+            boost::multiprecision::unchecked, void>>                                    \
+            int_type;                                                                   \
+        typedef boost::multiprecision::number<boost::multiprecision::cpp_int_backend<   \
+            256, 256, boost::multiprecision::unsigned_magnitude,                        \
+            boost::multiprecision::unchecked, void>>                                    \
+            uint_type;                                                                  \
+        typedef boost::multiprecision::number<                                          \
+            boost::multiprecision::backends::cpp_int_modular_backend<256>>              \
+            modular_uint_type;                                                          \
+                                                                                        \
+        BOILERPLATING(COMPONENT_NAME)                                                   \
+                                                                                        \
+        std::array<value_type, result_type::result_size> result_values_calculator(      \
+            const assignment<                                                           \
+                crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>>        \
+                &assignment,                                                            \
+            const input_type &instance_input) const override {                          \
+            static const int_type two_128 =                                             \
+                boost::multiprecision::pow(int_type(2), 128);                           \
+            static const int_type top_mask = ((int_type(1) << 128) - 1) << 128;         \
+            static const int_type bottom_mask = (int_type(1) << 128) - 1;               \
+            int_type                                                                    \
+                a = (var_value(assignment, instance_input.a[0]) == 0 ? 1 : -1) *        \
+                        static_cast<int_type>(                                          \
+                            var_value(assignment, instance_input.a[1]).to_integral()) * \
+                        two_128 +                                                       \
+                    static_cast<int_type>(                                              \
+                        var_value(assignment, instance_input.a[2]).to_integral()),      \
+                b = (var_value(assignment, instance_input.b[0]) == 0 ? 1 : -1) *        \
+                        static_cast<int_type>(                                          \
+                            var_value(assignment, instance_input.b[1]).to_integral()) * \
+                        two_128 +                                                       \
+                    static_cast<int_type>(                                              \
+                        var_value(assignment, instance_input.b[2]).to_integral());      \
+            int_type result = OP(a, b);                                                 \
+            int_type result_top = (top_mask & result) >> 128;                           \
+            int_type result_bottom = bottom_mask & result;                              \
+            modular_uint_type result_top_modular =                                      \
+                typename modular_uint_type::backend_type(uint_type(result_top));        \
+            modular_uint_type result_bottom_modular =                                   \
+                typename modular_uint_type::backend_type(uint_type(result_bottom));     \
+            return {value_type(result.sign() >= 0 ? 0 : 1),                             \
+                    value_type(result_top_modular), value_type(result_bottom_modular)}; \
+        }                                                                               \
+                                                                                        \
+        result_type result_builder(const std::size_t start_row_index) const override {  \
+            return {var(0, start_row_index, false), var(1, start_row_index, false),     \
+                    var(2, start_row_index, false)};                                    \
+        }                                                                               \
+    };
 
             // for BitsAmount == 256
-            #define SIGNED_BIG_BOOL_OP_COMPONENT(COMPONENT_NAME, OP) \
-                template<typename ArithmetizationType, typename BlueprintFieldType> \
-                class COMPONENT_NAME; \
- \
-                template<typename BlueprintFieldType> \
-                class COMPONENT_NAME< \
-                    crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>, \
-                    BlueprintFieldType> : public mocked_component_base< \
-                        crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>, \
-                        detail::two_signed_pair_var_type<BlueprintFieldType>, \
-                        detail::one_var_type<BlueprintFieldType>> { \
-                public: \
-                    using component_type = mocked_component_base< \
-                        crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>, \
-                        detail::two_signed_pair_var_type<BlueprintFieldType>, \
-                        detail::one_var_type<BlueprintFieldType>>; \
- \
-                    typedef boost::multiprecision::number< \
-                        boost::multiprecision::backends::cpp_int_modular_backend<256>> int_type; \
- \
-                    BOILERPLATING(COMPONENT_NAME) \
- \
-                    std::array<value_type, result_type::result_size> result_values_calculator( \
-                        const assignment<crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>> \
-                            &assignment, \
-                        const input_type &instance_input) const override { \
- \
-                        static const int_type two_128 = \
-                            boost::multiprecision::pow(int_type(2), 128); \
-                        int_type \
-                            a = (var_value(assignment, instance_input.a[0]) == 0 ? 1 : -1) * \
-                                static_cast<int_type>(var_value(assignment, instance_input.a[1]).data) * two_128 + \
-                                static_cast<int_type>(var_value(assignment, instance_input.a[2]).data), \
-                            b = (var_value(assignment, instance_input.b[0]) == 0 ? 1 : -1) * \
-                                static_cast<int_type>(var_value(assignment, instance_input.b[1]).data) * two_128 + \
-                                static_cast<int_type>(var_value(assignment, instance_input.b[2]).data); \
-                        return {OP(a, b)}; \
-                    } \
- \
-                    result_type result_builder(const std::size_t start_row_index) const override { \
- \
-                        return {var(0, start_row_index, false)}; \
-                    } \
-                }; \
+#define SIGNED_BIG_BOOL_OP_COMPONENT(COMPONENT_NAME, OP)                                \
+    template<typename ArithmetizationType, typename BlueprintFieldType>                 \
+    class COMPONENT_NAME;                                                               \
+                                                                                        \
+    template<typename BlueprintFieldType>                                               \
+    class COMPONENT_NAME<                                                               \
+        crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>,                \
+        BlueprintFieldType>                                                             \
+        : public mocked_component_base<                                                 \
+              crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>,          \
+              detail::two_signed_pair_var_type<BlueprintFieldType>,                     \
+              detail::one_var_type<BlueprintFieldType>> {                               \
+      public:                                                                           \
+        using component_type = mocked_component_base<                                   \
+            crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>,            \
+            detail::two_signed_pair_var_type<BlueprintFieldType>,                       \
+            detail::one_var_type<BlueprintFieldType>>;                                  \
+                                                                                        \
+        typedef boost::multiprecision::number<                                          \
+            boost::multiprecision::backends::cpp_int_modular_backend<256>>              \
+            int_type;                                                                   \
+                                                                                        \
+        BOILERPLATING(COMPONENT_NAME)                                                   \
+                                                                                        \
+        std::array<value_type, result_type::result_size> result_values_calculator(      \
+            const assignment<                                                           \
+                crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>>        \
+                &assignment,                                                            \
+            const input_type &instance_input) const override {                          \
+            static const int_type two_128 =                                             \
+                boost::multiprecision::pow(int_type(2), 128);                           \
+            int_type                                                                    \
+                a = (var_value(assignment, instance_input.a[0]) == 0 ? 1 : -1) *        \
+                        static_cast<int_type>(                                          \
+                            var_value(assignment, instance_input.a[1]).to_integral()) * \
+                        two_128 +                                                       \
+                    static_cast<int_type>(                                              \
+                        var_value(assignment, instance_input.a[2]).to_integral()),      \
+                b = (var_value(assignment, instance_input.b[0]) == 0 ? 1 : -1) *        \
+                        static_cast<int_type>(                                          \
+                            var_value(assignment, instance_input.b[1]).to_integral()) * \
+                        two_128 +                                                       \
+                    static_cast<int_type>(                                              \
+                        var_value(assignment, instance_input.b[2]).to_integral());      \
+            return {OP(a, b)};                                                          \
+        }                                                                               \
+                                                                                        \
+        result_type result_builder(const std::size_t start_row_index) const override {  \
+            return {var(0, start_row_index, false)};                                    \
+        }                                                                               \
+    };
 
             template<typename ArithmetizationType, typename BlueprintFieldType>
             class signed_abs_component_big;

@@ -144,15 +144,15 @@ namespace nil {
                                                    foreign_y = 0, pow = 1;
 
                             for (std::size_t i = 0; i < num_chunks; ++i) {
-                                foreign_x +=
-                                    extended_integral_type(integral_type(X[i].data)) *
-                                    pow;
-                                foreign_y +=
-                                    extended_integral_type(integral_type(Y[i].data)) *
-                                    pow;
-                                foreign_p +=
-                                    extended_integral_type(integral_type(P[i].data)) *
-                                    pow;
+                                foreign_x += extended_integral_type(
+                                                 integral_type(X[i].to_integral())) *
+                                             pow;
+                                foreign_y += extended_integral_type(
+                                                 integral_type(Y[i].to_integral())) *
+                                             pow;
+                                foreign_p += extended_integral_type(
+                                                 integral_type(P[i].to_integral())) *
+                                             pow;
                                 pow <<= bit_size_chunk;
                             }
 
@@ -220,19 +220,20 @@ namespace nil {
                         if constexpr (stage == GenerationStage::ASSIGNMENT) {
                             A[0] = Z[0] - R[0];
                             integral_type a_integral =
-                                integral_type(A[0].data) >> bit_size_chunk;
+                                integral_type(A[0].to_integral()) >> bit_size_chunk;
                             A[0] = TYPE(a_integral);
                             for (std::size_t i = 1; i < num_chunks; ++i) {
                                 A[i] = (Z[i] + A[i - 1] - R[i]);
-                                a_integral = integral_type(A[i].data) >> bit_size_chunk;
+                                a_integral =
+                                    integral_type(A[i].to_integral()) >> bit_size_chunk;
                                 A[i] = TYPE(a_integral);
                             }
                             for (std::size_t i = 0; i < num_chunks - 2; ++i) {
                                 B[2 * i] =
-                                    TYPE(integral_type(A[i].data) &
+                                    TYPE(integral_type(A[i].to_integral()) &
                                          ((integral_type(1) << bit_size_chunk) - 1));
-                                B[2 * i + 1] =
-                                    TYPE(integral_type(A[i].data) >> bit_size_chunk);
+                                B[2 * i + 1] = TYPE(integral_type(A[i].to_integral()) >>
+                                                    bit_size_chunk);
                             }
                         }
 

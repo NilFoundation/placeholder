@@ -138,8 +138,11 @@ namespace nil {
                             point.to_affine();
                         chunk_type m_unit = detail::evaluate_m_unit<chunk_type>(point, true);
                         if (!(I_bit & m_unit)) {
-                            multiprecision::processing::write_data<params_type::bit_length(), endianness>(
-                                static_cast<typename group_value_type::field_type::integral_type>(point_affine.X.data),
+                            multiprecision::processing::write_data<
+                                params_type::bit_length(), endianness>(
+                                static_cast<
+                                    typename group_value_type::field_type::integral_type>(
+                                    point_affine.X.to_integral()),
                                 iter);
                         }
                         (*iter) |= m_unit;
@@ -180,14 +183,18 @@ namespace nil {
                         chunk_type m_unit = detail::evaluate_m_unit<chunk_type>(point, true);
                         if (!(I_bit & m_unit)) {
                             TIter write_iter = iter;
-                            multiprecision::processing::write_data<sizeof_field_element, endianness>(
-                                static_cast<typename group_value_type::field_type::integral_type>(
-                                    point_affine.X.data[1].data),
+                            multiprecision::processing::write_data<sizeof_field_element,
+                                                                   endianness>(
+                                static_cast<
+                                    typename group_value_type::field_type::integral_type>(
+                                    point_affine.X.data[1].to_integral()),
                                 write_iter);
                             write_iter += sizeof_field_element_chunks_count;
-                            multiprecision::processing::write_data<sizeof_field_element, endianness>(
-                                static_cast<typename group_value_type::field_type::integral_type>(
-                                    point_affine.X.data[0].data),
+                            multiprecision::processing::write_data<sizeof_field_element,
+                                                                   endianness>(
+                                static_cast<
+                                    typename group_value_type::field_type::integral_type>(
+                                    point_affine.X.data[0].to_integral()),
                                 write_iter);
                         }
                         (*iter) |= m_unit;
@@ -219,8 +226,11 @@ namespace nil {
                             point.to_affine();
                         chunk_type m_unit = detail::evaluate_m_unit<chunk_type>(point, true);
                         if (!(I_bit & m_unit)) {
-                            multiprecision::processing::write_data<params_type::bit_length(), endianness>(
-                                static_cast<typename group_value_type::field_type::integral_type>(point_affine.X.data),
+                            multiprecision::processing::write_data<
+                                params_type::bit_length(), endianness>(
+                                static_cast<
+                                    typename group_value_type::field_type::integral_type>(
+                                    point_affine.X.to_integral()),
                                 iter);
                         }
                         (*iter) |= m_unit;
@@ -261,14 +271,18 @@ namespace nil {
                         chunk_type m_unit = detail::evaluate_m_unit<chunk_type>(point, true);
                         if (!(I_bit & m_unit)) {
                             TIter write_iter = iter;
-                            multiprecision::processing::write_data<sizeof_field_element, endianness>(
-                                static_cast<typename group_value_type::field_type::integral_type>(
-                                    point_affine.X.data[1].data),
+                            multiprecision::processing::write_data<sizeof_field_element,
+                                                                   endianness>(
+                                static_cast<
+                                    typename group_value_type::field_type::integral_type>(
+                                    point_affine.X.data[1].to_integral()),
                                 write_iter);
                             write_iter += sizeof_field_element_chunks_count;
-                            multiprecision::processing::write_data<sizeof_field_element, endianness>(
-                                static_cast<typename group_value_type::field_type::integral_type>(
-                                    point_affine.X.data[0].data),
+                            multiprecision::processing::write_data<sizeof_field_element,
+                                                                   endianness>(
+                                static_cast<
+                                    typename group_value_type::field_type::integral_type>(
+                                    point_affine.X.data[0].to_integral()),
                                 write_iter);
                         }
                         (*iter) |= m_unit;

@@ -102,9 +102,9 @@ void test_fft() {
     std::cout << "FFT: key = " << typeid(*domain).name() << std::endl;
     for (std::size_t i = 0; i < m; i++) {
         value_type e = evaluate_polynomial(f, idx[i], m);
-        std::cout << "idx[" << i << "] = " << idx[i].data << std::endl;
-        std::cout << "e = " << e.data << std::endl;
-        BOOST_CHECK_EQUAL(e.data, a[i].data);
+        std::cout << "idx[" << i << "] = " << idx[i] << std::endl;
+        std::cout << "e = " << e << std::endl;
+        BOOST_CHECK_EQUAL(e, a[i]);
     }
     std::cout << "is_basic_radix2_domain = " << detail::is_basic_radix2_domain<FieldType>(m) << std::endl;
     std::cout << "is_extended_radix2_domain = " << detail::is_extended_radix2_domain<FieldType>(m) << std::endl;
@@ -158,8 +158,8 @@ void test_inverse_fft_of_fft() {
 
     std::cout << "inverse FFT of FFT: key = " << typeid(*domain).name() << std::endl;
     for (std::size_t i = 0; i < m; i++) {
-        std::cout << "a[" << i << "] = " << a[i].data << std::endl;
-        BOOST_CHECK_EQUAL(f[i].data, a[i].data);
+        std::cout << "a[" << i << "] = " << a[i] << std::endl;
+        BOOST_CHECK_EQUAL(f[i], a[i]);
     }
 }
 
@@ -182,7 +182,7 @@ void test_inverse_coset_ftt_of_coset_fft() {
     multiply_by_coset(a, coset.inversed());
 
     for (std::size_t i = 0; i < m; i++) {
-        BOOST_CHECK_EQUAL(f[i].data, a[i].data);
+        BOOST_CHECK_EQUAL(f[i], a[i]);
     }
 }
 
@@ -204,13 +204,13 @@ void test_lagrange_coefficients() {
     std::vector<value_type> d(m);
     for (std::size_t i = 0; i < m; i++) {
         d[i] = domain->get_domain_element(i);
-        std::cout << "d[" << i << "] = " << d[i].data << std::endl;
+        std::cout << "d[" << i << "] = " << d[i] << std::endl;
     }
 
     for (std::size_t i = 0; i < m; i++) {
         value_type e = evaluate_lagrange_polynomial(d, t, m, i);
-        BOOST_CHECK_EQUAL(e.data, a[i].data);
-        std::cout << "e = " << e.data << std::endl;
+        BOOST_CHECK_EQUAL(e, a[i]);
+        std::cout << "e = " << e << std::endl;
     }
 }
 
@@ -231,10 +231,10 @@ void test_compute_z() {
     std::cout << "ComputeZ: key = " << typeid(*domain).name() << std::endl;
     for (std::size_t i = 0; i < m; i++) {
         Z *= (t - domain->get_domain_element(i));
-        std::cout << "Z = " << Z.data << std::endl;
+        std::cout << "Z = " << Z << std::endl;
     }
 
-    BOOST_CHECK_EQUAL(Z.data, a.data);
+    BOOST_CHECK_EQUAL(Z, a);
 }
 
 template<typename FieldType, typename GroupType, typename EvaluationDomainType, typename GroupEvaluationDomainType>

@@ -171,7 +171,7 @@ void check_pairing_operations(std::vector<Fr_value_type> const& Fr_elements,
     std::cout << " * Reduced pairing tests with pow started..." << std::endl;
     BOOST_CHECK_EQUAL(
         *pair_reduced<CurveType>(Fr_elements[VKx_poly] * G1_elements[A1], G2_elements[B1]),
-        pair_reduced<CurveType>(G1_elements[A1], G2_elements[B1])->pow(Fr_elements[VKx_poly].data.base()));
+        pair_reduced<CurveType>(G1_elements[A1], G2_elements[B1])->pow(Fr_elements[VKx_poly].to_integral()));
     std::cout << " * Reduced pairing tests with pow finished." << std::endl << std::endl;
 
     std::cout << " * Miller loop tests started..." << std::endl;

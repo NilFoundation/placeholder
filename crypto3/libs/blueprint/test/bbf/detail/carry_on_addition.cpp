@@ -73,11 +73,11 @@ void test_carry_on_addition(
     for (std::size_t i = 0; i < num_chunks; i++) {
 #ifdef BLUEPRINT_PLONK_PROFILING_ENABLED
         std::cout << "Expected res: " << std::dec << expected_res[i] << std::endl;
-        std::cout << "Real res:     " << std::dec << A.r[i].data << std::endl;
+        std::cout << "Real res:     " << std::dec << A.r[i] << std::endl;
 #endif
-        assert(A.r[i].data == expected_res[i].data);
+        assert(A.r[i] == expected_res[i]);
     }
-    assert(carry[num_chunks - 1] == A.c.data);
+    assert(carry[num_chunks - 1] == A.c);
 }
 
 template<typename BlueprintFieldType, std::size_t num_chunks, std::size_t bit_size_chunk,
@@ -95,7 +95,7 @@ void carry_on_addition_tests() {
         std::vector<typename BlueprintFieldType::value_type> public_input = {};
         for (std::size_t j = 0; j < 2 * num_chunks; j++) {
             public_input.push_back(
-                value_type(integral_type(generate_random().data) % chunk_size));
+                value_type(integral_type(generate_random().to_integral()) % chunk_size));
         }
         test_carry_on_addition<BlueprintFieldType, num_chunks, bit_size_chunk>(
             public_input);

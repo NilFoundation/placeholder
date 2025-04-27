@@ -284,47 +284,49 @@ namespace nil {
 
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
                         // computation of s = a*b product
-                        auto s_first_row_carries = s_first_carryless.data.base() >> 128;
-                        value_type s_c_1 =
-                            static_cast<value_type>(s_first_row_carries & (two_64 - 1).data.base());
+                        auto s_first_row_carries = s_first_carryless.to_integral() >> 128;
+                        value_type s_c_1 = static_cast<value_type>(
+                            s_first_row_carries & (two_64 - 1).to_integral());
                         s_c_2 = static_cast<value_type>(s_first_row_carries >> 64);
                         s_c_1_chunks = chunk_64_to_16<FieldType>(s_c_1);
                         // no need for c_2 chunks as there is only a single chunk
 
                         auto s_second_row_carries =
-                            (s_second_carryless + s_c_1 + s_c_2 * two_64).data.base() >> 128;
+                            (s_second_carryless + s_c_1 + s_c_2 * two_64).to_integral() >>
+                            128;
                         // computation of s = a*b product
 
-                        value_type s_c_3 =
-                            static_cast<value_type>(s_second_row_carries & (two_64 - 1).data.base());
+                        value_type s_c_3 = static_cast<value_type>(
+                            s_second_row_carries & (two_64 - 1).to_integral());
                         s_c_4 = static_cast<value_type>(s_second_row_carries >> 64);
                         s_c_3_chunks = chunk_64_to_16<FieldType>(s_c_3);
-                        auto s_third_row_carries = s_third_carryless.data.base() >> 128;
+                        auto s_third_row_carries = s_third_carryless.to_integral() >> 128;
 
-                        value_type s_c_5 =
-                            static_cast<value_type>(s_third_row_carries & (two_64 - 1).data.base());
+                        value_type s_c_5 = static_cast<value_type>(
+                            s_third_row_carries & (two_64 - 1).to_integral());
                         s_c_6 = static_cast<value_type>(s_third_row_carries >> 64);
                         s_c_5_chunks = chunk_64_to_16<FieldType>(s_c_5);
 
                         // computation of N*r product
                         // caluclate first row carries
-                        auto first_row_carries = first_carryless.data.base() >> 128;
-                        value_type c_1 =
-                            static_cast<value_type>(first_row_carries & (two_64 - 1).data.base());
+                        auto first_row_carries = first_carryless.to_integral() >> 128;
+                        value_type c_1 = static_cast<value_type>(
+                            first_row_carries & (two_64 - 1).to_integral());
                         c_2 = static_cast<value_type>(first_row_carries >> 64);
                         c_1_chunks = chunk_64_to_16<FieldType>(c_1);
                         // no need for c_2 chunks as there is only a single chunk
                         auto second_row_carries =
-                            (second_carryless + c_1 + c_2 * two_64) .data.base() >> 128;
-                        value_type c_3 =
-                            static_cast<value_type>(second_row_carries & (two_64 - 1).data.base());
+                            (second_carryless + c_1 + c_2 * two_64).to_integral() >> 128;
+                        value_type c_3 = static_cast<value_type>(
+                            second_row_carries & (two_64 - 1).to_integral());
                         c_4 = static_cast<value_type>(second_row_carries >> 64);
                         c_3_chunks = chunk_64_to_16<FieldType>(c_3);
                         auto third_row_carries =
-                            (third_carryless + c_3 + c_4 * two_64) .data.base() >> 128;
-                        value_type c_5 =
-                            static_cast<value_type>(third_row_carries & (two_64 - 1).data.base());
-                        c_6 = static_cast<value_type>(third_carryless.data.base() >> 64);
+                            (third_carryless + c_3 + c_4 * two_64).to_integral() >> 128;
+                        value_type c_5 = static_cast<value_type>(
+                            third_row_carries & (two_64 - 1).to_integral());
+                        c_6 =
+                            static_cast<value_type>(third_carryless.to_integral() >> 64);
                         c_5_chunks = chunk_64_to_16<FieldType>(c_5);
 
                         N_sum = std::accumulate(N_chunks.begin(), N_chunks.end(), value_type(0));

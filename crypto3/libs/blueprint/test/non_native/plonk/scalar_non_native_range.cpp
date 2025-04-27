@@ -65,11 +65,13 @@ void test_scalar_non_native_range(std::vector<typename BlueprintFieldType::value
 
     typename component_type::input_type instance_input = {var(0, 0, false, var::column_type::public_input)};
 
-    auto result_check = [public_input](AssignmentType &assignment, typename component_type::result_type &real_res) {
+    auto result_check = [public_input](AssignmentType &assignment,
+                                       typename component_type::result_type &real_res) {
 #ifdef BLUEPRINT_PLONK_PROFILING_ENABLED
         std::cout << std::hex
-                  << "________________________________________________________________________________________\ninput: "
-                  << public_input[0].data << std::endl;
+                  << "___________________________________________________________________"
+                     "_____________________\ninput: "
+                  << public_input[0] << std::endl;
 #endif
     };
 
@@ -116,7 +118,7 @@ BOOST_AUTO_TEST_CASE(blueprint_non_native_scalar_range_test1) {
 
     for (std::size_t i = 0; i < random_tests_amount; i++) {
         r = rand();
-        r_integral = typename field_type::integral_type(r.data);
+        r_integral = typename field_type::integral_type(r.to_integral());
         r_integral = r_integral % ed25519_scalar_modulus;
         r = typename field_type::value_type(r_integral);
         test_scalar_non_native_range<field_type>({r}, true);
@@ -140,7 +142,8 @@ BOOST_AUTO_TEST_CASE(blueprint_non_native_scalar_range_test_must_fail) {
     typename field_type::integral_type overage;
 
     for (std::size_t i = 0; i < random_tests_amount; i++) {
-        overage = (typename field_type::integral_type(rand().data)) % ed25519_scalar_overage;
+        overage = (typename field_type::integral_type(rand().to_integral())) %
+                  ed25519_scalar_overage;
         // Test with numbers larger than modulus must fail.
         test_scalar_non_native_range<field_type>(
             {typename field_type::value_type(ed25519_scalar_modulus + overage)}, false);    // false positive

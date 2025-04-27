@@ -47,7 +47,7 @@ namespace boost {
             template<typename FieldParams>
             struct print_log_value<typename fields::detail::element_fp<FieldParams>> {
                 void operator()(std::ostream &os, typename fields::detail::element_fp<FieldParams> const &e) {
-                    os << e.data << std::endl;
+                    os << e << std::endl;
                 }
             };
 
@@ -56,7 +56,7 @@ namespace boost {
                 void operator()(std::ostream &os,
                                 std::array<typename fields::detail::element_fp<FieldParams>, array_size> const &arr) {
                     for (auto &e: arr) {
-                        os << e.data << std::endl;
+                        os << e << std::endl;
                     }
                 }
             };

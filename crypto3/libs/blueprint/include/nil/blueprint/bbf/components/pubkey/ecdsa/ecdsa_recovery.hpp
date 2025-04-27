@@ -180,9 +180,11 @@ namespace nil {
 
                         ec_point_value_type G = ec_point_value_type::one();
                         base_integral_type x = base_integral_type(
-                                               base_basic_integral_type(G.X.data)),
+                                               base_basic_integral_type(
+                                                   G.X.to_integral())),
                                            y = base_integral_type(
-                                               base_basic_integral_type(G.Y.data));
+                                               base_basic_integral_type(
+                                                   G.Y.to_integral()));
                         BASE_TYPE a = CurveType::template g1_type<
                             nil::crypto3::algebra::curves::coordinates::affine>::
                             params_type::b;
@@ -224,7 +226,8 @@ namespace nil {
                         std::vector<TYPE> MP = PushScalarChunks(mp);
                         std::vector<TYPE> X = PushBaseChunks(x);
                         std::vector<TYPE> Y = PushBaseChunks(y);
-                        base_basic_integral_type aBB = base_basic_integral_type(a.data);
+                        base_basic_integral_type aBB =
+                            base_basic_integral_type(a.to_integral());
                         base_integral_type aB = base_integral_type(aBB);
                         std::vector<TYPE> A = PushBaseChunks(aB);
 
@@ -406,21 +409,21 @@ namespace nil {
                                 R[i] = input.r[i];
                                 S[i] = input.s[i];
                             }
-                            V = input.v.data;
+                            V = input.v;
 
                             scalar_integral_type pow = 1;
                             SCALAR_TYPE z = 0, r = 0, s = 0;
 
                             for (std::size_t i = 0; i < num_chunks; ++i) {
-                                z +=
-                                    scalar_integral_type(integral_type(input.z[i].data)) *
-                                    pow;
-                                r +=
-                                    scalar_integral_type(integral_type(input.r[i].data)) *
-                                    pow;
-                                s +=
-                                    scalar_integral_type(integral_type(input.s[i].data)) *
-                                    pow;
+                                z += scalar_integral_type(
+                                         integral_type(input.z[i].to_integral())) *
+                                     pow;
+                                r += scalar_integral_type(
+                                         integral_type(input.r[i].to_integral())) *
+                                     pow;
+                                s += scalar_integral_type(
+                                         integral_type(input.s[i].to_integral())) *
+                                     pow;
                                 pow <<= bit_size_chunk;
                             }
 
@@ -431,21 +434,25 @@ namespace nil {
                             C[1] = 1 - r.is_zero();
                             i1 = r.is_zero() ? 0 : r.inversed();
 
-                            C[2] = (scalar_basic_integral_type(r.data) < n) ? 1 : 0;
+                            C[2] =
+                                (scalar_basic_integral_type(r.to_integral()) < n) ? 1 : 0;
 
                             C[3] = 1 - s.is_zero();
                             i3 = s.is_zero() ? 0 : s.inversed();
 
-                            C[4] = (scalar_basic_integral_type(s.data) < m) ? 1 : 0;
+                            C[4] =
+                                (scalar_basic_integral_type(s.to_integral()) < m) ? 1 : 0;
 
                             BASE_TYPE x1 = scalar_basic_integral_type(
-                                r.data);  // should we consider r + n also?
+                                r.to_integral());  // should we consider r + n also?
                             BASE_TYPE y1 =
                                 (x1 * x1 * x1 + a).is_square()
                                     ? (x1 * x1 * x1 + a).sqrt()
                                     : 1;  // should be signaled as invalid signaure
-                            if (base_basic_integral_type(y1.data) % 2 !=
-                                scalar_basic_integral_type(integral_type(V.data)) % 2) {
+                            if (base_basic_integral_type(y1.to_integral()) % 2 !=
+                                scalar_basic_integral_type(
+                                    integral_type(V.to_integral())) %
+                                    2) {
                                 y1 = -y1;
                             }
                             C[5] = (x1 * x1 * x1 + a - y1 * y1).is_zero();
@@ -453,20 +460,27 @@ namespace nil {
                                      ? 0
                                      : (x1 * x1 * x1 + a - y1 * y1).inversed();
 
-                            C[6] = (SCALAR_TYPE(base_basic_integral_type(x1.data)) - r)
-                                       .is_zero();
+                            C[6] =
+                                (SCALAR_TYPE(base_basic_integral_type(x1.to_integral())) -
+                                 r)
+                                    .is_zero();
                             i6 =
-                                (SCALAR_TYPE(base_basic_integral_type(x1.data)) - r)
+                                (SCALAR_TYPE(base_basic_integral_type(x1.to_integral())) -
+                                 r)
                                         .is_zero()
                                     ? 0
-                                    : (SCALAR_TYPE(base_basic_integral_type(x1.data)) - r)
+                                    : (SCALAR_TYPE(
+                                           base_basic_integral_type(x1.to_integral())) -
+                                       r)
                                           .inversed();
 
-                            C[7] = ((base_basic_integral_type(y1.data) % 2) ==
-                                    (scalar_basic_integral_type(integral_type(V.data)) % 2));
-                            d2 = (base_basic_integral_type(y1.data) +
-                                  base_basic_integral_type(
-                                      scalar_basic_integral_type(integral_type(V.data)))) /
+                            C[7] = ((base_basic_integral_type(y1.to_integral()) % 2) ==
+                                    (scalar_basic_integral_type(
+                                         integral_type(V.to_integral())) %
+                                     2));
+                            d2 = (base_basic_integral_type(y1.to_integral()) +
+                                  base_basic_integral_type(scalar_basic_integral_type(
+                                      integral_type(V.to_integral())))) /
                                  2;
 
                             SCALAR_TYPE
@@ -478,9 +492,9 @@ namespace nil {
                                          ? 2
                                          : s * r.inversed();  // don't wanto to break the
                                                               // scalar multiplication
-                            ec_point_value_type R =
-                                ec_point_value_type(scalar_basic_integral_type(x1.data),
-                                                    scalar_basic_integral_type(y1.data));
+                            ec_point_value_type R = ec_point_value_type(
+                                scalar_basic_integral_type(x1.to_integral()),
+                                scalar_basic_integral_type(y1.to_integral()));
                             QA = G * u1 + R * u2;
 
                             C[8] = 1 - QA.is_zero();
@@ -493,7 +507,7 @@ namespace nil {
                                                           num_chunks](SCALAR_TYPE x) {
                                 std::vector<TYPE> X(num_chunks);
                                 scalar_integral_type x_value =
-                                    scalar_basic_integral_type(x.data);
+                                    scalar_basic_integral_type(x.to_integral());
                                 for (std::size_t i = 0; i < num_chunks; i++) {
                                     X[i] = x_value % sB;
                                     x_value /= sB;
@@ -506,7 +520,7 @@ namespace nil {
                                                         num_chunks](BASE_TYPE x) {
                                 std::vector<TYPE> X(num_chunks);
                                 base_integral_type x_value =
-                                    base_basic_integral_type(x.data);
+                                    base_basic_integral_type(x.to_integral());
                                 for (std::size_t i = 0; i < num_chunks; i++) {
                                     X[i] = x_value % bB;
                                     x_value /= bB;
@@ -664,14 +678,14 @@ namespace nil {
                             BASE_TYPE new_yQA = 0;
                             for (std::size_t i = num_chunks; i > 0; i--) {
                                 new_yQA *= sB;
-                                new_yQA += integral_type(t29.yR[i - 1].data);
+                                new_yQA += integral_type(t29.yR[i - 1].to_integral());
                             }
                             if (QA.Y != new_yQA) {  // we also have to adjust I8, c8 and
                                                     // c0 to agree with the updated yQA
                                 BASE_TYPE new_I8 =
                                     new_yQA.is_zero() ? 0 : new_yQA.inversed();
                                 base_integral_type new_I8_int =
-                                    base_basic_integral_type(new_I8.data);
+                                    base_basic_integral_type(new_I8.to_integral());
                                 for (std::size_t i = 0; i < num_chunks; i++) {
                                     I8[i] = new_I8_int % bB;
                                     new_I8_int /= bB;

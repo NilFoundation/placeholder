@@ -237,33 +237,50 @@ namespace nil {
                     std::size_t row = start_row_index;
 
                     std::array<typename BlueprintFieldType::integral_type, 20> RAM = {
-                        typename BlueprintFieldType::integral_type(var_value(assignment, instance_input.R.x[0]).data),
-                        typename BlueprintFieldType::integral_type(var_value(assignment, instance_input.R.x[1]).data),
-                        typename BlueprintFieldType::integral_type(var_value(assignment, instance_input.R.x[2]).data),
-                        typename BlueprintFieldType::integral_type(var_value(assignment, instance_input.R.x[3]).data),
+                        typename BlueprintFieldType::integral_type(
+                            var_value(assignment, instance_input.R.x[0]).to_integral()),
+                        typename BlueprintFieldType::integral_type(
+                            var_value(assignment, instance_input.R.x[1]).to_integral()),
+                        typename BlueprintFieldType::integral_type(
+                            var_value(assignment, instance_input.R.x[2]).to_integral()),
+                        typename BlueprintFieldType::integral_type(
+                            var_value(assignment, instance_input.R.x[3]).to_integral()),
 
-                        typename BlueprintFieldType::integral_type(var_value(assignment, instance_input.R.y[0]).data),
-                        typename BlueprintFieldType::integral_type(var_value(assignment, instance_input.R.y[1]).data),
-                        typename BlueprintFieldType::integral_type(var_value(assignment, instance_input.R.y[2]).data),
-                        typename BlueprintFieldType::integral_type(var_value(assignment, instance_input.R.y[3]).data),
+                        typename BlueprintFieldType::integral_type(
+                            var_value(assignment, instance_input.R.y[0]).to_integral()),
+                        typename BlueprintFieldType::integral_type(
+                            var_value(assignment, instance_input.R.y[1]).to_integral()),
+                        typename BlueprintFieldType::integral_type(
+                            var_value(assignment, instance_input.R.y[2]).to_integral()),
+                        typename BlueprintFieldType::integral_type(
+                            var_value(assignment, instance_input.R.y[3]).to_integral()),
 
-                        typename BlueprintFieldType::integral_type(var_value(assignment, instance_input.A.x[0]).data),
-                        typename BlueprintFieldType::integral_type(var_value(assignment, instance_input.A.x[1]).data),
-                        typename BlueprintFieldType::integral_type(var_value(assignment, instance_input.A.x[2]).data),
-                        typename BlueprintFieldType::integral_type(var_value(assignment, instance_input.A.x[3]).data),
+                        typename BlueprintFieldType::integral_type(
+                            var_value(assignment, instance_input.A.x[0]).to_integral()),
+                        typename BlueprintFieldType::integral_type(
+                            var_value(assignment, instance_input.A.x[1]).to_integral()),
+                        typename BlueprintFieldType::integral_type(
+                            var_value(assignment, instance_input.A.x[2]).to_integral()),
+                        typename BlueprintFieldType::integral_type(
+                            var_value(assignment, instance_input.A.x[3]).to_integral()),
 
-                        typename BlueprintFieldType::integral_type(var_value(assignment, instance_input.A.y[0]).data),
-                        typename BlueprintFieldType::integral_type(var_value(assignment, instance_input.A.y[1]).data),
-                        typename BlueprintFieldType::integral_type(var_value(assignment, instance_input.A.y[2]).data),
-                        typename BlueprintFieldType::integral_type(var_value(assignment, instance_input.A.y[3]).data),
+                        typename BlueprintFieldType::integral_type(
+                            var_value(assignment, instance_input.A.y[0]).to_integral()),
+                        typename BlueprintFieldType::integral_type(
+                            var_value(assignment, instance_input.A.y[1]).to_integral()),
+                        typename BlueprintFieldType::integral_type(
+                            var_value(assignment, instance_input.A.y[2]).to_integral()),
+                        typename BlueprintFieldType::integral_type(
+                            var_value(assignment, instance_input.A.y[3]).to_integral()),
 
-                        typename BlueprintFieldType::integral_type(var_value(assignment, instance_input.M[0]).data),
-                        typename BlueprintFieldType::integral_type(var_value(assignment, instance_input.M[1]).data),
-                        typename BlueprintFieldType::integral_type(var_value(assignment, instance_input.M[2]).data),
-                        typename BlueprintFieldType::integral_type(var_value(assignment, instance_input.M[3]).data)
-                        };
-
-
+                        typename BlueprintFieldType::integral_type(
+                            var_value(assignment, instance_input.M[0]).to_integral()),
+                        typename BlueprintFieldType::integral_type(
+                            var_value(assignment, instance_input.M[1]).to_integral()),
+                        typename BlueprintFieldType::integral_type(
+                            var_value(assignment, instance_input.M[2]).to_integral()),
+                        typename BlueprintFieldType::integral_type(
+                            var_value(assignment, instance_input.M[3]).to_integral())};
 
                     std::array<typename BlueprintFieldType::integral_type, 32> input_words_values;
                     typename BlueprintFieldType::integral_type integral_one = 1;

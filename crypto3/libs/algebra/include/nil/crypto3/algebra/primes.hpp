@@ -59,7 +59,7 @@ namespace nil {
                     xx = xx * xx + c;
                     divisor = nil::crypto3::multiprecision::gcd((x > xx) ? x - xx : xx - x, nn);
                 } while (static_cast<int>(divisor) == 1);
-                return divisor.base();
+                return divisor.to_integral();
             }
 
             /*

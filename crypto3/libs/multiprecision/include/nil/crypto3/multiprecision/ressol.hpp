@@ -62,7 +62,7 @@ namespace nil::crypto3::multiprecision {
             ++exp_padded;
             exp_padded >>= 2u;
 
-            return pow(a_mod, big_uint_t(exp_padded)).base();
+            return pow(a_mod, big_uint_t(exp_padded)).to_integral();
         }
 
         big_uint_t p_negone = p;
@@ -81,8 +81,8 @@ namespace nil::crypto3::multiprecision {
         n_mod *= r_sq_mod;
         r_mod *= a_mod;
 
-        if (n_mod.base() == 1u) {
-            return r_mod.base();
+        if (n_mod.to_integral() == 1u) {
+            return r_mod.to_integral();
         }
 
         // find random quadratic nonresidue z
@@ -101,12 +101,12 @@ namespace nil::crypto3::multiprecision {
 
         auto c_mod = pow(z_mod, q);
 
-        while (n_mod.base() > 1u) {
+        while (n_mod.to_integral() > 1u) {
             std::size_t i = 0u;
 
             auto q_mod = n_mod;
 
-            while (q_mod.base() != 1u) {
+            while (q_mod.to_integral() != 1u) {
                 q_mod = pow(q_mod, two);
                 ++i;
 
@@ -128,11 +128,11 @@ namespace nil::crypto3::multiprecision {
             s = i;
         }
 
-        return r_mod.base();
+        return r_mod.to_integral();
     }
 
     template<typename big_mod_t, std::enable_if_t<is_big_mod_v<big_mod_t>, int> = 0>
     constexpr big_mod_t ressol(const big_mod_t &b) {
-        return big_mod_t(ressol(b.base(), b.mod()), b.ops_storage());
+        return big_mod_t(ressol(b.to_integral(), b.mod()), b.ops_storage());
     }
 }  // namespace nil::crypto3::multiprecision

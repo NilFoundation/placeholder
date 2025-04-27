@@ -1,6 +1,7 @@
 template<typename FieldType, typename NonNativeFieldType>
 std::array<typename FieldType::value_type, 4> chop_non_native(typename NonNativeFieldType::value_type input) {
-    typename NonNativeFieldType::integral_type input_integral = typename NonNativeFieldType::integral_type(input.data);
+    typename NonNativeFieldType::integral_type input_integral =
+        typename NonNativeFieldType::integral_type(input.to_integral());
 
     std::array<typename FieldType::value_type, 4> output;
 
@@ -24,7 +25,7 @@ typename NonNativeFieldType::value_type glue_non_native(std::array<typename Fiel
 
     for (std::size_t i = 0; i < input.size(); i++) {
         assert(input[i] < chunk_size);
-        input_integral[i] = typename FieldType::integral_type(input[i].data);
+        input_integral[i] = typename FieldType::integral_type(input[i].to_integral());
     }
 
     typename NonNativeFieldType::integral_type output_integral =

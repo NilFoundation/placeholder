@@ -774,7 +774,7 @@ namespace nil {
                     for (auto it = poly.begin(); it != poly.end(); ++it) {
                         if (it != poly.begin())
                             os << ", ";
-                        os << it->data;
+                        os << *it;
                     }
                     os << "]" << std::dec;
                 }

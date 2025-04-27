@@ -1050,7 +1050,7 @@ namespace nil {
                     for (std::size_t query_id = 0; query_id < fri_params.lambda; query_id++) {
                         std::size_t domain_size = fri_params.D[0]->size();
                         std::uint64_t x_index = static_cast<std::uint64_t>(
-                            challenges[query_id].data.base() % domain_size);
+                            challenges[query_id].to_integral() % domain_size);
                         auto x = fri_params.D[0]->get_domain_element(x_index);
 
                         // Fill round proofs
@@ -1098,7 +1098,7 @@ namespace nil {
                          &challenges](std::size_t query_id) {
                             std::size_t domain_size = fri_params.D[0]->size();
                             std::uint64_t x_index = static_cast<std::uint64_t>(
-                                challenges[query_id].data.base() % domain_size);
+                                challenges[query_id].to_integral() % domain_size);
                             auto x = fri_params.D[0]->get_domain_element(x_index);
 
                             std::map<std::size_t, typename FRI::initial_proof_type>
@@ -1498,8 +1498,8 @@ namespace nil {
                     typename FRI::field_type::value_type x_challenge =
                         transcript.template challenge<typename FRI::field_type>();
 
-                    x_index_out =
-                        static_cast<std::uint64_t>(x_challenge.data.base() % domain_size);
+                    x_index_out = static_cast<std::uint64_t>(x_challenge.to_integral() %
+                                                             domain_size);
                     x_out = fri_params.D[0]->get_domain_element(x_index_out);
 
                     std::vector<std::array<typename FRI::field_type::value_type, FRI::m>> s;

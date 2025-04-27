@@ -243,7 +243,7 @@ namespace nil {
                 g1_value_type Q;
 
                 typename CurveType::scalar_field_type::integral_type integral_b =
-                    typename CurveType::scalar_field_type::integral_type(b.data);
+                    typename CurveType::scalar_field_type::integral_type(b.to_integral());
                 const std::size_t scalar_size = 255;
                 nil::crypto3::marshalling::status_type status;
                 std::array<bool, scalar_size> bits =
@@ -255,7 +255,8 @@ namespace nil {
                 if (std::is_same<CurveType,nil::crypto3::algebra::curves::pallas>::value) {
                     z_n2 = integral_b;
                     aux = z_n2 - component.t_q + component.two.pow(130);
-                    typename BlueprintFieldType::integral_type intehral_b_high = typename BlueprintFieldType::integral_type(b_high.data);
+                    typename BlueprintFieldType::integral_type intehral_b_high =
+                        typename BlueprintFieldType::integral_type(b_high.to_integral());
                     if (intehral_b_high == 1) {
                         bits[0] = 1;
                     }
@@ -264,7 +265,8 @@ namespace nil {
                     aux = z_n2 - component.t_p + component.two.pow(130);
                 }
                 typename CurveType::scalar_field_type::integral_type integral_aux =
-                    typename CurveType::scalar_field_type::integral_type(aux.data);
+                    typename CurveType::scalar_field_type::integral_type(
+                        aux.to_integral());
                 const std::size_t base_size = 255;
                 std::array<bool, base_size> aux_bits =
                     nil::crypto3::marshalling::pack<nil::crypto3::marshalling::option::big_endian>(integral_aux, status);

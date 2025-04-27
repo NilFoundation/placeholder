@@ -75,7 +75,7 @@ void test_poseidon(std::vector<typename BlueprintFieldType::value_type> public_i
 
     #ifdef BLUEPRINT_PLONK_PROFILING_ENABLED
     for (std::uint32_t i = 0; i < component_type::state_size; i++){
-        std::cout << "input[" << i << "]   : " << public_input[i].data << "\n";
+        std::cout << "input[" << i << "]   : " << public_input[i] << "\n";
     }
     #endif
 
@@ -84,9 +84,11 @@ void test_poseidon(std::vector<typename BlueprintFieldType::value_type> public_i
 
         for (std::uint32_t i = 0; i < component_type::state_size; i++){
             #ifdef BLUEPRINT_PLONK_PROFILING_ENABLED
-            std::cout << "expected[" << i << "]: " << expected_res[i].data << "\n";
-            std::cout << "real[" << i << "]    : " << var_value(assignment, real_res.output_state[i]).data << "\n";
-            #endif
+            std::cout << "expected[" << i << "]: " << expected_res[i] << "\n";
+            std::cout << "real[" << i
+                      << "]    : " << var_value(assignment, real_res.output_state[i])
+                      << "\n";
+#endif
             assert(expected_res[i] == var_value(assignment, real_res.output_state[i]));
         }
     };

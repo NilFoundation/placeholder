@@ -155,7 +155,9 @@ namespace nil {
                                         }
                                         transcript_type tmp_transcript = transcript;
                                         tmp_transcript(pow_seed + i);
-                                        integral_type pow_result = integral_type(tmp_transcript.template challenge<FieldType>().data);
+                                        integral_type pow_result = integral_type(
+                                            tmp_transcript.template challenge<FieldType>()
+                                                .to_integral());
                                         if ( ((pow_result & mask) == 0) && !challenge_found ) {
                                             bool expected = false;
                                             if (challenge_found.compare_exchange_strong(expected, true)) {
@@ -185,7 +187,8 @@ namespace nil {
                                 ((integral_type(1) << GrindingBits) - 1) << (FieldType::modulus_bits - GrindingBits)
                                 : 0);
 
-                        integral_type result = integral_type(transcript.template challenge<FieldType>().data);
+                        integral_type result = integral_type(
+                            transcript.template challenge<FieldType>().to_integral());
                         return ((result & mask) == 0);
                     }
                 };

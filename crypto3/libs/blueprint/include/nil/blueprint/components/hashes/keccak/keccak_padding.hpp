@@ -1157,13 +1157,14 @@ namespace nil {
                 std::vector<std::array<integral_type, 2>> shifted_chunk_parts;
 
                 if (component.shift != 0) {
-                    integral_type relay_chunk = integral_type(var_value(assignment, instance_input.message[0]).data);
+                    integral_type relay_chunk = integral_type(
+                        var_value(assignment, instance_input.message[0]).to_integral());
                     for (std::size_t index = 1; index < component.num_blocks + 1; ++index) {
                         value_type chunk = value_type(component.padding_delimiter);
                         if (index < component.num_blocks) {
                             chunk = var_value(assignment, instance_input.message[index]);
                         }
-                        integral_type integral_chunk = integral_type(chunk.data);
+                        integral_type integral_chunk = integral_type(chunk.to_integral());
                         integral_type mask = (integral_type(1) << (64 - component.shift)) - 1;
                         std::array<integral_type, 2> chunk_parts = {integral_chunk >> (64 - component.shift),
                                                                     integral_chunk & mask};
@@ -1216,7 +1217,9 @@ namespace nil {
                         auto cur_config = component.full_configuration[index];
 
                         if (component.range_check_input) {
-                            integral_type chunk_to_check = integral_type(var_value(assignment, instance_input.message[index]).data);
+                            integral_type chunk_to_check = integral_type(
+                                var_value(assignment, instance_input.message[index])
+                                    .to_integral());
                             integral_type mask_range_check = (integral_type(1) << 8) - 1;
                             std::vector<integral_type> chunk_range_check;
                             for (std::size_t i = 0; i < 8; ++i) {

@@ -487,7 +487,8 @@ namespace nil {
                 }
                 value_type diff = y - x;
 
-                std::array<integral_type, 2> integrals = {integral_type(x.data), integral_type(diff.data)};
+                std::array<integral_type, 2> integrals = {
+                    integral_type(x.to_integral()), integral_type(diff.to_integral())};
 
                 std::array<std::vector<bool>, 2> bits;
                 for (std::size_t i = 0; i < 2; i++) {

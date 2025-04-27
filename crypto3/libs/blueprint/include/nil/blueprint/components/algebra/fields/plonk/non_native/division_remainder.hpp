@@ -225,8 +225,8 @@ namespace nil {
                     using value_type = typename BlueprintFieldType::value_type;
                     using integral_type = typename BlueprintFieldType::integral_type;
 
-                    integral_type x_integral = integral_type(input[0].data),
-                                y_integral = integral_type(input[1].data);
+                    integral_type x_integral = integral_type(input[0].to_integral()),
+                                  y_integral = integral_type(input[1].to_integral());
                     integral_type q_integral = y_integral != 0 ? x_integral / y_integral : 0,
                                 r_integral = y_integral != 0 ? x_integral % y_integral : 0;
                     return {value_type(q_integral), value_type(r_integral)};
@@ -368,8 +368,8 @@ namespace nil {
 
                 value_type x = var_value(assignment, instance_input.x),
                            y = var_value(assignment, instance_input.y);
-                integral_type x_integral = integral_type(x.data),
-                              y_integral = integral_type(y.data);
+                integral_type x_integral = integral_type(x.to_integral()),
+                              y_integral = integral_type(y.to_integral());
                 integral_type q_integral = y_integral != 0 ? x_integral / y_integral : 0,
                               r_integral = y_integral != 0 ? x_integral % y_integral : 0;
                 value_type q = value_type(q_integral),

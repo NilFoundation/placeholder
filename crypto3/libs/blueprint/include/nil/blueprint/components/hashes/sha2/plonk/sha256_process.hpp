@@ -207,8 +207,10 @@ namespace nil {
 
                     std::array<typename BlueprintFieldType::integral_type, 8> sparse_values {};
                     for (std::size_t i = 0; i < 4; i++) {
-                        typename BlueprintFieldType::integral_type integral_input_state_sparse =
-                            typename BlueprintFieldType::integral_type(input_state[i].data);
+                        typename BlueprintFieldType::integral_type
+                            integral_input_state_sparse =
+                                typename BlueprintFieldType::integral_type(
+                                    input_state[i].to_integral());
                         std::vector<bool> input_state_sparse(32);
                         {
                             nil::crypto3::marshalling::status_type status;
@@ -226,8 +228,10 @@ namespace nil {
                         sparse_values[i] = input_state_sparse_chunks[1][0];
                     }
                     for (std::size_t i = 4; i < 8; i++) {
-                        typename BlueprintFieldType::integral_type integral_input_state_sparse =
-                            typename BlueprintFieldType::integral_type(input_state[i].data);
+                        typename BlueprintFieldType::integral_type
+                            integral_input_state_sparse =
+                                typename BlueprintFieldType::integral_type(
+                                    input_state[i].to_integral());
                         std::vector<bool> input_state_sparse(32);
                         {
                             nil::crypto3::marshalling::status_type status;
@@ -251,7 +255,9 @@ namespace nil {
                     typename BlueprintFieldType::value_type base7_value = base7;
                     for (std::size_t i = row; i < row + 236; i = i + 5) {
                         typename BlueprintFieldType::integral_type integral_a =
-                            typename BlueprintFieldType::integral_type(message_scheduling_words[(i - row) / 5 + 1].data);
+                            typename BlueprintFieldType::integral_type(
+                                message_scheduling_words[(i - row) / 5 + 1]
+                                    .to_integral());
                         std::vector<bool> a(32);
                         {
                             nil::crypto3::marshalling::status_type status;
@@ -273,7 +279,9 @@ namespace nil {
                                 sparse_sigma0, sigma_sizes, base4);
 
                         typename BlueprintFieldType::integral_type integral_b =
-                            typename BlueprintFieldType::integral_type(message_scheduling_words[(i - row) / 5 + 14].data);
+                            typename BlueprintFieldType::integral_type(
+                                message_scheduling_words[(i - row) / 5 + 14]
+                                    .to_integral());
                         std::vector<bool> b(32);
                         {
                             nil::crypto3::marshalling::status_type status;
@@ -303,14 +311,17 @@ namespace nil {
                             (one << 16) * (sigma1_chunks[0][2] + sigma0_chunks[0][2]) +
                             (one << 24) * (sigma1_chunks[0][3] + sigma0_chunks[0][3]);
                         message_scheduling_words[(i - row) / 5 + 16] =
-                            typename BlueprintFieldType::integral_type(sum.data) %
                             typename BlueprintFieldType::integral_type(
-                                typename BlueprintFieldType::value_type(2).pow(32).data);
+                                sum.to_integral()) %
+                            typename BlueprintFieldType::integral_type(
+                                typename BlueprintFieldType::value_type(2)
+                                    .pow(32)
+                                    .to_integral());
                     }
                     row = row + 240;
                     for (std::size_t i = row; i < row + 512; i = i + 8) {
                         typename BlueprintFieldType::integral_type integral_e =
-                            typename BlueprintFieldType::integral_type(e.data);
+                            typename BlueprintFieldType::integral_type(e.to_integral());
                         std::vector<bool> e_bits(32);
                         {
                             nil::crypto3::marshalling::status_type status;
@@ -325,17 +336,24 @@ namespace nil {
                                 e_bits, e_sizes, base7);
 
                         sparse_values[4] = typename BlueprintFieldType::integral_type(
-                            (e_chunks[1][0] + e_chunks[1][1] * base7_value.pow(e_sizes[0]) +
-                            e_chunks[1][2] * base7_value.pow(e_sizes[0] + e_sizes[1]) +
-                            e_chunks[1][3] * base7_value.pow(e_sizes[0] + e_sizes[1] + e_sizes[2]))
-                                .data);
+                            (e_chunks[1][0] +
+                             e_chunks[1][1] * base7_value.pow(e_sizes[0]) +
+                             e_chunks[1][2] * base7_value.pow(e_sizes[0] + e_sizes[1]) +
+                             e_chunks[1][3] *
+                                 base7_value.pow(e_sizes[0] + e_sizes[1] + e_sizes[2]))
+                                .to_integral());
                         typename BlueprintFieldType::integral_type sparse_Sigma1 =
                             typename BlueprintFieldType::integral_type(
-                                (e_chunks[1][1] * (base7_value.pow(27) + base7_value.pow(13) + 1) +
-                                e_chunks[1][2] * (base7_value.pow(5) + base7_value.pow(18) + 1) +
-                                e_chunks[1][3] * (base7_value.pow(19) + base7_value.pow(14) + 1) +
-                                e_chunks[1][0] * (base7_value.pow(26) + base7_value.pow(21) + base7_value.pow(7)))
-                                    .data);
+                                (e_chunks[1][1] *
+                                     (base7_value.pow(27) + base7_value.pow(13) + 1) +
+                                 e_chunks[1][2] *
+                                     (base7_value.pow(5) + base7_value.pow(18) + 1) +
+                                 e_chunks[1][3] *
+                                     (base7_value.pow(19) + base7_value.pow(14) + 1) +
+                                 e_chunks[1][0] *
+                                     (base7_value.pow(26) + base7_value.pow(21) +
+                                      base7_value.pow(7)))
+                                    .to_integral());
                         std::array<std::vector<typename BlueprintFieldType::integral_type>, 2> Sigma1_chunks =
                             detail::reversed_sparse_and_split<BlueprintFieldType>(
                                 sparse_Sigma1, sigma_sizes, base7);
@@ -359,15 +377,19 @@ namespace nil {
                                                                     message_scheduling_words[(i - row) / 8];
                         typename BlueprintFieldType::value_type sum = tmp1 + d;
                         typename BlueprintFieldType::value_type e_new =
-                            typename BlueprintFieldType::integral_type(sum.data) %
                             typename BlueprintFieldType::integral_type(
-                                typename BlueprintFieldType::value_type(2).pow(32).data);
+                                sum.to_integral()) %
+                            typename BlueprintFieldType::integral_type(
+                                typename BlueprintFieldType::value_type(2)
+                                    .pow(32)
+                                    .to_integral());
 
                         typename BlueprintFieldType::integral_type integral_a2 =
-                            typename BlueprintFieldType::integral_type(e_new.data);
+                            typename BlueprintFieldType::integral_type(
+                                e_new.to_integral());
 
                         typename BlueprintFieldType::integral_type integral_a =
-                            typename BlueprintFieldType::integral_type(a.data);
+                            typename BlueprintFieldType::integral_type(a.to_integral());
                         std::vector<bool> a_bits(32);
                         {
                             nil::crypto3::marshalling::status_type status;
@@ -382,10 +404,12 @@ namespace nil {
                                 a_bits, a_sizes, base4);
 
                         sparse_values[0] = typename BlueprintFieldType::integral_type(
-                            (a_chunks[1][0] + a_chunks[1][1] * base4_value.pow(a_sizes[0]) +
-                            a_chunks[1][2] * base4_value.pow(a_sizes[0] + a_sizes[1]) +
-                            a_chunks[1][3] * base4_value.pow(a_sizes[0] + a_sizes[1] + a_sizes[2]))
-                                .data);
+                            (a_chunks[1][0] +
+                             a_chunks[1][1] * base4_value.pow(a_sizes[0]) +
+                             a_chunks[1][2] * base4_value.pow(a_sizes[0] + a_sizes[1]) +
+                             a_chunks[1][3] *
+                                 base4_value.pow(a_sizes[0] + a_sizes[1] + a_sizes[2]))
+                                .to_integral());
                         typename BlueprintFieldType::integral_type sparse_Sigma0 =
                             (a_chunks[1][0] * ((one << 38) + (1 << 20) + (one << 60)) +
                             a_chunks[1][1] * ((one << 42) + 1 + (1 << 24)) +
@@ -410,12 +434,15 @@ namespace nil {
                                                                         maj_chunks[0][3] * (1 << 24);
                         typename BlueprintFieldType::value_type sum1 = tmp1 + Sigma0 + maj;
                         typename BlueprintFieldType::value_type a_new =
-                            typename BlueprintFieldType::integral_type(sum1.data) %
                             typename BlueprintFieldType::integral_type(
-                                typename BlueprintFieldType::value_type(2).pow(32).data);
+                                sum1.to_integral()) %
+                            typename BlueprintFieldType::integral_type(
+                                typename BlueprintFieldType::value_type(2)
+                                    .pow(32)
+                                    .to_integral());
 
-                        integral_a2 =
-                            typename BlueprintFieldType::integral_type(a_new.data);
+                        integral_a2 = typename BlueprintFieldType::integral_type(
+                            a_new.to_integral());
 
                         h = g;
                         sparse_values[7] = sparse_values[6];
@@ -436,10 +463,14 @@ namespace nil {
                     std::array<typename BlueprintFieldType::value_type, 8> result;
                     row = row + 512;
                     for (std::size_t i = 0; i < 8; i++) {
-                        auto sum = typename BlueprintFieldType::integral_type(input_state[i].data) +
-                                typename BlueprintFieldType::integral_type(output_state[i].data);
+                        auto sum = typename BlueprintFieldType::integral_type(
+                                       input_state[i].to_integral()) +
+                                   typename BlueprintFieldType::integral_type(
+                                       output_state[i].to_integral());
                         result[i] = sum % typename BlueprintFieldType::integral_type(
-                                  typename BlueprintFieldType::value_type(2).pow(32).data);
+                                              typename BlueprintFieldType::value_type(2)
+                                                  .pow(32)
+                                                  .to_integral());
                     }
 
                     return result;
@@ -1389,8 +1420,10 @@ namespace nil {
                 std::array<typename BlueprintFieldType::integral_type, 8> sparse_values {};
                 for (std::size_t i = 0; i < 4; i++) {
                     assignment.witness(component.W(i), row) = input_state[i];
-                    typename BlueprintFieldType::integral_type integral_input_state_sparse =
-                        typename BlueprintFieldType::integral_type(input_state[i].data);
+                    typename BlueprintFieldType::integral_type
+                        integral_input_state_sparse =
+                            typename BlueprintFieldType::integral_type(
+                                input_state[i].to_integral());
                     std::vector<bool> input_state_sparse(32);
                     {
                         nil::crypto3::marshalling::status_type status;
@@ -1411,8 +1444,10 @@ namespace nil {
                 }
                 for (std::size_t i = 4; i < 8; i++) {
                     assignment.witness(component.W(i), row) = input_state[i];
-                    typename BlueprintFieldType::integral_type integral_input_state_sparse =
-                        typename BlueprintFieldType::integral_type(input_state[i].data);
+                    typename BlueprintFieldType::integral_type
+                        integral_input_state_sparse =
+                            typename BlueprintFieldType::integral_type(
+                                input_state[i].to_integral());
                     std::vector<bool> input_state_sparse(32);
                     {
                         nil::crypto3::marshalling::status_type status;
@@ -1440,7 +1475,8 @@ namespace nil {
                     plonk_sha256_process<BlueprintFieldType>::base7;
                 for (std::size_t i = row; i < row + 236; i = i + 5) {
                     typename BlueprintFieldType::integral_type integral_a =
-                        typename BlueprintFieldType::integral_type(message_scheduling_words[(i - row) / 5 + 1].data);
+                        typename BlueprintFieldType::integral_type(
+                            message_scheduling_words[(i - row) / 5 + 1].to_integral());
                     assignment.witness(component.W(0), i) = message_scheduling_words[(i - row) / 5 + 1];
                     std::vector<bool> a(32);
                     {
@@ -1483,7 +1519,8 @@ namespace nil {
                     assignment.witness(component.W(4), i + 2) = sigma0_chunks[0][3];
 
                     typename BlueprintFieldType::integral_type integral_b =
-                        typename BlueprintFieldType::integral_type(message_scheduling_words[(i - row) / 5 + 14].data);
+                        typename BlueprintFieldType::integral_type(
+                            message_scheduling_words[(i - row) / 5 + 14].to_integral());
                     std::vector<bool> b(32);
                     {
                         nil::crypto3::marshalling::status_type status;
@@ -1532,13 +1569,16 @@ namespace nil {
                         (one << 16) * (sigma1_chunks[0][2] + sigma0_chunks[0][2]) +
                         (one << 24) * (sigma1_chunks[0][3] + sigma0_chunks[0][3]);
                     message_scheduling_words[(i - row) / 5 + 16] =
-                        typename BlueprintFieldType::integral_type(sum.data) %
+                        typename BlueprintFieldType::integral_type(sum.to_integral()) %
                         typename BlueprintFieldType::integral_type(
-                            typename BlueprintFieldType::value_type(2).pow(32).data);
+                            typename BlueprintFieldType::value_type(2)
+                                .pow(32)
+                                .to_integral());
                     assignment.witness(component.W(0), i + 2) = message_scheduling_words[(i - row) / 5 + 16];
 
                     typename BlueprintFieldType::integral_type integral_a2 =
-                        typename BlueprintFieldType::integral_type(message_scheduling_words[(i - row) / 5 + 16].data);
+                        typename BlueprintFieldType::integral_type(
+                            message_scheduling_words[(i - row) / 5 + 16].to_integral());
                     assignment.witness(component.W(5), i + 4) = ( ((1 << 14) - 1) & (integral_a2) );
                     assignment.witness(component.W(6), i + 4) = ( ((1 << 14) - 1) & (integral_a2 >> 14) );
                     assignment.witness(component.W(7), i + 4) = ( ((1 << 14) - 1) & (integral_a2 >> 28) );
@@ -1552,7 +1592,7 @@ namespace nil {
                 for (std::size_t i = row; i < row + 512; i = i + 8) {
                     assignment.witness(component.W(0), i) = e;
                     typename BlueprintFieldType::integral_type integral_e =
-                        typename BlueprintFieldType::integral_type(e.data);
+                        typename BlueprintFieldType::integral_type(e.to_integral());
                     std::vector<bool> e_bits(32);
                     {
                         nil::crypto3::marshalling::status_type status;
@@ -1579,17 +1619,22 @@ namespace nil {
                     sparse_values[4] = typename BlueprintFieldType::integral_type(
                         (e_chunks[1][0] + e_chunks[1][1] * base7_value.pow(e_sizes[0]) +
                          e_chunks[1][2] * base7_value.pow(e_sizes[0] + e_sizes[1]) +
-                         e_chunks[1][3] * base7_value.pow(e_sizes[0] + e_sizes[1] + e_sizes[2]))
-                            .data);
+                         e_chunks[1][3] *
+                             base7_value.pow(e_sizes[0] + e_sizes[1] + e_sizes[2]))
+                            .to_integral());
                     assignment.witness(component.W(0), i + 1) = sparse_values[4];
                     assignment.witness(component.W(1), i + 1) = sparse_values[5];
                     typename BlueprintFieldType::integral_type sparse_Sigma1 =
                         typename BlueprintFieldType::integral_type(
-                            (e_chunks[1][1] * (base7_value.pow(27) + base7_value.pow(13) + 1) +
-                             e_chunks[1][2] * (base7_value.pow(5) + base7_value.pow(18) + 1) +
-                             e_chunks[1][3] * (base7_value.pow(19) + base7_value.pow(14) + 1) +
-                             e_chunks[1][0] * (base7_value.pow(26) + base7_value.pow(21) + base7_value.pow(7)))
-                                .data);
+                            (e_chunks[1][1] *
+                                 (base7_value.pow(27) + base7_value.pow(13) + 1) +
+                             e_chunks[1][2] *
+                                 (base7_value.pow(5) + base7_value.pow(18) + 1) +
+                             e_chunks[1][3] *
+                                 (base7_value.pow(19) + base7_value.pow(14) + 1) +
+                             e_chunks[1][0] * (base7_value.pow(26) + base7_value.pow(21) +
+                                               base7_value.pow(7)))
+                                .to_integral());
                     std::array<std::vector<typename BlueprintFieldType::integral_type>, 2> Sigma1_chunks =
                         detail::reversed_sparse_and_split<BlueprintFieldType>(
                             sparse_Sigma1, sigma_sizes,
@@ -1635,24 +1680,29 @@ namespace nil {
                                                                    message_scheduling_words[(i - row) / 8];
                     typename BlueprintFieldType::value_type sum = tmp1 + d;
                     typename BlueprintFieldType::value_type e_new =
-                        typename BlueprintFieldType::integral_type(sum.data) %
+                        typename BlueprintFieldType::integral_type(sum.to_integral()) %
                         typename BlueprintFieldType::integral_type(
-                            typename BlueprintFieldType::value_type(2).pow(32).data);
+                            typename BlueprintFieldType::value_type(2)
+                                .pow(32)
+                                .to_integral());
                     assignment.witness(component.W(4), i + 4) = tmp1;
                     assignment.witness(component.W(4), i + 3) = e_new;
                     assignment.witness(component.W(4), i + 2) =
                         (sum - e_new) * typename BlueprintFieldType::integral_type(
-                                            typename BlueprintFieldType::value_type(2).pow(32).inversed().data);
+                                            typename BlueprintFieldType::value_type(2)
+                                                .pow(32)
+                                                .inversed()
+                                                .to_integral());
 
                     typename BlueprintFieldType::integral_type integral_a2 =
-                        typename BlueprintFieldType::integral_type(e_new.data);
+                        typename BlueprintFieldType::integral_type(e_new.to_integral());
                     assignment.witness(component.W(6), i + 1) = ( ((1 << 14) - 1) & (integral_a2) );
                     assignment.witness(component.W(7), i + 1) = ( ((1 << 14) - 1) & (integral_a2 >> 14) );
                     assignment.witness(component.W(8), i + 1) = ( ((1 << 14) - 1) & (integral_a2 >> 28) );
 
                     assignment.witness(component.W(0), i + 7) = a;
                     typename BlueprintFieldType::integral_type integral_a =
-                        typename BlueprintFieldType::integral_type(a.data);
+                        typename BlueprintFieldType::integral_type(a.to_integral());
                     std::vector<bool> a_bits(32);
                     {
                         nil::crypto3::marshalling::status_type status;
@@ -1679,8 +1729,9 @@ namespace nil {
                     sparse_values[0] = typename BlueprintFieldType::integral_type(
                         (a_chunks[1][0] + a_chunks[1][1] * base4_value.pow(a_sizes[0]) +
                          a_chunks[1][2] * base4_value.pow(a_sizes[0] + a_sizes[1]) +
-                         a_chunks[1][3] * base4_value.pow(a_sizes[0] + a_sizes[1] + a_sizes[2]))
-                            .data);
+                         a_chunks[1][3] *
+                             base4_value.pow(a_sizes[0] + a_sizes[1] + a_sizes[2]))
+                            .to_integral());
                     assignment.witness(component.W(0), i + 5) = sparse_values[0];
                     assignment.witness(component.W(1), i + 5) = sparse_values[1];
                     typename BlueprintFieldType::integral_type sparse_Sigma0 =
@@ -1726,15 +1777,17 @@ namespace nil {
                     assignment.witness(component.W(4), i + 5) = sparse_values[2];
                     typename BlueprintFieldType::value_type sum1 = tmp1 + Sigma0 + maj;
                     typename BlueprintFieldType::value_type a_new =
-                        typename BlueprintFieldType::integral_type(sum1.data) %
+                        typename BlueprintFieldType::integral_type(sum1.to_integral()) %
                         typename BlueprintFieldType::integral_type(
-                            typename BlueprintFieldType::value_type(2).pow(32).data);
+                            typename BlueprintFieldType::value_type(2)
+                                .pow(32)
+                                .to_integral());
                     assignment.witness(component.W(2), i + 5) = a_new;
                     assignment.witness(component.W(3), i + 5) =
                         (sum1 - a_new) * typename BlueprintFieldType::value_type(2).pow(32).inversed();
 
                     integral_a2 =
-                        typename BlueprintFieldType::integral_type(a_new.data);
+                        typename BlueprintFieldType::integral_type(a_new.to_integral());
                     assignment.witness(component.W(6), i + 7) = ( ((1 << 14) - 1) & (integral_a2) );
                     assignment.witness(component.W(7), i + 7) = ( ((1 << 14) - 1) & (integral_a2 >> 14) );
                     assignment.witness(component.W(8), i + 7) = ( ((1 << 14) - 1) & (integral_a2 >> 28) );
@@ -1758,44 +1811,62 @@ namespace nil {
                 row = row + 512;
                 for (std::size_t i = 0; i < 4; i++) {
                     assignment.witness(component.W(i), row) = input_state[i];
-                    auto sum = typename BlueprintFieldType::integral_type(input_state[i].data) +
-                               typename BlueprintFieldType::integral_type(output_state[i].data);
+                    auto sum = typename BlueprintFieldType::integral_type(
+                                   input_state[i].to_integral()) +
+                               typename BlueprintFieldType::integral_type(
+                                   output_state[i].to_integral());
                     assignment.witness(component.W(i), row + 1) =
                         sum % typename BlueprintFieldType::integral_type(
-                                  typename BlueprintFieldType::value_type(2).pow(32).data);
+                                  typename BlueprintFieldType::value_type(2)
+                                      .pow(32)
+                                      .to_integral());
                     assignment.witness(component.W(i + 4), row) = output_state[i];
                     assignment.witness(component.W(i + 4), row + 1) =
                         (sum - sum % typename BlueprintFieldType::integral_type(
-                                         typename BlueprintFieldType::value_type(2).pow(32).data)) /
+                                         typename BlueprintFieldType::value_type(2)
+                                             .pow(32)
+                                             .to_integral())) /
                         typename BlueprintFieldType::integral_type(
-                            typename BlueprintFieldType::value_type(2).pow(32).data);
+                            typename BlueprintFieldType::value_type(2)
+                                .pow(32)
+                                .to_integral());
                 }
                 row = row + 2;
                 for (std::size_t i = 0; i < 4; i++) {
                     assignment.witness(component.W(i), row) = input_state[i + 4];
-                    auto sum = typename BlueprintFieldType::integral_type(input_state[i + 4].data) +
-                               typename BlueprintFieldType::integral_type(output_state[i + 4].data);
+                    auto sum = typename BlueprintFieldType::integral_type(
+                                   input_state[i + 4].to_integral()) +
+                               typename BlueprintFieldType::integral_type(
+                                   output_state[i + 4].to_integral());
                     assignment.witness(component.W(i), row + 1) =
                         sum % typename BlueprintFieldType::integral_type(
-                                  typename BlueprintFieldType::value_type(2).pow(32).data);
+                                  typename BlueprintFieldType::value_type(2)
+                                      .pow(32)
+                                      .to_integral());
                     assignment.witness(component.W(i + 4), row) = output_state[i + 4];
                     assignment.witness(component.W(i + 4), row + 1) =
                         (sum - sum % typename BlueprintFieldType::integral_type(
-                                         typename BlueprintFieldType::value_type(2).pow(32).data)) /
+                                         typename BlueprintFieldType::value_type(2)
+                                             .pow(32)
+                                             .to_integral())) /
                         typename BlueprintFieldType::integral_type(
-                            typename BlueprintFieldType::value_type(2).pow(32).data);
+                            typename BlueprintFieldType::value_type(2)
+                                .pow(32)
+                                .to_integral());
                 }
 
                 row = row + 2;
                 typename BlueprintFieldType::integral_type integral_a2;
                 for (std::size_t i = 0; i < 4; i++) {
-                    integral_a2 = typename BlueprintFieldType::integral_type(output_state[2 * i].data);
+                    integral_a2 = typename BlueprintFieldType::integral_type(
+                        output_state[2 * i].to_integral());
                     assignment.witness(component.W(0), row + i) = ( ((1 << 14) - 1) & (integral_a2) );
                     assignment.witness(component.W(1), row + i) = ( ((1 << 14) - 1) & (integral_a2 >> 14) );
                     assignment.witness(component.W(2), row + i) = ( ((1 << 14) - 1) & (integral_a2 >> 28) );
                     assignment.witness(component.W(3), row + i) = integral_a2;
 
-                    integral_a2 = typename BlueprintFieldType::integral_type(output_state[2 * i + 1].data);
+                    integral_a2 = typename BlueprintFieldType::integral_type(
+                        output_state[2 * i + 1].to_integral());
                     assignment.witness(component.W(4), row + i) = ( ((1 << 14) - 1) & (integral_a2) );
                     assignment.witness(component.W(5), row + i) = ( ((1 << 14) - 1) & (integral_a2 >> 14) );
                     assignment.witness(component.W(6), row + i) = ( ((1 << 14) - 1) & (integral_a2 >> 28) );

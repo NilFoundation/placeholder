@@ -202,14 +202,14 @@ namespace nil {
 
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
                         // caluclate first row carries
-                        auto first_row_carries =first_carryless.data.base()>>128;
-                        value_type c_1 = 
-                            static_cast<value_type>(first_row_carries & (two_64 - 1).data.base());
+                        auto first_row_carries = first_carryless.to_integral() >> 128;
+                        value_type c_1 = static_cast<value_type>(
+                            first_row_carries & (two_64 - 1).to_integral());
                         c_2 = static_cast<value_type>(first_row_carries >> 64);
                         c_1_chunks = chunk_64_to_16<FieldType>(c_1);
                         // no need for c_2 chunks as there is only a single chunk
                         auto second_row_carries =
-                            (second_carryless + c_1 + c_2 * two_64).data.base() >> 128;
+                            (second_carryless + c_1 + c_2 * two_64).to_integral() >> 128;
                         c_3 = static_cast<value_type>(second_row_carries);
                         std::vector<value_type> c_3_chunks = chunk_64_to_16<FieldType>(c_3);
                         value_type N_sum =
@@ -219,7 +219,7 @@ namespace nil {
                         // value_type
                         c_1_64 = chunk_sum_64<TYPE>(c_1_chunks, 0);
 
-                        auto third_row_carries = third_carryless.data.base() >> 128;
+                        auto third_row_carries = third_carryless.to_integral() >> 128;
 
                         carry[0][0] = 0;
                         carry[1][0] = 0;
