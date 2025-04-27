@@ -310,6 +310,22 @@ namespace nil::crypto3::algebra::fields::detail {
             }
             return result;
         }
+
+        friend std::ostream &operator<<(std::ostream &os, const element_fpn &elem) {
+            os << '[';
+            bool first = true;
+            for (const auto &c : elem.data) {
+                if (!first) {
+                    os << ", ";
+                }
+                os << c;
+                first = false;
+            }
+            os << ']';
+            return os;
+        }
+
+        friend std::hash<element_fpn>;
     };
 
     template<BinomialFieldExtensionParams Params>
@@ -341,23 +357,10 @@ namespace nil::crypto3::algebra::fields::detail {
         return element_fpn_details::one_instance<Params>;
     }
 
-    template<BinomialFieldExtensionParams Params>
-    std::ostream &operator<<(std::ostream &os, const element_fpn<Params> &elem) {
-        os << '[';
-        bool first = true;
-        for (const auto &c : elem.data) {
-            if (!first) {
-                os << ", ";
-            }
-            os << c;
-            first = false;
-        }
-        os << ']';
-        return os;
-    }
-
-    static_assert(is_field_element<element_fpn<BinomialFieldExtensionParamsArchetype>>::value);
-    static_assert(is_extended_field_element<element_fpn<BinomialFieldExtensionParamsArchetype>>::value);
+    static_assert(
+        is_field_element<element_fpn<BinomialFieldExtensionParamsArchetype>>::value);
+    static_assert(is_extended_field_element<
+                  element_fpn<BinomialFieldExtensionParamsArchetype>>::value);
 }  // namespace nil::crypto3::algebra::fields::detail
 
 template<nil::crypto3::algebra::fields::detail::BinomialFieldExtensionParams Params>
