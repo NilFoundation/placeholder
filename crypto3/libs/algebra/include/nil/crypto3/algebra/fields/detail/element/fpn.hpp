@@ -96,10 +96,12 @@ namespace nil::crypto3::algebra::fields::detail {
         using base_field_type = typename Params::base_field_type;
         using underlying_type = typename Params::base_field_type::value_type;
         constexpr static std::size_t dimension = Params::dimension;
-        using data_type = std::array<underlying_type, dimension>;
 
+      private:
+        using data_type = std::array<underlying_type, dimension>;
         data_type data;
 
+      public:
         constexpr element_fpn() : element_fpn(underlying_type::zero()) {}
 
         constexpr element_fpn(const data_type &in_data) : data(in_data) {}

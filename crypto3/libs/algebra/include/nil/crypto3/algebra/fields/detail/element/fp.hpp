@@ -47,7 +47,7 @@ namespace nil {
                     class element_fp {
                         typedef FieldParams policy_type;
 
-                    public:
+                      public:
                         typedef typename policy_type::field_type field_type;
 
                         typedef typename policy_type::modular_type modular_type;
@@ -55,9 +55,11 @@ namespace nil {
 
                         constexpr static const integral_type modulus = policy_type::modulus;
 
+                      private:
                         using data_type = modular_type;
                         data_type data;
 
+                      public:
                         constexpr element_fp() = default;
 
                         constexpr element_fp(const data_type &data) : data(data) {}
