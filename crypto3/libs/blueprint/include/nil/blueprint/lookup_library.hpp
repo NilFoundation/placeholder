@@ -158,7 +158,7 @@ namespace nil {
                 typename BlueprintFieldType::value_type to_sparse(typename BlueprintFieldType::value_type value) {
                     using value_type = typename BlueprintFieldType::value_type;
                     using integral_type = typename BlueprintFieldType::integral_type;
-                    integral_type value_integral = integral_type(value.data);
+                    integral_type value_integral = value.to_integral();
                     integral_type result_integral = 0;
                     integral_type power = 1;
                     for (int i = 0; i < 64; ++i) {
@@ -365,7 +365,7 @@ namespace nil {
                 typename BlueprintFieldType::value_type to_sparse(typename BlueprintFieldType::value_type value) {
                     using value_type = typename BlueprintFieldType::value_type;
                     using integral_type = typename BlueprintFieldType::integral_type;
-                    integral_type value_integral = integral_type(value.data);
+                    integral_type value_integral = integral_type(value.to_integral());
                     integral_type result_integral = 0;
                     integral_type power = 1;
                     for (int i = 0; i < 64; ++i) {
@@ -403,7 +403,7 @@ namespace nil {
                 typename BlueprintFieldType::value_type to_sparse(typename BlueprintFieldType::value_type value) {
                     using value_type = typename BlueprintFieldType::value_type;
                     using integral_type = typename BlueprintFieldType::integral_type;
-                    integral_type value_integral = integral_type(value.data);
+                    integral_type value_integral = value.to_integral();
                     integral_type result_integral = 0;
                     integral_type power = 1;
                     for (int i = 0; i < 64; ++i) {

@@ -86,7 +86,8 @@ void test(std::vector<typename BlueprintFieldType::value_type> &public_input,
 
     auto result_check = [expected_res](AssignmentType &assignment, typename component_type::result_type &real_res) {
         for (std::size_t i = 0; i < 3; i++) {
-            std::cout << "F_" << i << ": " << std::hex << var_value(assignment, real_res.output[i]).data << std::endl;
+            std::cout << "F_" << i << ": " << std::hex
+                      << var_value(assignment, real_res.output[i]) << std::endl;
         }
         for (std::size_t i = 0; i < 3; i++) {
             assert(var_value(assignment, real_res.output[i]) == expected_res[i]);

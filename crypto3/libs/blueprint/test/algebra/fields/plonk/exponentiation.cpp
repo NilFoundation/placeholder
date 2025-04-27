@@ -70,17 +70,19 @@ void test_exponentiation(std::vector<typename FieldType::value_type> public_inpu
     typename component_type::input_type instance_input = {base, exponent};
 
     typename BlueprintFieldType::value_type base_value = public_input[0];
-    typename BlueprintFieldType::integral_type exponent_value_integral = typename BlueprintFieldType::integral_type(public_input[1].data);
+    typename BlueprintFieldType::integral_type exponent_value_integral =
+        typename BlueprintFieldType::integral_type(public_input[1].to_integral());
     typename BlueprintFieldType::value_type expected_res = power(base_value, exponent_value_integral);
 
     auto result_check = [&expected_res, public_input](AssignmentType &assignment,
 	    typename component_type::result_type &real_res) {
             #ifdef BLUEPRINT_PLONK_PROFILING_ENABLED
             std::cout << "exponentiation test: " << "\n";
-            std::cout << "input   : " << public_input[0].data << " " << public_input[1].data << "\n";
-            std::cout << "expected: " << expected_res.data    << "\n";
-            std::cout << "real    : " << var_value(assignment, real_res.output).data << "\n\n";
-            #endif
+            std::cout << "input   : " << public_input[0] << " " << public_input[1]
+                      << "\n";
+            std::cout << "expected: " << expected_res << "\n";
+            std::cout << "real    : " << var_value(assignment, real_res.output) << "\n\n";
+#endif
             assert(expected_res == var_value(assignment, real_res.output));
     };
 

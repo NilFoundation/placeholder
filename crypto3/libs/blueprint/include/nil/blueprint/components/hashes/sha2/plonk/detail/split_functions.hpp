@@ -74,8 +74,8 @@ namespace nil {
                     using value_type = typename BlueprintFieldType::value_type;
                     static std::map<std::pair<std::size_t, std::size_t>, integral_type> cache;
                     const auto pair = std::make_pair(base, k);
-                    if (cache.find(pair) == cache.end()) {  [[unlikely]]
-                        cache[pair] = integral_type(value_type(base).pow(k).data);
+                    if (cache.find(pair) == cache.end()) {
+                        [[unlikely]] cache[pair] = value_type(base).pow(k).to_integral();
                     }
                     return cache[pair];
                 }

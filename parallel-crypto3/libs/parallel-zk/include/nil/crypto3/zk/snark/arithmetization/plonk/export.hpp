@@ -68,11 +68,10 @@ namespace nil {
                             for (auto [lower_witness, upper_witness] : witnesses) {
                                 for (std::uint32_t j = lower_witness; j <= upper_witness; j++) {
                                     out << std::setw(width)
-                                    << (i < table.witness_column_size(j) ?
-                                            table.witness(j)[i] :
-                                            0)
-                                            .data
-                                    << " ";
+                                        << (i < table.witness_column_size(j)
+                                                ? table.witness(j)[i]
+                                                : 0)
+                                        << " ";
                                 }
                             }
                             out << "| ";
@@ -80,11 +79,10 @@ namespace nil {
                             for (auto [lower_public_input, upper_public_input] : public_inputs) {
                                 for (std::uint32_t j = lower_public_input; j <= upper_public_input; j++) {
                                     out << std::setw(width)
-                                    << (i < table.public_input_column_size(j) ?
-                                            table.public_input(j)[i] :
-                                            0)
-                                            .data
-                                    << " ";
+                                        << (i < table.public_input_column_size(j)
+                                                ? table.public_input(j)[i]
+                                                : 0)
+                                        << " ";
                                 }
                             }
                             out << "| ";
@@ -92,11 +90,10 @@ namespace nil {
                             for (auto [lower_constant, upper_constant] : constants) {
                                 for (std::uint32_t j = lower_constant; j <= upper_constant; j++) {
                                     out << std::setw(width)
-                                    << (i < table.constant_column_size(j) ?
-                                            table.constant(j)[i] :
-                                            0)
-                                            .data
-                                    << " ";
+                                        << (i < table.constant_column_size(j)
+                                                ? table.constant(j)[i]
+                                                : 0)
+                                        << " ";
                                 }
                             }
                             out << "| ";
@@ -104,11 +101,10 @@ namespace nil {
                             for (auto [lower_selector, upper_selector] : selectors) {
                                 // Selectors only need a single bit, so we do not renew the size here
                                 for (std::uint32_t j = lower_selector; j <= upper_selector; j++) {
-                                    out << (i < table.selector_column_size(j) ?
-                                            table.selector(j)[i] :
-                                            0)
-                                            .data
-                                    << " ";
+                                    out << (i < table.selector_column_size(j)
+                                                ? table.selector(j)[i]
+                                                : 0)
+                                        << " ";
                                 }
                             }
                             out << "\n";

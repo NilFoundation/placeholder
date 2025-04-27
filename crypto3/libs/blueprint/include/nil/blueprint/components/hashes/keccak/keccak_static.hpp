@@ -674,18 +674,20 @@ namespace nil {
                 for (int i = 0; i < component.num_round_calls; i++) {
                     for (int j = 0; j < 24; j++) {
                         // if (i + j != 0) {
-                        //     std::cout << "prev: " << prev_row << " vs curr" << cur_row << std::endl;
-                        //     for (int k = 0; k < 5; k++) {
-                        //         auto ind1 = (j == 1) ? rotate_rows_tf[k] : rotate_rows_ff[k];
-                        //         auto ind2 = rotate_rows_ff[k];
+                        //     std::cout << "prev: " << prev_row << " vs curr" << cur_row
+                        //     << std::endl; for (int k = 0; k < 5; k++) {
+                        //         auto ind1 = (j == 1) ? rotate_rows_tf[k] :
+                        //         rotate_rows_ff[k]; auto ind2 = rotate_rows_ff[k];
                         //         std::cout << ind1 << " , " << ind2 << std::endl;
                         //         std::cout
-                        //             << var_value(assignment, var(component.C(0), prev_row + ind1, false)).data <<
-                        //             "  vs  "
-                        //             << var_value(assignment, var(component.C(0), cur_row + ind2, false)).data <<
-                        //             std::endl;
-                        //         bp.add_copy_constraint({var(component.C(0), prev_row + ind1, false),
-                        //                                 var(component.C(0), cur_row + ind2, false)});
+                        //             << var_value(assignment, var(component.C(0),
+                        //             prev_row + ind1, false)) << "  vs  "
+                        //             << var_value(assignment, var(component.C(0),
+                        //             cur_row + ind2, false)) << std::endl;
+                        //         bp.add_copy_constraint({var(component.C(0), prev_row +
+                        //         ind1, false),
+                        //                                 var(component.C(0), cur_row +
+                        //                                 ind2, false)});
                         //     }
                         //     prev_row = cur_row;
                         // }
@@ -872,7 +874,7 @@ namespace nil {
                 std::vector<var> sparse_padded_message_coords(padded_message.size());
                 for (std::size_t index = 0; index < padded_message.size(); ++index) {
                     value_type regular_value = var_value(assignment, padded_message[index]);
-                    integral_type regular = integral_type(regular_value.data);
+                    integral_type regular = integral_type(regular_value.to_integral());
                     // std::cout << "pad elem: " << regular << std::endl;
                     auto sparse = integral_type(0);
                     auto chunk_size = component.pack_chunk_size;
@@ -886,9 +888,13 @@ namespace nil {
                         integral_chunks.push_back(regular & mask);
                         regular >>= chunk_size;
                         auto packed = pack<BlueprintFieldType>(value_type(integral_chunks.back()));
-                        integral_sparse_chunks.push_back(integral_type(packed.data));
-//                        std::cout << "chunks: " << std::hex <<  integral_chunks.back() << " " << integral_sparse_chunks.back() << std::dec
-//                                   << std::endl;
+                        integral_sparse_chunks.push_back(
+                            integral_type(packed.to_integral()));
+                        //                        std::cout << "chunks: " << std::hex <<
+                        //                        integral_chunks.back() << " " <<
+                        //                        integral_sparse_chunks.back() <<
+                        //                        std::dec
+                        //                                   << std::endl;
                     }
                     for (std::size_t j = 0; j < num_chunks; ++j) {
                         sparse = sparse + power * integral_sparse_chunks[num_chunks - j - 1];
@@ -931,10 +937,12 @@ namespace nil {
                     std::copy(sparse_padded_message_coords.begin() + offset,
                               sparse_padded_message_coords.begin() + offset + 17, pmc.begin());
 
-                    //for (auto &el : pmc) {
-                    //    std::cout << component.unpack(integral_type(var_value(assignment, el).data)) << ",";
-                    //}
-                    //std::cout << std::endl;
+                    // for (auto &el : pmc) {
+                    //     std::cout <<
+                    //     component.unpack(integral_type(var_value(assignment,
+                    //     el).to_integral())) << ",";
+                    // }
+                    // std::cout << std::endl;
 
                     for (std::size_t j = 0; j < 24; ++j) {
                         typename round_type::input_type round_input = {
@@ -964,8 +972,9 @@ namespace nil {
                 for (std::size_t index = 0; index < 4; ++index) {
                     value_type sparse_value = var_value(assignment, inner_state[index]);
                     std::cout << "Sparse round output variable = " << inner_state[index] << " = " << std::hex << sparse_value << std::dec << std::endl;
-                    integral_type sparse = integral_type(sparse_value.data);
-                    integral_type regular(unpack<BlueprintFieldType>(sparse).data);
+                    integral_type sparse = integral_type(sparse_value.to_integral());
+                    integral_type regular(
+                        unpack<BlueprintFieldType>(sparse).to_integral());
                     // std::cout << "from sparse: " << sparse << " to regular " << regular << std::endl;
                     auto chunk_size = component.pack_chunk_size * 3;
                     auto num_chunks = component.pack_num_chunks;
@@ -976,7 +985,8 @@ namespace nil {
                         integral_chunks.push_back(sparse & mask);
                         sparse >>= chunk_size;
                         auto unpacked = unpack<BlueprintFieldType>(integral_chunks.back());
-                        integral_sparse_chunks.push_back(integral_type(unpacked.data));
+                        integral_sparse_chunks.push_back(
+                            integral_type(unpacked.to_integral()));
                     }
 
                     sparse_padded_message[index] = value_type(regular);

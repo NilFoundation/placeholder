@@ -53,7 +53,7 @@ template<typename BlueprintFieldType>
 std::size_t number_bits(typename BlueprintFieldType::value_type value) {
     using integral_type = typename BlueprintFieldType::integral_type;
 
-    integral_type integral_value = integral_type(value.data);
+    integral_type integral_value = integral_type(value.to_integral());
     std::size_t result = 0;
     while (integral_value > 0) {
         integral_value >>= 1;
@@ -73,11 +73,12 @@ std::vector<typename BlueprintFieldType::value_type>
     std::size_t shift = 64 * message.size() - num_bits;
 
     if (shift > 0) {
-        integral_type relay_value = integral_type(message[0].data);
+        integral_type relay_value = integral_type(message[0].to_integral());
         for (int i = 1; i < message.size(); ++i) {
             integral_type mask = (integral_type(1) << (64 - shift)) - 1;
-            integral_type left_part = integral_type(message[i].data.base() >> (64 - shift));
-            integral_type right_part = integral_type(message[i].data) & mask;
+            integral_type left_part =
+                integral_type(message[i].to_integral() >> (64 - shift));
+            integral_type right_part = integral_type(message[i].to_integral()) & mask;
             result.push_back(value_type((relay_value << shift) + left_part));
             relay_value = right_part;
         }

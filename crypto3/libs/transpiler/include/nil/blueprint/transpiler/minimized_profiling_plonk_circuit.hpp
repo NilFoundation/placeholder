@@ -412,7 +412,8 @@ namespace nil {
                     if(it->get_coeff().is_one())
                         res << generate_term(profiling_params, it->get_vars(), columns_rotations, true);
                     else {
-                        res << "\t\t\tterms:=0x" << std::hex << it->get_coeff().data << std::dec << std::endl;
+                        res << "\t\t\tterms:=0x" << std::hex << it->get_coeff()
+                            << std::dec << std::endl;
                         res << generate_term(profiling_params, it->get_vars(), columns_rotations, false);
                     }
                     res << "\t\t\tmstore("

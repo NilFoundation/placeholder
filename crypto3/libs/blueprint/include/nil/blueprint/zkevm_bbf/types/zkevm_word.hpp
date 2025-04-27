@@ -79,7 +79,7 @@ namespace nil {
             constexpr const std::size_t chunk_size = 16;
             constexpr const std::size_t num_chunks = 4;
             constexpr const integral_type mask = (integral_type(1) << chunk_size) - 1;
-            integral_type value_copy = integral_type(value.data);
+            integral_type value_copy = value.to_integral();
             for (std::size_t i = 0; i < num_chunks; ++i) {
                 chunks.push_back(static_cast<value_type>(value_copy & mask));
                 value_copy >>= chunk_size;

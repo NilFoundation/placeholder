@@ -242,78 +242,85 @@ namespace nil {
 
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
                          // caluclate first row carries
-                        auto first_row_carries = first_carryless.data.base() >> 128;
-                        value_type c_1 =
-                            static_cast<value_type>(first_row_carries & (two_64 - 1).data.base());
-                        c_2 = static_cast<value_type>(first_row_carries >> 64);
-                        c_1_chunks = chunk_64_to_16<FieldType>(c_1);
-                        // no need for c_2 chunks as there is only a single chunk
-                        auto second_row_carries =
-                            (second_carryless + c_1 + c_2 * two_64).data.base() >> 128;
+                         auto first_row_carries = first_carryless.to_integral() >> 128;
+                         value_type c_1 = static_cast<value_type>(
+                             first_row_carries & (two_64 - 1).to_integral());
+                         c_2 = static_cast<value_type>(first_row_carries >> 64);
+                         c_1_chunks = chunk_64_to_16<FieldType>(c_1);
+                         // no need for c_2 chunks as there is only a single chunk
+                         auto second_row_carries =
+                             (second_carryless + c_1 + c_2 * two_64).to_integral() >> 128;
 
-                        // value_type
-                        c_1_64 = chunk_sum_64<TYPE>(c_1_chunks, 0);
+                         // value_type
+                         c_1_64 = chunk_sum_64<TYPE>(c_1_chunks, 0);
 
-                        auto third_row_carries = third_carryless.data.base() >> 128;
+                         auto third_row_carries = third_carryless.to_integral() >> 128;
 
-                        b_sum = std::accumulate(b_chunks.begin(), b_chunks.end(), value_type(0));
-                        a_sum = std::accumulate(a_chunks.begin(), a_chunks.end(), value_type(0)) -
-                                16 * 65535;
-                        q_sum = std::accumulate(q_chunks.begin(), q_chunks.end(), value_type(0));
-                        b_input_sum = std::accumulate(b_input_chunks.begin(), b_input_chunks.end(),
-                                                      value_type(0));
-                        b_lower_sum =
-                            b_input_sum -
-                            b_input_chunks[chunk_amount - 1];  // all chunks except the last
-                        b2 = b_input_chunks[chunk_amount - 1] - two_15;
+                         b_sum = std::accumulate(b_chunks.begin(), b_chunks.end(),
+                                                 value_type(0));
+                         a_sum = std::accumulate(a_chunks.begin(), a_chunks.end(),
+                                                 value_type(0)) -
+                                 16 * 65535;
+                         q_sum = std::accumulate(q_chunks.begin(), q_chunks.end(),
+                                                 value_type(0));
+                         b_input_sum = std::accumulate(
+                             b_input_chunks.begin(), b_input_chunks.end(), value_type(0));
+                         b_lower_sum = b_input_sum -
+                                       b_input_chunks[chunk_amount -
+                                                      1];  // all chunks except the last
+                         b2 = b_input_chunks[chunk_amount - 1] - two_15;
 
-                        bool a_indicator = a_sum == 0;
-                        bool b_indicator = b_lower_sum == 0;
-                        bool b2_indicator = b2 == 0;
-                        // a_ind and b_ind needs to be 1 when overflow is 1
-                        a_ind = a_indicator;
-                        b_ind = b_indicator;
-                        b2_ind = b2_indicator;
-                        b_lower_sum_inverse = b_indicator ? 0 : b_lower_sum.inversed();
-                        b_sum_inverse = b_sum == 0 ? 0 : b_sum.inversed();
-                        b2_inverse = b2 == 0 ? 0 : b2.inversed();
-                        a_sum_inverse = a_indicator ? 0 : a_sum.inversed();
+                         bool a_indicator = a_sum == 0;
+                         bool b_indicator = b_lower_sum == 0;
+                         bool b2_indicator = b2 == 0;
+                         // a_ind and b_ind needs to be 1 when overflow is 1
+                         a_ind = a_indicator;
+                         b_ind = b_indicator;
+                         b2_ind = b2_indicator;
+                         b_lower_sum_inverse = b_indicator ? 0 : b_lower_sum.inversed();
+                         b_sum_inverse = b_sum == 0 ? 0 : b_sum.inversed();
+                         b2_inverse = b2 == 0 ? 0 : b2.inversed();
+                         a_sum_inverse = a_indicator ? 0 : a_sum.inversed();
 
-                        b_zero = 1 - b_sum_inverse * b_sum;
-                        b_nonzero = b_sum_inverse * b_sum;
+                         b_zero = 1 - b_sum_inverse * b_sum;
+                         b_nonzero = b_sum_inverse * b_sum;
 
-                        // compute signs of a,b and q
-                        // x + 2^15 = x_aux + 2^16*x_neg
-                        biggest_a_chunk = a >> (256 - 16);
-                        biggest_b_chunk = b >> (256 - 16);
-                        biggest_q_chunk = q >> (256 - 16);
+                         // compute signs of a,b and q
+                         // x + 2^15 = x_aux + 2^16*x_neg
+                         biggest_a_chunk = a >> (256 - 16);
+                         biggest_b_chunk = b >> (256 - 16);
+                         biggest_q_chunk = q >> (256 - 16);
 
-                        a_aux = (biggest_a_chunk > two_15 - 1) ? (biggest_a_chunk - two_15)
-                                                               : biggest_a_chunk + two_15;
-                        a_neg = (biggest_a_chunk > two_15 - 1);
-                        a_top = a_aux + two_16 * a_neg - two_15;
+                         a_aux = (biggest_a_chunk > two_15 - 1)
+                                     ? (biggest_a_chunk - two_15)
+                                     : biggest_a_chunk + two_15;
+                         a_neg = (biggest_a_chunk > two_15 - 1);
+                         a_top = a_aux + two_16 * a_neg - two_15;
 
-                        b_aux = (biggest_b_chunk > two_15 - 1) ? (biggest_b_chunk - two_15)
-                                                               : biggest_b_chunk + two_15;
-                        b_neg = (biggest_b_chunk > two_15 - 1);
-                        b_top = b_aux + two_16 * b_neg - two_15;
+                         b_aux = (biggest_b_chunk > two_15 - 1)
+                                     ? (biggest_b_chunk - two_15)
+                                     : biggest_b_chunk + two_15;
+                         b_neg = (biggest_b_chunk > two_15 - 1);
+                         b_top = b_aux + two_16 * b_neg - two_15;
 
-                        q_aux = (biggest_q_chunk > two_15 - 1) ? (biggest_q_chunk - two_15)
-                                                               : biggest_q_chunk + two_15;
-                        q_neg = (biggest_q_chunk > two_15 - 1);
-                        q_top = q_aux + two_16 * q_neg - two_15;
+                         q_aux = (biggest_q_chunk > two_15 - 1)
+                                     ? (biggest_q_chunk - two_15)
+                                     : biggest_q_chunk + two_15;
+                         q_neg = (biggest_q_chunk > two_15 - 1);
+                         q_top = q_aux + two_16 * q_neg - two_15;
 
-                        carry[0][0] = 0;
-                        carry[1][0] = 0;
-                        carry[2][0] = 0;
-                        // b + |b| = 2^256 carries
-                        for (std::size_t i = 0; i < carry_amount - 1; i++) {
-                            carry[0][i + 1] =
-                                (carry[0][i] + b_chunks[3 * i] + b_abs_chunks[3 * i] +
-                                 (b_chunks[3 * i + 1] + b_abs_chunks[3 * i + 1]) * two_16 +
-                                 (b_chunks[3 * i + 2] + b_abs_chunks[3 * i + 2]) * two_32) >=
-                                two_48;
-                        }
+                         carry[0][0] = 0;
+                         carry[1][0] = 0;
+                         carry[2][0] = 0;
+                         // b + |b| = 2^256 carries
+                         for (std::size_t i = 0; i < carry_amount - 1; i++) {
+                             carry[0][i + 1] =
+                                 (carry[0][i] + b_chunks[3 * i] + b_abs_chunks[3 * i] +
+                                  (b_chunks[3 * i + 1] + b_abs_chunks[3 * i + 1]) *
+                                      two_16 +
+                                  (b_chunks[3 * i + 2] + b_abs_chunks[3 * i + 2]) *
+                                      two_32) >= two_48;
+                         }
                         // The last carry, if b + |b| is ever needed, should be 1 anyway, so we
                         // don't store it
 

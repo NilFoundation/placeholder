@@ -103,10 +103,11 @@ void test_dfri_linear_check(const std::vector<typename BlueprintFieldType::value
 
     typename component_type::input_type instance_input = {theta, x, xi, y, z};
 
-
-    auto result_check = [&expected_res](AssignmentType &assignment, typename component_type::result_type &real_res) {
-        // std::cout << "expected: " << expected_res.data << std::endl;
-        // std::cout << "real res: " << var_value(assignment, real_res.output).data << std::endl;
+    auto result_check = [&expected_res](AssignmentType &assignment,
+                                        typename component_type::result_type &real_res) {
+        // std::cout << "expected: " << expected_res << std::endl;
+        // std::cout << "real res: " << var_value(assignment, real_res.output) <<
+        // std::endl;
         BOOST_ASSERT(var_value(assignment, real_res.output) == expected_res);
     };
 

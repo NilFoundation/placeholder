@@ -60,11 +60,12 @@ void test_ecdsa_recovery(
     std::vector<TYPE> public_input;
 
     // maybe integral_type instead of foreign_basic_integral_type
-    foreign_integral_type B = foreign_integral_type(1) << bit_size_chunk,
-                          zf = foreign_integral_type(foreign_basic_integral_type(z.data)),
-                          rf = foreign_integral_type(foreign_basic_integral_type(r.data)),
-                          sf = foreign_integral_type(foreign_basic_integral_type(s.data)),
-                          vf = foreign_integral_type(foreign_basic_integral_type(v.data));
+    foreign_integral_type
+        B = foreign_integral_type(1) << bit_size_chunk,
+        zf = foreign_integral_type(foreign_basic_integral_type(z.to_integral())),
+        rf = foreign_integral_type(foreign_basic_integral_type(r.to_integral())),
+        sf = foreign_integral_type(foreign_basic_integral_type(s.to_integral())),
+        vf = foreign_integral_type(foreign_basic_integral_type(v.to_integral()));
 
     auto chunks_to_public_input = [&public_input, &B](foreign_integral_type& t) {
         for (std::size_t i = 0; i < num_chunks; i++) {
@@ -92,16 +93,16 @@ void test_ecdsa_recovery(
 
         foreign_integral_type xQA = 0, yQA = 0, pow = 1;
         for (std::size_t i = 0; i < num_chunks; i++) {
-            xQA += foreign_integral_type(integral_type(A.xQA[i].data)) * pow;
-            yQA += foreign_integral_type(integral_type(A.yQA[i].data)) * pow;
+            xQA += foreign_integral_type(integral_type(A.xQA[i].to_integral())) * pow;
+            yQA += foreign_integral_type(integral_type(A.yQA[i].to_integral())) * pow;
             pow <<= bit_size_chunk;
         }
 #ifdef BLUEPRINT_PLONK_PROFILING_ENABLED
-        std::cout << "expected: " << QA.X.data << " " << QA.Y.data << "\n";
+        std::cout << "expected: " << QA.X << " " << QA.Y << "\n";
         std::cout << "real    : " << xQA << " " << yQA << "\n";
         std::cout << "c = " << A.c << "\n\n";
 #endif
-        bool pass = QA.X.data == xQA && QA.Y.data == yQA && A.c == TYPE(1);
+        bool pass = QA.X == xQA && QA.Y == yQA && A.c == TYPE(1);
         BOOST_TEST(pass == to_pass);
     };
 
@@ -167,11 +168,12 @@ void multi_test_recovery() {
             k = generate_random_scalar();  // this random generation is part of the
                                            // signature procedure
             R = G * k;
-            v = scalar_value_type(scalar_integral_type(R.Y.data) % 2);
-            r = base_integral_type(R.X.data);
+            v = scalar_value_type(scalar_integral_type(R.Y.to_integral()) % 2);
+            r = base_integral_type(R.X.to_integral());
             s = k.inversed() * (z + r * d);
-        } while (r.is_zero() || s.is_zero() || (scalar_integral_type(r.data) >= n) ||
-                 (scalar_integral_type(s.data) >= m));
+        } while (r.is_zero() || s.is_zero() ||
+                 (scalar_integral_type(r.to_integral()) >= n) ||
+                 (scalar_integral_type(s.to_integral()) >= m));
 
         std::cout << "Random test # " << (i + 1) << std::endl;
         test_ecdsa_recovery<FieldType, CurveType, num_chunks, bit_size_chunk>(z, r, s, v,
@@ -214,11 +216,12 @@ void multi_test_recovery_invalid() {
             k = generate_random_scalar();  // this random generation is part of the
                                            // signature procedure
             R = G * k;
-            v = scalar_value_type(scalar_integral_type(R.Y.data) % 2);
-            r = base_integral_type(R.X.data);
+            v = scalar_value_type(scalar_integral_type(R.Y.to_integral()) % 2);
+            r = base_integral_type(R.X.to_integral());
             s = k.inversed() * (z + r * d);
-        } while (r.is_zero() || s.is_zero() || (scalar_integral_type(r.data) >= n) ||
-                 (scalar_integral_type(s.data) < m));
+        } while (r.is_zero() || s.is_zero() ||
+                 (scalar_integral_type(r.to_integral()) >= n) ||
+                 (scalar_integral_type(s.to_integral()) < m));
         test_ecdsa_recovery<FieldType, CurveType, num_chunks, bit_size_chunk>(z, r, s, v,
                                                                               QA, false);
 
@@ -227,19 +230,20 @@ void multi_test_recovery_invalid() {
             k = generate_random_scalar();  // this random generation is part of the
                                            // signature procedure
             R = G * k;
-            v = scalar_value_type(scalar_integral_type(R.Y.data) % 2);
-            r = base_integral_type(R.X.data);
+            v = scalar_value_type(scalar_integral_type(R.Y.to_integral()) % 2);
+            r = base_integral_type(R.X.to_integral());
             s = k.inversed() * (z + r * d);
-        } while (r.is_zero() || s.is_zero() || (scalar_integral_type(r.data) >= n) ||
-                 (scalar_integral_type(s.data) >= m));
+        } while (r.is_zero() || s.is_zero() ||
+                 (scalar_integral_type(r.to_integral()) >= n) ||
+                 (scalar_integral_type(s.to_integral()) >= m));
 
-        base_value_type x1 = base_integral_type(r.data);
+        base_value_type x1 = base_integral_type(r.to_integral());
         while ((x1 * x1 * x1 + a).is_square()) {
             x1 = x1 + 1;
         }
 
         test_ecdsa_recovery<FieldType, CurveType, num_chunks, bit_size_chunk>(
-            z, scalar_value_type(base_integral_type(x1.data)), s, v, QA, false);
+            z, scalar_value_type(base_integral_type(x1.to_integral())), s, v, QA, false);
     }
 }
 

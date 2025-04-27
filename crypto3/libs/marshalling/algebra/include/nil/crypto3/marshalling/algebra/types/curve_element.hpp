@@ -218,7 +218,11 @@ namespace nil {
                                         int>::type
                     compare_field_data(const typename FieldType::value_type &field_elem1,
                                        const typename FieldType::value_type &field_elem2) {
-                    return (field_elem1.data < field_elem2.data) ? -1 : ((field_elem1.data > field_elem2.data) ? 1 : 0);
+                    return (field_elem1.to_integral() < field_elem2.to_integral())
+                               ? -1
+                               : ((field_elem1.to_integral() > field_elem2.to_integral())
+                                      ? 1
+                                      : 0);
                 }
 
                 template<typename FieldType>

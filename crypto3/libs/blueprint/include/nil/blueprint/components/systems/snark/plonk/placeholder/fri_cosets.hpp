@@ -244,8 +244,10 @@ namespace nil {
                 const std::size_t l = component.nine_bl_per_line;
 
                 typename BlueprintFieldType::integral_type
-                    x_decomp = typename BlueprintFieldType::integral_type(var_value(assignment, instance_input.x).data),
-                    pm1_decomp = typename BlueprintFieldType::integral_type(BlueprintFieldType::value_type::modulus - 1);
+                    x_decomp = typename BlueprintFieldType::integral_type(
+                        var_value(assignment, instance_input.x).to_integral()),
+                    pm1_decomp = typename BlueprintFieldType::integral_type(
+                        BlueprintFieldType::value_type::modulus - 1);
 
                 value_type w_power = component.omega;
                 value_type coset_element = 1;

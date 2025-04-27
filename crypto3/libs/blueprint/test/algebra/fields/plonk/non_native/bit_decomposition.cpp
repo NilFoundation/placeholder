@@ -75,25 +75,26 @@ void test_bit_decomposition(typename BlueprintFieldType::value_type input,
 
     bool expected_to_pass = input < value_type(2).pow(BitsAmount);
 
-    auto result_check = [&expected_res, input, expected_to_pass](AssignmentType &assignment,
-        typename component_type::result_type &real_res) {
-            #ifdef BLUEPRINT_PLONK_PROFILING_ENABLED
-            std::cout << "input: " << std::hex << public_input[0].data << "\n";
-            for (std::size_t i = 0; i < expected_res.size(); i++){
-                std::cout << expected_res[i].data;
-            }
-            std::cout << std::endl;
+    auto result_check = [&expected_res, input, expected_to_pass](
+                            AssignmentType &assignment,
+                            typename component_type::result_type &real_res) {
+#ifdef BLUEPRINT_PLONK_PROFILING_ENABLED
+        std::cout << "input: " << std::hex << public_input[0] << "\n";
+        for (std::size_t i = 0; i < expected_res.size(); i++) {
+            std::cout << expected_res[i];
+        }
+        std::cout << std::endl;
 
-            for (std::size_t i = 0; i < real_res.output.size(); i++){
-                std::cout << var_value(assignment, real_res.output[i]).data;
-            }
-            std::cout << std::endl;
+        for (std::size_t i = 0; i < real_res.output.size(); i++) {
+            std::cout << var_value(assignment, real_res.output[i]);
+        }
+        std::cout << std::endl;
             #endif
-            if (expected_to_pass) {
-                for (std::size_t i = 0; i < real_res.output.size(); i++) {
-                    assert(expected_res[i] == var_value(assignment, real_res.output[i]));
-                }
+        if (expected_to_pass) {
+            for (std::size_t i = 0; i < real_res.output.size(); i++) {
+                assert(expected_res[i] == var_value(assignment, real_res.output[i]));
             }
+        }
     };
 
     std::array<std::uint32_t, WitnessColumns> witnesses;
@@ -139,7 +140,7 @@ void calc_expected_and_test_bit_decomposition(typename FieldType::value_type inp
     using value_type = typename FieldType::value_type;
     using integral_type = typename FieldType::integral_type;
 
-    integral_type input_integral = integral_type(input.data);
+    integral_type input_integral = integral_type(input.to_integral());
 
     std::vector<value_type> expected_res = std::vector<value_type>(BitsAmount);
     for (std::size_t i = 0; i < BitsAmount; i++) {
@@ -185,8 +186,8 @@ void test_decomposition_random_inputs() {
 
     for (std::size_t j = 0; j < random_tests_amount; j++) {
         value_type random = rand();
-        integral_type input_integral = integral_type(random.data);
-        input_integral = input_integral & integral_type((max_value - 1).data);
+        integral_type input_integral = integral_type(random.to_integral());
+        input_integral = input_integral & integral_type((max_value - 1).to_integral());
         value_type input = value_type(input_integral);
         // Sanity check
         assert(input < max_value);
@@ -207,11 +208,14 @@ void test_decomposition_fail_random_inputs() {
     rand.seed(seed_seq);
 
     value_type max_value = value_type(2).pow(BitsAmount);
-    integral_type restriction_modulus = BlueprintFieldType::modulus - integral_type(max_value.data);
+    integral_type restriction_modulus =
+        BlueprintFieldType::modulus - integral_type(max_value.to_integral());
 
     for (std::size_t j = 0; j < random_tests_amount; j++) {
         value_type random = rand();
-        value_type input = max_value + (value_type(integral_type(random.data) % restriction_modulus));
+        value_type input =
+            max_value +
+            (value_type(integral_type(random.to_integral()) % restriction_modulus));
         // Sanity check
         assert(input >= max_value);
 

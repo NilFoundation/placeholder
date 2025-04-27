@@ -137,7 +137,8 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_cicruit_builder_test) {
     integral_type base17 = integral_type(1) << 17;
 
     for (std::size_t i = 0; i < random_tests_amount; i++) {
-        auto random_input = value_type(integral_type(generate_random().data) % (i % 2 ? base16 : base17));
+        auto random_input = value_type(integral_type(generate_random().to_integral()) %
+                                       (i % 2 ? base16 : base17));
         bbf::micro_range_check<field_type,bbf::GenerationStage::ASSIGNMENT>::input_type input = {random_input};
         test_circuit_builder<field_type,bbf::micro_range_check>(input);
     }

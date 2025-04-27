@@ -237,7 +237,7 @@ namespace nil {
                                 state[index] = input.inner_state[index];
                                 message[index] = input.padded_message_chunk[index];
                                 TYPE sum = state[index] + message[index];
-                                integral_type integral_sum = integral_type(sum.data);
+                                integral_type integral_sum = sum.to_integral();
                                 std::vector<integral_type> integral_chunks;
                                 std::vector<integral_type> integral_normalized_chunks;
                                 integral_type mask =
@@ -284,7 +284,7 @@ namespace nil {
                             }
                             C_sum[index] = sum;
 
-                            integral_type integral_sum = integral_type(sum.data);
+                            integral_type integral_sum = sum.to_integral();
                             std::vector<integral_type> integral_chunks;
                             std::vector<integral_type> integral_normalized_chunks;
                             integral_type mask = (integral_type(1) << normalize6_chunk_size) - 1;
@@ -314,7 +314,7 @@ namespace nil {
 
                         std::vector<integral_type> additional_rot_chunks;
                         for (int index = 0; index < 5; ++index) {
-                            integral_type integral_C = integral_type(C[index].data);
+                            integral_type integral_C = C[index].to_integral();
                             integral_type smaller_part = integral_C >> 189;
                             integral_type bigger_part =
                                 integral_C & ((integral_type(1) << 189) - 1);
@@ -363,7 +363,7 @@ namespace nil {
                         for (int index = 0; index < 25; ++index) {
                             int x = index % 5;
                             TYPE sum = A1[index] + C_rot[(x + 1) % 5] + C[(x + 4) % 5];
-                            integral_type integral_sum = integral_type(sum.data);
+                            integral_type integral_sum = sum.to_integral();
                             std::vector<integral_type> integral_chunks;
                             std::vector<integral_type> integral_normalized_chunks;
                             integral_type mask = (integral_type(1) << normalize4_chunk_size) - 1;
@@ -395,7 +395,7 @@ namespace nil {
                         for (int index = 1; index < 25; ++index) {
                             int r = 3 * rho_offsets[index];
                             int minus_r = 192 - r;
-                            integral_type integral_A = integral_type(A2[perm[index - 1]].data);
+                            integral_type integral_A = A2[perm[index - 1]].to_integral();
                             integral_type smaller_part = integral_A >> minus_r;
                             integral_type bigger_part =
                                 integral_A & ((integral_type(1) << minus_r) - 1);
@@ -440,7 +440,7 @@ namespace nil {
                             int y = index / 5;
                             TYPE sum = TYPE(sparse_3) - 2 * B[x + 5 * y] + B[(x + 1) % 5 + 5 * y] -
                                        B[(x + 2) % 5 + 5 * y];
-                            integral_type integral_sum = integral_type(sum.data);
+                            integral_type integral_sum = integral_type(sum.to_integral());
                             std::vector<integral_type> integral_chunks;
                             std::vector<integral_type> integral_chi_chunks;
                             integral_type mask = (integral_type(1) << chi_chunk_size) - 1;
@@ -467,7 +467,7 @@ namespace nil {
                         // iota
                         {
                             TYPE sum = A3[0] + input.round_constant;
-                            integral_type integral_sum = integral_type(sum.data);
+                            integral_type integral_sum = sum.to_integral();
                             std::vector<integral_type> integral_chunks;
                             std::vector<integral_type> integral_normalized_chunks;
                             integral_type mask = (integral_type(1) << normalize3_chunk_size) - 1;

@@ -150,8 +150,14 @@ namespace nil {
                     std::size_t shift = 0;
 
                     for (std::size_t i = 0; i < 8; i++) {
-                        range_chunks[i] = (typename BlueprintFieldType::integral_type(data[0].data) >> shift) & ((65536) - 1);
-                        range_chunks[i + 8] = (typename BlueprintFieldType::integral_type(data[1].data) >> shift) & ((65536) - 1);
+                        range_chunks[i] = (typename BlueprintFieldType::integral_type(
+                                               data[0].to_integral()) >>
+                                           shift) &
+                                          ((65536) - 1);
+                        range_chunks[i + 8] = (typename BlueprintFieldType::integral_type(
+                                                   data[1].to_integral()) >>
+                                               shift) &
+                                              ((65536) - 1);
                         shift += 16;
                     }
 
@@ -189,8 +195,10 @@ namespace nil {
 
                 std::size_t row = start_row_index;
                 std::array<typename BlueprintFieldType::integral_type, 2> data = {
-                    typename BlueprintFieldType::integral_type(var_value(assignment, instance_input.data[0]).data),
-                    typename BlueprintFieldType::integral_type(var_value(assignment, instance_input.data[1]).data)};
+                    typename BlueprintFieldType::integral_type(
+                        var_value(assignment, instance_input.data[0]).to_integral()),
+                    typename BlueprintFieldType::integral_type(
+                        var_value(assignment, instance_input.data[1]).to_integral())};
                 std::array<typename BlueprintFieldType::integral_type, 16> range_chunks;
                 std::size_t shift = 0;
 
@@ -231,8 +239,9 @@ namespace nil {
                 using component_type = plonk_native_decomposition<BlueprintFieldType>;
 
                 std::size_t row = start_row_index;
-                std::array<typename BlueprintFieldType::value_type, 2> data = {var_value(assignment, instance_input.data[0]).data,
-                                                                                var_value(assignment, instance_input.data[1]).data};
+                std::array<typename BlueprintFieldType::value_type, 2> data = {
+                    var_value(assignment, instance_input.data[0]),
+                    var_value(assignment, instance_input.data[1])};
 
                 std::array<typename BlueprintFieldType::value_type, 8> output = component_type::calculate(data);
                 for (std::size_t i = 0; i < 8; i++) {

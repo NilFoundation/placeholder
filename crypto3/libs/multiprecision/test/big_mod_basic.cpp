@@ -213,7 +213,7 @@ BOOST_AUTO_TEST_CASE(big) {
         0xE632329C42040E595D127EB6889D22215DBE56F540425C705D6BF83_big_uint224;
 
     BOOST_CHECK_EQUAL(
-        (a * b).base(),
+        (a * b).to_integral(),
         0x107BC09A9F3443A6F6458495ADD98CBA1FCD15F17D0EAB66302FEFA6_big_uint224);
 }
 
@@ -229,7 +229,8 @@ BOOST_AUTO_TEST_CASE(big_assign) {
     a *= b;
 
     BOOST_CHECK_EQUAL(
-        a.base(), 0x107BC09A9F3443A6F6458495ADD98CBA1FCD15F17D0EAB66302FEFA6_big_uint224);
+        a.to_integral(),
+        0x107BC09A9F3443A6F6458495ADD98CBA1FCD15F17D0EAB66302FEFA6_big_uint224);
 }
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(minus_one_squared_is_one, big_mod_t, modular_types) {
@@ -255,12 +256,12 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(init_from_big_uint512_is_modulo, big_mod_t, modula
     auto base =
         0xAA9E37FDB4756C822359B5D50B63A666C1E8D71142E315D224BF596CD169F7B60F01A02DEB2B562B8D51AFD478E1C21155F0E950C265CB32656FC073CDF19DA2_big_uint512;
     big_mod_t a = base;
-    BOOST_CHECK_EQUAL(a.base(), base % a.mod());
+    BOOST_CHECK_EQUAL(a.to_integral(), base % a.mod());
 }
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(init_from_signed_is_modulo, big_mod_t, modular_types) {
     big_mod_t a = -1;
-    BOOST_CHECK_EQUAL(a.base(), a.mod() - 1);
+    BOOST_CHECK_EQUAL(a.to_integral(), a.mod() - 1);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
@@ -299,7 +300,7 @@ BOOST_AUTO_TEST_CASE(bad_negation) {
 BOOST_AUTO_TEST_CASE(goldilocks_multiplication_noncanonical) {
     goldilocks_mod a = 0xEB17187D25277580ULL;
     goldilocks_mod b = 0xBF79143CE60CA966ULL;
-    BOOST_CHECK_EQUAL((a * b).base(), 0x8);
+    BOOST_CHECK_EQUAL((a * b).to_integral(), 0x8);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
