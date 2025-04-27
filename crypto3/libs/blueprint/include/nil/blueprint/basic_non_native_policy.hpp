@@ -64,7 +64,7 @@ namespace nil {
                                         std::size_t i_th) {
                     assert(i_th < ratio && "non-native type does not have that much chunks!");
                     extended_integral_type result = extended_integral_type(
-                        non_native_field_type::integral_type(input.data));
+                        non_native_field_type::integral_type(input.to_integral()));
                     native_field_type::integral_type base = 1;
                     native_field_type::integral_type mask = (base << chunk_sizes[i_th]) - 1;
                     std::size_t shift = 0;
@@ -86,13 +86,16 @@ namespace nil {
 
                 static non_native_field_type::value_type glue_non_native(chopped_value_type input) {
                     non_native_field_type::value_type result;
-                    result = non_native_field_type::value_type(native_field_type::integral_type(input[0].data));
+                    result = non_native_field_type::value_type(
+                        native_field_type::integral_type(input[0].to_integral()));
                     for (std::size_t i = 1; i < ratio; i++) {
                         std::size_t shift = 0;
                         for (std::size_t j = 0; j < i; j++) {
                             shift += chunk_sizes[j];
                         }
-                        result += non_native_field_type::value_type(native_field_type::integral_type(input[i].data) << shift);
+                        result += non_native_field_type::value_type(
+                            native_field_type::integral_type(input[i].to_integral())
+                            << shift);
                     }
                     return result;
                 }
@@ -156,13 +159,16 @@ namespace nil {
 
                 static non_native_field_type::value_type glue_non_native(chopped_value_type input) {
                     non_native_field_type::value_type result;
-                    result = non_native_field_type::value_type(native_field_type::integral_type(input[0].data));
+                    result = non_native_field_type::value_type(
+                        native_field_type::integral_type(input[0].to_integral()));
                     for (std::size_t i = 1; i < ratio; i++) {
                         std::size_t shift = 0;
                         for (std::size_t j = 0; j < i; j++) {
                             shift += chunk_sizes[j];
                         }
-                        result += non_native_field_type::value_type(native_field_type::integral_type(input[i].data) << shift);
+                        result += non_native_field_type::value_type(
+                            native_field_type::integral_type(input[i].to_integral())
+                            << shift);
                     }
                     return result;
                 }
@@ -312,13 +318,16 @@ namespace nil {
 
                 static non_native_field_type glue_non_native(chopped_value_type input) {
                     non_native_field_type result;
-                    result = non_native_field_type(native_field_type::integral_type(input[0].data));
+                    result = non_native_field_type(
+                        native_field_type::integral_type(input[0].to_integral()));
                     for (std::size_t i = 1; i < ratio; i++) {
                         std::size_t shift = 0;
                         for (std::size_t j = 0; j < i; j++) {
                             shift += chunk_sizes[j];
                         }
-                        result += non_native_field_type(native_field_type::integral_type(input[i].data) << shift);
+                        result += non_native_field_type(
+                            native_field_type::integral_type(input[i].to_integral())
+                            << shift);
                     }
                     return result;
                 }

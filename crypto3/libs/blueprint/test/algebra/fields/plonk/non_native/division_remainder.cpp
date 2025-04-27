@@ -74,8 +74,14 @@ auto test_division_remainder(typename BlueprintFieldType::value_type x,
 
     typename component_type::input_type instance_input = {x_var, y_var};
 
-    value_type expected_result_quotient = y != 0 ? value_type(integral_type(x.data) / integral_type(y.data)) : 0,
-               expected_result_remainder = y != 0 ? value_type(integral_type(x.data) % integral_type(y.data)) : 0;
+    value_type expected_result_quotient =
+                   y != 0 ? value_type(integral_type(x.to_integral()) /
+                                       integral_type(y.to_integral()))
+                          : 0,
+               expected_result_remainder =
+                   y != 0 ? value_type(integral_type(x.to_integral()) %
+                                       integral_type(y.to_integral()))
+                          : 0;
 
     value_type max_val = value_type(2).pow(R);
     bool expected_to_pass = x < max_val && y < max_val && expected_result_remainder < max_val &&
@@ -150,8 +156,10 @@ void test_division_remainder_random_inputs() {
                    max_val_y = value_type(2).pow(distribution(seed_seq));
         value_type x = generate_random(),
                    y = generate_random();
-        integral_type x_integral = integral_type(x.data) & integral_type((max_val_x - 1).data),
-                      y_integral = integral_type(y.data) & integral_type((max_val_y - 1).data);
+        integral_type x_integral = integral_type(x.to_integral()) &
+                                   integral_type((max_val_x - 1).to_integral()),
+                      y_integral = integral_type(y.to_integral()) &
+                                   integral_type((max_val_y - 1).to_integral());
         x = value_type(x_integral);
         y = value_type(y_integral);
 
@@ -167,8 +175,10 @@ void test_division_remainder_random_inputs() {
                    max_val_y = value_type(2).pow(distribution(seed_seq));
         value_type x = generate_random(),
                    y = generate_random();
-        integral_type x_integral = integral_type(x.data) | integral_type((max_val_x).data),
-                      y_integral = integral_type(y.data) & integral_type((max_val_y - 1).data);
+        integral_type x_integral = integral_type(x.to_integral()) |
+                                   integral_type((max_val_x).to_integral()),
+                      y_integral = integral_type(y.to_integral()) &
+                                   integral_type((max_val_y - 1).to_integral());
         x = value_type(x_integral);
         y = value_type(y_integral);
 

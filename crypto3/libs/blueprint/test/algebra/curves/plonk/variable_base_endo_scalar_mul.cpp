@@ -72,8 +72,9 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_base_endo_scalar_mul) {
 
     //curve_type::scalar_field_type::value_type b = algebra::random_element<BlueprintScalarType>();
     curve_type::scalar_field_type::value_type b = 2;
-    typename curve_type::scalar_field_type::integral_type integral_b = typename curve_type::scalar_field_type::integral_type(b.data);
-	BlueprintFieldType::value_type b_scalar = integral_b;
+    typename curve_type::scalar_field_type::integral_type integral_b =
+        typename curve_type::scalar_field_type::integral_type(b.to_integral());
+    BlueprintFieldType::value_type b_scalar = integral_b;
     curve_type::template g1_type<algebra::curves::coordinates::affine>::value_type T = algebra::random_element<curve_type::template g1_type<algebra::curves::coordinates::affine>>();
     var T_X_var = {0, 1, false, var::column_type::public_input};
     var T_Y_var = {0, 2, false, var::column_type::public_input};

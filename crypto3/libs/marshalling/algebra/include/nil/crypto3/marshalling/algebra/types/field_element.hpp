@@ -54,7 +54,8 @@ namespace nil {
 
                         std::array<typename FieldValueType::field_type::integral_type,
                             FieldValueType::field_type::arity> result;
-                        result[0] = typename FieldValueType::field_type::integral_type(field_elem.data);
+                        result[0] = typename FieldValueType::field_type::integral_type(
+                            field_elem.to_integral());
                         return result;
                     }
 
@@ -143,8 +144,9 @@ namespace nil {
 
                     /// @brief Constructor
                     explicit pure_field_element(const FieldValueType &field_elem)
-                    : base_impl_type(typename FieldValueType::field_type::integral_type(field_elem.data)){
-                    }
+                        : base_impl_type(
+                              typename FieldValueType::field_type::integral_type(
+                                  field_elem.to_integral())) {}
 
                     /// @brief Copy constructor
                     pure_field_element(const pure_field_element &) = default;
@@ -453,8 +455,9 @@ namespace nil {
                 //                         int>::type
                 //     compare_field_data(const FieldValueType &field_elem1,
                 //                        const FieldValueType &field_elem2) {
-                //     return (field_elem1.to_integral()  < field_elem2.data) ? -1 :
-                //     ((field_elem1.to_integral()  > field_elem2.data) ? 1 : 0);
+                //     return (field_elem1.to_integral()  < field_elem2.to_integral()) ?
+                //     -1 :
+                //     ((field_elem1.to_integral()  > field_elem2.to_integral()) ? 1 : 0);
                 // }
 
                 // template<typename FieldValueType>

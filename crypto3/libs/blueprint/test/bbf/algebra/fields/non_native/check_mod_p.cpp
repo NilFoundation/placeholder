@@ -62,7 +62,7 @@ void test_mod_p_check(
         std::cout << "Expected output: " << std::dec << overflow << std::endl;
         std::cout << "Real output:     " << std::dec << A.output << std::endl;
 #endif
-        assert(overflow == A.output.data);
+        assert(overflow == A.output.to_integral());
     }
 }
 
@@ -80,10 +80,11 @@ void mod_p_check_tests() {
 
     for (std::size_t i = 0; i < RandomTestsAmount; i++) {
         std::vector<typename BlueprintFieldType::value_type> public_input;
-        integral_type p = integral_type(generate_random().data);
+        integral_type p = integral_type(generate_random().to_integral());
         p = (p == 0) ? 1 : p;  // avoid p == 0
 
-        integral_type x = overflow ? p + 1 : (integral_type(generate_random().data) % p);
+        integral_type x =
+            overflow ? p + 1 : (integral_type(generate_random().to_integral()) % p);
 
         for (std::size_t j = 0; j < num_chunks; j++) {  // the x's
             public_input.push_back(value_type(x % B));

@@ -86,7 +86,7 @@ typename CurveType::scalar_field_type::value_type calculate_endo_scalar(typename
         bits_per_crumb * crumbs_per_row;    // we suppose that ScalarSize % bits_per_row = 0
 
     typename BlueprintFieldType::integral_type integral_scalar =
-        typename BlueprintFieldType::integral_type(scalar.data);
+        typename BlueprintFieldType::integral_type(scalar.to_integral());
     std::array<bool, ScalarSize> bits_msb;
     {
         nil::crypto3::marshalling::status_type status;
@@ -196,7 +196,8 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_endo_scalar_vesta) {
 
     for (std::size_t i = 0; i < random_tests_amount; i++){
         typename curve_type::scalar_field_type::value_type input = generate_random();
-    	typename curve_type::scalar_field_type::integral_type input_integral = typename curve_type::scalar_field_type::integral_type(input.data);
+        typename curve_type::scalar_field_type::integral_type input_integral =
+            typename curve_type::scalar_field_type::integral_type(input.to_integral());
         input_integral = input_integral & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_big_uint255;
     	typename curve_type::scalar_field_type::value_type input_scalar =  input_integral;
         test_endo_scalar<curve_type>({input_scalar}, calculate_endo_scalar<curve_type, 128>(input_scalar));
@@ -221,7 +222,8 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_endo_scalar_pallas) {
 
     for (std::size_t i = 0; i < random_tests_amount; i++){
         typename curve_type::scalar_field_type::value_type input = generate_random();
-    	typename curve_type::scalar_field_type::integral_type input_integral = typename curve_type::scalar_field_type::integral_type(input.data);
+        typename curve_type::scalar_field_type::integral_type input_integral =
+            typename curve_type::scalar_field_type::integral_type(input.to_integral());
         input_integral = input_integral & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_big_uint255;
     	typename curve_type::scalar_field_type::value_type input_scalar =  input_integral;
         test_endo_scalar<curve_type>({input_scalar}, calculate_endo_scalar<curve_type, 128>(input_scalar));

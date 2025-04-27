@@ -233,7 +233,7 @@ namespace nil {
                 // TODO: evaluate min_value at compile-time
                 constexpr static inline result_type min() {
                     result_type min_value;
-                    for (auto& coord : min_value.data) {
+                    for (auto& coord : min_value.to_integral()) {
                         coord = internal_generator_type::min();
                     }
 
@@ -244,7 +244,7 @@ namespace nil {
                 // TODO: evaluate max_value at compile-time
                 constexpr static inline result_type max() {
                     result_type max_value;
-                    for (auto& coord : max_value.data) {
+                    for (auto& coord : max_value.to_integral()) {
                         coord = internal_generator_type::max();
                     }
 
@@ -254,7 +254,7 @@ namespace nil {
                 /** Returns a random value in the range [min, max]. */
                 result_type operator()() {
                     result_type result;
-                    for (auto& coord : result.data) {
+                    for (auto& coord : result.to_integral()) {
                         coord = gen();
                     }
 

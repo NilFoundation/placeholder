@@ -88,14 +88,15 @@ void test_mul(typename CurveType::base_field_type::value_type b_val,
     typename component_type::input_type instance_input = {
         {input_var_Xa, input_var_Xb}, b};
 
-    typename Ed25519Type::scalar_field_type::value_type b_val_scalar { foreign_integral_type(b_val.data) };
+    typename Ed25519Type::scalar_field_type::value_type b_val_scalar{
+        foreign_integral_type(b_val.to_integral())};
     typename Ed25519Type::template g1_type<crypto3::algebra::curves::coordinates::affine>::value_type P =
         T * b_val_scalar;
 
-    foreign_integral_type Tx = foreign_integral_type(T.X.data);
-    foreign_integral_type Ty = foreign_integral_type(T.Y.data);
-    foreign_integral_type Px = foreign_integral_type(P.X.data);
-    foreign_integral_type Py = foreign_integral_type(P.Y.data);
+    foreign_integral_type Tx = foreign_integral_type(T.X.to_integral());
+    foreign_integral_type Ty = foreign_integral_type(T.Y.to_integral());
+    foreign_integral_type Px = foreign_integral_type(P.X.to_integral());
+    foreign_integral_type Py = foreign_integral_type(P.Y.to_integral());
     foreign_integral_type base = 1;
     foreign_integral_type mask = (base << 66) - 1;
 
@@ -197,17 +198,24 @@ void test_mul_per_bit(){
     ed25519_type::template g1_type<crypto3::algebra::curves::coordinates::affine>::value_type R = crypto3::algebra::random_element<ed25519_type::template g1_type<crypto3::algebra::curves::coordinates::affine>>();
     typename BlueprintFieldType::value_type b_val = 1;
 
-    typename ed25519_type::scalar_field_type::value_type b_val_scalar { foreign_integral_type(b_val.data) };
+    typename ed25519_type::scalar_field_type::value_type b_val_scalar{
+        foreign_integral_type(b_val.to_integral())};
     ed25519_type::template g1_type<crypto3::algebra::curves::coordinates::affine>::value_type bool_res = T * b_val_scalar;
     ed25519_type::template g1_type<crypto3::algebra::curves::coordinates::affine>::value_type doub_res = R + R;
     ed25519_type::template g1_type<crypto3::algebra::curves::coordinates::affine>::value_type P = bool_res + doub_res;
 
-    ed25519_type::base_field_type::integral_type Tx = ed25519_type::base_field_type::integral_type(T.X.data);
-    ed25519_type::base_field_type::integral_type Ty = ed25519_type::base_field_type::integral_type(T.Y.data);
-    ed25519_type::base_field_type::integral_type Rx = ed25519_type::base_field_type::integral_type(R.X.data);
-    ed25519_type::base_field_type::integral_type Ry = ed25519_type::base_field_type::integral_type(R.Y.data);
-    ed25519_type::base_field_type::integral_type Px = ed25519_type::base_field_type::integral_type(P.X.data);
-    ed25519_type::base_field_type::integral_type Py = ed25519_type::base_field_type::integral_type(P.Y.data);
+    ed25519_type::base_field_type::integral_type Tx =
+        ed25519_type::base_field_type::integral_type(T.X.to_integral());
+    ed25519_type::base_field_type::integral_type Ty =
+        ed25519_type::base_field_type::integral_type(T.Y.to_integral());
+    ed25519_type::base_field_type::integral_type Rx =
+        ed25519_type::base_field_type::integral_type(R.X.to_integral());
+    ed25519_type::base_field_type::integral_type Ry =
+        ed25519_type::base_field_type::integral_type(R.Y.to_integral());
+    ed25519_type::base_field_type::integral_type Px =
+        ed25519_type::base_field_type::integral_type(P.X.to_integral());
+    ed25519_type::base_field_type::integral_type Py =
+        ed25519_type::base_field_type::integral_type(P.Y.to_integral());
     typename ed25519_type::base_field_type::integral_type base = 1;
     typename ed25519_type::base_field_type::integral_type mask = (base << 66) - 1;
 
@@ -280,10 +288,14 @@ void test_doubling() {
     ed25519_type::template g1_type<crypto3::algebra::curves::coordinates::affine>::value_type T = crypto3::algebra::random_element<ed25519_type::template g1_type<crypto3::algebra::curves::coordinates::affine>>();
     ed25519_type::template g1_type<crypto3::algebra::curves::coordinates::affine>::value_type P = T + T;
 
-    ed25519_type::base_field_type::integral_type Tx = ed25519_type::base_field_type::integral_type(T.X.data);
-    ed25519_type::base_field_type::integral_type Ty = ed25519_type::base_field_type::integral_type(T.Y.data);
-    ed25519_type::base_field_type::integral_type Px = ed25519_type::base_field_type::integral_type(P.X.data);
-    ed25519_type::base_field_type::integral_type Py = ed25519_type::base_field_type::integral_type(P.Y.data);
+    ed25519_type::base_field_type::integral_type Tx =
+        ed25519_type::base_field_type::integral_type(T.X.to_integral());
+    ed25519_type::base_field_type::integral_type Ty =
+        ed25519_type::base_field_type::integral_type(T.Y.to_integral());
+    ed25519_type::base_field_type::integral_type Px =
+        ed25519_type::base_field_type::integral_type(P.X.to_integral());
+    ed25519_type::base_field_type::integral_type Py =
+        ed25519_type::base_field_type::integral_type(P.Y.to_integral());
     typename ed25519_type::base_field_type::integral_type base = 1;
     typename ed25519_type::base_field_type::integral_type mask = (base << 66) - 1;
 
@@ -361,12 +373,18 @@ void test_complete_addition(){
     ed25519_type::template g1_type<crypto3::algebra::curves::coordinates::affine>::value_type R = crypto3::algebra::random_element<ed25519_type::template g1_type<crypto3::algebra::curves::coordinates::affine>>();
     ed25519_type::template g1_type<crypto3::algebra::curves::coordinates::affine>::value_type P = T + R;
 
-    ed25519_type::base_field_type::integral_type Tx = ed25519_type::base_field_type::integral_type(T.X.data);
-    ed25519_type::base_field_type::integral_type Ty = ed25519_type::base_field_type::integral_type(T.Y.data);
-    ed25519_type::base_field_type::integral_type Rx = ed25519_type::base_field_type::integral_type(R.X.data);
-    ed25519_type::base_field_type::integral_type Ry = ed25519_type::base_field_type::integral_type(R.Y.data);
-    ed25519_type::base_field_type::integral_type Px = ed25519_type::base_field_type::integral_type(P.X.data);
-    ed25519_type::base_field_type::integral_type Py = ed25519_type::base_field_type::integral_type(P.Y.data);
+    ed25519_type::base_field_type::integral_type Tx =
+        ed25519_type::base_field_type::integral_type(T.X.to_integral());
+    ed25519_type::base_field_type::integral_type Ty =
+        ed25519_type::base_field_type::integral_type(T.Y.to_integral());
+    ed25519_type::base_field_type::integral_type Rx =
+        ed25519_type::base_field_type::integral_type(R.X.to_integral());
+    ed25519_type::base_field_type::integral_type Ry =
+        ed25519_type::base_field_type::integral_type(R.Y.to_integral());
+    ed25519_type::base_field_type::integral_type Px =
+        ed25519_type::base_field_type::integral_type(P.X.to_integral());
+    ed25519_type::base_field_type::integral_type Py =
+        ed25519_type::base_field_type::integral_type(P.Y.to_integral());
     typename ed25519_type::base_field_type::integral_type base = 1;
     typename ed25519_type::base_field_type::integral_type mask = (base << 66) - 1;
 
@@ -459,7 +477,9 @@ BOOST_AUTO_TEST_CASE(blueprint_non_native_mul_1) {
 
     // We need 2 conversions here, first convert modular type to integral type of the same size, then convert and integral
     // type of one size to integral type of another size.
-    scal_integral = typename CurveType::base_field_type::integral_type(Ed25519Type::scalar_field_type::integral_type(random_scalar_generator().data));
+    scal_integral = typename CurveType::base_field_type::integral_type(
+        Ed25519Type::scalar_field_type::integral_type(
+            random_scalar_generator().to_integral()));
     scal_rand = typename CurveType::base_field_type::value_type (scal_integral);
 
     test_mul<CurveType, Ed25519Type, false>(scal_zero, point_zero);
@@ -476,7 +496,9 @@ BOOST_AUTO_TEST_CASE(blueprint_non_native_mul_1) {
     for (std::size_t i = 0; i < random_tests_amount; i++) {
         // We need 2 conversions here, first convert modular type to integral type of the same size, then convert and integral
         // type of one size to integral type of another size.
-        scal_integral = typename CurveType::base_field_type::integral_type(Ed25519Type::scalar_field_type::integral_type((random_scalar_generator()).data));
+        scal_integral = typename CurveType::base_field_type::integral_type(
+            Ed25519Type::scalar_field_type::integral_type(
+                (random_scalar_generator()).to_integral()));
         scal_rand = typename CurveType::base_field_type::value_type (scal_integral);
 
         test_mul<CurveType, Ed25519Type, false>(scal_rand, random_point_generator());

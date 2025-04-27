@@ -62,12 +62,32 @@ BOOST_AUTO_TEST_CASE(zk_transcript_manual_test) {
     auto ch2 = tr.challenge<field_type>();
     auto ch_n = tr.challenges<field_type, 3>();
 
-    BOOST_CHECK_EQUAL(ch1.data, field_type::value_type(0xe858ba005424eabd6d97de7e930779def59a85c1a9ff7e8a5d001cdb07f6e4_big_uint254).data);
-    BOOST_CHECK_EQUAL(ch2.data, field_type::value_type(0xf61f38f58a55b3bbee0480fc5ec3cf8df81603579f4f7134f764bfd3ca5938b_big_uint254).data);
+    BOOST_CHECK_EQUAL(
+        ch1.data,
+        field_type::value_type(
+            0xe858ba005424eabd6d97de7e930779def59a85c1a9ff7e8a5d001cdb07f6e4_big_uint254)
+            .to_integral());
+    BOOST_CHECK_EQUAL(
+        ch2.data,
+        field_type::value_type(
+            0xf61f38f58a55b3bbee0480fc5ec3cf8df81603579f4f7134f764bfd3ca5938b_big_uint254)
+            .to_integral());
 
-    BOOST_CHECK_EQUAL(ch_n[0].data, field_type::value_type(0x4f6b97a9bc99d6996fab5e03d1cd0b418a9b3c97ed64cca070e15777e7cc99a_big_uint254).data);
-    BOOST_CHECK_EQUAL(ch_n[1].data, field_type::value_type(0x2414ddf7ecff246500beb2c01b0c5912a400bc3cdca6d7f24bd2bd4987b21e04_big_uint254).data);
-    BOOST_CHECK_EQUAL(ch_n[2].data, field_type::value_type(0x10bfe2f4a414eec551dda5fd9899e9b46e327648b4fa564ed0517b6a99396aec_big_uint254).data);
+    BOOST_CHECK_EQUAL(
+        ch_n[0].data,
+        field_type::value_type(
+            0x4f6b97a9bc99d6996fab5e03d1cd0b418a9b3c97ed64cca070e15777e7cc99a_big_uint254)
+            .to_integral());
+    BOOST_CHECK_EQUAL(
+        ch_n[1].data,
+        field_type::value_type(
+            0x2414ddf7ecff246500beb2c01b0c5912a400bc3cdca6d7f24bd2bd4987b21e04_big_uint254)
+            .to_integral());
+    BOOST_CHECK_EQUAL(
+        ch_n[2].data,
+        field_type::value_type(
+            0x10bfe2f4a414eec551dda5fd9899e9b46e327648b4fa564ed0517b6a99396aec_big_uint254)
+            .to_integral());
 }
 
 BOOST_AUTO_TEST_SUITE_END()
@@ -89,8 +109,16 @@ BOOST_AUTO_TEST_CASE(zk_poseidon_transcript_init_test) {
     auto ch2 = tr.challenge<field_type>();
     int ch_int = tr.int_challenge<int>();
 
-    BOOST_CHECK_EQUAL(ch1.data, field_type::value_type(0x2c8488fd580563511086c59020975e49afd065fd26c451f6c1f9c5213798c928_big_uint255).data);
-    BOOST_CHECK_EQUAL(ch2.data, field_type::value_type(0x285f5407fb2f26a10fdcdc9357ecdc2b1415dc67b082f7c18964022bcb644ca7_big_uint255).data);
+    BOOST_CHECK_EQUAL(
+        ch1.data,
+        field_type::value_type(
+            0x2c8488fd580563511086c59020975e49afd065fd26c451f6c1f9c5213798c928_big_uint255)
+            .to_integral());
+    BOOST_CHECK_EQUAL(
+        ch2.data,
+        field_type::value_type(
+            0x285f5407fb2f26a10fdcdc9357ecdc2b1415dc67b082f7c18964022bcb644ca7_big_uint255)
+            .to_integral());
     BOOST_CHECK_EQUAL(ch_int, 0x48f3);
 
     init_blob = {};
@@ -99,8 +127,16 @@ BOOST_AUTO_TEST_CASE(zk_poseidon_transcript_init_test) {
     ch2 = tr.challenge<field_type>();
     ch_int = tr.int_challenge<int>();
 
-    BOOST_CHECK_EQUAL(ch1.data, field_type::value_type(0x35626947FA1063436F4E5434029CCAEC64075C9FC80034C0923054A2B1D30BD2_big_uint255).data);
-    BOOST_CHECK_EQUAL(ch2.data, field_type::value_type(0x1B961886411EE8722DD6B576CBA5876EB30999B5237FE0E14255E6D006CFF63C_big_uint255).data);
+    BOOST_CHECK_EQUAL(
+        ch1.data,
+        field_type::value_type(
+            0x35626947FA1063436F4E5434029CCAEC64075C9FC80034C0923054A2B1D30BD2_big_uint255)
+            .to_integral());
+    BOOST_CHECK_EQUAL(
+        ch2.data,
+        field_type::value_type(
+            0x1B961886411EE8722DD6B576CBA5876EB30999B5237FE0E14255E6D006CFF63C_big_uint255)
+            .to_integral());
     BOOST_CHECK_EQUAL(ch_int, 0xC92);
 }
 
@@ -114,8 +150,16 @@ BOOST_AUTO_TEST_CASE(zk_poseidon_transcript_no_init_test) {
     auto ch2 = tr.challenge<field_type>();
     int ch_int = tr.int_challenge<int>();
 
-    BOOST_CHECK_EQUAL(ch1.data, field_type::value_type(0x35626947fa1063436f4e5434029ccaec64075c9fc80034c0923054a2b1d30bd2_big_uint255).data);
-    BOOST_CHECK_EQUAL(ch2.data, field_type::value_type(0x1b961886411ee8722dd6b576cba5876eb30999b5237fe0e14255e6d006cff63c_big_uint255).data);
+    BOOST_CHECK_EQUAL(
+        ch1.data,
+        field_type::value_type(
+            0x35626947fa1063436f4e5434029ccaec64075c9fc80034c0923054a2b1d30bd2_big_uint255)
+            .to_integral());
+    BOOST_CHECK_EQUAL(
+        ch2.data,
+        field_type::value_type(
+            0x1b961886411ee8722dd6b576cba5876eb30999b5237fe0e14255e6d006cff63c_big_uint255)
+            .to_integral());
     BOOST_CHECK_EQUAL(ch_int, 0xc92);
 }
 

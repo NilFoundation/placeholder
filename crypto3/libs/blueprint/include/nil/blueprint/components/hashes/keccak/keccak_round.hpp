@@ -1908,7 +1908,7 @@ namespace nil {
                         value_type state = var_value(assignment, instance_input.inner_state[index]);
                         value_type message = var_value(assignment, instance_input.padded_message_chunk[index]);
                         value_type sum = state + message;
-                        integral_type integral_sum = integral_type(sum.data);
+                        integral_type integral_sum = integral_type(sum.to_integral());
                         auto chunk_size = component.normalize3_chunk_size;
                         auto num_chunks = component.normalize3_num_chunks;
                         std::vector<integral_type> integral_chunks;
@@ -1949,7 +1949,7 @@ namespace nil {
                         value_type state = var_value(assignment, instance_input.inner_state[16]);
                         value_type message = var_value(assignment, instance_input.padded_message_chunk[16]);
                         value_type sum = state + message + value_type(component.sparse_x80);
-                        integral_type integral_sum = integral_type(sum.data);
+                        integral_type integral_sum = integral_type(sum.to_integral());
                         auto chunk_size = component.normalize4_chunk_size;
                         auto num_chunks = component.normalize4_num_chunks;
                         std::vector<integral_type> integral_chunks;
@@ -2009,7 +2009,7 @@ namespace nil {
                     for (int j = 0; j < 5; ++j) {
                         sum += A_1[index + 5 * j];
                     }
-                    integral_type integral_sum = integral_type(sum.data);
+                    integral_type integral_sum = integral_type(sum.to_integral());
                     auto chunk_size = component.normalize6_chunk_size;
                     auto num_chunks = component.normalize6_num_chunks;
                     std::vector<integral_type> integral_chunks;
@@ -2070,7 +2070,7 @@ namespace nil {
                 // component.calculate_sparse((integral_type(1) << 63) - 1) << "\n" <<
                 // component.calculate_sparse((integral_type(1) << 1) - 1) << "\n";
                 for (int index = 0; index < 5; ++index) {
-                    integral_type integral_C = integral_type(C[index].data);
+                    integral_type integral_C = integral_type(C[index].to_integral());
                     integral_type smaller_part = integral_C >> 189;
                     integral_type bigger_part = integral_C & ((integral_type(1) << 189) - 1);
                     integral_type integral_C_rot = (bigger_part << 3) + smaller_part;
@@ -2139,7 +2139,7 @@ namespace nil {
                 for (int index = 0; index < 25; ++index) {
                     int x = index % 5;
                     value_type sum = A_1[index] + C_rot[(x + 1) % 5] + C[(x + 4) % 5];
-                    integral_type integral_sum = integral_type(sum.data);
+                    integral_type integral_sum = integral_type(sum.to_integral());
                     auto chunk_size = component.normalize4_chunk_size;
                     auto num_chunks = component.normalize4_num_chunks;
                     std::vector<integral_type> integral_chunks;
@@ -2191,7 +2191,8 @@ namespace nil {
                 for (int index = 1; index < 25; ++index) {
                     int r = 3 * component.rho_offsets[index];
                     int minus_r = 192 - r;
-                    integral_type integral_A = integral_type(A_2[perm[index - 1]].data);
+                    integral_type integral_A =
+                        integral_type(A_2[perm[index - 1]].to_integral());
                     integral_type smaller_part = integral_A >> minus_r;
                     integral_type bigger_part = integral_A & ((integral_type(1) << minus_r) - 1);
                     integral_type integral_A_rot = (bigger_part << r) + smaller_part;
@@ -2257,7 +2258,7 @@ namespace nil {
                     int y = index / 5;
                     value_type sum =
                         component.sparse_3 - 2 * B[x + 5 * y] + B[(x + 1) % 5 + 5 * y] - B[(x + 2) % 5 + 5 * y];
-                    integral_type integral_sum = integral_type(sum.data);
+                    integral_type integral_sum = integral_type(sum.to_integral());
                     auto chunk_size = component.chi_chunk_size;
                     auto num_chunks = component.chi_num_chunks;
                     std::vector<integral_type> integral_chunks;
@@ -2301,7 +2302,7 @@ namespace nil {
                 {
                     value_type round_constant = var_value(assignment, instance_input.round_constant);
                     value_type sum = A_3[0] + round_constant;
-                    integral_type integral_sum = integral_type(sum.data);
+                    integral_type integral_sum = integral_type(sum.to_integral());
                     auto chunk_size = component.normalize3_chunk_size;
                     auto num_chunks = component.normalize3_num_chunks;
                     std::vector<integral_type> integral_chunks;

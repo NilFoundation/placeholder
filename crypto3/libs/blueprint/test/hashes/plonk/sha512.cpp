@@ -123,10 +123,14 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_sha512) {
     ed25519_type::scalar_field_type::value_type b = crypto3::algebra::random_element<ed25519_type::scalar_field_type>();
     ed25519_type::template g1_type<crypto3::algebra::curves::coordinates::affine>::value_type T = b * R;
 
-    ed25519_type::base_field_type::integral_type Tx = ed25519_type::base_field_type::integral_type(T.X.data);
-    ed25519_type::base_field_type::integral_type Ty = ed25519_type::base_field_type::integral_type(T.Y.data);
-    ed25519_type::base_field_type::integral_type Rx = ed25519_type::base_field_type::integral_type(R.X.data);
-    ed25519_type::base_field_type::integral_type Ry = ed25519_type::base_field_type::integral_type(R.Y.data);
+    ed25519_type::base_field_type::integral_type Tx =
+        ed25519_type::base_field_type::integral_type(T.X.to_integral());
+    ed25519_type::base_field_type::integral_type Ty =
+        ed25519_type::base_field_type::integral_type(T.Y.to_integral());
+    ed25519_type::base_field_type::integral_type Rx =
+        ed25519_type::base_field_type::integral_type(R.X.to_integral());
+    ed25519_type::base_field_type::integral_type Ry =
+        ed25519_type::base_field_type::integral_type(R.Y.to_integral());
     typename ed25519_type::base_field_type::integral_type base = 1;
     typename ed25519_type::base_field_type::integral_type mask = (base << 66) - 1;
     std::vector<typename BlueprintFieldType::value_type> public_input = {

@@ -62,7 +62,7 @@ template<typename BlueprintFieldType>
 std::size_t number_bits(typename BlueprintFieldType::value_type value) {
     using integral_type = typename BlueprintFieldType::integral_type;
 
-    integral_type integral_value = integral_type(value.data);
+    integral_type integral_value = integral_type(value.to_integral());
     std::size_t result = 0;
     while (integral_value > 0) {
         integral_value >>= 1;
@@ -75,7 +75,7 @@ template<typename BlueprintFieldType>
 typename BlueprintFieldType::value_type to_sparse(typename BlueprintFieldType::value_type value) {
     using value_type = typename BlueprintFieldType::value_type;
     using integral_type = typename BlueprintFieldType::integral_type;
-    integral_type value_integral = integral_type(value.data);
+    integral_type value_integral = integral_type(value.to_integral());
     integral_type result_integral = 0;
     integral_type power = 1;
     for (int i = 0; i < 64; ++i) {
@@ -91,7 +91,7 @@ template<typename BlueprintFieldType>
 typename BlueprintFieldType::value_type to_le(typename BlueprintFieldType::value_type value) {
     using value_type = typename BlueprintFieldType::value_type;
     using integral_type = typename BlueprintFieldType::integral_type;
-    integral_type value_integral = integral_type(value.data);
+    integral_type value_integral = integral_type(value.to_integral());
     integral_type result_integral = 0;
     for (int i = 0; i < 64; ++i) {
         integral_type bit = value_integral & 1;
@@ -105,7 +105,7 @@ template<typename BlueprintFieldType>
 typename BlueprintFieldType::value_type to_le_bytes(typename BlueprintFieldType::value_type value) {
     using value_type = typename BlueprintFieldType::value_type;
     using integral_type = typename BlueprintFieldType::integral_type;
-    integral_type value_integral = integral_type(value.data);
+    integral_type value_integral = integral_type(value.to_integral());
     integral_type result_integral = 0;
     for (int i = 0; i < 64; i += 8) {
         integral_type bit = value_integral & 0xff;
@@ -116,17 +116,12 @@ typename BlueprintFieldType::value_type to_le_bytes(typename BlueprintFieldType:
 }
 /*
 template<typename BlueprintFieldType>
-typename BlueprintFieldType::value_type unpack(typename BlueprintFieldType::value_type value) {
-    using value_type = typename BlueprintFieldType::value_type;
-    using integral_type = typename BlueprintFieldType::integral_type;
-    integral_type value_integral = integral_type(value.data);
-    integral_type result_integral = 0;
-    integral_type power = 1;
-    while (value_integral >= 1) {
-        integral_type bit = value_integral & 1;
-        result_integral = result_integral + bit * power;
-        value_integral = value_integral >> 3;
-        power = power << 1;
+typename BlueprintFieldType::value_type unpack(typename BlueprintFieldType::value_type
+value) { using value_type = typename BlueprintFieldType::value_type; using integral_type =
+typename BlueprintFieldType::integral_type; integral_type value_integral =
+integral_type(value.to_integral()); integral_type result_integral = 0; integral_type power
+= 1; while (value_integral >= 1) { integral_type bit = value_integral & 1; result_integral
+= result_integral + bit * power; value_integral = value_integral >> 3; power = power << 1;
     }
     return value_type(result_integral);
 }
@@ -142,12 +137,12 @@ std::vector<typename BlueprintFieldType::value_type>
     std::size_t shift = 64 * message.size() - num_bits;
 
     if (shift > 0) {
-        integral_type relay_value = integral_type(message[0].data);
+        integral_type relay_value = integral_type(message[0].to_integral());
         for (int i = 1; i < message.size(); ++i) {
             integral_type mask = (integral_type(1) << (64 - shift)) - 1;
             integral_type left_part =
                 integral_type(message[i].to_integral() >> (64 - shift));
-            integral_type right_part = integral_type(message[i].data) & mask;
+            integral_type right_part = integral_type(message[i].to_integral()) & mask;
             result.push_back(value_type((relay_value << shift) + left_part));
             relay_value = right_part;
         }
@@ -183,14 +178,16 @@ std::array<typename BlueprintFieldType::value_type, 25>
 
     std::array<std::array<integral_type, 5>, 5> inner_state_integral;
     std::array<integral_type, 17> padded_message_chunk_integral;
-    integral_type RC_integral = integral_type(RC.data);
+    integral_type RC_integral = integral_type(RC.to_integral());
     for (int x = 0; x < 5; ++x) {
         for (int y = 0; y < 5; ++y) {
-            inner_state_integral[x][y] = integral_type(inner_state[x + 5 * y].data);
+            inner_state_integral[x][y] =
+                integral_type(inner_state[x + 5 * y].to_integral());
         }
     }
     for (int i = 0; i < 17; ++i) {
-        padded_message_chunk_integral[i] = integral_type(padded_message_chunk[i].data);
+        padded_message_chunk_integral[i] =
+            integral_type(padded_message_chunk[i].to_integral());
     }
 
     auto rot = [](integral_type x, const int s) {
@@ -210,7 +207,8 @@ std::array<typename BlueprintFieldType::value_type, 25>
         }
         if (last_round_call) {
             value_type last_round_const = to_sparse<BlueprintFieldType>(value_type(0x8000000000000000));
-            integral_type last_round_const_integral = integral_type(last_round_const.data);
+            integral_type last_round_const_integral =
+                integral_type(last_round_const.to_integral());
             inner_state_integral[1][3] =
                 inner_state_integral[1][3] ^ padded_message_chunk_integral[16] ^ last_round_const_integral;
         }

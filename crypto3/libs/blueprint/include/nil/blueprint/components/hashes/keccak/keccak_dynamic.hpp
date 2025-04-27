@@ -933,19 +933,28 @@ namespace nil {
                         const integral_type sparse_x7f = component.round_tf.sparse_x7f >> 144;
                         auto s16 = var_value(assignment, var(m.s.S1.index, state_row + 3, false));
                         auto s16_chunks = sparsed_64bits_to_4_chunks<BlueprintFieldType>(s16);
-                        value_type mod = integral_type(s16_chunks[0].data) >= sparse_x80 ? s16_chunks[0] - sparse_x80 : sparse_x7f - s16_chunks[0];
-                        value_type XOR = integral_type(s16_chunks[0].data) >= sparse_x80 ? s16_chunks[0] - sparse_x80 : s16_chunks[0] + sparse_x80;
-/*                      std::cout <<std::hex
-                            << "S16 = " << s16 << ":" << state[16] << " => "
-                            << s16_chunks[0] << ", "
-                            << s16_chunks[1] << ", "
-                            << s16_chunks[2] << ", "
-                            << s16_chunks[3] << std::dec << std::endl;
-                        std::cout << std::hex << "mod = " << mod << std::dec << std::endl;
-                        std::cout << std::hex << "XOR = " << XOR << std::dec << std::endl;
-                        std::cout << std::hex << "sparse_x80 = " << sparse_x80 << std::dec << std::endl;
-                        std::cout << std::hex << "sparse_x7f = " << sparse_x7f << std::dec << std::endl;
-                        std::cout << "State row = " << state_row << std::endl;*/
+                        value_type mod =
+                            integral_type(s16_chunks[0].to_integral()) >= sparse_x80
+                                ? s16_chunks[0] - sparse_x80
+                                : sparse_x7f - s16_chunks[0];
+                        value_type XOR =
+                            integral_type(s16_chunks[0].to_integral()) >= sparse_x80
+                                ? s16_chunks[0] - sparse_x80
+                                : s16_chunks[0] + sparse_x80;
+                        /*                      std::cout <<std::hex
+                                                    << "S16 = " << s16 << ":" << state[16]
+                           << " => "
+                                                    << s16_chunks[0] << ", "
+                                                    << s16_chunks[1] << ", "
+                                                    << s16_chunks[2] << ", "
+                                                    << s16_chunks[3] << std::dec <<
+                           std::endl; std::cout << std::hex << "mod = " << mod << std::dec
+                           << std::endl; std::cout << std::hex << "XOR = " << XOR <<
+                           std::dec << std::endl; std::cout << std::hex << "sparse_x80 = "
+                           << sparse_x80 << std::dec << std::endl; std::cout << std::hex
+                           << "sparse_x7f = " << sparse_x7f << std::dec << std::endl;
+                                                std::cout << "State row = " << state_row
+                           << std::endl;*/
 
                         assignment.witness(m.s.rng.index, state_row) = mod;
                         assignment.witness(m.s.rng.index, state_row + 1) = s16_chunks[0];

@@ -140,7 +140,7 @@ void calc_expected_and_test_bit_decomposition(typename FieldType::value_type inp
     using value_type = typename FieldType::value_type;
     using integral_type = typename FieldType::integral_type;
 
-    integral_type input_integral = integral_type(input.data);
+    integral_type input_integral = integral_type(input.to_integral());
 
     std::vector<value_type> expected_res = std::vector<value_type>(BitsAmount);
     for (std::size_t i = 0; i < BitsAmount; i++) {
@@ -186,8 +186,8 @@ void test_decomposition_random_inputs() {
 
     for (std::size_t j = 0; j < random_tests_amount; j++) {
         value_type random = rand();
-        integral_type input_integral = integral_type(random.data);
-        input_integral = input_integral & integral_type((max_value - 1).data);
+        integral_type input_integral = integral_type(random.to_integral());
+        input_integral = input_integral & integral_type((max_value - 1).to_integral());
         value_type input = value_type(input_integral);
         // Sanity check
         assert(input < max_value);
@@ -208,11 +208,14 @@ void test_decomposition_fail_random_inputs() {
     rand.seed(seed_seq);
 
     value_type max_value = value_type(2).pow(BitsAmount);
-    integral_type restriction_modulus = BlueprintFieldType::modulus - integral_type(max_value.data);
+    integral_type restriction_modulus =
+        BlueprintFieldType::modulus - integral_type(max_value.to_integral());
 
     for (std::size_t j = 0; j < random_tests_amount; j++) {
         value_type random = rand();
-        value_type input = max_value + (value_type(integral_type(random.data) % restriction_modulus));
+        value_type input =
+            max_value +
+            (value_type(integral_type(random.to_integral()) % restriction_modulus));
         // Sanity check
         assert(input >= max_value);
 

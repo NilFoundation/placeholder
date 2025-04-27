@@ -47,12 +47,13 @@ void test_add_sub_mod_p(
     extended_integral_type x = 0, y = 0, p = 0, pow = 1;
     // Populate x, y, p
     for (std::size_t i = 0; i < num_chunks; ++i) {
-        x += extended_integral_type(integral_type(public_input[i].data)) * pow;
-        y += extended_integral_type(integral_type(public_input[i + num_chunks].data)) *
+        x += extended_integral_type(integral_type(public_input[i].to_integral())) * pow;
+        y += extended_integral_type(
+                 integral_type(public_input[i + num_chunks].to_integral())) *
              pow;
-        p +=
-            extended_integral_type(integral_type(public_input[i + 2 * num_chunks].data)) *
-            pow;
+        p += extended_integral_type(
+                 integral_type(public_input[i + 2 * num_chunks].to_integral())) *
+             pow;
         pow <<= bit_size_chunk;
     }
 
@@ -82,7 +83,7 @@ void test_add_sub_mod_p(
         extended_integral_type R = 0;
         pow = 1;
         for (std::size_t i = 0; i < num_chunks; i++) {
-            R += extended_integral_type(integral_type(A.r[i].data)) * pow;
+            R += extended_integral_type(integral_type(A.r[i].to_integral())) * pow;
             pow <<= bit_size_chunk;
         }
 #ifdef BLUEPRINT_PLONK_PROFILING_ENABLED
@@ -154,8 +155,10 @@ void add_sub_mod_p_tests() {
 
         foreign_value_type src_x = generate_random(), src_y = generate_random();
 
-        extended_integral_type x = extended_integral_type(integral_type(src_x.data)),
-                               y = extended_integral_type(integral_type(src_y.data)),
+        extended_integral_type x = extended_integral_type(
+                                   integral_type(src_x.to_integral())),
+                               y = extended_integral_type(
+                                   integral_type(src_y.to_integral())),
                                extended_base = 1,
                                ext_pow = extended_base << (num_chunks * bit_size_chunk),
                                p = NonNativeFieldType::modulus;

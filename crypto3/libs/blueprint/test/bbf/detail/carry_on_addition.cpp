@@ -95,7 +95,7 @@ void carry_on_addition_tests() {
         std::vector<typename BlueprintFieldType::value_type> public_input = {};
         for (std::size_t j = 0; j < 2 * num_chunks; j++) {
             public_input.push_back(
-                value_type(integral_type(generate_random().data) % chunk_size));
+                value_type(integral_type(generate_random().to_integral()) % chunk_size));
         }
         test_carry_on_addition<BlueprintFieldType, num_chunks, bit_size_chunk>(
             public_input);

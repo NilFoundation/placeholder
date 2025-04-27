@@ -325,7 +325,8 @@ namespace nil {
                         auto c = challenge<field_type>();
 
                         typename field_type::integral_type intermediate_result =
-                            static_cast<typename field_type::integral_type>(c.data);
+                            static_cast<typename field_type::integral_type>(
+                                c.to_integral());
                         Integral result = 0u;
                         Integral factor = 1u;
                         size_t bytes_to_fill = sizeof(Integral);

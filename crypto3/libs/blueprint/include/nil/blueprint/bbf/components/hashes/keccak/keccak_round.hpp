@@ -440,7 +440,7 @@ namespace nil {
                             int y = index / 5;
                             TYPE sum = TYPE(sparse_3) - 2 * B[x + 5 * y] + B[(x + 1) % 5 + 5 * y] -
                                        B[(x + 2) % 5 + 5 * y];
-                            integral_type integral_sum = integral_type(sum.data);
+                            integral_type integral_sum = integral_type(sum.to_integral());
                             std::vector<integral_type> integral_chunks;
                             std::vector<integral_type> integral_chi_chunks;
                             integral_type mask = (integral_type(1) << chi_chunk_size) - 1;

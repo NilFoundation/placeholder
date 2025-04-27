@@ -135,7 +135,7 @@ namespace nil {
                             return nil::crypto3::marshalling::status_type::invalid_msg_data;
                         }
                         base_field_value_type x = x2.sqrt();
-                        auto x_int = static_cast<base_integral_type>(x.data);
+                        auto x_int = static_cast<base_integral_type>(x.to_integral());
                         if (rfc8032) {
                             if ( (x_int % 2 == 1) != sign) {
                                 x_int = base_field_type::modulus - x_int;

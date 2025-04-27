@@ -92,7 +92,7 @@ BOOST_AUTO_TEST_CASE(polynomial_dfs_from_coefficients_less_degree) {
 
     BOOST_CHECK_EQUAL(c_res.size(), a.size());
     for (std::size_t i = 0; i < c_res.size(); i++) {
-        BOOST_CHECK_EQUAL(c_res[i].data, a[i].data);
+        BOOST_CHECK_EQUAL(c_res[i].data, a[i].to_integral());
     }
 }
 
@@ -115,7 +115,7 @@ BOOST_AUTO_TEST_CASE(polynomial_dfs_coefficients_less_degree) {
 
     BOOST_CHECK_EQUAL(c_res.size(), c.size());
     for (std::size_t i = 0; i < c_res.size(); i++) {
-        BOOST_CHECK_EQUAL(c_res[i].data, c[i].data);
+        BOOST_CHECK_EQUAL(c_res[i].data, c[i].to_integral());
     }
 }
 
@@ -133,7 +133,7 @@ BOOST_AUTO_TEST_CASE(polynomial_dfs_coefficients_same_degree) {
     std::vector<typename FieldType::value_type> c_res = {1u, 3u, 4u, 25u, 6u, 7u, 7u, 2u};
     std::vector<typename FieldType::value_type> c = a.coefficients();
     for (std::size_t i = 0; i < c_res.size(); i++) {
-        BOOST_CHECK_EQUAL(c_res[i].data, c[i].data);
+        BOOST_CHECK_EQUAL(c_res[i].data, c[i].to_integral());
     }
 }
 BOOST_AUTO_TEST_SUITE_END()

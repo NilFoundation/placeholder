@@ -50,7 +50,7 @@ BOOST_AUTO_TEST_CASE(polynomial_constructor) {
     polynomial_view<typename FieldType::value_type> a(a_v);
 
     for (std::size_t i = 0; i < a_v.size(); i++) {
-        BOOST_CHECK_EQUAL(a[i].data, a_v[i].data);
+        BOOST_CHECK_EQUAL(a[i].data, a_v[i].to_integral());
     }
 }
 
@@ -70,7 +70,7 @@ BOOST_AUTO_TEST_CASE(polynomial_addition_equal) {
     std::vector<typename FieldType::value_type> a_ans = {10u, 6u, 15u, 39u, 13u, 8u, 12u, 10u};
 
     for (std::size_t i = 0; i < a_ans.size(); ++i) {
-        BOOST_CHECK_EQUAL(a_ans[i].data, a[i].data);
+        BOOST_CHECK_EQUAL(a_ans[i].data, a[i].to_integral());
     }
 }
 
@@ -87,7 +87,7 @@ BOOST_AUTO_TEST_CASE(polynomial_addition_long_a) {
     std::vector<typename FieldType::value_type> a_ans = {10u, 6u, 15u, 39u, 13u, 7u, 7u, 2u};
 
     for (std::size_t i = 0; i < a_ans.size(); i++) {
-        BOOST_CHECK_EQUAL(a_ans[i].data, a[i].data);
+        BOOST_CHECK_EQUAL(a_ans[i].data, a[i].to_integral());
     }
 }
 
@@ -104,7 +104,7 @@ BOOST_AUTO_TEST_CASE(polynomial_addition_long_b) {
     std::vector<typename FieldType::value_type> a_ans = {10u, 6u, 15u, 39u, 13u, 1u, 5u, 8u};
 
     for (std::size_t i = 0; i < a_ans.size(); i++) {
-        BOOST_CHECK_EQUAL(a_ans[i].data, a[i].data);
+        BOOST_CHECK_EQUAL(a_ans[i].data, a[i].to_integral());
     }
 }
 
@@ -121,7 +121,7 @@ BOOST_AUTO_TEST_CASE(polynomial_addition_zero_a) {
     std::vector<typename FieldType::value_type> a_ans = {1u, 3u, 4u, 25u, 6u, 7u, 7u, 2u};
 
     for (std::size_t i = 0; i < a_ans.size(); i++) {
-        BOOST_CHECK_EQUAL(a_ans[i].data, a[i].data);
+        BOOST_CHECK_EQUAL(a_ans[i].data, a[i].to_integral());
     }
 }
 
@@ -138,7 +138,7 @@ BOOST_AUTO_TEST_CASE(polynomial_addition_zero_b) {
     std::vector<typename FieldType::value_type> a_ans = {1u, 3u, 4u, 25u, 6u, 7u, 7u, 2u};
 
     for (std::size_t i = 0; i < a_ans.size(); i++) {
-        BOOST_CHECK_EQUAL(a_ans[i].data, a[i].data);
+        BOOST_CHECK_EQUAL(a_ans[i].data, a[i].to_integral());
     }
 }
 
@@ -160,7 +160,7 @@ BOOST_AUTO_TEST_CASE(polynomial_subtraction_equal) {
         FieldType::modulus - 8u, 0u, FieldType::modulus - 7u, 11u, FieldType::modulus - 1u, 6u, 2u, FieldType::modulus - 6u};
 
     for (std::size_t i = 0; i < a_ans.size(); i++) {
-        BOOST_CHECK_EQUAL(a_ans[i].data, a[i].data);
+        BOOST_CHECK_EQUAL(a_ans[i].data, a[i].to_integral());
     }
 }
 
@@ -178,7 +178,7 @@ BOOST_AUTO_TEST_CASE(polynomial_subtraction_long_a) {
         FieldType::modulus - 8u, 0u, FieldType::modulus - 7u, 11u, FieldType::modulus - 1u, 7u, 7u, 2u};
 
     for (std::size_t i = 0; i < a_ans.size(); i++) {
-        BOOST_CHECK_EQUAL(a_ans[i].data, a[i].data);
+        BOOST_CHECK_EQUAL(a_ans[i].data, a[i].to_integral());
     }
 }
 
@@ -197,7 +197,7 @@ BOOST_AUTO_TEST_CASE(polynomial_subtraction_long_b) {
         FieldType::modulus - 1u, FieldType::modulus - 5u, FieldType::modulus - 8u};
 
     for (std::size_t i = 0; i < a_ans.size(); i++) {
-        BOOST_CHECK_EQUAL(a_ans[i].data, a[i].data);
+        BOOST_CHECK_EQUAL(a_ans[i].data, a[i].to_integral());
     }
 }
 
@@ -217,7 +217,7 @@ BOOST_AUTO_TEST_CASE(polynomial_subtraction_zero_a) {
         FieldType::modulus - 2u};
 
     for (std::size_t i = 0; i < a_ans.size(); i++) {
-        BOOST_CHECK_EQUAL(a_ans[i].data, a[i].data);
+        BOOST_CHECK_EQUAL(a_ans[i].data, a[i].to_integral());
     }
 }
 
@@ -234,7 +234,7 @@ BOOST_AUTO_TEST_CASE(polynomial_subtraction_zero_b) {
     std::vector<typename FieldType::value_type> a_ans = {1u, 3u, 4u, 25u, 6u, 7u, 7u, 2u};
 
     for (std::size_t i = 0; i < a_ans.size(); i++) {
-        BOOST_CHECK_EQUAL(a_ans[i].data, a[i].data);
+        BOOST_CHECK_EQUAL(a_ans[i].data, a[i].to_integral());
     }
 }
 
@@ -255,7 +255,7 @@ BOOST_AUTO_TEST_CASE(polynomial_multiplication_long_a) {
     std::vector<typename FieldType::value_type> a_ans = {65u, 0u, 5u, 169u, 0u, 26u, 0u, 1u};
 
     for (std::size_t i = 0; i < a_ans.size(); i++) {
-        BOOST_CHECK_EQUAL(a_ans[i].data, a[i].data);
+        BOOST_CHECK_EQUAL(a_ans[i].data, a[i].to_integral());
     }
 }
 
@@ -272,7 +272,7 @@ BOOST_AUTO_TEST_CASE(polynomial_multiplication_long_b) {
     std::vector<typename FieldType::value_type> a_ans = {65u, 0u, 5u, 169u, 0u, 26u, 0u, 1u};
 
     for (std::size_t i = 0; i < a_ans.size(); i++) {
-        BOOST_CHECK_EQUAL(a_ans[i].data, a[i].data);
+        BOOST_CHECK_EQUAL(a_ans[i].data, a[i].to_integral());
     }
 }
 
@@ -289,7 +289,7 @@ BOOST_AUTO_TEST_CASE(polynomial_multiplication_zero_a) {
     std::vector<typename FieldType::value_type> a_ans = {0u};
 
     for (std::size_t i = 0; i < a_ans.size(); i++) {
-        BOOST_CHECK_EQUAL(a_ans[i].data, a[i].data);
+        BOOST_CHECK_EQUAL(a_ans[i].data, a[i].to_integral());
     }
 }
 
@@ -306,7 +306,7 @@ BOOST_AUTO_TEST_CASE(polynomial_multiplication_zero_b) {
     std::vector<typename FieldType::value_type> a_ans = {0u};
 
     for (std::size_t i = 0; i < a_ans.size(); i++) {
-        BOOST_CHECK_EQUAL(a_ans[i].data, a[i].data);
+        BOOST_CHECK_EQUAL(a_ans[i].data, a[i].to_integral());
     }
 }
 
@@ -327,7 +327,7 @@ BOOST_AUTO_TEST_CASE(polynomial_div) {
     a /= b;
 
     for (std::size_t i = 0; i < q_ans.size(); ++i) {
-        BOOST_CHECK_EQUAL(q_ans[i].data, a[i].data);
+        BOOST_CHECK_EQUAL(q_ans[i].data, a[i].to_integral());
     }
 }
 
@@ -344,7 +344,7 @@ BOOST_AUTO_TEST_CASE(polynomial_mod) {
     a %= b;
 
     for (std::size_t i = 0; i < r_ans.size(); ++i) {
-        BOOST_CHECK_EQUAL(r_ans[i].data, a[i].data);
+        BOOST_CHECK_EQUAL(r_ans[i].data, a[i].to_integral());
     }
 }
 

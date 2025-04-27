@@ -67,7 +67,8 @@ void test_fri_cosets(std::vector<typename FieldType::value_type> public_input,
     typename component_type::input_type instance_input = {
         var(0, 0, false, var::column_type::public_input)};
 
-    typename BlueprintFieldType::integral_type pi_num = typename BlueprintFieldType::integral_type(public_input[0].data);
+    typename BlueprintFieldType::integral_type pi_num =
+        typename BlueprintFieldType::integral_type(public_input[0].to_integral());
 
     std::vector<std::array<typename BlueprintFieldType::value_type,3>> expected_res = {};
 

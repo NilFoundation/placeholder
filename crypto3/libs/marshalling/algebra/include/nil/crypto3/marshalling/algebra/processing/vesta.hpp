@@ -111,9 +111,12 @@ namespace nil {
                             point_affine = point.to_affine();
 
                         *iter++ = (point_affine.Y.to_integral() & 1u) == 0u ? 0x02 : 0x03;
-                        multiprecision::processing::write_data<params_type::bit_length(), endianness>(
-                                static_cast<typename group_value_type::field_type::integral_type>(point_affine.X.data),
-                                iter);
+                        multiprecision::processing::write_data<params_type::bit_length(),
+                                                               endianness>(
+                            static_cast<
+                                typename group_value_type::field_type::integral_type>(
+                                point_affine.X.to_integral()),
+                            iter);
 
                         return nil::crypto3::marshalling::status_type::success;
                     }

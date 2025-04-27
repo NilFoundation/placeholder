@@ -165,7 +165,7 @@ void test_field_mul_all_cases() {
     typename NonNativeFieldType::value_type f = 0xf;
     typename NonNativeFieldType::integral_type f_integral;
     for (std::size_t i = 0; i < 256; i++) {
-        f_integral = typename NonNativeFieldType::integral_type(f.data);
+        f_integral = typename NonNativeFieldType::integral_type(f.to_integral());
         f_integral = (f_integral << 1) + 1;
         f = typename NonNativeFieldType::value_type(f_integral);
         test_field_mul_useable<FieldType, NonNativeFieldType>(f, f);
