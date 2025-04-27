@@ -110,6 +110,8 @@ using field_types = std::tuple<
     nil::crypto3::algebra::fields::alt_bn128_scalar_field<254u>,
     nil::crypto3::algebra::fields::goldilocks, nil::crypto3::algebra::fields::mersenne31,
     nil::crypto3::algebra::fields::koalabear, nil::crypto3::algebra::fields::babybear,
+    nil::crypto3::algebra::fields::babybear_fp4,
+    nil::crypto3::algebra::fields::babybear_fp5,
     nil::crypto3::algebra::fields::pallas_base_field,
     nil::crypto3::algebra::fields::mnt4_base_field<298>,
     nil::crypto3::algebra::fields::mnt6_base_field<298>,

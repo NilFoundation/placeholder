@@ -243,7 +243,7 @@ public:
 BOOST_FIXTURE_TEST_SUITE(zkevm_bbf_hardhat, zkEVMHardhatTestFixture)
 
 BOOST_AUTO_TEST_CASE(minimal_math) {
-    using field_type = typename algebra::curves::pallas::base_field_type;
+    using field_type = typename algebra::fields::babybear_fp4;
     auto pts = load_hardhat_input("minimal_math.json");
     l1_size_restrictions max_sizes;
 

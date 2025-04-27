@@ -77,7 +77,7 @@ namespace nil {
                         constexpr element_fp(const element_fp &&B) BOOST_NOEXCEPT
                                 : data(std::move(B.data)) {}
 
-                        typename field_type::integral_type to_integral() const {
+                        constexpr typename field_type::integral_type to_integral() const {
                             return data.base();
                         }
 
