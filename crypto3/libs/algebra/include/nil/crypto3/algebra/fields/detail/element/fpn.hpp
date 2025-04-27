@@ -37,6 +37,14 @@
 #include <nil/crypto3/algebra/fields/detail/element/operations.hpp>
 #include <nil/crypto3/algebra/fields/detail/exponentiation.hpp>
 
+namespace nil::crypto3::marshalling::types::detail {
+    template<typename FieldValueType>
+    typename std::enable_if<algebra::is_extended_field_element<FieldValueType>::value,
+                            std::array<typename FieldValueType::field_type::integral_type,
+                                       FieldValueType::field_type::arity>>::type
+    fill_field_data(const FieldValueType &field_elem);
+}
+
 namespace nil::crypto3::algebra::fields::detail {
     template<typename T>
     concept BinomialFieldExtensionParams = requires(T a) {
@@ -327,6 +335,13 @@ namespace nil::crypto3::algebra::fields::detail {
         }
 
         friend std::hash<element_fpn>;
+        template<typename FieldValueType>
+        friend typename std::enable_if<
+            algebra::is_extended_field_element<FieldValueType>::value,
+            std::array<typename FieldValueType::field_type::integral_type,
+                       FieldValueType::field_type::arity>>::type
+        nil::crypto3::marshalling::types::detail::fill_field_data(
+            const FieldValueType &field_elem);
     };
 
     template<BinomialFieldExtensionParams Params>
