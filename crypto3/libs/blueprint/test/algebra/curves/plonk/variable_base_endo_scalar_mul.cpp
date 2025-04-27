@@ -88,7 +88,7 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_base_endo_scalar_mul) {
     typename BlueprintFieldType::value_type endo_scalar = 0x244630A7EE5033DA383B3677B4C5CA94A3EBE4156FC4FA4E08B35974929CA2C5_big_uint255;
 
     typename curve_type::template g1_type<algebra::curves::coordinates::affine>::value_type testResult = endo_scalar * T;
-    std::cout<<"Expected result for endo_scalar * T: "<<testResult.X.data<<" "<< testResult.Y.data<<std::endl;
+    std::cout<<"Expected result for endo_scalar * T: "<<testResult.X<<" "<< testResult.Y<<std::endl;
     std::array<bool, curve_type::scalar_field_type::modulus_bits + 1> bits = {false};
     for (std::size_t i = 0; i < 128; i++) {
         bits[128 - i - 1] = multiprecision::bit_test(integral_b, i);
@@ -112,7 +112,7 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_base_endo_scalar_mul) {
         }
         acc = acc + testQ + acc;
     }
-    std::cout<<"Expected result: "<<acc.X.data<<" "<< acc.Y.data<<std::endl;
+    std::cout<<"Expected result: "<<acc.X<<" "<< acc.Y<<std::endl;
 
     auto result_check = [](AssignmentType &assignment,
         component_type::result_type &real_res) {
