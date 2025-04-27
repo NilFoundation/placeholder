@@ -406,7 +406,7 @@ namespace nil {
                                 R[i] = input.r[i];
                                 S[i] = input.s[i];
                             }
-                            V = input.v.data;
+                            V = input.v;
 
                             scalar_integral_type pow = 1;
                             SCALAR_TYPE z = 0, r = 0, s = 0;

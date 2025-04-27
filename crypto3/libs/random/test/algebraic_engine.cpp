@@ -44,7 +44,7 @@ using namespace nil::crypto3;
 
 template<typename FieldParams>
 void print_field_element(std::ostream &os, const typename algebra::fields::detail::element_fp<FieldParams> &e) {
-    os << std::hex << e.data;
+    os << std::hex << e;
 }
 
 template<typename FieldParams>

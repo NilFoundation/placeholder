@@ -327,7 +327,7 @@ public:
         } else {
             ss << std::dec;
         }
-        ss << row[column_index].data;
+        ss << row[column_index];
         string_cache[column_index] = ss.str();
     }
 
@@ -454,7 +454,7 @@ protected:
             } else {
                 ss << std::dec;
             }
-            ss << row[i].data;
+            ss << row[i];
             string_cache.push_back(ss.str());
         }
     }
@@ -1280,7 +1280,7 @@ public:
                 return;
             }
             std::stringstream sse;
-            sse << std::hex << value.data;
+            sse << std::hex << value;
             label->set_text(sse.str());
         }
 

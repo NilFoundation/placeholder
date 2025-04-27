@@ -265,7 +265,7 @@ namespace nil {
 
             std::string to_string() const {
                 std::stringstream ss;
-                ss << "Gate ID: " << value_1 << " " << value_2.data;
+                ss << "Gate ID: " << value_1 << " " << value_2;
                 return ss.str();
             }
         };
@@ -372,7 +372,7 @@ namespace nil {
 
             std::string to_string() const {
                 std::stringstream ss;
-                ss << "Lookup Gate ID: " << value_1 << " " << value_2.data;
+                ss << "Lookup Gate ID: " << value_1 << " " << value_2;
                 return ss.str();
             }
         };

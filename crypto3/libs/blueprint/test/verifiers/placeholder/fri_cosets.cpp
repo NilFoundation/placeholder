@@ -101,8 +101,7 @@ void test_fri_cosets(std::vector<typename FieldType::value_type> public_input,
                 std::cout << std::hex << var_value(assignment, real_res.output[i][0])
                           << "," << std::hex
                           << var_value(assignment, real_res.output[i][1]) << ","
-                          << std::dec
-                          << var_value(assignment, real_res.output[i][2]).data;
+                          << std::dec << var_value(assignment, real_res.output[i][2]);
                 if (i < n-1) { std::cout << ",\n"; }
             }
             std::cout << "}\n\n";

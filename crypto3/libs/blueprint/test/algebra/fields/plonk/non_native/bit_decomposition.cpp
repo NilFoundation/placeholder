@@ -81,12 +81,12 @@ void test_bit_decomposition(typename BlueprintFieldType::value_type input,
 #ifdef BLUEPRINT_PLONK_PROFILING_ENABLED
         std::cout << "input: " << std::hex << public_input[0] << "\n";
         for (std::size_t i = 0; i < expected_res.size(); i++) {
-            std::cout << expected_res[i].data;
+            std::cout << expected_res[i];
         }
         std::cout << std::endl;
 
         for (std::size_t i = 0; i < real_res.output.size(); i++) {
-            std::cout << var_value(assignment, real_res.output[i]).data;
+            std::cout << var_value(assignment, real_res.output[i]);
         }
         std::cout << std::endl;
             #endif
