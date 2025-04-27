@@ -620,7 +620,7 @@ namespace nil {
                 } else {
                     os << "[Polynomial, size " << poly.size() << " values ";
                     for (auto it = poly.begin(); it != poly.end(); ++it) {
-                        os << "0x" << std::hex << it->data << ", ";
+                        os << "0x" << std::hex << *it << ", ";
                     }
                     os << "]";
                 }

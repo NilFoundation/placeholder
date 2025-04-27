@@ -118,7 +118,9 @@ class zkevm_signextend_bbf : public generic_component<FieldType, stage> {
             y_chunks = zkevm_word_to_field_element<FieldType>(result);
 
             // conversion of field elements to integers for computing division remainders
-            auto field_to_int = [](TYPE x) {return static_cast<unsigned int>(x.data.base()); };
+            auto field_to_int = [](TYPE x) {
+                return static_cast<unsigned int>(x.to_integral());
+            };
 
             // the following values are necessary to bind b,x and y
             b0 = (b > 65535) ? 32 : b_chunks[0]; // b0 is either the first chunk of b, or 32 if other chunks are not all 0s
