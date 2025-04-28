@@ -54,22 +54,6 @@ namespace nil {
             public:
                 using typename generic_component<FieldType,stage>::TYPE;
 
-                // using private_input_type = std::conditional_t<
-                //         stage == GenerationStage::ASSIGNMENT,
-                //         zkevm_keccak_buffers, std::monostate
-                // >;
-
-                // struct input_type {
-                //     TYPE rlc_challenge;
-                //     private_input_type private_input;
-                // }; 
-//                 [0,    55]
-//                 [55,  127]
-//                 [128, 183]
-//                 [184, 191]
-//                 [192, 247]
-//                 [248, 255]
-
                 std::size_t max_rows;
 
                 std::vector<TYPE> rlp_prefix_0  = std::vector<TYPE>(max_rows);
@@ -103,7 +87,10 @@ namespace nil {
                             first_element[row_index] = i;
                             first_element_flag[row_index] = 1;
                             element_type[row_index] = 1;
-                            len_low[row_index] = 1;
+                            if (i == 0)
+                                len_low[row_index] = 0;
+                            else
+                                len_low[row_index] = 1;
                             len_high[row_index] = 0;
                             row_index++;
                         }
@@ -193,31 +180,20 @@ namespace nil {
                             element_type[row_index] = 0;
                             len_low[row_index] = i & 0xFF;
                             len_high[row_index] = (i >> 8) & 0xFF;
-                            // if (rlp_prefix_1[row_index] == 0x7B) {
-                            //     std::cout << "jingo 0\t1\t2\tfirst elem\tfirst flag\ttype\tlenlow\tlenhigh\n" <<
-                            //                  std::hex << rlp_prefix_0[row_index] << std::dec << " " <<
-                            //                  std::hex << rlp_prefix_1[row_index] << std::dec << " " <<
-                            //                  std::hex << rlp_prefix_2[row_index] << std::dec << " " <<
-                            //                  std::hex << first_element[row_index] << std::dec << " " <<
-                            //                  std::hex << first_element_flag[row_index] << std::dec << " " <<
-                            //                  std::hex << element_type[row_index] << std::dec << " " <<
-                            //                  std::hex << len_low[row_index] << std::dec << " " <<
-                            //                  std::hex << len_high[row_index] << std::dec << " " << std::endl;
-                            // }
                             row_index++;
 
                         }
 
                         for (size_t i = 0; i < row_index; i++)
                         {
-                            allocate(rlp_prefix_0[i],       0, i);
-                            allocate(rlp_prefix_1[i],       1, i);
-                            allocate(rlp_prefix_2[i],       2, i);
-                            allocate(first_element[i],      3, i);
-                            allocate(first_element_flag[i], 4, i);
-                            allocate(element_type[i],       5, i);
-                            allocate(len_low[i],            6, i);
-                            allocate(len_high[i],           7, i);
+                            allocate(rlp_prefix_0[i],           0, i);
+                            allocate(rlp_prefix_1[i],           1, i);
+                            allocate(rlp_prefix_2[i],           2, i);
+                            allocate(first_element[i],          3, i);
+                            allocate(first_element_flag[i],     4, i);
+                            allocate(element_type[i],           5, i);
+                            allocate(len_low[i],                6, i);
+                            allocate(len_high[i],               7, i);
                             allocate(rlp_prefix_1_is_zero[i],   8, i);
                             allocate(rlp_prefix_2_is_zero[i],   9, i);
                         }

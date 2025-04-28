@@ -72,35 +72,22 @@ public:
     void test_zkevm_mpt(
         std::string data_source,
         std::size_t max_mpt_size,
+        std::size_t keccak_max_block,
         bool expected_result = true
     ) {
-        using input_type = typename mpt<field_type, GenerationStage::ASSIGNMENT>::input_type;
+        using input_type = typename mpt_hasher<field_type, GenerationStage::ASSIGNMENT>::input_type;
 
         input_type input;
+        input.rlc_challenge = 53;
+        boost::property_tree::ptree nodes_data = load_json_input(data_source);
 
-        boost::property_tree::ptree src_data = load_json_input(data_source);
-
-        mpt_path single_path;
-
-        std::string path_key = src_data.get<std::string>("storageProof..key");
-        boost::property_tree::ptree proof_path = src_data.get_child("storageProof..proof");
-
-        // std::cout << "key = " << path_key << std::endl;
-        single_path.slotNumber = zkevm_word_from_string(path_key); // TODO it's not slot number always
-
-        for(const auto &v : proof_path) {
+        for(const auto &v : nodes_data) {
             boost::property_tree::ptree node = v.second;
+            mpt_node single_node = {LEAF, {}};
 
-            mpt_node single_node = {EXTENSION, {}};
-            if (node.size() == 17) {
-                single_node.type = BRANCH;
-            }
-
-            // std::cout << "[" << std::endl;
-
+            int i = 0;
             for(const auto &w : node) {
                 std::string hash_value = w.second.data();
-                std::cout << "    valueeee = " << hash_value << std::endl;
                 std::vector<zkevm_word_type> value;
                 if (hash_value.length() % 2 == 1) {
                     std::string highest_byte(1, hash_value[0]);
@@ -110,25 +97,15 @@ public:
                 for (unsigned i = 0; i < hash_value.length(); i += 2) {
                     value.push_back(zkevm_word_from_string(hash_value.substr(i, 2)));
                 }
-                
-                single_node.value.push_back(value);
+                single_node.data[i++] = value;
             }
-            // std::cout << "]" << std::endl;
-            
-            single_path.proof.push_back(single_node);
+            input.nodes.push_back(single_node);
         }
-        if (single_path.proof.back().value.size() != 17){ // the last node is either a leaf node or a branch node (if leaf doesn't exist)
-            single_path.proof.back().type = LEAF; 
-        }
-        input.paths.push_back(single_path);
-        input.rlc_challenge = 53;
-
-
-        bool result = test_bbf_component<field_type, mpt>(
+        bool result = test_bbf_component<field_type, mpt_hasher>(
             "mpt",                 //  Circuit name
             {} ,                   //  Public input
             input,                 //  Assignment input (paths to prove)
-            max_mpt_size           //  Maximum size of mpt circuit
+            max_mpt_size          //  Maximum size of mpt circuit,
         );
         BOOST_CHECK((!check_satisfiability && !generate_proof) || result == expected_result); // Max_rw, Max_mpt
     }
@@ -137,6 +114,6 @@ public:
 BOOST_FIXTURE_TEST_SUITE(zkevm_bbf_mpt, zkEVMMPTTestFixture)
     using field_type = nil::crypto3::algebra::curves::alt_bn128_254::scalar_field_type;
 BOOST_AUTO_TEST_CASE(one_mpt_path) {
-    test_zkevm_mpt<field_type>("mpt_path_0.json", 5); 
+    test_zkevm_mpt<field_type>("mpt_hash_0.json", 10, 10); 
 }
 BOOST_AUTO_TEST_SUITE_END()
