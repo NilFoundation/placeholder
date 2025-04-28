@@ -169,8 +169,8 @@ namespace nil {
                         s.storage_key = 0;
                         s.rw_counter = call_id;
                         s.is_write = false;
-                        s.initial_value = 0;
-                        s.call_initial_value = 0;
+                        s.initial_value = block_id;
+                        s.call_initial_value = block_id;
                         s.previous_value = block_id;
                         s.value = block_id;
                         s.parent_id = block_id;
@@ -220,8 +220,8 @@ namespace nil {
                         s.storage_key = 0;
                         s.rw_counter = call_id;
                         s.is_write = false;
-                        s.initial_value = 0;
-                        s.call_initial_value = 0;
+                        s.initial_value = _call_stack[_call_stack.size() - 2].call_id;
+                        s.call_initial_value = _call_stack[_call_stack.size() - 2].call_id;
                         s.previous_value = _call_stack[_call_stack.size() - 2].call_id;
                         s.value = _call_stack[_call_stack.size() - 2].call_id;
                         s.parent_id = _call_stack[_call_stack.size() - 2].call_id;
@@ -1138,7 +1138,7 @@ namespace nil {
                     std::size_t length = std::size_t(stack[stack.size() - 2]);
 
                     _zkevm_states.back().load_stack(stack,2);
-                    _zkevm_states.back().load_size_t_field(zkevm_state_size_t_field::depth, depth);
+                    _zkevm_states.back().load_size_t_field(zkevm_state_size_t_field::modified_items_amount, last_state_counter_stack.back().size());
                     append_stack_reads(2);
                     append_state_reverts();
                     zkevm_basic_evm::revert();
@@ -1285,8 +1285,48 @@ namespace nil {
                         s.call_id = block_id;
                         _state_operations.push_back(s);
                     }
-                    last_state_counter_stack.pop_back();
+                    {
+                        state_operation s;
+                        s.op = rw_operation_type::call_context;
+                        s.id = block_id;
+                        s.address = std::size_t(state_call_context_fields::is_reverted);
+                        s.field = 0;
+                        s.storage_key = 0;
+                        s.rw_counter = block_id + std::size_t(state_call_context_fields::is_reverted);
+                        s.is_write = false;
+                        s.initial_value = 0;
+                        s.call_initial_value = 0;
+                        s.previous_value = 0;
+                        s.value = 0;
+                        s.parent_id = 0;
+                        s.grandparent_id = 0;
+                        s.call_id = block_id;
+                        _state_operations.push_back(s);
+                    }
+                    {
+                        std::size_t end_call_rw_id = 0;
+                        for( auto &[k,v]: last_state_counter_stack.back() ){
+                            if( end_call_rw_id < v) end_call_rw_id = v;
+                        }
+                        state_operation s;
+                        s.op = rw_operation_type::call_context;
+                        s.id = block_id;
+                        s.address = std::size_t(state_call_context_fields::end_call_rw_id);
+                        s.field = 0;
+                        s.storage_key = 0;
+                        s.rw_counter = block_id + std::size_t(state_call_context_fields::end_call_rw_id);
+                        s.is_write = false;
+                        s.initial_value = end_call_rw_id;
+                        s.call_initial_value = end_call_rw_id;
+                        s.previous_value = end_call_rw_id;
+                        s.value = end_call_rw_id;
+                        s.parent_id = 0;
+                        s.grandparent_id = 0;
+                        s.call_id = block_id;
+                        _state_operations.push_back(s);
+                    }
                     _call_state_data[block_id].modified_items = last_state_counter_stack.back().size();
+                    last_state_counter_stack.pop_back();
                 }
 
 
@@ -1463,6 +1503,48 @@ namespace nil {
                         s.call_id = call_id;
                         _state_operations.push_back(s);
                     }
+                    {
+                        state_operation s;
+                        s.op = rw_operation_type::call_context;
+                        s.id = call_id;
+                        s.address = std::size_t(state_call_context_fields::is_reverted);
+                        s.field = 0;
+                        s.storage_key = 0;
+                        s.rw_counter = call_id + std::size_t(state_call_context_fields::is_reverted);
+                        s.is_write = false;
+                        s.initial_value = _call_state_data[call_id].is_reverted? 1: 0;
+                        s.call_initial_value = _call_state_data[call_id].is_reverted? 1: 0;
+                        s.previous_value = _call_state_data[call_id].is_reverted? 1: 0;
+                        s.value = _call_state_data[call_id].is_reverted? 1: 0;
+                        s.parent_id = _call_stack[_call_stack.size() - 2].call_id;
+                        s.grandparent_id = depth < 3? 0: _call_stack[_call_stack.size() - 3].call_id;
+                        s.call_id = call_id;
+                        _state_operations.push_back(s);
+                    }
+                    {
+                        std::size_t end_call_rw_id = 0;
+                        for( auto &[k,v]: last_state_counter_stack.back() ){
+                            if( end_call_rw_id < v) end_call_rw_id = v;
+                        }
+
+                        state_operation s;
+                        s.op = rw_operation_type::call_context;
+                        s.id = call_id;
+                        s.address = std::size_t(state_call_context_fields::end_call_rw_id);
+                        s.field = 0;
+                        s.storage_key = 0;
+                        s.rw_counter = call_id + std::size_t(state_call_context_fields::end_call_rw_id);
+                        s.is_write = false;
+                        s.initial_value = end_call_rw_id;
+                        s.call_initial_value = end_call_rw_id;
+                        s.previous_value = end_call_rw_id;
+                        s.value = end_call_rw_id;
+                        s.parent_id = _call_stack[_call_stack.size() - 2].call_id;
+                        s.grandparent_id = depth < 3? 0: _call_stack[_call_stack.size() - 3].call_id;
+                        s.call_id = call_id;
+                        _state_operations.push_back(s);
+                    }
+                    _call_state_data[call_id].is_reverted = _call_state_data[call_id].is_reverted;
                     _call_state_data[call_id].modified_items = last_state_counter_stack.back().size();
                     for( auto &[k,v]: last_state_counter_stack.back() ){
                         auto op = std::get<0>(k);

@@ -60,7 +60,7 @@ namespace nil {
 
                 static constexpr std::size_t diff_index_selectors_amount = 32;
                 static constexpr std::size_t chunks_amount = 30;
-                static constexpr std::size_t helpers_amount = 19;
+                static constexpr std::size_t helpers_amount = 23;
                 static constexpr std::size_t op_selectors_amount = state_operation_types_amount - 1;
 
                 static table_params get_minimal_requirements(
@@ -175,6 +175,7 @@ namespace nil {
                     std::vector<TYPE> call_id(max_state);
                     std::vector<TYPE> parent_id(max_state);             // 0 for block
                     std::vector<TYPE> update_parent_selector(max_state);
+                    std::vector<TYPE> reverted_is_last_selector(max_state);
 
                     std::vector<TYPE> diff(max_state);
                     std::vector<TYPE> diff_inv(max_state);
@@ -188,10 +189,13 @@ namespace nil {
                     std::vector<TYPE> grandparent_id(max_state);        // 0 for block and for transaction
                     std::vector<TYPE> grandparent_id_inv(max_state);
                     std::vector<TYPE> is_not_block_and_not_transaction(max_state);
-                    std::vector<TYPE> modified_items_selector(max_state);
+                    std::vector<TYPE> last_in_call_selector(max_state);
                     std::vector<TYPE> call_initial_value_hi(max_state);
                     std::vector<TYPE> call_initial_value_lo(max_state);
                     std::vector<TYPE> counter(max_state);
+                    std::vector<TYPE> modified_items(max_state);
+                    std::vector<TYPE> is_reverted(max_state);
+                    std::vector<TYPE> last_in_reverted_call_selector(max_state);
 
                     std::map<rw_operation_type, std::size_t> op_selector_indices;
                     std::size_t index = 0;
@@ -203,6 +207,7 @@ namespace nil {
 
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
                         auto &state_trace = input.state_trace;
+                        auto &call_state_data = input.call_state_data;
 
                         BOOST_LOG_TRIVIAL(trace) << "State trace.size = " << state_trace.size() << std::endl;
                         std::vector<TYPE> sorted;
@@ -250,6 +255,7 @@ namespace nil {
                             }
 
                             if( i == 0) continue;
+
                             std::size_t diff_ind;
                             for( diff_ind= 0; diff_ind < sorted.size(); diff_ind++ ){
                                 if(sorted[diff_ind] != sorted_prev[diff_ind]) break;
@@ -270,6 +276,14 @@ namespace nil {
                             is_not_block[i] = parent_id[i] == 0? 0: 1;
                             grandparent_id[i] = state_trace[i].grandparent_id;
                             grandparent_id_inv[i] = grandparent_id[i] == 0? 0: grandparent_id[i].inversed();
+                            modified_items[i] = call_state_data.at(state_trace[i].id).modified_items;
+                            is_reverted[i] = call_state_data.at(state_trace[i].id).is_reverted;
+
+                            if( state_trace[i-1].op == rw_operation_type::state
+                                || state_trace[i-1].op == rw_operation_type::transient_storage
+                                || state_trace[i-1].op == rw_operation_type::access_list
+                            ) reverted_is_last_selector[i-1] = is_last[i-1] * is_reverted[i-1];
+
                             is_not_block_and_not_transaction[i] = grandparent_id[i] == 0? 0: 1;
                             if( is_last[i-1] != 0 && is_not_block[i-1] != 0 && state_trace[i-1].op == rw_operation_type::state){
                                 update_parent_selector[i - 1] = 1;
@@ -279,7 +293,8 @@ namespace nil {
                             ){
                                 update_parent_selector[i - 1] = 1;
                             }
-                            if( is_last[i-1] != 0 && id[i] != id[i-1] ) modified_items_selector[i - 1] = 1;
+                            if( is_last[i-1] != 0 && id[i] != id[i-1] ) last_in_call_selector[i - 1] = 1;
+                            last_in_reverted_call_selector[i-1] = last_in_call_selector[i-1] * is_reverted[i-1];
 
                             if( state_trace[i].op == rw_operation_type::call_context ){
                                 counter[i] = 0;
@@ -293,9 +308,19 @@ namespace nil {
                             } else {
                                 counter[i] = counter[i-1] + 1;
                             }
+
+                            BOOST_LOG_TRIVIAL(trace)
+                                << "   modified_items = " << modified_items[i]
+                                << " counter = " << counter[i]
+                                << (is_reverted[i] == 1? " reverted" : "");
                         }
                         // TODO: Process empty trace correctly
                         is_last[state_trace.size() - 1] = 1;
+                        if( state_trace.back().op == rw_operation_type::state
+                            || state_trace.back().op == rw_operation_type::transient_storage
+                            || state_trace.back().op == rw_operation_type::access_list
+                        ) reverted_is_last_selector[state_trace.size() - 1] = is_reverted[state_trace.size() - 1];
+
                         if( is_not_block[state_trace.size()-1] != 0 && state_trace[state_trace.size()-1].op == rw_operation_type::state){
                             update_parent_selector[state_trace.size()-1] = 1;
                         }
@@ -304,7 +329,8 @@ namespace nil {
                         ){
                             update_parent_selector[state_trace.size()-1] = 1;
                         }
-                        modified_items_selector[state_trace.size() - 1] = 1;
+                        last_in_call_selector[state_trace.size() - 1] = 1;
+                        last_in_reverted_call_selector[state_trace.size() - 1] = is_reverted[state_trace.size() - 1] * last_in_call_selector[state_trace.size() - 1];
 
                         for( std::size_t i = state_trace.size(); i < max_state; i++ ){
                             op_selectors[i][op_selector_indices[rw_operation_type::padding]] = 1;
@@ -338,10 +364,14 @@ namespace nil {
                         allocate(grandparent_id[i], cur_column++, i);
                         allocate(grandparent_id_inv[i], cur_column++, i);
                         allocate(is_not_block_and_not_transaction[i], cur_column++, i);
-                        allocate(modified_items_selector[i], cur_column++, i);
+                        allocate(last_in_call_selector[i], cur_column++, i);
                         allocate(call_initial_value_hi[i], cur_column++, i);
                         allocate(call_initial_value_lo[i], cur_column++, i);
                         allocate(counter[i], cur_column++, i);
+                        allocate(modified_items[i], cur_column++, i);
+                        allocate(is_reverted[i], cur_column++, i);
+                        allocate(reverted_is_last_selector[i], cur_column++, i);
+                        allocate(last_in_reverted_call_selector[i], cur_column++, i);
                     }
 
                     constrain(op[0] - START_OP);
@@ -492,11 +522,23 @@ namespace nil {
                             (access_list_selector + transient_storage_selector) * is_not_block_and_not_transaction[1]
                         ));
                         non_first_row_constraints.push_back(
-                            modified_items_selector[0] - is_last[0] * ( diff_index_selectors[1][0] + diff_index_selectors[1][1] + padding_selector)
+                            last_in_call_selector[0] - is_last[0] * ( diff_index_selectors[1][0] + diff_index_selectors[1][1] + padding_selector)
                         );
                         every_row_constraints.push_back(is_original[1] * (id[1] - call_id[1]));
                         every_row_constraints.push_back(is_original[1] * (1 - is_original[1]));
                         every_row_constraints.push_back(is_original[1] * (1 - filled_selector));
+
+                        non_first_row_constraints.push_back((filled_selector - is_first[1]) * (modified_items[1] - modified_items[0]));
+                        non_first_row_constraints.push_back((filled_selector - is_first[1]) * (is_reverted[1] - is_reverted[0]));
+                        every_row_constraints.push_back(is_last[1] * is_reverted[1] * (value_hi[1] - call_initial_value_hi[1]));
+                        every_row_constraints.push_back(is_last[1] * is_reverted[1] * (value_lo[1] - call_initial_value_lo[1]));
+                        every_row_constraints.push_back(is_last[1] * is_reverted[1] * (1 - is_original[1]));
+                        every_row_constraints.push_back(
+                            reverted_is_last_selector[1] - (state_selector + transient_storage_selector + access_list_selector) * is_last[1] * is_reverted[1]
+                        );
+                        every_row_constraints.push_back(
+                            last_in_reverted_call_selector[1] - is_reverted[1] * last_in_call_selector[1]
+                        );
 
                         // Parent lookup
                         std::vector<TYPE> parent_lookup = {
@@ -513,6 +555,38 @@ namespace nil {
                             filled_selector * parent_id[1],
                             TYPE(0),
                             filled_selector * parent_id[1],
+                            filled_selector * id[1]
+                        };
+                        std::vector<TYPE> reverted_lookup = {
+                            filled_selector,
+                            filled_selector * TYPE(std::size_t(rw_operation_type::call_context)),
+                            filled_selector * id[1],
+                            filled_selector * TYPE(std::size_t(state_call_context_fields::is_reverted)),
+                            TYPE(0),
+                            TYPE(0),
+                            TYPE(0),
+                            filled_selector * ( id[1] +  std::size_t(state_call_context_fields::is_reverted) ),
+                            TYPE(0),
+                            TYPE(0),
+                            filled_selector * is_reverted[1],
+                            TYPE(0),
+                            filled_selector * is_reverted[1],
+                            filled_selector * id[1]
+                        };
+                        std::vector<TYPE> modified_items_column_lookup = {
+                            filled_selector,
+                            filled_selector * TYPE(std::size_t(rw_operation_type::call_context)),
+                            filled_selector * id[1],
+                            filled_selector * TYPE(std::size_t(state_call_context_fields::modified_items)),
+                            TYPE(0),
+                            TYPE(0),
+                            TYPE(0),
+                            filled_selector * ( id[1] +  std::size_t(state_call_context_fields::modified_items) ),
+                            TYPE(0),
+                            TYPE(0),
+                            filled_selector * modified_items[1],
+                            TYPE(0),
+                            filled_selector * modified_items[1],
                             filled_selector * id[1]
                         };
                         std::vector<TYPE> grandparent_lookup = {
@@ -563,6 +637,38 @@ namespace nil {
                             counter[1],
                             id[1]
                         };
+                        std::vector<TYPE> end_call_lookup = {
+                            TYPE(1),
+                            TYPE(std::size_t(rw_operation_type::call_context)),
+                            id[1],
+                            TYPE(std::size_t(state_call_context_fields::end_call_rw_id)),
+                            TYPE(0),
+                            TYPE(0),
+                            TYPE(0),
+                            id[1] + std::size_t(state_call_context_fields::end_call_rw_id),
+                            TYPE(0),
+                            TYPE(0),
+                            rw_id[1],
+                            TYPE(0),
+                            rw_id[1],
+                            id[1]
+                        };
+                        std::vector<TYPE> revert_end_call_lookup = {
+                            TYPE(1),
+                            TYPE(std::size_t(rw_operation_type::call_context)),
+                            id[1],
+                            TYPE(std::size_t(state_call_context_fields::end_call_rw_id)),
+                            TYPE(0),
+                            TYPE(0),
+                            TYPE(0),
+                            id[1] + std::size_t(state_call_context_fields::end_call_rw_id),
+                            TYPE(0),
+                            TYPE(0),
+                            rw_id[1] - counter[1] + modified_items[1],
+                            TYPE(0),
+                            rw_id[1] - counter[1] + modified_items[1],
+                            id[1]
+                        };
                         std::vector<TYPE> child_lookup = {
                             op[1],
                             call_id[1],
@@ -578,7 +684,11 @@ namespace nil {
                             parent_lookup[i] = context_object.relativize(parent_lookup[i], -1);
                             grandparent_lookup[i] = context_object.relativize(grandparent_lookup[i], -1);
                             update_parent_lookup[i] = context_object.relativize(update_parent_lookup[i] * update_parent_selector[1], -1);
-                            modified_items_lookup[i] = context_object.relativize(modified_items_lookup[i] * modified_items_selector[1], -1);
+                            modified_items_lookup[i] = context_object.relativize(modified_items_lookup[i] * last_in_call_selector[1], -1);
+                            end_call_lookup[i] = context_object.relativize(end_call_lookup[i] * last_in_reverted_call_selector[1], -1);
+                            reverted_lookup[i] = context_object.relativize(reverted_lookup[i], -1);
+                            revert_end_call_lookup[i] = context_object.relativize(revert_end_call_lookup[i] * reverted_is_last_selector[1], -1);
+                            modified_items_column_lookup[i] = context_object.relativize(modified_items_column_lookup[i], -1);
                         }
                         for( std::size_t i = 0; i < child_lookup.size(); i++){
                             child_lookup[i] = context_object.relativize((filled_selector - is_original[1]) * child_lookup[i], -1);
@@ -588,6 +698,10 @@ namespace nil {
                         context_object.relative_lookup(grandparent_lookup, "zkevm_state", 0, max_state-1);
                         context_object.relative_lookup(update_parent_lookup, "zkevm_state", 0, max_state-1);
                         context_object.relative_lookup(modified_items_lookup, "zkevm_state", 0, max_state-1);
+                        context_object.relative_lookup(end_call_lookup, "zkevm_state", 0, max_state-1);
+                        context_object.relative_lookup(reverted_lookup, "zkevm_state", 0, max_state-1);
+                        context_object.relative_lookup(revert_end_call_lookup, "zkevm_state", 0, max_state-1);
+                        context_object.relative_lookup(modified_items_column_lookup, "zkevm_state", 0, max_state-1);
                         context_object.relative_lookup(child_lookup, "zkevm_state_parent", 0, max_state-1);
 
                         for( std::size_t i = 0; i < chunks_amount; i++){

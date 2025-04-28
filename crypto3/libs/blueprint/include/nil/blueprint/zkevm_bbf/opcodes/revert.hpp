@@ -34,7 +34,7 @@ namespace nil {
         namespace bbf{
             template<typename FieldType>
             class opcode_abstract;
-/*
+
             template<typename FieldType, GenerationStage stage>
             class zkevm_revert_bbf : generic_component<FieldType, stage> {
                 using typename generic_component<FieldType, stage>::context_type;
@@ -47,55 +47,75 @@ namespace nil {
                 using typename generic_component<FieldType,stage>::TYPE;
                 using value_type = typename FieldType::value_type;
                 constexpr static const value_type two_128 = 0x100000000000000000000000000000000_big_uint254;
+                using Word_Size = typename bbf::word_size<FieldType, stage>;
+                using Memory_Cost = typename bbf::memory_cost<FieldType, stage>;
 
                 zkevm_revert_bbf(context_type &context_object, const opcode_input_type<FieldType, stage> &current_state):
                     generic_component<FieldType,stage>(context_object, false)
                 {
                     TYPE offset;
                     TYPE length, length_inv, is_length_zero;
-                    TYPE N, N_inv, is_N_zero; // Number of changed items inside current CALL
-                    TYPE block_id;
+                    TYPE modified_items;
+                    TYPE current_mem, next_mem, memory_expansion_cost, memory_expansion_size, S;
+
                     if constexpr( stage == GenerationStage::ASSIGNMENT ){
                         offset = w_lo<FieldType>(current_state.stack_top());
                         length = w_lo<FieldType>(current_state.stack_top(1));
                         length_inv = length == 0? 0: length.inversed();
                         is_length_zero = length == 0? 0: 1;
-                        N = current_state.modified_items_amount();
-                        N_inv = N == 0? 0: N.inversed();
-                        is_N_zero = N == 0? 0: 1;
-                        block_id = current_state.block_id();
+                        modified_items = current_state.modified_items_amount();
+
+                        current_mem = current_state.memory_size();
+                        next_mem = length.is_zero()? current_mem : std::max(offset + length, current_mem);
+                        S = next_mem > current_mem;
                     }
-                    allocate(block_id, 0, 0);
                     allocate(offset, 32, 0);
                     allocate(length, 33, 0);
                     allocate(length_inv, 34, 0);
                     allocate(is_length_zero, 35, 0);
-                    allocate(N, 33, 1);
-                    allocate(N_inv, 34, 1);
-                    allocate(is_N_zero, 35, 1);
+                    allocate(modified_items, 36, 0);
+                    allocate(current_mem, 37, 0);
+                    allocate(next_mem, 38, 0);
+                    allocate(S, 39, 0);
+                    allocate(memory_expansion_cost, 40, 0);
+                    allocate(memory_expansion_size, 41, 0);
 
-                    // is_length_zero correctness
+                    // // is_length_zero correctness
                     constrain(length * (length *length_inv - 1));
                     constrain(length_inv * (length *length_inv - 1));
                     constrain(is_length_zero - length * length_inv);
 
-                    // is_N_zero correctness
-                    constrain(N * (N * N_inv - 1));
-                    constrain(N_inv * (N * N_inv - 1));
-                    constrain(is_N_zero - N * N_inv);
+                    // memory_expansion
+                    constrain(S * (S - 1));
+                    constrain(S * (next_mem - offset - length) + (1 - S) * (next_mem - current_mem));
+
+                    std::vector<std::size_t> word_size_lookup_area = {32, 33, 34};
+                    allocate(memory_expansion_cost, 35, 1);
+                    allocate(memory_expansion_size, 36, 1);
+                    std::vector<std::size_t> memory_cost_lookup_area = {42, 43, 44, 45, 46, 47};
+
+                    context_type word_size_ct = context_object.subcontext(word_size_lookup_area, 1, 1);
+
+                    context_type current_memory_ct = context_object.subcontext(memory_cost_lookup_area, 0, 1);
+                    context_type next_memory_ct = context_object.subcontext(memory_cost_lookup_area, 1, 1);
+
+                    Memory_Cost current_memory = Memory_Cost(current_memory_ct, current_mem);
+                    Memory_Cost next_memory = Memory_Cost(next_memory_ct, next_mem);
+                    memory_expansion_cost = next_memory.cost - current_memory.cost;
+                    memory_expansion_size = (next_memory.word_size - current_memory.word_size) * 32;
+                    Word_Size minimum_word = Word_Size(word_size_ct, length);
+
 
                     if constexpr( stage == GenerationStage::CONSTRAINTS ){
                         // constrain(current_state.pc_next() - current_state.pc(0) - 1);                   // PC transition
-                        // constrain(current_state.gas(0) - current_state.gas_next() - gas_cost);               // GAS transition
+                        constrain(current_state.gas(0) - current_state.gas_next() - memory_expansion_cost);               // GAS transition
                         // constrain(current_state.stack_size(0) - current_state.stack_size_next() - 2);   // stack_size transition
                         // constrain(current_state.memory_size(0) - current_state.memory_size_next());     // memory_size transition
-                        // constrain(current_state.rw_counter_next() - current_state.rw_counter(0) - 3);   // rw_counter transition
+                        constrain(current_state.rw_counter_next() - current_state.rw_counter(0) - modified_items - 2 * length - 3);   // rw_counter transition
 
                         // TODO: If we should process reverting transactions, append end_transaction option for next opcode.
-                        // Now only CALL revert-s supported
-                        constrain(
-                            (current_state.opcode_next() - TYPE(std::size_t(opcode_to_number(zkevm_opcode::end_call))))
-                        );
+                        // Now only CALL revert-s supported now
+                        constrain((current_state.opcode_next() - TYPE(std::size_t(opcode_to_number(zkevm_opcode::end_call)))));
 
                         // Stack reading correctness
                         lookup(rw_table<FieldType, stage>::stack_lookup(
@@ -115,12 +135,12 @@ namespace nil {
                             length
                         ), "zkevm_rw");
 
-                        // N, block_id, length correctness
+                        // Modified_items, returndatasize correctness
                         lookup(rw_table<FieldType, stage>::call_context_lookup(
                             current_state.call_id(0),
-                            std::size_t(call_context_field::modified_items),
+                            std::size_t(state_call_context_fields::modified_items),
                             TYPE(0),
-                            N
+                            modified_items
                         ), "zkevm_rw");
                         lookup(rw_table<FieldType, stage>::call_context_lookup(
                             current_state.call_id(0),
@@ -128,60 +148,10 @@ namespace nil {
                             TYPE(0),
                             length
                         ), "zkevm_rw");
-                        lookup(rw_table<FieldType, stage>::call_context_lookup(
-                            current_state.call_id(0),
-                            std::size_t(call_context_field::block_id),
-                            TYPE(0),
-                            block_id
-                        ), "zkevm_rw");
-
-                        // State reverting constraints. They should be applied to row 1.
-                        lookup({
-                            is_N_zero,                              // is_first
-                            TYPE(0),                                // it is source
-                            is_N_zero * TYPE(std::size_t(copy_operand_type::reverted) - 1),
-                            TYPE(0),                                // id_hi
-                            is_N_zero * current_state.call_id(1),
-                            TYPE(0),                                // counter 0
-                            TYPE(0),                                // counter 1
-                            N
-                        }, "zkevm_copy");
-                        lookup({
-                            is_N_zero,                              // is_first
-                            is_N_zero,                              // it's destination
-                            is_N_zero * TYPE(std::size_t(copy_operand_type::reverted) - 1),
-                            TYPE(0),                                // id_hi
-                            is_N_zero * block_id,                   // id_lo
-                            is_N_zero * (current_state.rw_counter(1) + 2),    // counter 0
-                            TYPE(0),                                // counter 1
-                            N
-                        }, "zkevm_copy");
-
-                        // State reverting constraints. They should be applied to row 0.
-                        lookup({
-                            is_length_zero,                                                       // is_first
-                            TYPE(0),                                                                   // is_write
-                            is_length_zero * TYPE(copy_op_to_num(copy_operand_type::memory)),     // cp_type
-                            TYPE(0),                                                                   // id_hi
-                            is_length_zero * current_state.call_id(0),                            // id_lo
-                            is_length_zero * offset,                                              // counter_1
-                            is_length_zero * (current_state.rw_counter(0) + 2 + N),                   // counter_2
-                            length
-                        }, "zkevm_copy");
-                        // lookup({
-                        //     is_length_zero,                                                          // is_first
-                        //     is_length_zero,                                                          // is_write
-                        //     is_length_zero * TYPE(copy_op_to_num(copy_operand_type::returndata)),    // cp_type
-                        //     TYPE(0),                                                                      // id_hi
-                        //     is_length_zero * current_state.call_id(0),                               // id_lo
-                        //     TYPE(0),                                                                      // counter_1
-                        //     is_length_zero * (current_state.rw_counter(0) + length + 2 + N),             // counter_2
-                        //     length
-                        // }, "zkevm_copy");
                     }
                 }
             };
-*/
+
             template<typename FieldType>
             class zkevm_revert_operation : public opcode_abstract<FieldType> {
             public:
@@ -189,13 +159,13 @@ namespace nil {
                     typename generic_component<FieldType, GenerationStage::ASSIGNMENT>::context_type &context,
                     const opcode_input_type<FieldType, GenerationStage::ASSIGNMENT> &current_state
                 )  override {
-                    // zkevm_revert_bbf<FieldType, GenerationStage::ASSIGNMENT> bbf_obj(context, current_state);
+                    zkevm_revert_bbf<FieldType, GenerationStage::ASSIGNMENT> bbf_obj(context, current_state);
                 }
                 virtual void fill_context(
                     typename generic_component<FieldType, GenerationStage::CONSTRAINTS>::context_type &context,
                     const opcode_input_type<FieldType, GenerationStage::CONSTRAINTS> &current_state
                 )  override {
-                    // zkevm_revert_bbf<FieldType, GenerationStage::CONSTRAINTS> bbf_obj(context, current_state);
+                    zkevm_revert_bbf<FieldType, GenerationStage::CONSTRAINTS> bbf_obj(context, current_state);
                 }
                 virtual std::size_t rows_amount() override {
                     return 2; // We use two rows because don't want to use 4 lookups to copy table instead of 2

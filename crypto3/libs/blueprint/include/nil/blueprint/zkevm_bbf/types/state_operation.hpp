@@ -39,9 +39,10 @@ namespace nil {
             enum class state_call_context_fields: std::uint8_t {
                 parent_id = 0,
                 is_reverted = 1,
-                modified_items = 2
+                modified_items = 2,
+                end_call_rw_id = 3
             };
-            static constexpr std::size_t state_call_context_fields_amount = 3;
+            static constexpr std::size_t state_call_context_fields_amount = 4;
 
             struct state_operation{
                 state_operation(){};
