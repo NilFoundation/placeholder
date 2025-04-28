@@ -40,7 +40,7 @@
 
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
-#include <nil/blueprint/zkevm_bbf/copy.hpp>
+#include <nil/blueprint/zkevm_bbf/big_field/circuits/copy.hpp>
 #include <nil/blueprint/zkevm_bbf/input_generators/debugtt_input_generator.hpp>
 
 #include "./circuit_test_fixture.hpp"

@@ -55,14 +55,14 @@
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
 
-#include <nil/blueprint/zkevm_bbf/zkevm.hpp>
-#include <nil/blueprint/zkevm_bbf/zkevm_wide.hpp>
-#include <nil/blueprint/zkevm_bbf/rw.hpp>
-#include <nil/blueprint/zkevm_bbf/state.hpp>
-#include <nil/blueprint/zkevm_bbf/copy.hpp>
-#include <nil/blueprint/zkevm_bbf/bytecode.hpp>
-#include <nil/blueprint/zkevm_bbf/keccak.hpp>
-#include <nil/blueprint/zkevm_bbf/exp.hpp>
+#include <nil/blueprint/zkevm_bbf/big_field/circuits/zkevm.hpp>
+#include <nil/blueprint/zkevm_bbf/big_field/circuits/zkevm_wide.hpp>
+#include <nil/blueprint/zkevm_bbf/big_field/circuits/rw.hpp>
+#include <nil/blueprint/zkevm_bbf/big_field/circuits/state.hpp>
+#include <nil/blueprint/zkevm_bbf/big_field/circuits/copy.hpp>
+#include <nil/blueprint/zkevm_bbf/big_field/circuits/bytecode.hpp>
+#include <nil/blueprint/zkevm_bbf/big_field/circuits/keccak.hpp>
+#include <nil/blueprint/zkevm_bbf/big_field/circuits/exp.hpp>
 
 #include "./circuit_test_fixture.hpp"
 
@@ -137,14 +137,14 @@ public:
         std::size_t max_exp_rows = max_sizes.max_exp_rows;
         std::size_t max_state = max_sizes.max_state;
 
-        typename copy<BlueprintFieldType, GenerationStage::ASSIGNMENT>::input_type copy_assignment_input;
+        typename zkevm_big_field::copy<BlueprintFieldType, GenerationStage::ASSIGNMENT>::input_type copy_assignment_input;
         copy_assignment_input.rlc_challenge = 7;
         copy_assignment_input.bytecodes = circuit_inputs.bytecodes();
         copy_assignment_input.keccak_buffers = circuit_inputs.keccaks();
         copy_assignment_input.rw_operations = circuit_inputs.short_rw_operations();
         copy_assignment_input.copy_events = circuit_inputs.copy_events();
 
-        typename zkevm<BlueprintFieldType, GenerationStage::ASSIGNMENT>::input_type zkevm_assignment_input;
+        typename zkevm_big_field::zkevm<BlueprintFieldType, GenerationStage::ASSIGNMENT>::input_type zkevm_assignment_input;
         zkevm_assignment_input.rlc_challenge = 7;
         zkevm_assignment_input.bytecodes = circuit_inputs.bytecodes();
         zkevm_assignment_input.keccak_buffers = circuit_inputs.keccaks();
@@ -154,7 +154,7 @@ public:
         zkevm_assignment_input.exponentiations = circuit_inputs.exponentiations();
         zkevm_assignment_input.state_operations = circuit_inputs.state_operations();
 
-        typename zkevm_wide<BlueprintFieldType, GenerationStage::ASSIGNMENT>::input_type zkevm_wide_assignment_input;
+        typename zkevm_big_field::zkevm_wide<BlueprintFieldType, GenerationStage::ASSIGNMENT>::input_type zkevm_wide_assignment_input;
         zkevm_wide_assignment_input.rlc_challenge = 7;
         zkevm_wide_assignment_input.bytecodes = circuit_inputs.bytecodes();
         zkevm_wide_assignment_input.keccak_buffers = circuit_inputs.keccaks();
@@ -164,18 +164,18 @@ public:
         zkevm_wide_assignment_input.exponentiations = circuit_inputs.exponentiations();
         zkevm_wide_assignment_input.state_operations = circuit_inputs.state_operations();
 
-        typename rw<BlueprintFieldType, GenerationStage::ASSIGNMENT>::input_type rw_assignment_input;
+        typename zkevm_big_field::rw<BlueprintFieldType, GenerationStage::ASSIGNMENT>::input_type rw_assignment_input;
         rw_assignment_input = circuit_inputs.short_rw_operations();
 
-        typename nil::blueprint::bbf::state_transition<BlueprintFieldType, GenerationStage::ASSIGNMENT>::input_type state_assignment_input;
+        typename zkevm_big_field::state_transition<BlueprintFieldType, GenerationStage::ASSIGNMENT>::input_type state_assignment_input;
         state_assignment_input.state_trace = circuit_inputs.state_operations();
         state_assignment_input.call_state_data = circuit_inputs.call_state_data();
 
-        typename nil::blueprint::bbf::zkevm_keccak<BlueprintFieldType,nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type keccak_assignment_input;
+        typename nil::blueprint::bbf::zkevm_big_field::zkevm_keccak<BlueprintFieldType,nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type keccak_assignment_input;
         keccak_assignment_input.rlc_challenge = 7;
         keccak_assignment_input.private_input = circuit_inputs.keccaks();
 
-        typename bytecode<BlueprintFieldType, GenerationStage::ASSIGNMENT>::input_type bytecode_assignment_input;
+        typename zkevm_big_field::bytecode<BlueprintFieldType, GenerationStage::ASSIGNMENT>::input_type bytecode_assignment_input;
         bytecode_assignment_input.rlc_challenge = 7;
         bytecode_assignment_input.bytecodes = circuit_inputs.bytecodes();
         bytecode_assignment_input.keccak_buffers = circuit_inputs.keccaks();
@@ -187,7 +187,7 @@ public:
         const std::string exp_circuit = "exp";
         if (should_run_circuit(exp_circuit)) {
             BOOST_LOG_TRIVIAL(info) << std::endl << "circuit '" << exp_circuit << "'";
-            result = test_bbf_component<BlueprintFieldType, nil::blueprint::bbf::exponentiation>(
+            result = test_bbf_component<BlueprintFieldType, nil::blueprint::bbf::zkevm_big_field::exponentiation>(
                 "exp",
                 {}, exp_assignment_input,
                 max_exp_rows,
@@ -200,7 +200,7 @@ public:
         const std::string bytecode_circuit = "bytecode";
         if (should_run_circuit(bytecode_circuit)) {
             BOOST_LOG_TRIVIAL(info) << std::endl << "circuit '" << bytecode_circuit << "'";
-            result = test_bbf_component<BlueprintFieldType, nil::blueprint::bbf::bytecode>(
+            result = test_bbf_component<BlueprintFieldType, nil::blueprint::bbf::zkevm_big_field::bytecode>(
                 "bytecode",
                 {7}, bytecode_assignment_input, max_bytecode, max_keccak_blocks
             );
@@ -211,7 +211,7 @@ public:
         const std::string rw_circuit = "rw";
         if (should_run_circuit(rw_circuit)) {
             BOOST_LOG_TRIVIAL(info) << std::endl << "circuit '" << rw_circuit << "'";
-            result = test_bbf_component<BlueprintFieldType, nil::blueprint::bbf::rw>(
+            result = test_bbf_component<BlueprintFieldType, nil::blueprint::bbf::zkevm_big_field::rw>(
                 "rw", {}, rw_assignment_input, max_rw
             );
             BOOST_CHECK(result);
@@ -221,7 +221,7 @@ public:
         const std::string state_circuit = "state";
         if (should_run_circuit(state_circuit)) {
             BOOST_LOG_TRIVIAL(info) << std::endl << "circuit '" << state_circuit << "'";
-            result = test_bbf_component<BlueprintFieldType, nil::blueprint::bbf::state_transition>(
+            result = test_bbf_component<BlueprintFieldType, nil::blueprint::bbf::zkevm_big_field::state_transition>(
                 "state", {}, state_assignment_input, max_state
             );
             BOOST_CHECK(result);
@@ -231,7 +231,7 @@ public:
         const std::string copy_circuit = "copy";
         if (should_run_circuit(copy_circuit)) {
             BOOST_LOG_TRIVIAL(info) << "circuit '" << copy_circuit << "'";
-            result = test_bbf_component<BlueprintFieldType, nil::blueprint::bbf::copy>(
+            result = test_bbf_component<BlueprintFieldType, nil::blueprint::bbf::zkevm_big_field::copy>(
                 "copy", {7}, copy_assignment_input,
                 max_copy, max_rw, max_keccak_blocks, max_bytecode
             );
@@ -241,7 +241,7 @@ public:
         const std::string zkevm_circuit = "zkevm";
         if (should_run_circuit(zkevm_circuit)) {
             BOOST_LOG_TRIVIAL(info) << "circuit '" << zkevm_circuit << "'";
-            result = test_bbf_component<BlueprintFieldType, nil::blueprint::bbf::zkevm>(
+            result = test_bbf_component<BlueprintFieldType, nil::blueprint::bbf::zkevm_big_field::zkevm>(
                 "zkevm", {}, zkevm_assignment_input,
                 max_zkevm_rows, max_copy, max_rw, max_exponentiations, max_bytecode, max_state
             );
@@ -251,7 +251,7 @@ public:
         const std::string zkevm_wide_circuit = "zkevm-wide";
         if (should_run_circuit(zkevm_wide_circuit)) {
             BOOST_LOG_TRIVIAL(info) << "circuit '" << zkevm_wide_circuit << "'";
-            result = test_bbf_component<BlueprintFieldType, nil::blueprint::bbf::zkevm_wide>(
+            result = test_bbf_component<BlueprintFieldType, nil::blueprint::bbf::zkevm_big_field::zkevm_wide>(
                 "zkevm_wide", {}, zkevm_wide_assignment_input,
                 max_zkevm_rows, max_copy, max_rw, max_exponentiations, max_bytecode, max_state
             );
@@ -445,7 +445,7 @@ BOOST_AUTO_TEST_CASE(try_catch2) {
     max_sizes.max_mpt = 0;
     max_sizes.max_rw = 8000;
     max_sizes.max_copy = 1500;
-    max_sizes.max_zkevm_rows = 3000;
+    max_sizes.max_zkevm_rows = 6000;
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
     max_sizes.max_state = 500;
@@ -457,12 +457,12 @@ BOOST_AUTO_TEST_CASE(try_catch_cold) {
     using field_type = typename algebra::curves::pallas::base_field_type;
     l1_size_restrictions max_sizes;
 
-    max_sizes.max_keccak_blocks = 20;
-    max_sizes.max_bytecode = 3000;
+    max_sizes.max_keccak_blocks = 50;
+    max_sizes.max_bytecode = 6000;
     max_sizes.max_mpt = 0;
-    max_sizes.max_rw = 6000;
+    max_sizes.max_rw = 8000;
     max_sizes.max_copy = 1500;
-    max_sizes.max_zkevm_rows = 3000;
+    max_sizes.max_zkevm_rows = 5000;
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
     max_sizes.max_state = 500;
@@ -596,7 +596,7 @@ BOOST_AUTO_TEST_CASE(transient_storage) {
     max_sizes.max_mpt = 0;
     max_sizes.max_rw = 3000;
     max_sizes.max_copy = 500;
-    max_sizes.max_zkevm_rows = 2000;
+    max_sizes.max_zkevm_rows = 5000;
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
 
@@ -610,9 +610,9 @@ BOOST_AUTO_TEST_CASE(transient_storage_revert) {
     max_sizes.max_keccak_blocks = 50;
     max_sizes.max_bytecode = 2000;
     max_sizes.max_mpt = 0;
-    max_sizes.max_rw = 3000;
+    max_sizes.max_rw = 4000;
     max_sizes.max_copy = 500;
-    max_sizes.max_zkevm_rows = 2000;
+    max_sizes.max_zkevm_rows = 4000;
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
 
