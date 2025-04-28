@@ -923,25 +923,23 @@ namespace nil {
                 }
                 void logx( std::size_t l){
                     _zkevm_states.push_back(call_header_zkevm_state(get_basic_zkevm_state_part(), get_call_header_state_part()));
-                    // _zkevm_states.push_back(simple_zkevm_state(get_basic_zkevm_state_part()));
                     std::size_t offset = std::size_t(stack[stack.size() - 1]);
                     std::size_t length = std::size_t(stack[stack.size() - 2]);
                     _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-1, rw_counter++, false, stack[stack.size()-1]));
                     _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-2, rw_counter++, false, stack[stack.size()-2]));
+
+                    std::vector<zkevm_word_type> topics;
                     for( std::size_t i = 0; i < l; i++){
                         _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-3-i, rw_counter++, false, stack[stack.size()-3-i]));
+                        topics.push_back(stack[stack.size()-3-i]);
                     }
-                    //std::vector<std::uint8_t> data = std::vector<std::uint8_t>(memory.begin() + offset, memory.begin() + offset + length);
-                    // std::vector<std::uint8_t> data = std::vector<std::uint8_t>(memory.begin() + offset, memory.begin() + offset + length);
-                    // _rw_operations.push_back(memory_rw_operation(call_id, offset+i, rw_counter++, false, data));
 
                     zkevm_word_type index = _logs.empty()? 0 : _logs.back().id != tx_id? 0 : _logs.back().index + 1;
                     _logs.push_back({
                         tx_id,
                         index,
                         call_context_address,
-                        // data,
-                        std::vector<zkevm_word_type>(stack.end() - 3 - l, stack.end() - 3)});
+                        topics});
                     
                 }
 

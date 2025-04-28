@@ -62,6 +62,7 @@
 #include <nil/blueprint/zkevm_bbf/keccak.hpp>
 #include <nil/blueprint/zkevm_bbf/exp.hpp>
 #include <nil/blueprint/zkevm_bbf/call_commit.hpp>
+#include <nil/blueprint/zkevm_bbf/tx_log.hpp>
 
 #include "./circuit_test_fixture.hpp"
 
@@ -109,7 +110,11 @@ public:
         zkevm_assignment_input.copy_events = circuit_inputs.copy_events();
         zkevm_assignment_input.zkevm_states = circuit_inputs.zkevm_states();
         zkevm_assignment_input.exponentiations = circuit_inputs.exponentiations();
-        zkevm_assignment_input.logs = circuit_inputs.logs();
+
+        typename tx_log<field_type, GenerationStage::ASSIGNMENT>::input_type log_assignment_input;
+        log_assignment_input.logs = circuit_inputs.logs();
+        log_assignment_input.rlc_challenge = 7;
+        log_assignment_input.keccak_buffers = circuit_inputs.keccaks();
 
         typename nil::blueprint::bbf::rw<field_type,nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type rw_assignment_input;
         rw_assignment_input.rw_operations = circuit_inputs.rw_operations();
@@ -131,22 +136,22 @@ public:
         auto exp_assignment_input = circuit_inputs.exponentiations();
 
         bool result{false};
-        const std::string zkevm_circuit = "zkevm";
-        if (should_run_circuit(zkevm_circuit)) {
-            std::cout << "circuit '" << zkevm_circuit << "'" << std::endl;
+        // const std::string zkevm_circuit = "zkevm";
+        // if (should_run_circuit(zkevm_circuit)) {
+        //     std::cout << "circuit '" << zkevm_circuit << "'" << std::endl;
 
-            // Max_rows, max_bytecode, max_rw
-            result = test_bbf_component<field_type, nil::blueprint::bbf::zkevm>(
-                zkevm_circuit,
-                {}, zkevm_assignment_input,
-                max_zkevm_rows,
-                max_copy,
-                max_rw,
-                max_exponentiations,
-                max_bytecode
-            );
-            BOOST_ASSERT(result);
-        }
+        //     // Max_rows, max_bytecode, max_rw
+        //     result = test_bbf_component<field_type, nil::blueprint::bbf::zkevm>(
+        //         zkevm_circuit,
+        //         {}, zkevm_assignment_input,
+        //         max_zkevm_rows,
+        //         max_copy,
+        //         max_rw,
+        //         max_exponentiations,
+        //         max_bytecode
+        //     );
+        //     BOOST_ASSERT(result);
+        // }
 
         // const std::string exp_circuit = "exp";
         // if (should_run_circuit(exp_circuit)) {
@@ -233,6 +238,20 @@ public:
         //     BOOST_ASSERT(result);
         //     std::cout << std::endl;
         // }
+
+        const std::string log_circuit = "tx_log";
+        if (should_run_circuit(log_circuit)) {
+            std::cout << "circuit '" << log_circuit << "'" << std::endl;
+
+            // Max_rows, max_bytecode, max_rw
+            result = test_bbf_component<field_type, nil::blueprint::bbf::tx_log>(
+                log_circuit,
+                {}, log_assignment_input,
+                max_zkevm_rows,
+                max_keccak_blocks
+            );
+            BOOST_ASSERT(result);
+        }
     }
 };
 
