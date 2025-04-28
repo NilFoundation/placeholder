@@ -178,8 +178,6 @@ namespace nil::crypto3::zk::snark {
         using pow_operation_type = pow_operation<VariableType>;
         using binary_arithmetic_operation_type = binary_arithmetic_operation<VariableType>;
 
-        dag_expression() = default;
-
         size_t get_root_nodes_count() const {
             return root_nodes.size();
         }
@@ -226,8 +224,6 @@ namespace nil::crypto3::zk::snark {
         using term_type = term<VariableType>;
         using pow_operation_type = pow_operation<VariableType>;
         using binary_arithmetic_operation_type = binary_arithmetic_operation<VariableType>;
-
-        dag_expression_builder() = default;
 
         std::size_t get_expression_count() const {
             return expressions.size();
