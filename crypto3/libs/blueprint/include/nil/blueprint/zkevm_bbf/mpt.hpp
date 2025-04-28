@@ -120,8 +120,11 @@ public:
         // child_choice: selector columns -> 1 for the right child, 0 for all the rest
         std::array<std::vector<TYPE>,16> child_choice;          // child_choice[16][max_mpt_size]
 
+        std::array<std::vector<TYPE>,32> correct_child_hash;    // correct_child_hash[32][max_mpt_size]
+
         for(std::size_t i = 0; i < 32; i++) {
             parent_hash[i].resize(max_mpt_size);
+            correct_child_hash[i].resize(max_mpt_size);
             for(std::size_t j = 0; j < 16; j++) {
                 child[j][i].resize(max_mpt_size);
             }
@@ -147,7 +150,7 @@ public:
         std::vector<TYPE> child_vector(35);
         // columns of child_hash_table
         std::vector<std::size_t> child_hash_lookup_area;
-        
+
         if constexpr (stage == GenerationStage::ASSIGNMENT) {
            // assignment
            std::size_t node_num = 0;
@@ -168,10 +171,11 @@ public:
                    std::cout << "node type = " << n.type << std::endl;
                    std::cout << "[" << std::endl;
 
-                   std::size_t node_key_length = 0;
-                   std::size_t node_value_length = 0;
-                   std::size_t node_key_bytes, node_value_bytes;
-                   std::size_t total_value_length = 0;
+                   std::size_t node_key_length = 0;     // size of key in each node (bytes)- for branch = 1
+                   std::size_t node_value_length = 0;   // size of value in each node (bytes) - for ext/leaf nodes
+                   std::size_t node_key_bytes = 0;      // num of bytes in key
+                   std::size_t node_value_bytes = 0;    // num of bytes in value
+                   std::size_t total_value_length = 0;  // total size of value to be hashed
 
                    if (n.type != branch) { // extension or leaf
                         std::vector<uint8_t> hash_input;
@@ -409,22 +413,24 @@ public:
 
                 for(std::size_t b = 0; b < 32; b++) {
                     child_vector[b + 3] = child[node_type[i] == 1 ? key : 1][b][i];
+                    correct_child_hash[b][i] = child[node_type[i] == 1 ? key : 1][b][i];
                 }
                 child_hash_tab_input.push_back(child_vector);
            }
 
-           for( std::size_t i = 0; i < ChildTable::get_witness_amount(); i++){
-                child_hash_lookup_area.push_back(i);
-           }
-           context_type child_hash_ct = context_object.subcontext(child_hash_lookup_area, max_mpt_size, 2*max_mpt_size);
-           ChildTable c_t = ChildTable(child_hash_ct, child_hash_tab_input, max_mpt_size);
+        //    for( std::size_t i = 0; i < ChildTable::get_witness_amount(); i++){
+        //         child_hash_lookup_area.push_back(i);
+        //    }
+        //    context_type child_hash_ct = context_object.subcontext(child_hash_lookup_area, max_mpt_size, 2*max_mpt_size);
+        //    ChildTable c_t = ChildTable(child_hash_ct, child_hash_tab_input, max_mpt_size);
 
-           for(std::size_t i = 0; i < node_num - 1 ; i++) {
-                for(std::size_t b = 0; b < 32; b++) {
-                        BOOST_ASSERT_MSG( parent_hash[b][i + 1] == c_t.child_hash[b][i], "hash does not match");
-                        // lookup(parent_hash[b][i + 1], "child_hash_table");
-                }
-           }  
+        //    for(std::size_t i = 0; i < node_num - 1 ; i++) {
+        //         for(std::size_t b = 0; b < 32; b++) {
+        //                 BOOST_ASSERT_MSG( parent_hash[b][i + 1] == c_t.child_hash[b][i], "hash does not match");
+        //                 // lookup(parent_hash[b][i + 1], "child_hash_table");
+        //         }
+        //    }  
+
         }
 
         // allocation
@@ -471,7 +477,70 @@ public:
             for(std::size_t j = 0; j < 16; j++) {
                 allocate(child_choice[j][i], 663 + j, i);
             }
+            for(std::size_t j = 0; j < 32; j++) {
+                allocate(correct_child_hash[j][i], 679 + j, i);
+            }
         }
+
+        std::vector<std::size_t> lookup_cols;
+        for(std::size_t i = 679; i < 711; i++) {
+            lookup_cols.push_back(i);
+        }
+
+        std::vector<TYPE> child_hash_check(32);  
+        lookup_table("dummy_dynamic",lookup_cols,0,max_mpt_size);
+        for(std::size_t i = 0; i < max_mpt_size - 1; i++) {
+            for(std::size_t b = 0; b < 32; b++) {
+                child_hash_check[b] = parent_hash[b][i + 1];
+            }
+            lookup(child_hash_check,"dummy_dynamic");
+        }
+
+        // for( std::size_t i = 0; i < ChildTable::get_witness_amount(); i++){
+        //     child_hash_lookup_area.push_back(i);
+        // }
+        // context_type child_hash_ct = context_object.subcontext(child_hash_lookup_area, max_mpt_size, 2*max_mpt_size);
+        // ChildTable c_t = ChildTable(child_hash_ct, node_type[0], max_mpt_size);
+
+        // std::vector<TYPE> child_hash_lookup = {
+        //     1,
+        //     1,
+        //     1, 
+        //     parent_hash[0][1],
+        //     parent_hash[1][1],
+        //     parent_hash[2][1],
+        //     parent_hash[3][1],
+        //     parent_hash[4][1],
+        //     parent_hash[5][1],
+        //     parent_hash[6][1],
+        //     parent_hash[7][1],
+        //     parent_hash[8][1],
+        //     parent_hash[9][1],
+        //     parent_hash[10][1],
+        //     parent_hash[11][1],
+        //     parent_hash[12][1],
+        //     parent_hash[13][1],
+        //     parent_hash[14][1],
+        //     parent_hash[15][1],
+        //     parent_hash[16][1],
+        //     parent_hash[17][1],
+        //     parent_hash[18][1],
+        //     parent_hash[19][1],
+        //     parent_hash[20][1],
+        //     parent_hash[21][1],
+        //     parent_hash[22][1],
+        //     parent_hash[23][1],
+        //     parent_hash[24][1],
+        //     parent_hash[25][1],
+        //     parent_hash[26][1],
+        //     parent_hash[27][1],
+        //     parent_hash[28][1],
+        //     parent_hash[29][1],
+        //     parent_hash[30][1],
+        //     parent_hash[31][1]     
+        // };
+
+        // lookup(child_hash_lookup, "child_hash_table");
 
         std::array<std::vector<TYPE>,16> child_sum;     // these two are non-allocated expressions
         std::array<std::vector<TYPE>,16> child_is_zero; // child_is_zero[j] = 1 if child[j] = 0...0, 0 otherwise
@@ -560,46 +629,6 @@ public:
             constrain( child_choice[14][i] * (1 - child_choice[14][i]) );
             constrain( child_choice[15][i] * (1 - child_choice[15][i]) );
         }
-
-        // std::vector<TYPE> child_hash_lookup = {
-        //     1,
-        //     node_type[0],
-        //     key_part[31][0], 
-        //     parent_hash[0][1],
-        //     parent_hash[1][1],
-        //     parent_hash[2][1],
-        //     parent_hash[3][1],
-        //     parent_hash[4][1],
-        //     parent_hash[5][1],
-        //     parent_hash[6][1],
-        //     parent_hash[7][1],
-        //     parent_hash[8][1],
-        //     parent_hash[9][1],
-        //     parent_hash[10][1],
-        //     parent_hash[11][1],
-        //     parent_hash[12][1],
-        //     parent_hash[13][1],
-        //     parent_hash[14][1],
-        //     parent_hash[15][1],
-        //     parent_hash[16][1],
-        //     parent_hash[17][1],
-        //     parent_hash[18][1],
-        //     parent_hash[19][1],
-        //     parent_hash[20][1],
-        //     parent_hash[21][1],
-        //     parent_hash[22][1],
-        //     parent_hash[23][1],
-        //     parent_hash[24][1],
-        //     parent_hash[25][1],
-        //     parent_hash[26][1],
-        //     parent_hash[27][1],
-        //     parent_hash[28][1],
-        //     parent_hash[29][1],
-        //     parent_hash[30][1],
-        //     parent_hash[31][1]     
-        // };
-
-        // lookup(child_hash_lookup, "child_hash_table");
 
         if constexpr (stage == GenerationStage::CONSTRAINTS) {
            // some constraint-only stuff (for optimization)

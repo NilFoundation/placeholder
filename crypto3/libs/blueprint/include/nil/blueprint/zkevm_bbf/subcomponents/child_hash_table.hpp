@@ -57,7 +57,7 @@ namespace nil {
                 std::vector<TYPE> path_num = std::vector<TYPE>(max_rows);
                 std::vector<TYPE> node_type = std::vector<TYPE>(max_rows);
                 std::vector<TYPE> key = std::vector<TYPE>(max_rows);
-                // std::vector<std::vector<TYPE>> child_hash;
+                std::vector<std::size_t> table_lookup_area;
                 std::array<std::vector<TYPE>,32> child_hash;
 
                 static std::size_t get_witness_amount(){
@@ -93,14 +93,18 @@ namespace nil {
 
                     for(std::size_t i = 0; i < max_rows; i++) {
                         allocate(path_num[i], 0, i);
-                        allocate(node_type[i], 1, i);
-                        allocate(key[i], 2, i);
-                        for (std::size_t b = 0; b < 32; b++) {
-                            allocate(child_hash[b][i], b + 3, i);
-                        }
+                        // allocate(node_type[i], 1, i);
+                        // allocate(key[i], 2, i);
+                        // for (std::size_t b = 0; b < 32; b++) {
+                        //     allocate(child_hash[b][i], b + 3, i);
+                        // }
                     }
+
                     // // declare dynamic lookup table
-                    lookup_table("child_hash_table", std::vector<std::size_t>({0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34}), 0, max_rows);
+                    for(std::size_t i = 0; i < 1; i++) {
+                        table_lookup_area.push_back(i);
+                    }
+                    lookup_table("child_hash_table", table_lookup_area, 0, max_rows);
                 };
             };
         } // namespace bbf
