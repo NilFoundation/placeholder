@@ -27,64 +27,121 @@
 #define CRYPTO3_ALGEBRA_FIELDS_ELEMENT_OPERATIONS_HPP
 
 #include <nil/crypto3/algebra/type_traits.hpp>
+#include <nil/crypto3/multiprecision/type_traits.hpp>
 
 namespace nil {
     namespace crypto3 {
         namespace algebra {
             namespace fields {
                 namespace detail {
-                    template<typename FieldElement, typename Integral,
-                            typename = typename std::enable_if<is_field_element<FieldElement>::value &&
-                                                               std::is_constructible<FieldElement, Integral>::value>::type>
+                    template<
+                        typename FieldElement, multiprecision::integral Integral,
+                        typename = typename std::enable_if<
+                            is_field_element<FieldElement>::value &&
+                            std::is_constructible<FieldElement, Integral>::value>::type>
                     constexpr FieldElement operator+(const FieldElement &A, Integral B) {
                         return A + FieldElement(B);
                     }
 
-                    template<typename FieldElement, typename Integral,
-                            typename = typename std::enable_if<is_field_element<FieldElement>::value &&
-                                                               std::is_constructible<FieldElement, Integral>::value>::type>
+                    template<
+                        typename FieldElement, multiprecision::integral Integral,
+                        typename = typename std::enable_if<
+                            is_field_element<FieldElement>::value &&
+                            std::is_constructible<FieldElement, Integral>::value>::type>
                     constexpr FieldElement operator-(const FieldElement &A, Integral B) {
                         return A - FieldElement(B);
                     }
 
-                    template<typename FieldElement, typename Integral,
-                            typename = typename std::enable_if<is_field_element<FieldElement>::value &&
-                                                               std::is_constructible<FieldElement, Integral>::value>::type>
+                    template<
+                        typename FieldElement, multiprecision::integral Integral,
+                        typename = typename std::enable_if<
+                            is_field_element<FieldElement>::value &&
+                            std::is_constructible<FieldElement, Integral>::value>::type>
                     constexpr FieldElement operator*(const FieldElement &A, Integral B) {
                         return A * FieldElement(B);
                     }
 
-                    template<typename FieldElement, typename Integral,
-                            typename = typename std::enable_if<is_field_element<FieldElement>::value &&
-                                                               std::is_constructible<FieldElement, Integral>::value>::type>
+                    template<
+                        typename FieldElement, multiprecision::integral Integral,
+                        typename = typename std::enable_if<
+                            is_field_element<FieldElement>::value &&
+                            std::is_constructible<FieldElement, Integral>::value>::type>
                     constexpr FieldElement operator/(const FieldElement &A, Integral B) {
                         return A / FieldElement(B);
                     }
 
-                    template<typename FieldElement, typename Integral,
-                            typename = typename std::enable_if<is_field_element<FieldElement>::value &&
-                                                               std::is_constructible<FieldElement, Integral>::value>::type>
+                    template<
+                        typename FieldElement, multiprecision::integral Integral,
+                        typename = typename std::enable_if<
+                            is_field_element<FieldElement>::value &&
+                            std::is_constructible<FieldElement, Integral>::value>::type>
+                    constexpr FieldElement &operator+=(FieldElement &A, Integral B) {
+                        A += FieldElement(B);
+                        return A;
+                    }
+
+                    template<
+                        typename FieldElement, multiprecision::integral Integral,
+                        typename = typename std::enable_if<
+                            is_field_element<FieldElement>::value &&
+                            std::is_constructible<FieldElement, Integral>::value>::type>
+                    constexpr FieldElement &operator-=(FieldElement &A, Integral B) {
+                        A -= FieldElement(B);
+                        return A;
+                    }
+
+                    template<
+                        typename FieldElement, multiprecision::integral Integral,
+                        typename = typename std::enable_if<
+                            is_field_element<FieldElement>::value &&
+                            std::is_constructible<FieldElement, Integral>::value>::type>
+                    constexpr FieldElement &operator*=(FieldElement &A, Integral B) {
+                        A *= FieldElement(B);
+                        return A;
+                    }
+
+                    template<
+                        typename FieldElement, multiprecision::integral Integral,
+                        typename = typename std::enable_if<
+                            is_field_element<FieldElement>::value &&
+                            std::is_constructible<FieldElement, Integral>::value>::type>
+                    constexpr FieldElement &operator/=(FieldElement &A, Integral B) {
+                        A /= FieldElement(B);
+                        return A;
+                    }
+
+                    template<
+                        typename FieldElement, multiprecision::integral Integral,
+                        typename = typename std::enable_if<
+                            is_field_element<FieldElement>::value &&
+                            std::is_constructible<FieldElement, Integral>::value>::type>
                     constexpr FieldElement operator+(Integral A, const FieldElement &B) {
                         return FieldElement(A) + B;
                     }
 
-                    template<typename FieldElement, typename Integral,
-                            typename = typename std::enable_if<is_field_element<FieldElement>::value &&
-                                                               std::is_constructible<FieldElement, Integral>::value>::type>
+                    template<
+                        typename FieldElement, multiprecision::integral Integral,
+                        typename = typename std::enable_if<
+                            is_field_element<FieldElement>::value &&
+                            std::is_constructible<FieldElement, Integral>::value>::type>
                     constexpr FieldElement operator-(Integral A, const FieldElement &B) {
                         return FieldElement(A) - B;
                     }
 
-                    template<typename FieldElement, typename Integral,
-                            typename = typename std::enable_if<is_field_element<FieldElement>::value &&
-                                                               std::is_constructible<FieldElement, Integral>::value>::type>
+                    template<
+                        typename FieldElement, multiprecision::integral Integral,
+                        typename = typename std::enable_if<
+                            is_field_element<FieldElement>::value &&
+                            std::is_constructible<FieldElement, Integral>::value>::type>
                     constexpr FieldElement operator*(Integral A, const FieldElement &B) {
                         return FieldElement(A) * B;
                     }
 
-                    template<typename FieldElement, typename Integral,
-                            typename = typename std::enable_if<is_field_element<FieldElement>::value &&
-                                                               std::is_constructible<FieldElement, Integral>::value>::type>
+                    template<
+                        typename FieldElement, multiprecision::integral Integral,
+                        typename = typename std::enable_if<
+                            is_field_element<FieldElement>::value &&
+                            std::is_constructible<FieldElement, Integral>::value>::type>
                     constexpr FieldElement operator/(Integral A, const FieldElement &B) {
                         return FieldElement(A) / B;
                     }
