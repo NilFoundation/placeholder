@@ -84,8 +84,10 @@ void test(std::vector<typename BlueprintFieldType::value_type> &public_input,
 
     typename component_type::input_type instance_input = {alphai, si, ti};
 
-    auto result_check = [expected_res](AssignmentType &assignment, typename component_type::result_type &real_res) {
-        std::cout << "F: 0x" << std::hex << var_value(assignment, real_res.output).data << std::endl;
+    auto result_check = [expected_res](AssignmentType &assignment,
+                                       typename component_type::result_type &real_res) {
+        std::cout << "F: 0x" << std::hex << var_value(assignment, real_res.output)
+                  << std::endl;
         assert(var_value(assignment, real_res.output) == expected_res);
     };
 

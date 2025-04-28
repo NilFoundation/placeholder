@@ -110,7 +110,7 @@ void calculate_expected_and_test_bit_shift(typename BlueprintFieldType::value_ty
     using integral_type = typename BlueprintFieldType::integral_type;
 
     integral_type max = integral_type(1) << BitsAmount;
-    integral_type input_integral = integral_type(input.data) % max;
+    integral_type input_integral = integral_type(input.to_integral()) % max;
     value_type expected_res = 0;
 
     if (Mode == bit_shift_mode::RIGHT) {
@@ -151,8 +151,8 @@ void test_shift_random_input() {
 
     for (std::size_t j = 0; j < random_tests_amount; j++) {
         value_type random = rand();
-        integral_type input_integral = integral_type(random.data);
-        input_integral = input_integral & integral_type((max_value - 1).data);
+        integral_type input_integral = integral_type(random.to_integral());
+        input_integral = input_integral & integral_type((max_value - 1).to_integral());
         value_type input = value_type(input_integral);
 
         calculate_expected_and_test_bit_shift<BlueprintFieldType, WitnessesAmount, BitsAmount, Shift, Mode>(input);

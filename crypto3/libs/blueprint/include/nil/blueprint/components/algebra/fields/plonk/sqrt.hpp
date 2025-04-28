@@ -306,7 +306,8 @@ namespace nil {
                 var qr_check = generate_assignments(exp_instance, assignment, {instance_input.y, exp}, row).output;
                 row += exp_instance.rows_amount;
                 // x = sqrt(y) if y \in QR(q) or y = 0, -1 otherwise
-                typename BlueprintFieldType::value_type qr_check_value = var_value(assignment, qr_check).data;
+                typename BlueprintFieldType::value_type qr_check_value =
+                    var_value(assignment, qr_check);
                 if (qr_check_value == BlueprintFieldType::value_type::zero() ||
                     qr_check_value == BlueprintFieldType::value_type::one()){
                         typename BlueprintFieldType::value_type x_val = var_value(assignment, instance_input.y).sqrt();

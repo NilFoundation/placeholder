@@ -75,9 +75,9 @@ auto test_logic_and_flag(std::vector<typename BlueprintFieldType::value_type> pu
                                            typename component_type::result_type &real_res) {
 #ifdef BLUEPRINT_PLONK_PROFILING_ENABLED
         std::cout << "logic and test: \n";
-        std::cout << "input   : " << public_input[0].data << " " << public_input[1].data << "\n";
-        std::cout << "expected: " << expected_result.data << "\n";
-        std::cout << "real    : " << var_value(assignment, real_res.output).data << "\n\n";
+        std::cout << "input   : " << public_input[0] << " " << public_input[1] << "\n";
+        std::cout << "expected: " << expected_result << "\n";
+        std::cout << "real    : " << var_value(assignment, real_res.output) << "\n\n";
 #endif
         assert(var_value(assignment, real_res.output) == expected_result);
     };

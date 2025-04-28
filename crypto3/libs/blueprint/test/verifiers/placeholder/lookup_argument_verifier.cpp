@@ -167,15 +167,15 @@ void test(std::vector<typename BlueprintFieldType::value_type> &public_input,
 
     auto result_check = [expected_res](AssignmentType &assignment, typename component_type::result_type &real_res) {
         for (int i = 0; i < 4; i++) {
-            std::cout << "F[" << i << "]: 0x" << std::hex << var_value(assignment, real_res.output[i]).data
-                      << std::endl;
+            std::cout << "F[" << i << "]: 0x" << std::hex
+                      << var_value(assignment, real_res.output[i]) << std::endl;
         }
 
         for (int i = 0; i < 4; i++) {
             assert(var_value(assignment, real_res.output[i]) == expected_res[i]);
         }
 
-        // std::cout << "expected F: " << expected_res.data << std::endl;
+        // std::cout << "expected F: " << expected_res << std::endl;
     };
 
     crypto3::test_component<component_type, BlueprintFieldType, hash_type, Lambda>(

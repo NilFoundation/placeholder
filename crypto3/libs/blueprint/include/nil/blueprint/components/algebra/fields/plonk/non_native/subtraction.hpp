@@ -172,25 +172,35 @@ namespace nil {
                     typename BlueprintFieldType::integral_type pasta_base = 1;
                     typename ed25519_field_type::extended_integral_type extended_base = 1;
                     typename ed25519_field_type::value_type eddsa_a =
-                        typename ed25519_field_type::integral_type(a[0].data) +
-                        typename ed25519_field_type::integral_type(a[1].data) * (base << 66) +
-                        typename ed25519_field_type::integral_type(a[2].data) * (base << 132) +
-                        typename ed25519_field_type::integral_type(a[3].data) * (base << 198);
+                        typename ed25519_field_type::integral_type(a[0].to_integral()) +
+                        typename ed25519_field_type::integral_type(a[1].to_integral()) *
+                            (base << 66) +
+                        typename ed25519_field_type::integral_type(a[2].to_integral()) *
+                            (base << 132) +
+                        typename ed25519_field_type::integral_type(a[3].to_integral()) *
+                            (base << 198);
 
                     typename ed25519_field_type::extended_integral_type eddsa_p = ed25519_field_type::modulus;
                     typename ed25519_field_type::value_type eddsa_b =
-                        (typename ed25519_field_type::integral_type(b[0].data) +
-                        typename ed25519_field_type::integral_type(b[1].data) * (base << 66) +
-                        typename ed25519_field_type::integral_type(b[2].data) * (base << 132) +
-                        typename ed25519_field_type::integral_type(b[3].data) * (base << 198));
+                        (typename ed25519_field_type::integral_type(b[0].to_integral()) +
+                         typename ed25519_field_type::integral_type(b[1].to_integral()) *
+                             (base << 66) +
+                         typename ed25519_field_type::integral_type(b[2].to_integral()) *
+                             (base << 132) +
+                         typename ed25519_field_type::integral_type(b[3].to_integral()) *
+                             (base << 198));
 
                     typename ed25519_field_type::value_type eddsa_r = eddsa_a - eddsa_b;
                     typename ed25519_field_type::integral_type integral_eddsa_r =
-                        typename ed25519_field_type::integral_type(eddsa_r.data);
+                        typename ed25519_field_type::integral_type(eddsa_r.to_integral());
                     typename ed25519_field_type::extended_integral_type integral_eddsa_q =
-                        (typename ed25519_field_type::extended_integral_type(ed25519_field_type::integral_type(eddsa_a.data)) + eddsa_p -
-                        typename ed25519_field_type::extended_integral_type(ed25519_field_type::integral_type(eddsa_b.data)) -
-                        typename ed25519_field_type::extended_integral_type(ed25519_field_type::integral_type(eddsa_r.data))) /
+                        (typename ed25519_field_type::extended_integral_type(
+                             ed25519_field_type::integral_type(eddsa_a.to_integral())) +
+                         eddsa_p -
+                         typename ed25519_field_type::extended_integral_type(
+                             ed25519_field_type::integral_type(eddsa_b.to_integral())) -
+                         typename ed25519_field_type::extended_integral_type(
+                             ed25519_field_type::integral_type(eddsa_r.to_integral()))) /
                         eddsa_p;
                     typename ed25519_field_type::extended_integral_type pow = extended_base << 257;
                     typename ed25519_field_type::extended_integral_type minus_eddsa_p = pow - eddsa_p;
@@ -216,7 +226,8 @@ namespace nil {
                     typename BlueprintFieldType::value_type u0 = t - r[0];
 
                     typename BlueprintFieldType::integral_type u0_integral =
-                        typename BlueprintFieldType::integral_type(u0.data) >> 66;
+                        typename BlueprintFieldType::integral_type(u0.to_integral()) >>
+                        66;
                     std::array<typename BlueprintFieldType::value_type, 4> u0_chunks;
 
                     u0_chunks[0] = u0_integral & ((1 << 22) - 1);
@@ -253,35 +264,56 @@ namespace nil {
                 typename BlueprintFieldType::integral_type pasta_base = 1;
                 typename ed25519_field_type::extended_integral_type extended_base = 1;
                 std::array<typename BlueprintFieldType::value_type, 4> a = {
-                    typename BlueprintFieldType::integral_type(var_value(assignment, instance_input.A[0]).data),
-                    typename BlueprintFieldType::integral_type(var_value(assignment, instance_input.A[1]).data),
-                    typename BlueprintFieldType::integral_type(var_value(assignment, instance_input.A[2]).data),
-                    typename BlueprintFieldType::integral_type(var_value(assignment, instance_input.A[3]).data)};
+                    typename BlueprintFieldType::integral_type(
+                        var_value(assignment, instance_input.A[0]).to_integral()),
+                    typename BlueprintFieldType::integral_type(
+                        var_value(assignment, instance_input.A[1]).to_integral()),
+                    typename BlueprintFieldType::integral_type(
+                        var_value(assignment, instance_input.A[2]).to_integral()),
+                    typename BlueprintFieldType::integral_type(
+                        var_value(assignment, instance_input.A[3]).to_integral())};
                 typename ed25519_field_type::value_type eddsa_a =
-                    typename ed25519_field_type::integral_type(a[0].data) +
-                    typename ed25519_field_type::integral_type(a[1].data) * (base << 66) +
-                    typename ed25519_field_type::integral_type(a[2].data) * (base << 132) +
-                    typename ed25519_field_type::integral_type(a[3].data) * (base << 198);
+                    typename ed25519_field_type::integral_type(a[0].to_integral()) +
+                    typename ed25519_field_type::integral_type(a[1].to_integral()) *
+                        (base << 66) +
+                    typename ed25519_field_type::integral_type(a[2].to_integral()) *
+                        (base << 132) +
+                    typename ed25519_field_type::integral_type(a[3].to_integral()) *
+                        (base << 198);
 
                 std::array<typename BlueprintFieldType::value_type, 4> b = {
-                    typename BlueprintFieldType::integral_type(var_value(assignment, instance_input.B[0]).data),
-                    typename BlueprintFieldType::integral_type(var_value(assignment, instance_input.B[1]).data),
-                    typename BlueprintFieldType::integral_type(var_value(assignment, instance_input.B[2]).data),
-                    typename BlueprintFieldType::integral_type(var_value(assignment, instance_input.B[3]).data)};
+                    typename BlueprintFieldType::integral_type(
+                        var_value(assignment, instance_input.B[0]).to_integral()),
+                    typename BlueprintFieldType::integral_type(
+                        var_value(assignment, instance_input.B[1]).to_integral()),
+                    typename BlueprintFieldType::integral_type(
+                        var_value(assignment, instance_input.B[2]).to_integral()),
+                    typename BlueprintFieldType::integral_type(
+                        var_value(assignment, instance_input.B[3]).to_integral())};
                 typename ed25519_field_type::extended_integral_type eddsa_p = ed25519_field_type::modulus;
                 typename ed25519_field_type::value_type eddsa_b =
-                    (typename ed25519_field_type::integral_type(b[0].data) +
-                     typename ed25519_field_type::integral_type(b[1].data) * (base << 66) +
-                     typename ed25519_field_type::integral_type(b[2].data) * (base << 132) +
-                     typename ed25519_field_type::integral_type(b[3].data) * (base << 198));
+                    (typename ed25519_field_type::integral_type(b[0].to_integral()) +
+                     typename ed25519_field_type::integral_type(b[1].to_integral()) *
+                         (base << 66) +
+                     typename ed25519_field_type::integral_type(b[2].to_integral()) *
+                         (base << 132) +
+                     typename ed25519_field_type::integral_type(b[3].to_integral()) *
+                         (base << 198));
 
                 typename ed25519_field_type::value_type eddsa_r = eddsa_a - eddsa_b;
                 typename ed25519_field_type::integral_type integral_eddsa_r =
-                    typename ed25519_field_type::integral_type(eddsa_r.data);
+                    typename ed25519_field_type::integral_type(eddsa_r.to_integral());
                 typename ed25519_field_type::extended_integral_type integral_eddsa_q =
-                    (typename ed25519_field_type::extended_integral_type(typename ed25519_field_type::integral_type(eddsa_a.data)) + eddsa_p -
-                     typename ed25519_field_type::extended_integral_type(typename ed25519_field_type::integral_type(eddsa_b.data)) -
-                     typename ed25519_field_type::extended_integral_type(typename ed25519_field_type::integral_type(eddsa_r.data))) /
+                    (typename ed25519_field_type::extended_integral_type(
+                         typename ed25519_field_type::integral_type(
+                             eddsa_a.to_integral())) +
+                     eddsa_p -
+                     typename ed25519_field_type::extended_integral_type(
+                         typename ed25519_field_type::integral_type(
+                             eddsa_b.to_integral())) -
+                     typename ed25519_field_type::extended_integral_type(
+                         typename ed25519_field_type::integral_type(
+                             eddsa_r.to_integral()))) /
                     eddsa_p;
                 typename ed25519_field_type::extended_integral_type pow = extended_base << 257;
                 typename ed25519_field_type::extended_integral_type minus_eddsa_p = pow - eddsa_p;
@@ -307,7 +339,7 @@ namespace nil {
                 typename BlueprintFieldType::value_type u0 = t - r[0];
 
                 typename BlueprintFieldType::integral_type u0_integral =
-                    typename BlueprintFieldType::integral_type(u0.data) >> 66;
+                    typename BlueprintFieldType::integral_type(u0.to_integral()) >> 66;
                 std::array<typename BlueprintFieldType::value_type, 4> u0_chunks;
 
                 u0_chunks[0] = u0_integral & ((1 << 22) - 1);
@@ -362,16 +394,24 @@ namespace nil {
                 using component_type = plonk_ed25519_subtraction<BlueprintFieldType>;
 
                 std::array<typename BlueprintFieldType::value_type, 4> a = {
-                    typename BlueprintFieldType::integral_type(var_value(assignment, instance_input.A[0]).data),
-                    typename BlueprintFieldType::integral_type(var_value(assignment, instance_input.A[1]).data),
-                    typename BlueprintFieldType::integral_type(var_value(assignment, instance_input.A[2]).data),
-                    typename BlueprintFieldType::integral_type(var_value(assignment, instance_input.A[3]).data)};
+                    typename BlueprintFieldType::integral_type(
+                        var_value(assignment, instance_input.A[0]).to_integral()),
+                    typename BlueprintFieldType::integral_type(
+                        var_value(assignment, instance_input.A[1]).to_integral()),
+                    typename BlueprintFieldType::integral_type(
+                        var_value(assignment, instance_input.A[2]).to_integral()),
+                    typename BlueprintFieldType::integral_type(
+                        var_value(assignment, instance_input.A[3]).to_integral())};
 
                 std::array<typename BlueprintFieldType::value_type, 4> b = {
-                    typename BlueprintFieldType::integral_type(var_value(assignment, instance_input.B[0]).data),
-                    typename BlueprintFieldType::integral_type(var_value(assignment, instance_input.B[1]).data),
-                    typename BlueprintFieldType::integral_type(var_value(assignment, instance_input.B[2]).data),
-                    typename BlueprintFieldType::integral_type(var_value(assignment, instance_input.B[3]).data)};
+                    typename BlueprintFieldType::integral_type(
+                        var_value(assignment, instance_input.B[0]).to_integral()),
+                    typename BlueprintFieldType::integral_type(
+                        var_value(assignment, instance_input.B[1]).to_integral()),
+                    typename BlueprintFieldType::integral_type(
+                        var_value(assignment, instance_input.B[2]).to_integral()),
+                    typename BlueprintFieldType::integral_type(
+                        var_value(assignment, instance_input.B[3]).to_integral())};
 
                 auto r = component_type::calculate(a, b);
                 assignment.witness(component.W(0), start_row_index) = r[0];

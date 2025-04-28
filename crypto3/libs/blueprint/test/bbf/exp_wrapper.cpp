@@ -100,8 +100,8 @@ word_type random_word_type(nil::crypto3::random::algebraic_engine<FieldType> &g)
 
     integral_type base128 = integral_type(1) << 128;
 
-    integral_type hi = integral_type(g().data) % base128;
-    integral_type lo = integral_type(g().data) % base128;
+    integral_type hi = integral_type(g().to_integral()) % base128;
+    integral_type lo = integral_type(g().to_integral()) % base128;
     word_type w_hi = hi;
     word_type w_lo = lo;
     word_type result = w_hi * base128 + w_lo;

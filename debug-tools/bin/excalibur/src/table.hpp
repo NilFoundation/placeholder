@@ -327,7 +327,7 @@ public:
         } else {
             ss << std::dec;
         }
-        ss << row[column_index].data;
+        ss << row[column_index];
         string_cache[column_index] = ss.str();
     }
 
@@ -454,7 +454,7 @@ protected:
             } else {
                 ss << std::dec;
             }
-            ss << row[i].data;
+            ss << row[i];
             string_cache.push_back(ss.str());
         }
     }
@@ -1136,11 +1136,11 @@ public:
             }
             std::size_t curr_idx = 1;
             for (std::size_t j = 0; j < sizes.witnesses_size; j++) {
-                row_stream << std::setw(width) << row->get_row_item(curr_idx++).data << " ";
+                row_stream << std::setw(width) << row->get_row_item(curr_idx++) << " ";
             }
             row_stream << "| ";
             for (std::size_t j = 0; j < sizes.public_inputs_size; j++) {
-                row_stream << std::setw(width) << row->get_row_item(curr_idx++).data << " ";
+                row_stream << std::setw(width) << row->get_row_item(curr_idx++) << " ";
             }
             row_stream << "| ";
             for (std::size_t j = 0; j < sizes.constants_size; j++) {
@@ -1150,9 +1150,9 @@ public:
             }
             row_stream << "| ";
             for (std::size_t j = 0; j < sizes.selectors_size - 1; j++) {
-                row_stream << row->get_row_item(curr_idx++).data << " ";
+                row_stream << row->get_row_item(curr_idx++) << " ";
             }
-            row_stream << row->get_row_item(curr_idx).data << "\n";
+            row_stream << row->get_row_item(curr_idx) << "\n";
             stream->write(row_stream.str().c_str(), row_stream.str().size());
         }
         stream->close();
@@ -1280,7 +1280,7 @@ public:
                 return;
             }
             std::stringstream sse;
-            sse << std::hex << value.data;
+            sse << std::hex << value;
             label->set_text(sse.str());
         }
 

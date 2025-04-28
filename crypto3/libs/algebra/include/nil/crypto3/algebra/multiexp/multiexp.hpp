@@ -174,11 +174,8 @@ namespace nil {
                                                         const std::size_t window,
                                                         const window_table<GroupType> &powers_of_g,
                                                         const typename FieldType::value_type &pow) {
-
-                typedef typename FieldType::modular_type modular_type;
-
                 const std::size_t outerc = (scalar_size + window - 1) / window;
-                const modular_type pow_val = pow.data;
+                const auto pow_val = pow.to_integral();
                 /* exp */
                 typename GroupType::value_type res = powers_of_g[0][0];
 

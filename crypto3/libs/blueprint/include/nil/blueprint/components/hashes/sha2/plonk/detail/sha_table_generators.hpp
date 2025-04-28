@@ -248,11 +248,15 @@ namespace nil {
                     static const std::size_t base7 = 7;
                     static const value_type base7_value = value_type(base7);
                     static const std::array<integral_type, 4> e_mult = {
-                        integral_type((base7_value.pow(26) + base7_value.pow(21) + base7_value.pow(7)).data),
-                        integral_type((base7_value.pow(27) + base7_value.pow(13) + 1).data),
-                        integral_type((base7_value.pow(5) + base7_value.pow(18) + 1).data),
-                        integral_type((base7_value.pow(19) + base7_value.pow(14) + 1).data)
-                    };
+                        integral_type((base7_value.pow(26) + base7_value.pow(21) +
+                                       base7_value.pow(7))
+                                          .to_integral()),
+                        integral_type((base7_value.pow(27) + base7_value.pow(13) + 1)
+                                          .to_integral()),
+                        integral_type(
+                            (base7_value.pow(5) + base7_value.pow(18) + 1).to_integral()),
+                        integral_type((base7_value.pow(19) + base7_value.pow(14) + 1)
+                                          .to_integral())};
 
                     std::vector<bool> value(table_size);
                     for (std::size_t j = 0; j < table_size; j++) {

@@ -40,7 +40,7 @@ namespace nil {
         template<typename ValueType>
         void profiling(std::vector<ValueType> column, std::ostream &out = std::cout) {
             for (std::size_t index = 0; index < column.size(); index++) {
-                out << "\t" << column[index].data;
+                out << "\t" << column[index];
             }
         }
 

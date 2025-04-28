@@ -47,7 +47,7 @@ namespace nil {
                     class element_fp {
                         typedef FieldParams policy_type;
 
-                    public:
+                      public:
                         typedef typename policy_type::field_type field_type;
 
                         typedef typename policy_type::modular_type modular_type;
@@ -55,27 +55,21 @@ namespace nil {
 
                         constexpr static const integral_type modulus = policy_type::modulus;
 
+                      private:
                         using data_type = modular_type;
                         data_type data;
 
+                      public:
                         constexpr element_fp() = default;
 
                         constexpr element_fp(const data_type &data) : data(data) {}
 
-                        template<std::size_t Bits>
-                        constexpr element_fp(const nil::crypto3::multiprecision::big_uint<Bits> &data)
-                                : data(data) {}
+                        template<multiprecision::integral T>
+                        constexpr element_fp(const T &data) : data(data) {}
 
-                        template<typename Number, typename std::enable_if<
-                                std::is_integral<Number>::value, bool>::type = true>
-                        constexpr element_fp(const Number &data)
-                                : data(data) {}
-
-                        constexpr element_fp(const element_fp &B)
-                                : data(B.data) {}
-
-                        constexpr element_fp(const element_fp &&B) BOOST_NOEXCEPT
-                                : data(std::move(B.data)) {}
+                        constexpr typename field_type::integral_type to_integral() const {
+                            return data.to_integral();
+                        }
 
                         // Creating a zero is a fairly slow operation and is called very often, so we must return a
                         // reference to the same static object every time.
@@ -92,17 +86,11 @@ namespace nil {
                         }
 
                         constexpr auto operator<=>(const element_fp &B) const {
-                            return data.base() <=> B.data.base();
+                            return to_integral() <=> B.to_integral();
                         }
 
                         constexpr bool operator==(const element_fp &B) const {
                             return data == B.data;
-                        }
-
-                        constexpr element_fp &operator=(const element_fp &B) {
-                            data = B.data;
-
-                            return *this;
                         }
 
                         constexpr element_fp operator+(const element_fp &B) const {
@@ -216,6 +204,14 @@ namespace nil {
                         constexpr element_fp pow(const PowerType &pwr) const {
                             return element_fp(nil::crypto3::multiprecision::pow(data, pwr));
                         }
+
+                        friend std::ostream &operator<<(std::ostream &os,
+                                                        const element_fp &elem) {
+                            os << elem.data;
+                            return os;
+                        }
+
+                        friend std::hash<element_fp>;
                     };
 
                     template<typename FieldParams>
@@ -240,13 +236,6 @@ namespace nil {
                     constexpr const element_fp<FieldParams> &element_fp<FieldParams>::one() {
                         return element_fp_details::one_instance<FieldParams>;
                     }
-
-                    template<typename FieldParams>
-                    std::ostream &operator<<(std::ostream &os, const element_fp<FieldParams> &elem) {
-                        os << elem.data;
-                        return os;
-                    }
-
                 }    // namespace detail
             }        // namespace fields
         }            // namespace algebra

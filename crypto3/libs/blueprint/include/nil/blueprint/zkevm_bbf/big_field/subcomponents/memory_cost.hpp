@@ -61,8 +61,8 @@ namespace nil::blueprint::bbf::zkevm_big_field{
 
             if constexpr (stage == GenerationStage::ASSIGNMENT) {
                 integral_type memory2 =
-                    integral_type(mem_words.data) * integral_type(mem_words.data);
-                mem_cost = memory2 / 512 + 3 * integral_type(mem_words.data);
+                    integral_type(mem_words.to_integral()) * integral_type(mem_words.to_integral());
+                mem_cost = memory2 / 512 + 3 * integral_type(mem_words.to_integral());
                 R = memory2 % 512;
             }
 

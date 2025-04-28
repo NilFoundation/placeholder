@@ -90,7 +90,7 @@ namespace nil::crypto3::multiprecision {
         }
 
       public:
-        constexpr auto base() const { return big_uint<Bits>(internal_base()); }
+        constexpr auto to_integral() const { return big_uint<Bits>(internal_base()); }
 
         constexpr decltype(auto) mod() const {
             if constexpr (is_big_uint_v<base_type>) {
@@ -100,7 +100,7 @@ namespace nil::crypto3::multiprecision {
             }
         }
 
-        explicit constexpr operator auto() const { return base(); }
+        explicit constexpr operator auto() const { return to_integral(); }
 
         explicit constexpr operator bool() const { return !is_zero(); }
 
@@ -141,7 +141,7 @@ namespace nil::crypto3::multiprecision {
             std::ios_base::fmtflags flags = std::ios_base::hex | std::ios_base::showbase |
                                             std::ios_base::uppercase) const {
             // TODO(ioxid): optimize when base_type is not big_uint
-            return base().str(flags);
+            return to_integral().str(flags);
         }
 
         // Arithmetic operations

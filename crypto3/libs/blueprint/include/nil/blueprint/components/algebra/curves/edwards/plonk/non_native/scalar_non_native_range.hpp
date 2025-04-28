@@ -144,7 +144,9 @@ namespace nil {
                 typename Ed25519Type::scalar_field_type::integral_type base = 1;
                 typename Ed25519Type::scalar_field_type::extended_integral_type extended_base = 1;
                 typename Ed25519Type::scalar_field_type::integral_type mask = (base << 22) - 1;
-                typename BlueprintFieldType::integral_type pasta_k = typename BlueprintFieldType::integral_type(var_value(assignment, instance_input.k).data);
+                typename BlueprintFieldType::integral_type pasta_k =
+                    typename BlueprintFieldType::integral_type(
+                        var_value(assignment, instance_input.k).to_integral());
                 typename Ed25519Type::scalar_field_type::integral_type k = typename Ed25519Type::scalar_field_type::integral_type(pasta_k);
                 typename Ed25519Type::scalar_field_type::extended_integral_type q = Ed25519Type::scalar_field_type::modulus;
                 typename Ed25519Type::scalar_field_type::extended_integral_type d = (extended_base << 253) - q;

@@ -175,16 +175,19 @@ void test_vbsm(
 		expected = point * scalar;
 
 		typename CurveType::scalar_field_type::value_type shifted = shift_scalar<CurveType>(scalar);
-		typename CurveType::scalar_field_type::integral_type shifted_integral_type = typename CurveType::scalar_field_type::integral_type(shifted.data);
-		typename CurveType::base_field_type::value_type shifted_base_value_type = shifted_integral_type;
+        typename CurveType::scalar_field_type::integral_type shifted_integral_type =
+            typename CurveType::scalar_field_type::integral_type(shifted.to_integral());
+        typename CurveType::base_field_type::value_type shifted_base_value_type = shifted_integral_type;
 		typename CurveType::base_field_type::value_type shifted_base_value_type_bit;
 		typename CurveType::scalar_field_type::value_type two = 2;
 
 		if constexpr (std::is_same<CurveType, nil::crypto3::algebra::curves::pallas>::value) {
 			if (shifted >= two.pow(254)) {
 				shifted = shifted - two.pow(254);
-				shifted_integral_type = typename CurveType::scalar_field_type::integral_type(shifted.data);
-				shifted_base_value_type = shifted_integral_type;
+                shifted_integral_type =
+                    typename CurveType::scalar_field_type::integral_type(
+                        shifted.to_integral());
+                shifted_base_value_type = shifted_integral_type;
 				shifted_base_value_type_bit = 1;
 			} else {
 				shifted_base_value_type = shifted_integral_type;

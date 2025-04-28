@@ -86,7 +86,7 @@ typename CurveType::scalar_field_type::value_type calculate_endo_scalar(typename
         bits_per_crumb * crumbs_per_row;    // we suppose that ScalarSize % bits_per_row = 0
 
     typename BlueprintFieldType::integral_type integral_scalar =
-        typename BlueprintFieldType::integral_type(scalar.data);
+        typename BlueprintFieldType::integral_type(scalar.to_integral());
     std::array<bool, ScalarSize> bits_msb;
     {
         nil::crypto3::marshalling::status_type status;
@@ -155,15 +155,17 @@ void test_endo_scalar(std::vector<typename CurveType::scalar_field_type::value_t
     var challenge_var(0, 0, false, var::column_type::public_input);
     typename component_type::input_type instance_input = {challenge_var};
 
-    auto result_check = [&expected_res, public_input](AssignmentType &assignment,
-	    typename component_type::result_type &real_res) {
-            #ifdef BLUEPRINT_PLONK_PROFILING_ENABLED
-            std::cout << "endo_scalar input: " << std::hex << public_input[0].data << "\n";
-            std::cout << "expected result  : " << std::hex << expected_res.data << "\n";
-            std::cout << "real result      : " << std::hex << var_value(assignment, real_res.output).data << "\n\n";
-            #endif
+    auto result_check = [&expected_res, public_input](
+                            AssignmentType &assignment,
+                            typename component_type::result_type &real_res) {
+#ifdef BLUEPRINT_PLONK_PROFILING_ENABLED
+        std::cout << "endo_scalar input: " << std::hex << public_input[0] << "\n";
+        std::cout << "expected result  : " << std::hex << expected_res << "\n";
+        std::cout << "real result      : " << std::hex
+                  << var_value(assignment, real_res.output) << "\n\n";
+#endif
 
-            BOOST_CHECK_EQUAL(expected_res, var_value(assignment, real_res.output));
+        BOOST_CHECK_EQUAL(expected_res, var_value(assignment, real_res.output));
     };
 
     component_type component_instance({0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14},{},{},num_bits);
@@ -194,7 +196,8 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_endo_scalar_vesta) {
 
     for (std::size_t i = 0; i < random_tests_amount; i++){
         typename curve_type::scalar_field_type::value_type input = generate_random();
-    	typename curve_type::scalar_field_type::integral_type input_integral = typename curve_type::scalar_field_type::integral_type(input.data);
+        typename curve_type::scalar_field_type::integral_type input_integral =
+            typename curve_type::scalar_field_type::integral_type(input.to_integral());
         input_integral = input_integral & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_big_uint255;
     	typename curve_type::scalar_field_type::value_type input_scalar =  input_integral;
         test_endo_scalar<curve_type>({input_scalar}, calculate_endo_scalar<curve_type, 128>(input_scalar));
@@ -219,7 +222,8 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_endo_scalar_pallas) {
 
     for (std::size_t i = 0; i < random_tests_amount; i++){
         typename curve_type::scalar_field_type::value_type input = generate_random();
-    	typename curve_type::scalar_field_type::integral_type input_integral = typename curve_type::scalar_field_type::integral_type(input.data);
+        typename curve_type::scalar_field_type::integral_type input_integral =
+            typename curve_type::scalar_field_type::integral_type(input.to_integral());
         input_integral = input_integral & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_big_uint255;
     	typename curve_type::scalar_field_type::value_type input_scalar =  input_integral;
         test_endo_scalar<curve_type>({input_scalar}, calculate_endo_scalar<curve_type, 128>(input_scalar));

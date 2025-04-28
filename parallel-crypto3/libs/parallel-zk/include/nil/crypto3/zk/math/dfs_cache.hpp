@@ -46,6 +46,8 @@
 #include <nil/crypto3/zk/snark/arithmetization/plonk/assignment.hpp>
 #include <nil/crypto3/zk/snark/arithmetization/plonk/constraint_system.hpp>
 
+#include <nil/crypto3/bench/scoped_profiler.hpp>
+
 namespace nil::crypto3::zk::snark {
 
     // Currently we store the value of given variable without any rotations in the cache, to same memory.
@@ -119,6 +121,8 @@ namespace nil::crypto3::zk::snark {
         }
 
         void ensure_cache(const std::set<variable_type> &variables, std::size_t size) {
+            PROFILE_SCOPE("Ensure Cache");
+
             if (variables.size() == 0)
                 return;
             if (original_domain_size > size) {

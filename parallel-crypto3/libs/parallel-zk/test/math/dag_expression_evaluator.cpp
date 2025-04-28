@@ -93,8 +93,10 @@ BOOST_AUTO_TEST_CASE(dag_expression_evaluator_test) {
     var w1(1, 0, var::column_type::witness);
 
     expression<var> expr = w0 * w1;
-    dag_expression<var> dag_expr;
-    dag_expr.add_expression(expr);
+    dag_expression_builder<var> dag_expr_builder;
+    dag_expr_builder.add_expression(expr);
+    dag_expression<var> dag_expr = dag_expr_builder.build();
+
     table.ensure_cache({w0, w1}, domain_size * 2);
 
     dag_expression_evaluator<FieldType> dag_evaluator(dag_expr, 2);

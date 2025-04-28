@@ -142,13 +142,13 @@ BOOST_AUTO_TEST_CASE(inverse_tests) { test_inverse_mod<big_uint<4096>>(); }
 
 BOOST_AUTO_TEST_CASE(test_big_mod_6_bits) {
     auto modular = big_mod_rt<6>(10_big_uint6, 37_big_uint6);
-    BOOST_CHECK_EQUAL(inverse(modular).base(), 26u);
+    BOOST_CHECK_EQUAL(inverse(modular).to_integral(), 26u);
 
     modular = big_mod_rt<6>(3_big_uint6, 8_big_uint6);
-    BOOST_CHECK_EQUAL(inverse(modular).base(), 3u);
+    BOOST_CHECK_EQUAL(inverse(modular).to_integral(), 3u);
 
     modular = big_mod_rt<6>(3_big_uint6, 16_big_uint6);
-    BOOST_CHECK_EQUAL(inverse(modular).base(), 11u);
+    BOOST_CHECK_EQUAL(inverse(modular).to_integral(), 11u);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

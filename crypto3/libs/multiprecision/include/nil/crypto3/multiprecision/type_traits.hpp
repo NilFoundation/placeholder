@@ -36,6 +36,9 @@ namespace nil::crypto3::multiprecision {
     constexpr bool is_integral_v = is_integral<T>::value;
 
     template<typename T>
+    concept integral = is_integral_v<T>;
+
+    template<typename T>
     struct is_big_mod : std::false_type {};
 
     template<typename modular_ops_storage_t_>

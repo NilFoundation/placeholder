@@ -99,16 +99,16 @@ BOOST_AUTO_TEST_SUITE(blueprint_plonk_test_suite)
 
 template<typename FieldType>
 std::vector<typename FieldType::value_type> calculate_decomposition(std::vector<typename FieldType::value_type> data_value) {
-                std::array<typename FieldType::integral_type, 2> data = {
-                    typename FieldType::integral_type(data_value[0].data),
-                    typename FieldType::integral_type(data_value[1].data)};
-                std::array<typename FieldType::integral_type, 16> range_chunks;
-                std::size_t shift = 0;
+    std::array<typename FieldType::integral_type, 2> data = {
+        typename FieldType::integral_type(data_value[0].to_integral()),
+        typename FieldType::integral_type(data_value[1].to_integral())};
+    std::array<typename FieldType::integral_type, 16> range_chunks;
+    std::size_t shift = 0;
 
-                for (std::size_t i = 0; i < 8; i++) {
-                    range_chunks[i] = (data[0] >> shift) & ((1 << 16) - 1);
-                    range_chunks[i + 8] = (data[1] >> shift) & ((1 << 16) - 1);
-                    shift += 16;
+    for (std::size_t i = 0; i < 8; i++) {
+        range_chunks[i] = (data[0] >> shift) & ((1 << 16) - 1);
+        range_chunks[i + 8] = (data[1] >> shift) & ((1 << 16) - 1);
+        shift += 16;
                 }
 
                 std::array<typename FieldType::integral_type, 8> output;

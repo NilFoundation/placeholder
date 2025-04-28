@@ -109,13 +109,16 @@ namespace nil {
                         while( true ) {
                             transcript_type tmp_transcript = transcript;
                             tmp_transcript(proof_of_work);
-                            result = integral_type(tmp_transcript.template challenge<FieldType>().data);
+                            result = integral_type(
+                                tmp_transcript.template challenge<FieldType>()
+                                    .to_integral());
                             if ((result & mask) == 0)
                                 break;
                             proof_of_work++;
                         }
                         transcript(proof_of_work);
-                        result = integral_type(transcript.template challenge<FieldType>().data);
+                        result = integral_type(
+                            transcript.template challenge<FieldType>().to_integral());
                         return proof_of_work;
                     }
 
@@ -126,7 +129,8 @@ namespace nil {
                                 ((integral_type(1) << GrindingBits) - 1) << (FieldType::modulus_bits - GrindingBits)
                                 : 0);
 
-                        integral_type result = integral_type(transcript.template challenge<FieldType>().data);
+                        integral_type result = integral_type(
+                            transcript.template challenge<FieldType>().to_integral());
                         return ((result & mask) == 0);
                     }
                 };
