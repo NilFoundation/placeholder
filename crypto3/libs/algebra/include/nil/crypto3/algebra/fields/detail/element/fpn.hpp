@@ -97,6 +97,10 @@ namespace nil::crypto3::algebra::fields::detail {
 
     static_assert(BinomialFieldExtensionParams<BinomialFieldExtensionParamsArchetype>);
 
+    // This is a generic class for binomial extension.
+    // It works when Params::dimension divides (modulus - 1).
+    // Unlike fp2 and fp3 multiplication and inversion are not optimized for specific
+    // dimension. Also the parameters structure is a bit different.
     template<BinomialFieldExtensionParams Params>
     class element_fpn {
       public:
