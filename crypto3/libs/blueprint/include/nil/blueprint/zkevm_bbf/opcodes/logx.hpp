@@ -27,9 +27,10 @@
 #include <algorithm>
 #include <numeric>
 
-#include <nil/blueprint/zkevm_bbf/types/zkevm_word.hpp>
+#include <nil/blueprint/zkevm_bbf/subcomponents/log_table.hpp>
 #include <nil/blueprint/zkevm_bbf/subcomponents/memory_cost.hpp>
 #include <nil/blueprint/zkevm_bbf/types/opcode.hpp>
+#include <nil/blueprint/zkevm_bbf/types/zkevm_word.hpp>
 
 namespace nil {
     namespace blueprint {
@@ -56,11 +57,18 @@ namespace nil {
                     using Memory_Cost = typename bbf::memory_cost<FieldType, stage>;
 
                     TYPE offset, length, current_mem, next_mem, memory_expansion_size,
-                        memory_expansion_cost, S;
+                        memory_expansion_cost, S, block_id, tx_id,
+                        call_context_address_hi, call_context_address_lo, log_index;
                     std::vector<TYPE> topics_lo(x);
                     std::vector<TYPE> topics_hi(x);
 
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
+                        tx_id = current_state.tx_id();
+                        block_id = current_state.block_id();
+                        auto call_context_address = current_state.call_context_address();
+                        call_context_address_hi = w_hi<FieldType>(call_context_address);
+                        call_context_address_lo = w_lo<FieldType>(call_context_address);
+                        log_index = current_state.log_index();
                         offset = w_lo<FieldType>(current_state.stack_top());
                         length = w_lo<FieldType>(current_state.stack_top(1));
                         current_mem = current_state.memory_size();
@@ -81,6 +89,12 @@ namespace nil {
                     allocate(current_mem, 34, 0);
                     allocate(next_mem, 35, 0);
                     allocate(S, 36, 0);
+                    allocate(block_id, 47, 0);
+                    allocate(tx_id, 44, 1);
+                    allocate(call_context_address_hi, 45, 1);
+                    allocate(call_context_address_lo, 46, 1);
+                    allocate(log_index, 47, 1);
+
                     for (std::size_t i = 0; i < x; i++) {
                         allocate(topics_lo[i], 37 + 2 * i, 0);
                         allocate(topics_hi[i], 38 + 2 * i, 0);
@@ -109,39 +123,33 @@ namespace nil {
                     memory_expansion_size =
                         (next_memory.word_size - current_memory.word_size) * 32;
 
-                        // add 
-                        // memory read lookup
-                        // log table lookup
-
                     if constexpr (stage == GenerationStage::CONSTRAINTS) {
-                        constrain(current_state.pc_next() - current_state.pc(0) - 1);  // PC transition
+                        constrain(current_state.pc_next() - current_state.pc(0) -
+                                  1);  // PC transition
                         constrain(current_state.gas(0) - current_state.gas_next() -
                                   375 * (1 + x) - 8 * length -
                                   memory_expansion_cost);  // GAS transition
-                        constrain(current_state.stack_size(0) - current_state.stack_size_next() - 2 - x);  // stack_size transition
+                        constrain(current_state.stack_size(0) -
+                                  current_state.stack_size_next() - 2 -
+                                  x);  // stack_size transition
                         constrain(current_state.memory_size_next() -
                                   current_state.memory_size(0) -
                                   memory_expansion_size);  // memory_size transition
                         constrain(current_state.rw_counter_next() -
-                                  current_state.rw_counter(0) - 2 - x);  // rw_counter transition
+                                  current_state.rw_counter(0) - 2 -
+                                  x);  // rw_counter transition
                         std::vector<TYPE> tmp;
                         tmp = rw_table<FieldType, stage>::stack_lookup(
-                            current_state.call_id(0),
-                            current_state.stack_size(0) - 1,
+                            current_state.call_id(0), current_state.stack_size(0) - 1,
                             current_state.rw_counter(0),
                             TYPE(0),  // is_write
-                            TYPE(0),
-                            offset
-                        );
+                            TYPE(0), offset);
                         lookup(tmp, "zkevm_rw");
                         tmp = rw_table<FieldType, stage>::stack_lookup(
-                            current_state.call_id(0),
-                            current_state.stack_size(0) - 2,
+                            current_state.call_id(0), current_state.stack_size(0) - 2,
                             current_state.rw_counter(0) + 1,
                             TYPE(0),  // is_write
-                            TYPE(0),
-                            length
-                        );
+                            TYPE(0), length);
                         lookup(tmp, "zkevm_rw");
                         for (std::size_t i = 0; i < x; i++) {
                             tmp = rw_table<FieldType, stage>::stack_lookup(
@@ -149,11 +157,19 @@ namespace nil {
                                 current_state.stack_size(0) - 3 - i,
                                 current_state.rw_counter(0) + 2 + i,
                                 TYPE(0),  // is_write
-                                topics_hi[i],
-                                topics_lo[i]
-                            );
+                                topics_hi[i], topics_lo[i]);
                             lookup(tmp, "zkevm_rw");
                         }
+                        // if (x) {
+                        //     tmp = log_table<FieldType, stage>::log_tx_lookup(
+                        //         block_id, tx_id, log_index, topics_hi[x - 1],
+                        //         topics_lo[x - 1], x);
+                        // } else {
+                        //     tmp = log_table<FieldType, stage>::log_tx_lookup(
+                        //         block_id, tx_id, log_index, call_context_address_hi,
+                        //         call_context_address_lo, x);
+                        // }
+                        // lookup(tmp, "zkevm_tx_logs");
                     }
                 }
             };

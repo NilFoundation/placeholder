@@ -23,7 +23,8 @@
 //---------------------------------------------------------------------------//
 #pragma once
 
-#include<nil/blueprint/zkevm_bbf/types/log.hpp>
+#include <nil/blueprint/zkevm_bbf/types/log.hpp>
+#include <nil/blueprint/zkevm_bbf/types/zkevm_word.hpp>
 
 namespace nil {
     namespace blueprint {
@@ -36,91 +37,177 @@ namespace nil {
                 using generic_component<FieldType, stage>::constrain;
                 using generic_component<FieldType, stage>::lookup;
                 using generic_component<FieldType, stage>::lookup_table;
-            public:
-                using typename generic_component<FieldType,stage>::TYPE;
-                using input_type = typename std::conditional<stage==GenerationStage::ASSIGNMENT, std::vector<zkevm_log>, std::nullptr_t>::type;
-                using integral_type =  nil::crypto3::multiprecision::big_uint<257>;
-            public:
-                //Maybe copy data with copy circuit
 
-                // receipt_data
-                std::vector<TYPE> id; //transaction index
-                std::vector<TYPE> index; //log index
-                std::vector<TYPE> address;
-                // std::vector<TYPE> data; //log data
-                std::vector<std::vector<TYPE>> topics;
+              public:
+                using typename generic_component<FieldType, stage>::TYPE;
+                using input_type =
+                    typename std::conditional<stage == GenerationStage::ASSIGNMENT,
+                                              std::vector<zkevm_filter_indices>,
+                                              std::nullptr_t>::type;
+                using integral_type = typename FieldType::integral_type;
+                static constexpr std::size_t filter_chunks_amount = 128;
 
-                // bloom filter data
-                // std::vector<TYPE> previous_filter;
-                // std::vector<TYPE> bloom_filter; //new filter
-                // std::vector<TYPE> address_hash;
-                // std::vector<std::vector<TYPE>> topics_hash;
-                // std::vector<TYPE> address_indices;
-                // std::vector<std::vector<TYPE>> topics_indices;
+                // The Bloom filter consists of 2048 bits
+                // Each address and topic do 3 bitwise OR operation on a single bit (turn
+                // a bit on if it is off)
 
-                static std::size_t get_witness_amount(){ return 10; }
-                //in order:
-                //1. Create log item in hardhat
-                //2. Create table
-                //3. Write circuit
-                //4. Lookup from log opcode
+                // The bit corresponds to the value of the 11 low
+                // bits of the top 2, 4 and 6 bytes of the hash
 
-                log_table(context_type &context_object, const input_type &input, std::size_t max_zkevm_rows)
-                    :generic_component<FieldType,stage>(context_object),
-                    id(max_zkevm_rows),
-                    index(max_zkevm_rows),
-                    address(max_zkevm_rows),
-                    // data(max_zkevm_rows),
-                    topics(max_zkevm_rows, std::vector<TYPE>(4))
-                    //number of topics?
-                    // start with only log data
-                    // previous_filter(max_zkevm_rows),
-                    // bloom_filter(max_zkevm_rows),
-                    // address_hash(max_zkevm_rows),
-                    // topics_hash(max_zkevm_rows, std::vector<TYPE>(4)),
-                    // address_indices(max_zkevm_rows),
-                    // topics_indices(max_zkevm_rows, std::vector<TYPE>(4))
-                {
-                    if constexpr  (stage == GenerationStage::ASSIGNMENT) {
-                        auto logs = input;
-                        std::cout << "HERE :) " << std::endl;
+                // Each row of the table
+                // corresponds to an indice of the hash (3 indice by hash)
 
-                        std::size_t row = 0;
-                        for( auto &[id,index,address,topics]: logs){
-                            std::cout << "log" << std::endl;
-                            //address hash, and then topic hash
-                            for( std::size_t i = 0; i < topics.size(); i++, row++ ){
-                                // BOOST_ASSERT(row < max_call_commit_size);
-                                // BOOST_ASSERT(ind == call_commit.call_id);
-                                // call_id[row] = ind;
-                                // op[row] = rw_op_to_num(call_commit.items[i].op);
-                                // id[row] = call_commit.items[i].id;
-                                // address[row] = integral_type(call_commit.items[i].address);
-                                // storage_key_hi[row] = w_hi<FieldType>(call_commit.items[i].storage_key);
-                                // storage_key_lo[row] = w_lo<FieldType>(call_commit.items[i].storage_key);
-                                // field_type[row] = call_commit.items[i].field;
-                                // counter[row] = i+1;
-                                // value_hi[row] = w_hi<FieldType>(call_commit.items[i].value_before);
-                                // value_lo[row] = w_lo<FieldType>(call_commit.items[i].value_before);
+                // Each log operation produces between 3 and 15 rows depending on the
+                // number of topics
+
+                // Each log indice is duplicated, once to modify the tx_filter, and once
+                // to modify the block_filter.
+
+                // Both filters are labeled current_filter
+                // Even rows are tx_filter and odd rows are block_filter
+
+              public:
+                std::vector<TYPE> selector;   // 0 when outside the assigned cells
+                std::vector<TYPE> block_id;   // block index
+                std::vector<TYPE> tx_id;      // transaction index
+                std::vector<TYPE> log_index;  // log index
+                std::vector<std::vector<TYPE>> value;  // address or topic x
+                std::vector<TYPE> type;                // 0: address, or x: topic x
+                std::vector<TYPE> indice_0;            // Each value has 3 indices
+                std::vector<TYPE> indice_1;            // Indice column is 0
+                std::vector<TYPE> indice_2;            // For all except current indice
+                // last indice of a log_index (can have up to 15)
+                std::vector<TYPE> is_last;
+                std::vector<TYPE> is_block;  // 0: tx_filter, 1: block filter
+                std::vector<TYPE> is_block_const;
+                std::vector<std::vector<TYPE>> hash;  // hash of value
+                std::vector<std::vector<TYPE>> current_filter;
+
+                static std::size_t get_witness_amount() { return 170; }
+
+                static std::vector<TYPE> log_tx_lookup(
+                    TYPE block_id, TYPE tx_id, TYPE index,
+                    std::vector<std::vector<TYPE>> value, TYPE type) {
+                    std::vector<TYPE> result = {};
+                    result.push_back(1);  // selector
+                    result.push_back(block_id);
+                    result.push_back(tx_id);
+                    result.push_back(index);
+                    for (std::size_t i = 0; i < 16; i++) {
+                        result.push_back(value[i]);
+                    }
+                    result.push_back(type);
+                    result.push_back(TYPE(0));  // indice_0
+                    result.push_back(TYPE(0));  // indice_1
+                    result.push_back(TYPE(1));  // indice_2
+                    result.push_back(TYPE(1));  // is_last
+                    result.push_back(TYPE(0));  // is_block
+
+                    return result;
+                }
+
+                static std::vector<TYPE> log_block_lookup(TYPE block_id, TYPE tx_id) {
+                    std::vector<TYPE> result = {
+                        TYPE(1),  // selector
+                        block_id,
+                        tx_id,    // transaction_id
+                        TYPE(0),  // indice_0
+                        TYPE(0),  // indice_1
+                        TYPE(1),  // indice_2
+                        TYPE(1),  // is_last
+                        TYPE(1)   // is_block
+                    };
+                    return result;
+                }
+
+                log_table(context_type& context_object, const input_type& input,
+                          std::size_t max_filter_indices)
+                    : generic_component<FieldType, stage>(context_object),
+                      selector(max_filter_indices),
+                      block_id(max_filter_indices),
+                      tx_id(max_filter_indices),
+                      log_index(max_filter_indices),
+                      value(max_filter_indices, std::vector<TYPE>(16)),
+                      type(max_filter_indices),
+                      indice_0(max_filter_indices),
+                      indice_1(max_filter_indices),
+                      indice_2(max_filter_indices),
+                      is_last(max_filter_indices),
+                      is_block(max_filter_indices),
+                      is_block_const(max_filter_indices),
+                      hash(max_filter_indices, std::vector<TYPE>(16)),
+                      current_filter(max_filter_indices,
+                                     std::vector<TYPE>(filter_chunks_amount)) {
+                    if constexpr (stage == GenerationStage::ASSIGNMENT) {
+                        auto filter_indices = input;
+                        auto print_log_bloom =
+                            [](const std::vector<TYPE>& bloom) -> std::string {
+                            std::stringstream ss;
+                            ss << "0x" << std::hex << std::setfill('0');
+                            for (const auto& byte : bloom) {
+                                ss << std::setw(4)
+                                   << (unsigned int)(byte.to_integral() & 0xFFFF);
                             }
+                            return ss.str();
+                        };
+                        for (std::size_t i = 0; i < filter_indices.size(); i++) {
+                            selector[i] = 1;
+                            block_id[i] = filter_indices[i].block_id;
+                            tx_id[i] = filter_indices[i].tx_id;
+                            log_index[i] = filter_indices[i].index;
+                            value[i] = zkevm_word_to_field_element<FieldType>(
+                                filter_indices[i].value);
+                            type[i] = filter_indices[i].type;
+                            indice_0[i] = filter_indices[i].indice == 0;
+                            indice_1[i] = filter_indices[i].indice == 1;
+                            indice_2[i] = filter_indices[i].indice == 2;
+                            is_last[i] = filter_indices[i].is_last;
+                            is_block[i] = filter_indices[i].is_block;
+                            hash[i] = zkevm_word_to_field_element<FieldType>(
+                                filter_indices[i].hash);
+                            for (std::size_t j = 0; j < filter_chunks_amount; j++) {
+                                current_filter[i][j] = filter_indices[i].filter[j];
+                            }
+
+                            print_log_bloom(current_filter[i]);
                         }
                     }
-                    // for( std::size_t i = 0; i < max_call_commit_size; i++ ){
-                    //     allocate(call_id[i], 0, i);
-                    //     allocate(op[i], 1, i);
-                    //     allocate(id[i], 2, i);
-                    //     allocate(address[i], 3, i);
-                    //     allocate(field_type[i], 4, i);
-                    //     allocate(storage_key_hi[i], 5, i);
-                    //     allocate(storage_key_lo[i], 6, i);
-                    //     allocate(counter[i], 7, i);
-                    //     allocate(value_hi[i], 8, i);
-                    //     allocate(value_lo[i], 9, i);
-                    // }
-                    // lookup_table("zkevm_call_commit_items",std::vector<std::size_t>({0,1,2,3,4,5,6}),0,max_call_commit_size);
-                    // lookup_table("zkevm_call_commit_table",std::vector<std::size_t>({0,1,2,3,4,5,6,7,8,9}),0,max_call_commit_size);
+
+                    for (std::size_t i = 0; i < max_filter_indices; i++) {
+                        is_block_const[i] = TYPE(i % 2);
+                        context_object.allocate(is_block_const[i], 0, i,
+                                                column_type::constant);
+                        allocate(selector[i], 0, i);
+                        allocate(block_id[i], 1, i);
+                        allocate(tx_id[i], 2, i);
+                        allocate(log_index[i], 3, i);
+                        for (std::size_t j = 0; j < 16; j++) {
+                            allocate(value[i][j], 4 + j, i);
+                        }
+                        allocate(type[i], 20, i);
+                        allocate(indice_0[i], 21, i);
+                        allocate(indice_1[i], 22, i);
+                        allocate(indice_2[i], 23, i);
+                        allocate(is_last[i], 24, i);
+                        allocate(is_block[i], 25, i);
+                        for (std::size_t j = 0; j < 16; j++) {
+                            allocate(hash[i][j], 26 + j, i);
+                        }
+                        for (std::size_t j = 0; j < filter_chunks_amount; j++) {
+                            allocate(current_filter[i][j], 42 + j, i);
+                        }
+                    }
+                    std::vector<std::size_t> tx_indices(25);
+                    std::iota(tx_indices.begin(), tx_indices.end(), 0);
+                    lookup_table("zkevm_tx_logs", tx_indices, 0, max_filter_indices);
+                    lookup_table("zkevm_block_logs",
+                                 std::vector<std::size_t>({0, 1, 2, 21, 22, 23, 24, 25}),
+                                 0, max_filter_indices);
+                    std::vector<std::size_t> indices(170);
+                    std::iota(indices.begin(), indices.end(), 0);
+                    lookup_table("zkevm_logs_filters", indices, 0, max_filter_indices);
                 }
             };
-         }
-    }
-}
+        }  // namespace bbf
+    }  // namespace blueprint
+}  // namespace nil

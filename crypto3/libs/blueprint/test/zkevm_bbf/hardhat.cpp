@@ -62,6 +62,7 @@
 #include <nil/blueprint/zkevm_bbf/keccak.hpp>
 #include <nil/blueprint/zkevm_bbf/exp.hpp>
 #include <nil/blueprint/zkevm_bbf/call_commit.hpp>
+#include <nil/blueprint/zkevm_bbf/tx_log.hpp>
 
 #include "./circuit_test_fixture.hpp"
 
@@ -90,6 +91,7 @@ public:
         std::size_t max_rw = max_sizes.max_rw;
         std::size_t max_copy = max_sizes.max_copy;
         std::size_t max_zkevm_rows = max_sizes.max_zkevm_rows;
+        std::size_t max_filter_indices = max_sizes.max_filter_indices;
         std::size_t max_exponentiations = max_sizes.max_exponentiations;
         std::size_t max_exp_rows = max_sizes.max_exp_rows;
         std::size_t max_call_commits = max_sizes.max_call_commits;
@@ -110,7 +112,12 @@ public:
         zkevm_assignment_input.copy_events = circuit_inputs.copy_events();
         zkevm_assignment_input.zkevm_states = circuit_inputs.zkevm_states();
         zkevm_assignment_input.exponentiations = circuit_inputs.exponentiations();
-        zkevm_assignment_input.logs = circuit_inputs.logs();
+        zkevm_assignment_input.filter_indices = circuit_inputs.filter_indices();
+
+        typename tx_log<field_type, GenerationStage::ASSIGNMENT>::input_type log_assignment_input;
+        log_assignment_input.filter_indices = circuit_inputs.filter_indices();
+        log_assignment_input.rlc_challenge = 7;
+        log_assignment_input.keccak_buffers = circuit_inputs.logs_buffers();
 
         typename nil::blueprint::bbf::rw<field_type,nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type rw_assignment_input;
         rw_assignment_input.rw_operations = circuit_inputs.rw_operations();
@@ -148,63 +155,65 @@ public:
                 max_copy,
                 max_rw,
                 max_exponentiations,
-                max_bytecode
+                max_bytecode,
+                max_filter_indices
             );
             BOOST_ASSERT(result);
         }
+        
 
-        // const std::string exp_circuit = "exp";
-        // if (should_run_circuit(exp_circuit)) {
-        //     // Max_copy, Max_rw, Max_keccak, Max_bytecode
-        //     result =test_bbf_component<field_type, nil::blueprint::bbf::exponentiation>(
-        //         exp_circuit,
-        //         {}, exp_assignment_input,
-        //         max_exp_rows,
-        //         max_exponentiations
-        //     );
-        //     BOOST_ASSERT(result);
-        //     std::cout << std::endl;
-        // }
+        const std::string exp_circuit = "exp";
+        if (should_run_circuit(exp_circuit)) {
+            // Max_copy, Max_rw, Max_keccak, Max_bytecode
+            result =test_bbf_component<field_type, nil::blueprint::bbf::exponentiation>(
+                exp_circuit,
+                {}, exp_assignment_input,
+                max_exp_rows,
+                max_exponentiations
+            );
+            BOOST_ASSERT(result);
+            std::cout << std::endl;
+        }
 
-        // const std::string copy_circuit = "copy";
-        // if (should_run_circuit(copy_circuit)) {
-        //     std::cout << "circuit '" << copy_circuit << "'" << std::endl;
+        const std::string copy_circuit = "copy";
+        if (should_run_circuit(copy_circuit)) {
+            std::cout << "circuit '" << copy_circuit << "'" << std::endl;
 
-        //     // Max_copy, Max_rw, Max_keccak, Max_bytecode
-        //     result =test_bbf_component<field_type, nil::blueprint::bbf::copy>(
-        //         copy_circuit,
-        //         {7}, copy_assignment_input,
-        //         max_copy, max_rw, max_keccak_blocks, max_bytecode, max_call_commits
-        //     );
-        //     BOOST_ASSERT(result);
-        //     std::cout << std::endl;
-        // }
+            // Max_copy, Max_rw, Max_keccak, Max_bytecode
+            result =test_bbf_component<field_type, nil::blueprint::bbf::copy>(
+                copy_circuit,
+                {7}, copy_assignment_input,
+                max_copy, max_rw, max_keccak_blocks, max_bytecode, max_call_commits
+            );
+            BOOST_ASSERT(result);
+            std::cout << std::endl;
+        }
 
-        // const std::string keccak_circuit = "keccak";
-        // if (should_run_circuit(keccak_circuit)) {
-        //     std::cout << "circuit '" << keccak_circuit << "'" << std::endl;
+        const std::string keccak_circuit = "keccak";
+        if (should_run_circuit(keccak_circuit)) {
+            std::cout << "circuit '" << keccak_circuit << "'" << std::endl;
 
-        //     // Max_keccak
-        //     result = test_bbf_component<field_type, nil::blueprint::bbf::zkevm_keccak>(
-        //         keccak_circuit,
-        //         {}, keccak_assignment_input,max_keccak_blocks
-        //     );
-        //     BOOST_ASSERT(result);
-        //     std::cout << std::endl;
-        // }
+            // Max_keccak
+            result = test_bbf_component<field_type, nil::blueprint::bbf::zkevm_keccak>(
+                keccak_circuit,
+                {}, keccak_assignment_input,max_keccak_blocks
+            );
+            BOOST_ASSERT(result);
+            std::cout << std::endl;
+        }
 
-        // const std::string bytecode_circuit = "bytecode";
-        // if (should_run_circuit(bytecode_circuit)) {
-        //     std::cout << "circuit '" << bytecode_circuit << "'" << std::endl;
+        const std::string bytecode_circuit = "bytecode";
+        if (should_run_circuit(bytecode_circuit)) {
+            std::cout << "circuit '" << bytecode_circuit << "'" << std::endl;
 
-        //     // Max_bytecode, max_bytecode
-        //     result = test_bbf_component<field_type, nil::blueprint::bbf::bytecode>(
-        //         bytecode_circuit,
-        //         {7}, bytecode_assignment_input, max_bytecode, max_keccak_blocks
-        //     );
-        //     BOOST_ASSERT(result);
-        //     std::cout << std::endl;
-        // }
+            // Max_bytecode, max_bytecode
+            result = test_bbf_component<field_type, nil::blueprint::bbf::bytecode>(
+                bytecode_circuit,
+                {7}, bytecode_assignment_input, max_bytecode, max_keccak_blocks
+            );
+            BOOST_ASSERT(result);
+            std::cout << std::endl;
+        }
 
             const std::string rw_circuit = "rw";
             if (should_run_circuit(rw_circuit)) {
@@ -224,18 +233,39 @@ public:
                 std::cout << std::endl;
             }
 
-        // const std::string call_commit_circuit = "call_commit";
-        // if (should_run_circuit(call_commit_circuit)) {
-        //     std::cout << "circuit '" << call_commit_circuit << "'" << std::endl;
+        const std::string call_commit_circuit = "call_commit";
+        if (should_run_circuit(call_commit_circuit)) {
+            std::cout << "circuit '" << call_commit_circuit << "'" << std::endl;
 
-        //     // Max_rw, Max_mpt
-        //     result = test_bbf_component<field_type, nil::blueprint::bbf::call_commit>(
-        //         call_commit_circuit,
-        //         {}, call_commit_assignment_input, max_rw, max_call_commits
-        //     );
-        //     BOOST_ASSERT(result);
-        //     std::cout << std::endl;
-        // }
+            // Max_rw, Max_mpt
+            result = test_bbf_component<field_type, nil::blueprint::bbf::call_commit>(
+                call_commit_circuit,
+                {}, call_commit_assignment_input, max_rw, max_call_commits
+            );
+            BOOST_ASSERT(result);
+            std::cout << std::endl;
+        }
+
+        const std::string log_circuit = "tx_log";
+        auto start = std::chrono::high_resolution_clock::now();
+        if (should_run_circuit(log_circuit)) {
+            std::cout << "circuit '" << log_circuit << "'" << std::endl;
+
+            // Max_rows, max_bytecode, max_rw
+            result = test_bbf_component<field_type, nil::blueprint::bbf::tx_log>(
+                log_circuit,
+                {}, log_assignment_input,
+                max_filter_indices,
+                max_keccak_blocks
+            );
+            BOOST_ASSERT(result);
+            auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::high_resolution_clock::now() - start
+        );
+        
+        std::cout << duration.count() << " ms\n";
+            std::cout << std::endl;
+        }
     }
 };
 
@@ -257,6 +287,7 @@ BOOST_AUTO_TEST_CASE(minimal_math) {
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
     max_sizes.max_call_commits = 500;
+    max_sizes.max_filter_indices = 1000;
 
     complex_test<field_type>(pts, max_sizes);
 }
@@ -292,6 +323,7 @@ BOOST_AUTO_TEST_CASE(call_counter) {
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
     max_sizes.max_call_commits = 500;
+    max_sizes.max_filter_indices = 1000;
 
     complex_test<field_type>(pt, max_sizes);
 }
@@ -310,6 +342,7 @@ BOOST_AUTO_TEST_CASE(delegatecall_counter) {
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
     max_sizes.max_call_commits = 500;
+    max_sizes.max_filter_indices = 1000;
 
     complex_test<field_type>(pt, max_sizes);
 }
@@ -328,6 +361,7 @@ BOOST_AUTO_TEST_CASE(counter) {
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
     max_sizes.max_call_commits = 500;
+    max_sizes.max_filter_indices = 1000;
 
     complex_test<field_type>(pt, max_sizes);
 }
@@ -346,6 +380,7 @@ BOOST_AUTO_TEST_CASE(keccak) {
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
     max_sizes.max_call_commits = 500;
+    max_sizes.max_filter_indices = 1000;
 
     complex_test<field_type>(pt, max_sizes);
 }
@@ -364,6 +399,7 @@ BOOST_AUTO_TEST_CASE(call_keccak) {
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
     max_sizes.max_call_commits = 500;
+    max_sizes.max_filter_indices = 1000;
 
     complex_test<field_type>(pt, max_sizes);
 }
@@ -378,10 +414,30 @@ BOOST_AUTO_TEST_CASE(indexed_log) {
     max_sizes.max_mpt = 0;
     max_sizes.max_rw = 3000;
     max_sizes.max_copy = 500;
-    max_sizes.max_zkevm_rows = 1000;
+    max_sizes.max_zkevm_rows = 5000;
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
     max_sizes.max_call_commits = 500;
+    max_sizes.max_filter_indices = 1000;
+
+    complex_test<field_type>(pt, max_sizes);
+}
+
+BOOST_AUTO_TEST_CASE(simple_log) {
+    using field_type = typename algebra::curves::pallas::base_field_type;
+    auto pt = load_hardhat_input("simple_log.json");
+    l1_size_restrictions max_sizes;
+
+    max_sizes.max_keccak_blocks = 10;
+    max_sizes.max_bytecode = 3000;
+    max_sizes.max_mpt = 0;
+    max_sizes.max_rw = 3000;
+    max_sizes.max_copy = 500;
+    max_sizes.max_zkevm_rows = 5000;
+    max_sizes.max_exponentiations = 50;
+    max_sizes.max_exp_rows = 500;
+    max_sizes.max_call_commits = 500;
+    max_sizes.max_filter_indices = 100;
 
     complex_test<field_type>(pt, max_sizes);
 }
@@ -400,6 +456,7 @@ BOOST_AUTO_TEST_CASE(cold_sstore) {
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
     max_sizes.max_call_commits = 500;
+    max_sizes.max_filter_indices = 1000;
 
     complex_test<field_type>(pt, max_sizes);
 }
@@ -418,6 +475,7 @@ BOOST_AUTO_TEST_CASE(try_catch) {
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
     max_sizes.max_call_commits = 500;
+    max_sizes.max_filter_indices = 1000;
 
     complex_test<field_type>(pt, max_sizes);
 }
@@ -436,6 +494,7 @@ BOOST_AUTO_TEST_CASE(try_catch2) {
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
     max_sizes.max_call_commits = 500;
+    max_sizes.max_filter_indices = 1000;
 
     complex_test<field_type>(pt, max_sizes);
 }
@@ -454,6 +513,7 @@ BOOST_AUTO_TEST_CASE(try_catch_cold) {
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
     max_sizes.max_call_commits = 500;
+    max_sizes.max_filter_indices = 1000;
 
     complex_test<field_type>(pt, max_sizes);
 }
@@ -472,6 +532,7 @@ BOOST_AUTO_TEST_CASE(sar) {
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
     max_sizes.max_call_commits = 500;
+    max_sizes.max_filter_indices = 1000;
 
     complex_test<field_type>(pt, max_sizes);
 }
@@ -490,6 +551,7 @@ BOOST_AUTO_TEST_CASE(scmp) {
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
     max_sizes.max_call_commits = 500;
+    max_sizes.max_filter_indices = 1000;
 
     complex_test<field_type>(pt, max_sizes);
 }

@@ -82,7 +82,7 @@ namespace nil {
                         std::vector<zkevm_state>, std::monostate
                     > zkevm_states;
                     ExpTable::input_type exponentiations;
-                    LogTable::input_type logs;
+                    LogTable::input_type filter_indices;
                 };
 
                 static table_params get_minimal_requirements(
@@ -90,7 +90,8 @@ namespace nil {
                     std::size_t max_copy,
                     std::size_t max_rw,
                     std::size_t max_exponentations,
-                    std::size_t max_bytecode
+                    std::size_t max_bytecode,
+                    std::size_t max_filter_indices
                 ) {
                     std::size_t implemented_opcodes_amount = get_implemented_opcodes_list().size();
 
@@ -107,18 +108,18 @@ namespace nil {
                                    + 10,
                         .public_inputs = 1,
                         .constants = 5,
-                        .rows = std::max(
-                            max_zkevm_rows, std::max(
-                                std::max(max_copy, max_rw), std::max(max_exponentations, max_bytecode)
-                            ) + 1
-                        )
+                        .rows = std::max({
+                                max_zkevm_rows,
+                                std::max({max_copy, max_rw, max_exponentations, max_bytecode}) + 1,
+                                max_filter_indices
+                            })
                     };
                 }
 
                 static void allocate_public_inputs(
                         context_type &context, input_type &input,
                         std::size_t max_zkevm_rows, std::size_t max_copy, std::size_t max_rw,
-                        std::size_t max_exponentations, std::size_t max_bytecode) {
+                        std::size_t max_exponentations, std::size_t max_bytecode, std::size_t max_filter_indices) {
                     context.allocate(input.rlc_challenge, 0, 0, column_type::public_input);
                 }
 
@@ -129,7 +130,8 @@ namespace nil {
                     std::size_t max_copy,
                     std::size_t max_rw,
                     std::size_t max_exponentiations,
-                    std::size_t max_bytecode
+                    std::size_t max_bytecode,
+                    std::size_t max_filter_indices
                 ) :generic_component<FieldType,stage>(context_object), implemented_opcodes(get_implemented_opcodes_list()) {
                     std::size_t implemented_opcodes_amount = implemented_opcodes.size();
                     std::size_t opcode_selectors_amount = std::ceil(float(implemented_opcodes_amount)/4);
@@ -178,6 +180,7 @@ namespace nil {
                         std::cout << current_column << " ";
                         copy_lookup_area.push_back(current_column++);
                     }
+
                     std::cout << std::endl;
 
                     std::vector<std::size_t> log_lookup_area;
@@ -187,22 +190,24 @@ namespace nil {
                         log_lookup_area.push_back(current_column++);
                     }
                     std::cout << std::endl;
+
+                    std::cout << std::endl;
                     std::cout << std::endl;
 
                     context_type bytecode_ct = context_object.subcontext(bytecode_lookup_area,1,max_bytecode + 1);
                     context_type exp_ct = context_object.subcontext( exp_lookup_area, 1, max_exponentiations + 1);
                     context_type rw_ct = context_object.subcontext(rw_lookup_area,1,max_rw + 1);
                     context_type copy_ct = context_object.subcontext( copy_lookup_area, 1, max_copy + 1);
-                    context_type log_ct = context_object.subcontext( log_lookup_area, 1, max_zkevm_rows + 1);
+                    context_type log_ct = context_object.subcontext( log_lookup_area, 1, max_filter_indices + 1);
 
                     BytecodeTable bc_t = BytecodeTable(bytecode_ct, input.bytecodes, max_bytecode);
                     ExpTable e_t = ExpTable(exp_ct, input.exponentiations, max_exponentiations);
                     RWTable rw_t = RWTable(rw_ct, input.rw_operations, max_rw, true);
                     CopyTable c_t = CopyTable(copy_ct, input.copy_events, max_copy, true);
-                    LogTable l_t = LogTable(log_ct, input.logs, max_zkevm_rows);
+                    LogTable l_t = LogTable(log_ct, input.filter_indices, max_filter_indices);
 
                     auto opcode_impls = get_opcode_implementations<FieldType>();
-
+                    
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
                         std::cout << "ZKEVM assign size=" << input.zkevm_states.size() << std::endl;
                         std::size_t current_row = 0;

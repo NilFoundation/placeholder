@@ -44,6 +44,7 @@ namespace nil {
             class zkevm_abstract_input_generator{
             public:
                 virtual zkevm_keccak_buffers keccaks() = 0;
+                virtual zkevm_keccak_buffers logs_buffers() = 0;
                 virtual zkevm_keccak_buffers bytecodes() = 0;
                 virtual rw_operations_vector rw_operations() = 0;
                 virtual std::vector<copy_event> copy_events() = 0;
@@ -51,10 +52,12 @@ namespace nil {
                 virtual std::vector<std::pair<zkevm_word_type, zkevm_word_type>> exponentiations() = 0;
                 virtual std::map<std::size_t,zkevm_call_commit> call_commits() = 0;
                 virtual std::vector<zkevm_log> logs() = 0;
+                virtual std::vector<zkevm_filter_indices> filter_indices() = 0;
             };
 
             class zkevm_small_test_input_generator:zkevm_abstract_input_generator{
             public:
+                virtual zkevm_keccak_buffers logs_buffers() override {return _logs_buffers;}
                 virtual zkevm_keccak_buffers keccaks() override {return _keccaks;}
                 virtual zkevm_keccak_buffers bytecodes() override { return _bytecodes;}
                 virtual rw_operations_vector rw_operations() override {return _rw_operations;}
@@ -63,9 +66,11 @@ namespace nil {
                 virtual std::vector<std::pair<zkevm_word_type, zkevm_word_type>> exponentiations()override{return _exponentiations;}
                 virtual std::map<std::size_t,zkevm_call_commit> call_commits() override {return _call_commits;}
                 virtual std::vector<zkevm_log> logs() override { return _logs;}
+                virtual std::vector<zkevm_filter_indices> filter_indices() override { return _filter_indices;}
 
                 zkevm_small_test_input_generator(){}
             private:
+                zkevm_keccak_buffers                                     _logs_buffers;
                 zkevm_keccak_buffers                                     _keccaks;
                 zkevm_keccak_buffers                                     _bytecodes;
                 rw_operations_vector                                     _rw_operations;
@@ -74,6 +79,7 @@ namespace nil {
                 std::vector<std::pair<zkevm_word_type, zkevm_word_type>> _exponentiations;
                 std::map<std::size_t,zkevm_call_commit>                  _call_commits;
                 std::vector<zkevm_log>                                   _logs;
+                std::vector<zkevm_filter_indices>                        _filter_indices;
             };
         } // namespace bbf
     } // namespace blueprint
