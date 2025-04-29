@@ -121,51 +121,56 @@ namespace nil::blueprint::bbf {
             TYPE hash_high;
             // the key-value stored in this node
             node_content content;
-
         };
 
-        // void initialize_node_rlp_data(node_rlp_data &node, std::size_t max_mpt_hasher_size) {
-        //     node.prefix.resize(max_mpt_hasher_size);
-        //     node.second_prefix_is_last.resize(max_mpt_hasher_size);
-        //     node.third_prefix_is_last.resize(max_mpt_hasher_size);
-        //     node.prefix_index.resize(max_mpt_hasher_size);
-        //     node.prefix_rlc.resize(max_mpt_hasher_size);
-        //     node.len_low.resize(max_mpt_hasher_size);
-        //     node.len_high.resize(max_mpt_hasher_size);
-        //     node.hash_low.resize(max_mpt_hasher_size);
-        //     node.hash_high.resize(max_mpt_hasher_size);
-        //     initialize_leaf_rlp_data(node.leaf, max_mpt_hasher_size);
-        // }
+        void allocate_leaf_node_variables(std::size_t max_mpt_hasher_size) {
+            leaf_node_not_padding.resize(max_mpt_hasher_size);
+            leaf_node_prefix.resize(max_mpt_hasher_size);
+            leaf_node_second_prefix_is_last.resize(max_mpt_hasher_size);
+            leaf_node_third_prefix_is_last.resize(max_mpt_hasher_size);
+            leaf_node_prefix_index.resize(max_mpt_hasher_size);
+            leaf_node_prefix_rlc.resize(max_mpt_hasher_size);
+            leaf_node_len_low.resize(max_mpt_hasher_size);
+            leaf_node_len_high.resize(max_mpt_hasher_size);
+            leaf_node_hash_low.resize(max_mpt_hasher_size);
+            leaf_node_hash_high.resize(max_mpt_hasher_size);
+            node_type.resize(max_mpt_hasher_size);
+        }
 
-        // void initialize_leaf_rlp_data(leaf_rlp_data &leaf, std::size_t max_mpt_hasher_size ) {
-        //     leaf.data.resize(max_mpt_hasher_size);
-        //     leaf.index.resize(max_mpt_hasher_size);
-        //     leaf.rlc.resize(max_mpt_hasher_size);
-        //     leaf.index_is_last_I.resize(max_mpt_hasher_size);
-        //     leaf.index_is_last_R.resize(max_mpt_hasher_size);
-        //     leaf.is_last.resize(max_mpt_hasher_size);
-        //     leaf.prefix.resize(max_mpt_hasher_size);
-        //     leaf.prefix_index.resize(max_mpt_hasher_size);
-        //     leaf.prefix_rlc.resize(max_mpt_hasher_size);
-        //     leaf.second_prefix_is_last.resize(max_mpt_hasher_size);
-        //     leaf.len_low.resize(max_mpt_hasher_size);
-        //     leaf.len_high.resize(max_mpt_hasher_size);
-        //     leaf.first_element_flag.resize(max_mpt_hasher_size);
-        //     leaf.first_element.resize(max_mpt_hasher_size);
-        // }
+        void allocate_leaf_internal_variables(std::size_t max_mpt_hasher_size ) {
+            leaf_internal_data.resize(max_mpt_hasher_size);
+            leaf_internal_index.resize(max_mpt_hasher_size);
+            leaf_internal_rlc.resize(max_mpt_hasher_size);
+            leaf_internal_index_is_last_I.resize(max_mpt_hasher_size);
+            leaf_internal_index_is_last_R.resize(max_mpt_hasher_size);
+            leaf_internal_is_last.resize(max_mpt_hasher_size);
+            leaf_internal_prefix.resize(max_mpt_hasher_size);
+            leaf_internal_prefix_index.resize(max_mpt_hasher_size);
+            leaf_internal_prefix_rlc.resize(max_mpt_hasher_size);
+            leaf_internal_second_prefix_is_last.resize(max_mpt_hasher_size);
+            leaf_internal_len_low.resize(max_mpt_hasher_size);
+            leaf_internal_len_high.resize(max_mpt_hasher_size);
+            leaf_internal_first_element_flag.resize(max_mpt_hasher_size);
+            leaf_internal_first_element.resize(max_mpt_hasher_size);
+        }
 
-        void initialize_node_rlp_data(std::vector<node_rlp_data> &nodes) {
-            for (auto &node : nodes) {
-                node.second_prefix_is_last = 1;
-                node.third_prefix_is_last = 1;
-                node.prefix[0] = 0xC0;
-                store_node_hash(node, calculate_keccak({}, 0));
-                for (size_t i = 0; i < 2; i++) {
+        void allocate_witness_variables(std::size_t size) {
+            allocate_leaf_node_variables(size);
+            allocate_leaf_internal_variables(size);
+        }
+
+        void initialize_leaf_data(std::size_t size) {
+            for (size_t i = 0; i < size; i++) {
+                leaf_node_second_prefix_is_last[i] = 1;
+                leaf_node_third_prefix_is_last[i] = 1;
+                leaf_node_prefix[i][0] = 0xC0;
+                store_node_hash(i, calculate_keccak({}, 0));
+                for (size_t j = 0; j < 2; j++) {
                     for (size_t k = 0; k < 110; k++) {
-                        node.content.is_last[i][k] = 1;
+                        leaf_internal_is_last[i][j][k] = 1;
                     }
-                    node.content.second_prefix_is_last[i] = 1;
-                    node.content.first_element_flag[i] = 1;
+                    leaf_internal_second_prefix_is_last[i][j] = 1;
+                    leaf_internal_first_element_flag[i][j] = 1;
                 }
             }
         }
@@ -173,47 +178,43 @@ namespace nil::blueprint::bbf {
         mpt_hasher(context_type &context_object, const input_type &input,
             std::size_t max_mpt_hasher_size)
             : generic_component<FieldType, stage>(context_object) {
-
+            // initialization
             std::vector<std::size_t> keccak_lookup_area;
             std::size_t keccak_max_blocks = 10;
-            // std::size_t keccak_max_blocks = 10;
             std::vector<std::size_t> rlp_lookup_area;
-            std::vector<TYPE> node_type(max_mpt_hasher_size);
             // std::vector<TYPE> node_type_inv_2(max_mpt_hasher_size);
             // std::vector<TYPE> r(max_mpt_hasher_size);
             std::size_t node_num = 0;
             typename KeccakTable::private_input_type keccak_buffers;
-            std::vector<node_rlp_data> nodes(max_mpt_hasher_size);
-            
+            allocate_witness_variables(max_mpt_hasher_size);
+
             if constexpr (stage == GenerationStage::ASSIGNMENT) {
                 keccak_buffers.new_buffer(std::vector<uint8_t>{});
-                initialize_node_rlp_data(nodes);
+                initialize_leaf_data(max_mpt_hasher_size);
                 // assignment
                 for (size_t i = 0; i < input.nodes.size(); i++) {
                     mpt_node mn = input.nodes[i];
-                    node_rlp_data n = nodes[i];
                     std::vector<zkevm_word_type> key = mn.data[0];
                     std::vector<zkevm_word_type> value = mn.data[1];
                     std::size_t total_length = get_leaf_key_length(key) + get_leaf_value_length(value);
                     std::size_t rlp_encoding_index;
                     std::vector<std::uint8_t> hash_input(532);
                     TYPE rlc_accumulator;
-                    encode_node_data(nodes[i], total_length, rlp_encoding_index, hash_input, rlc_accumulator, input.rlc_challenge);
-                    encode_leaf_data(nodes[i].content, key, value, rlp_encoding_index, hash_input, rlc_accumulator, input.rlc_challenge);
+                    encode_node_data(i, total_length, rlp_encoding_index, hash_input, rlc_accumulator, input.rlc_challenge);
+                    encode_leaf_data(i, key, value, rlp_encoding_index, hash_input, rlc_accumulator, input.rlc_challenge);
                     zkevm_word_type hash = calculate_keccak(hash_input, rlp_encoding_index);
                     std::cout << "node hash: " << std::hex << hash << std::dec << std::endl;
-                    // std::cout << "rlc: " << rlc_accumulator<< std::endl;
                     std::vector<uint8_t> buffer(hash_input.begin(), hash_input.begin() + rlp_encoding_index);
                     keccak_buffers.new_buffer(buffer);
-                    store_node_hash(nodes[i], hash);
-                    // print_leaf_node(nodes[i], hash, key.size(), value.size());
+                    store_node_hash(i, hash);
+                    // print_leaf_node(i, hash, key.size(), value.size());
                 }
             }
 
             // allocation
             for (std::size_t i = 0; i < max_mpt_hasher_size; i++) {
                 size_t column_index = 0;
-                allocate(node_type[i], column_index++, i);
+                // allocate(node_type[i], column_index++, i);
                 // for (std::size_t j = 0; j < 32; j++) {
                 //     allocate(key[i][j], column_index++, i);
                 // }
@@ -221,51 +222,50 @@ namespace nil::blueprint::bbf {
                 // allocate(r[i], column_index++, i);
 
                 // node
-                allocate(nodes[i].not_padding, column_index ++, i);
+                allocate(leaf_node_not_padding[i], column_index ++, i);
                 
                 // rlp len
-                allocate(nodes[i].len_low, column_index ++, i);
-                allocate(nodes[i].len_high, column_index ++, i);
-                allocate(nodes[i].hash_low, column_index ++, i);
-                allocate(nodes[i].hash_high, column_index ++, i);
+                allocate(leaf_node_len_low[i], column_index ++, i);
+                allocate(leaf_node_len_high[i], column_index ++, i);
+                allocate(leaf_node_hash_low[i], column_index ++, i);
+                allocate(leaf_node_hash_high[i], column_index ++, i);
                 // prefix
-                allocate(nodes[i].prefix[0], column_index ++, i);
-                allocate(nodes[i].prefix_rlc[0], column_index ++, i);
-                allocate(nodes[i].second_prefix_is_last, column_index ++, i);
-                allocate(nodes[i].third_prefix_is_last, column_index ++, i);
-                allocate(nodes[i].prefix[1], column_index ++, i);
-                allocate(nodes[i].prefix_rlc[1], column_index ++, i);
-                allocate(nodes[i].prefix_index[0], column_index ++, i);
-                allocate(nodes[i].prefix[2], column_index ++, i);
-                allocate(nodes[i].prefix_rlc[2], column_index ++, i);
-                allocate(nodes[i].prefix_index[1], column_index ++, i);
+                allocate(leaf_node_prefix[i][0], column_index ++, i);
+                allocate(leaf_node_prefix_rlc[i][0], column_index ++, i);
+                allocate(leaf_node_second_prefix_is_last[i], column_index ++, i);
+                allocate(leaf_node_third_prefix_is_last[i], column_index ++, i);
+                allocate(leaf_node_prefix[i][1], column_index ++, i);
+                allocate(leaf_node_prefix_rlc[i][1], column_index ++, i);
+                allocate(leaf_node_prefix_index[i][0], column_index ++, i);
+                allocate(leaf_node_prefix[i][2], column_index ++, i);
+                allocate(leaf_node_prefix_rlc[i][2], column_index ++, i);
+                allocate(leaf_node_prefix_index[i][1], column_index ++, i);
 
                 // children
                 for (std::size_t j = 0; j < 2; j++) {
                     // rlp len
-                    allocate(nodes[i].content.len_low[j], column_index ++, i);
-                    allocate(nodes[i].content.len_high[j], column_index ++, i);
+                    allocate(leaf_internal_len_low[i][j], column_index ++, i);
+                    allocate(leaf_internal_len_high[i][j], column_index ++, i);
                     // prefix
-                    allocate(nodes[i].content.prefix[j][0], column_index++, i);
-                    allocate(nodes[i].content.prefix_rlc[j][0], column_index++, i);
-                    allocate(nodes[i].content.prefix_index[j][0], column_index++, i);
-                    allocate(nodes[i].content.prefix[j][1], column_index++, i);
-                    allocate(nodes[i].content.prefix_rlc[j][1], column_index++, i);
-                    allocate(nodes[i].content.prefix_index[j][1], column_index++, i);
-                    allocate(nodes[i].content.second_prefix_is_last[j], column_index++, i);
-                    allocate(nodes[i].content.first_element_flag[j], column_index++, i);
+                    allocate(leaf_internal_prefix[i][j][0], column_index++, i);
+                    allocate(leaf_internal_prefix_rlc[i][j][0], column_index++, i);
+                    allocate(leaf_internal_prefix_index[i][j][0], column_index++, i);
+                    allocate(leaf_internal_prefix[i][j][1], column_index++, i);
+                    allocate(leaf_internal_prefix_rlc[i][j][1], column_index++, i);
+                    allocate(leaf_internal_prefix_index[i][j][1], column_index++, i);
+                    allocate(leaf_internal_second_prefix_is_last[i][j], column_index++, i);
+                    allocate(leaf_internal_first_element_flag[i][j], column_index++, i);
 
                     // encoding
                     for (std::size_t k = 0; k < 110; k++) {
-                        allocate(nodes[i].content.data[j][k], column_index++, i);
-                        allocate(nodes[i].content.rlc[j][k], column_index++, i);
-                        allocate(nodes[i].content.is_last[j][k], column_index++, i);
-                        allocate(nodes[i].content.index[j][k], column_index++, i);
-                        allocate(nodes[i].content.index_is_last_I[j][k], column_index++, i);
-                        allocate(nodes[i].content.index_is_last_R[j][k], column_index++, i);
+                        allocate(leaf_internal_data[i][j][k], column_index++, i);
+                        allocate(leaf_internal_rlc[i][j][k], column_index++, i);
+                        allocate(leaf_internal_is_last[i][j][k], column_index++, i);
+                        allocate(leaf_internal_index[i][j][k], column_index++, i);
+                        allocate(leaf_internal_index_is_last_I[i][j][k], column_index++, i);
+                        allocate(leaf_internal_index_is_last_R[i][j][k], column_index++, i);
                     }
                 }
-
             }
 
 
@@ -282,8 +282,116 @@ namespace nil::blueprint::bbf {
             KeccakTable k_t = KeccakTable(keccak_ct, {input.rlc_challenge, keccak_buffers}, keccak_max_blocks);
 
             if constexpr (stage == GenerationStage::CONSTRAINTS) {
-                for (auto &n: nodes) {
-                    node_content c = n.content;
+                    std::size_t leaf_data_size = leaf_internal_data[0][0].size();
+
+                    std::vector<TYPE> node_rlp_lookup = {
+                        leaf_node_prefix[0][0], 
+                        leaf_node_prefix[0][1],
+                        leaf_node_prefix[0][2],
+                        0,
+                        0,
+                        0,
+                        leaf_node_len_low[0], 
+                        leaf_node_len_high[0],
+                        leaf_node_second_prefix_is_last[0],
+                        leaf_node_third_prefix_is_last[0]
+                    };
+                    std::vector<TYPE> key_rlp_lookup = {
+                        leaf_internal_prefix[0][0][0],
+                        leaf_internal_prefix[0][0][1],
+                        0,
+                        leaf_internal_first_element[0][0],
+                        leaf_internal_first_element_flag[0][0],
+                        1,
+                        leaf_internal_len_low[0][0], 
+                        leaf_internal_len_high[0][0],
+                        // 1,
+                        leaf_internal_second_prefix_is_last[0][0],
+                        1
+                    };
+
+                    std::vector<TYPE> value_rlp_lookup = {
+                        leaf_internal_prefix[0][1][0],
+                        leaf_internal_prefix[0][1][1],
+                        0,
+                        leaf_internal_first_element[0][1],
+                        leaf_internal_first_element_flag[0][1],
+                        1,
+                        leaf_internal_len_low[0][1], 
+                        leaf_internal_len_high[0][1],
+                        leaf_internal_second_prefix_is_last[0][1],
+                        1
+                    };
+
+                    std::vector<TYPE> keccak_lookup = {
+                        1,
+                        leaf_internal_rlc[0][1][leaf_data_size-1] * leaf_node_not_padding[0],
+                        leaf_node_hash_high[0],
+                        leaf_node_hash_low[0]
+                    };
+                    // std::vector<TYPE> tmp;
+                    context_object.relative_lookup(context_object.relativize(node_rlp_lookup, 0), "rlp_table", 0, max_mpt_hasher_size - 1);
+                    context_object.relative_lookup(context_object.relativize(key_rlp_lookup, 0), "rlp_table", 0, max_mpt_hasher_size - 1);
+                    context_object.relative_lookup(context_object.relativize(value_rlp_lookup, 0), "rlp_table", 0, max_mpt_hasher_size - 1);
+                    context_object.relative_lookup(context_object.relativize(keccak_lookup, 0), "keccak_table", 0, max_mpt_hasher_size - 1);
+
+                    std::vector<TYPE> consts;
+
+                    consts.push_back(context_object.relativize(leaf_node_second_prefix_is_last[0]*(1 - leaf_node_second_prefix_is_last[0]), 0));
+                    consts.push_back(context_object.relativize(leaf_node_prefix[0][1] * leaf_node_second_prefix_is_last[0], 0));
+                    consts.push_back(context_object.relativize(leaf_node_prefix[0][2] * leaf_node_third_prefix_is_last[0], 0));
+                    consts.push_back(context_object.relativize(leaf_internal_second_prefix_is_last[0][1] * (1 - leaf_internal_second_prefix_is_last[0][1]), 0));
+                    consts.push_back(context_object.relativize(leaf_internal_second_prefix_is_last[0][0] * (1 - leaf_internal_second_prefix_is_last[0][0]), 0));
+                    consts.push_back(context_object.relativize(leaf_node_not_padding[0] * (leaf_node_prefix_rlc[0][0] - 
+    /* total length */      ((1 + 1 - leaf_node_second_prefix_is_last[0] + 1 - leaf_node_third_prefix_is_last[0] + leaf_node_len_low[0] + 0x100 * leaf_node_len_high[0])
+                            * 53 + leaf_node_prefix[0][0])), 0));
+
+                    consts.push_back(context_object.relativize(leaf_node_prefix_rlc[0][1] - ((1 - leaf_node_second_prefix_is_last[0]) * (leaf_node_prefix_rlc[0][0] * 53 + leaf_node_prefix[0][1]) + leaf_node_second_prefix_is_last[0] * leaf_node_prefix_rlc[0][0]), 0));
+                    consts.push_back(context_object.relativize(leaf_node_prefix_rlc[0][2] - ((1 - leaf_node_third_prefix_is_last[0]) *  (leaf_node_prefix_rlc[0][1] * 53 + leaf_node_prefix[0][2]) + leaf_node_third_prefix_is_last[0] * leaf_node_prefix_rlc[0][1]), 0));
+
+                    consts.push_back(context_object.relativize(leaf_node_not_padding[0] * (-(leaf_node_len_low[0] + 0x100 * leaf_node_len_high[0])
+                            + leaf_internal_len_low[0][0] + 0x100 * leaf_internal_len_high[0][0] 
+                            + leaf_internal_len_low[0][1] + 0x100 * leaf_internal_len_high[0][1] 
+                            + 3 - leaf_internal_second_prefix_is_last[0][1]), 0));
+
+                    // node first rlp prefix is always keccak 0 index
+                    consts.push_back(context_object.relativize(leaf_node_prefix_index[0][0] - (1 - leaf_node_second_prefix_is_last[0]), 0));
+                    consts.push_back(context_object.relativize(leaf_node_prefix_index[0][1] * leaf_node_third_prefix_is_last[0] + (2-leaf_node_prefix_index[0][1])*(1-leaf_node_third_prefix_is_last[0]), 0));
+
+                    for (size_t j = 0; j < 2; j++) {
+                        if (j == 0) {
+                            consts.push_back(context_object.relativize(leaf_internal_prefix_index[0][j][0] - leaf_node_not_padding[0] - (1 - leaf_node_second_prefix_is_last[0]) + (1 - leaf_node_third_prefix_is_last[0]), 0));
+                            consts.push_back(context_object.relativize(leaf_internal_prefix_rlc[0][j][0] - (leaf_node_prefix_rlc[0][2] * 53 + leaf_internal_prefix[0][0][0]), 0));
+                        } else {
+                            consts.push_back(context_object.relativize(leaf_internal_prefix_index[0][j][0] - 
+                                (leaf_internal_len_low[0][j-1] + leaf_internal_len_high[0][j-1] * 0x100 + leaf_internal_prefix_index[0][j-1][0] + leaf_node_not_padding[0] - leaf_internal_second_prefix_is_last[0][j-1] + 1), 0));
+                            consts.push_back(context_object.relativize(leaf_internal_prefix_rlc[0][j][0] - (leaf_internal_rlc[0][j-1][leaf_data_size-1] * 53 + leaf_internal_prefix[0][j][0]), 0));
+                        }
+                        consts.push_back(context_object.relativize(leaf_internal_prefix_index[0][j][1] - (1 - leaf_internal_second_prefix_is_last[0][j]) * (leaf_internal_prefix_index[0][j][0] + leaf_node_not_padding[0]), 0));
+                        consts.push_back(context_object.relativize(leaf_internal_prefix_rlc[0][j][1] - ((1 - leaf_internal_second_prefix_is_last[0][j]) * (leaf_internal_prefix_rlc[0][j][0] * 53 + leaf_internal_prefix[0][j][1]) + leaf_internal_second_prefix_is_last[0][j] * leaf_internal_prefix_rlc[0][j][0]), 0));
+                        consts.push_back(context_object.relativize(leaf_internal_index[0][j][0] - (1 - leaf_internal_second_prefix_is_last[0][j]) - leaf_internal_prefix_index[0][j][0] - leaf_node_not_padding[0], 0));
+                        consts.push_back(context_object.relativize(leaf_internal_rlc[0][j][0] - (leaf_internal_prefix_rlc[0][j][1] * 53 + leaf_internal_data[0][j][0]), 0));
+
+                        consts.push_back(context_object.relativize(leaf_internal_data[0][j][0] * leaf_internal_is_last[0][j][0], 0));
+                        for (size_t k = 1; k < leaf_data_size; k++) {
+                            consts.push_back(context_object.relativize((1 - leaf_internal_is_last[0][j][k]) * leaf_internal_is_last[0][j][k], 0));
+                            consts.push_back(context_object.relativize((1 - leaf_internal_is_last[0][j][k]) * leaf_internal_is_last[0][j][k-1], 0));
+                            
+                            consts.push_back(context_object.relativize(leaf_node_not_padding[0] * (leaf_internal_index_is_last_R[0][j][k] - (1 - 
+                                leaf_internal_index_is_last_I[0][j][k] * ((leaf_internal_len_low[0][j] + leaf_internal_len_high[0][j] * 0x100) - (leaf_internal_index[0][j][k] - leaf_internal_index[0][j][0] + 1)))), 0));
+                            consts.push_back(context_object.relativize(((leaf_internal_len_low[0][j] + leaf_internal_len_high[0][j] * 0x100) - (leaf_internal_index[0][j][k] - leaf_internal_index[0][j][0] + 1)) * leaf_internal_index_is_last_R[0][j][k], 0));
+                            consts.push_back(context_object.relativize(leaf_internal_is_last[0][j][k] - leaf_internal_index_is_last_R[0][j][k] - leaf_internal_is_last[0][j][k-1], 0));
+                            consts.push_back(context_object.relativize(leaf_internal_index[0][j][k] * leaf_internal_is_last[0][j][k-1], 0));
+                            consts.push_back(context_object.relativize((leaf_internal_index[0][j][k] - leaf_internal_index[0][j][k-1] - 1) * (1 - leaf_internal_is_last[0][j][k-1]), 0));
+                            consts.push_back(context_object.relativize(leaf_internal_data[0][j][k] * leaf_internal_is_last[0][j][k-1], 0));
+                            consts.push_back(context_object.relativize(leaf_internal_rlc[0][j][k] - (leaf_internal_is_last[0][j][k-1] * leaf_internal_rlc[0][j][k-1] + (1 - leaf_internal_is_last[0][j][k-1]) * (leaf_internal_rlc[0][j][k-1] * 53 + leaf_internal_data[0][j][k])), 0));
+                        }
+                    }
+
+                    for (size_t i = 0; i < consts.size(); i++) {
+                        context_object.relative_constrain(consts[i], 0, max_mpt_hasher_size - 1);
+                    }
+                // for (size_t i = 0; i < max_mpt_hasher_size; i++) {
                     // constrain(node_type[i] * (1 - node_type[i]) * (2 - node_type[i]));
                     // r[i] = 1 -> node is leaf (type 2)
                     // constrain((2 - node_type[i]) * r[i]);
@@ -291,109 +399,107 @@ namespace nil::blueprint::bbf {
                     // constrain(r[i] * (32 - node.encoded[i][3]) *
                     //           (48 - node.encoded[i][3]));  // change this to
                                                                 // first-nibble isntead
-                    std::size_t leaf_data_size = n.content.data[0].size();
-                    std::vector<TYPE> node_rlp_lookup = {
-                        n.prefix[0], 
-                        n.prefix[1],
-                        n.prefix[2],
-                        0,
-                        0,
-                        0,
-                        n.len_low, 
-                        n.len_high,
-                        n.second_prefix_is_last,
-                        n.third_prefix_is_last
-                    };
+    //                 std::vector<TYPE> node_rlp_lookup = {
+    //                     leaf_node_prefix[i][0], 
+    //                     leaf_node_prefix[i][1],
+    //                     leaf_node_prefix[i][2],
+    //                     0,
+    //                     0,
+    //                     0,
+    //                     leaf_node_len_low[i], 
+    //                     leaf_node_len_high[i],
+    //                     leaf_node_second_prefix_is_last[i],
+    //                     leaf_node_third_prefix_is_last[i]
+    //                 };
+    //                 std::vector<TYPE> key_rlp_lookup = {
+    //                     leaf_internal_prefix[i][0][0],
+    //                     leaf_internal_prefix[i][0][1],
+    //                     0,
+    //                     leaf_internal_first_element[i][0],
+    //                     leaf_internal_first_element_flag[i][0],
+    //                     1,
+    //                     leaf_internal_len_low[i][0], 
+    //                     leaf_internal_len_high[i][0],
+    //                     // 1,
+    //                     leaf_internal_second_prefix_is_last[i][0],
+    //                     1
+    //                 };
 
-                    std::vector<TYPE> key_rlp_lookup = {
-                        c.prefix[0][0],
-                        c.prefix[0][1],
-                        0,
-                        c.first_element[0],
-                        c.first_element_flag[0],
-                        1,
-                        c.len_low[0], 
-                        c.len_high[0],
-                        // 1,
-                        c.second_prefix_is_last[0],
-                        1
-                    };
+    //                 std::vector<TYPE> value_rlp_lookup = {
+    //                     leaf_internal_prefix[i][1][0],
+    //                     leaf_internal_prefix[i][1][1],
+    //                     0,
+    //                     leaf_internal_first_element[i][1],
+    //                     leaf_internal_first_element_flag[i][1],
+    //                     1,
+    //                     leaf_internal_len_low[i][1], 
+    //                     leaf_internal_len_high[i][1],
+    //                     leaf_internal_second_prefix_is_last[i][1],
+    //                     1
+    //                 };
 
-                    std::vector<TYPE> value_rlp_lookup = {
-                        c.prefix[1][0],
-                        c.prefix[1][1],
-                        0,
-                        c.first_element[1],
-                        c.first_element_flag[1],
-                        1,
-                        c.len_low[1], 
-                        c.len_high[1],
-                        c.second_prefix_is_last[1],
-                        1
-                    };
+    //                 std::vector<TYPE> keccak_lookup = {
+    //                     1,
+    //                     leaf_internal_rlc[i][1][leaf_data_size-1] * leaf_node_not_padding[i],
+    //                     leaf_node_hash_high[i],
+    //                     leaf_node_hash_low[i]
+    //                 };
+    //                 lookup(node_rlp_lookup, "rlp_table");
+    //                 lookup(key_rlp_lookup, "rlp_table");
+    //                 lookup(value_rlp_lookup, "rlp_table");
+    //                 lookup(keccak_lookup, "keccak_table");
+    //                 constrain(leaf_node_second_prefix_is_last[i]*(1 - leaf_node_second_prefix_is_last[i]));
+    //                 constrain(leaf_node_prefix[i][1] * leaf_node_second_prefix_is_last[i]);
+    //                 constrain(leaf_node_prefix[i][2] * leaf_node_third_prefix_is_last[i]);
+    //                 constrain(leaf_internal_second_prefix_is_last[i][1] * (1 - leaf_internal_second_prefix_is_last[i][1]));
+    //                 constrain(leaf_internal_second_prefix_is_last[i][0] * (1 - leaf_internal_second_prefix_is_last[i][0]));
+    //                 constrain(leaf_node_not_padding[i] * (leaf_node_prefix_rlc[i][0] - 
+    // /* total length */      ((1 + 1 - leaf_node_second_prefix_is_last[i] + 1 - leaf_node_third_prefix_is_last[i] + leaf_node_len_low[i] + 0x100 * leaf_node_len_high[i])
+    //                         * 53 + leaf_node_prefix[i][0])));
 
-                    std::vector<TYPE> keccak_lookup = {
-                        1,
-                        c.rlc[1][leaf_data_size-1] * n.not_padding,
-                        n.hash_high,
-                        n.hash_low
-                    };
-                    lookup(node_rlp_lookup, "rlp_table");
-                    lookup(key_rlp_lookup, "rlp_table");
-                    lookup(value_rlp_lookup, "rlp_table");
-                    lookup(keccak_lookup, "keccak_table");
-                    constrain(n.second_prefix_is_last*(1 - n.second_prefix_is_last));
-                    constrain(n.prefix[1] * n.second_prefix_is_last);
-                    constrain(n.prefix[2] * n.third_prefix_is_last);
-                    constrain(c.second_prefix_is_last[1] * (1 - c.second_prefix_is_last[1]));
-                    constrain(c.second_prefix_is_last[0] * (1 - c.second_prefix_is_last[0]));
-                    constrain(n.not_padding * (n.prefix_rlc[0] - 
-    /* total length */      ((1 + 1 - n.second_prefix_is_last + 1 - n.third_prefix_is_last + n.len_low + 0x100 * n.len_high)
-                            * 53 + n.prefix[0])));
+    //                 constrain(leaf_node_prefix_rlc[i][1] - ((1 - leaf_node_second_prefix_is_last[i]) * (leaf_node_prefix_rlc[i][0] * 53 + leaf_node_prefix[i][1]) + leaf_node_second_prefix_is_last[i] * leaf_node_prefix_rlc[i][0]));
+    //                 constrain(leaf_node_prefix_rlc[i][2] - ((1 - leaf_node_third_prefix_is_last[i]) *  (leaf_node_prefix_rlc[i][1] * 53 + leaf_node_prefix[i][2]) + leaf_node_third_prefix_is_last[i] * leaf_node_prefix_rlc[i][1]));
 
-                    constrain(n.prefix_rlc[1] - ((1 - n.second_prefix_is_last) * (n.prefix_rlc[0] * 53 + n.prefix[1]) + n.second_prefix_is_last * n.prefix_rlc[0]));
-                    constrain(n.prefix_rlc[2] - ((1 - n.third_prefix_is_last) *  (n.prefix_rlc[1] * 53 + n.prefix[2]) + n.third_prefix_is_last * n.prefix_rlc[1]));
+    //                 constrain(leaf_node_not_padding[i] * (-(leaf_node_len_low[i] + 0x100 * leaf_node_len_high[i])
+    //                         + leaf_internal_len_low[i][0] + 0x100 * leaf_internal_len_high[i][0] 
+    //                         + leaf_internal_len_low[i][1] + 0x100 * leaf_internal_len_high[i][1] 
+    //                         + 3 - leaf_internal_second_prefix_is_last[i][1]));
 
-                    constrain(n.not_padding * (-(n.len_low + 0x100 * n.len_high)
-                            + c.len_low[0] + 0x100 * c.len_high[0] 
-                            + c.len_low[1] + 0x100 * c.len_high[1] 
-                            + 3 - c.second_prefix_is_last[1]));
+    //                 // node first rlp prefix is always keccak 0 index
+    //                 constrain(leaf_node_prefix_index[i][0] - (1 - leaf_node_second_prefix_is_last[i]));
+    //                 constrain(leaf_node_prefix_index[i][1] * leaf_node_third_prefix_is_last[i] + (2-leaf_node_prefix_index[i][1])*(1-leaf_node_third_prefix_is_last[i]));
+    //                 for (size_t j = 0; j < 2; j++) {
+    //                     if (j == 0) {
+    //                         constrain(leaf_internal_prefix_index[i][j][0] - leaf_node_not_padding[i] - (1 - leaf_node_second_prefix_is_last[i]) + (1 - leaf_node_third_prefix_is_last[i]));
+    //                         constrain(leaf_internal_prefix_rlc[i][j][0] - (leaf_node_prefix_rlc[i][2] * 53 + leaf_internal_prefix[i][0][0]));
+    //                     } else {
+    //                         constrain(leaf_internal_prefix_index[i][j][0] - 
+    //                             (leaf_internal_len_low[i][j-1] + leaf_internal_len_high[i][j-1] * 0x100 + leaf_internal_prefix_index[i][j-1][0] + leaf_node_not_padding[i] - leaf_internal_second_prefix_is_last[i][j-1] + 1));
+    //                         constrain(leaf_internal_prefix_rlc[i][j][0] - (leaf_internal_rlc[i][j-1][leaf_data_size-1] * 53 + leaf_internal_prefix[i][j][0]));
+    //                     }
+    //                     constrain(leaf_internal_prefix_index[i][j][1] - (1 - leaf_internal_second_prefix_is_last[i][j]) * (leaf_internal_prefix_index[i][j][0] + leaf_node_not_padding[i]));
+    //                     constrain(leaf_internal_prefix_rlc[i][j][1] - ((1 - leaf_internal_second_prefix_is_last[i][j]) * (leaf_internal_prefix_rlc[i][j][0] * 53 + leaf_internal_prefix[i][j][1]) + leaf_internal_second_prefix_is_last[i][j] * leaf_internal_prefix_rlc[i][j][0]));
+    //                     constrain(leaf_internal_index[i][j][0] - (1 - leaf_internal_second_prefix_is_last[i][j]) - leaf_internal_prefix_index[i][j][0] - leaf_node_not_padding[i]);
+    //                     constrain(leaf_internal_rlc[i][j][0] - (leaf_internal_prefix_rlc[i][j][1] * 53 + leaf_internal_data[i][j][0]));
 
-                    // node first rlp prefix is always keccak 0 index
-                    constrain(n.prefix_index[0] - (1 - n.second_prefix_is_last));
-                    constrain(n.prefix_index[1] * n.third_prefix_is_last + (2-n.prefix_index[1])*(1-n.third_prefix_is_last));
-                    for (size_t k = 0; k < 2; k++) {
-                        if (k == 0) {
-                            constrain(c.prefix_index[k][0] - n.not_padding - (1 - n.second_prefix_is_last) + (1 - n.third_prefix_is_last));
-                            constrain(c.prefix_rlc[k][0] - (n.prefix_rlc[2] * 53 + c.prefix[0][0]));
-                        } else {
-                            constrain(c.prefix_index[k][0] - 
-                                (c.len_low[k-1] + c.len_high[k-1] * 0x100 + c.prefix_index[k-1][0] + n.not_padding - c.second_prefix_is_last[k-1] + 1));
-                            constrain(c.prefix_rlc[k][0] - (c.rlc[k-1][leaf_data_size-1] * 53 + c.prefix[k][0]));
-                        }
-                        constrain(c.prefix_index[k][1] - (1 - c.second_prefix_is_last[k]) * (c.prefix_index[k][0] + n.not_padding));
-                        constrain(c.prefix_rlc[k][1] - ((1 - c.second_prefix_is_last[k]) * (c.prefix_rlc[k][0] * 53 + c.prefix[k][1]) + c.second_prefix_is_last[k] * c.prefix_rlc[k][0]));
-                        constrain(c.index[k][0] - (1 - c.second_prefix_is_last[k]) - c.prefix_index[k][0] - n.not_padding);
-                        constrain(c.rlc[k][0] - (c.prefix_rlc[k][1] * 53 + c.data[k][0]));
-
-                        constrain(c.data[k][0] * c.is_last[k][0]);
-                        for (size_t i = 1; i < leaf_data_size; i++) {
-                            constrain((1 - c.is_last[k][i]) * c.is_last[k][i]);
-                            constrain((1 - c.is_last[k][i]) * c.is_last[k][i-1]);
+    //                     constrain(leaf_internal_data[i][j][0] * leaf_internal_is_last[i][j][0]);
+    //                     for (size_t k = 1; k < leaf_data_size; k++) {
+    //                         constrain((1 - leaf_internal_is_last[i][j][k]) * leaf_internal_is_last[i][j][k]);
+    //                         constrain((1 - leaf_internal_is_last[i][j][k]) * leaf_internal_is_last[i][j][k-1]);
                             
-                            constrain(n.not_padding * (c.index_is_last_R[k][i] - (1 - 
-                                c.index_is_last_I[k][i] * ((c.len_low[k] + c.len_high[k] * 0x100) - (c.index[k][i] - c.index[k][0] + 1)))));
-                            constrain(((c.len_low[k] + c.len_high[k] * 0x100) - (c.index[k][i] - c.index[k][0] + 1)) * c.index_is_last_R[k][i]);
-                            constrain(c.is_last[k][i] - c.index_is_last_R[k][i] - c.is_last[k][i-1]);
-                            constrain(c.index[k][i] * c.is_last[k][i-1]);
-                            constrain((c.index[k][i] - c.index[k][i-1] - 1) * (1 - c.is_last[k][i-1]));
-                            constrain(c.data[k][i] * c.is_last[k][i-1]);
-                            constrain(c.rlc[k][i] - (c.is_last[k][i-1] * c.rlc[k][i-1] + (1 - c.is_last[k][i-1]) * (c.rlc[k][i-1] * 53 + c.data[k][i])));
-                        }
-                    }
-                }
-            }
+    //                         constrain(leaf_node_not_padding[i] * (leaf_internal_index_is_last_R[i][j][k] - (1 - 
+    //                             leaf_internal_index_is_last_I[i][j][k] * ((leaf_internal_len_low[i][j] + leaf_internal_len_high[i][j] * 0x100) - (leaf_internal_index[i][j][k] - leaf_internal_index[i][j][0] + 1)))));
+    //                         constrain(((leaf_internal_len_low[i][j] + leaf_internal_len_high[i][j] * 0x100) - (leaf_internal_index[i][j][k] - leaf_internal_index[i][j][0] + 1)) * leaf_internal_index_is_last_R[i][j][k]);
+    //                         constrain(leaf_internal_is_last[i][j][k] - leaf_internal_index_is_last_R[i][j][k] - leaf_internal_is_last[i][j][k-1]);
+    //                         constrain(leaf_internal_index[i][j][k] * leaf_internal_is_last[i][j][k-1]);
+    //                         constrain((leaf_internal_index[i][j][k] - leaf_internal_index[i][j][k-1] - 1) * (1 - leaf_internal_is_last[i][j][k-1]));
+    //                         constrain(leaf_internal_data[i][j][k] * leaf_internal_is_last[i][j][k-1]);
+    //                         constrain(leaf_internal_rlc[i][j][k] - (leaf_internal_is_last[i][j][k-1] * leaf_internal_rlc[i][j][k-1] + (1 - leaf_internal_is_last[i][j][k-1]) * (leaf_internal_rlc[i][j][k-1] * 53 + leaf_internal_data[i][j][k])));
+    //                     }
+    //                 }
+    //         }
         }
+    }
 
         size_t get_rlp_encoded_length(TYPE first_byte, size_t length) {
             size_t rlp_encoded_length;
@@ -422,7 +528,7 @@ namespace nil::blueprint::bbf {
             return get_rlp_encoded_length(value_first_byte, value_length);
         }
 
-        void encode_node_data(node_rlp_data &node, std::size_t total_length, std::size_t &rlp_encoding_index, std::vector<std::uint8_t> &hash_input, TYPE &rlc_accumulator, TYPE rlc_challenge) {
+        void encode_node_data(std::size_t index, std::size_t total_length, std::size_t &rlp_encoding_index, std::vector<std::uint8_t> &hash_input, TYPE &rlc_accumulator, TYPE rlc_challenge) {
             rlp_encoding_index = 0;
             if (total_length > 55) {
                 std::size_t length_length = 0;
@@ -432,46 +538,46 @@ namespace nil::blueprint::bbf {
                     temp >>= 8;
                     length_length ++;
                 }
-                node.prefix[0] = 0xF7 + length_length;
-                node.prefix[1] = total_length;
-                node.prefix[2] = 0;
-                node.prefix_index[0] = rlp_encoding_index+1;
+                leaf_node_prefix[index][0] = 0xF7 + length_length;
+                leaf_node_prefix[index][1] = total_length;
+                leaf_node_prefix[index][2] = 0;
+                leaf_node_prefix_index[index][0] = rlp_encoding_index+1;
 
-                node.second_prefix_is_last = 0;
-                node.third_prefix_is_last = 1;
+                leaf_node_second_prefix_is_last[index] = 0;
+                leaf_node_third_prefix_is_last[index] = 1;
 
                 hash_input[rlp_encoding_index++] = 0xF7 + length_length;
                 hash_input[rlp_encoding_index++] = total_length;
 
-                node.prefix_rlc[0] = (total_length+2) * rlc_challenge + node.prefix[0];
-                rlc_accumulator = node.prefix_rlc[0];
-                node.prefix_rlc[1] = rlc_accumulator * rlc_challenge + node.prefix[1];
-                rlc_accumulator = node.prefix_rlc[1];
-                node.prefix_rlc[2] = rlc_accumulator;
+                leaf_node_prefix_rlc[index][0] = (total_length+2) * rlc_challenge + leaf_node_prefix[index][0];
+                rlc_accumulator = leaf_node_prefix_rlc[index][0];
+                leaf_node_prefix_rlc[index][1] = rlc_accumulator * rlc_challenge + leaf_node_prefix[index][1];
+                rlc_accumulator = leaf_node_prefix_rlc[index][1];
+                leaf_node_prefix_rlc[index][2] = rlc_accumulator;
             } else {
-                node.prefix[0] = 0xC0 + total_length;
-                node.second_prefix_is_last = 1;
-                node.third_prefix_is_last = 1;
-                node.prefix_index[0] = 0;
+                leaf_node_prefix[index][0] = 0xC0 + total_length;
+                leaf_node_second_prefix_is_last[index] = 1;
+                leaf_node_third_prefix_is_last[index] = 1;
+                leaf_node_prefix_index[index][0] = 0;
 
                 hash_input[rlp_encoding_index++] = uint8_t((0xC0 + total_length) & 0xFF);
-                node.prefix_rlc[0] = (total_length+1) * rlc_challenge + node.prefix[0];
-                rlc_accumulator = node.prefix_rlc[0];
-                node.prefix_rlc[1] = rlc_accumulator;
-                node.prefix_rlc[2] = rlc_accumulator;
+                leaf_node_prefix_rlc[index][0] = (total_length+1) * rlc_challenge + leaf_node_prefix[index][0];
+                rlc_accumulator = leaf_node_prefix_rlc[index][0];
+                leaf_node_prefix_rlc[index][1] = rlc_accumulator;
+                leaf_node_prefix_rlc[index][2] = rlc_accumulator;
             }
 
-            node.len_low = total_length & 0xFF;
-            node.len_high = (total_length >> 8) & 0xFF;
-            node.not_padding = 1;
+            leaf_node_len_low[index] = total_length & 0xFF;
+            leaf_node_len_high[index] = (total_length >> 8) & 0xFF;
+            leaf_node_not_padding[index] = 1;
         }
 
-        void store_node_hash(node_rlp_data &node, zkevm_word_type hash) {
-            node.hash_low = w_lo<FieldType>(hash);
-            node.hash_high = w_hi<FieldType>(hash);
+        void store_node_hash(std::size_t index, zkevm_word_type hash) {
+            leaf_node_hash_low[index] = w_lo<FieldType>(hash);
+            leaf_node_hash_high[index] = w_hi<FieldType>(hash);
         }
 
-        void encode_leaf_data(node_content &content, std::vector<zkevm_word_type> key, std::vector<zkevm_word_type> value, std::size_t& rlp_encoding_index, std::vector<std::uint8_t> &hash_input, TYPE &rlc_accumulator, TYPE rlc_challenge) {
+        void encode_leaf_data(std::size_t index, std::vector<zkevm_word_type> key, std::vector<zkevm_word_type> value, std::size_t& rlp_encoding_index, std::vector<std::uint8_t> &hash_input, TYPE &rlc_accumulator, TYPE rlc_challenge) {
             std::vector<std::vector<zkevm_word_type>> data = {key, value}; 
             for (size_t i = 0; i < data.size(); i++) {
                 // std::cout <<"    value = ";
@@ -481,18 +587,18 @@ namespace nil::blueprint::bbf {
                     //     std::cout <<"0" << std::hex << d[j] << std::dec;
                     // else
                     //     std::cout << std::hex << d[j] << std::dec;
-                    content.data[i][j] = d[j];
-                    content.is_last[i][j] = 0;
+                    leaf_internal_data[index][i][j] = d[j];
+                    leaf_internal_is_last[index][i][j] = 0;
                 }
                 if (d.size() > 0) {
-                    content.is_last[i][d.size() - 1] = 1;
+                    leaf_internal_is_last[index][i][d.size() - 1] = 1;
                 }
                 if (d.size() == 0 || (d.size() == 1 && d[0] < 128)) {
                     if (d.size() == 1)
-                        content.first_element[i] = d[0];
-                    content.first_element_flag[i] = 1;
+                        leaf_internal_first_element[index][i] = d[0];
+                    leaf_internal_first_element_flag[index][i] = 1;
                 } else {
-                    content.first_element_flag[i] = 0;
+                    leaf_internal_first_element_flag[index][i] = 0;
                 }
                 // std::cout << " size: " << d.size();
                 // std::cout << std::endl;
@@ -502,19 +608,19 @@ namespace nil::blueprint::bbf {
             if (key.size() == 1) { // first byte of key in leaf nodes is always less than 0x7F due to leaf node encoding
                 // TODO child_prefix_is_last[nodenum][0][0] must be true
             } else if (key.size() <= 33) {
-                content.prefix[0][0] = 0x80 + key.size();
-                content.second_prefix_is_last[0] = 1;
-                content.prefix_index[0][0] = rlp_encoding_index;
+                leaf_internal_prefix[index][0][0] = 0x80 + key.size();
+                leaf_internal_second_prefix_is_last[index][0] = 1;
+                leaf_internal_prefix_index[index][0][0] = rlp_encoding_index;
 
                 hash_input[rlp_encoding_index++] = uint8_t(0x80 + key.size());
 
-                content.prefix_rlc[0][0] = rlc_accumulator * rlc_challenge + content.prefix[0][0];
-                rlc_accumulator = content.prefix_rlc[0][0];
-                content.prefix_rlc[0][1] = rlc_accumulator;
+                leaf_internal_prefix_rlc[index][0][0] = rlc_accumulator * rlc_challenge + leaf_internal_prefix[index][0][0];
+                rlc_accumulator = leaf_internal_prefix_rlc[index][0][0];
+                leaf_internal_prefix_rlc[index][0][1] = rlc_accumulator;
             }
 
-            content.len_low[0] = key.size();
-            content.len_high[0] = 0;
+            leaf_internal_len_low[index][0] = key.size();
+            leaf_internal_len_high[index][0] = 0;
             // maximum lengths: 
             //      rlp encoded leaf node = 144 + 2 bytes
             //      key = 33 bytes
@@ -524,69 +630,69 @@ namespace nil::blueprint::bbf {
 
 
             for (size_t j = 0; j < key.size(); j++) {
-                content.index[0][j] = rlp_encoding_index;
+                leaf_internal_index[index][0][j] = rlp_encoding_index;
                 hash_input[rlp_encoding_index++] = uint8_t(key[j]);
 
-                content.rlc[0][j] = rlc_accumulator * rlc_challenge + content.data[0][j];
-                rlc_accumulator = content.rlc[0][j];
+                leaf_internal_rlc[index][0][j] = rlc_accumulator * rlc_challenge + leaf_internal_data[index][0][j];
+                rlc_accumulator = leaf_internal_rlc[index][0][j];
             }
-            for (size_t j = key.size(); j < content.rlc[0].size(); j++) {
-                content.rlc[0][j] = rlc_accumulator;
+            for (size_t j = key.size(); j < leaf_internal_rlc[index][0].size(); j++) {
+                leaf_internal_rlc[index][0][j] = rlc_accumulator;
             }
             
             if (value.size() == 1 && value[0] <= 0x7F) {
                 // TODO
             } else if (value.size() <= 55) {
-                content.prefix[1][0] = 0x80 + value.size();
-                content.prefix_index[1][0] = rlp_encoding_index;
+                leaf_internal_prefix[index][1][0] = 0x80 + value.size();
+                leaf_internal_prefix_index[index][1][0] = rlp_encoding_index;
                 hash_input[rlp_encoding_index++] = uint8_t(0x80 + value.size());
 
-                content.prefix_rlc[1][0] = rlc_accumulator * rlc_challenge + content.prefix[1][0];
-                rlc_accumulator = content.prefix_rlc[1][0];
-                content.prefix_rlc[1][1] = rlc_accumulator;
+                leaf_internal_prefix_rlc[index][1][0] = rlc_accumulator * rlc_challenge + leaf_internal_prefix[index][1][0];
+                rlc_accumulator = leaf_internal_prefix_rlc[index][1][0];
+                leaf_internal_prefix_rlc[index][1][1] = rlc_accumulator;
             } else {
-                content.prefix[1][0] = 0xB8;
-                content.prefix_index[1][0] = rlp_encoding_index;
-                content.prefix[1][1] = value.size();
-                content.prefix_index[1][1] = rlp_encoding_index+1;
-                content.second_prefix_is_last[1] = 0;
+                leaf_internal_prefix[index][1][0] = 0xB8;
+                leaf_internal_prefix_index[index][1][0] = rlp_encoding_index;
+                leaf_internal_prefix[index][1][1] = value.size();
+                leaf_internal_prefix_index[index][1][1] = rlp_encoding_index+1;
+                leaf_internal_second_prefix_is_last[index][1] = 0;
                 
                 hash_input[rlp_encoding_index++] = uint8_t(0xB8);
                 hash_input[rlp_encoding_index++] = value.size();
 
-                content.prefix_rlc[1][0] = rlc_accumulator * rlc_challenge + content.prefix[1][0];
-                rlc_accumulator = content.prefix_rlc[1][0];
-                content.prefix_rlc[1][1] = rlc_accumulator * rlc_challenge + content.prefix[1][1];
-                rlc_accumulator = content.prefix_rlc[1][1];
+                leaf_internal_prefix_rlc[index][1][0] = rlc_accumulator * rlc_challenge + leaf_internal_prefix[index][1][0];
+                rlc_accumulator = leaf_internal_prefix_rlc[index][1][0];
+                leaf_internal_prefix_rlc[index][1][1] = rlc_accumulator * rlc_challenge + leaf_internal_prefix[index][1][1];
+                rlc_accumulator = leaf_internal_prefix_rlc[index][1][1];
             }
 
-            content.len_low[1] = value.size();
-            content.len_high[1] = 0;
+            leaf_internal_len_low[index][1] = value.size();
+            leaf_internal_len_high[index][1] = 0;
 
             for (size_t j = 0; j < value.size(); j++) {
-                content.index[1][j] = rlp_encoding_index;
+                leaf_internal_index[index][1][j] = rlp_encoding_index;
                 hash_input[rlp_encoding_index++] = uint8_t(value[j]);
 
-                content.rlc[1][j] = rlc_accumulator * rlc_challenge + content.data[1][j];
-                rlc_accumulator = content.rlc[1][j];
+                leaf_internal_rlc[index][1][j] = rlc_accumulator * rlc_challenge + leaf_internal_data[index][1][j];
+                rlc_accumulator = leaf_internal_rlc[index][1][j];
             }
-            for (size_t j = value.size(); j < content.rlc[1].size(); j++) {
-                content.rlc[1][j] = rlc_accumulator;
+            for (size_t j = value.size(); j < leaf_internal_rlc[index][1].size(); j++) {
+                leaf_internal_rlc[index][1][j] = rlc_accumulator;
             }
 
 
             for (size_t k = 0; k < 2; k++) {
-                TYPE len = content.len_low[k] + content.len_high[k] * 0x100;
+                TYPE len = leaf_internal_len_low[index][k] + leaf_internal_len_high[index][k] * 0x100;
                 for (size_t j = 0; j < 110; j++) {
-                    if ( content.index[k][j] - content.index[k][0] == len - 1) {
-                        content.index_is_last_I[k][j] = 0;
+                    if ( leaf_internal_index[index][k][j] - leaf_internal_index[index][k][0] == len - 1) {
+                        leaf_internal_index_is_last_I[index][k][j] = 0;
                     } else {
-                        content.index_is_last_I[k][j] = 
-                            (len - 1 - (content.index[k][j] - content.index[k][0])).inversed();
+                        leaf_internal_index_is_last_I[index][k][j] = 
+                            (len - 1 - (leaf_internal_index[index][k][j] - leaf_internal_index[index][k][0])).inversed();
                     }
-                    content.index_is_last_R[k][j] = 1 - 
-                        (len - 1 - (content.index[k][j] - content.index[k][0])) 
-                        * content.index_is_last_I[k][j];
+                    leaf_internal_index_is_last_R[index][k][j] = 1 - 
+                        (len - 1 - (leaf_internal_index[index][k][j] - leaf_internal_index[index][k][0])) 
+                        * leaf_internal_index_is_last_I[index][k][j];
                 }
             }
         }
@@ -597,65 +703,98 @@ namespace nil::blueprint::bbf {
             return hash;
         }
 
-        void print_leaf_node(node_rlp_data &node, zkevm_word_type hash, size_t key_data_len, size_t value_data_len) {
-            node_content content = node.content;
+        void print_leaf_node(std::size_t index, zkevm_word_type hash, size_t key_data_len, size_t value_data_len) {
             TYPE hash_low = w_lo<FieldType>(hash);
             TYPE hash_high = w_hi<FieldType>(hash);
 
             std::cout << "rlp prefix:" << std::endl;
             std::cout << "\tdata\tindex\n";
 
-            std::cout << "\t" << std::hex << node.prefix[0] << std::dec << "\t"
+            std::cout << "\t" << std::hex << leaf_node_prefix[index][0] << std::dec << "\t"
                       << std::hex << hash_high << std::dec << "\t"
                       << std::hex << hash_low << std::dec << "\t"
                       << std::hex << 0 << std::dec << std::endl;
-            std::cout << "\t" << std::hex << node.prefix[1] << std::dec << "\t"
-                      << std::hex << node.prefix_index[0] << std::dec << std::endl;
-            std::cout << "\t" << std::hex << node.prefix[2] << std::dec << "\t"
-                      << std::hex << node.prefix_index[1] << std::dec << std::endl;
+            std::cout << "\t" << std::hex << leaf_node_prefix[index][1] << std::dec << "\t"
+                      << std::hex << leaf_node_prefix_index[index][0] << std::dec << std::endl;
+            std::cout << "\t" << std::hex << leaf_node_prefix[index][2] << std::dec << "\t"
+                      << std::hex << leaf_node_prefix_index[index][1] << std::dec << std::endl;
             
             std::cout << "node rlp second prefix is last:\n "
-                      << std::hex << node.second_prefix_is_last << std::dec << std::endl;
+                      << std::hex << leaf_node_second_prefix_is_last[index] << std::dec << std::endl;
             std::cout << "node rlp len low and high: \n"
-                      << std::hex << node.len_low << std::dec << "\t"
-                      << std::hex << node.len_high << std::dec << std::endl;
+                      << std::hex << leaf_node_len_low[index] << std::dec << "\t"
+                      << std::hex << leaf_node_len_high[index] << std::dec << std::endl;
             
             std::cout << "key prefix: \n\tdata\tindex\n\t";
-            std::cout << std::hex << content.prefix[0][0] << std::dec << "\t"
-                      << std::hex << content.prefix_index[0][0] << std::dec << std::endl;
+            std::cout << std::hex << leaf_internal_prefix[index][0][0] << std::dec << "\t"
+                      << std::hex << leaf_internal_prefix_index[index][0][0] << std::dec << std::endl;
             std::cout << "second is last\tlen_low\tlen_high\tfirst_element_flag\tfirst_element\n\t";
-            std::cout << std::hex << content.second_prefix_is_last[0] << std::dec << "\t"
-                      << std::hex << content.len_low[0] << std::dec << "\t"
-                      << std::hex << content.len_high[0] << std::dec << "\t\t"
-                      << std::hex << content.first_element_flag[0] << std::dec << "\t\t"
-                      << std::hex << content.first_element[0] << std::dec << std::endl;
+            std::cout << std::hex << leaf_internal_second_prefix_is_last[index][0] << std::dec << "\t"
+                      << std::hex << leaf_internal_len_low[index][0] << std::dec << "\t"
+                      << std::hex << leaf_internal_len_high[index][0] << std::dec << "\t\t"
+                      << std::hex << leaf_internal_first_element_flag[index][0] << std::dec << "\t\t"
+                      << std::hex << leaf_internal_first_element[index][0] << std::dec << std::endl;
 
 
             std::cout << "key:\n\tdata\tindex\n";
             for (size_t i = 0; i < key_data_len; i++) {
                 std::cout << "\t"
-                          << std::hex << content.data[0][i] << std::dec << "\t" 
-                          << std::hex << content.index[0][i] << std::dec << std::endl;
+                          << std::hex << leaf_internal_data[index][0][i] << std::dec << "\t" 
+                          << std::hex << leaf_internal_index[index][0][i] << std::dec << std::endl;
             }
         
             std::cout << "value prefix: \n\tdata\tindex\n";
-            std::cout << "\t" << std::hex << content.prefix[1][0] << std::dec << "\t" 
-                      << std::hex << content.prefix_index[1][0] << std::dec << std::endl;
-            std::cout << "\t" << std::hex << content.prefix[1][1] << std::dec << "\t"  
-                      << std::hex << content.prefix_index[1][1] << std::dec << std::endl;
+            std::cout << "\t" << std::hex << leaf_internal_prefix[index][1][0] << std::dec << "\t" 
+                      << std::hex << leaf_internal_prefix_index[index][1][0] << std::dec << std::endl;
+            std::cout << "\t" << std::hex << leaf_internal_prefix[index][1][1] << std::dec << "\t"  
+                      << std::hex << leaf_internal_prefix_index[index][1][1] << std::dec << std::endl;
 
             std::cout << "second is last\tlen_high\tlen_low\tfirst_element_flag\tfirst_element\n\t";
-            std::cout << std::hex << content.second_prefix_is_last[1] << std::dec << "\t"
-                      << std::hex << content.len_high[1] << std::dec << "\t"
-                      << std::hex << content.len_low[1] << std::dec << "\t"
-                      << std::hex << content.first_element_flag[1] << std::dec << "\t\t"
-                      << std::hex << content.first_element[1] << std::dec << std::endl;
+            std::cout << std::hex << leaf_internal_second_prefix_is_last[index][1] << std::dec << "\t"
+                      << std::hex << leaf_internal_len_high[index][1] << std::dec << "\t"
+                      << std::hex << leaf_internal_len_low[index][1] << std::dec << "\t"
+                      << std::hex << leaf_internal_first_element_flag[index][1] << std::dec << "\t\t"
+                      << std::hex << leaf_internal_first_element[index][1] << std::dec << std::endl;
             std::cout << "value: \n";
             for (size_t i = 0; i < value_data_len; i++) {
                 std::cout << "\t"
-                          << std::hex << content.data[1][i] << std::dec << "\t" 
-                          << std::hex << content.index[1][i] << std::dec << std::endl;
+                          << std::hex << leaf_internal_data[index][1][i] << std::dec << "\t" 
+                          << std::hex << leaf_internal_index[index][1][i] << std::dec << std::endl;
             }
         }
+    
+      protected:
+        // leaf-nodes node
+        std::vector<TYPE> leaf_node_not_padding;
+        std::vector<std::array<TYPE, 3>> leaf_node_prefix;
+        std::vector<std::array<TYPE, 3>> leaf_node_prefix_rlc;
+        // the first rlp prefix is not last and its hash and index is known
+        std::vector<TYPE> leaf_node_second_prefix_is_last;
+        std::vector<TYPE> leaf_node_third_prefix_is_last;
+        std::vector<std::array<TYPE, 2>> leaf_node_prefix_index;
+        std::vector<TYPE> leaf_node_len_low;
+        std::vector<TYPE> leaf_node_len_high;
+        std::vector<TYPE> leaf_node_hash_low;
+        std::vector<TYPE> leaf_node_hash_high;
+
+        // leaf-nodes internals
+        std::vector<std::array<std::array<TYPE, 110>, 2>> leaf_internal_data;
+        std::vector<std::array<std::array<TYPE, 110>, 2>> leaf_internal_index;
+        std::vector<std::array<std::array<TYPE, 110>, 2>> leaf_internal_index_is_last_I;
+        std::vector<std::array<std::array<TYPE, 110>, 2>> leaf_internal_index_is_last_R;
+        std::vector<std::array<std::array<TYPE, 110>, 2>> leaf_internal_is_last;
+        std::vector<std::array<std::array<TYPE, 110>, 2>> leaf_internal_rlc;
+        std::vector<std::array<std::array<TYPE, 2>,   2>> leaf_internal_prefix;
+        std::vector<std::array<std::array<TYPE, 2>,   2>> leaf_internal_prefix_index;
+        std::vector<std::array<std::array<TYPE, 2>,   2>> leaf_internal_prefix_rlc;
+        std::vector<std::array<TYPE, 2>> leaf_internal_second_prefix_is_last;
+        // lengths without considering rlp prefixes
+        std::vector<std::array<TYPE, 2>> leaf_internal_len_low;
+        std::vector<std::array<TYPE, 2>> leaf_internal_len_high;
+        // first element flag for rlp lookup
+        std::vector<std::array<TYPE, 2>> leaf_internal_first_element_flag;
+        std::vector<std::array<TYPE, 2>> leaf_internal_first_element;
+        std::vector<TYPE> node_type;
+
     };
 }  // namespace nil::blueprint::bbf
