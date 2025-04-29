@@ -29,6 +29,7 @@ set(COMMON_TEST_FILES
     "bbf/algebra/curves/weierstrass/ec_two_t_plus_q"
     "bbf/algebra/curves/weierstrass/ec_scalar_mult"
     "bbf/pubkey/ecdsa/ecdsa_recovery"
+    "bbf/rlp_field"
     )
 
 set(NON_NATIVE_TESTS_FILES
