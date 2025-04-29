@@ -43,7 +43,8 @@
 
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
-#include <nil/blueprint/zkevm_bbf/mpt.hpp>
+// #include <nil/blueprint/zkevm_bbf/mpt.hpp>
+#include <nil/blueprint/zkevm_bbf/mpt_leaf.hpp>
 
 #include "./circuit_test_fixture.hpp"
 
@@ -69,13 +70,13 @@ public:
     }
 
     template <typename field_type>
-    void test_zkevm_mpt(
+    void test_zkevm_mpt_leaf(
         std::string data_source,
-        std::size_t max_mpt_size,
+        std::size_t max_mpt_leaf_size,
         std::size_t keccak_max_block,
         bool expected_result = true
     ) {
-        using input_type = typename mpt_hasher<field_type, GenerationStage::ASSIGNMENT>::input_type;
+        using input_type = typename mpt_leaf<field_type, GenerationStage::ASSIGNMENT>::input_type;
 
         input_type input;
         input.rlc_challenge = 53;
@@ -101,19 +102,19 @@ public:
             }
             input.nodes.push_back(single_node);
         }
-        bool result = test_bbf_component<field_type, mpt_hasher>(
-            "mpt",                 //  Circuit name
+        bool result = test_bbf_component<field_type, mpt_leaf>(
+            "mpt_leaf",                 //  Circuit name
             {} ,                   //  Public input
             input,                 //  Assignment input (paths to prove)
-            max_mpt_size          //  Maximum size of mpt circuit,
+            max_mpt_leaf_size          //  Maximum size of mpt circuit,
         );
         BOOST_CHECK((!check_satisfiability && !generate_proof) || result == expected_result); // Max_rw, Max_mpt
     }
 };
 
-BOOST_FIXTURE_TEST_SUITE(zkevm_bbf_mpt, zkEVMMPTTestFixture)
+BOOST_FIXTURE_TEST_SUITE(zkevm_bbf_mpt_leaf, zkEVMMPTTestFixture)
     using field_type = nil::crypto3::algebra::curves::alt_bn128_254::scalar_field_type;
 BOOST_AUTO_TEST_CASE(one_mpt_path) {
-    test_zkevm_mpt<field_type>("mpt_hash_0.json", 10, 10); 
+    test_zkevm_mpt_leaf<field_type>("mpt_hash_0.json", 10, 10); 
 }
 BOOST_AUTO_TEST_SUITE_END()
