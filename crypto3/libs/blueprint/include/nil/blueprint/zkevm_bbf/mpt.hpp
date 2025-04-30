@@ -429,6 +429,12 @@ public:
                 }
             }
 
+            for(std::size_t i = 0; i < node_num; i++) {
+                for(std::size_t b = 0; b < 32; b++) {
+                    key_reconstruct[b][i] = key_part[b][i];
+                }
+            }
+
         //    for( std::size_t i = 0; i < ChildTable::get_witness_amount(); i++){
         //         child_hash_lookup_area.push_back(i);
         //    }
