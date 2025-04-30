@@ -45,6 +45,9 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
     using value_type = typename FieldType::value_type;
 
     constexpr static const std::size_t chunk_amount = 16;
+    // constexpr static const std::size_t chunk_24_amount = 16;
+    constexpr static const std::size_t chunk_8_amount = 32;
+
     constexpr static const std::size_t carry_amount = 16 / 3 + 1; // Number of carry bits. Corresponds to the number of 48-bit chunks, plus 1.
     constexpr static const value_type two_15 = 32768;
     constexpr static const value_type two_16 = 65536;
@@ -69,6 +72,56 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
                chunks[4 * chunk_idx + 2] * two_32 +
                chunks[4 * chunk_idx + 3] * two_48;
     }
+
+
+    template<typename T, typename V = T>
+    T carryless_mul(const std::vector<T> &r_16_chunks,
+                                const std::vector<T> &b_8_chunks,
+                                const unsigned char chunk_idx) const {
+        // 0 -> (0,0)
+        // 1 -> (0,1)
+        // 2 -> (1,0) (0,2) 
+        // 3 -> (1, 1) (0,3)
+        // for (int i = 0; i <= max(16, chunk_idx/2); i++) {
+        //     res += r_16_chunks[i] * b_8_chunks[chunk_idx - 2*i];
+        // }
+        //
+        for (int i = 0; i < chunk_idx; i++) {
+            if ((i <= 16) && (chunk_idx - 2*i >= 0)) {
+                res += r_16_chunks[i] * b_8_chunks[chunk_idx - 2*i];
+            }
+        }
+        return res;
+    }
+    
+    template<typename T, typename V = T>
+    T carryless_construct(const std::vector<T> &rb_8_chunks,
+                                const std::vector<T> &q_16_chunks,
+                                const std::vector<T> &a_16_chunks,
+                                const unsigned char chunk_idx) const {
+        res = rb_8_chunks[2 * chunk_idx] + rb_8_chunks[2 * chunk_idx + 1] * 256 + q_16_chunks[chunk_idx] - a_16_chunks[chunk_idx];
+        return res;
+    }
+
+
+    // template<typename T, typename V = T>
+    // T carryless_construct(const std::vector<T> &a_24_chunks,
+    //                             const std::vector<T> &b_24_chunks,
+    //                             const std::vector<T> &r_24_chunks,
+    //                             const std::vector<T> &q_24_chunks,
+    //                             const unsigned char chunk_idx) const {
+    //     TYPE res = 0;        
+    //     for (std::size_t i = 0; i < chunk_24_amount + 1; i++) {
+    //         if (2 * chunk_idx - i) >= 0 {
+    //             res += r_24_chunks[i] * b_24_chunks[2 * chunk_idx - i];
+    //         }
+    //         if (2 * chunk_idx + 1 - i) >= 0 {
+    //             res += r_24_chunks[i] * b_24_chunks[2 * chunk_idx - i] * two_24;
+    //         }
+    //     }
+    //     res += q_24_chunks[2 * chunk_idx] + q_24_chunks[2 * chunk_idx + 1] * two_24;
+    //     res -= a_24_chunks[2 * chunk_idx] + a_24_chunks[2 * chunk_idx + 1] * two_24;        return res;
+    // }
 
     // From 64-bit chunks of a, b, r, q, compute the part of r*b + q - a with combined chunk coefficients 2^0 and 2^64
     template<typename T>
@@ -186,6 +239,7 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
         std::vector<TYPE> r_chunks(chunk_amount);  // Shift result chunks (without sign extension)
         std::vector<TYPE> q_chunks(chunk_amount);  // Division remainder chunks
         std::vector<TYPE> v_chunks(chunk_amount);  // Difference chunks (q - b)
+        std::vector<TYPE> b8_chunks(chunk_8_amount);
 
         // Indicator vectors for shift position
         std::vector<TYPE> indic_1(chunk_amount);  // First shift position indicators
@@ -220,6 +274,7 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
 
             zkevm_word_type b = zkevm_word_type(1)
                                 << shift;             // Power of 2 for shift (shift < 256 => b != 0)
+
             zkevm_word_type q = a % b;  // Division remainder -- this results in the shift least significant bits of a, 
                                         // i.e. those that will disappear as a result of the shift operation.
             // Now we have a = r * b + q
@@ -234,6 +289,54 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
             q_chunks = zkevm_word_to_field_element<FieldType>(q);
             v_chunks = zkevm_word_to_field_element<FieldType>(v);
             y_chunks = zkevm_word_to_field_element<FieldType>(result);
+
+
+            // TODO: rangecheck b[i]
+            std::vector<TYPE> mul8_carryless_chunks(chunk_8_amount);
+            std::vector<TYPE> mulcarries(chunk_8_amount);
+            std::vector<TYPE> mul8_chunks(chunk_8_amount);
+            b8_chunks = zkevm_word_to_field_element_flexible<FieldType>(b, 32, 8);
+            for (int i = 0; i < 32; i++) {
+                mul8_carryless_chunks[i] = carryless_mul(r_chunks, b8_chunks, i);
+                mulcarries[i] = mul8_carryless_chunks[i].data.base() >> 8;
+                auto prev_carry = (i > 0) ? mulcarries[i - 1] : 0;
+                mul8_chunks[i] = mul8_carryless_chunks[i] - (mulcarries[i] << 8) + prev_carry;
+            }
+            for (std::size_t i = 0; i < chunk_8_amount; i++) {
+                // TODO: fix address (they must be range checked!)
+                allocate(mul8_chunks[i], i, 2);
+                allocate(mulcarries[i], i, 3);
+            }
+
+            constrain(mul8_carryless_chunks[0] - mulcarries[0] * 256 - mul8_chunks[0]);
+            for (int i = 1; i < 32; i++) {
+                constrain(mul8_carryless_chunks[i] 
+                          - mulcarries[i] * 256 + mulcarries[i-1]  - mul8_chunks[i]);
+            }
+           
+            std::vector<TYPE> construct_carryless_chunks(chunk_amount);
+            std::vector<TYPE> constructcarries(chunk_amount);
+            std::vector<TYPE> construct_chunks(chunk_amount);
+            for (int i = 0; i < chunk_amount; i++) {
+                construct_carryless_chunks[i] = carryless_construct(mul8_chunks, q_chunks, a_chunks, i);
+                constructcarries[i] = construct_carryless_chunks[i].data.base() << 16; 
+                auto prev_carry = (i > 0) ? constructcarries[i - 1] : 0;
+                construct_chunks[i] = construct_carryless_chunks[i] - (constructcarries[i] << 16) + prev_carry;
+            }
+            
+            for (std::size_t i = 0; i < chunk_amount; i++) {
+                // TODO: fix address (they must be range checked!)
+                allocate(constructcarries[i], i, 2);
+                allocate(construct_chunks[i], i, 3);
+            }
+
+            constrain(construct_carryless_chunks[0] - constructcarries[0] * 256 - construct_chunks[0]);
+            for (int i = 1; i < 16; i++) {
+                constrain(construct_carryless_chunks[i] 
+                          - constructcarries[i] * two_16 + constructcarries[i-1]  - construct_chunks[i]);
+            }
+
+
 
             // Decompose shift amount
             shift_value = shift;
@@ -608,3 +711,4 @@ class zkevm_sar_operation : public opcode_abstract<FieldType> {
     virtual std::size_t rows_amount() override { return 4; }
 };
 }  // namespace nil::blueprint::bbf
+
