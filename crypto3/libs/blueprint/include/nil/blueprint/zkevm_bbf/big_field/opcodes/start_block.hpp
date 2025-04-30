@@ -26,7 +26,7 @@ namespace nil::blueprint::bbf::zkevm_big_field{
                 constrain(current_state.gas(0));                                                // GAS transition
                 constrain(current_state.stack_size(0));                                         // stack_size transition
                 constrain(current_state.memory_size(0));                                        // memory_size transition
-                constrain(current_state.rw_counter_next() - current_state.rw_counter(0) - block_context_fields_amount);       // rw_counter transition
+                constrain(current_state.rw_counter_next() - current_state.rw_counter(0) - call_context_readonly_field_amount);       // rw_counter transition
                 constrain(current_state.rw_counter(0) - current_state.call_id(0));
                 constrain(
                     (current_state.opcode_next() - TYPE(std::size_t(opcode_to_number(zkevm_opcode::start_transaction)))) *

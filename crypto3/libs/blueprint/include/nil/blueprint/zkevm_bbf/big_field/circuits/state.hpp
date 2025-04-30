@@ -112,7 +112,7 @@ namespace nil::blueprint::bbf::zkevm_big_field{
             std::size_t ACCESS_LIST_OP = std::size_t(rw_operation_type::access_list);
             std::size_t STATE_OP = std::size_t(rw_operation_type::state);
             std::size_t TRANSIENT_STORAGE_OP = std::size_t(rw_operation_type::transient_storage);
-            std::size_t CALL_CONTEXT_OP = std::size_t(rw_operation_type::call_context);
+            std::size_t CALL_CONTEXT_OP = std::size_t(rw_operation_type::state_call_context);
             std::size_t PADDING_OP = std::size_t(rw_operation_type::padding);
 
             std::vector<std::size_t> table_subcomponent_area;
@@ -165,6 +165,7 @@ namespace nil::blueprint::bbf::zkevm_big_field{
             const std::vector<TYPE> &initial_value_hi = t.initial_value_hi;
             const std::vector<TYPE> &initial_value_lo = t.initial_value_lo;
             const std::vector<TYPE> &is_original = t.is_original;
+            const std::vector<TYPE> &internal_counter = t.internal_counter;
 
             std::vector<std::array<TYPE, op_selectors_amount>> op_selectors(max_state);
             std::vector<std::array<TYPE, diff_index_selectors_amount>> diff_index_selectors(max_state);
@@ -197,7 +198,7 @@ namespace nil::blueprint::bbf::zkevm_big_field{
 
             std::map<rw_operation_type, std::size_t> op_selector_indices;
             std::size_t index = 0;
-            op_selector_indices[rw_operation_type::call_context] = index++;
+            op_selector_indices[rw_operation_type::state_call_context] = index++;
             op_selector_indices[rw_operation_type::access_list] = index++;
             op_selector_indices[rw_operation_type::state] = index++;
             op_selector_indices[rw_operation_type::transient_storage] = index++;
@@ -294,7 +295,7 @@ namespace nil::blueprint::bbf::zkevm_big_field{
                     if( is_last[i-1] != 0 && id[i] != id[i-1] ) last_in_call_selector[i - 1] = 1;
                     last_in_reverted_call_selector[i-1] = last_in_call_selector[i-1] * is_reverted[i-1];
 
-                    if( state_trace[i].op == rw_operation_type::call_context ){
+                    if( state_trace[i].op == rw_operation_type::state_call_context ){
                         counter[i] = 0;
                     } else if( op[i] == op[i-1] &&
                         address[i] == address[i-1] &&
@@ -373,6 +374,8 @@ namespace nil::blueprint::bbf::zkevm_big_field{
             }
 
             constrain(op[0] - START_OP);
+            constrain(internal_counter[0]);
+
             if constexpr (stage == GenerationStage::CONSTRAINTS) {
                 std::vector<TYPE> every_row_constraints;
                 std::vector<TYPE> non_first_row_constraints;
@@ -396,7 +399,7 @@ namespace nil::blueprint::bbf::zkevm_big_field{
                 TYPE access_list_selector = op_selectors[1][op_selector_indices[rw_operation_type::access_list]];
                 TYPE state_selector = op_selectors[1][op_selector_indices[rw_operation_type::state]];
                 TYPE transient_storage_selector = op_selectors[1][op_selector_indices[rw_operation_type::transient_storage]];
-                TYPE call_context_selector = op_selectors[1][op_selector_indices[rw_operation_type::call_context]];
+                TYPE call_context_selector = op_selectors[1][op_selector_indices[rw_operation_type::state_call_context]];
                 TYPE padding_selector = op_selectors[1][op_selector_indices[rw_operation_type::padding]];
 
                 TYPE access_list_selector_prev = op_selectors[0][op_selector_indices[rw_operation_type::access_list]];
@@ -538,10 +541,14 @@ namespace nil::blueprint::bbf::zkevm_big_field{
                     last_in_reverted_call_selector[1] - is_reverted[1] * last_in_call_selector[1]
                 );
 
+                non_first_row_constraints.push_back(
+                    filled_selector * (internal_counter[1] - internal_counter[0] - is_first[1])
+                );
+
                 // Parent lookup
                 std::vector<TYPE> parent_lookup = {
                     filled_selector,
-                    filled_selector * TYPE(std::size_t(rw_operation_type::call_context)),
+                    filled_selector * TYPE(std::size_t(rw_operation_type::state_call_context)),
                     filled_selector * id[1],
                     filled_selector * TYPE(std::size_t(state_call_context_fields::parent_id)),
                     TYPE(0),
@@ -557,7 +564,7 @@ namespace nil::blueprint::bbf::zkevm_big_field{
                 };
                 std::vector<TYPE> reverted_lookup = {
                     filled_selector,
-                    filled_selector * TYPE(std::size_t(rw_operation_type::call_context)),
+                    filled_selector * TYPE(std::size_t(rw_operation_type::state_call_context)),
                     filled_selector * id[1],
                     filled_selector * TYPE(std::size_t(state_call_context_fields::is_reverted)),
                     TYPE(0),
@@ -573,7 +580,7 @@ namespace nil::blueprint::bbf::zkevm_big_field{
                 };
                 std::vector<TYPE> modified_items_column_lookup = {
                     filled_selector,
-                    filled_selector * TYPE(std::size_t(rw_operation_type::call_context)),
+                    filled_selector * TYPE(std::size_t(rw_operation_type::state_call_context)),
                     filled_selector * id[1],
                     filled_selector * TYPE(std::size_t(state_call_context_fields::modified_items)),
                     TYPE(0),
@@ -589,7 +596,7 @@ namespace nil::blueprint::bbf::zkevm_big_field{
                 };
                 std::vector<TYPE> grandparent_lookup = {
                     is_not_block[1],
-                    is_not_block[1] * TYPE(std::size_t(rw_operation_type::call_context)),
+                    is_not_block[1] * TYPE(std::size_t(rw_operation_type::state_call_context)),
                     is_not_block[1] * parent_id[1],
                     is_not_block[1] * TYPE(std::size_t(state_call_context_fields::parent_id)),
                     TYPE(0),
@@ -621,7 +628,7 @@ namespace nil::blueprint::bbf::zkevm_big_field{
                 };
                 std::vector<TYPE> modified_items_lookup = {
                     TYPE(1),
-                    TYPE(std::size_t(rw_operation_type::call_context)),
+                    TYPE(std::size_t(rw_operation_type::state_call_context)),
                     id[1],
                     TYPE(std::size_t(state_call_context_fields::modified_items)),
                     TYPE(0),
@@ -637,7 +644,7 @@ namespace nil::blueprint::bbf::zkevm_big_field{
                 };
                 std::vector<TYPE> end_call_lookup = {
                     TYPE(1),
-                    TYPE(std::size_t(rw_operation_type::call_context)),
+                    TYPE(std::size_t(rw_operation_type::state_call_context)),
                     id[1],
                     TYPE(std::size_t(state_call_context_fields::end_call_rw_id)),
                     TYPE(0),
@@ -653,7 +660,7 @@ namespace nil::blueprint::bbf::zkevm_big_field{
                 };
                 std::vector<TYPE> revert_end_call_lookup = {
                     TYPE(1),
-                    TYPE(std::size_t(rw_operation_type::call_context)),
+                    TYPE(std::size_t(rw_operation_type::state_call_context)),
                     id[1],
                     TYPE(std::size_t(state_call_context_fields::end_call_rw_id)),
                     TYPE(0),

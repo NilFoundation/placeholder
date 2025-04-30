@@ -47,8 +47,10 @@ namespace nil::blueprint::bbf::zkevm_big_field{
         std::vector<TYPE> is_write;
         std::vector<TYPE> value_hi;
         std::vector<TYPE> value_lo;
-\
-        static std::size_t get_witness_amount(){ return 7; }
+        std::vector<TYPE> internal_counter;
+        std::vector<TYPE> is_filled;
+
+        static std::size_t get_witness_amount(){ return 9; }
 
         static std::vector<TYPE> call_context_lookup(
             TYPE call_id,
@@ -201,7 +203,9 @@ namespace nil::blueprint::bbf::zkevm_big_field{
             rw_id(max_rw_size),
             is_write(max_rw_size),
             value_hi(max_rw_size),
-            value_lo(max_rw_size)
+            value_lo(max_rw_size),
+            internal_counter(max_rw_size),
+            is_filled(max_rw_size)
         {
             if constexpr  (stage == GenerationStage::ASSIGNMENT) {
                 auto rw_trace = input;
@@ -217,6 +221,8 @@ namespace nil::blueprint::bbf::zkevm_big_field{
                     rw_id[i] = rw_trace[i].rw_counter;
                     value_hi[i] = w_hi<FieldType>(rw_trace[i].value);
                     value_lo[i] = w_lo<FieldType>(rw_trace[i].value);
+                    internal_counter[i] = rw_trace[i].internal_counter;
+                    is_filled[i] = i == 0? 0 :1;
                 }
                 for( std::size_t i = rw_trace.size(); i < max_rw_size; i++ ){
                     op[i] = std::size_t(rw_operation_type::padding);
@@ -224,15 +230,18 @@ namespace nil::blueprint::bbf::zkevm_big_field{
             }
             for( std::size_t i = 0; i < max_rw_size; i++ ){
                 std::size_t current_column = 0;
-                allocate(op[i], current_column++, i);
-                allocate(id[i], current_column++, i);
-                allocate(address[i], current_column++, i);
-                allocate(rw_id[i], current_column++, i);
-                allocate(is_write[i], current_column++, i);
-                allocate(value_hi[i], current_column++, i);
-                allocate(value_lo[i], current_column++, i);
+                allocate(op[i], current_column++, i);                       // 0
+                allocate(id[i], current_column++, i);                       // 1
+                allocate(address[i], current_column++, i);                  // 2
+                allocate(rw_id[i], current_column++, i);                    // 3
+                allocate(is_write[i], current_column++, i);                 // 4
+                allocate(value_hi[i], current_column++, i);                 // 5
+                allocate(value_lo[i], current_column++, i);                 // 6
+                allocate(is_filled[i], current_column++, i);                // 7
+                allocate(internal_counter[i], current_column++, i);         // 8
             }
             lookup_table("zkevm_rw",std::vector<std::size_t>({0,1,2,3,4,5,6}),0,max_rw_size);
+            lookup_table("zkevm_rw_timeline",std::vector<std::size_t>({7,3,8}),0,max_rw_size);
         }
     };
 }

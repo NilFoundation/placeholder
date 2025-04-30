@@ -44,39 +44,42 @@ namespace nil {
                 calldata = 4,
                 returndata = 5,
                 blobhash = 6,
-                access_list = 7,
-                state = 8,              // Grouped by block, includes STORAGE and ACCOUNT operations
-                transient_storage = 9,  // Grouped by transaction
-                padding = 10
+                state_call_context = 7,
+                access_list = 8,
+                state = 9,              // Grouped by block, includes STORAGE and ACCOUNT operations
+                transient_storage = 10,  // Grouped by transaction
+                padding = 11
             };
             static constexpr std::size_t short_rw_operation_types_amount = 8;
             static constexpr std::size_t state_operation_types_amount = 6;
 
             std::string rw_operation_type_to_string(rw_operation_type op){
                 switch (op) {
-                    case rw_operation_type::start:
-                        return "START";
-                    case rw_operation_type::call_context:
-                        return "CALL_CONTEXT";
-                    case rw_operation_type::stack:
-                        return "STACK";
-                    case rw_operation_type::memory:
-                        return "MEMORY";
-                    case rw_operation_type::calldata:
-                        return "CALLDATA";
-                    case rw_operation_type::returndata:
-                        return "RETURNDATA";
-                    case rw_operation_type::blobhash:
-                        return "BLOBHASH";
-                    case rw_operation_type::access_list:
-                        return "ACCESS_LIST";
-                    case rw_operation_type::state:
-                        return "STATE";
-                    case rw_operation_type::transient_storage:
-                        return "TRANSIENT_STORAGE";
-                    default:
-                        BOOST_ASSERT(false);
-                    return "UNKNOWN";
+                case rw_operation_type::start:
+                    return "START";
+                case rw_operation_type::call_context:
+                    return "CALL_CONTEXT";
+                case rw_operation_type::stack:
+                    return "STACK";
+                case rw_operation_type::memory:
+                    return "MEMORY";
+                case rw_operation_type::calldata:
+                    return "CALLDATA";
+                case rw_operation_type::returndata:
+                    return "RETURNDATA";
+                case rw_operation_type::blobhash:
+                    return "BLOBHASH";
+                case rw_operation_type::state_call_context:
+                    return "STATE_CALL_CONTEXT";
+                case rw_operation_type::access_list:
+                    return "ACCESS_LIST";
+                case rw_operation_type::state:
+                    return "STATE";
+                case rw_operation_type::transient_storage:
+                    return "TRANSIENT_STORAGE";
+                default:
+                    BOOST_ASSERT(false);
+                return "UNKNOWN";
                 }
             }
         } // namespace bbf

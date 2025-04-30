@@ -38,9 +38,9 @@ namespace nil {
         namespace bbf {
             enum class state_call_context_fields: std::uint8_t {
                 parent_id = 0,
-                is_reverted = 1,
-                modified_items = 2,
-                end_call_rw_id = 3
+                is_reverted = 10,
+                modified_items = 11,
+                end_call_rw_id = 12
             };
             static constexpr std::size_t state_call_context_fields_amount = 4;
 
@@ -62,6 +62,7 @@ namespace nil {
                 std::size_t             parent_id = 0;
                 std::size_t             grandparent_id = 0;
                 std::size_t             call_id = 0;
+                std::size_t             internal_counter = 0;
                 //zkevm_word_type         initial_root = 0;    // uncomment when MPT will be supported
                 //zkevm_word_type         root = 0;
 

@@ -106,7 +106,7 @@ namespace nil::blueprint::bbf::zkevm_big_field{
                 constrain(current_state.gas(0) - current_state.gas_next() - memory_expansion_cost);               // GAS transition
                 // constrain(current_state.stack_size(0) - current_state.stack_size_next() - 2);   // stack_size transition
                 // constrain(current_state.memory_size(0) - current_state.memory_size_next());     // memory_size transition
-                constrain(current_state.rw_counter_next() - current_state.rw_counter(0) - modified_items - 2 * length - 3);   // rw_counter transition
+                constrain(current_state.rw_counter_next() - current_state.rw_counter(0) - modified_items - 2 * length - 2);   // rw_counter transition
 
                 // TODO: If we should process reverting transactions, append end_transaction option for next opcode.
                 // Now only CALL revert-s supported now
@@ -133,7 +133,7 @@ namespace nil::blueprint::bbf::zkevm_big_field{
                 // Modified_items, returndatasize correctness
                 lookup({
                     TYPE(1),
-                    TYPE(std::size_t(rw_operation_type::call_context)),
+                    TYPE(std::size_t(rw_operation_type::state_call_context)),
                     current_state.call_id(0),
                     std::size_t(state_call_context_fields::modified_items),
                     TYPE(0),    //field

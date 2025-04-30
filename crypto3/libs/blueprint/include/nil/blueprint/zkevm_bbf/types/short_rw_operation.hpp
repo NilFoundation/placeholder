@@ -40,31 +40,27 @@ namespace nil {
                 // Grouped by call, no revertions
                 number = 0
             };
-            static constexpr std::size_t block_context_fields_amount = 5;
-
-            enum class tx_context_field: std::uint8_t {
-                // Grouped by call, no revertions
-                block_id = 0
-            };
-            static constexpr std::size_t tx_context_fields_amount = 6;
+            static constexpr std::size_t block_context_fields_amount = 1;
+            static constexpr std::size_t tx_context_fields_amount = 0;
 
             enum class call_context_field: std::uint8_t {
                 // Grouped by call, no revertions
-                parent_id = 0,
-                block_id = 1,
-                tx_id = 2,
-                call_context_value = 3,
-                call_context_address = 4,
-                calldata_size = 5,
-                depth = 6,
-                returndata_size = 7,
-                lastcall_id = 8,
-                lastcall_returndata_offset = 9,
-                lastcall_returndata_length = 10,
-                call_status = 11
+                parent_id = 1,
+                block_id = 2,
+                tx_id = 3,
+                call_context_value = 4,
+                call_context_address = 5,
+                calldata_size = 6,
+                depth = 7,
+                returndata_size = 8,
+                call_status = 9,
+
+                lastcall_id = 13,
+                lastcall_returndata_offset = 14,
+                lastcall_returndata_length = 15
             };
-            static constexpr std::size_t call_context_readonly_field_amount = 12;
-            static constexpr std::size_t call_context_fields_amount = 18;
+            static constexpr std::size_t call_context_readonly_field_amount = 13;
+            static constexpr std::size_t call_context_fields_amount = 12;
 
             struct short_rw_operation{
                 rw_operation_type op = rw_operation_type::start;           // operation type
@@ -73,6 +69,7 @@ namespace nil {
                 std::size_t             rw_counter = 0;
                 bool                    is_write = false;
                 zkevm_word_type         value = 0;
+                std::size_t             internal_counter = 0;
 
                 bool operator< (const short_rw_operation &other) const {
                     if( op != other.op ) return op < other.op;                                      // 16 bits

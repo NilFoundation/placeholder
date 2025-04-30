@@ -156,11 +156,9 @@ namespace nil::blueprint::bbf::zkevm_big_field{
                     length
                 }, "zkevm_copy");
                 lookup({
-                    rw_table<FieldType, stage>::call_context_editable_lookup(
+                    rw_table<FieldType, stage>::call_context_lookup(
                         current_state.call_id(0),
                         std::size_t(call_context_field::call_status),
-                        current_state.rw_counter(0) + 2 * length + 2,
-                        TYPE(1), // is_write
                         TYPE(0),
                         TYPE(1)
                     )

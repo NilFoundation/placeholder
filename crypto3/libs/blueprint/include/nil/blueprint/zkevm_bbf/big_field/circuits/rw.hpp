@@ -32,6 +32,8 @@
 
 #include <nil/blueprint/bbf/generic.hpp>
 #include <nil/blueprint/zkevm_bbf/big_field/subcomponents/rw_table.hpp>
+#include <nil/blueprint/zkevm_bbf/big_field/subcomponents/state_table.hpp>
+#include <nil/blueprint/zkevm_bbf/big_field/subcomponents/timeline_table.hpp>
 
 namespace nil::blueprint::bbf::zkevm_big_field{
     template<typename FieldType, GenerationStage stage>
@@ -48,7 +50,15 @@ namespace nil::blueprint::bbf::zkevm_big_field{
         using typename generic_component<FieldType,stage>::TYPE;
 
         using rw_table_type = rw_table<FieldType, stage>;
-        using input_type = typename rw_table_type::input_type;
+        using state_table_type = state_table<FieldType, stage>;
+        using timeline_table_type = timeline_table<FieldType, stage>;
+
+        struct input_type{
+            typename rw_table_type::input_type rw_trace;
+            typename timeline_table_type::input_type timeline;
+            typename state_table_type::input_type state_trace;
+        };
+
         using value = typename FieldType::value_type;
         using integral_type = nil::crypto3::multiprecision::big_uint<257>;
 
@@ -64,26 +74,32 @@ namespace nil::blueprint::bbf::zkevm_big_field{
         static constexpr std::size_t diff_index_selectors_amount = 7;
 
         static table_params get_minimal_requirements(
-            std::size_t max_rw_size
+            std::size_t max_rw_size,
+            std::size_t max_state_size
         ) {
+            std::size_t witness_amount = rw_table_type::get_witness_amount()
+                + state_table_type::get_witness_amount()
+                + timeline_table_type::get_witness_amount()
+                + chunks_amount                                 // Additional chunks
+                + diff_index_selectors_amount                   // Diff selector
+                + op_selectors_amount                           // Selectors for op
+                + 6;
+            BOOST_LOG_TRIVIAL(info) << "RW circuit witness amount = " << witness_amount;
             return {
-                .witnesses = rw_table_type::get_witness_amount()
-                    + chunks_amount                                 // Additional chunks
-                    + diff_index_selectors_amount                   // Diff selector
-                    + op_selectors_amount                           // Selectors for op
-                    + 6,
+                .witnesses = witness_amount,
                 .public_inputs = 0,
                 .constants = 0,
-                .rows = max_rw_size
+                .rows = max_rw_size + max_state_size
             };
         }
 
         static void allocate_public_inputs(
-            context_type &context, input_type &input, std::size_t max_rw_size
+            context_type &context, input_type &input, std::size_t max_rw_size, std::size_t max_state
         ) {}
 
         rw(context_type &context_object, const input_type &input,
-            std::size_t max_rw_size
+            std::size_t max_rw_size,
+            std::size_t max_state
         ) :generic_component<FieldType,stage>(context_object) {
             std::size_t START_OP = std::size_t(rw_operation_type::start);
             std::size_t STACK_OP = std::size_t(rw_operation_type::stack);
@@ -94,11 +110,22 @@ namespace nil::blueprint::bbf::zkevm_big_field{
             std::size_t BLOBHASH_OP = std::size_t(rw_operation_type::blobhash);
             std::size_t PADDING_OP = std::size_t(rw_operation_type::padding);
 
-            std::vector<std::size_t> rw_table_area;
-            for( std::size_t i = 0; i < rw_table_type::get_witness_amount(); i++ ) rw_table_area.push_back(i);
+            std::size_t current_column = 0;
 
+            std::vector<std::size_t> rw_table_area;
+            for( std::size_t i = 0; i < rw_table_type::get_witness_amount(); i++ ) rw_table_area.push_back(current_column++);
             context_type rw_table_ct = context_object.subcontext(rw_table_area,0,max_rw_size);
-            rw_table_type t(rw_table_ct, input, max_rw_size, true);
+            rw_table_type t(rw_table_ct, input.rw_trace, max_rw_size, true);
+
+            std::vector<std::size_t> timeline_table_area;
+            for( std::size_t i = 0; i < timeline_table_type::get_witness_amount(); i++ ) timeline_table_area.push_back(current_column++);
+            context_type timeline_table_ct = context_object.subcontext(timeline_table_area,0,max_rw_size + max_state);
+            timeline_table_type tt(timeline_table_ct, input.timeline, max_rw_size + max_state);
+
+            std::vector<std::size_t> state_table_area;
+            for( std::size_t i = 0; i < state_table_type::get_witness_amount(); i++ ) state_table_area.push_back(current_column++);
+            context_type state_table_ct = context_object.subcontext(state_table_area,0,max_state);
+            state_table_type st(state_table_ct, input.state_trace, max_state);
 
             const std::vector<TYPE> &op = t.op;
             const std::vector<TYPE> &id = t.id;
@@ -107,6 +134,8 @@ namespace nil::blueprint::bbf::zkevm_big_field{
             const std::vector<TYPE> &is_write = t.is_write;
             const std::vector<TYPE> &value_hi = t.value_hi;
             const std::vector<TYPE> &value_lo = t.value_lo;
+            const std::vector<TYPE> &internal_counter = t.internal_counter;
+            const std::vector<TYPE> &is_filled = t.is_filled;
 
             // Allocated cells
             std::vector<std::array<TYPE,op_selectors_amount>> op_selectors(max_rw_size);
@@ -141,8 +170,19 @@ namespace nil::blueprint::bbf::zkevm_big_field{
             op_selector_indices[rw_operation_type::padding] = index++;
 
             if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                auto rw_trace = input;
-                BOOST_LOG_TRIVIAL(trace) << "RW trace.size = " << rw_trace.size() << std::endl;
+                for(std::size_t i = 0; i < input.timeline.size(); i++){
+                    BOOST_LOG_TRIVIAL(trace)
+                            << "\ttime " << i
+                            << " rw_id = " << input.timeline[i].rw_id << " "
+                            << rw_operation_type_to_string(input.timeline[i].op)
+                            << " internal_counter = " << input.timeline[i].internal_counter;
+                }
+                for(std::size_t i = 0; i < input.state_trace.size(); i++){
+                    BOOST_LOG_TRIVIAL(trace) << "STATE " << i << " " << input.state_trace[i];
+                }
+
+                auto rw_trace = input.rw_trace;
+                BOOST_LOG_TRIVIAL(trace) << "RW trace.size = " << rw_trace.size();
 
                 for( std::size_t i = 0; i < rw_trace.size(); i++ ){
                     // First operations is always start i.e. 0
@@ -184,7 +224,7 @@ namespace nil::blueprint::bbf::zkevm_big_field{
                         is_first[i] = 1;
                         if(i != 0) is_last[i-1] = 1;
                     }
-                    BOOST_LOG_TRIVIAL(trace) << i << ". " << rw_trace[i] << " is_first = " << is_first[i] << " is_last = " << is_last[i];
+                    BOOST_LOG_TRIVIAL(debug) << i << ". " << rw_trace[i] << " is_first = " << is_first[i] << " is_last = " << is_last[i];
 
                     diff[i] = sorted[diff_ind] - sorted_prev[diff_ind];
                     inv_diff[i] = diff[i] == 0? 0: diff[i].inversed();
@@ -202,7 +242,7 @@ namespace nil::blueprint::bbf::zkevm_big_field{
             }
 
             for( std::size_t i = 0; i < max_rw_size; i++){
-                std::size_t cur_column = rw_table_type::get_witness_amount();
+                std::size_t cur_column = rw_table_type::get_witness_amount() + state_table_type::get_witness_amount() + timeline_table_type::get_witness_amount();
                 for( std::size_t j = 0; j < op_selectors_amount; j++){
                     allocate(op_selectors[i][j], ++cur_column, i);
                 };
@@ -220,6 +260,8 @@ namespace nil::blueprint::bbf::zkevm_big_field{
             }
 
             constrain(op[0] - START_OP);
+            constrain(internal_counter[0]);
+            constrain(tt.internal_counter[0]);
 
             if constexpr (stage == GenerationStage::CONSTRAINTS) {
                 std::vector<TYPE> every_row_constraints;
@@ -256,6 +298,11 @@ namespace nil::blueprint::bbf::zkevm_big_field{
                     non_first_row_constraints.push_back(diff_index_selectors[1][j] * (diff_index_selectors[1][j] - 1));
                 }
                 non_first_row_constraints.push_back(diff_ind_selectors_sum * (diff_ind_selectors_sum - 1));
+
+                TYPE non_rw_counter_diff_ind_selectors_sum;
+                for(std::size_t j = 0; j < diff_index_selectors_amount-2; j++){
+                    non_rw_counter_diff_ind_selectors_sum += diff_index_selectors[1][j];
+                }
 
                 for( std::size_t s_ind = 0; s_ind < sorted.size() - 1; s_ind++ ){
                     TYPE eq_selector;
@@ -307,10 +354,12 @@ namespace nil::blueprint::bbf::zkevm_big_field{
                 TYPE blobhash_selector = op_selectors[1][op_selector_indices[rw_operation_type::blobhash]];
                 TYPE padding_selector = op_selectors[1][op_selector_indices[rw_operation_type::padding]];
 
+                every_row_constraints.push_back(is_filled[1] - (calldata_selector + returndata_selector + memory_selector + stack_selector + call_context_selector + blobhash_selector));
                 every_row_constraints.push_back((calldata_selector + returndata_selector) *  is_write[1] * (1 - is_first[1]) );
                 every_row_constraints.push_back(is_write[1] *(blobhash_selector + padding_selector));
                 non_first_row_constraints.push_back((1 - padding_selector) * (1 - is_diff_non_zero[1]));
                 every_row_constraints.push_back(value_hi[1] *(calldata_selector + returndata_selector + memory_selector + padding_selector));
+
                 chunked_16_lookups.push_back(value_lo[1] * (calldata_selector + returndata_selector + memory_selector));
                 chunked_16_lookups.push_back((255 - value_lo[1]) * (calldata_selector + returndata_selector + memory_selector));
                 chunked_16_lookups.push_back(stack_selector * address[1]);
@@ -318,6 +367,42 @@ namespace nil::blueprint::bbf::zkevm_big_field{
 
                 non_first_row_constraints.push_back(stack_selector * (1 - is_first[1]) * (address[1] - address[0]) * (address[1] - address[0] - 1));
                 non_first_row_constraints.push_back((memory_selector + calldata_selector + returndata_selector) * is_first[1] * (1 - is_write[1]) * value_lo[1]);
+                non_first_row_constraints.push_back(is_filled[1] * (internal_counter[1] - internal_counter[0] - non_rw_counter_diff_ind_selectors_sum));
+
+                non_first_row_constraints.push_back(tt.rw_table_selector[1] * (tt.rw_table_selector[1] - 1));
+                non_first_row_constraints.push_back(tt.state_table_selector[1] * (tt.state_table_selector[1] - 1));
+                non_first_row_constraints.push_back((tt.state_table_selector[1] + tt.rw_table_selector[1] - 1) * (tt.state_table_selector[1] + tt.rw_table_selector[1]));
+                non_first_row_constraints.push_back(
+                    (1 - tt.state_table_selector[1] - tt.rw_table_selector[1]) *
+                    (tt.state_table_selector[2] + tt.rw_table_selector[2])
+                );
+                non_first_row_constraints.push_back((tt.state_table_selector[1] + tt.rw_table_selector[1]) * (tt.rw_id[1] - tt.rw_id[0] - 1));
+
+                context_object.relative_lookup({
+                    context_object.relativize(tt.rw_table_selector[1], -1),
+                    context_object.relativize(tt.rw_table_selector[1] * tt.rw_id[1], -1),
+                    context_object.relativize(tt.rw_table_selector[1] * tt.internal_counter[1], -1)
+                }, "zkevm_rw_timeline", 0, max_rw_size + max_state - 1);
+
+                context_object.relative_lookup({
+                    context_object.relativize(tt.state_table_selector[1], -1),
+                    context_object.relativize(tt.state_table_selector[1] * tt.rw_id[1], -1),
+                    context_object.relativize(tt.state_table_selector[1] * tt.internal_counter[1], -1)
+                }, "zkevm_state_timeline", 0, max_rw_size + max_state - 1);
+
+                context_object.relative_lookup({
+                    context_object.relativize(is_filled[1] * rw_id[1], -1),
+                    context_object.relativize(is_filled[1], -1),
+                    context_object.relativize(TYPE(0), -1),
+                    context_object.relativize(is_filled[1] * internal_counter[1], -1)
+                }, "zkevm_timeline", 0, max_rw_size-1);
+
+                context_object.relative_lookup({
+                    context_object.relativize(st.is_original[1] * st.rw_id[1], -1),
+                    context_object.relativize(TYPE(0), -1),
+                    context_object.relativize(st.is_original[1], -1),
+                    context_object.relativize(st.is_original[1] * st.internal_counter[1], -1)
+                }, "zkevm_timeline", 0, max_state-1);
 
                 for( auto& constraint: every_row_constraints){
                     context_object.relative_constrain(context_object.relativize(constraint, -1), 0, max_rw_size-1);

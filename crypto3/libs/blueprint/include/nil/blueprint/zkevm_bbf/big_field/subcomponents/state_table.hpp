@@ -55,8 +55,9 @@ namespace nil::blueprint::bbf::zkevm_big_field{
         std::vector<TYPE> initial_value_hi;             // 12
         std::vector<TYPE> initial_value_lo;             // 13
         std::vector<TYPE> is_original;                  // 14
+        std::vector<TYPE> internal_counter;             // 15
 
-        static std::size_t get_witness_amount(){ return 15; }
+        static std::size_t get_witness_amount(){ return 16; }
 
         state_table(context_type &context_object, const input_type &input, std::size_t max_state)
             :generic_component<FieldType,stage>(context_object),
@@ -74,7 +75,8 @@ namespace nil::blueprint::bbf::zkevm_big_field{
             previous_value_lo(max_state),
             initial_value_hi(max_state),
             initial_value_lo(max_state),
-            is_original(max_state)
+            is_original(max_state),
+            internal_counter(max_state)
         {
             BOOST_LOG_TRIVIAL(trace) << "State table";
             auto &state_trace = input;
@@ -97,6 +99,7 @@ namespace nil::blueprint::bbf::zkevm_big_field{
                     initial_value_hi[i] = w_hi<FieldType>(state_trace[i].initial_value);
                     initial_value_lo[i] = w_lo<FieldType>(state_trace[i].initial_value);
                     if( i!=0 ) is_original[i] = state_trace[i].is_original? 1 : 0;
+                    internal_counter[i] = state_trace[i].internal_counter;
                 }
                 for( std::size_t i = state_trace.size(); i < max_state; i++ ){
                     op[i] = std::size_t(rw_operation_type::padding);
@@ -119,8 +122,10 @@ namespace nil::blueprint::bbf::zkevm_big_field{
                 allocate(previous_value_lo[i], current_column++, i);    //12
                 allocate(initial_value_hi[i], current_column++, i);     //13
                 allocate(initial_value_lo[i], current_column++, i);     //14
+                allocate(internal_counter[i], current_column++, i);      //15
             }
             lookup_table("zkevm_state_opcode",std::vector<std::size_t>({0,1,2,3,4,5,6,7,8,9,10,11,12,13,14}),0,max_state);
+            lookup_table("zkevm_state_timeline",std::vector<std::size_t>({0,7,15}),0,max_state);
         }
     };
 }

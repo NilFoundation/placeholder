@@ -38,6 +38,7 @@
 #include <nil/blueprint/zkevm_bbf/types/zkevm_account.hpp>
 #include <nil/blueprint/zkevm_bbf/types/call_context.hpp>
 #include <nil/blueprint/zkevm_bbf/types/call_state_data.hpp>
+#include <nil/blueprint/zkevm_bbf/types/timeline_item.hpp>
 
 #include <nil/blueprint/zkevm_bbf/types/zkevm_block.hpp>
 #include <nil/blueprint/zkevm_bbf/types/zkevm_transaction.hpp>
@@ -65,6 +66,7 @@ namespace nil {
                 std::vector<std::pair<zkevm_word_type, zkevm_word_type>> _exponentiations;
                 std::map<zkevm_word_type, zkevm_account>                 _accounts;
                 std::map<std::size_t, zkevm_call_state_data>            _call_state_data;
+                std::vector<timeline_item>                              _timeline;
 
                 std::set<zkevm_word_type>                                 _bytecode_hashes;
                 std::vector<std::map<std::tuple<rw_operation_type, zkevm_word_type, std::size_t, zkevm_word_type>, std::size_t>> last_state_counter_stack;
@@ -77,6 +79,7 @@ namespace nil {
                 virtual std::vector<zkevm_state> zkevm_states() { return _zkevm_states;}
                 virtual std::vector<std::pair<zkevm_word_type, zkevm_word_type>> exponentiations(){return _exponentiations;}
                 virtual std::map<std::size_t, zkevm_call_state_data> call_state_data(){return _call_state_data;}
+                virtual std::vector<timeline_item> timeline(){return _timeline;}
 
                 zkevm_basic_input_generator(abstract_block_loader *_loader): zkevm_basic_evm(_loader){
                     rw_counter = 1;
@@ -84,8 +87,44 @@ namespace nil {
                     std::sort(_short_rw_operations.begin(), _short_rw_operations.end(), [](short_rw_operation a, short_rw_operation b){
                         return a < b;
                     });
+                    _timeline.push_back({
+                        0,
+                        rw_operation_type::start,
+                        0
+                    });
+                    for( std::size_t i = 1; i < _short_rw_operations.size(); i++){
+                        _short_rw_operations[i].internal_counter = _short_rw_operations[i-1].internal_counter;
+                        if(
+                            _short_rw_operations[i].op != _short_rw_operations[i-1].op ||
+                            _short_rw_operations[i].id != _short_rw_operations[i-1].id ||
+                            _short_rw_operations[i].address != _short_rw_operations[i-1].address
+                        ) _short_rw_operations[i].internal_counter++;
+                        _timeline.push_back({
+                            _short_rw_operations[i].rw_counter,
+                            _short_rw_operations[i].op,
+                            _short_rw_operations[i].internal_counter
+                        });
+                    }
                     std::sort(_state_operations.begin(), _state_operations.end(), [](state_operation a, state_operation b){
                         return a < b;
+                    });
+                    for(std::size_t i = 1; i < _state_operations.size(); i++ ){
+                        _state_operations[i].internal_counter = _state_operations[i-1].internal_counter;
+                        if(
+                            _state_operations[i].op != _state_operations[i-1].op ||
+                            _state_operations[i].id != _state_operations[i-1].id ||
+                            _state_operations[i].address != _state_operations[i-1].address ||
+                            _state_operations[i].field != _state_operations[i-1].field ||
+                            _state_operations[i].storage_key != _state_operations[i-1].storage_key
+                        ) _state_operations[i].internal_counter++;
+                        if( _state_operations[i].is_original ) _timeline.push_back({
+                            _state_operations[i].rw_counter,
+                            _state_operations[i].op,
+                            _state_operations[i].internal_counter
+                        });
+                    }
+                    std::sort(_timeline.begin(), _timeline.end(), [](timeline_item a, timeline_item b){
+                        return a.rw_id < b.rw_id;
                     });
                 }
 
@@ -103,12 +142,38 @@ namespace nil {
                         rw_counter
                     ));
                     zkevm_basic_evm::start_block();
+                    _short_rw_operations.push_back(call_context_header_operation(
+                        block_id, call_context_field::parent_id, 0
+                    ));
+                    _short_rw_operations.push_back(call_context_header_operation(
+                        block_id, call_context_field::block_id, block_id
+                    ));
+                    _short_rw_operations.push_back(call_context_header_operation(
+                        block_id, call_context_field::tx_id, 0
+                    ));
+                    _short_rw_operations.push_back(call_context_header_operation(
+                        block_id, call_context_field::call_context_value, 0
+                    ));
+                    _short_rw_operations.push_back(call_context_header_operation(
+                        block_id, call_context_field::call_context_address, 0
+                    ));
+                    _short_rw_operations.push_back(call_context_header_operation(
+                        block_id, call_context_field::calldata_size, 0
+                    ));
+                    _short_rw_operations.push_back(call_context_header_operation(
+                        block_id, call_context_field::depth, 0
+                    ));
+                    _short_rw_operations.push_back(call_context_header_operation(
+                        block_id, call_context_field::returndata_size, 0
+                    ));
+                    _short_rw_operations.push_back(call_context_header_operation(
+                        block_id, call_context_field::call_status, 0
+                    ));
                     last_state_counter_stack.push_back({});
-                    rw_counter += block_context_fields_amount;
                     _call_stack.back().call_id = block_id;
                     {
                         state_operation s;
-                        s.op = rw_operation_type::call_context;
+                        s.op = rw_operation_type::state_call_context;
                         s.id = call_id;
                         s.address = std::size_t(state_call_context_fields::parent_id);
                         s.field = 0;
@@ -125,6 +190,7 @@ namespace nil {
                         _state_operations.push_back(s);
                     }
                     _call_state_data[call_id].parent_id = 0;
+                    rw_counter += call_context_readonly_field_amount;
                 }
 
                 virtual void start_transaction() override{
@@ -153,21 +219,14 @@ namespace nil {
                         _bytecode_hashes.insert(bytecode_hash);
                     }
                     append_call_context_readonly_fields();
-                    rw_counter += call_context_readonly_field_amount + tx_context_fields_amount;
-
-                    for( std::size_t i = 0; i < calldata.size(); i++ ){
-                        _short_rw_operations.push_back(calldata_rw_operation(
-                            call_id, i,rw_counter++, true, calldata[i]
-                        ));
-                    }
                     {
                         state_operation s;
-                        s.op = rw_operation_type::call_context;
+                        s.op = rw_operation_type::state_call_context;
                         s.id = call_id;
                         s.address = std::size_t(state_call_context_fields::parent_id);
                         s.field = 0;
                         s.storage_key = 0;
-                        s.rw_counter = call_id;
+                        s.rw_counter = call_id + std::size_t(state_call_context_fields::parent_id);
                         s.is_write = false;
                         s.initial_value = block_id;
                         s.call_initial_value = block_id;
@@ -177,6 +236,13 @@ namespace nil {
                         s.grandparent_id = 0;
                         s.call_id = call_id;
                         _state_operations.push_back(s);
+                    }
+                    rw_counter += call_context_readonly_field_amount + tx_context_fields_amount;
+
+                    for( std::size_t i = 0; i < calldata.size(); i++ ){
+                        _short_rw_operations.push_back(calldata_rw_operation(
+                            call_id, i,rw_counter++, true, calldata[i]
+                        ));
                     }
                     _call_state_data[call_id].parent_id = block_id;
                     print_accounts_current_state();
@@ -213,12 +279,12 @@ namespace nil {
                     _call_stack.back().call_id = call_id;
                     {
                         state_operation s;
-                        s.op = rw_operation_type::call_context;
+                        s.op = rw_operation_type::state_call_context;
                         s.id = call_id;
                         s.address = std::size_t(state_call_context_fields::parent_id);
                         s.field = 0;
                         s.storage_key = 0;
-                        s.rw_counter = call_id;
+                        s.rw_counter = call_id + std::size_t(state_call_context_fields::parent_id);
                         s.is_write = false;
                         s.initial_value = _call_stack[_call_stack.size() - 2].call_id;
                         s.call_initial_value = _call_stack[_call_stack.size() - 2].call_id;
@@ -323,10 +389,9 @@ namespace nil {
                     _zkevm_states.back().load_size_t_field(
                         zkevm_state_size_t_field::bytecode_size, bytecode.size()
                     );
-                    _short_rw_operations.push_back(call_context_w_operation(
+                    _short_rw_operations.push_back(call_context_header_operation(
                         call_id,
                         call_context_field::call_status,
-                        rw_counter++,
                         1
                     ));
                     zkevm_basic_evm::stop();
@@ -1122,10 +1187,9 @@ namespace nil {
                         cpy.push_byte(returndata[i]);
                     }
                     // Write call_status in call_context
-                    _short_rw_operations.push_back(call_context_w_operation(
+                    _short_rw_operations.push_back(call_context_header_operation(
                         call_id,
                         call_context_field::call_status,
-                        rw_counter++,
                         1
                     ));
                     if( length > 0 ) _copy_events.push_back(cpy);
@@ -1169,10 +1233,9 @@ namespace nil {
                         cpy.push_byte(returndata[i]);
                     }
                     // Write call_status in call_context
-                    _short_rw_operations.push_back(call_context_w_operation(
+                    _short_rw_operations.push_back(call_context_header_operation(
                         call_id,
                         call_context_field::call_status,
-                        rw_counter++,
                         0
                     ));
                 }
@@ -1243,6 +1306,11 @@ namespace nil {
                 virtual void end_transaction() override{
                     after_call_last_state_operation_update();
                     zkevm_basic_evm::end_transaction();
+                    _short_rw_operations.push_back(call_context_header_operation(
+                        call_id,
+                        call_context_field::returndata_size,
+                        returndata.size()
+                    ));
                     _zkevm_states.push_back(zkevm_state(
                         call_id,
                         bytecode_hash,
@@ -1269,7 +1337,7 @@ namespace nil {
                     ));
                     {
                         state_operation s;
-                        s.op = rw_operation_type::call_context;
+                        s.op = rw_operation_type::state_call_context;
                         s.id = block_id;
                         s.address = std::size_t(state_call_context_fields::modified_items);
                         s.field = 0;
@@ -1287,7 +1355,7 @@ namespace nil {
                     }
                     {
                         state_operation s;
-                        s.op = rw_operation_type::call_context;
+                        s.op = rw_operation_type::state_call_context;
                         s.id = block_id;
                         s.address = std::size_t(state_call_context_fields::is_reverted);
                         s.field = 0;
@@ -1309,7 +1377,7 @@ namespace nil {
                             if( end_call_rw_id < v) end_call_rw_id = v;
                         }
                         state_operation s;
-                        s.op = rw_operation_type::call_context;
+                        s.op = rw_operation_type::state_call_context;
                         s.id = block_id;
                         s.address = std::size_t(state_call_context_fields::end_call_rw_id);
                         s.field = 0;
@@ -1487,7 +1555,7 @@ namespace nil {
                 void after_call_last_state_operation_update(){
                     {
                         state_operation s;
-                        s.op = rw_operation_type::call_context;
+                        s.op = rw_operation_type::state_call_context;
                         s.id = call_id;
                         s.address = std::size_t(state_call_context_fields::modified_items);
                         s.field = 0;
@@ -1505,7 +1573,7 @@ namespace nil {
                     }
                     {
                         state_operation s;
-                        s.op = rw_operation_type::call_context;
+                        s.op = rw_operation_type::state_call_context;
                         s.id = call_id;
                         s.address = std::size_t(state_call_context_fields::is_reverted);
                         s.field = 0;
@@ -1528,7 +1596,7 @@ namespace nil {
                         }
 
                         state_operation s;
-                        s.op = rw_operation_type::call_context;
+                        s.op = rw_operation_type::state_call_context;
                         s.id = call_id;
                         s.address = std::size_t(state_call_context_fields::end_call_rw_id);
                         s.field = 0;

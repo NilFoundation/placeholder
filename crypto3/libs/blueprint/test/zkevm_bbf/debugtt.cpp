@@ -165,7 +165,9 @@ public:
         zkevm_wide_assignment_input.state_operations = circuit_inputs.state_operations();
 
         typename zkevm_big_field::rw<BlueprintFieldType, GenerationStage::ASSIGNMENT>::input_type rw_assignment_input;
-        rw_assignment_input = circuit_inputs.short_rw_operations();
+        rw_assignment_input.rw_trace = circuit_inputs.short_rw_operations();
+        rw_assignment_input.timeline = circuit_inputs.timeline();
+        rw_assignment_input.state_trace = circuit_inputs.state_operations();
 
         typename zkevm_big_field::state_transition<BlueprintFieldType, GenerationStage::ASSIGNMENT>::input_type state_assignment_input;
         state_assignment_input.state_trace = circuit_inputs.state_operations();
@@ -212,7 +214,7 @@ public:
         if (should_run_circuit(rw_circuit)) {
             BOOST_LOG_TRIVIAL(info) << std::endl << "circuit '" << rw_circuit << "'";
             result = test_bbf_component<BlueprintFieldType, nil::blueprint::bbf::zkevm_big_field::rw>(
-                "rw", {}, rw_assignment_input, max_rw
+                "rw", {}, rw_assignment_input, max_rw, max_state
             );
             BOOST_CHECK(result);
         }
