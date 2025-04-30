@@ -47,25 +47,25 @@ namespace nil {
 
             public:
                 using typename generic_component<FieldType,stage>::TYPE;
-                using input_type = typename std::conditional<stage == GenerationStage::ASSIGNMENT, std::vector<std::vector<TYPE>>, std::nullptr_t>::type;
+                using input_type = typename std::conditional<stage == GenerationStage::ASSIGNMENT, std::vector<TYPE>, std::nullptr_t>::type;
                 // struct input_type{
-                //     std::vector<TYPE> proof;
+                //     std::vector<TYPE> input;
                 // };
                 std::size_t max_rows;
 
                 // interfaces for interaction with other components:
                 std::vector<TYPE> path_num = std::vector<TYPE>(max_rows);
-                std::vector<TYPE> node_type = std::vector<TYPE>(max_rows);
-                std::vector<TYPE> key = std::vector<TYPE>(max_rows);
+                // std::vector<TYPE> node_type = std::vector<TYPE>(max_rows);
+                // std::vector<TYPE> key = std::vector<TYPE>(max_rows);
                 std::vector<std::size_t> table_lookup_area;
-                std::array<std::vector<TYPE>,32> child_hash;
+                // std::array<std::vector<TYPE>,32> child_hash;
 
                 static std::size_t get_witness_amount(){
-                    return 35;
+                    return 1;
                 }
 
                 child_hash_table(context_type &context_object,
-                    input_type input,
+                    const input_type input,
                     std::size_t max_rows_
                 ) :
                     max_rows(max_rows_),
@@ -73,21 +73,26 @@ namespace nil {
 
                     using value_type = typename FieldType::value_type;
 
-                    for(std::size_t i = 0; i < 32; i++) {
-                        child_hash[i].resize(max_rows);
-                    }
+                    std::cout << "max rows =" << max_rows << std::endl;
+
+
+                    // for(std::size_t i = 0; i < 32; i++) {
+                    //     child_hash[i].resize(max_rows);
+                    // }
                         
                     std::cout << "Child hash table:" << std::endl;
-                    std::cout << "input_size = " << input.size() << std::endl;
 
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
+                        std::cout << "input_size = " << input.size() << std::endl;
+
                         for (std::size_t i = 0; i < input.size(); i++) {
-                            path_num[i] = input[i][0];
-                            node_type[i] = input[i][1];
-                            key[i] = input[i][2];
-                            for (std::size_t b = 0; b < 32; b++) {
-                                child_hash[b][i] = input[i][b + 3];
-                            }
+                            std::cout << "input[" << i << "] = " << input[i] << std::endl;
+                            path_num[i] = input[i];
+                            // node_type[i] = input[i][1];
+                            // key[i] = input[i][2];
+                            // for (std::size_t b = 0; b < 32; b++) {
+                            //     child_hash[b][i] = input[i][b + 3];
+                            // }
                         }
                     }
 
@@ -105,6 +110,7 @@ namespace nil {
                         table_lookup_area.push_back(i);
                     }
                     lookup_table("child_hash_table", table_lookup_area, 0, max_rows);
+                    std::cout << "Child hash table - finished" << std::endl;
                 };
             };
         } // namespace bbf
