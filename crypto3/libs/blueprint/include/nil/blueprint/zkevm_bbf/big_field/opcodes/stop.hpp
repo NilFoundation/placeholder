@@ -60,7 +60,7 @@ namespace nil::blueprint::bbf::zkevm_big_field{
                 // constrain(current_state.gas(0) - current_state.gas_next() - 1);                 // GAS transition
                 // constrain(current_state.stack_size(0) - current_state.stack_size_next());       // stack_size transition
                 // constrain(current_state.memory_size(0) - current_state.memory_size_next());     // memory_size transition
-                constrain(current_state.rw_counter_next() - current_state.rw_counter(0) - 1);   // rw_counter transition
+                constrain(current_state.rw_counter_next() - current_state.rw_counter(0));   // rw_counter transition
 
                 constrain(current_state.opcode_next() - next_opcode); // Next opcode restrictions
                 // depth is correct
@@ -71,11 +71,9 @@ namespace nil::blueprint::bbf::zkevm_big_field{
                     depth + 2
                 ), "zkevm_rw");
 
-                lookup(rw_table<FieldType, stage>::call_context_editable_lookup(
+                lookup(rw_table<FieldType, stage>::call_context_lookup(
                     current_state.call_id(0),
                     std::size_t(call_context_field::call_status),
-                    current_state.rw_counter(0),
-                    TYPE(1), // is_write
                     TYPE(0),
                     TYPE(1)
                 ), "zkevm_rw");

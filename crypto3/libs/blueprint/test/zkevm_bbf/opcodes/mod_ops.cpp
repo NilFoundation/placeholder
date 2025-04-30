@@ -27,10 +27,9 @@
 #include <boost/assert.hpp>
 #include <boost/test/unit_test.hpp>
 
-#include <nil/crypto3/algebra/curves/pallas.hpp>
-#include <nil/crypto3/algebra/fields/arithmetic_params/pallas.hpp>
-#include <nil/crypto3/algebra/curves/vesta.hpp>
-#include <nil/crypto3/algebra/fields/arithmetic_params/vesta.hpp>
+#include <nil/crypto3/algebra/curves/alt_bn128.hpp>
+#include <nil/crypto3/algebra/fields/arithmetic_params/alt_bn128.hpp>
+#include <nil/crypto3/algebra/fields/babybear.hpp>
 #include <nil/crypto3/algebra/random_element.hpp>
 
 #include <nil/crypto3/hash/algorithm/hash.hpp>
@@ -46,8 +45,10 @@ using namespace nil::blueprint::bbf;
 // Here they are different for different tests just for fast and easy testing
 BOOST_GLOBAL_FIXTURE(zkEVMGlobalFixture);
 BOOST_FIXTURE_TEST_SUITE(zkevm_opcode_test_suite, zkEVMOpcodeTestFixture)
+    using big_field_type = typename nil::crypto3::algebra::curves::alt_bn128_254::base_field_type;
+    using small_field_type = typename algebra::fields::babybear;
+
 BOOST_AUTO_TEST_CASE(mod_ops) {
-    using field_type = typename algebra::curves::pallas::base_field_type;
     zkevm_opcode_tester opcode_tester;
 
     l1_size_restrictions max_sizes;
@@ -110,6 +111,6 @@ BOOST_AUTO_TEST_CASE(mod_ops) {
     max_sizes.max_rw = 500;
     max_sizes.max_copy = 500;
     max_sizes.max_zkevm_rows = 300;
-    complex_opcode_test<field_type>(opcode_tester, max_sizes);
+    complex_opcode_test<big_field_type, small_field_type>(opcode_tester, max_sizes);
 }
 BOOST_AUTO_TEST_SUITE_END()

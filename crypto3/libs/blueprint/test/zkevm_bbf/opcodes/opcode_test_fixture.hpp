@@ -63,7 +63,7 @@ using namespace nil::blueprint::bbf;
 
 class zkEVMOpcodeTestFixture: public CircuitTestFixture {
 public:
-    template<typename BlueprintFieldType>
+    template<typename BigFieldType, typename SmallFieldType>
     void complex_opcode_test(
         const zkevm_opcode_tester                       &opcode_tester,
         const l1_size_restrictions                      &max_sizes
@@ -73,8 +73,8 @@ public:
         BOOST_LOG_TRIVIAL(info) << circuit_inputs.print_statistics();
         BOOST_ASSERT(circuit_inputs.get_execution_status());
 
-        using integral_type = typename BlueprintFieldType::integral_type;
-        using value_type = typename BlueprintFieldType::value_type;
+        using integral_type = typename BigFieldType::integral_type;
+        using value_type = typename BigFieldType::value_type;
 
         integral_type base16 = integral_type(1) << 16;
 
@@ -88,58 +88,16 @@ public:
         std::size_t max_exp_rows = max_sizes.max_exp_rows;
         std::size_t max_state = max_sizes.max_state;
 
-        typename zkevm_big_field::copy<BlueprintFieldType, GenerationStage::ASSIGNMENT>::input_type copy_assignment_input;
-        copy_assignment_input.rlc_challenge = 7;
-        copy_assignment_input.bytecodes = circuit_inputs.bytecodes();
-        copy_assignment_input.keccak_buffers = circuit_inputs.keccaks();
-        copy_assignment_input.rw_operations = circuit_inputs.short_rw_operations();
-        copy_assignment_input.copy_events = circuit_inputs.copy_events();
-
-        typename zkevm_big_field::zkevm<BlueprintFieldType, GenerationStage::ASSIGNMENT>::input_type zkevm_assignment_input;
-        zkevm_assignment_input.rlc_challenge = 7;
-        zkevm_assignment_input.bytecodes = circuit_inputs.bytecodes();
-        zkevm_assignment_input.keccak_buffers = circuit_inputs.keccaks();
-        zkevm_assignment_input.rw_operations = circuit_inputs.short_rw_operations();
-        zkevm_assignment_input.copy_events = circuit_inputs.copy_events();
-        zkevm_assignment_input.zkevm_states = circuit_inputs.zkevm_states();
-        zkevm_assignment_input.exponentiations = circuit_inputs.exponentiations();
-        zkevm_assignment_input.state_operations = circuit_inputs.state_operations();
-
-        typename zkevm_big_field::zkevm_wide<BlueprintFieldType, GenerationStage::ASSIGNMENT>::input_type zkevm_wide_assignment_input;
-        zkevm_wide_assignment_input.rlc_challenge = 7;
-        zkevm_wide_assignment_input.bytecodes = circuit_inputs.bytecodes();
-        zkevm_wide_assignment_input.keccak_buffers = circuit_inputs.keccaks();
-        zkevm_wide_assignment_input.rw_operations = circuit_inputs.short_rw_operations();
-        zkevm_wide_assignment_input.copy_events = circuit_inputs.copy_events();
-        zkevm_wide_assignment_input.zkevm_states = circuit_inputs.zkevm_states();
-        zkevm_wide_assignment_input.exponentiations = circuit_inputs.exponentiations();
-        zkevm_assignment_input.state_operations = circuit_inputs.state_operations();
-
-        typename zkevm_big_field::rw<BlueprintFieldType, GenerationStage::ASSIGNMENT>::input_type rw_assignment_input;
-        rw_assignment_input.rw_trace = circuit_inputs.short_rw_operations();
-        rw_assignment_input.timeline = circuit_inputs.timeline();
-        rw_assignment_input.state_trace = circuit_inputs.state_operations();
-
-        typename zkevm_big_field::state_transition<BlueprintFieldType, GenerationStage::ASSIGNMENT>::input_type state_assignment_input;
-        state_assignment_input.state_trace = circuit_inputs.state_operations();
-        state_assignment_input.call_state_data = circuit_inputs.call_state_data();
-
-        typename zkevm_big_field::zkevm_keccak<BlueprintFieldType,nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type keccak_assignment_input;
+        typename zkevm_big_field::zkevm_keccak<BigFieldType,nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type keccak_assignment_input;
         keccak_assignment_input.rlc_challenge = 7;
         keccak_assignment_input.private_input = circuit_inputs.keccaks();
-
-        typename zkevm_big_field::bytecode<BlueprintFieldType, GenerationStage::ASSIGNMENT>::input_type bytecode_assignment_input;
-        bytecode_assignment_input.rlc_challenge = 7;
-        bytecode_assignment_input.bytecodes = circuit_inputs.bytecodes();
-        bytecode_assignment_input.keccak_buffers = circuit_inputs.keccaks();
-
-        auto exp_assignment_input = circuit_inputs.exponentiations();
 
         bool result;
 
         const std::string exp_circuit = "exp";
         if (should_run_circuit(exp_circuit)) {
-            result = test_bbf_component<BlueprintFieldType, zkevm_big_field::exponentiation>(
+            auto exp_assignment_input = circuit_inputs.exponentiations();
+            result = test_bbf_component<BigFieldType, zkevm_big_field::exponentiation>(
                 "exp",
                 {}, exp_assignment_input,
                 max_exp_rows,
@@ -152,7 +110,12 @@ public:
         const std::string bytecode_circuit = "bytecode";
         if (should_run_circuit(bytecode_circuit)) {
             BOOST_LOG_TRIVIAL(info) << "circuit '" << bytecode_circuit << "'";
-            result = test_bbf_component<BlueprintFieldType, zkevm_big_field::bytecode>(
+            typename zkevm_big_field::bytecode<BigFieldType, GenerationStage::ASSIGNMENT>::input_type bytecode_assignment_input;
+            bytecode_assignment_input.rlc_challenge = 7;
+            bytecode_assignment_input.bytecodes = circuit_inputs.bytecodes();
+            bytecode_assignment_input.keccak_buffers = circuit_inputs.keccaks();
+
+            result = test_bbf_component<BigFieldType, zkevm_big_field::bytecode>(
                 "bytecode",
                 {7}, bytecode_assignment_input, max_bytecode, max_keccak_blocks
             );
@@ -163,7 +126,12 @@ public:
         const std::string rw_circuit = "rw";
         if (should_run_circuit(rw_circuit)) {
             BOOST_LOG_TRIVIAL(info) << "circuit '" << rw_circuit << "'";
-            result = test_bbf_component<BlueprintFieldType, zkevm_big_field::rw>(
+            typename zkevm_big_field::rw<BigFieldType, GenerationStage::ASSIGNMENT>::input_type rw_assignment_input;
+            rw_assignment_input.rw_trace = circuit_inputs.short_rw_operations();
+            rw_assignment_input.timeline = circuit_inputs.timeline();
+            rw_assignment_input.state_trace = circuit_inputs.state_operations();
+
+            result = test_bbf_component<BigFieldType, zkevm_big_field::rw>(
                 "rw", {}, rw_assignment_input, max_rw, max_state
             );
             BOOST_CHECK(result);
@@ -173,7 +141,11 @@ public:
         const std::string state_circuit = "state";
         if (should_run_circuit(state_circuit)) {
             BOOST_LOG_TRIVIAL(info) << std::endl << "circuit '" << state_circuit << "'";
-            result = test_bbf_component<BlueprintFieldType, zkevm_big_field::state_transition>(
+            typename zkevm_big_field::state_transition<BigFieldType, GenerationStage::ASSIGNMENT>::input_type state_assignment_input;
+            state_assignment_input.state_trace = circuit_inputs.state_operations();
+            state_assignment_input.call_state_data = circuit_inputs.call_state_data();
+
+            result = test_bbf_component<BigFieldType, zkevm_big_field::state_transition>(
                 "state", {}, state_assignment_input, max_state
             );
             BOOST_CHECK(result);
@@ -183,7 +155,14 @@ public:
         const std::string copy_circuit = "copy";
         if (should_run_circuit(copy_circuit)) {
             BOOST_LOG_TRIVIAL(info) << "circuit '" << copy_circuit << "'";
-            result = test_bbf_component<BlueprintFieldType, zkevm_big_field::copy>(
+            typename zkevm_big_field::copy<BigFieldType, GenerationStage::ASSIGNMENT>::input_type copy_assignment_input;
+            copy_assignment_input.rlc_challenge = 7;
+            copy_assignment_input.bytecodes = circuit_inputs.bytecodes();
+            copy_assignment_input.keccak_buffers = circuit_inputs.keccaks();
+            copy_assignment_input.rw_operations = circuit_inputs.short_rw_operations();
+            copy_assignment_input.copy_events = circuit_inputs.copy_events();
+
+            result = test_bbf_component<BigFieldType, zkevm_big_field::copy>(
                 "copy", {7}, copy_assignment_input,
                 max_copy, max_rw, max_keccak_blocks, max_bytecode
             );
@@ -193,7 +172,17 @@ public:
         const std::string zkevm_circuit = "zkevm";
         if (should_run_circuit(zkevm_circuit)) {
             BOOST_LOG_TRIVIAL(info) << "circuit '" << zkevm_circuit << "'";
-            result = test_bbf_component<BlueprintFieldType, zkevm_big_field::zkevm>(
+            typename zkevm_big_field::zkevm<BigFieldType, GenerationStage::ASSIGNMENT>::input_type zkevm_assignment_input;
+            zkevm_assignment_input.rlc_challenge = 7;
+            zkevm_assignment_input.bytecodes = circuit_inputs.bytecodes();
+            zkevm_assignment_input.keccak_buffers = circuit_inputs.keccaks();
+            zkevm_assignment_input.rw_operations = circuit_inputs.short_rw_operations();
+            zkevm_assignment_input.copy_events = circuit_inputs.copy_events();
+            zkevm_assignment_input.zkevm_states = circuit_inputs.zkevm_states();
+            zkevm_assignment_input.exponentiations = circuit_inputs.exponentiations();
+            zkevm_assignment_input.state_operations = circuit_inputs.state_operations();
+
+            result = test_bbf_component<BigFieldType, zkevm_big_field::zkevm>(
                 "zkevm", {}, zkevm_assignment_input,
                 max_zkevm_rows, max_copy, max_rw, max_exponentiations, max_bytecode, max_state
             );
@@ -203,7 +192,17 @@ public:
         const std::string zkevm_wide_circuit = "zkevm-wide";
         if (should_run_circuit(zkevm_wide_circuit)) {
             BOOST_LOG_TRIVIAL(info) << "circuit '" << zkevm_wide_circuit << "'";
-            result = test_bbf_component<BlueprintFieldType, zkevm_big_field::zkevm_wide>(
+            typename zkevm_big_field::zkevm_wide<BigFieldType, GenerationStage::ASSIGNMENT>::input_type zkevm_wide_assignment_input;
+            zkevm_wide_assignment_input.rlc_challenge = 7;
+            zkevm_wide_assignment_input.bytecodes = circuit_inputs.bytecodes();
+            zkevm_wide_assignment_input.keccak_buffers = circuit_inputs.keccaks();
+            zkevm_wide_assignment_input.rw_operations = circuit_inputs.short_rw_operations();
+            zkevm_wide_assignment_input.copy_events = circuit_inputs.copy_events();
+            zkevm_wide_assignment_input.zkevm_states = circuit_inputs.zkevm_states();
+            zkevm_wide_assignment_input.exponentiations = circuit_inputs.exponentiations();
+            zkevm_wide_assignment_input.state_operations = circuit_inputs.state_operations();
+
+            result = test_bbf_component<BigFieldType, zkevm_big_field::zkevm_wide>(
                 "zkevm_wide", {}, zkevm_wide_assignment_input,
                 max_zkevm_rows, max_copy, max_rw, max_exponentiations, max_bytecode, max_state
             );
