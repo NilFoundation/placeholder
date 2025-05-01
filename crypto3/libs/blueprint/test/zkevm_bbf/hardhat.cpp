@@ -90,6 +90,7 @@ public:
         std::size_t max_rw = max_sizes.max_rw;
         std::size_t max_copy = max_sizes.max_copy;
         std::size_t max_zkevm_rows = max_sizes.max_zkevm_rows;
+        std::size_t max_log_rows = max_sizes.max_zkevm_rows;
         std::size_t max_exponentiations = max_sizes.max_exponentiations;
         std::size_t max_exp_rows = max_sizes.max_exp_rows;
         std::size_t max_call_commits = max_sizes.max_call_commits;
@@ -240,6 +241,7 @@ public:
         // }
 
         const std::string log_circuit = "tx_log";
+        auto start = std::chrono::high_resolution_clock::now();
         if (should_run_circuit(log_circuit)) {
             std::cout << "circuit '" << log_circuit << "'" << std::endl;
 
@@ -247,10 +249,16 @@ public:
             result = test_bbf_component<field_type, nil::blueprint::bbf::tx_log>(
                 log_circuit,
                 {}, log_assignment_input,
-                max_zkevm_rows,
+                max_log_rows,
                 max_keccak_blocks
             );
             BOOST_ASSERT(result);
+            auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::high_resolution_clock::now() - start
+        );
+        
+        std::cout << duration.count() << " ms\n";
+            std::cout << std::endl;
         }
     }
 };
@@ -394,7 +402,7 @@ BOOST_AUTO_TEST_CASE(indexed_log) {
     max_sizes.max_mpt = 0;
     max_sizes.max_rw = 3000;
     max_sizes.max_copy = 500;
-    max_sizes.max_zkevm_rows = 1000;
+    max_sizes.max_zkevm_rows = 5000;
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
     max_sizes.max_call_commits = 500;
