@@ -258,6 +258,8 @@ namespace nil::crypto3::zk::snark {
         }
     };
 
+    // TODO(martun): if we find time, get rid of all usages of std::holds_alternative.
+ 
     // This class stores all registered expressions, then runs over them as a visitor and
     // builds a DAG for them.
     template<typename VariableType>
@@ -300,17 +302,15 @@ namespace nil::crypto3::zk::snark {
             dag_node_statistics_visitor<VariableType> visitor;
 
             PROFILE_SCOPE("Squashing DAG expression.");
-std::cout << "Before squashing dag has " << result.nodes.size() << " nodes" << std::endl;
-visitor.print_stats(result);
+            std::cout << "DAG before Squashing" << std::endl;
+            visitor.print_stats(result);
+
             merge_children();
-std::cout << "After merging children dag has " << result.nodes.size() << " nodes" << std::endl;
-visitor.print_stats(result);
             remove_unreachable_nodes();
-std::cout << "After removing unreachable nodes dag has " << result.nodes.size() << " nodes" << std::endl;
-visitor.print_stats(result);
             remove_duplicates();
-std::cout << "After squashing dag has " << result.nodes.size() << " nodes" << std::endl;
-visitor.print_stats(result);
+
+            std::cout << "DAG after Squashing" << std::endl;
+            visitor.print_stats(result);
         }
 
         // Runs over the dag, looking at the addition and multiplication nodes. If it detects a pair of children than appear
@@ -322,7 +322,11 @@ visitor.print_stats(result);
             bool something_changed = false;
             do {
                 something_changed = false;
-                auto [add_co_occurence_map, mul_co_occurence_map] = generate_co_occurence_maps();
+                auto [add_occurences, mul_occurences] = generate_occurance_count();
+                auto [add_co_occurence_map, mul_co_occurence_map] = generate_co_occurence_maps(
+                    add_occurences, mul_occurences);
+                prune_co_occurence_map(add_co_occurence_map);
+                prune_co_occurence_map(mul_co_occurence_map);
                 
                 std::vector<size_t> new_index(result.nodes.size());
                 dag_expression<VariableType> new_result;
@@ -330,7 +334,10 @@ visitor.print_stats(result);
                     auto& node = result.nodes[k];
                     if (std::holds_alternative<dag_addition>(node)) {
                         auto& add = std::get<dag_addition>(node);
-                        const auto [selected_pairs, used] = pair_nodes(add.operands, add_co_occurence_map);
+                        const auto [selected_pairs, used] = pair_nodes(
+                            add.operands, add_occurences, add_co_occurence_map);
+                        if (selected_pairs.size() != 0)
+                            something_changed = true;
                         
                         dag_operands_vector_type new_operands;
                         for (size_t i = 0; i < add.operands.size(); i++) {
@@ -345,8 +352,11 @@ visitor.print_stats(result);
                         add.operands = new_operands;
                     } else if (std::holds_alternative<dag_multiplication>(node)) {
                         auto& mul = std::get<dag_multiplication>(node);
-                        const auto [selected_pairs, used] = pair_nodes(mul.operands, mul_co_occurence_map);
-                        
+                        const auto [selected_pairs, used] = pair_nodes(
+                            mul.operands, mul_occurences, mul_co_occurence_map);
+                        if (selected_pairs.size() != 0)
+                            something_changed = true;
+
                         dag_operands_vector_type new_operands;
                         for (size_t i = 0; i < mul.operands.size(); i++) {
                             if (!used[i])
@@ -378,15 +388,18 @@ visitor.print_stats(result);
         // Also returns a vector telling us which index was paired.
         std::pair<std::vector<std::pair<size_t, size_t>>, std::vector<bool>> pair_nodes(
             const dag_operands_vector_type& operands,
+            const std::unordered_map<size_t, size_t>& occurences,
             const co_occurence_map_type& co_occurence_map
             ) {
             // Get all the pairs that appear >=2 times and sort by decreasing order of appearances.
             std::multimap<size_t, std::pair<size_t, size_t>, std::greater<>> pairs;
             for (size_t i = 0; i < operands.size(); i++) {
+                if (occurences.at(operands[i]) == 1)
+                    continue;
                 for (size_t j = i + 1; j < operands.size(); j++) {
-                    size_t co_occurence = co_occurence_map.at(std::make_pair(operands[i], operands[j]));
-                    if (co_occurence > 1) {
-                        pairs.emplace(co_occurence, std::pair<std::size_t, std::size_t>{i, j});
+                    auto iter = co_occurence_map.find(std::make_pair(operands[i], operands[j]));
+                    if (iter != co_occurence_map.end() && iter->second > 1) {
+                        pairs.emplace(iter->second, std::pair<std::size_t, std::size_t>{i, j});
                     }
                 }
             }
@@ -402,7 +415,53 @@ visitor.print_stats(result);
             return {selected_pairs, used};
         }
 
-        std::pair<co_occurence_map_type, co_occurence_map_type> generate_co_occurence_maps() const {
+        // Keeps only the top 5% of pairs, removes the rest. We tried 1%, 2%, 5%, 10%, 20%. For some
+        // reason 5% is optimal.
+        void prune_co_occurence_map(co_occurence_map_type& m) const {
+            if (m.size() == 0)
+                return;
+
+            std::vector<size_t> values;
+            
+            for (auto it = m.begin(); it != m.end(); ++it) {
+                values.push_back(it->second);
+            }
+            std::sort(values.begin(), values.end());
+
+            size_t M = values[values.size() / 20];
+            for (auto it = m.begin(); it != m.end();) {
+                if (it->second < M)
+                    it = m.erase(it);
+                else
+                    ++it;
+            }
+        }
+
+        // Count how many times each node appears as a child in addition or multiplication.
+        // If it appears only once, there is no chance it has duplicates. This is an optimization.
+        std::pair<std::unordered_map<size_t, size_t>, std::unordered_map<size_t, size_t>> generate_occurance_count() const {
+            std::unordered_map<size_t, size_t> add_appearances;
+            std::unordered_map<size_t, size_t> mul_appearances;
+            for (size_t k = 0; k < result.nodes.size(); ++k) {
+                const auto& node = result.nodes[k];
+                if (std::holds_alternative<dag_addition>(node)) {
+                    const auto& add = std::get<dag_addition>(node);
+                    for (size_t i = 0; i < add.operands.size(); i++) {
+                        add_appearances[add.operands[i]]++;
+                    }
+                } else if (std::holds_alternative<dag_multiplication>(node)) {
+                    const auto& mul = std::get<dag_multiplication>(node);
+                    for (size_t i = 0; i < mul.operands.size(); i++) {
+                        mul_appearances[mul.operands[i]]++;
+                    }
+                }
+            }
+            return {add_appearances, mul_appearances};
+        }
+
+        std::pair<co_occurence_map_type, co_occurence_map_type> generate_co_occurence_maps(
+                const std::unordered_map<size_t, size_t>& add_occurences,
+                const std::unordered_map<size_t, size_t>& mul_occurences) const {
             co_occurence_map_type add_co_occurence_map;
             co_occurence_map_type mul_co_occurence_map;
             for (size_t k = 0; k < result.nodes.size(); ++k) {
@@ -410,6 +469,9 @@ visitor.print_stats(result);
                 if (std::holds_alternative<dag_addition>(node)) {
                     const auto& add = std::get<dag_addition>(node);
                     for (size_t i = 0; i < add.operands.size(); i++) {
+                        // It's useless to compute co-occurance for something, that appears only once.
+                        if (add_occurences.at(add.operands[i]) == 1)
+                            continue;
                         for (size_t j = i + 1; j < add.operands.size(); j++) {
                             add_co_occurence_map[std::make_pair(add.operands[i], add.operands[j])]++;
                         }
@@ -417,6 +479,9 @@ visitor.print_stats(result);
                 } else if (std::holds_alternative<dag_multiplication>(node)) {
                     const auto& mul = std::get<dag_multiplication>(node);
                     for (size_t i = 0; i < mul.operands.size(); i++) {
+                        // It's useless to compute co-occurance for something, that appears only once.
+                        if (mul_occurences.at(mul.operands[i]) == 1)
+                            continue;
                         for (size_t j = i + 1; j < mul.operands.size(); j++) {
                             mul_co_occurence_map[std::make_pair(mul.operands[i], mul.operands[j])]++;
                         }
