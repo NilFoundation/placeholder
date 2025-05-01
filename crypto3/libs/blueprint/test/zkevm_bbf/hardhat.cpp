@@ -90,7 +90,7 @@ public:
         std::size_t max_rw = max_sizes.max_rw;
         std::size_t max_copy = max_sizes.max_copy;
         std::size_t max_zkevm_rows = max_sizes.max_zkevm_rows;
-        std::size_t max_log_rows = max_sizes.max_zkevm_rows;
+        std::size_t max_log_indices = max_sizes.max_log_indices;
         std::size_t max_exponentiations = max_sizes.max_exponentiations;
         std::size_t max_exp_rows = max_sizes.max_exp_rows;
         std::size_t max_call_commits = max_sizes.max_call_commits;
@@ -249,7 +249,7 @@ public:
             result = test_bbf_component<field_type, nil::blueprint::bbf::tx_log>(
                 log_circuit,
                 {}, log_assignment_input,
-                max_log_rows,
+                max_log_indices,
                 max_keccak_blocks
             );
             BOOST_ASSERT(result);
@@ -406,6 +406,7 @@ BOOST_AUTO_TEST_CASE(indexed_log) {
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
     max_sizes.max_call_commits = 500;
+    max_sizes.max_log_indices = 500;
 
     complex_test<field_type>(pt, max_sizes);
 }

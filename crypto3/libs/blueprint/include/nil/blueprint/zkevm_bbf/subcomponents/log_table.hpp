@@ -46,33 +46,41 @@ namespace nil {
                                               std::nullptr_t>::type;
                 using integral_type = typename FieldType::integral_type;
                 static constexpr std::size_t filter_chunks_amount = 128;
+            
+            // The Bloom filter consists of 2048 bits
+            // Each address and topic do 3 bitwise OR operation on a single bit (turn a bit on if it is off)
+            // The bit corresponds to the value of the 11 low bits of the top 2, 4 and 6 bytes of the hash
+            // Each row of the table corresponds to an indice of the hash (3 indice by hash)
+            // Each log operation produces between 3 and 15 rows depending on the number of topics
 
               public:
                 zkevm_keccak_buffers keccaks;
 
                 std::vector<TYPE> id;         // transaction index
                 std::vector<TYPE> log_index;  // log index
-                std::vector<TYPE> value;      // address or topic x
+                std::vector<TYPE> value_hi;   // address or topic x
+                std::vector<TYPE> value_lo;   // address or topic x
                 std::vector<TYPE> type;       // 0: address, or x: topic x
                 std::vector<TYPE> indice;     // each value has 3 indices
                 std::vector<TYPE> is_last;    // last indice of a log_index
                 std::vector<std::vector<TYPE>> previous_filter;
                 std::vector<std::vector<TYPE>> current_filter;
 
-                static std::size_t get_witness_amount() { return 262; }
+                static std::size_t get_witness_amount() { return 263; }
 
                 log_table(context_type& context_object, const input_type& input,
-                          std::size_t max_log_rows)
+                          std::size_t max_log_indices)
                     : generic_component<FieldType, stage>(context_object),
-                      id(max_log_rows),
-                      log_index(max_log_rows),
-                      value(max_log_rows),
-                      type(max_log_rows),
-                      indice(max_log_rows),
-                      is_last(max_log_rows),
-                      previous_filter(max_log_rows,
+                      id(max_log_indices),
+                      log_index(max_log_indices),
+                      value_hi(max_log_indices),
+                      value_lo(max_log_indices),
+                      type(max_log_indices),
+                      indice(max_log_indices),
+                      is_last(max_log_indices),
+                      previous_filter(max_log_indices,
                                       std::vector<TYPE>(filter_chunks_amount)),
-                      current_filter(max_log_rows,
+                      current_filter(max_log_indices,
                                      std::vector<TYPE>(filter_chunks_amount)) {
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
                         auto logs = input;
@@ -89,8 +97,8 @@ namespace nil {
                         };
 
                         auto set_row =
-                            [&](TYPE t_id, TYPE log_i, TYPE val, TYPE t, TYPE last,
-                                const std::array<std::size_t, 16>& hash_bytes,
+                            [&](TYPE t_id, TYPE log_i, TYPE val_hi, TYPE val_lo, TYPE t,
+                                TYPE last, const std::array<std::size_t, 16>& hash_bytes,
                                 std::vector<std::vector<TYPE>>& current_filter,
                                 std::vector<std::vector<TYPE>>& previous_filter,
                                 size_t& row) {
@@ -114,7 +122,8 @@ namespace nil {
 
                                     id[row] = t_id;
                                     log_index[row] = log_i;
-                                    value[row] = val;
+                                    value_hi[row] = val_hi;
+                                    value_lo[row] = val_lo;
                                     type[row] = t;
                                     indice[row] = i;
                                     is_last[row] = last == 1 && i == 2;
@@ -139,7 +148,9 @@ namespace nil {
 
                             auto address_hash = zkevm_keccak_hash(address_buffer);
                             auto hash_bytes = w_to_16(address_hash);
-                            set_row(log.id, log.index, log.address, 0, 0, hash_bytes,
+
+                            set_row(log.id, log.index, w_hi<FieldType>(log.address),
+                                    w_lo<FieldType>(log.address), 0, log.topics.size() == 0, hash_bytes,
                                     current_filter, previous_filter, row);
 
                             for (std::size_t i = 0; i < log.topics.size(); i++) {
@@ -150,31 +161,34 @@ namespace nil {
                                 }
 
                                 auto topic_hash = zkevm_keccak_hash(topics_buffer);
+
                                 auto topic_hash_bytes = w_to_16(topic_hash);
-                                set_row(log.id, log.index, log.topics[i], i + 1,
+                                set_row(log.id, log.index, w_hi<FieldType>(log.topics[i]),
+                                        w_lo<FieldType>(log.topics[i]), i + 1,
                                         (i == log.topics.size() - 1), topic_hash_bytes,
                                         current_filter, previous_filter, row);
                             }
                         }
                     }
-                    for (std::size_t i = 0; i < max_log_rows; i++) {
+                    for (std::size_t i = 0; i < max_log_indices; i++) {
                         allocate(id[i], 0, i);
                         allocate(log_index[i], 1, i);
-                        allocate(value[i], 2, i);
-                        allocate(type[i], 3, i);
-                        allocate(indice[i], 4, i);
-                        allocate(is_last[i], 5, i);
+                        allocate(value_hi[i], 2, i);
+                        allocate(value_lo[i], 3, i);
+                        allocate(type[i], 4, i);
+                        allocate(indice[i], 5, i);
+                        allocate(is_last[i], 6, i);
                         for (std::size_t j = 0; j < filter_chunks_amount; j++) {
-                            allocate(previous_filter[i][j], 6 + j, i);
+                            allocate(previous_filter[i][j], 7 + j, i);
                         }
                         for (std::size_t j = 0; j < filter_chunks_amount; j++) {
-                            allocate(current_filter[i][j], 6 + filter_chunks_amount + j,
+                            allocate(current_filter[i][j], 7 + filter_chunks_amount + j,
                                      i);
                         }
                     }
-                    std::vector<std::size_t> indices(262);
+                    std::vector<std::size_t> indices(263);
                     std::iota(indices.begin(), indices.end(), 0);
-                    lookup_table("zkevm_logs", indices, 0, max_log_rows);
+                    lookup_table("zkevm_logs", indices, 0, max_log_indices);
                 }
             };
         }  // namespace bbf
