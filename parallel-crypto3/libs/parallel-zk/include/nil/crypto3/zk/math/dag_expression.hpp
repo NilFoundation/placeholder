@@ -103,7 +103,6 @@ namespace nil::crypto3::zk::snark {
         dag_negation
     >;
 
-    // Used for counting max degree of an expression.
     template<typename VariableType>
     class dag_node_hashing_visitor : public boost::static_visitor<size_t> {
     public:
@@ -147,6 +146,7 @@ namespace nil::crypto3::zk::snark {
         }
     };
 
+    
 } // namespace nil::crypto3::zk::snark
 
 // Define the hash of a dag_node, so we can use it in dag_expression.
@@ -212,6 +212,52 @@ namespace nil::crypto3::zk::snark {
         }
     };
 
+    // Very useful for debugging, not used in production.
+    template<typename VariableType>
+    class dag_node_statistics_visitor : public boost::static_visitor<void> {
+    public:
+        size_t additions;
+        size_t multiplications;
+        size_t copies;
+        size_t negations;
+
+        dag_node_statistics_visitor() = default;
+
+        void print_stats(const dag_expression<VariableType> &dag) {
+            additions = multiplications = copies = negations = 0;
+            for (const auto& node: dag.get_nodes()) {
+                std::visit(*this, node);
+            }
+
+            std::cout << "To compute the DAG you will need " << std::endl;
+            std::cout << "    Additions: " << additions << std::endl;
+            std::cout << "    Multiplications: " << multiplications << std::endl;
+            std::cout << "    Copies: " << copies << std::endl;
+            std::cout << "    Negations: " << negations << std::endl;
+        }
+
+        void operator()(const dag_constant<VariableType>& n) {
+            copies++;
+        }
+
+        void operator()(const dag_variable<VariableType>& n) {
+            copies++;
+        }
+
+        void operator()(const dag_addition& n) {
+            copies++;
+            additions += n.operands.size() - 1;
+        }
+        void operator()(const dag_multiplication& n) {
+            copies++;
+            multiplications += n.operands.size() - 1;
+        }
+        void operator()(const dag_negation& n) {
+            copies++;
+            negations++;
+        }
+    };
+
     // This class stores all registered expressions, then runs over them as a visitor and
     // builds a DAG for them.
     template<typename VariableType>
@@ -251,11 +297,20 @@ namespace nil::crypto3::zk::snark {
         // is also mult/add node, it takes the children of that child to itself, as a direct child.
         // This does not result into a more optimal dag yet, it just [potentially] reduces the number of nodes.
         void squash_dag() {
+            dag_node_statistics_visitor<VariableType> visitor;
+
+            PROFILE_SCOPE("Squashing DAG expression.");
 std::cout << "Before squashing dag has " << result.nodes.size() << " nodes" << std::endl;
+visitor.print_stats(result);
             merge_children();
+std::cout << "After merging children dag has " << result.nodes.size() << " nodes" << std::endl;
+visitor.print_stats(result);
             remove_unreachable_nodes();
+std::cout << "After removing unreachable nodes dag has " << result.nodes.size() << " nodes" << std::endl;
+visitor.print_stats(result);
             remove_duplicates();
 std::cout << "After squashing dag has " << result.nodes.size() << " nodes" << std::endl;
+visitor.print_stats(result);
         }
 
         // Runs over the dag, looking at the addition and multiplication nodes. If it detects a pair of children than appear
