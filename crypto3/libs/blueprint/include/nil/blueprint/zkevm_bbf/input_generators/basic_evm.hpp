@@ -1375,6 +1375,9 @@ namespace nil {
                     call_args_length = std::size_t(stack.back()); stack.pop_back();
                     BOOST_LOG_TRIVIAL(trace) << "create: " << std::hex << call_context_address  << std::dec;
 
+                    _call_stack.back().lastcall_returndataoffset = 0;
+                    _call_stack.back().lastcall_returndatalength = 0;
+
                     // TODO: Compute address ourselves
                     caller = call_context_address;
 
@@ -1456,6 +1459,9 @@ namespace nil {
                     call_args_offset = std::size_t(stack.back()); stack.pop_back();
                     call_args_length = std::size_t(stack.back()); stack.pop_back();
                     zkevm_word_type salt = stack.back(); stack.pop_back();
+
+                    _call_stack.back().lastcall_returndataoffset = 0;
+                    _call_stack.back().lastcall_returndatalength = 0;
 
                     BOOST_LOG_TRIVIAL(trace) << "create2: " << std::hex << call_context_address << " " << salt << std::dec;
                     // TODO: Compute address ourselves
@@ -1844,6 +1850,7 @@ namespace nil {
                 }
 
                 virtual void gas_error(){
+                    BOOST_LOG_TRIVIAL(trace) << "Gas error";
                     returndata.clear();
                     // TODO: It's only gas error!
                     gas = 0;

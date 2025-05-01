@@ -320,6 +320,8 @@ namespace nil::blueprint::bbf::zkevm_big_field{
                 non_first_row_constraints.push_back(is_last[1] * (1 - is_first[2]));
                 non_first_row_constraints.push_back(is_first[1] - is_first_constraint);
                 non_first_row_constraints.push_back(diff[1] * inv_diff[1] - is_diff_non_zero[1]);
+                non_first_row_constraints.push_back(diff[1] * (is_diff_non_zero[1] - 1));
+                non_first_row_constraints.push_back(inv_diff[1] * (is_diff_non_zero[1] - 1));
 
                 TYPE id_composition;
                 std::size_t cur_chunk = 0;

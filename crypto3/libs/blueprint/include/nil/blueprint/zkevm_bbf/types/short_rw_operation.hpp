@@ -43,25 +43,6 @@ namespace nil {
             static constexpr std::size_t block_context_fields_amount = 1;
             static constexpr std::size_t tx_context_fields_amount = 0;
 
-            enum class call_context_field: std::uint8_t {
-                // Grouped by call, no revertions
-                parent_id = 1,
-                block_id = 2,
-                tx_id = 3,
-                call_context_value = 4,
-                call_context_address = 5,
-                calldata_size = 6,
-                depth = 7,
-                returndata_size = 8,
-                call_status = 9,
-
-                lastcall_id = 13,
-                lastcall_returndata_offset = 14,
-                lastcall_returndata_length = 15
-            };
-            static constexpr std::size_t call_context_readonly_field_amount = 13;
-            static constexpr std::size_t call_context_fields_amount = 12;
-
             struct short_rw_operation{
                 rw_operation_type op = rw_operation_type::start;           // operation type
                 std::size_t             id = 0;

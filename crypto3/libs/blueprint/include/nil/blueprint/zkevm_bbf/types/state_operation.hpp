@@ -36,14 +36,6 @@
 namespace nil {
     namespace blueprint {
         namespace bbf {
-            enum class state_call_context_fields: std::uint8_t {
-                parent_id = 0,
-                is_reverted = 10,
-                modified_items = 11,
-                end_call_rw_id = 12
-            };
-            static constexpr std::size_t state_call_context_fields_amount = 4;
-
             struct state_operation{
                 state_operation(){};
                 rw_operation_type       op = rw_operation_type::start;           // operation type

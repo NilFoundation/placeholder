@@ -82,6 +82,34 @@ namespace nil {
                 return "UNKNOWN";
                 }
             }
+
+            enum class state_call_context_fields: std::uint8_t {
+                parent_id = 0,
+                is_reverted = 1,
+                modified_items = 2,
+                end_call_rw_id = 3
+            };
+            static constexpr std::size_t state_call_context_fields_amount = 4;
+
+            enum class call_context_field: std::uint8_t {
+                // Grouped by call, no revertions
+                parent_id = 4,
+                block_id = 5,
+                tx_id = 6,
+                call_context_value = 7,
+                call_context_address = 8,
+                calldata_size = 9,
+                depth = 10,
+                returndata_size = 11,
+                call_status = 12,
+
+                lastcall_id = 13,
+                lastcall_returndata_offset = 14,
+                lastcall_returndata_length = 15
+            };
+            static constexpr std::size_t call_context_readonly_field_amount = 13;
+            static constexpr std::size_t call_context_fields_amount = 12;
+
         } // namespace bbf
     } // namespace blueprint
 } // namespace nil
