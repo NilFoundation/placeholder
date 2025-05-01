@@ -72,7 +72,7 @@ public:
 
     static table_params get_minimal_requirements(std::size_t max_mpt_size) {
         return {
-            .witnesses = 800,
+            .witnesses = 900,
             .public_inputs = 0,
             .constants = 0,
             .rows = max_mpt_size + max_mpt_size + 24
@@ -122,11 +122,13 @@ public:
 
         std::array<std::vector<TYPE>,32> correct_child_hash;    // correct_child_hash[32][max_mpt_size]
         std::array<std::vector<TYPE>,32> key_reconstruct;       // key_reconstruct[32][max_mpt_size]
+        std::array<std::vector<TYPE>,32> key_concatenation;     // key_concatenation[32][max_mpt_size]
 
         for(std::size_t i = 0; i < 32; i++) {
             parent_hash[i].resize(max_mpt_size);
             correct_child_hash[i].resize(max_mpt_size);
             key_reconstruct[i].resize(max_mpt_size);
+            key_concatenation[i].resize(max_mpt_size);
             for(std::size_t j = 0; j < 16; j++) {
                 child[j][i].resize(max_mpt_size);
             }
@@ -168,6 +170,7 @@ public:
                std::cout << "path key = " << std::hex << path_key << std::dec << std::endl;
 
                zkevm_word_type key_suffix = path_key;
+               zkevm_word_type accumulated_key = path_key;
                std::size_t accumulated_length = 0;
                std::size_t node_depth = 0;
 
@@ -361,6 +364,13 @@ public:
                    accumulated_length += node_key_length;
                    std::cout << "Accumulated length = " << accumulated_length << std::endl;
 
+                   zkevm_word_type node_key_accumulated = accumulated_key >> 4*(64 - accumulated_length);
+                   std::array<std::uint8_t,32> key_accumulated_byte = w_to_8(node_key_accumulated);
+                   for(std::size_t i = 0; i < 32; i++) {
+                        key_concatenation[i][node_num] = key_accumulated_byte[i];
+                   }
+                   std::cout << "accumulated key = " << std::hex << node_key_accumulated << std::dec << std::endl;
+
                    zkevm_word_type node_key_part = key_suffix >> 4*(64 - accumulated_length);
                    std::array<std::uint8_t,32> key_part_byte = w_to_8(node_key_part);
                    for(std::size_t i = 0; i < 32; i++) {
@@ -425,29 +435,22 @@ public:
                 size_t key = static_cast<size_t>(key_part[31][i].data.base());
                 for(std::size_t b = 0; b < 32; b++) {
                     correct_child_hash[b][i] = child[node_type[i] == 1 ? key : 1][b][i];
-                    key_reconstruct[b][i] = key_part[b][i];
+                    // key_reconstruct[b][i] = key_concatenation[b][i];
                 }
             }
 
             for(std::size_t i = 0; i < node_num; i++) {
                 for(std::size_t b = 0; b < 32; b++) {
-                    key_reconstruct[b][i] = key_part[b][i];
+                    key_reconstruct[b][i] = key_concatenation[b][i];
                 }
             }
 
-        //    for( std::size_t i = 0; i < ChildTable::get_witness_amount(); i++){
-        //         child_hash_lookup_area.push_back(i);
-        //    }
-        //    context_type child_hash_ct = context_object.subcontext(child_hash_lookup_area, max_mpt_size, 2*max_mpt_size);
-        //    ChildTable c_t = ChildTable(child_hash_ct, child_hash_tab_input, max_mpt_size);
-
-        //    for(std::size_t i = 0; i < node_num - 1 ; i++) {
-        //         for(std::size_t b = 0; b < 32; b++) {
-        //                 BOOST_ASSERT_MSG( parent_hash[b][i + 1] == c_t.child_hash[b][i], "hash does not match");
-        //                 // lookup(parent_hash[b][i + 1], "child_hash_table");
-        //         }
-        //    }  
-
+            // for(std::size_t i = 0; i < node_num; i++) {
+            //     for(std::size_t b = 0; b < 32; b++) {
+            //         std::cout << "key_part[" << b << "][" << i << "] = " << std::hex << key_part[b][i] << std::dec << std::endl;
+            //         std::cout << "key_concatenation[" << b << "][" << i << "] = " << std::hex << key_concatenation[b][i] << std::dec << std::endl;
+            //     }
+            // }
         }
 
         // allocation
@@ -495,6 +498,9 @@ public:
                 allocate(child_choice[j][i], 663 + j, i);
             }
             for(std::size_t j = 0; j < 32; j++) {
+                allocate(key_concatenation[j][i], 679 + j, i);
+            }
+            for(std::size_t j = 0; j < 32; j++) {
                 allocate(key_reconstruct[j][i], j, max_mpt_size + i);
             }
             for(std::size_t j = 0; j < 32; j++) {
@@ -511,7 +517,7 @@ public:
         lookup_table("dynamic_child_hash",lookup_cols,max_mpt_size,max_mpt_size + max_mpt_size);
         for(std::size_t i = 0; i < max_mpt_size - 1; i++) {
             for(std::size_t b = 0; b < 32; b++) {
-                lookup_table_input[b] = key_part[b][i];
+                lookup_table_input[b] = key_concatenation[b][i];
             }
             for(std::size_t b = 0; b < 32; b++) {
                 lookup_table_input[32 + b] = parent_hash[b][i + 1];
@@ -519,17 +525,17 @@ public:
             lookup(lookup_table_input,"dynamic_child_hash");
         }
         
-        // typename ChildTable::input_type test_input;
-        // table_lookup_area = {0};
+        typename ChildTable::input_type test_input;
+        table_lookup_area = {65};
 
-        // if constexpr (stage == GenerationStage::ASSIGNMENT) {
-        //     for( std::size_t i = 0; i < max_mpt_size; i++){
-        //         test_input.push_back(1);
-        //     }
-        // }
-        // context_type test_ct = context_object.subcontext(table_lookup_area, max_mpt_size, max_mpt_size + max_mpt_size);
-        // std::cout << "max_mpt_size = " << max_mpt_size << std::endl;
-        // ChildTable ch_t(test_ct, test_input, max_mpt_size);
+        if constexpr (stage == GenerationStage::ASSIGNMENT) {
+            for( std::size_t i = 0; i < max_mpt_size; i++){
+                test_input.push_back(1);
+            }
+        }
+        context_type test_ct = context_object.subcontext(table_lookup_area, max_mpt_size, max_mpt_size + max_mpt_size);
+        std::cout << "max_mpt_size = " << max_mpt_size << std::endl;
+        ChildTable ch_t(test_ct, test_input, max_mpt_size);
 
         std::array<std::vector<TYPE>,16> child_sum;     // these two are non-allocated expressions
         std::array<std::vector<TYPE>,16> child_is_zero; // child_is_zero[j] = 1 if child[j] = 0...0, 0 otherwise

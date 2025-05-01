@@ -86,7 +86,7 @@ namespace nil {
                         std::cout << "input_size = " << input.size() << std::endl;
 
                         for (std::size_t i = 0; i < input.size(); i++) {
-                            std::cout << "input[" << i << "] = " << input[i] << std::endl;
+                            // std::cout << "input[" << i << "] = " << input[i] << std::endl;
                             path_num[i] = input[i];
                             // node_type[i] = input[i][1];
                             // key[i] = input[i][2];
