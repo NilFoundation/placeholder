@@ -886,7 +886,6 @@ namespace nil {
                     > &g_coeffs,
                     std::uint64_t x_index)
                 {
-                    PARALLEL_PROFILE_SCOPE("Build inital proof");
                     std::vector<std::array<typename FRI::field_type::value_type, FRI::m>> s;
                     std::vector<std::array<std::size_t, FRI::m>> s_indices;
                     std::tie(s, s_indices) = calculate_s<FRI>(x_index, fri_params.step_list[0], fri_params.D[0]);
