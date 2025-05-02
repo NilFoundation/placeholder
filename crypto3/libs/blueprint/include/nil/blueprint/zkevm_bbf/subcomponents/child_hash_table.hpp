@@ -56,12 +56,12 @@ namespace nil {
                 // interfaces for interaction with other components:
                 std::vector<TYPE> path_num = std::vector<TYPE>(max_rows);
                 // std::vector<TYPE> node_type = std::vector<TYPE>(max_rows);
-                // std::vector<TYPE> key = std::vector<TYPE>(max_rows);
+                std::array<std::vector<TYPE>,32> key_accumulated;
                 std::vector<std::size_t> table_lookup_area;
-                // std::array<std::vector<TYPE>,32> child_hash;
+                std::array<std::vector<TYPE>,32> child_hash;
 
                 static std::size_t get_witness_amount(){
-                    return 1;
+                    return 33;
                 }
 
                 child_hash_table(context_type &context_object,
@@ -73,26 +73,24 @@ namespace nil {
 
                     using value_type = typename FieldType::value_type;
 
-                    std::cout << "max rows =" << max_rows << std::endl;
-
-
-                    // for(std::size_t i = 0; i < 32; i++) {
-                    //     child_hash[i].resize(max_rows);
-                    // }
+                    for(std::size_t i = 0; i < 32; i++) {
+                        child_hash[i].resize(max_rows);
+                        key_accumulated[i].resize(max_rows);
+                    }
                         
                     std::cout << "Child hash table:" << std::endl;
 
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
                         std::cout << "input_size = " << input.size() << std::endl;
 
-                        for (std::size_t i = 0; i < input.size(); i++) {
-                            // std::cout << "input[" << i << "] = " << input[i] << std::endl;
-                            path_num[i] = input[i];
-                            // node_type[i] = input[i][1];
-                            // key[i] = input[i][2];
-                            // for (std::size_t b = 0; b < 32; b++) {
-                            //     child_hash[b][i] = input[i][b + 3];
-                            // }
+                        size_t i = 0, row = 0;
+                        while ( i < input.size() ) {
+                            path_num[row] = input[i];
+                            for (std::size_t b = 0; b < 32; b++) {
+                                key_accumulated[b][row] = input[i + b + 1];
+                                // child_hash[b][row] = input[i + b + 33];
+                            }
+                            i = i + 33; row++;
                         }
                     }
 
@@ -100,13 +98,14 @@ namespace nil {
                         allocate(path_num[i], 0, i);
                         // allocate(node_type[i], 1, i);
                         // allocate(key[i], 2, i);
-                        // for (std::size_t b = 0; b < 32; b++) {
-                        //     allocate(child_hash[b][i], b + 3, i);
-                        // }
+                        for (std::size_t b = 0; b < 32; b++) {
+                            allocate(key_accumulated[b][i], b + 1, i);
+                            // allocate(child_hash[b][i], b + 33, i);
+                        }
                     }
 
                     // // declare dynamic lookup table
-                    for(std::size_t i = 0; i < 1; i++) {
+                    for(std::size_t i = 0; i < 33; i++) {
                         table_lookup_area.push_back(i);
                     }
                     lookup_table("child_hash_table", table_lookup_area, 0, max_rows);

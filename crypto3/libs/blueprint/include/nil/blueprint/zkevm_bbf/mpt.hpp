@@ -72,10 +72,10 @@ public:
 
     static table_params get_minimal_requirements(std::size_t max_mpt_size) {
         return {
-            .witnesses = 900,
+            .witnesses = 1000,
             .public_inputs = 0,
             .constants = 0,
-            .rows = max_mpt_size + max_mpt_size + 24
+            .rows = max_mpt_size + max_mpt_size + 40
         };
     }
 
@@ -150,12 +150,13 @@ public:
         }
 
         // input for child_hash_table
-        std::vector<std::vector<TYPE>> child_hash_tab_input;
+        typename ChildTable::input_type child_hash_tab_input;
         std::vector<TYPE> child_vector(35);
         std::vector<TYPE> table_test_input(max_mpt_size);
         // columns of child_hash_table
         std::vector<std::size_t> child_hash_lookup_area;
         std::vector<std::size_t> table_lookup_area;
+        std::vector<TYPE> path_num(max_mpt_size);
 
         if constexpr (stage == GenerationStage::ASSIGNMENT) {
            // assignment
@@ -419,38 +420,26 @@ public:
                }
            }
 
-           for(std::size_t i = 0; i < node_num - 1 ; i++) {
+           for(std::size_t i = 0; i < node_num; i++) {
                 size_t key = static_cast<size_t>(key_part[31][i].data.base());
-                child_vector[0] = 1;
-                child_vector[1] = node_type[i];
-                child_vector[2] = (node_type[i] == 1) ? key : 1;
-
+                child_hash_tab_input.push_back(1);
+                path_num[i] = 1;
                 for(std::size_t b = 0; b < 32; b++) {
-                    child_vector[b + 3] = child[node_type[i] == 1 ? key : 1][b][i];
+                    child_hash_tab_input.push_back(key_concatenation[b][i]);
                 }
-                child_hash_tab_input.push_back(child_vector);
+                for(std::size_t b = 0; b < 32; b++) {
+                    if (i < node_num - 1){
+                        correct_child_hash[b][i] = child[node_type[i] == 1 ? key : 1][b][i];
+                        // child_hash_tab_input.push_back(child[node_type[i] == 1 ? key : 1][b][i]);
+                    }
+                }
            }
-
-           for(std::size_t i = 0; i < node_num - 1 ; i++) {
-                size_t key = static_cast<size_t>(key_part[31][i].data.base());
-                for(std::size_t b = 0; b < 32; b++) {
-                    correct_child_hash[b][i] = child[node_type[i] == 1 ? key : 1][b][i];
-                    // key_reconstruct[b][i] = key_concatenation[b][i];
-                }
-            }
 
             for(std::size_t i = 0; i < node_num; i++) {
                 for(std::size_t b = 0; b < 32; b++) {
                     key_reconstruct[b][i] = key_concatenation[b][i];
                 }
             }
-
-            // for(std::size_t i = 0; i < node_num; i++) {
-            //     for(std::size_t b = 0; b < 32; b++) {
-            //         std::cout << "key_part[" << b << "][" << i << "] = " << std::hex << key_part[b][i] << std::dec << std::endl;
-            //         std::cout << "key_concatenation[" << b << "][" << i << "] = " << std::hex << key_concatenation[b][i] << std::dec << std::endl;
-            //     }
-            // }
         }
 
         // allocation
@@ -500,6 +489,7 @@ public:
             for(std::size_t j = 0; j < 32; j++) {
                 allocate(key_concatenation[j][i], 679 + j, i);
             }
+            allocate(path_num[i], 711, i);
             for(std::size_t j = 0; j < 32; j++) {
                 allocate(key_reconstruct[j][i], j, max_mpt_size + i);
             }
@@ -524,18 +514,26 @@ public:
             }
             lookup(lookup_table_input,"dynamic_child_hash");
         }
-        
-        typename ChildTable::input_type test_input;
-        table_lookup_area = {65};
 
-        if constexpr (stage == GenerationStage::ASSIGNMENT) {
-            for( std::size_t i = 0; i < max_mpt_size; i++){
-                test_input.push_back(1);
-            }
+        for(std::size_t i = 64; i < 97; i++) {
+            table_lookup_area.push_back(i);
         }
+
         context_type test_ct = context_object.subcontext(table_lookup_area, max_mpt_size, max_mpt_size + max_mpt_size);
         std::cout << "max_mpt_size = " << max_mpt_size << std::endl;
-        ChildTable ch_t(test_ct, test_input, max_mpt_size);
+        ChildTable ch_t(test_ct, child_hash_tab_input, max_mpt_size);
+
+        std::vector<TYPE> lookup_table_sub_input(33);  
+        for(std::size_t i = 0; i < max_mpt_size; i++) {
+            lookup_table_sub_input[0] = path_num[i];
+            for(std::size_t b = 0; b < 32; b++) {
+                lookup_table_sub_input[b + 1] = key_concatenation[b][i];
+            }
+            // for(std::size_t b = 0; b < 32; b++) {
+            //     lookup_table_sub_input[33 + b] = parent_hash[b][i + 1];
+            // }
+            lookup(lookup_table_sub_input,"child_hash_table");
+        }
 
         std::array<std::vector<TYPE>,16> child_sum;     // these two are non-allocated expressions
         std::array<std::vector<TYPE>,16> child_is_zero; // child_is_zero[j] = 1 if child[j] = 0...0, 0 otherwise
