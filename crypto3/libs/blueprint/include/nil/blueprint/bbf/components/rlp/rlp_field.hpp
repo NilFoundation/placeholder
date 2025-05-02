@@ -103,10 +103,16 @@ namespace nil::blueprint::bbf {
                     is_big[0] = 1;
                     len_len[0] = bytes[0] - 0xb7;
                     real_len_len = integral_type(len_len[0].data);
-                    for(std::size_t i = static_cast<std::size_t>(real_len_len); i>=1; i--){
+                    
+                    auto rll = static_cast<std::size_t>(real_len_len);
+                    for(std::size_t i = rll; i>=1; i--){
                         bytes[i] = rlp_input.input[i];
                         is_len[i] = 1;
-                        len_val[i] = bytes[i] * 256 + len_val[i+1];
+                        if(i == rll){
+                            len_val[i] = bytes[i];
+                        }else{
+                            len_val[i] = bytes[i] * 256 + len_val[i+1];
+                        }
                         len_len[i] = TYPE(real_len_len - i + 1);
                     }
                     len_val[0] = len_val[1];
@@ -126,7 +132,13 @@ namespace nil::blueprint::bbf {
                     cur++;
                 }
                 is_last[cur-1] = 1;
+
                 BOOST_ASSERT(cur <= max_bytes);
+
+                while(cur < max_bytes){
+                    field_len[cur] = field_len[cur - 1] - 1;
+                    cur++;
+                }
 
                 std::cout << "bytes\tis_prefix\tis_big\tis_len\tfield_len\tlen_len\tlen_val\tis_last\n";
                 for(std::size_t row_index = 0; row_index< max_bytes; row_index++){
