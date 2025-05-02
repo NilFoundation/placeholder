@@ -410,8 +410,8 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
             constrain(construct_carryless_chunks[i] 
                       - constructcarries[i] * two_16 + constructcarries[i-1]);
         }
-        constrain(b0_lower - b8_chunks_check[0]);
-        constrain(b0_upper - b8_chunks_check[1]);
+        constrain(b0_lower * 256 - b8_chunks_check[0]);
+        constrain(b0_upper * 256 - b8_chunks_check[1]);
 
         // note that we don't assign 64-chunks for a/b, as we can build
         // them from 16-chunks with constraints under the same logic we
