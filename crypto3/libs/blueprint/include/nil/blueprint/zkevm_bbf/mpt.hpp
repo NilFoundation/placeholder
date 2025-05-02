@@ -430,7 +430,10 @@ public:
                 for(std::size_t b = 0; b < 32; b++) {
                     if (i < node_num - 1){
                         correct_child_hash[b][i] = child[node_type[i] == 1 ? key : 1][b][i];
-                        // child_hash_tab_input.push_back(child[node_type[i] == 1 ? key : 1][b][i]);
+                        child_hash_tab_input.push_back(child[node_type[i] == 1 ? key : 1][b][i]);
+                    }
+                    else{
+                        child_hash_tab_input.push_back(0);
                     }
                 }
            }
@@ -515,7 +518,7 @@ public:
             lookup(lookup_table_input,"dynamic_child_hash");
         }
 
-        for(std::size_t i = 64; i < 97; i++) {
+        for(std::size_t i = 64; i < 129; i++) {
             table_lookup_area.push_back(i);
         }
 
@@ -523,15 +526,15 @@ public:
         std::cout << "max_mpt_size = " << max_mpt_size << std::endl;
         ChildTable ch_t(test_ct, child_hash_tab_input, max_mpt_size);
 
-        std::vector<TYPE> lookup_table_sub_input(33);  
-        for(std::size_t i = 0; i < max_mpt_size; i++) {
+        std::vector<TYPE> lookup_table_sub_input(65);  
+        for(std::size_t i = 0; i < max_mpt_size - 1; i++) {
             lookup_table_sub_input[0] = path_num[i];
             for(std::size_t b = 0; b < 32; b++) {
                 lookup_table_sub_input[b + 1] = key_concatenation[b][i];
             }
-            // for(std::size_t b = 0; b < 32; b++) {
-            //     lookup_table_sub_input[33 + b] = parent_hash[b][i + 1];
-            // }
+            for(std::size_t b = 0; b < 32; b++) {
+                lookup_table_sub_input[33 + b] = parent_hash[b][i + 1];
+            }
             lookup(lookup_table_sub_input,"child_hash_table");
         }
 

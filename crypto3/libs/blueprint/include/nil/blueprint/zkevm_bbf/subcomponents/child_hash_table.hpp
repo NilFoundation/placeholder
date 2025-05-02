@@ -61,7 +61,7 @@ namespace nil {
                 std::array<std::vector<TYPE>,32> child_hash;
 
                 static std::size_t get_witness_amount(){
-                    return 33;
+                    return 65;
                 }
 
                 child_hash_table(context_type &context_object,
@@ -88,9 +88,9 @@ namespace nil {
                             path_num[row] = input[i];
                             for (std::size_t b = 0; b < 32; b++) {
                                 key_accumulated[b][row] = input[i + b + 1];
-                                // child_hash[b][row] = input[i + b + 33];
+                                child_hash[b][row] = input[i + b + 33];
                             }
-                            i = i + 33; row++;
+                            i = i + 65; row++;
                         }
                     }
 
@@ -100,12 +100,12 @@ namespace nil {
                         // allocate(key[i], 2, i);
                         for (std::size_t b = 0; b < 32; b++) {
                             allocate(key_accumulated[b][i], b + 1, i);
-                            // allocate(child_hash[b][i], b + 33, i);
+                            allocate(child_hash[b][i], b + 33, i);
                         }
                     }
 
                     // // declare dynamic lookup table
-                    for(std::size_t i = 0; i < 33; i++) {
+                    for(std::size_t i = 0; i < 65; i++) {
                         table_lookup_area.push_back(i);
                     }
                     lookup_table("child_hash_table", table_lookup_area, 0, max_rows);
