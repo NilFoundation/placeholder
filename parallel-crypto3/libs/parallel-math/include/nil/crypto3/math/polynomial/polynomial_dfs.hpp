@@ -449,9 +449,7 @@ namespace nil {
 
                     if (other._d == 0) {
                         const auto& value = other.val[0];
-                        parallel_for(0, this->size(), [this, &value](std::size_t i) {
-                            this->val[i] += value;
-                        });
+                        *this += value;
                         return *this;
                     }
 
@@ -475,7 +473,10 @@ namespace nil {
                  * and stores result in polynomial A.
                  */
                 polynomial_dfs& operator+=(const FieldValueType& c) {
-                    for( auto it = this->begin(); it!=this->end(); it++) *it += c;
+                    parallel_for(0, this->size(), [this, &c](std::size_t i) {
+                        this->val[i] += c;
+                    });
+ 
                     return *this;
                 }
 
@@ -511,9 +512,7 @@ namespace nil {
 
                     if (other._d == 0) {
                         const auto& value = other.val[0];
-                        parallel_for(0, this->size(), [this, &value](std::size_t i) {
-                            this->val[i] -= value;
-                        });
+                        *this -= value;
                         return *this;
                     }
 
@@ -537,7 +536,10 @@ namespace nil {
                  * and stores result in polynomial A.
                  */
                 polynomial_dfs& operator-=(const FieldValueType& c) {
-                    for( auto it = this->begin(); it!=this->end(); it++) *it -= c;
+                    parallel_for(0, this->size(), [this, &c](std::size_t i) {
+                        this->val[i] -= c;
+                    });
+
                     return *this;
                 }
 
@@ -558,9 +560,7 @@ namespace nil {
                 polynomial_dfs& operator*=(const polynomial_dfs& other) {
                     if (other._d == 0) {
                         const auto& value = other.val[0];
-                        parallel_for(0, this->size(), [this, &value](std::size_t i) {
-                            this->val[i] *= value;
-                        });
+                        *this *= value;
                         return *this;
                     }
                     return cached_multiplication(other);
@@ -602,11 +602,13 @@ namespace nil {
                 }
 
                 /**
-                 * Perform the multiplication of two polynomials, polynomial A * constant alpha,
+                 * Perform the multiplication of two polynomials, polynomial A * constant 'c',
                  * and stores result in polynomial A.
                  */
-                polynomial_dfs& operator*=(const FieldValueType& alpha) {
-                    for( auto it = this->begin(); it!=this->end(); it++) *it *= alpha;
+                polynomial_dfs& operator*=(const FieldValueType& c) {
+                    parallel_for(0, this->size(), [this, &c](std::size_t i) {
+                        this->val[i] *= c;
+                    });
                     return *this;
                 }
 

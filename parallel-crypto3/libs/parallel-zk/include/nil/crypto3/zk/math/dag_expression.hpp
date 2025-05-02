@@ -302,15 +302,22 @@ namespace nil::crypto3::zk::snark {
             dag_node_statistics_visitor<VariableType> visitor;
 
             PROFILE_SCOPE("Squashing DAG expression.");
-            std::cout << "DAG before Squashing" << std::endl;
-            visitor.print_stats(result);
+            //std::cout << "DAG before Squashing" << std::endl;
+            //visitor.print_stats(result);
 
             merge_children();
+
+            //std::cout << "DAG After merge children" << std::endl;
+            //visitor.print_stats(result);
+
             remove_unreachable_nodes();
+            //std::cout << "DAG After remove unreachable nodes" << std::endl;
+            //visitor.print_stats(result);
+
             remove_duplicates();
 
-            std::cout << "DAG after Squashing" << std::endl;
-            visitor.print_stats(result);
+            //std::cout << "DAG after Squashing" << std::endl;
+            //project:visitor.print_stats(result);
         }
 
         // Runs over the dag, looking at the addition and multiplication nodes. If it detects a pair of children than appear
