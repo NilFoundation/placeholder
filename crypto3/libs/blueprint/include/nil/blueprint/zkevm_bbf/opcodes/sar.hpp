@@ -246,6 +246,7 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
         std::vector<TYPE> r_chunks_copy1(chunk_amount);  // Shift result chunks (without sign extension)
         std::vector<TYPE> r_chunks_copy2(chunk_amount);  // Shift result chunks (without sign extension)
         std::vector<TYPE> r_chunks_copy3(chunk_amount);  // Shift result chunks (without sign extension)
+        std::vector<TYPE> r_chunks_copy4(chunk_amount);  // Shift result chunks (without sign extension)
         std::vector<TYPE> q_chunks(chunk_amount);  // Division remainder chunks
         std::vector<TYPE> q_chunks_copy1(chunk_amount);  // Division remainder chunks
         std::vector<TYPE> v_chunks(chunk_amount);  // Difference chunks (q - b)
@@ -312,6 +313,7 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
             r_chunks_copy1 = zkevm_word_to_field_element<FieldType>(r);
             r_chunks_copy2 = zkevm_word_to_field_element<FieldType>(r);
             r_chunks_copy3 = zkevm_word_to_field_element<FieldType>(r);
+            r_chunks_copy4 = zkevm_word_to_field_element<FieldType>(r);
             q_chunks = zkevm_word_to_field_element<FieldType>(q);
             q_chunks_copy1 = zkevm_word_to_field_element<FieldType>(q);
             v_chunks = zkevm_word_to_field_element<FieldType>(v);
@@ -324,7 +326,7 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
                 b8_chunks_check[i] = b8_chunks[i] * 256;
             }
             for (int i = 0; i < 32; i++) {
-                mul8_carryless_chunks[i] = carryless_mul(r_chunks_copy3, b8_chunks, i);
+                mul8_carryless_chunks[i] = carryless_mul(r_chunks_copy2, b8_chunks, i);
                 mulcarries[i] = mul8_carryless_chunks[i].data.base() >> 8;
                 auto prev_carry = (i > 0) ? mulcarries[i - 1] : 0;
                 mul8_chunks[i] = mul8_carryless_chunks[i] - (mulcarries[i].data.base() << 8) + prev_carry;
@@ -364,10 +366,11 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
         // }
         for (std::size_t i = 0; i < chunk_amount; i++) {
             allocate(input_b_chunks[i], i + chunk_amount, 2);
-            allocate(r_chunks[i], i + 2 * chunk_amount, 3);
-            allocate(r_chunks_copy1[i], i + 2 * chunk_amount, 5);
-            allocate(r_chunks_copy2[i], i + 2 * chunk_amount, 7);
-            allocate(r_chunks_copy3[i], i, 8);
+            allocate(r_chunks[i], i + 2 * chunk_amount, 1);
+            allocate(r_chunks_copy1[i], i + 2 * chunk_amount, 3);
+            allocate(r_chunks_copy2[i], i + 2 * chunk_amount, 5);
+            allocate(r_chunks_copy3[i], i + 2 * chunk_amount, 7);
+            allocate(r_chunks_copy4[i], i, 8);
             allocate(a_chunks[i], i + 2 * chunk_amount, 8);
             allocate(b_chunks[i], i + 2 * chunk_amount, 2);
             allocate(b_chunks_copy1[i], i + 2 * chunk_amount, 4);
@@ -390,10 +393,11 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
         allocate(b0_upper, 1, 1);
 
         for (std::size_t i = 0; i < chunk_amount; i++) {
-            constrain(r_chunks[i] - r_chunks_copy1[i]);
             constrain(b_chunks[i] - b_chunks_copy1[i]);
+            constrain(r_chunks[i] - r_chunks_copy1[i]);
             constrain(r_chunks_copy1[i] - r_chunks_copy2[i]);
             constrain(r_chunks_copy2[i] - r_chunks_copy3[i]);
+            constrain(r_chunks_copy3[i] - r_chunks_copy4[i]);
             constrain(q_chunks[i] - q_chunks_copy1[i]);
         }
         constrain(mul8_carryless_chunks[0] - mulcarries[0] * 256 - mul8_chunks[0]);
@@ -499,8 +503,8 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
                                  ? 0
                                  : (shift_upper - i).inversed();
             }
-            allocate(indic_1[i], i + 2 * chunk_amount, 0);
-            allocate(indic_2[i], i + 2 * chunk_amount, 1);
+            allocate(indic_1[i], i + chunk_amount, 0);
+            allocate(indic_2[i], i + 2 * chunk_amount, 0);
             // indic_1[i] = 0                        =>  shift_lower = i       // AFAICS the other implication is not enforced. Is this a problem?
             // indic_1[i] = (shift_lower - i)^(-1)  <=>  shift_lower != i
             // same for indic_2.
@@ -525,7 +529,7 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
             // b_chunks[i] = shift_power * (1 - (shift_upper - i) * indic_2[i]) 
             // shift_upper = i   <=>  b_chunks[i] = shift_power = 2^(shift_lower)
             // shift_upper != i  <=>  b_chunks[i] = 0
-            constrain(b_chunks_copy1[i] - shift_power * (1 - (shift_upper - i) * indic_2[i]));
+            constrain(b_chunks[i] - shift_power * (1 - (shift_upper - i) * indic_2[i]));
         }
 
         // Examples of the above. 
