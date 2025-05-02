@@ -92,7 +92,7 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
         //
         T res;
         for (int i = 0; i < chunk_idx; i++) {
-            if ((i <= 16) && (chunk_idx - 2*i >= 0)) {
+            if ((i < 16) && (chunk_idx - 2*i >= 0)) {
                 res += r_16_chunks[i] * b_8_chunks[chunk_idx - 2*i];
             }
         }
@@ -322,10 +322,10 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
 
             // TODO: rangecheck b[i]
             b8_chunks = zkevm_word_to_field_element_flexible<FieldType>(b, 32, 8);
-            for (int i = 0; i < 32; i++) {
+            for (int i = 0; i < chunk_8_amount; i++) {
                 b8_chunks_check[i] = b8_chunks[i] * 256;
             }
-            for (int i = 0; i < 32; i++) {
+            for (int i = 0; i < chunk_8_amount; i++) {
                 mul8_carryless_chunks[i] = carryless_mul(r_chunks_copy2, b8_chunks, i);
                 mulcarries[i] = mul8_carryless_chunks[i].data.base() >> 8;
                 auto prev_carry = (i > 0) ? mulcarries[i - 1] : 0;
@@ -334,7 +334,7 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
             }
            
             for (int i = 0; i < chunk_amount; i++) {
-                construct_carryless_chunks[i] = carryless_construct(mul8_chunks, q_chunks, a_chunks, i);
+                construct_carryless_chunks[i] = carryless_construct(mul8_chunks, q_chunks_copy1, a_chunks, i);
                 constructcarries[i] = construct_carryless_chunks[i].data.base() << 16; 
                 auto prev_carry = (i > 0) ? constructcarries[i - 1] : 0;
                 // construct_chunks[i] = construct_carryless_chunks[i] - (constructcarries[i].data.base() << 16) + prev_carry;
@@ -377,18 +377,18 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
             allocate(q_chunks[i], i, 4);
             allocate(q_chunks_copy1[i], i + 2 * chunk_amount, 6);
             allocate(v_chunks[i], i + chunk_amount, 4);
+        }
+        for (std::size_t i = 0; i < chunk_8_amount; i++) {
             allocate(b8_chunks[i], i, 5);
             allocate(b8_chunks_check[i], i, 3);
             allocate(m8_chunks_check[i], i, 9);
-        }
-        allocate(a_chunks15_copy1, 15, 2);
-        for (std::size_t i = 0; i < chunk_8_amount; i++) {
             allocate(mul8_chunks[i], i, 7);
             allocate(mulcarries[i], i, 6);
         }
         for (std::size_t i = 0; i < chunk_amount; i++) {
             allocate(constructcarries[i], i + chunk_amount, 8);
         }
+        allocate(a_chunks15_copy1, 15, 2);
         allocate(b0_lower, 0, 1);
         allocate(b0_upper, 1, 1);
 
@@ -664,8 +664,6 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
         // Ensure that the highest chunk (without the sign bit) is 15-bits.
         lower_bits_range = 2 * lower_chunk_bits;
         allocate(lower_bits_range, 12, 1);
-
-        ///// REVIEWED UP TO HERE.
 
         // Sign extension logic
         // is_sign[i] signals whether a chunk should be completely filled with sign bits
