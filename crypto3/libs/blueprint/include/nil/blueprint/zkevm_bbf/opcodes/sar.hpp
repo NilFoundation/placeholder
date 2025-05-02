@@ -405,7 +405,7 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
             constrain(mul8_carryless_chunks[i] 
                       - mulcarries[i] * 256 + mulcarries[i-1]  - mul8_chunks[i]);
         }
-        constrain(construct_carryless_chunks[0] - constructcarries[0] * 256);
+        constrain(construct_carryless_chunks[0] - constructcarries[0] * two_16);
         for (int i = 1; i < 16; i++) {
             constrain(construct_carryless_chunks[i] 
                       - constructcarries[i] * two_16 + constructcarries[i-1]);
