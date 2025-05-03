@@ -163,6 +163,7 @@ namespace nil {
 
                         std::vector<expression_type> exprs = get_gate_argument_expressions(constraint_system, theta);
 
+
                         central_expr_evaluator.register_expressions(exprs);
                         central_expr_evaluator.evaluate_all();
 

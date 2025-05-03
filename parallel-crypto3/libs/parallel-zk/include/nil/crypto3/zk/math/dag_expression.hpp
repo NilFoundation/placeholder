@@ -189,7 +189,9 @@ namespace nil::crypto3::zk::snark {
         const std::vector<node_type>& get_nodes() const {
             return nodes;
         }
-
+        const node_type& get_node(size_t i) const {
+            return nodes[i];
+        }
         size_t get_root_node(size_t i) const {
             return root_nodes[i];
         }
@@ -258,6 +260,42 @@ namespace nil::crypto3::zk::snark {
         }
     };
 
+    // For each node of a DAG counts how many times is it used as a child of another node.
+    template<typename VariableType>
+    class dag_child_occurence_counting_visitor : public boost::static_visitor<void> {
+    public:
+
+        std::vector<size_t> _occurences;
+
+        dag_child_occurence_counting_visitor() = default;
+
+        std::vector<size_t> get_occurence_counts(const dag_expression<VariableType> &dag) {
+            _occurences = std::vector<size_t>(dag.get_nodes_count(), 0);
+            for (const auto& node: dag.get_nodes()) {
+                std::visit(*this, node);
+            }
+            return std::move(_occurences);
+        }
+
+        void operator()(const dag_constant<VariableType>& n) {
+        }
+        void operator()(const dag_variable<VariableType>& n) {
+        }
+        void operator()(const dag_addition& n) {
+            for (size_t i = 0; i < n.operands.size(); i++) {
+                _occurences[n.operands[i]]++;
+            }
+        }
+        void operator()(const dag_multiplication& n) {
+            for (size_t i = 0; i < n.operands.size(); i++) {
+                _occurences[n.operands[i]]++;
+            }
+        }
+        void operator()(const dag_negation& n) {
+            _occurences[n.operand]++;
+        }
+    };
+
     // TODO(martun): if we find time, get rid of all usages of std::holds_alternative.
  
     // This class stores all registered expressions, then runs over them as a visitor and
@@ -305,7 +343,7 @@ namespace nil::crypto3::zk::snark {
             //std::cout << "DAG before Squashing" << std::endl;
             //visitor.print_stats(result);
 
-            merge_children();
+            merge_children(false);
 
             //std::cout << "DAG After merge children" << std::endl;
             //visitor.print_stats(result);
@@ -316,8 +354,15 @@ namespace nil::crypto3::zk::snark {
 
             remove_duplicates();
 
+            //std::cout << "DAG After removing duplicates" << std::endl;
+            //visitor.print_stats(result);
+
+            // Now remove children that are the only have one parent, and parent operation matches.
+            merge_children(true);
+            remove_unreachable_nodes();
+
             //std::cout << "DAG after Squashing" << std::endl;
-            //project:visitor.print_stats(result);
+            //visitor.print_stats(result);
         }
 
         // Runs over the dag, looking at the addition and multiplication nodes. If it detects a pair of children than appear
@@ -326,7 +371,7 @@ namespace nil::crypto3::zk::snark {
         // Then we merge node pairs if they co-occure more than once. Then the matrix is built again and again, until
         // if does not contain any number >1.
         void remove_duplicates() {
-            bool something_changed = false;
+            bool something_changed;
             do {
                 something_changed = false;
                 auto [add_occurences, mul_occurences] = generate_occurance_count();
@@ -416,7 +461,8 @@ namespace nil::crypto3::zk::snark {
                 const auto& [first, second] = pr;
                 if (used[first] || used[second])
                     continue;
-                used[first] = used[second] = true;
+                used[first] = true;
+                used[second] = true;
                 selected_pairs.push_back({first, second});
             }
             return {selected_pairs, used};
@@ -562,7 +608,18 @@ namespace nil::crypto3::zk::snark {
             return reachable;
         }
 
-        void merge_children() {
+        /** \breief - Merges children into the parent node if operation matches. For example if the parent node is a multiplication,
+         *          and one of it's children is a multiplication as well, it moves the children of that child to the parent.
+         *  \param[in] only_those_that_occur_once - if set to true, will only move up children that are not re-used, I.E. this
+         *          node is the only parent, so the child can be destroyed later.
+         */
+        void merge_children(bool only_those_that_occur_once) {
+            std::vector<size_t> occurences;
+            if (only_those_that_occur_once) {
+                dag_child_occurence_counting_visitor<VariableType> v;
+                occurences = v.get_occurence_counts(result);
+            }
+ 
             for (size_t k = 0; k < result.nodes.size(); ++k) {
                 auto& node = result.nodes[k];
                 if (std::holds_alternative<dag_addition>(node)) {
@@ -571,7 +628,9 @@ namespace nil::crypto3::zk::snark {
                     for (size_t i = 0; i < add.operands.size(); i++) {
                         const auto& child_node = result.nodes[add.operands[i]];
                         // If a child node holds addition, 'steal' its children.
-                        if (std::holds_alternative<dag_addition>(child_node)) {
+                        if (std::holds_alternative<dag_addition>(child_node) && 
+                            (!only_those_that_occur_once || occurences[add.operands[i]] == 1)) {
+
                             const auto& child_add = std::get<dag_addition>(child_node);
                             for (size_t j = 0; j < child_add.operands.size(); j++) {
                                 new_operands.push_back(child_add.operands[j]);
@@ -587,7 +646,9 @@ namespace nil::crypto3::zk::snark {
                     for (size_t i = 0; i < mul.operands.size(); i++) {
                         const auto& child_node = result.nodes[mul.operands[i]];
                         // If a child node holds multiplication, 'steal' its children.
-                        if (std::holds_alternative<dag_multiplication>(child_node)) {
+                        if (std::holds_alternative<dag_multiplication>(child_node) && 
+                            (!only_those_that_occur_once || occurences[mul.operands[i]] == 1)) {
+
                             const auto& child_mul = std::get<dag_multiplication>(child_node);
                             for (size_t j = 0; j < child_mul.operands.size(); j++) {
                                 new_operands.push_back(child_mul.operands[j]);
