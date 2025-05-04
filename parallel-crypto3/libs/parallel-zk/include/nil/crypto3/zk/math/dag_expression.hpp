@@ -195,11 +195,15 @@ namespace nil::crypto3::zk::snark {
         size_t get_root_node(size_t i) const {
             return root_nodes[i];
         }
-
+        size_t get_root_node_degree(size_t i) const {
+            return root_node_degrees[i];
+        }
     private:
 
         std::unordered_map<node_type, size_t> node_map;
         std::vector<size_t> root_nodes;
+        // The degrees of expression that represent the given root node.
+        std::vector<size_t> root_node_degrees;
         std::vector<node_type> nodes;
 
         size_t register_node(const node_type& node) {
@@ -325,9 +329,14 @@ namespace nil::crypto3::zk::snark {
         }
 
         dag_expression<VariableType> build() {
+            expression_max_degree_visitor<VariableType> max_degree_visitor;
+
             for (const auto& expr: expressions) {
                 size_t root_node = boost::apply_visitor(*this, expr.get_expr());
                 result.root_nodes.push_back(root_node);
+
+                std::size_t degree = max_degree_visitor.compute_max_degree(expr);
+                result.root_node_degrees.push_back(degree);
             }
             squash_dag();
             return std::move(result);
@@ -429,6 +438,7 @@ namespace nil::crypto3::zk::snark {
                 }
                 // Move all the root nodes as well.
                 new_result.root_nodes = result.root_nodes;
+                new_result.root_node_degrees = result.root_node_degrees;
                 for (auto& root_id: new_result.root_nodes) {
                     root_id = new_index[root_id];
                 } 
@@ -574,6 +584,7 @@ namespace nil::crypto3::zk::snark {
             }
             // Move all the root nodes as well.
             new_result.root_nodes = result.root_nodes;
+            new_result.root_node_degrees = result.root_node_degrees;
             for (auto& root_id: new_result.root_nodes) {
                 root_id = new_index[root_id];
             } 
