@@ -216,30 +216,13 @@ namespace nil {
                                 "Lookup argument compute h constraint parts of size {}",
                                 hs.size());
 
-                            // Resize each of hs 2x the size of the corresponding lookup_input.
-                            // This will later change to a batch resize.
-                            parallel_for(
-                                0, hs.size(),
-                                [&hs, &h_constraint_parts, &lookup_input](std::size_t i) {
-                                    hs[i].resize(lookup_input[i].size() * 2);
-                                },
-                                ThreadPool::PoolLevel::HIGH);
-                            parallel_for(
-                                0, hs.size(),
-                                [&hs, &h_constraint_parts, &lookup_input](std::size_t i) {
-                                    lookup_input[i].resize(lookup_input[i].size() * 2);
-                                },
-                                ThreadPool::PoolLevel::HIGH);
-
                             parallel_for(
                                 0, hs.size(),
                                 [&hs, &h_constraint_parts, &h_challenges, &alpha,
                                  &lookup_input, &one](std::size_t i) {
-                                    h_constraint_parts[i] = -lookup_input[i];
-                                    h_constraint_parts[i] += alpha;
-                                    h_constraint_parts[i] *= hs[i];
-                                    h_constraint_parts[i] += one;
-                                    h_constraint_parts[i] *= h_challenges[i];
+                                    h_constraint_parts[i] =
+                                        h_challenges[i] *
+                                        (hs[i] * (alpha - lookup_input[i]) + one);
                                 },
                                 ThreadPool::PoolLevel::HIGH);
                         }

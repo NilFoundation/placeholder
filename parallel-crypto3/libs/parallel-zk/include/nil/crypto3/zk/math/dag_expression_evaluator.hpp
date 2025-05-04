@@ -93,8 +93,14 @@ namespace nil::crypto3::zk::snark {
             const size_t extended_domain_size = _cached_assignment_table.original_domain_size * _max_degree;
 
             // Create empty dfs polynomials of degree 'extended_domain_size - 1' and size 'extended_domain_size'.
-            std::vector<polynomial_dfs_type> result(_expr.get_root_nodes_count(),
-                polynomial_dfs_type(extended_domain_size - 1, extended_domain_size));
+            std::vector<polynomial_dfs_type> result;
+
+            // For each polynomial in the results compute and set the correct degree. This is useful, since in some 
+            // cases a poly of degree 3*N is stored in size 4*N, and it is later multiplied by a selector or a poly in lookup argument.
+            for (size_t i = 0; i < _expr.get_root_nodes_count(); ++i) {
+                size_t degree = _cached_assignment_table.original_domain_size * _expr.get_root_node_degree(i);
+                result.push_back(polynomial_dfs_type(degree - 1, extended_domain_size));
+            }
 
             wait_for_all(parallel_run_in_chunks<void>(
                 extended_domain_size,
@@ -115,6 +121,7 @@ namespace nil::crypto3::zk::snark {
                 ThreadPool::PoolLevel::HIGH
             ));
 
+            
             return result;
         }
 
