@@ -27,9 +27,9 @@
 #include <algorithm>
 #include <numeric>
 
-#include <nil/blueprint/zkevm_bbf/types/zkevm_word.hpp>
 #include <nil/blueprint/zkevm_bbf/subcomponents/memory_cost.hpp>
 #include <nil/blueprint/zkevm_bbf/types/opcode.hpp>
+#include <nil/blueprint/zkevm_bbf/types/zkevm_word.hpp>
 
 namespace nil {
     namespace blueprint {
@@ -46,6 +46,8 @@ namespace nil {
                 using generic_component<FieldType, stage>::lookup;
                 using generic_component<FieldType, stage>::lookup_table;
 
+                static constexpr std::size_t filter_chunks_amount = 128;
+
               public:
                 using typename generic_component<FieldType, stage>::TYPE;
 
@@ -59,11 +61,18 @@ namespace nil {
                         memory_expansion_cost, S;
                     std::vector<TYPE> topics_lo(x);
                     std::vector<TYPE> topics_hi(x);
+                    // std::vector<std::vector<TYPE>> filters(3 * (x + 1) + 1,
+                    //                                        filter_chunks_amount);
+                    // should have current filter and next filter
 
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
                         offset = w_lo<FieldType>(current_state.stack_top());
                         length = w_lo<FieldType>(current_state.stack_top(1));
                         current_mem = current_state.memory_size();
+                        // current_state.current_filter();
+                        // current_state.next_filter();
+                        // add constrains x = 0 -> value = topic
+                        // x = 1 -> value = topic x
                         next_mem = length.is_zero()
                                        ? current_mem
                                        : std::max(offset + length, current_mem);
@@ -109,39 +118,33 @@ namespace nil {
                     memory_expansion_size =
                         (next_memory.word_size - current_memory.word_size) * 32;
 
-                        // add 
-                        // memory read lookup
-                        // log table lookup
-
                     if constexpr (stage == GenerationStage::CONSTRAINTS) {
-                        constrain(current_state.pc_next() - current_state.pc(0) - 1);  // PC transition
+                        constrain(current_state.pc_next() - current_state.pc(0) -
+                                  1);  // PC transition
                         constrain(current_state.gas(0) - current_state.gas_next() -
                                   375 * (1 + x) - 8 * length -
                                   memory_expansion_cost);  // GAS transition
-                        constrain(current_state.stack_size(0) - current_state.stack_size_next() - 2 - x);  // stack_size transition
+                        constrain(current_state.stack_size(0) -
+                                  current_state.stack_size_next() - 2 -
+                                  x);  // stack_size transition
                         constrain(current_state.memory_size_next() -
                                   current_state.memory_size(0) -
                                   memory_expansion_size);  // memory_size transition
                         constrain(current_state.rw_counter_next() -
-                                  current_state.rw_counter(0) - 2 - x);  // rw_counter transition
+                                  current_state.rw_counter(0) - 2 -
+                                  x);  // rw_counter transition
                         std::vector<TYPE> tmp;
                         tmp = rw_table<FieldType, stage>::stack_lookup(
-                            current_state.call_id(0),
-                            current_state.stack_size(0) - 1,
+                            current_state.call_id(0), current_state.stack_size(0) - 1,
                             current_state.rw_counter(0),
                             TYPE(0),  // is_write
-                            TYPE(0),
-                            offset
-                        );
+                            TYPE(0), offset);
                         lookup(tmp, "zkevm_rw");
                         tmp = rw_table<FieldType, stage>::stack_lookup(
-                            current_state.call_id(0),
-                            current_state.stack_size(0) - 2,
+                            current_state.call_id(0), current_state.stack_size(0) - 2,
                             current_state.rw_counter(0) + 1,
                             TYPE(0),  // is_write
-                            TYPE(0),
-                            length
-                        );
+                            TYPE(0), length);
                         lookup(tmp, "zkevm_rw");
                         for (std::size_t i = 0; i < x; i++) {
                             tmp = rw_table<FieldType, stage>::stack_lookup(
@@ -149,9 +152,7 @@ namespace nil {
                                 current_state.stack_size(0) - 3 - i,
                                 current_state.rw_counter(0) + 2 + i,
                                 TYPE(0),  // is_write
-                                topics_hi[i],
-                                topics_lo[i]
-                            );
+                                topics_hi[i], topics_lo[i]);
                             lookup(tmp, "zkevm_rw");
                         }
                     }

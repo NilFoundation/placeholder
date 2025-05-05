@@ -115,8 +115,6 @@ namespace nil {
                     const std::vector<TYPE> &type = l_t.type;
                     const std::vector<TYPE> &indice = l_t.indice;
                     const std::vector<TYPE> &is_last = l_t.is_last;
-                    const std::vector<std::vector<TYPE>> &previous_filter =
-                        l_t.previous_filter;
                     const std::vector<std::vector<TYPE>> &current_filter =
                         l_t.current_filter;
 
@@ -211,7 +209,7 @@ namespace nil {
                             indice_chunk[i] = word;
 
                             for (std::size_t j = 0; j < filter_chunks_amount; j++) {
-                                auto new_chunk = previous_filter[i][j];
+                                auto new_chunk = i == 0 ? 0 : current_filter[i - 1][j];
 
                                 index_chunk[i][j] =
                                     (j == byte_pos[i].to_integral())
@@ -232,6 +230,27 @@ namespace nil {
                                         transition_chunk_bits[i][k] = temp_chunk % 2;
                                         temp_chunk /= 2;
                                     }
+                                }
+                            }
+
+                            if (i != 0) {
+                                for (std::size_t j = 0; j < filter_chunks_amount; j++) {
+                                    std::cout << "i: " << i << ", j: " << j << std::endl;
+                                    std::cout << "current_filter[i][j]: "
+                                              << current_filter[i][j] << std::endl;
+                                    std::cout << "current_filter[i-1][j]: "
+                                              << current_filter[i - 1][j] << std::endl;
+                                    std::cout
+                                        << "index_chunk[i][j]: " << index_chunk[i][j]
+                                        << std::endl;
+                                    std::cout
+                                        << "index_selector[i]: " << index_selector[i]
+                                        << std::endl;
+                                    std::cout << "constrain: "
+                                              << current_filter[i][j] -
+                                                     current_filter[i - 1][j] -
+                                                     index_selector[i] * index_chunk[i][j]
+                                              << std::endl;
                                 }
                             }
                         }
@@ -282,14 +301,6 @@ namespace nil {
 
                         // first index is 0
                         constrain(log_index[0]);
-
-                        for (std::size_t j = 0; j < filter_chunks_amount; j++) {
-                            constrain(previous_filter[0][j]);  // First filter is empty
-                            non_first_row_constraints.push_back(context_object.relativize(
-                                (previous_filter[1][j] - current_filter[0][j]) *
-                                    selector[1],
-                                -1));  // Previous_filter = current_filer of previous row
-                        }
 
                         every_row_constraints.push_back(context_object.relativize(
                             is_zero_index[1] * (is_zero_index[1] - 1), -1));
@@ -387,7 +398,7 @@ namespace nil {
                         every_row_constraints.push_back(context_object.relativize(
                             index_selector[1] * (1 - index_selector[1]), -1));
 
-                        for (std::size_t j = 0; j < filter_bit_per_chunk < ; j++) {
+                        for (std::size_t j = 0; j < filter_bit_per_chunk; j++) {
                             every_row_constraints.push_back(context_object.relativize(
                                 index_bit_selector[1][j] * (1 - index_bit_selector[1][j]),
                                 -1));
@@ -400,7 +411,7 @@ namespace nil {
                         for (std::size_t j = 0; j < filter_chunks_amount; j++) {
                             TYPE transition_sum;
                             int pow = 1;
-                            auto temp_chunk = previous_filter[1][j];
+                            auto temp_chunk = current_filter[0][j];
 
                             // The loop removes all bits of temp_chunk except the
                             // bit_index
@@ -414,21 +425,43 @@ namespace nil {
                             // If temp_chunk is 0, the index was not in the
                             // previous_filter -> index_selector is 1
                             // If temp_chunk is not 0, it is equal to index_chunk
-                            every_row_constraints.push_back(context_object.relativize(
+                            non_first_row_constraints.push_back(context_object.relativize(
                                 (1 - index_selector[1]) *
                                     (temp_chunk - index_chunk[1][j]) * index_chunk[1][j],
                                 -1));
 
                             // transition_sum = previous_chunk if address_index_chunk
-                            every_row_constraints.push_back(context_object.relativize(
+                            non_first_row_constraints.push_back(context_object.relativize(
                                 index_chunk[1][j] *
-                                    (transition_sum - previous_filter[1][j]),
+                                    (transition_sum - current_filter[0][j]),
                                 -1));
 
-                            every_row_constraints.push_back(context_object.relativize(
-                                current_filter[1][j] - previous_filter[1][j] -
-                                    index_chunk[1][j] * index_selector[1],
+                            non_first_row_constraints.push_back(context_object.relativize(
+                                (current_filter[1][j] - current_filter[0][j] -
+                                 index_chunk[1][j] * index_selector[1]) *
+                                    selector[1],
                                 -1));
+                        }
+
+                        // first row constrain for the filter, temp_chunk = 0
+                        for (std::size_t j = 0; j < filter_chunks_amount; j++) {
+                            TYPE transition_sum;
+                            int pow = 1;
+                            TYPE temp_chunk = 0;
+
+                            for (std::size_t k = 0; k < filter_bit_per_chunk; k++) {
+                                temp_chunk -= transition_chunk_bits[0][k] *
+                                              index_bit_selector[0][k] * pow;
+                                transition_sum += transition_chunk_bits[0][k] * pow;
+                                pow *= 2;
+                            }
+                            constrain((1 - index_selector[0]) *
+                                      (temp_chunk - index_chunk[0][j]) *
+                                      index_chunk[0][j]);
+
+                            constrain(index_chunk[0][j] * transition_sum);
+                            constrain(current_filter[0][j] -
+                                      index_chunk[0][j] * index_selector[0]);
                         }
 
                         {
