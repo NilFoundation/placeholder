@@ -352,7 +352,7 @@ namespace nil::crypto3::zk::snark {
             //std::cout << "DAG before Squashing" << std::endl;
             //visitor.print_stats(result);
 
-            merge_children(false);
+            merge_children(/*only_those_that_occur_once=*/ false);
 
             //std::cout << "DAG After merge children" << std::endl;
             //visitor.print_stats(result);
@@ -366,8 +366,8 @@ namespace nil::crypto3::zk::snark {
             //std::cout << "DAG After removing duplicates" << std::endl;
             //visitor.print_stats(result);
 
-            // Now remove children that are the only have one parent, and parent operation matches.
-            merge_children(true);
+            // Now remove children that are the only child of their parent, and parent operation matches.
+            merge_children(/*only_those_that_occur_once=*/ true);
             remove_unreachable_nodes();
 
             //std::cout << "DAG after Squashing" << std::endl;
