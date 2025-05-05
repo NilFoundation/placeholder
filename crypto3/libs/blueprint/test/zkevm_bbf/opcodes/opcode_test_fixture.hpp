@@ -24,10 +24,10 @@
 
 #pragma once
 
-#include <nil/crypto3/algebra/curves/pallas.hpp>
-#include <nil/crypto3/algebra/fields/arithmetic_params/pallas.hpp>
-#include <nil/crypto3/algebra/curves/vesta.hpp>
-#include <nil/crypto3/algebra/fields/arithmetic_params/vesta.hpp>
+#include <nil/crypto3/algebra/curves/alt_bn128.hpp>
+#include <nil/crypto3/algebra/fields/arithmetic_params/alt_bn128.hpp>
+#include <nil/crypto3/algebra/fields/babybear.hpp>
+#include <nil/crypto3/algebra/fields/arithmetic_params/babybear.hpp>
 #include <nil/crypto3/algebra/random_element.hpp>
 
 #include <nil/crypto3/hash/algorithm/hash.hpp>
@@ -54,6 +54,8 @@
 #include <nil/blueprint/zkevm_bbf/big_field/circuits/state.hpp>
 #include <nil/blueprint/zkevm_bbf/big_field/circuits/zkevm.hpp>
 #include <nil/blueprint/zkevm_bbf/big_field/circuits/zkevm_wide.hpp>
+
+#include <nil/blueprint/zkevm_bbf/small_field/circuits/rw.hpp>
 
 #include "../circuit_test_fixture.hpp"
 
@@ -205,6 +207,23 @@ public:
             result = test_bbf_component<BigFieldType, zkevm_big_field::zkevm_wide>(
                 "zkevm_wide", {}, zkevm_wide_assignment_input,
                 max_zkevm_rows, max_copy, max_rw, max_exponentiations, max_bytecode, max_state
+            );
+            BOOST_CHECK(result);
+        }
+
+        // Small_field
+
+        // Max_rw, max_state
+        const std::string small_rw_circuit = "rw-s";
+        if (should_run_circuit(small_rw_circuit)) {
+            BOOST_LOG_TRIVIAL(info) << std::endl << "circuit '" << small_rw_circuit << "'";
+            typename zkevm_small_field::rw<SmallFieldType, GenerationStage::ASSIGNMENT>::input_type rw_assignment_input;
+            rw_assignment_input.rw_trace = circuit_inputs.short_rw_operations();
+            rw_assignment_input.timeline = circuit_inputs.timeline();
+            rw_assignment_input.state_trace = circuit_inputs.state_operations();
+
+            result = test_bbf_component<SmallFieldType, nil::blueprint::bbf::zkevm_small_field::rw>(
+                "rw-s", {}, rw_assignment_input, max_rw, max_state
             );
             BOOST_CHECK(result);
         }

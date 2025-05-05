@@ -1435,6 +1435,12 @@ namespace nil {
                         copy_full_length += cpy.length;
                     }
                     ss << "Full length of copy events = " << copy_full_length << std::endl;
+                    ss << "Bytecodes_amount = " << _bytecodes.get_data().size() << std::endl;
+                    std::size_t bytecodes_length_sum = 0;
+                    for( const auto &v: _bytecodes.get_data()){
+                        bytecodes_length_sum += v.first.size();
+                    }
+                    ss << "Bytecodes_length_sum = " << bytecodes_length_sum << std::endl;
                     return ss.str();
                 }
             protected:
