@@ -67,13 +67,7 @@ namespace nil::crypto3::zk::snark {
 
         dag_expression_evaluator(const dag_expression<polynomial_dfs_variable_type>& expr, size_t max_degree)
             : _expr(expr)
-            , _max_degree(max_degree)
-            , _is_root(expr.get_nodes_count(), false) {
-
-           for (size_t i = 0; i < _expr.get_root_nodes_count(); ++i)
-                _is_root[_expr.get_root_node(i)] = true;
-            dag_child_occurence_counting_visitor<polynomial_dfs_variable_type> v;
-            _occurences = v.get_occurence_counts(_expr);
+            , _max_degree(max_degree) {
         }
 
         simd_vector_type get_variable_value_chunk(
@@ -151,47 +145,15 @@ namespace nil::crypto3::zk::snark {
                         extended_domain_size, begin, j);
                 } else if (std::holds_alternative<dag_addition>(node)) {
                     const auto& add = std::get<dag_addition>(node);
-                    // Find a child we can move.
-                    bool moved_a_child = false; 
-                    for (std::size_t i = 0; i < add.operands.size(); i++) {
-                        if ((_occurences[add.operands[i]] == 1) && !_is_root[add.operands[i]]) {
-                            moved_a_child = true; 
-                            assignment_chunks[k] = std::move(assignment_chunks[add.operands[i]]);
-                            for (std::size_t j = 0; j < add.operands.size(); j++) {
-                                if (j == i)
-                                    continue;
-                                assignment_chunks[k] += assignment_chunks[add.operands[j]];
-                            }
-                            break;
-                        }
-                    }
-                    if (!moved_a_child) {
-                        assignment_chunks[k] = assignment_chunks[add.operands[0]];
-                        for (std::size_t i = 1; i < add.operands.size(); i++) {
-                            assignment_chunks[k] += assignment_chunks[add.operands[i]];
-                        }
+                    assignment_chunks[k] = assignment_chunks[add.operands[0]];
+                    for (std::size_t i = 1; i < add.operands.size(); i++) {
+                        assignment_chunks[k] += assignment_chunks[add.operands[i]];
                     }
                 } else if (std::holds_alternative<dag_multiplication>(node)) {
                     const auto& mul = std::get<dag_multiplication>(node);
-                    // Find a child we can move.
-                    bool moved_a_child = false; 
-                    for (std::size_t i = 0; i < mul.operands.size(); i++) {
-                        if ((_occurences[mul.operands[i]] == 1) && !_is_root[mul.operands[i]]) {
-                            moved_a_child = true; 
-                            assignment_chunks[k] = std::move(assignment_chunks[mul.operands[i]]);
-                            for (std::size_t j = 0; j < mul.operands.size(); j++) {
-                                if (j == i)
-                                    continue;
-                                assignment_chunks[k] *= assignment_chunks[mul.operands[j]];
-                            }
-                            break;
-                        }
-                    }
-                    if (!moved_a_child) {
-                        assignment_chunks[k] = assignment_chunks[mul.operands[0]];
-                        for (std::size_t i = 1; i < mul.operands.size(); i++) {
-                            assignment_chunks[k] *= assignment_chunks[mul.operands[i]];
-                        }
+                    assignment_chunks[k] = assignment_chunks[mul.operands[0]];
+                    for (std::size_t i = 1; i < mul.operands.size(); i++) {
+                        assignment_chunks[k] *= assignment_chunks[mul.operands[i]];
                     }
                 } else if (std::holds_alternative<dag_negation>(node)) {
                     assignment_chunks[k] = 
@@ -200,8 +162,6 @@ namespace nil::crypto3::zk::snark {
             }
         }
 
-        std::vector<size_t> _occurences;
-        std::vector<bool> _is_root;
         dag_expression<polynomial_dfs_variable_type> _expr;
         size_t _max_degree;
     };
