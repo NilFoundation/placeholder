@@ -55,21 +55,25 @@ namespace nil::blueprint::bbf {
             };
 
 
-            static table_params get_minimal_requirements(std::size_t max_bytes) {
+            static table_params get_minimal_requirements(std::size_t max_bytes, bool is_variable_len) {
             constexpr std::size_t witness = 9;
             constexpr std::size_t public_inputs = 1;
-            constexpr std::size_t constants = 0;
+            constexpr std::size_t constants = 1;
             std::size_t rows = max_bytes;
             return {witness, public_inputs, constants, rows};
         }
 
         static void allocate_public_inputs(
-                context_type &context_object, input_type &input, std::size_t max_blocks) {
+                context_type &context_object, input_type &input, std::size_t max_blocks, bool is_variable_len) {
             context_object.allocate(input.rlc_challenge, 0, 0,
                                     column_type::public_input);
         }
 
-        rlp_field(context_type &context_object, input_type rlp_input, std::size_t max_bytes, bool make_links = true) :
+        TYPE field_length;
+        TYPE length_length;
+        TYPE has_prefix;
+
+        rlp_field(context_type &context_object, input_type rlp_input, std::size_t max_bytes, bool is_variable_len, bool make_links = true) :
             generic_component<FieldType,stage>(context_object) {
 
             std::vector<TYPE> bytes = std::vector<TYPE>(max_bytes);
@@ -81,6 +85,8 @@ namespace nil::blueprint::bbf {
             std::vector<TYPE> len_val = std::vector<TYPE>(max_bytes);
             std::vector<TYPE> is_last = std::vector<TYPE>(max_bytes);
             std::vector<TYPE> rlc = std::vector<TYPE>(max_bytes);
+
+            value_type fixed_length = (value_type) max_bytes;
 
             if constexpr (stage == GenerationStage::ASSIGNMENT) {  
                 BOOST_ASSERT(rlp_input.input.size() <= max_bytes);
@@ -103,7 +109,7 @@ namespace nil::blueprint::bbf {
                     is_big[0] = 1;
                     len_len[0] = bytes[0] - 0xb7;
                     real_len_len = integral_type(len_len[0].data);
-                    
+
                     auto rll = static_cast<std::size_t>(real_len_len);
                     for(std::size_t i = rll; i>=1; i--){
                         bytes[i] = rlp_input.input[i];
@@ -166,7 +172,9 @@ namespace nil::blueprint::bbf {
                 allocate(rlc[i], 8, i);
             }
 
-
+            if(!is_variable_len){
+                constrain(field_len[0] + is_prefix[0] + len_len[0] - fixed_length);
+            }
             constrain((1-is_prefix[0])*(field_len[0] - 1), "single byte up to 0x79 has no prefix");
             for(std::size_t i = 0; i < max_bytes; i++){
                 // lookup(bytes[i], "byte_range_table/full");
@@ -189,6 +197,10 @@ namespace nil::blueprint::bbf {
                     constrain(is_len[i]*(len_len[i] - len_len[i+1] - 1), "len_len decrements by 1");
                 }
             }
+
+            field_length = field_len[0];
+            length_length = len_len[0];
+            has_prefix = is_prefix[0];
         }
     };
 } // namespace nil::blueprint::bbf
