@@ -526,16 +526,16 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
 
         if constexpr (stage == GenerationStage::CONSTRAINTS) {
             // State transition constraints
-            constrain(current_state.pc_next() - current_state.pc(number_of_rows - 1) -
+            constrain(current_state.pc_next() - current_state.pc(9) -
                       1);  // PC increment
-            constrain(current_state.gas(number_of_rows - 1) - current_state.gas_next() -
+            constrain(current_state.gas(9) - current_state.gas_next() -
                       3);  // Gas cost
-            constrain(current_state.stack_size(number_of_rows - 1) -
+            constrain(current_state.stack_size(9) -
                       current_state.stack_size_next() - 1);  // Stack pop
-            constrain(current_state.memory_size(number_of_rows - 1) -
+            constrain(current_state.memory_size(9) -
                       current_state.memory_size_next());  // Memory unchanged
             constrain(current_state.rw_counter_next() -
-                      current_state.rw_counter(number_of_rows - 1) - 3);  // RW counter
+                      current_state.rw_counter(9) - 3);  // RW counter
 
             // Stack lookup constraints
             std::vector<TYPE> tmp;
@@ -576,7 +576,6 @@ class zkevm_sar_operation : public opcode_abstract<FieldType> {
         zkevm_sar_bbf<FieldType, GenerationStage::CONSTRAINTS> bbf_obj(
             context, current_state);
     }
-    // virtual std::size_t rows_amount() override { return 4; }
     virtual std::size_t rows_amount() override { return 10; }
 };
 }  // namespace nil::blueprint::bbf
