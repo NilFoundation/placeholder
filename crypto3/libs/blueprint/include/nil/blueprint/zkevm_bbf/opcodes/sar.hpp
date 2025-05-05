@@ -443,73 +443,73 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
             res[i] = y_chunks[i];
         }
 
-        // // allocate(sign_bit, 15, 3);
-        // // constrain(sign_bit * (1 - sign_bit));  // Ensure sign_bit is 0 or 1
-        // // lower_chunk_bits = a_chunks[15] - sign_bit * two_15;
-        // // allocate(lower_chunk_bits, 14, 3);
-        // // // Ensure that the highest chunk (without the sign bit) is 15-bits.
-        // // lower_bits_range = 2 * lower_chunk_bits;
-
-        // allocate(sign_bit, 14, 1);
+        // allocate(sign_bit, 15, 3);
         // constrain(sign_bit * (1 - sign_bit));  // Ensure sign_bit is 0 or 1
-        // lower_chunk_bits = a_chunks15_copy1 - sign_bit * two_15;
-        // allocate(lower_chunk_bits, 13, 1);
+        // lower_chunk_bits = a_chunks[15] - sign_bit * two_15;
+        // allocate(lower_chunk_bits, 14, 3);
         // // Ensure that the highest chunk (without the sign bit) is 15-bits.
         // lower_bits_range = 2 * lower_chunk_bits;
-        // allocate(lower_bits_range, 12, 1);
 
-        // // Sign extension logic
-        // // is_sign[i] signals whether a chunk should be completely filled with sign bits
-        // // is_transition[i] signals whether a chunk has some sign bits and some "meaningful" bits
-        // std::vector<TYPE> is_transition(chunk_amount);
-        // std::vector<TYPE> is_sign(chunk_amount);
-        // for (std::size_t i = 0; i < chunk_amount; i++) {
-        //     // To know in which chunk the transition happens, we just need to look at shift_upper
-        //     // Small shift means the transition happens in most significant chunks, and vice versa. Hence the index reversal.
-        //     // indic_2[i_inv] = 0                           => shift_upper = i_inv  => is_transition[i] = 1
-        //     // indic_2[i_inv] = (shift_upper - i_inv)^(-1)  => shift_upper != i     => is_transition[i] = 0
-        //     size_t i_inv = chunk_amount - 1 - i;
-        //     is_transition[i] = (1 - (shift_upper - i_inv) * indic_2[i_inv]);
-        //     // Let i* be the unique index such that is_transition[i*] = 1.
-        //     // is_sign[i] = {
-        //     //      0 <=> i <= i*
-        //     //      1 <=> i > i*    
-        //     // }
-        //     for (std::size_t j = i + 1; j < chunk_amount; j++) {
-        //         is_sign[j] += is_transition[i];
-        //     }
-        // }
+        allocate(sign_bit, 14, 1);
+        constrain(sign_bit * (1 - sign_bit));  // Ensure sign_bit is 0 or 1
+        lower_chunk_bits = a_chunks15_copy1 - sign_bit * two_15;
+        allocate(lower_chunk_bits, 13, 1);
+        // Ensure that the highest chunk (without the sign bit) is 15-bits.
+        lower_bits_range = 2 * lower_chunk_bits;
+        allocate(lower_bits_range, 12, 1);
 
-        // // Calculate transition chunk
-        // // indic_2[i_inv] = (shift_upper - i_inv)^(-1)  => transition_chunk = r_chunks[i] + (sign mask -- more on this below)
-        // transition_chunk = 0;
-        // // shift_upper determines which chunk is the transition chunk
-        // for (std::size_t i = 0; i < chunk_amount; i++) {
-        //     size_t i_inv = chunk_amount - 1 - i;
-        //     transition_chunk +=
-        //         r_chunks[i] * (1 - (shift_upper - i_inv) * indic_2[i_inv]);
-        // }
-        // // shift_lower determines which exact mask should be added (how many sign bits)
-        // for (std::size_t i = 0; i < chunk_amount; i++) {
-        //     // It's really the chunk_size, not chunk_amount that matters, although in this case they're the same.
-        //     unsigned int mask = ((1 << i) - 1) << (chunk_amount - i); // 11...1100...00 = 1{i}0{chunk_amount - i}
-        //     transition_chunk +=
-        //         (1 - (shift_lower - i) * indic_1[i]) * mask * sign_bit;
-        // }
-        // // allocate(transition_chunk, 38, 1);
-        // allocate(transition_chunk, 11, 1);
+        // Sign extension logic
+        // is_sign[i] signals whether a chunk should be completely filled with sign bits
+        // is_transition[i] signals whether a chunk has some sign bits and some "meaningful" bits
+        std::vector<TYPE> is_transition(chunk_amount);
+        std::vector<TYPE> is_sign(chunk_amount);
+        for (std::size_t i = 0; i < chunk_amount; i++) {
+            // To know in which chunk the transition happens, we just need to look at shift_upper
+            // Small shift means the transition happens in most significant chunks, and vice versa. Hence the index reversal.
+            // indic_2[i_inv] = 0                           => shift_upper = i_inv  => is_transition[i] = 1
+            // indic_2[i_inv] = (shift_upper - i_inv)^(-1)  => shift_upper != i     => is_transition[i] = 0
+            size_t i_inv = chunk_amount - 1 - i;
+            is_transition[i] = (1 - (shift_upper - i_inv) * indic_2[i_inv]);
+            // Let i* be the unique index such that is_transition[i*] = 1.
+            // is_sign[i] = {
+            //      0 <=> i <= i*
+            //      1 <=> i > i*    
+            // }
+            for (std::size_t j = i + 1; j < chunk_amount; j++) {
+                is_sign[j] += is_transition[i];
+            }
+        }
 
-        // // connect the result (y_chunks) with r_chunks and sign_bit
-        // for (std::size_t i = 0; i < chunk_amount; i++) {
-        //     constrain(
-        //         // Recall that y = r + sign extension. We adjust the chunks of y accordingly.
-        //         // is_sign[i] = 1           => y_chunks[i] = 0x0000 or 0xFFFF (depending on sign_bit)
-        //         // is_transition[i] = 1     => y_chunks[i] = transition
-        //         // both of the above are 0  => y_chunks[i] = r_chunks[i] 
-        //         y_chunks[i] - is_sign[i] * sign_bit * 0xFFFF  // Sign fill
-        //         - is_transition[i] * transition_chunk  // Transition chunk
-        //         - (1 - is_sign[i] - is_transition[i]) * r_chunks[i]);  // Original chunks
-        // }
+        // Calculate transition chunk
+        // indic_2[i_inv] = (shift_upper - i_inv)^(-1)  => transition_chunk = r_chunks[i] + (sign mask -- more on this below)
+        transition_chunk = 0;
+        // shift_upper determines which chunk is the transition chunk
+        for (std::size_t i = 0; i < chunk_amount; i++) {
+            size_t i_inv = chunk_amount - 1 - i;
+            transition_chunk +=
+                r_chunks[i] * (1 - (shift_upper - i_inv) * indic_2[i_inv]);
+        }
+        // shift_lower determines which exact mask should be added (how many sign bits)
+        for (std::size_t i = 0; i < chunk_amount; i++) {
+            // It's really the chunk_size, not chunk_amount that matters, although in this case they're the same.
+            unsigned int mask = ((1 << i) - 1) << (chunk_amount - i); // 11...1100...00 = 1{i}0{chunk_amount - i}
+            transition_chunk +=
+                (1 - (shift_lower - i) * indic_1[i]) * mask * sign_bit;
+        }
+        // allocate(transition_chunk, 38, 1);
+        allocate(transition_chunk, 11, 1);
+
+        // connect the result (y_chunks) with r_chunks and sign_bit
+        for (std::size_t i = 0; i < chunk_amount; i++) {
+            constrain(
+                // Recall that y = r + sign extension. We adjust the chunks of y accordingly.
+                // is_sign[i] = 1           => y_chunks[i] = 0x0000 or 0xFFFF (depending on sign_bit)
+                // is_transition[i] = 1     => y_chunks[i] = transition
+                // both of the above are 0  => y_chunks[i] = r_chunks[i] 
+                y_chunks[i] - is_sign[i] * sign_bit * 0xFFFF  // Sign fill
+                - is_transition[i] * transition_chunk  // Transition chunk
+                - (1 - is_sign[i] - is_transition[i]) * r_chunks[i]);  // Original chunks
+        }
 
         // Convert to 128-bit chunks for stack operations
         auto A_128 = chunks16_to_chunks128_reversed<TYPE>(a_chunks);
@@ -538,19 +538,19 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
                       current_state.rw_counter(number_of_rows - 1) - 3);  // RW counter
 
             // Stack lookup constraints
-            // std::vector<TYPE> tmp;
-            // tmp = rw_table<FieldType, stage>::stack_lookup(
-            //     current_state.call_id(1), current_state.stack_size(1) - 1,
-            //     current_state.rw_counter(1), TYPE(0), B0, B1);
-            // lookup(tmp, "zkevm_rw");
-            // tmp = rw_table<FieldType, stage>::stack_lookup(
-            //     current_state.call_id(1), current_state.stack_size(1) - 2,
-            //     current_state.rw_counter(1) + 1, TYPE(0), A0, A1);
-            // lookup(tmp, "zkevm_rw");
-            // tmp = rw_table<FieldType, stage>::stack_lookup(
-            //     current_state.call_id(3), current_state.stack_size(3) - 2,
-            //     current_state.rw_counter(3) + 2, TYPE(1), Res0, Res1);
-            // lookup(tmp, "zkevm_rw");
+            std::vector<TYPE> tmp;
+            tmp = rw_table<FieldType, stage>::stack_lookup(
+                current_state.call_id(1), current_state.stack_size(1) - 1,
+                current_state.rw_counter(1), TYPE(0), B0, B1);
+            lookup(tmp, "zkevm_rw");
+            tmp = rw_table<FieldType, stage>::stack_lookup(
+                current_state.call_id(1), current_state.stack_size(1) - 2,
+                current_state.rw_counter(1) + 1, TYPE(0), A0, A1);
+            lookup(tmp, "zkevm_rw");
+            tmp = rw_table<FieldType, stage>::stack_lookup(
+                current_state.call_id(3), current_state.stack_size(3) - 2,
+                current_state.rw_counter(3) + 2, TYPE(1), Res0, Res1);
+            lookup(tmp, "zkevm_rw");
 
             // TODO: add lookup for a_chunks15_copy1
         }
