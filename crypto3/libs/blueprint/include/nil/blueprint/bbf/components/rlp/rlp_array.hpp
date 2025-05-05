@@ -77,7 +77,7 @@ namespace nil::blueprint::bbf {
             using input_type = typename rlp_field<FieldType, stage>::input_type;
 
 
-        static table_params get_minimal_requirements(std::vector<std::size_t> max_bytes) {
+        static table_params get_minimal_requirements(std::vector<std::size_t> max_bytes, std::vector<bool> is_variable_len) {
             constexpr std::size_t witness = 11;
             constexpr std::size_t public_inputs = 1;
             constexpr std::size_t constants = 0;
@@ -89,12 +89,14 @@ namespace nil::blueprint::bbf {
         }
 
         static void allocate_public_inputs(
-                context_type &context_object, input_type &input, std::vector<std::size_t> max_bytes) {
+                context_type &context_object, input_type &input, std::vector<std::size_t> max_bytes, std::vector<bool> is_variable_len) {
             context_object.allocate(input.rlc_challenge, 0, 0, column_type::public_input);
         }
 
-        rlp_array(context_type &context_object, input_type rlp_input, std::vector<std::size_t> max_bytes, bool make_links = true) :
+        rlp_array(context_type &context_object, input_type rlp_input, std::vector<std::size_t> max_bytes, std::vector<bool> is_variable_len, bool make_links = true) :
             generic_component<FieldType,stage>(context_object) {
+
+            BOOST_ASSERT(is_variable_len.size() == max_bytes.size());
 
             std::size_t max_fields = max_bytes.size();
             std::size_t header_rows = 9;
@@ -105,14 +107,14 @@ namespace nil::blueprint::bbf {
 
             std::cout << "total max bytes: " << total_max_bytes << std::endl;
 
-            std::vector<TYPE> bytes = std::vector<TYPE>(total_max_bytes);
-            std::vector<TYPE> is_prefix = std::vector<TYPE>(total_max_bytes);
-            std::vector<TYPE> is_big = std::vector<TYPE>(total_max_bytes);
-            std::vector<TYPE> is_len = std::vector<TYPE>(total_max_bytes);
-            std::vector<TYPE> field_len = std::vector<TYPE>(total_max_bytes);
-            std::vector<TYPE> len_len = std::vector<TYPE>(total_max_bytes);
-            std::vector<TYPE> len_val = std::vector<TYPE>(total_max_bytes);
-            std::vector<TYPE> is_last = std::vector<TYPE>(total_max_bytes);
+            std::vector<TYPE> bytes = std::vector<TYPE>(header_rows);
+            std::vector<TYPE> is_prefix = std::vector<TYPE>(header_rows);
+            std::vector<TYPE> is_big = std::vector<TYPE>(header_rows);
+            std::vector<TYPE> is_len = std::vector<TYPE>(header_rows);
+            std::vector<TYPE> field_len = std::vector<TYPE>(header_rows);
+            std::vector<TYPE> len_len = std::vector<TYPE>(header_rows);
+            std::vector<TYPE> len_val = std::vector<TYPE>(header_rows);
+            std::vector<TYPE> is_last = std::vector<TYPE>(header_rows);
             std::vector<TYPE> rlc = std::vector<TYPE>(total_max_bytes);
             std::vector<TYPE> array_len = std::vector<TYPE>(total_max_bytes);
             std::vector<TYPE> array_is_last = std::vector<TYPE>(total_max_bytes);
@@ -153,20 +155,22 @@ namespace nil::blueprint::bbf {
                     for(std::size_t i = rll+1; i < header_rows; i++){
                         len_val[i] = len_val[rll];
                     }
-                    
                     array_len[0] = len_val[0];
-                    for(std::size_t i = 1; i<=rll; i++){
-                        array_len[i] =  len_val[0];
-                    }
                 }
 
-                std::cout << "bytes\tis_prefix\tis_big\tis_len\tfield_len\tlen_len\tlen_val\tis_last\n";
+                for(std::size_t i = 1; i< header_rows; i++){
+                        array_len[i] =  array_len[0];
+                    }
+
+                
+
+                std::cout << "bytes\tis_prefix\tis_big\tis_len\tarray_len\tlen_len\tlen_val\tis_last\n";
                 for(std::size_t row_index = 0; row_index < header_rows; row_index++){
                         std::cout << std::hex << std::setfill('0') << std::setw(2) << bytes[row_index] << std::dec << " " << 
                         is_prefix[row_index] << " " << 
                         is_big[row_index] << " " << 
                         is_len[row_index] << " " << 
-                        field_len[row_index] << " " << 
+                        array_len[row_index] << " " << 
                         len_len[row_index] << " " << 
                         len_val[row_index] << " " << 
                         is_last[row_index] << " " << 
@@ -176,11 +180,19 @@ namespace nil::blueprint::bbf {
                 std::size_t field_index = 0;
                 std::size_t cur_index = cur + static_cast<std::size_t>(real_len_len);
                 std::size_t cur_row = header_rows;
+
+                std::cout << array_len[cur_row - 1] << std::endl;
                 while(field_index < max_fields){
                     BOOST_ASSERT(cur_index < rlp_input.input.size());
                     std::vector<std::uint8_t> field_rlp = extract_next_field(rlp_input.input, cur_index, max_bytes[field_index]);
                     context_type ct = context_object.fresh_subcontext(rlp_field_area, cur_row, max_bytes[field_index]);
-                    rlp_field<FieldType, stage> rlp_field_block(ct, {field_rlp, rlp_input.rlc_challenge}, max_bytes[field_index], make_links);
+                    rlp_field<FieldType, stage> rlp_field_block(ct, {field_rlp, rlp_input.rlc_challenge}, max_bytes[field_index], is_variable_len[field_index], make_links);
+                    array_len[cur_row] = array_len[cur_row-1] - 
+                            (rlp_field_block.field_length + rlp_field_block.length_length + rlp_field_block.has_prefix);
+                    std::cout << array_len[cur_row] << std::endl;
+                    for(std::size_t i = cur_row + 1; i < cur_row + max_bytes[field_index]; i++){
+                        array_len[i] = array_len[i-1];
+                    }
                     cur_row += max_bytes[field_index];
                     cur_index += field_rlp.size();
                     field_index++;
@@ -198,6 +210,9 @@ namespace nil::blueprint::bbf {
                 allocate(len_val[i], 6, i);
                 allocate(is_last[i], 7, i);
                 allocate(rlc[i], 8, i);
+            }
+
+            for(std::size_t i = 0; i < total_max_bytes; i++){
                 allocate(array_len[i], 9, i);
                 allocate(array_is_last[i], 10, i);
             }
@@ -230,11 +245,15 @@ namespace nil::blueprint::bbf {
                 std::size_t cur_row = header_rows;
                 while(field_index < max_fields){
                     context_type ct = context_object.fresh_subcontext(rlp_field_area, cur_row, max_bytes[field_index]);
-                    rlp_field<FieldType, stage> rlp_field_block(ct, rlp_input, max_bytes[field_index], make_links);
+                    rlp_field<FieldType, stage> rlp_field_block(ct, rlp_input, max_bytes[field_index], is_variable_len[field_index], make_links);
+                    constrain(array_len[cur_row - 1] - array_len[cur_row] -  (rlp_field_block.field_length + rlp_field_block.length_length + rlp_field_block.has_prefix));
+                    for(std::size_t i = cur_row + 1; i < cur_row + max_bytes[field_index]; i++){
+                        copy_constrain(array_len[i], array_len[i-1]);
+                    }
                     cur_row += max_bytes[field_index];
                     field_index++;
                 }
-
+                constrain(array_len[total_max_bytes - 1], "last array len is zero");
             }
         }
     };

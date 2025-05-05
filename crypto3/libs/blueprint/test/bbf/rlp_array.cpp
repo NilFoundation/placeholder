@@ -34,10 +34,10 @@
 using namespace nil::crypto3;
 using namespace nil::blueprint;
 template<typename field_type>
-void test_bbf_rlp_array(const std::vector<std::uint8_t> &encoded_rlp, typename field_type::value_type RLC, std::vector<std::size_t> &max_bytes, bool expected_to_pass = true) {
+void test_bbf_rlp_array(const std::vector<std::uint8_t> &encoded_rlp, typename field_type::value_type RLC, std::vector<std::size_t> &max_bytes, std::vector<bool> &is_variable_len, bool expected_to_pass = true) {
 
     typename bbf::rlp_array<field_type, bbf::GenerationStage::ASSIGNMENT>::input_type input = {encoded_rlp, RLC};
-    auto B = bbf::circuit_builder<field_type, bbf::rlp_array, std::vector<std::size_t>>(max_bytes);
+    auto B = bbf::circuit_builder<field_type, bbf::rlp_array, std::vector<std::size_t>, std::vector<bool>>(max_bytes, is_variable_len);
     auto [at, A, desc] = B.assign(input);
     BOOST_TEST(expected_to_pass == B.is_satisfied(at), "constraints are not satisfied");
 }
@@ -45,18 +45,34 @@ void test_bbf_rlp_array(const std::vector<std::uint8_t> &encoded_rlp, typename f
 
 BOOST_AUTO_TEST_SUITE(blueprint_plonk_test_suite)
 
+BOOST_AUTO_TEST_CASE(blueprint_plonk_rlp_array_bbf_two_empty_items) {
+    using field_type = nil::crypto3::algebra::curves::pallas::base_field_type;
+    using value_type = typename field_type::value_type;
+
+    std::string rlp = "c28080";
+    std::vector<std::uint8_t> encoded_rlp(rlp.size()/2);
+    for(int j = 0; j < rlp.size() / 2; j++) {
+        sscanf(rlp.substr(2*j, 2).c_str(), "%02hhX", &encoded_rlp[j]);
+    }
+    value_type rlc = 0;
+    std::vector<std::size_t> max_bytes = {1,1};
+    std::vector<bool> is_varied = {false, false};
+    test_bbf_rlp_array<field_type>(encoded_rlp, rlc, max_bytes, is_varied);
+}
+
 BOOST_AUTO_TEST_CASE(blueprint_plonk_rlp_array_bbf_two_items) {
     using field_type = nil::crypto3::algebra::curves::pallas::base_field_type;
     using value_type = typename field_type::value_type;
 
-    std::string rlp = "c283411a04a0bb9abb994e8c193b54fe9819e0ef532d9149e26e64335fa71b665410d98bcace";
+    std::string rlp = "e583411a04a0bb9abb994e8c193b54fe9819e0ef532d9149e26e64335fa71b665410d98bcace";
     std::vector<std::uint8_t> encoded_rlp(rlp.size()/2);
     for(int j = 0; j < rlp.size() / 2; j++) {
         sscanf(rlp.substr(2*j, 2).c_str(), "%02hhX", &encoded_rlp[j]);
     }
     value_type rlc = 0;
     std::vector<std::size_t> max_bytes = {4,33};
-    test_bbf_rlp_array<field_type>(encoded_rlp, rlc, max_bytes);
+    std::vector<bool> is_varied = {false, false};
+    test_bbf_rlp_array<field_type>(encoded_rlp, rlc, max_bytes, is_varied);
 }
 
 
@@ -71,7 +87,9 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_rlp_array_bbf_block_header) {
     }
     value_type rlc = 0;
     std::vector<std::size_t> max_bytes = {33,33,21,33,33,33,259,8,5,5,5,5,33,33,9,33};
-    test_bbf_rlp_array<field_type>(encoded_rlp, rlc, max_bytes);
+    std::vector<bool> is_varied = {false, false, false, false, false, false, false, true, true, true, true, true, true, false,
+    false, true};
+    test_bbf_rlp_array<field_type>(encoded_rlp, rlc, max_bytes, is_varied);
 }
 
 
