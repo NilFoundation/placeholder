@@ -204,8 +204,7 @@ BOOST_AUTO_TEST_CASE(blueprint_non_native_select_test) {
     rand.seed(seed_seq);
 
     for (std::size_t j = 0; j < random_tests_amount; j++) {
-        value_type cond = rand().data.base() & 1u,
-                   true_branch = rand(),
+        value_type cond = rand().to_integral() & 1u, true_branch = rand(),
                    false_branch = rand();
 
         test_select<field_type>(cond, true_branch, false_branch);

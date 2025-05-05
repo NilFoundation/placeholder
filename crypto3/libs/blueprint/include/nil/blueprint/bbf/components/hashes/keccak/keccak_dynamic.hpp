@@ -315,10 +315,10 @@ namespace nil {
                                 TYPE s16 = m[block_counter].s[3].S1;
                                 std::array<TYPE, 4> s16_chunks =
                                     sparsed_64bits_to_4_chunks<FieldType>(s16);
-                                TYPE mod = integral_type(s16_chunks[0].data) >= sparse_x80
+                                TYPE mod = s16_chunks[0].to_integral() >= sparse_x80
                                                ? s16_chunks[0] - sparse_x80
                                                : sparse_x7f - s16_chunks[0];
-                                TYPE XOR = integral_type(s16_chunks[0].data) >= sparse_x80
+                                TYPE XOR = s16_chunks[0].to_integral() >= sparse_x80
                                                ? s16_chunks[0] - sparse_x80
                                                : s16_chunks[0] + sparse_x80;
 

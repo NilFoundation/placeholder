@@ -222,8 +222,7 @@ namespace nil {
                                     !algebra::is_extended_field<typename FieldValueType::field_type>::value,
                                     FieldValueType>::type>
                     element_kc<Type1, Type2> operator*(const element_kc<Type1, Type2> &lhs, const FieldValueType &rhs) {
-
-                        return lhs * rhs.data;
+                        return lhs * rhs;
                     }
                 }    // namespace detail
             }        // namespace commitments

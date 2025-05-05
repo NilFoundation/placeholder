@@ -39,23 +39,19 @@
 
 namespace nil {
     namespace crypto3 {
-        namespace math {
-
-            /**
-             * Forward declaration.
-             */
-            template<typename VariableType>
-            class term;
-
-            /**
-             * Forward declaration.
-             */
-            template<typename VariableType>
-            class expression;
-        }    // namespace math
-
         namespace zk {
             namespace snark {
+                /**
+                 * Forward declaration.
+                 */
+                template<typename VariableType>
+                class term;
+
+                /**
+                 * Forward declaration.
+                 */
+                template<typename VariableType>
+                class expression;
 
                 /********************************* Variable **********************************/
 
@@ -97,35 +93,35 @@ namespace nil {
                             , relative(other.relative)
                             , type(static_cast<column_type>(other.type)) {}
 
-                    math::expression<plonk_variable<AssignmentType>> pow(const std::size_t power) const {
-                        return math::term<plonk_variable<AssignmentType>>(*this).pow(power);
+                    expression<plonk_variable<AssignmentType>> pow(const std::size_t power) const {
+                        return term<plonk_variable<AssignmentType>>(*this).pow(power);
                     }
 
-                    math::term<plonk_variable<AssignmentType>>
+                    term<plonk_variable<AssignmentType>>
                     operator*(const assignment_type &field_coeff) const {
-                        return math::term<plonk_variable<AssignmentType>>(*this) * field_coeff;
+                        return term<plonk_variable<AssignmentType>>(*this) * field_coeff;
                     }
 
-                    math::term<plonk_variable<AssignmentType>> operator*(const plonk_variable &other) const {
-                        return math::term<plonk_variable<AssignmentType>>(*this) * other;
+                    term<plonk_variable<AssignmentType>> operator*(const plonk_variable &other) const {
+                        return term<plonk_variable<AssignmentType>>(*this) * other;
                     }
 
-                    math::expression<plonk_variable<AssignmentType>>
-                    operator+(const math::expression<plonk_variable<AssignmentType>> &other) const {
-                        math::expression<plonk_variable<AssignmentType>> result(*this);
+                    expression<plonk_variable<AssignmentType>>
+                    operator+(const expression<plonk_variable<AssignmentType>> &other) const {
+                        expression<plonk_variable<AssignmentType>> result(*this);
                         result += other;
                         return result;
                     }
 
-                    math::expression<plonk_variable<AssignmentType>>
-                    operator-(const math::expression<plonk_variable<AssignmentType>> &other) const {
-                        math::expression<plonk_variable<AssignmentType>> result(*this);
+                    expression<plonk_variable<AssignmentType>>
+                    operator-(const expression<plonk_variable<AssignmentType>> &other) const {
+                        expression<plonk_variable<AssignmentType>> result(*this);
                         result -= other;
                         return result;
                     }
 
-                    math::term<plonk_variable<AssignmentType>> operator-() const {
-                        return -math::term<plonk_variable<AssignmentType>>(*this);
+                    term<plonk_variable<AssignmentType>> operator-() const {
+                        return -term<plonk_variable<AssignmentType>>(*this);
                     }
 
                     bool operator==(const plonk_variable &other) const {
@@ -155,7 +151,7 @@ namespace nil {
                 template<typename AssignmentType, typename LeftType,
                         typename = std::enable_if_t<
                                 std::is_same<LeftType, AssignmentType>::value || std::is_integral<LeftType>::value>>
-                math::term<plonk_variable<AssignmentType>>
+                term<plonk_variable<AssignmentType>>
                 operator*(const LeftType &field_coeff, const plonk_variable<AssignmentType> &var) {
                     return var * field_coeff;
                 }
@@ -163,7 +159,7 @@ namespace nil {
                 template<typename AssignmentType, typename LeftType,
                         typename = std::enable_if_t<
                                 std::is_same<LeftType, AssignmentType>::value || std::is_integral<LeftType>::value>>
-                math::expression<plonk_variable<AssignmentType>>
+                expression<plonk_variable<AssignmentType>>
                 operator+(const LeftType &field_val, const plonk_variable<AssignmentType> &var) {
                     return var + field_val;
                 }
@@ -171,7 +167,7 @@ namespace nil {
                 template<typename AssignmentType, typename LeftType,
                         typename = std::enable_if_t<
                                 std::is_same<LeftType, AssignmentType>::value || std::is_integral<LeftType>::value>>
-                math::expression<plonk_variable<AssignmentType>>
+                expression<plonk_variable<AssignmentType>>
                 operator-(const LeftType &field_val, const plonk_variable<AssignmentType> &var) {
                     return -(var - field_val);
                 }

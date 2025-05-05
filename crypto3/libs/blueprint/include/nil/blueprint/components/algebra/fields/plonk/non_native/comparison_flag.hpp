@@ -304,7 +304,8 @@ namespace nil {
 
                     BOOST_ASSERT(chunk_size <= 8);
 
-                    std::array<integral_type, 2> integrals = {integral_type(x.data), integral_type(y.data)};
+                    std::array<integral_type, 2> integrals = {
+                        integral_type(x.to_integral()), integral_type(y.to_integral())};
 
                     std::array<std::vector<bool>, 2> bits;
                     for (std::size_t i = 0; i < 2; i++) {
@@ -461,7 +462,8 @@ namespace nil {
                     value_type x = var_value(assignment, instance_input.x),
                                y = var_value(assignment, instance_input.y);
 
-                    std::array<integral_type, 2> integrals = {integral_type(x.data), integral_type(y.data)};
+                    std::array<integral_type, 2> integrals = {
+                        integral_type(x.to_integral()), integral_type(y.to_integral())};
 
                     std::array<std::vector<bool>, 2> bits;
                     for (std::size_t i = 0; i < 2; i++) {

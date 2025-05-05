@@ -143,7 +143,7 @@ namespace nil {
                         for (const auto& constraint: gate.constraints) {
                             gate_lines += 2;
                             // Convert constraint expression to non_linear_combination.
-                            crypto3::math::expression_to_non_linear_combination_visitor<variable_type> visitor;
+                            crypto3::zk::snark::expression_to_non_linear_combination_visitor<variable_type> visitor;
                             auto comb = visitor.convert(constraint);
 
                             for (std::size_t t_index = 0; t_index < comb.terms.size(); t_index++) {
@@ -412,7 +412,8 @@ namespace nil {
                     if(it->get_coeff().is_one())
                         res << generate_term(profiling_params, it->get_vars(), columns_rotations, true);
                     else {
-                        res << "\t\t\tterms:=0x" << std::hex << it->get_coeff().data << std::dec << std::endl;
+                        res << "\t\t\tterms:=0x" << std::hex << it->get_coeff()
+                            << std::dec << std::endl;
                         res << generate_term(profiling_params, it->get_vars(), columns_rotations, false);
                     }
                     res << "\t\t\tmstore("
@@ -437,7 +438,7 @@ namespace nil {
                 res << "\t\t\tmstore(add(local_vars, CONSTRAINT_EVAL_OFFSET), 0)" << std::endl;
 
                 // Convert constraint expression to non_linear_combination.
-                crypto3::math::expression_to_non_linear_combination_visitor<variable_type> visitor;
+                crypto3::zk::snark::expression_to_non_linear_combination_visitor<variable_type> visitor;
                 auto comb = visitor.convert(constraint);
                 res << generate_terms(profiling_params, comb.terms, columns_rotations);
                 return res.str();

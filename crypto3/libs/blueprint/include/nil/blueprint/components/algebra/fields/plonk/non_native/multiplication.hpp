@@ -178,23 +178,26 @@ namespace nil {
                     native_integral_type pasta_base = 1;
                     foreign_extended_integral_type extended_base = 1;
                     foreign_value_type eddsa_a =
-                        foreign_integral_type(a[0].data) +
-                        foreign_integral_type(a[1].data) * (base << 66) +
-                        foreign_integral_type(a[2].data) * (base << 132) +
-                        foreign_integral_type(a[3].data) * (base << 198);
+                        foreign_integral_type(a[0].to_integral()) +
+                        foreign_integral_type(a[1].to_integral()) * (base << 66) +
+                        foreign_integral_type(a[2].to_integral()) * (base << 132) +
+                        foreign_integral_type(a[3].to_integral()) * (base << 198);
                     foreign_value_type eddsa_b =
-                        foreign_integral_type(b[0].data) +
-                        foreign_integral_type(b[1].data) * (base << 66) +
-                        foreign_integral_type(b[2].data) * (base << 132) +
-                        foreign_integral_type(b[3].data) * (base << 198);
+                        foreign_integral_type(b[0].to_integral()) +
+                        foreign_integral_type(b[1].to_integral()) * (base << 66) +
+                        foreign_integral_type(b[2].to_integral()) * (base << 132) +
+                        foreign_integral_type(b[3].to_integral()) * (base << 198);
                     foreign_value_type eddsa_r = eddsa_a * eddsa_b;
                     foreign_integral_type integral_eddsa_r =
-                        foreign_integral_type(eddsa_r.data);
+                        foreign_integral_type(eddsa_r.to_integral());
                     foreign_extended_integral_type eddsa_p = ed25519_field_type::modulus;
                     foreign_extended_integral_type integral_eddsa_q =
-                        (foreign_extended_integral_type(foreign_integral_type(eddsa_a.data)) *
-                            foreign_extended_integral_type(foreign_integral_type(eddsa_b.data)) -
-                        foreign_extended_integral_type(foreign_integral_type(eddsa_r.data))) /
+                        (foreign_extended_integral_type(
+                             foreign_integral_type(eddsa_a.to_integral())) *
+                             foreign_extended_integral_type(
+                                 foreign_integral_type(eddsa_b.to_integral())) -
+                         foreign_extended_integral_type(
+                             foreign_integral_type(eddsa_r.to_integral()))) /
                         eddsa_p;
                     foreign_extended_integral_type pow = extended_base << 257;
                     foreign_extended_integral_type minus_eddsa_p = pow - eddsa_p;
@@ -225,7 +228,7 @@ namespace nil {
                         t[0] - r[0] + t[1] * (pasta_base << 66) - r[1] * (pasta_base << 66);
 
                     native_integral_type u0_integral =
-                        native_integral_type(u0.data) >> 132;
+                        native_integral_type(u0.to_integral()) >> 132;
                     std::array<native_value_type, 4> u0_chunks;
 
                     u0_chunks[0] = u0_integral & ((1 << 22) - 1);
@@ -238,7 +241,7 @@ namespace nil {
                                                                 native_value_type(u0_integral);
 
                     native_integral_type u1_integral =
-                        native_integral_type(u1.data) >> 125;
+                        native_integral_type(u1.to_integral()) >> 125;
                     std::array<native_value_type, 4> u1_chunks;
                     u1_chunks[0] = u1_integral & ((1 << 22) - 1);
                     u1_chunks[1] = (u1_integral >> 22) & ((1 << 22) - 1);
@@ -283,33 +286,44 @@ namespace nil {
                 native_integral_type pasta_base = 1;
                 foreign_extended_integral_type extended_base = 1;
                 std::array<native_value_type, 4> a = {
-                    native_integral_type(var_value(assignment, instance_input.A[0]).data),
-                    native_integral_type(var_value(assignment, instance_input.A[1]).data),
-                    native_integral_type(var_value(assignment, instance_input.A[2]).data),
-                    native_integral_type(var_value(assignment, instance_input.A[3]).data)};
+                    native_integral_type(
+                        var_value(assignment, instance_input.A[0]).to_integral()),
+                    native_integral_type(
+                        var_value(assignment, instance_input.A[1]).to_integral()),
+                    native_integral_type(
+                        var_value(assignment, instance_input.A[2]).to_integral()),
+                    native_integral_type(
+                        var_value(assignment, instance_input.A[3]).to_integral())};
                 foreign_value_type eddsa_a =
-                    foreign_integral_type(a[0].data) +
-                    foreign_integral_type(a[1].data) * (base << 66) +
-                    foreign_integral_type(a[2].data) * (base << 132) +
-                    foreign_integral_type(a[3].data) * (base << 198);
+                    foreign_integral_type(a[0].to_integral()) +
+                    foreign_integral_type(a[1].to_integral()) * (base << 66) +
+                    foreign_integral_type(a[2].to_integral()) * (base << 132) +
+                    foreign_integral_type(a[3].to_integral()) * (base << 198);
                 std::array<native_value_type, 4> b = {
-                    native_integral_type(var_value(assignment, instance_input.B[0]).data),
-                    native_integral_type(var_value(assignment, instance_input.B[1]).data),
-                    native_integral_type(var_value(assignment, instance_input.B[2]).data),
-                    native_integral_type(var_value(assignment, instance_input.B[3]).data)};
+                    native_integral_type(
+                        var_value(assignment, instance_input.B[0]).to_integral()),
+                    native_integral_type(
+                        var_value(assignment, instance_input.B[1]).to_integral()),
+                    native_integral_type(
+                        var_value(assignment, instance_input.B[2]).to_integral()),
+                    native_integral_type(
+                        var_value(assignment, instance_input.B[3]).to_integral())};
                 foreign_value_type eddsa_b =
-                    foreign_integral_type(b[0].data) +
-                    foreign_integral_type(b[1].data) * (base << 66) +
-                    foreign_integral_type(b[2].data) * (base << 132) +
-                    foreign_integral_type(b[3].data) * (base << 198);
+                    foreign_integral_type(b[0].to_integral()) +
+                    foreign_integral_type(b[1].to_integral()) * (base << 66) +
+                    foreign_integral_type(b[2].to_integral()) * (base << 132) +
+                    foreign_integral_type(b[3].to_integral()) * (base << 198);
                 foreign_value_type eddsa_r = eddsa_a * eddsa_b;
                 foreign_integral_type integral_eddsa_r =
-                    foreign_integral_type(eddsa_r.data);
+                    foreign_integral_type(eddsa_r.to_integral());
                 foreign_extended_integral_type eddsa_p = ed25519_field_type::modulus;
                 foreign_extended_integral_type integral_eddsa_q =
-                    (foreign_extended_integral_type(foreign_integral_type(eddsa_a.data)) *
-                         foreign_extended_integral_type(foreign_integral_type(eddsa_b.data)) -
-                     foreign_extended_integral_type(foreign_integral_type(eddsa_r.data))) /
+                    (foreign_extended_integral_type(
+                         foreign_integral_type(eddsa_a.to_integral())) *
+                         foreign_extended_integral_type(
+                             foreign_integral_type(eddsa_b.to_integral())) -
+                     foreign_extended_integral_type(
+                         foreign_integral_type(eddsa_r.to_integral()))) /
                     eddsa_p;
                 foreign_extended_integral_type pow = extended_base << 257;
                 foreign_extended_integral_type minus_eddsa_p = pow - eddsa_p;
@@ -340,7 +354,7 @@ namespace nil {
                     t[0] - r[0] + t[1] * (pasta_base << 66) - r[1] * (pasta_base << 66);
 
                 native_integral_type u0_integral =
-                    native_integral_type(u0.data) >> 132;
+                    native_integral_type(u0.to_integral()) >> 132;
                 std::array<native_value_type, 4> u0_chunks;
 
                 u0_chunks[0] = u0_integral & ((1 << 22) - 1);
@@ -353,7 +367,7 @@ namespace nil {
                                                              native_value_type(u0_integral);
 
                 native_integral_type u1_integral =
-                    native_integral_type(u1.data) >> 125;
+                    native_integral_type(u1.to_integral()) >> 125;
                 std::array<native_value_type, 4> u1_chunks;
                 u1_chunks[0] = u1_integral & ((1 << 22) - 1);
                 u1_chunks[1] = (u1_integral >> 22) & ((1 << 22) - 1);
@@ -423,15 +437,23 @@ namespace nil {
                 using native_integral_type = typename BlueprintFieldType::integral_type;
 
                 std::array<native_value_type, 4> a = {
-                    native_integral_type(var_value(assignment, instance_input.A[0]).data),
-                    native_integral_type(var_value(assignment, instance_input.A[1]).data),
-                    native_integral_type(var_value(assignment, instance_input.A[2]).data),
-                    native_integral_type(var_value(assignment, instance_input.A[3]).data)};
+                    native_integral_type(
+                        var_value(assignment, instance_input.A[0]).to_integral()),
+                    native_integral_type(
+                        var_value(assignment, instance_input.A[1]).to_integral()),
+                    native_integral_type(
+                        var_value(assignment, instance_input.A[2]).to_integral()),
+                    native_integral_type(
+                        var_value(assignment, instance_input.A[3]).to_integral())};
                 std::array<native_value_type, 4> b = {
-                    native_integral_type(var_value(assignment, instance_input.B[0]).data),
-                    native_integral_type(var_value(assignment, instance_input.B[1]).data),
-                    native_integral_type(var_value(assignment, instance_input.B[2]).data),
-                    native_integral_type(var_value(assignment, instance_input.B[3]).data)};
+                    native_integral_type(
+                        var_value(assignment, instance_input.B[0]).to_integral()),
+                    native_integral_type(
+                        var_value(assignment, instance_input.B[1]).to_integral()),
+                    native_integral_type(
+                        var_value(assignment, instance_input.B[2]).to_integral()),
+                    native_integral_type(
+                        var_value(assignment, instance_input.B[3]).to_integral())};
 
                 auto r = component_type::calculate(a, b);
                 assignment.witness(component.W(0), start_row_index) = r[0];

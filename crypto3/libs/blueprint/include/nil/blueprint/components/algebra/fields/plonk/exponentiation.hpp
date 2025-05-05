@@ -212,7 +212,7 @@ namespace nil {
                         std::vector<bool> bits(component.padded_exponent_size, false);
                         {
                             std::vector<bool> bbb;
-                            auto data = exponent.data.base();
+                            auto data = exponent.to_integral();
                             while (data != 0u) {
                                 bbb.push_back((data - (data >> 1u << 1u)) != 0u);
                                 data = data >> 1u;

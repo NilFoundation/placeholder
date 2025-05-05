@@ -211,7 +211,8 @@ namespace nil {
 
                         typename BlueprintFieldType::value_type scalar = var_value(assignment, instance_input.scalar);
                         typename BlueprintFieldType::integral_type integral_scalar =
-                            typename BlueprintFieldType::integral_type(scalar.data);
+                            typename BlueprintFieldType::integral_type(
+                                scalar.to_integral());
                         std::vector<bool> bits_msb(component.scalar_size);
                         {
                             nil::crypto3::marshalling::status_type status;

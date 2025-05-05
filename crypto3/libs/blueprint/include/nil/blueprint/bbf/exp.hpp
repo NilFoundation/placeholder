@@ -219,7 +219,9 @@ namespace nil {
                                     exponentiation[3*cur + 2][1] = exponentiation[3*cur][1];
 
                                     exp_is_even[cur] = (bitmap[its - j - 1]) ? 0 : 1;
-                                    hi_last[cur] = static_cast<TYPE>(exponent[3*cur][0].data & one.data);
+                                    hi_last[cur] = static_cast<TYPE>(
+                                        exponent[3 * cur][0].to_integral() &
+                                        one.to_integral());
 
                                     is_last[3*cur] = (j == its - 1) ? 1 : 0;
                                     is_last[3*cur + 1] = is_last[3*cur];
@@ -237,13 +239,24 @@ namespace nil {
                                         r_64_chunks.push_back(chunk_sum_64<TYPE>(r_chunks[cur], k));
                                     }
 
-                                    auto first_row_carries = first_carryless_consrtruct<TYPE>(a_64_chunks, b_64_chunks, r_64_chunks).data.base() >> 128;
-                                    TYPE c_1 = static_cast<TYPE>(first_row_carries & (two_64 - 1).data.base());
+                                    auto first_row_carries =
+                                        first_carryless_consrtruct<TYPE>(
+                                            a_64_chunks, b_64_chunks, r_64_chunks)
+                                            .to_integral() >>
+                                        128;
+                                    TYPE c_1 = static_cast<TYPE>(
+                                        first_row_carries & (two_64 - 1).to_integral());
                                     c_2[cur] = static_cast<TYPE>(first_row_carries >> 64);
                                     c_1_chunks[cur] = chunk_64_to_16<FieldType>(c_1);
                                     // no need for c_2 chunks as there is only a single chunk
-                                    auto second_row_carries = (second_carryless_construct<TYPE>(a_64_chunks, b_64_chunks, r_64_chunks) + c_1 + c_2[cur] * two_64).data.base() >> 128;
-                                    TYPE c_3 = static_cast<TYPE>(second_row_carries & (two_64 - 1).data.base());
+                                    auto second_row_carries =
+                                        (second_carryless_construct<TYPE>(
+                                             a_64_chunks, b_64_chunks, r_64_chunks) +
+                                         c_1 + c_2[cur] * two_64)
+                                            .to_integral() >>
+                                        128;
+                                    TYPE c_3 = static_cast<TYPE>(
+                                        second_row_carries & (two_64 - 1).to_integral());
                                     c_4[cur] = static_cast<TYPE>(second_row_carries >> 64);
                                     c_3_chunks[cur] = chunk_64_to_16<FieldType>(c_3);
 

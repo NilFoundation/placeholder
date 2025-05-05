@@ -71,9 +71,9 @@ void test_choice_function(
     for (std::size_t i = 0; i < num_chunks; i++) {
 #ifdef BLUEPRINT_PLONK_PROFILING_ENABLED
         std::cout << "Expected res: " << std::dec << expected_res[i] << std::endl;
-        std::cout << "Real res:     " << std::dec << A.r[i].data << std::endl;
+        std::cout << "Real res:     " << std::dec << A.r[i] << std::endl;
 #endif
-        assert(A.r[i].data == expected_res[i].data);
+        assert(A.r[i] == expected_res[i]);
     }
 }
 

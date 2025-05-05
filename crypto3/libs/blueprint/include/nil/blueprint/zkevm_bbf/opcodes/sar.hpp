@@ -395,34 +395,50 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
             constrain(b_chunks[i] - shift_power * (1 - (shift_upper - i) * indic_2[i]));
         }
 
-        // Examples of the above. 
-        
-        // 4-bit shift.
-        // shift_lower = 4
-        // shift_upper = 0
-        // indic_1[4] = 0, and indic_1[i] = (shift_lower - 4)^(-1) for all other i.
-        // indic_2[0] = 0, and indic_2[i] = (shift_upper - 0)^(-1) for all other i.
-        // shift_power = 2^4
-        // b_chunks[0] = 2^4, and b_chunks[i] = 0 for all other i.
+        // Set up carryless constraints
+        first_carryless = first_carryless_construct<TYPE>(
+            a_64_chunks, b_64_chunks, r_64_chunks, q_64_chunks);
+        second_carryless = second_carryless_construct<TYPE>(
+            a_64_chunks, b_64_chunks, r_64_chunks, q_64_chunks);
+        third_carryless =
+            third_carryless_construct<TYPE>(b_64_chunks, r_64_chunks);
 
-        // 128-bit shift.
-        // shift_lower = 0
-        // shift_upper = 8
-        // indic_1[0] = 0, and indic_1[i] = (shift_lower - 0)^(-1) for all other i.
-        // indic_2[8] = 0, and indic_1[i] = (shift_lower - 8)^(-1) for all other i.
-        // shift_power = 2^0 = 1.
-        // b_chunks[8] = 1, and b_chunks[i] = 0 for all other i.
-        // That is, b = 0b_1..(followed by 8 chunks of 16 zeros) = 2^128.
+        if constexpr (stage == GenerationStage::ASSIGNMENT) {
+            // Calculate carries for first row
+            auto first_row_carries = first_carryless.to_integral() >> 128;
+            c_1 = value_type(first_row_carries & (two_64 - 1).to_integral());
+            c_2 = value_type(first_row_carries >> 64);
+            BOOST_ASSERT(first_carryless - c_1 * two_128 - c_2 * two_192 == 0);
+            c_1_chunks = chunk_64_to_16<FieldType>(c_1);
 
-        // 167-bit shift.
-        // 167 = 10 * 2^4 + 7
-        // shift_lower = 7
-        // shift_upper = 10
-        // indic_1[7]  = 0, and indic_1[i] = (shift_lower - 7)^(-1)  for all other i.
-        // indic_2[10] = 0, and indic_2[i] = (shift_upper - 10)^(-1) for all other i.
-        // shift_power = 2^7 
-        // b_chunks[10] = 2^7, and b_chunks[i] = 0 for all other i.
-        // That is, b = 2^7..(followed by 10 chunks of 16 zeros) = 2^7 * 2^(10*16) = 2^167.
+            // Calculate carry bits
+            carry[0] = 0;
+            for (std::size_t i = 0; i < carry_amount - 1; i++) {
+                carry[i + 1] =
+                    (carry[i] + b_chunks[3 * i] + v_chunks[3 * i] +
+                     (b_chunks[3 * i + 1] + v_chunks[3 * i + 1]) * two_16 +
+                     (b_chunks[3 * i + 2] + v_chunks[3 * i + 2]) * two_32) >=
+                    two_48;
+            }
+            carry[carry_amount] =
+                (carry[carry_amount - 1] + b_chunks[3 * (carry_amount - 1)] +
+                 v_chunks[3 * (carry_amount - 1)]) >= two_16;
+            BOOST_ASSERT(carry[carry_amount] == 1); // should always be 1 for q < b
+        }
+
+        for (std::size_t i = 0; i < 4; i++) {
+            allocate(c_1_chunks[i], 4 + i, 3);
+        }
+        c_1_64 = chunk_sum_64<TYPE>(c_1_chunks, 0);
+        allocate(c_1_64, 43, 1);
+        allocate(c_2, 39, 1);
+
+        // Carryless constraints
+        constrain(first_carryless - c_1_64 * two_128 - c_2 * two_192);
+        constrain(second_carryless + c_1_64 + c_2 * two_64);
+        constrain(c_2 * (c_2 - 1));
+        constrain(third_carryless);
+        constrain(b_64_chunks[3] * r_64_chunks[3]);
 
         // Carry propagation constraints for the v + b = q + 2^256 equality
         for (std::size_t i = 0; i < chunk_amount - 1; i++) {

@@ -144,23 +144,24 @@ namespace nil {
                     crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>;
 
                 std::size_t row = start_row_index;
-                std::array<typename ArithmetizationType::field_type::integral_type, 8> data = {
-                    typename ArithmetizationType::field_type::integral_type(
-                        var_value(assignment, instance_input.k[0]).data),
-                    typename ArithmetizationType::field_type::integral_type(
-                        var_value(assignment, instance_input.k[1]).data),
-                    typename ArithmetizationType::field_type::integral_type(
-                        var_value(assignment, instance_input.k[2]).data),
-                    typename ArithmetizationType::field_type::integral_type(
-                        var_value(assignment, instance_input.k[3]).data),
-                    typename ArithmetizationType::field_type::integral_type(
-                        var_value(assignment, instance_input.k[4]).data),
-                    typename ArithmetizationType::field_type::integral_type(
-                        var_value(assignment, instance_input.k[5]).data),
-                    typename ArithmetizationType::field_type::integral_type(
-                        var_value(assignment, instance_input.k[6]).data),
-                    typename ArithmetizationType::field_type::integral_type(
-                        var_value(assignment, instance_input.k[7]).data)};
+                std::array<typename ArithmetizationType::field_type::integral_type, 8>
+                    data = {
+                        typename ArithmetizationType::field_type::integral_type(
+                            var_value(assignment, instance_input.k[0]).to_integral()),
+                        typename ArithmetizationType::field_type::integral_type(
+                            var_value(assignment, instance_input.k[1]).to_integral()),
+                        typename ArithmetizationType::field_type::integral_type(
+                            var_value(assignment, instance_input.k[2]).to_integral()),
+                        typename ArithmetizationType::field_type::integral_type(
+                            var_value(assignment, instance_input.k[3]).to_integral()),
+                        typename ArithmetizationType::field_type::integral_type(
+                            var_value(assignment, instance_input.k[4]).to_integral()),
+                        typename ArithmetizationType::field_type::integral_type(
+                            var_value(assignment, instance_input.k[5]).to_integral()),
+                        typename ArithmetizationType::field_type::integral_type(
+                            var_value(assignment, instance_input.k[6]).to_integral()),
+                        typename ArithmetizationType::field_type::integral_type(
+                            var_value(assignment, instance_input.k[7]).to_integral())};
 
                 auto L = 0x1000000000000000000000000000000014def9dea2f79cd65812631a5cf5d3ed_big_uint512;
                 auto k = 0x00_big_uint512;

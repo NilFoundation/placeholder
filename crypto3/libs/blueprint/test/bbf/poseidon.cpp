@@ -62,8 +62,8 @@ void test_poseidon(std::vector<typename BlueprintFieldType::value_type> public_i
     BOOST_TEST(B.is_satisfied(at));
 
     for (std::uint32_t i = 0; i < public_input.size(); i++) {
-        BOOST_TEST_INFO("input:    " << public_input[i].data);
-        BOOST_TEST_INFO("expected: " << expected_res[i].data);
+        BOOST_TEST_INFO("input:    " << public_input[i].to_integral());
+        BOOST_TEST_INFO("expected: " << expected_res[i].to_integral());
         BOOST_TEST_INFO("real:     " << A.res[i]);
         BOOST_TEST(A.res[i] == expected_res[i], "unexpected result for input " << i);
     }

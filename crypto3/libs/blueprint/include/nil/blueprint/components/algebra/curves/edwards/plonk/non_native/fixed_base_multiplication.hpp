@@ -95,8 +95,9 @@ namespace nil {
                     typename Ed25519Type::scalar_field_type::integral_type base = 1;
                     std::array<typename Ed25519Type::scalar_field_type::integral_type, 12> k_chunks;
                     for (std::size_t i = 0; i < 12; i++) {
-                        k_chunks[i] = typename Ed25519Type::scalar_field_type::integral_type(
-                            assignment.var_value(k_chunks_vars[i]).data);
+                        k_chunks[i] =
+                            typename Ed25519Type::scalar_field_type::integral_type(
+                                assignment.var_value(k_chunks_vars[i]).to_integral());
                     }
 
                     typename Ed25519Type::template g1_type<algebra::curves::coordinates::affine>::value_type B =
@@ -108,13 +109,15 @@ namespace nil {
                         typename Ed25519Type::scalar_field_type::value_type(k_chunks[0]) * B;
 
                     typename Ed25519Type::base_field_type::integral_type Px_integral =
-                        typename Ed25519Type::base_field_type::integral_type(P.X.data);
+                        typename Ed25519Type::base_field_type::integral_type(
+                            P.X.to_integral());
                     std::array<typename Ed25519Type::base_field_type::integral_type, 4> x3 = {
                         Px_integral & mask, (Px_integral >> 66) & mask, (Px_integral >> 132) & mask,
                         (Px_integral >> 198) & mask};
 
                     typename Ed25519Type::base_field_type::integral_type Py_integral =
-                        typename Ed25519Type::base_field_type::integral_type(P.Y.data);
+                        typename Ed25519Type::base_field_type::integral_type(
+                            P.Y.to_integral());
                     std::array<typename Ed25519Type::base_field_type::integral_type, 4> y3 = {
                         Py_integral & mask, (Py_integral >> 66) & mask, (Py_integral >> 132) & mask,
                         (Py_integral >> 198) & mask};
@@ -138,13 +141,15 @@ namespace nil {
                             (base << 22 * (i + 1)) * B;
 
                         typename Ed25519Type::base_field_type::integral_type Qx_integral =
-                            typename Ed25519Type::base_field_type::integral_type(Q.X.data);
+                            typename Ed25519Type::base_field_type::integral_type(
+                                Q.X.to_integral());
                         std::array<typename Ed25519Type::base_field_type::integral_type, 4> x3 = {
                             Qx_integral & mask, (Qx_integral >> 66) & mask, (Qx_integral >> 132) & mask,
                             (Qx_integral >> 198) & mask};
 
                         typename Ed25519Type::base_field_type::integral_type Qy_integral =
-                            typename Ed25519Type::base_field_type::integral_type(Q.Y.data);
+                            typename Ed25519Type::base_field_type::integral_type(
+                                Q.Y.to_integral());
                         std::array<typename Ed25519Type::base_field_type::integral_type, 4> y3 = {
                             Qy_integral & mask, (Qy_integral >> 66) & mask, (Qy_integral >> 132) & mask,
                             (Qy_integral >> 198) & mask};
@@ -170,27 +175,27 @@ namespace nil {
                             P_y = t.output.y;
                             P.X = typename Ed25519Type::base_field_type::value_type(
                                 (typename Ed25519Type::base_field_type::integral_type(
-                                     assignment.var_value(P_x[0]).data) +
+                                     assignment.var_value(P_x[0]).to_integral()) +
                                  typename Ed25519Type::base_field_type::integral_type(
-                                     assignment.var_value(P_x[1]).data) *
+                                     assignment.var_value(P_x[1]).to_integral()) *
                                      (base << 66) +
                                  typename Ed25519Type::base_field_type::integral_type(
-                                     assignment.var_value(P_x[2]).data) *
+                                     assignment.var_value(P_x[2]).to_integral()) *
                                      (base << 132) +
                                  typename Ed25519Type::base_field_type::integral_type(
-                                     assignment.var_value(P_x[3]).data) *
+                                     assignment.var_value(P_x[3]).to_integral()) *
                                      (base << 198)));
                             P.Y = typename Ed25519Type::base_field_type::value_type(
                                 (typename Ed25519Type::base_field_type::integral_type(
-                                     assignment.var_value(P_y[0]).data) +
+                                     assignment.var_value(P_y[0]).to_integral()) +
                                  typename Ed25519Type::base_field_type::integral_type(
-                                     assignment.var_value(P_y[1]).data) *
+                                     assignment.var_value(P_y[1]).to_integral()) *
                                      (base << 66) +
                                  typename Ed25519Type::base_field_type::integral_type(
-                                     assignment.var_value(P_y[2]).data) *
+                                     assignment.var_value(P_y[2]).to_integral()) *
                                      (base << 132) +
                                  typename Ed25519Type::base_field_type::integral_type(
-                                     assignment.var_value(P_y[3]).data) *
+                                     assignment.var_value(P_y[3]).to_integral()) *
                                      (base << 198)));
                         } else {
 
@@ -198,14 +203,18 @@ namespace nil {
                                 typename Ed25519Type::scalar_field_type::value_type((k_chunks[i + 1]) * (base << 11)) *
                                 P;
 
-                            typename Ed25519Type::base_field_type::integral_type Qx_integral =
-                                typename Ed25519Type::base_field_type::integral_type(Q.X.data);
+                            typename Ed25519Type::base_field_type::integral_type
+                                Qx_integral =
+                                    typename Ed25519Type::base_field_type::integral_type(
+                                        Q.X.to_integral());
                             std::array<typename Ed25519Type::base_field_type::integral_type, 4> x3 = {
                                 Qx_integral & mask, (Qx_integral >> 66) & mask, (Qx_integral >> 132) & mask,
                                 (Qx_integral >> 198) & mask};
 
-                            typename Ed25519Type::base_field_type::integral_type Qy_integral =
-                                typename Ed25519Type::base_field_type::integral_type(Q.Y.data);
+                            typename Ed25519Type::base_field_type::integral_type
+                                Qy_integral =
+                                    typename Ed25519Type::base_field_type::integral_type(
+                                        Q.Y.to_integral());
                             std::array<typename Ed25519Type::base_field_type::integral_type, 4> y3 = {
                                 Qy_integral & mask, (Qy_integral >> 66) & mask, (Qy_integral >> 132) & mask,
                                 (Qy_integral >> 198) & mask};

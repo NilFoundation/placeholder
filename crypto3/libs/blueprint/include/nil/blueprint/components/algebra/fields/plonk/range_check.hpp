@@ -259,7 +259,7 @@ namespace nil {
 
                 value_type x = var_value(assignment, instance_input.x);
 
-                integral_type x_integral = integral_type(x.data);
+                integral_type x_integral = integral_type(x.to_integral());
 
                 std::vector<bool> bits(component.bits_amount + component.padding_bits);
                 std::fill(bits.begin(), bits.end(), false);

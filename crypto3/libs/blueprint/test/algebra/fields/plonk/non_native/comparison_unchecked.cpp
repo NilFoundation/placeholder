@@ -169,8 +169,10 @@ void test_comparison_unchecked_random_inputs() {
     for (std::size_t i = 0; i < RandomTestsAmount; i++){
         value_type x = generate_random(),
                    y = generate_random();
-        integral_type x_integral = integral_type(x.data) & integral_type((max_val - 1).data),
-                      y_integral = integral_type(y.data) & integral_type((max_val - 1).data);
+        integral_type x_integral = integral_type(x.to_integral()) &
+                                   integral_type((max_val - 1).to_integral()),
+                      y_integral = integral_type(y.to_integral()) &
+                                   integral_type((max_val - 1).to_integral());
         x = value_type(x_integral);
         y = value_type(y_integral);
 

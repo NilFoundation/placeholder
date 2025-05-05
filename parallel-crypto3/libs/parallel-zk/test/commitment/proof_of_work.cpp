@@ -63,7 +63,7 @@ BOOST_AUTO_TEST_SUITE(proof_of_knowledge_test_suite)
         auto chal = old_transcript_2.template challenge<field_type>();
         const integral_type expected_mask = integral_type( (1 << grinding_bits) - 1 ) << (field_type::modulus_bits - grinding_bits);
 
-        BOOST_ASSERT((integral_type(chal.data) & expected_mask) == 0);
+        BOOST_ASSERT((integral_type(chal.to_integral()) & expected_mask) == 0);
 
         using hard_pow_type = nil::crypto3::zk::commitments::field_proof_of_work<poseidon, field_type>;
         // check that random stuff doesn't pass verify

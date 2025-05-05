@@ -204,14 +204,14 @@ void test_static() {
 void test_mod_static() {
     constexpr auto a1_m = big_mod_rt<4>(0x5_big_uint4, 0xb_big_uint4);
     constexpr auto res1 = 0x4_big_uint4;
-    static_assert(ressol(a1_m).base() == res1, "ressol error");
+    static_assert(ressol(a1_m).to_integral() == res1, "ressol error");
 
     constexpr auto a2_m = big_mod_rt<521>(
         0x5_big_uint521,
         0x1ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff_big_uint521);
     constexpr auto res2 =
         0x17e76bd20bdb7664ba9117dd46c437ac50063e33390efa159b637a043df2fbfa55e97b9f7dc55968462121ec1b7a8d686ff263d511011f1b2ee6af5fa7726b97b18_big_uint521;
-    static_assert(ressol(a2_m).base() == res2, "ressol error");
+    static_assert(ressol(a2_m).to_integral() == res2, "ressol error");
 
     // constexpr auto a3_m = big_mod_rt<521>(
     //     0x4_big_uint521,
@@ -226,7 +226,7 @@ void test_mod_static() {
         0xffffffffffffffffffffffffffffffff000000000000000000000001_big_uint224);
     constexpr auto res4 =
         0x115490c2141baa1c2407abe908fcf3416b0cb0d290dcd3960c3ec7a7_big_uint224;
-    static_assert(ressol(a4_m).base() == res4, "ressol error");
+    static_assert(ressol(a4_m).to_integral() == res4, "ressol error");
 
     // constexpr auto a5_m = big_mod_rt<7>(0x40_big_uint7, 0x55_big_uint7);
     // constexpr auto negone_5 = big_mod_rt<7>(0, 0x55_big_uint7);
@@ -252,29 +252,29 @@ void test_mod_static() {
         0x400_big_uint315,
         0x40000000000000000000000000000000000000000000000000000000000c100000000000000ffff_big_uint315);
     constexpr auto res10 = 0x20_big_uint315;
-    static_assert(ressol(a10_m).base() == res10, "ressol error");
+    static_assert(ressol(a10_m).to_integral() == res10, "ressol error");
 
     constexpr auto a11_m = big_mod_rt<18>(0x400_big_uint18, 0x2aaab_big_uint18);
     constexpr auto res11 = 0x2aa8b_big_uint18;
-    static_assert(ressol(a11_m).base() == res11, "ressol error");
+    static_assert(ressol(a11_m).to_integral() == res11, "ressol error");
 
     constexpr auto a12_m = big_mod_rt<315>(
         0x401_big_uint315,
         0x40000000000000000000000000000000000000000000000000000000000c100000000000000ffff_big_uint315);
     constexpr auto res12 =
         0xdcc6506af06fe9e142cacb7b5ff56c1864fe7a0b2f7fb10739990aed564e07beb533b5edd95fa3_big_uint315;
-    static_assert(ressol(a12_m).base() == res12, "ressol error");
+    static_assert(ressol(a12_m).to_integral() == res12, "ressol error");
 
     constexpr auto a13_m = big_mod_rt<315>(
         0x10_big_uint315,
         0x40000000000000000000000000000000000000000000000000000000000c100000000000000ffff_big_uint315);
     constexpr auto res13 = 0x4_big_uint315;
-    static_assert(ressol(a13_m).base() == res13, "ressol error");
+    static_assert(ressol(a13_m).to_integral() == res13, "ressol error");
 
     constexpr auto a14_m = big_mod_rt<315>(
         0x733f6e1_big_uint315,
         0x40000000000000000000000000000000000000000000000000000000000c100000000000000ffff_big_uint315);
     constexpr auto res14 =
         0x40000000000000000000000000000000000000000000000000000000000c100000000000000d50e_big_uint315;
-    static_assert(ressol(a14_m).base() == res14, "ressol error");
+    static_assert(ressol(a14_m).to_integral() == res14, "ressol error");
 }

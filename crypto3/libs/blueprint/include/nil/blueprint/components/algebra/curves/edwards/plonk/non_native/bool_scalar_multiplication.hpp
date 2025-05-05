@@ -166,7 +166,9 @@ namespace nil {
                 using Ed25519Type = typename crypto3::algebra::curves::ed25519;
 
                 std::size_t row = start_row_index;
-                typename BlueprintFieldType::value_type b = typename Ed25519Type::base_field_type::integral_type(var_value(assignment, instance_input.k).data);
+                typename BlueprintFieldType::value_type b =
+                    typename Ed25519Type::base_field_type::integral_type(
+                        var_value(assignment, instance_input.k).to_integral());
                 std::array<typename BlueprintFieldType::value_type, 4> T_x_array = {var_value(assignment, instance_input.T.x[0]),
                 var_value(assignment, instance_input.T.x[1]), var_value(assignment, instance_input.T.x[2]), var_value(assignment, instance_input.T.x[3])};
                 std::array<typename BlueprintFieldType::value_type, 4> T_y_array = {var_value(assignment, instance_input.T.y[0]),

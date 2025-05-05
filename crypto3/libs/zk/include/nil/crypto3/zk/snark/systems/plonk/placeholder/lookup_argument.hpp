@@ -306,7 +306,7 @@ namespace nil {
 
                     // TODO: deduplicate this code, it's almost the same as in the gate argument.
                     static inline void build_variable_value_map(
-                        const std::vector<math::expression<variable_type>>& exprs,
+                        const std::vector<expression<variable_type>>& exprs,
                         const plonk_polynomial_dfs_table<FieldType>& assignments,
                         std::shared_ptr<math::evaluation_domain<FieldType>> domain,
                         std::size_t& extended_domain_size_out,
@@ -320,10 +320,10 @@ namespace nil {
                         std::vector<variable_type> variables;
 
                         size_t max_expr_degree = 0;
-                        math::expression_max_degree_visitor<variable_type> max_degree_visitor;
+                        expression_max_degree_visitor<variable_type> max_degree_visitor;
 
                         for (const auto& expr: exprs) {
-                            math::expression_for_each_variable_visitor<variable_type> visitor(
+                            expression_for_each_variable_visitor<variable_type> visitor(
                                 [&variable_counts, &variables, &variable_values_out](const variable_type& var) {
                                     // Create the structure of the map so we can change the values later.
                                     if (variable_counts[var] == 0) {
@@ -372,13 +372,13 @@ namespace nil {
                     }
 
                     // Run over all the lookup inputs, and collect a vector of expressions that will need to be evaluated.
-                    std::vector<math::expression<variable_type>> prepare_lookup_input_expressions() {
+                    std::vector<expression<variable_type>> prepare_lookup_input_expressions() {
                         PROFILE_SCOPE("Lookup argument preparing lookup input expressions");
-                        std::vector<math::expression<variable_type>> exprs;
+                        std::vector<expression<variable_type>> exprs;
 
                         using polynomial_dfs_variable_type = plonk_variable<polynomial_dfs_type>;
                         for (const auto &gate : lookup_gates) {
-                            math::expression<polynomial_dfs_variable_type> expr;
+                            expression<polynomial_dfs_variable_type> expr;
                             for (const auto &constraint : gate.constraints) {
                                 for(std::size_t k = 0; k < constraint.lookup_input.size(); k++){
                                     exprs.push_back(constraint.lookup_input[k]);
@@ -394,7 +394,7 @@ namespace nil {
                         const polynomial_dfs_type &lagrange0
                     ) {
                         PROFILE_SCOPE("Lookup argument preparing lookup input");
-                        std::vector<math::expression<variable_type>> exprs = prepare_lookup_input_expressions();
+                        std::vector<expression<variable_type>> exprs = prepare_lookup_input_expressions();
 
                         std::unordered_map<variable_type, polynomial_dfs_type> variable_values;
                         size_t extended_domain_size;
@@ -425,14 +425,14 @@ namespace nil {
 
                                 typename FieldType::value_type theta_acc = theta;
                                 for (std::size_t k = 0; k < constraint.lookup_input.size(); k++){
-                                    const math::expression<variable_type>& expr = constraint.lookup_input[k];
+                                    const expression<variable_type>& expr = constraint.lookup_input[k];
 
                                     polynomial_dfs_type result(extended_domain_size - 1, extended_domain_size);
 
                                     for (std::size_t j = 0; j < extended_domain_size; ++j) {
                                         // Don't use cache here. In practice it's slower to maintain the cache
                                         // than to re-compute the subexpression value when value type is field element.
-                                        math::expression_evaluator<variable_type> evaluator(
+                                        expression_evaluator<variable_type> evaluator(
                                             expr,
                                             [&variable_values, j]
                                                 (const variable_type &var) -> const typename FieldType::value_type& {

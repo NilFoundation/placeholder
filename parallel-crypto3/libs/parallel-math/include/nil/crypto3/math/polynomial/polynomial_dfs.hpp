@@ -449,9 +449,7 @@ namespace nil {
 
                     if (other._d == 0) {
                         const auto& value = other.val[0];
-                        parallel_for(0, this->size(), [this, &value](std::size_t i) {
-                            this->val[i] += value;
-                        });
+                        *this += value;
                         return *this;
                     }
 
@@ -475,7 +473,10 @@ namespace nil {
                  * and stores result in polynomial A.
                  */
                 polynomial_dfs& operator+=(const FieldValueType& c) {
-                    for( auto it = this->begin(); it!=this->end(); it++) *it += c;
+                    parallel_for(0, this->size(), [this, &c](std::size_t i) {
+                        this->val[i] += c;
+                    });
+ 
                     return *this;
                 }
 
@@ -511,9 +512,7 @@ namespace nil {
 
                     if (other._d == 0) {
                         const auto& value = other.val[0];
-                        parallel_for(0, this->size(), [this, &value](std::size_t i) {
-                            this->val[i] -= value;
-                        });
+                        *this -= value;
                         return *this;
                     }
 
@@ -537,7 +536,10 @@ namespace nil {
                  * and stores result in polynomial A.
                  */
                 polynomial_dfs& operator-=(const FieldValueType& c) {
-                    for( auto it = this->begin(); it!=this->end(); it++) *it -= c;
+                    parallel_for(0, this->size(), [this, &c](std::size_t i) {
+                        this->val[i] -= c;
+                    });
+
                     return *this;
                 }
 
@@ -558,9 +560,7 @@ namespace nil {
                 polynomial_dfs& operator*=(const polynomial_dfs& other) {
                     if (other._d == 0) {
                         const auto& value = other.val[0];
-                        parallel_for(0, this->size(), [this, &value](std::size_t i) {
-                            this->val[i] *= value;
-                        });
+                        *this *= value;
                         return *this;
                     }
                     return cached_multiplication(other);
@@ -602,11 +602,13 @@ namespace nil {
                 }
 
                 /**
-                 * Perform the multiplication of two polynomials, polynomial A * constant alpha,
+                 * Perform the multiplication of two polynomials, polynomial A * constant 'c',
                  * and stores result in polynomial A.
                  */
-                polynomial_dfs& operator*=(const FieldValueType& alpha) {
-                    for( auto it = this->begin(); it!=this->end(); it++) *it *= alpha;
+                polynomial_dfs& operator*=(const FieldValueType& c) {
+                    parallel_for(0, this->size(), [this, &c](std::size_t i) {
+                        this->val[i] *= c;
+                    });
                     return *this;
                 }
 
@@ -831,18 +833,17 @@ namespace nil {
                                      const polynomial_dfs<FieldValueType, Allocator>& poly) {
                 if (poly.degree() == 0) {
                     // If all it contains is a constant, print the constant, so it's more readable.
-                    os << *poly.begin();
+                    os << std::hex << std::showbase << *poly.begin() << std::dec;
                 } else {
                     os << "[Polynomial DFS, size " << poly.size()
-                       << " degree " << poly.degree() << " values ";
-                    os << std::hex;
-                    for(auto it = poly.begin(); it != poly.end(); ++it) {
-                        os << "0x" << it->data;
-                        if (it != std::prev(poly.end())) {
+                       << " degree " << poly.degree() << " values "
+                       << std::hex << std::showbase;
+                    for (auto it = poly.begin(); it != poly.end(); ++it) {
+                        if (it != poly.begin())
                             os << ", ";
-                        }
+                        os << *it;
                     }
-                    os << std::dec << "]";
+                    os << "]" << std::dec;
                 }
                 return os;
             }
