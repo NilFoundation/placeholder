@@ -27,7 +27,7 @@
 #include <numeric>
 #include <algorithm>
 
-#include <nil/blueprint/zkevm_bbf/types/opcode.hpp>
+#include <nil/blueprint/zkevm_bbf/big_field/opcodes/abstract_opcode.hpp>
 
 namespace nil::blueprint::bbf::zkevm_big_field {
 
@@ -212,7 +212,7 @@ class zkevm_bitwise_bbf : generic_component<FieldType, stage> {
 };
 
 template<typename FieldType>
-class zkevm_bitwise_operation : public nil::blueprint::bbf::opcode_abstract<FieldType> {
+class zkevm_bitwise_operation : public opcode_abstract<FieldType> {
  public:
   zkevm_bitwise_operation(bitwise_type _bit_operation): bit_operation(_bit_operation) { }
 

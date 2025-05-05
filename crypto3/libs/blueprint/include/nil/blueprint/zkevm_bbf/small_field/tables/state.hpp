@@ -40,7 +40,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
         using input_type = typename std::conditional<stage==GenerationStage::ASSIGNMENT, state_operations_vector, std::nullptr_t>::type;
         using integral_type =  nil::crypto3::multiprecision::big_uint<257>;
 
-        using state_timeline_table_type = typename state_timeline_table<FieldType, stage>;
+        // using state_timeline_table_type = typename state_timeline_table<FieldType, stage>;
     public:
         // state_table
         std::vector<TYPE> is_original;                       // 0

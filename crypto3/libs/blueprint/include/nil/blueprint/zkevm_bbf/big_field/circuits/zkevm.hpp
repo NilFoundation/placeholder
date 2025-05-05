@@ -35,6 +35,7 @@
 #include <nil/blueprint/component.hpp>
 
 #include <nil/blueprint/bbf/generic.hpp>
+#include <nil/blueprint/zkevm_bbf/big_field/subcomponents/zkevm_state_vars.hpp>
 #include <nil/blueprint/zkevm_bbf/big_field/subcomponents/keccak_table.hpp>
 #include <nil/blueprint/zkevm_bbf/big_field/subcomponents/bytecode_table.hpp>
 #include <nil/blueprint/zkevm_bbf/big_field/subcomponents/rw_table.hpp>

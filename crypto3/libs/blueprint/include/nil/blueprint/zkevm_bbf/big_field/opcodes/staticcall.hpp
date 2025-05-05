@@ -3,7 +3,7 @@
 #include <numeric>
 #include <algorithm>
 
-#include <nil/blueprint/zkevm_bbf/types/opcode.hpp>
+#include <nil/blueprint/zkevm_bbf/big_field/opcodes/abstract_opcode.hpp>
 #include <nil/blueprint/zkevm_bbf/big_field/opcodes/dummy.hpp>
 
 namespace nil::blueprint::bbf::zkevm_big_field{

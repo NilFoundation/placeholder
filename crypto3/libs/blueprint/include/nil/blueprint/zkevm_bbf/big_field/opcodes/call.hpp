@@ -3,7 +3,7 @@
 #include <numeric>
 #include <algorithm>
 
-#include <nil/blueprint/zkevm_bbf/types/opcode.hpp>
+#include <nil/blueprint/zkevm_bbf/big_field/opcodes/abstract_opcode.hpp>
 
 namespace nil::blueprint::bbf::zkevm_big_field{
     template<typename FieldType, GenerationStage stage>
@@ -48,7 +48,7 @@ namespace nil::blueprint::bbf::zkevm_big_field{
     };
 
     template<typename FieldType>
-    class zkevm_call_operation : public nil::blueprint::bbf::opcode_abstract<FieldType> {
+    class zkevm_call_operation : public opcode_abstract<FieldType> {
     public:
         zkevm_call_operation() {}
         virtual void fill_context(

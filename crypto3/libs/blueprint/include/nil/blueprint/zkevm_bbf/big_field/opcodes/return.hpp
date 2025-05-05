@@ -30,7 +30,7 @@
 #include <nil/blueprint/zkevm_bbf/types/zkevm_word.hpp>
 #include <nil/blueprint/zkevm_bbf/big_field/subcomponents/memory_cost.hpp>
 #include <nil/blueprint/zkevm_bbf/types/copy_event.hpp>
-#include <nil/blueprint/zkevm_bbf/types/opcode.hpp>
+#include <nil/blueprint/zkevm_bbf/big_field/opcodes/abstract_opcode.hpp>
 
 namespace nil::blueprint::bbf::zkevm_big_field{
     template<typename FieldType, GenerationStage stage>
@@ -168,7 +168,7 @@ namespace nil::blueprint::bbf::zkevm_big_field{
     };
 
     template<typename FieldType>
-    class zkevm_return_operation : public nil::blueprint::bbf::opcode_abstract<FieldType> {
+    class zkevm_return_operation : public opcode_abstract<FieldType> {
     public:
         virtual void fill_context(
             typename generic_component<FieldType, GenerationStage::ASSIGNMENT>::context_type &context,

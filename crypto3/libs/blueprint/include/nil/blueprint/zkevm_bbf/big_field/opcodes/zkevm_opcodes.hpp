@@ -34,7 +34,7 @@
 #include <nil/blueprint/zkevm_bbf/types/copy_event.hpp>
 
 #include <nil/blueprint/zkevm_bbf/util.hpp>
-#include <nil/blueprint/zkevm_bbf/types/opcode.hpp>
+#include <nil/blueprint/zkevm_bbf/big_field/opcodes/abstract_opcode.hpp>
 #include <nil/blueprint/zkevm_bbf/big_field/opcodes/pushx.hpp>
 #include <nil/blueprint/zkevm_bbf/big_field/opcodes/mload.hpp>
 #include <nil/blueprint/zkevm_bbf/big_field/opcodes/mstore.hpp>
@@ -99,8 +99,8 @@
 
 namespace nil::blueprint::bbf::zkevm_big_field{
     template <typename BlueprintFieldType>
-    std::map<zkevm_opcode, std::shared_ptr<nil::blueprint::bbf::opcode_abstract<BlueprintFieldType>>> get_opcode_implementations(){
-        std::map<zkevm_opcode, std::shared_ptr<nil::blueprint::bbf::opcode_abstract<BlueprintFieldType>>> opcodes;
+    std::map<zkevm_opcode, std::shared_ptr<opcode_abstract<BlueprintFieldType>>> get_opcode_implementations(){
+        std::map<zkevm_opcode, std::shared_ptr<opcode_abstract<BlueprintFieldType>>> opcodes;
         // add all the implemented opcodes here
 
         opcodes[zkevm_opcode::STOP] = std::make_shared<zkevm_stop_operation<BlueprintFieldType>>();

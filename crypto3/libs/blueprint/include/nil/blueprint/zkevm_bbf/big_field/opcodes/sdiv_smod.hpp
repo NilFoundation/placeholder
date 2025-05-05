@@ -27,7 +27,7 @@
 #pragma once
 
 #include <algorithm>
-#include <nil/blueprint/zkevm_bbf/types/opcode.hpp>
+#include <nil/blueprint/zkevm_bbf/big_field/opcodes/abstract_opcode.hpp>
 #include <numeric>
 
 namespace nil::blueprint::bbf::zkevm_big_field{
@@ -570,7 +570,7 @@ namespace nil::blueprint::bbf::zkevm_big_field{
     };
 
     template<typename FieldType>
-    class zkevm_sdiv_smod_operation : public nil::blueprint::bbf::opcode_abstract<FieldType> {
+    class zkevm_sdiv_smod_operation : public opcode_abstract<FieldType> {
         public:
         zkevm_sdiv_smod_operation(bool _is_div) : is_div(_is_div) {}
         virtual std::size_t rows_amount() override { return 5; }

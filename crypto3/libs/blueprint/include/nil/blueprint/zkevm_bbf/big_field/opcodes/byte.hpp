@@ -26,7 +26,7 @@
 
 #include <numeric>
 #include <algorithm>
-#include <nil/blueprint/zkevm_bbf/types/opcode.hpp>
+#include <nil/blueprint/zkevm_bbf/big_field/opcodes/abstract_opcode.hpp>
 
 namespace nil::blueprint::bbf::zkevm_big_field {
 /*
@@ -179,7 +179,7 @@ class zkevm_byte_bbf : generic_component<FieldType, stage> {
 };
 
 template<typename FieldType>
-class zkevm_byte_operation : public nil::blueprint::bbf::opcode_abstract<FieldType> {
+class zkevm_byte_operation : public opcode_abstract<FieldType> {
  public:
   virtual std::size_t rows_amount() override {
     return 2;

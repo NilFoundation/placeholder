@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------//
-// Copyright (c) 2024 Elena Tatuzova <e.tatuzova@nil.foundation>
+// Copyright (c) 2024 Elena Tatuzova   <e.tatuzova@nil.foundation>
 //
 // MIT License
 //
@@ -23,26 +23,35 @@
 //---------------------------------------------------------------------------//
 
 #pragma once
+#include <nil/crypto3/hash/type_traits.hpp>
+#include <nil/crypto3/hash/algorithm/hash.hpp>
 
-#include <numeric>
-#include <algorithm>
+#include <nil/blueprint/components/hashes/keccak/util.hpp> //Move needed utils to bbf
+#include <nil/blueprint/bbf/generic.hpp>
 
-#include <nil/blueprint/zkevm_bbf/big_field/opcodes/abstract_opcode.hpp>
+#include <nil/blueprint/zkevm_bbf/types/zkevm_state.hpp>
+#include <nil/blueprint/zkevm_bbf/types/zkevm_word.hpp>
 
-namespace nil::blueprint::bbf::zkevm_big_field{
+namespace nil::blueprint::bbf::zkevm_big_field {
+    template<typename FieldType, GenerationStage stage>
+    using opcode_input_type = typename std::conditional<stage == GenerationStage::ASSIGNMENT, zkevm_state, zkevm_state_vars<FieldType>>::type;
+
     template<typename FieldType>
-    class zkevm_padding_operation : public opcode_abstract<FieldType> {
+    class opcode_abstract{
     public:
+        virtual std::size_t rows_amount()=0;
+
         virtual void fill_context(
             typename generic_component<FieldType, GenerationStage::ASSIGNMENT>::context_type &context,
             const opcode_input_type<FieldType, GenerationStage::ASSIGNMENT> &current_state
-        ) override {}
+        ) = 0;
         virtual void fill_context(
             typename generic_component<FieldType, GenerationStage::CONSTRAINTS>::context_type &context,
             const opcode_input_type<FieldType, GenerationStage::CONSTRAINTS> &current_state
-        ) override {}
-        virtual std::size_t rows_amount() override {
-            return 1;
-        }
+        ) = 0;
+    protected:
+        std::size_t gas = 0;
+        std::size_t stack_input = 0;
+        std::size_t stack_output = 0;
     };
 }

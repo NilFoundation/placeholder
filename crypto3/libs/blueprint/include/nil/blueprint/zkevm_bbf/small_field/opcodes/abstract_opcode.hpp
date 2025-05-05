@@ -31,31 +31,28 @@
 
 #include <nil/blueprint/zkevm_bbf/types/zkevm_state.hpp>
 #include <nil/blueprint/zkevm_bbf/types/zkevm_word.hpp>
+#include <nil/blueprint/zkevm_bbf/small_field/subcomponents/zkevm_state_vars.hpp>
 
-namespace nil {
-    namespace blueprint {
-        namespace bbf {
-            template<typename FieldType, GenerationStage stage>
-            using opcode_input_type = typename std::conditional<stage == GenerationStage::ASSIGNMENT, zkevm_state, zkevm_state_vars<FieldType>>::type;
+namespace nil::blueprint::bbf::zkevm_small_field {
+    template<typename FieldType, GenerationStage stage>
+    using opcode_input_type = typename std::conditional<stage == GenerationStage::ASSIGNMENT, zkevm_state, zkevm_state_vars<FieldType>>::type;
 
-            template<typename FieldType>
-            class opcode_abstract{
-            public:
-                virtual std::size_t rows_amount()=0;
+    template<typename FieldType>
+    class opcode_abstract{
+    public:
+        virtual std::size_t rows_amount()=0;
 
-                virtual void fill_context(
-                    typename generic_component<FieldType, GenerationStage::ASSIGNMENT>::context_type &context,
-                    const opcode_input_type<FieldType, GenerationStage::ASSIGNMENT> &current_state
-                ) = 0;
-                virtual void fill_context(
-                    typename generic_component<FieldType, GenerationStage::CONSTRAINTS>::context_type &context,
-                    const opcode_input_type<FieldType, GenerationStage::CONSTRAINTS> &current_state
-                ) = 0;
-            protected:
-                std::size_t gas = 0;
-                std::size_t stack_input = 0;
-                std::size_t stack_output = 0;
-            };
-        } // namespace bbf
-    } // namespace blueprint
-} // namespace nil
+        virtual void fill_context(
+            typename generic_component<FieldType, GenerationStage::ASSIGNMENT>::context_type &context,
+            const opcode_input_type<FieldType, GenerationStage::ASSIGNMENT> &current_state
+        ) = 0;
+        virtual void fill_context(
+            typename generic_component<FieldType, GenerationStage::CONSTRAINTS>::context_type &context,
+            const opcode_input_type<FieldType, GenerationStage::CONSTRAINTS> &current_state
+        ) = 0;
+    protected:
+        std::size_t gas = 0;
+        std::size_t stack_input = 0;
+        std::size_t stack_output = 0;
+    };
+}
