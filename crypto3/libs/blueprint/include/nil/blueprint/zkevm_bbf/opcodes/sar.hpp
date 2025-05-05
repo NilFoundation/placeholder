@@ -67,29 +67,10 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
     using typename generic_component<FieldType, stage>::TYPE;
     using typename generic_component<FieldType, stage>::context_type;
 
-    // Reconstruct a 64-bit element from four 16-bit chunks
-    template<typename T, typename V = T>
-    T chunk_sum_64(const std::vector<V> &chunks,
-                   const unsigned char chunk_idx) const {
-        BOOST_ASSERT(chunk_idx < 4);
-        return chunks[4 * chunk_idx] + chunks[4 * chunk_idx + 1] * two_16 +
-               chunks[4 * chunk_idx + 2] * two_32 +
-               chunks[4 * chunk_idx + 3] * two_48;
-    }
-
-
     template<typename T, typename V = T>
     T carryless_mul(const std::vector<T> &r_16_chunks,
                                 const std::vector<T> &b_8_chunks,
                                 const unsigned char chunk_idx) const {
-        // 0 -> (0,0)
-        // 1 -> (0,1)
-        // 2 -> (1,0) (0,2) 
-        // 3 -> (1, 1) (0,3)
-        // for (int i = 0; i <= max(16, chunk_idx/2); i++) {
-        //     res += r_16_chunks[i] * b_8_chunks[chunk_idx - 2*i];
-        // }
-        //
         T res;
         for (int i = 0; i < chunk_idx; i++) {
             if ((i < 16) && (chunk_idx - 2*i >= 0)) {
@@ -107,94 +88,6 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
         auto res = rb_8_chunks[2 * chunk_idx] + rb_8_chunks[2 * chunk_idx + 1] * 256 + q_16_chunks[chunk_idx] - a_16_chunks[chunk_idx];
         return res;
     }
-
-
-    // template<typename T, typename V = T>
-    // T carryless_construct(const std::vector<T> &a_24_chunks,
-    //                             const std::vector<T> &b_24_chunks,
-    //                             const std::vector<T> &r_24_chunks,
-    //                             const std::vector<T> &q_24_chunks,
-    //                             const unsigned char chunk_idx) const {
-    //     TYPE res = 0;        
-    //     for (std::size_t i = 0; i < chunk_24_amount + 1; i++) {
-    //         if (2 * chunk_idx - i) >= 0 {
-    //             res += r_24_chunks[i] * b_24_chunks[2 * chunk_idx - i];
-    //         }
-    //         if (2 * chunk_idx + 1 - i) >= 0 {
-    //             res += r_24_chunks[i] * b_24_chunks[2 * chunk_idx - i] * two_24;
-    //         }
-    //     }
-    //     res += q_24_chunks[2 * chunk_idx] + q_24_chunks[2 * chunk_idx + 1] * two_24;
-    //     res -= a_24_chunks[2 * chunk_idx] + a_24_chunks[2 * chunk_idx + 1] * two_24;        return res;
-    // }
-
-    // From 64-bit chunks of a, b, r, q, compute the part of r*b + q - a with combined chunk coefficients 2^0 and 2^64
-    template<typename T>
-    T first_carryless_construct(const std::vector<T> &a_64_chunks,
-                                const std::vector<T> &b_64_chunks,
-                                const std::vector<T> &r_64_chunks,
-                                const std::vector<T> &q_64_chunks) const {
-        return r_64_chunks[0] * b_64_chunks[0] + q_64_chunks[0] +
-               two_64 * (r_64_chunks[0] * b_64_chunks[1] +
-                         r_64_chunks[1] * b_64_chunks[0] + q_64_chunks[1]) -
-               a_64_chunks[0] - two_64 * a_64_chunks[1];
-    }
-    
-    // From 64-bit chunks of a, b, r, q, compute the part of r*b + q - a with chunk coefficients 2^128 and 2^192
-    template<typename T>
-    T second_carryless_construct(const std::vector<T> &a_64_chunks,
-                                 const std::vector<T> &b_64_chunks,
-                                 const std::vector<T> &r_64_chunks,
-                                 const std::vector<T> &q_64_chunks) const {
-        return (r_64_chunks[0] * b_64_chunks[2] +
-                r_64_chunks[1] * b_64_chunks[1] +
-                r_64_chunks[2] * b_64_chunks[0] + q_64_chunks[2] -
-                a_64_chunks[2]) +
-               two_64 * (r_64_chunks[0] * b_64_chunks[3] +
-                         r_64_chunks[1] * b_64_chunks[2] +
-                         r_64_chunks[2] * b_64_chunks[1] +
-                         r_64_chunks[3] * b_64_chunks[0] + q_64_chunks[3] -
-                         a_64_chunks[3]);
-    }
-
-    // From 64-bit chunks of a, b, r, q, compute the part of r*b + q - a with chunk coefficients 2^256 and 2^320 (we don't need a, q because they have already been fully consumed in previous chunks)
-    template<typename T>
-    T third_carryless_construct(const std::vector<T> &b_64_chunks,
-        const std::vector<T> &r_64_chunks) const {
-            return (r_64_chunks[1] * b_64_chunks[3] +
-                r_64_chunks[2] * b_64_chunks[2] +
-                r_64_chunks[3] * b_64_chunks[1]) +
-                two_64 * (r_64_chunks[2] * b_64_chunks[3] +
-                    r_64_chunks[3] * b_64_chunks[2]);
-                }
-    // No need for a 4th carryless construct for chunk coefficient 2^384, i.e. r_64_chunks[3] * b_64_chunks[3].
-    // This case is handled direclty with the constraint b_64_chunks[3] * r_64_chunks[3] = 0.
-                
-    // Given 16-bit chunks of a, b, r, compute a + b - r, and take out whatever overflows 48-bits as a carry to the next one.
-    TYPE carry_on_addition_constraint(TYPE a_0, TYPE a_1, TYPE a_2, TYPE b_0,
-                                      TYPE b_1, TYPE b_2, TYPE r_0, TYPE r_1,
-                                      TYPE r_2, TYPE last_carry,
-                                      TYPE result_carry,
-                                      bool first_constraint = false) {
-        TYPE res;
-        if (first_constraint) {
-            // no last carry for first constraint
-            res = (a_0 + b_0) + (a_1 + b_1) * two_16 + (a_2 + b_2) * two_32 -
-                  r_0 - r_1 * two_16 - r_2 * two_32 - result_carry * two_48;
-        } else {
-            res = last_carry + (a_0 + b_0) + (a_1 + b_1) * two_16 +
-                  (a_2 + b_2) * two_32 - r_0 - r_1 * two_16 - r_2 * two_32 -
-                  result_carry * two_48;
-        }
-        return res;
-    };
-    // Similar to the above, but only one 16-bit chunk per value. 
-    TYPE last_carry_on_addition_constraint(TYPE a_0, TYPE b_0, TYPE r_0,
-                                           TYPE last_carry,
-                                           TYPE result_carry) {
-        TYPE res = (last_carry + a_0 + b_0 - r_0 - result_carry * two_16);
-        return res;
-    };
 
     std::vector<TYPE> res;
 
@@ -337,7 +230,6 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
                 construct_carryless_chunks[i] = carryless_construct(mul8_chunks, q_chunks_copy1, a_chunks, i);
                 constructcarries[i] = construct_carryless_chunks[i].data.base() << 16; 
                 auto prev_carry = (i > 0) ? constructcarries[i - 1] : 0;
-                // construct_chunks[i] = construct_carryless_chunks[i] - (constructcarries[i].data.base() << 16) + prev_carry;
             }
             
             for (int i = 0; i < chunk_amount - 1; i++) {
@@ -354,16 +246,7 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
             upper_inverse = b0_upper.is_zero() ? 0 : b0_upper.inversed();
 
         }
-        
-        // Allocate chunk vectors
-        // for (std::size_t i = 0; i < chunk_amount; i++) {
-        //     allocate(input_b_chunks[i], i, 2);
-        //     allocate(r_chunks[i], i + chunk_amount, 2);
-        //     allocate(a_chunks[i], i, 1);
-        //     allocate(b_chunks[i], i + chunk_amount, 1);
-        //     allocate(q_chunks[i], i, 0);
-        //     allocate(v_chunks[i], i + chunk_amount, 0);
-        // }
+
         for (std::size_t i = 0; i < chunk_amount; i++) {
             allocate(input_b_chunks[i], i + chunk_amount, 2);
             allocate(r_chunks[i], i + 2 * chunk_amount, 1);
@@ -412,26 +295,6 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
         }
         constrain(b0_lower * 256 - b8_chunks_check[0]);
         constrain(b0_upper * 256 - b8_chunks_check[1]);
-
-        // note that we don't assign 64-chunks for a/b, as we can build
-        // them from 16-chunks with constraints under the same logic we
-        // only assign the 16 - bit Convert 16-bit chunks to 64-bit chunks
-        // for (std::size_t i = 0; i < 4; i++) {
-        //     a_64_chunks[i] = chunk_sum_64<TYPE>(a_chunks, i);
-        //     b_64_chunks[i] = chunk_sum_64<TYPE>(b_chunks, i);
-        //     r_64_chunks[i] = chunk_sum_64<TYPE>(r_chunks, i);
-        //     q_64_chunks[i] = chunk_sum_64<TYPE>(q_chunks, i);
-        // }
-        // decomposition of input_b_chunks[0], upper_inverse = 1 / b0_upper
-        // allocate(b0_lower, 10, 3);
-        // allocate(b0_upper, 11, 3);
-        // allocate(upper_inverse, 40, 1);
-
-        // Ensure that b0_lower and b0_upper are 8-bit values
-        // b0_lower_check = 256 * b0_lower;
-        // b0_upper_check = 256 * b0_upper;
-        // allocate(b0_lower_check, 2, 3);
-        // allocate(b0_upper_check, 3, 3);
 
         // input_b_chunks[0] is decomposed into b0_lower, b0_upper
         constrain(input_b_chunks[0] - b0_lower - 256 * b0_upper);
@@ -561,61 +424,6 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
         // b_chunks[10] = 2^7, and b_chunks[i] = 0 for all other i.
         // That is, b = 2^7..(followed by 10 chunks of 16 zeros) = 2^7 * 2^(10*16) = 2^167.
 
-        // Set up carryless constraints
-        // first_carryless = first_carryless_construct<TYPE>(
-        //     a_64_chunks, b_64_chunks, r_64_chunks, q_64_chunks);
-        // second_carryless = second_carryless_construct<TYPE>(
-        //     a_64_chunks, b_64_chunks, r_64_chunks, q_64_chunks);
-        // third_carryless =
-        //     third_carryless_construct<TYPE>(b_64_chunks, r_64_chunks);
-
-        // if constexpr (stage == GenerationStage::ASSIGNMENT) {
-        //     // Calculate carries for first row.
-        //     auto first_row_carries = first_carryless.data.base() >> 128;
-        //     // Split whatever exceeds 128 bits into two 64-bit carries.
-        //     c_1 = value_type(first_row_carries & (two_64 - 1).data.base());
-        //     c_2 = value_type(first_row_carries >> 64);      // By definition of first_carryless_construct, c_2 <= 1.
-        //                                                     // QUESTION: I think c_2 = 0 always, since we have established that b <= 2^255, as opposed to b <= 2^256-1.
-        //     // Recall that a = r*b + q. So the 128 lower bits of first_carryless should be 0.
-        //     BOOST_ASSERT(first_carryless - c_1 * two_128 - c_2 * two_192 == 0);
-        //     // Split c_1 into four 16-bit chunks.
-        //     c_1_chunks = chunk_64_to_16<FieldType>(c_1);
-        //
-        //     // Calculate carry bits
-        //     // carry[i] = 1  <=>  the (i-1)-th 48-bit chunk of b + v overflows 48 bits.
-        //     // carry[i] = 0 otherwise.
-        //     carry[0] = 0;
-        //     for (std::size_t i = 0; i < carry_amount - 1; i++) {
-        //         carry[i + 1] =
-        //             (carry[i] + b_chunks[3 * i] + v_chunks[3 * i] +
-        //              (b_chunks[3 * i + 1] + v_chunks[3 * i + 1]) * two_16 +
-        //              (b_chunks[3 * i + 2] + v_chunks[3 * i + 2]) * two_32) >=
-        //             two_48;
-        //     }
-        //     // last carry, corresponding to the most significant 48-bit chunk of b + v.
-        //     // This one is different. It checks 16-bit overflow, instead of 48-bit overflow.
-        //     carry[carry_amount] =
-        //         (carry[carry_amount - 1] + b_chunks[3 * (carry_amount - 1)] +
-        //          v_chunks[3 * (carry_amount - 1)]) >= two_16;
-        //     BOOST_ASSERT(carry[carry_amount] == 1); // should always be 1 for q < b
-        // }
-
-        // for (std::size_t i = 0; i < 4; i++) {
-        //     allocate(c_1_chunks[i], 4 + i, 3);
-        // }
-        // c_1_64 = chunk_sum_64<TYPE>(c_1_chunks, 0);
-        // allocate(c_1_64, 43, 1);
-        // // We don't need to split c_2 into chunks, because it's either 0 or 1. 
-        // allocate(c_2, 39, 1);
-
-        // Carryless constraints
-        // The seemingly missing carry terms in 2nd and 3rd carryless are not needed, because they cancel out modulo 2^256.
-        // constrain(first_carryless - c_1_64 * two_128 - c_2 * two_192);
-        // constrain(second_carryless + c_1_64 + c_2 * two_64);
-        // constrain(c_2 * (c_2 - 1));
-        // constrain(third_carryless);
-        // constrain(b_64_chunks[3] * r_64_chunks[3]);     // "Fourth carryless"
-
         // Carry propagation constraints for the v + b = q + 2^256 equality
         for (std::size_t i = 0; i < chunk_amount - 1; i++) {
             allocate(more_carries[i], i, 2);
@@ -627,96 +435,81 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
             constrain(more_carries[i] * (1 - more_carries[i]));
         }
         
-        // for (std::size_t i = 0; i < carry_amount - 1; i++) {
-        //     allocate(carry[i + 1], 33 + i, 1);
-        //     constrain(carry_on_addition_constraint(
-        //         b_chunks[3 * i], b_chunks[3 * i + 1], b_chunks[3 * i + 2],
-        //         v_chunks[3 * i], v_chunks[3 * i + 1], v_chunks[3 * i + 2],
-        //         q_chunks[3 * i], q_chunks[3 * i + 1], q_chunks[3 * i + 2],
-        //         carry[i], carry[i + 1], i == 0));
-        //     constrain(carry[i + 1] * (1 - carry[i + 1]));
-        // }
-        // // allocate(carry[carry_amount], 38, 1);
-        // constrain(last_carry_on_addition_constraint(
-        //     b_chunks[3 * (carry_amount - 1)],
-        //     v_chunks[3 * (carry_amount - 1)],
-        //     q_chunks[3 * (carry_amount - 1)], carry[carry_amount - 1],
-        //     1)); // = carry[carry_amount]. Ensures that there **is** a carry.
 
-        // Sign extension handling
+        // // Sign extension handling
         for (std::size_t i = 0; i < chunk_amount; i++) {
             // allocate(y_chunks[i], i + chunk_amount, 3);
             allocate(y_chunks[i], i + chunk_amount, 1);
             res[i] = y_chunks[i];
         }
 
-        // allocate(sign_bit, 15, 3);
+        // // allocate(sign_bit, 15, 3);
+        // // constrain(sign_bit * (1 - sign_bit));  // Ensure sign_bit is 0 or 1
+        // // lower_chunk_bits = a_chunks[15] - sign_bit * two_15;
+        // // allocate(lower_chunk_bits, 14, 3);
+        // // // Ensure that the highest chunk (without the sign bit) is 15-bits.
+        // // lower_bits_range = 2 * lower_chunk_bits;
+
+        // allocate(sign_bit, 14, 1);
         // constrain(sign_bit * (1 - sign_bit));  // Ensure sign_bit is 0 or 1
-        // lower_chunk_bits = a_chunks[15] - sign_bit * two_15;
-        // allocate(lower_chunk_bits, 14, 3);
+        // lower_chunk_bits = a_chunks15_copy1 - sign_bit * two_15;
+        // allocate(lower_chunk_bits, 13, 1);
         // // Ensure that the highest chunk (without the sign bit) is 15-bits.
         // lower_bits_range = 2 * lower_chunk_bits;
+        // allocate(lower_bits_range, 12, 1);
 
-        allocate(sign_bit, 14, 1);
-        constrain(sign_bit * (1 - sign_bit));  // Ensure sign_bit is 0 or 1
-        lower_chunk_bits = a_chunks15_copy1 - sign_bit * two_15;
-        allocate(lower_chunk_bits, 13, 1);
-        // Ensure that the highest chunk (without the sign bit) is 15-bits.
-        lower_bits_range = 2 * lower_chunk_bits;
-        allocate(lower_bits_range, 12, 1);
+        // // Sign extension logic
+        // // is_sign[i] signals whether a chunk should be completely filled with sign bits
+        // // is_transition[i] signals whether a chunk has some sign bits and some "meaningful" bits
+        // std::vector<TYPE> is_transition(chunk_amount);
+        // std::vector<TYPE> is_sign(chunk_amount);
+        // for (std::size_t i = 0; i < chunk_amount; i++) {
+        //     // To know in which chunk the transition happens, we just need to look at shift_upper
+        //     // Small shift means the transition happens in most significant chunks, and vice versa. Hence the index reversal.
+        //     // indic_2[i_inv] = 0                           => shift_upper = i_inv  => is_transition[i] = 1
+        //     // indic_2[i_inv] = (shift_upper - i_inv)^(-1)  => shift_upper != i     => is_transition[i] = 0
+        //     size_t i_inv = chunk_amount - 1 - i;
+        //     is_transition[i] = (1 - (shift_upper - i_inv) * indic_2[i_inv]);
+        //     // Let i* be the unique index such that is_transition[i*] = 1.
+        //     // is_sign[i] = {
+        //     //      0 <=> i <= i*
+        //     //      1 <=> i > i*    
+        //     // }
+        //     for (std::size_t j = i + 1; j < chunk_amount; j++) {
+        //         is_sign[j] += is_transition[i];
+        //     }
+        // }
 
-        // Sign extension logic
-        // is_sign[i] signals whether a chunk should be completely filled with sign bits
-        // is_transition[i] signals whether a chunk has some sign bits and some "meaningful" bits
-        std::vector<TYPE> is_transition(chunk_amount);
-        std::vector<TYPE> is_sign(chunk_amount);
-        for (std::size_t i = 0; i < chunk_amount; i++) {
-            // To know in which chunk the transition happens, we just need to look at shift_upper
-            // Small shift means the transition happens in most significant chunks, and vice versa. Hence the index reversal.
-            // indic_2[i_inv] = 0                           => shift_upper = i_inv  => is_transition[i] = 1
-            // indic_2[i_inv] = (shift_upper - i_inv)^(-1)  => shift_upper != i     => is_transition[i] = 0
-            size_t i_inv = chunk_amount - 1 - i;
-            is_transition[i] = (1 - (shift_upper - i_inv) * indic_2[i_inv]);
-            // Let i* be the unique index such that is_transition[i*] = 1.
-            // is_sign[i] = {
-            //      0 <=> i <= i*
-            //      1 <=> i > i*    
-            // }
-            for (std::size_t j = i + 1; j < chunk_amount; j++) {
-                is_sign[j] += is_transition[i];
-            }
-        }
+        // // Calculate transition chunk
+        // // indic_2[i_inv] = (shift_upper - i_inv)^(-1)  => transition_chunk = r_chunks[i] + (sign mask -- more on this below)
+        // transition_chunk = 0;
+        // // shift_upper determines which chunk is the transition chunk
+        // for (std::size_t i = 0; i < chunk_amount; i++) {
+        //     size_t i_inv = chunk_amount - 1 - i;
+        //     transition_chunk +=
+        //         r_chunks[i] * (1 - (shift_upper - i_inv) * indic_2[i_inv]);
+        // }
+        // // shift_lower determines which exact mask should be added (how many sign bits)
+        // for (std::size_t i = 0; i < chunk_amount; i++) {
+        //     // It's really the chunk_size, not chunk_amount that matters, although in this case they're the same.
+        //     unsigned int mask = ((1 << i) - 1) << (chunk_amount - i); // 11...1100...00 = 1{i}0{chunk_amount - i}
+        //     transition_chunk +=
+        //         (1 - (shift_lower - i) * indic_1[i]) * mask * sign_bit;
+        // }
+        // // allocate(transition_chunk, 38, 1);
+        // allocate(transition_chunk, 11, 1);
 
-        // Calculate transition chunk
-        // indic_2[i_inv] = (shift_upper - i_inv)^(-1)  => transition_chunk = r_chunks[i] + (sign mask -- more on this below)
-        transition_chunk = 0;
-        // shift_upper determines which chunk is the transition chunk
-        for (std::size_t i = 0; i < chunk_amount; i++) {
-            size_t i_inv = chunk_amount - 1 - i;
-            transition_chunk +=
-                r_chunks[i] * (1 - (shift_upper - i_inv) * indic_2[i_inv]);
-        }
-        // shift_lower determines which exact mask should be added (how many sign bits)
-        for (std::size_t i = 0; i < chunk_amount; i++) {
-            // It's really the chunk_size, not chunk_amount that matters, although in this case they're the same.
-            unsigned int mask = ((1 << i) - 1) << (chunk_amount - i); // 11...1100...00 = 1{i}0{chunk_amount - i}
-            transition_chunk +=
-                (1 - (shift_lower - i) * indic_1[i]) * mask * sign_bit;
-        }
-        // allocate(transition_chunk, 38, 1);
-        allocate(transition_chunk, 11, 1);
-
-        // connect the result (y_chunks) with r_chunks and sign_bit
-        for (std::size_t i = 0; i < chunk_amount; i++) {
-            constrain(
-                // Recall that y = r + sign extension. We adjust the chunks of y accordingly.
-                // is_sign[i] = 1           => y_chunks[i] = 0x0000 or 0xFFFF (depending on sign_bit)
-                // is_transition[i] = 1     => y_chunks[i] = transition
-                // both of the above are 0  => y_chunks[i] = r_chunks[i] 
-                y_chunks[i] - is_sign[i] * sign_bit * 0xFFFF  // Sign fill
-                - is_transition[i] * transition_chunk  // Transition chunk
-                - (1 - is_sign[i] - is_transition[i]) * r_chunks[i]);  // Original chunks
-        }
+        // // connect the result (y_chunks) with r_chunks and sign_bit
+        // for (std::size_t i = 0; i < chunk_amount; i++) {
+        //     constrain(
+        //         // Recall that y = r + sign extension. We adjust the chunks of y accordingly.
+        //         // is_sign[i] = 1           => y_chunks[i] = 0x0000 or 0xFFFF (depending on sign_bit)
+        //         // is_transition[i] = 1     => y_chunks[i] = transition
+        //         // both of the above are 0  => y_chunks[i] = r_chunks[i] 
+        //         y_chunks[i] - is_sign[i] * sign_bit * 0xFFFF  // Sign fill
+        //         - is_transition[i] * transition_chunk  // Transition chunk
+        //         - (1 - is_sign[i] - is_transition[i]) * r_chunks[i]);  // Original chunks
+        // }
 
         // Convert to 128-bit chunks for stack operations
         auto A_128 = chunks16_to_chunks128_reversed<TYPE>(a_chunks);
@@ -745,19 +538,21 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
                       current_state.rw_counter(number_of_rows - 1) - 3);  // RW counter
 
             // Stack lookup constraints
-            std::vector<TYPE> tmp;
-            tmp = rw_table<FieldType, stage>::stack_lookup(
-                current_state.call_id(1), current_state.stack_size(1) - 1,
-                current_state.rw_counter(1), TYPE(0), B0, B1);
-            lookup(tmp, "zkevm_rw");
-            tmp = rw_table<FieldType, stage>::stack_lookup(
-                current_state.call_id(1), current_state.stack_size(1) - 2,
-                current_state.rw_counter(1) + 1, TYPE(0), A0, A1);
-            lookup(tmp, "zkevm_rw");
-            tmp = rw_table<FieldType, stage>::stack_lookup(
-                current_state.call_id(3), current_state.stack_size(3) - 2,
-                current_state.rw_counter(3) + 2, TYPE(1), Res0, Res1);
-            lookup(tmp, "zkevm_rw");
+            // std::vector<TYPE> tmp;
+            // tmp = rw_table<FieldType, stage>::stack_lookup(
+            //     current_state.call_id(1), current_state.stack_size(1) - 1,
+            //     current_state.rw_counter(1), TYPE(0), B0, B1);
+            // lookup(tmp, "zkevm_rw");
+            // tmp = rw_table<FieldType, stage>::stack_lookup(
+            //     current_state.call_id(1), current_state.stack_size(1) - 2,
+            //     current_state.rw_counter(1) + 1, TYPE(0), A0, A1);
+            // lookup(tmp, "zkevm_rw");
+            // tmp = rw_table<FieldType, stage>::stack_lookup(
+            //     current_state.call_id(3), current_state.stack_size(3) - 2,
+            //     current_state.rw_counter(3) + 2, TYPE(1), Res0, Res1);
+            // lookup(tmp, "zkevm_rw");
+
+            // TODO: add lookup for a_chunks15_copy1
         }
     }
 };
