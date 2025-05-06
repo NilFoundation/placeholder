@@ -1,7 +1,4 @@
 //---------------------------------------------------------------------------//
-// Copyright (c) 2020-2021 Mikhail Komarov <nemo@nil.foundation>
-// Copyright (c) 2020-2021 Nikita Kaskov <nbering@nil.foundation>
-// Copyright (c) 2022 Aleksei Moskvin <alalmoskvin@nil.foundation>
 // Copyright (c) 2025 Andrey Nefedov <ioxid@nil.foundation>
 // Copyright (c) 2025 Martun Karapetyan <martun@nil.foundation>
 //

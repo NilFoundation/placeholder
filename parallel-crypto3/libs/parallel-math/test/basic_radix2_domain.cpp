@@ -49,6 +49,7 @@ typedef fields::bls12_fr<381> FieldType;
 
 BOOST_AUTO_TEST_SUITE(basic_radix2_domain_test_suit)
 
+// TODO(martun): move this to benchmarks.
 BOOST_AUTO_TEST_CASE(basic_radix2_domain_benchmark, *boost::unit_test::disabled()) {
     using value_type = FieldType::value_type;
     const std::size_t fft_count = 5;
@@ -111,6 +112,7 @@ BOOST_AUTO_TEST_CASE(basic_radix2_domain_benchmark, *boost::unit_test::disabled(
               << " ms" << std::endl;
 }
 
+// TODO(martun): move this to benchmarks.
 BOOST_AUTO_TEST_CASE(fft_vs_multiplication_benchmark) {
     using value_type = FieldType::value_type;
     const std::size_t fft_size = 1 << 16;

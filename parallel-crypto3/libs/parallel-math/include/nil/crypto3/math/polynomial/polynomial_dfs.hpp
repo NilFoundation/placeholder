@@ -685,28 +685,31 @@ namespace nil {
                     _d = tmp.size() - 1;
                     val.assign(tmp.begin(), tmp.end());
                     val.resize(n, FieldValueType::zero());
+                    
+                    // We need this check, because we're unable to create an evaluation domain of size 1.
+                    if (n == 1)
+                        return;
+
                     if (domain == nullptr) {
-                        value_type omega = unity_root<FieldType>(n);
-                        detail::basic_radix2_fft<FieldType>(val, omega);
-                    } else {
-                        domain->fft(this->val);
+                        domain = make_evaluation_domain<FieldType>(this->size());
                     }
+                    domain->fft(this->val);
                 }
 
                 std::vector<FieldValueType> coefficients(
                         std::shared_ptr<evaluation_domain<typename value_type::field_type>> domain = nullptr) const {
                     typedef typename value_type::field_type FieldType;
-                    value_type omega = unity_root<FieldType>(this->size());
                     std::vector<FieldValueType> tmp(this->begin(), this->end());
 
-                    if (domain == nullptr) {
-                        detail::basic_radix2_fft<FieldType>(tmp, omega.inversed());
-                        const value_type sconst = value_type(this->size()).inversed();
-                        parallel_transform(tmp.begin(), tmp.end(),tmp.begin(),
-                            std::bind(std::multiplies<value_type>(), sconst, std::placeholders::_1));
-                    } else {
-                        domain->inverse_fft(tmp);
+                    // We need this check, because we're unable to create an evaluation domain of size 1.
+                    if (this->size() == 1) {
+                        return tmp;
                     }
+
+                    if (domain == nullptr) {
+                         domain = make_evaluation_domain<FieldType>(this->size());
+                    }
+                    domain->inverse_fft(tmp);
 
                     size_t r_size = tmp.size();
                     while (r_size > 1 && tmp[r_size - 1] == FieldValueType::zero()) {
@@ -849,7 +852,7 @@ namespace nil {
             }
 
             template<typename FieldType>
-            static inline polynomial_dfs<typename FieldType::value_type> polynomial_sum(
+            polynomial_dfs<typename FieldType::value_type> polynomial_sum(
                     std::vector<math::polynomial_dfs<typename FieldType::value_type>> addends) {
                 using FieldValueType = typename FieldType::value_type;
 
@@ -919,7 +922,7 @@ namespace nil {
             }
 
             template<typename FieldType>
-            static inline polynomial_dfs<typename FieldType::value_type> polynomial_product(
+            polynomial_dfs<typename FieldType::value_type> polynomial_product(
                     std::vector<math::polynomial_dfs<typename FieldType::value_type>> multipliers) {
                 // Pre-create all the domains. We could do this on-the-go, but we want this function to be more
                 // parallelization-friendly. This single-threaded version may look a bit complicated,
@@ -984,6 +987,25 @@ namespace nil {
                 return multipliers[0];
             }
 
+            template<typename FieldType>
+            std::vector<math::polynomial<typename FieldType::value_type>> polynomial_batch_to_coefficients(
+                    std::vector<math::polynomial_dfs<typename FieldType::value_type>> polys_dfs,
+                    std::shared_ptr<evaluation_domain<FieldType>> domain) {
+                std::vector<std::vector<typename FieldType::value_type>> data;
+                data.reserve(polys_dfs.size());
+                for (auto& poly: polys_dfs) {
+                    data.emplace_back(std::move(poly.get_storage()));
+                }
+
+                domain->batch_inverse_fft(data);
+
+                std::vector<math::polynomial<typename FieldType::value_type>> result;
+                result.reserve(data.size());
+                for (auto& coeffs: data) {
+                    result.emplace_back(std::move(coeffs));
+                }
+                return result;
+            }
         }    // namespace math
     }        // namespace crypto3
 }    // namespace nil

@@ -100,7 +100,6 @@ namespace nil {
 
 
                     // invariant: m = 2^{s-1}
-                    value_type t;
                     for (std::size_t s = 1, m = 1, inc = n / 2; s <= logn; ++s, m <<= 1, inc >>= 1) {
                         // w_m is 2^s-th root of unity now
                         size_t count_k = n / (2 * m) + (n % (2 * m) ? 1 : 0);

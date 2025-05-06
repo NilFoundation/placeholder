@@ -101,7 +101,7 @@ namespace nil {
 
                 /** Transforms the matrix of values. Usually the first dimension is much smaller than second, I.E. N << M.
                  */
-                std::vector<field_element_vector<value_type>> transform(std::vector<std::vector<value_type>> &a) {
+                std::vector<field_element_vector<value_type>> transpose(std::vector<std::vector<value_type>> &a) {
                     size_t N = a.size();
                     size_t M = 0; 
                     for (const auto& p: a) {
@@ -110,7 +110,7 @@ namespace nil {
                     std::vector<field_element_vector<value_type>> result(M, field_element_vector<value_type>(N));
                     parallel_for(0, M, [&a, &result, N](std::size_t j) {
                         for (size_t i = 0; i < N; ++i) {
-                            result[i][j] = a[j][i];
+                            result[j][i] = a[i][j];
                         }
                     }, ThreadPool::PoolLevel::LOW);
                     return result;
@@ -118,7 +118,7 @@ namespace nil {
 
                 /** Transforms the matrix of values. N >> M.
                  */
-                void transform(const std::vector<field_element_vector<value_type>>& input,
+                void transpose(const std::vector<field_element_vector<value_type>>& input,
                                std::vector<std::vector<value_type>> &result) {
                     size_t N = input.size();
                     size_t M = input[0].size(); 
@@ -133,40 +133,40 @@ namespace nil {
                  *  \param[in] a - Each element of a a[i] represents coefficients of a polynomial.
                  */
                 void batch_fft(std::vector<std::vector<value_type>> &a) override {
-                    for (auto& p: a) {
-                        if (p.size() != this->m) {
-                            if (p.size() < this->m) {
-                                p.resize(this->m, value_type::zero());
-                            } else {
-                                throw std::invalid_argument("basic_radix2: expected p.size() <= this->m");
-                            }
-                        }
-                    }
+                    if (a.size() == 0)
+                        return;
+                    resize_to_domain_size(a);
 
-                    std::vector<field_element_vector<value_type>> V = transform(a);
+                    std::vector<field_element_vector<value_type>> V = transpose(a);
                     detail::basic_radix2_fft_cached<FieldType>(V, fft_cache->first);
-                    transform(V, a);
+                    transpose(V, a);
                 }
 
-                void batched_inverse_fft(std::vector<std::vector<value_type>> &a) override {
+                void resize_to_domain_size(std::vector<std::vector<value_type>> &a) {
                     for (auto& p: a) {
                         if (p.size() != this->m) {
                             if (p.size() < this->m) {
                                 p.resize(this->m, value_type::zero());
                             } else {
-                                throw std::invalid_argument("batched_inverse_fft: expected p.size() <= this->m");
+                                throw std::invalid_argument("Expected polynomail size <= domain size");
                             }
                         }
                     }
+                }
 
-                    std::vector<field_element_vector<value_type>> V = transform(a);
-                    detail::basic_radix2_fft_cached<FieldType>(V, fft_cache->first);
+                void batch_inverse_fft(std::vector<std::vector<value_type>> &a) override {
+                    if (a.size() == 0)
+                        return;
+                    resize_to_domain_size(a);
+
+                    std::vector<field_element_vector<value_type>> V = transpose(a);
+                    detail::basic_radix2_fft_cached<FieldType>(V, fft_cache->second);
 
                     const field_value_type sconst = field_value_type(this->m).inversed();
                     nil::crypto3::parallel_foreach(V.begin(), V.end(), [&sconst](field_element_vector<value_type>& v_i){
                         v_i *= sconst;
                     }, ThreadPool::PoolLevel::LOW);
-                    transform(V, a);
+                    transpose(V, a);
                 }
 
                 void inverse_fft(std::vector<value_type> &a) override {
@@ -180,7 +180,7 @@ namespace nil {
 
                     detail::basic_radix2_fft_cached<FieldType>(a, fft_cache->second);
 
-                    const field_value_type sconst = field_value_type(a.size()).inversed();
+                    const field_value_type sconst = field_value_type(this->m).inversed();
                     nil::crypto3::parallel_foreach(a.begin(), a.end(), [&sconst](value_type& a_i){
                         a_i *= sconst;
                     });

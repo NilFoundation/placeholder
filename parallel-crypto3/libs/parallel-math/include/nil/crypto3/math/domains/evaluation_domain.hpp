@@ -97,7 +97,7 @@ namespace nil {
                 /**
                  * Compute the inverse FFT, over the domain S, of the vector of vectors a.
                  */
-                virtual void batched_inverse_fft(std::vector<std::vector<value_type>> &a) = 0;
+                virtual void batch_inverse_fft(std::vector<std::vector<value_type>> &a) = 0;
 
                 /**
                  * Evaluate all Lagrange polynomials.
