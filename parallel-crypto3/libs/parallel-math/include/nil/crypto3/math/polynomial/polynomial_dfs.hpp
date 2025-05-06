@@ -121,6 +121,14 @@ namespace nil {
                                const allocator_type& a)
                     : polynomial_dfs(d, container_type(first, last, a)) {}
 
+                template<typename Subfield>
+                polynomial_dfs(const polynomial_dfs<Subfield>& x) : _d(x.degree()) {
+                    val.resize(x.size());
+                    for (std::size_t i = 0; i < val.size(); ++i) {
+                        val[i] = x[i];
+                    }
+                }
+
                 polynomial_dfs(const polynomial_dfs& x, const allocator_type& a) : val(x.val, a), _d(x._d) {
                 }
 
