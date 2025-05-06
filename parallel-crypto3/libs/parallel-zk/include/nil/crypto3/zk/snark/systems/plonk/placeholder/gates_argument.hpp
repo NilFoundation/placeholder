@@ -35,6 +35,7 @@
 #include <iostream>
 #include <memory>
 #include <queue>
+#include <ranges>
 #include <unordered_map>
 
 #include <nil/crypto3/math/polynomial/polynomial_dfs.hpp>
@@ -81,96 +82,88 @@ namespace nil {
 
                     constexpr static const std::size_t argument_size = 1;
 
-                    static inline size_t get_gate_argument_max_degree(
-                            const constraint_system_type& constraint_system) {
-                        size_t max_degree = 0;
-                        expression_max_degree_visitor<variable_type> visitor;
+                    static inline std::vector<std::pair<
+                        std::vector<expression_evaluator_registration>, std::size_t>>
+                    register_gate_argument_expressions(
+                        const constraint_system_type& constraint_system,
+                        central_evaluator_type& central_expr_evaluator) {
+                        PROFILE_SCOPE("Gate argument register constraints' expressions");
 
-                        const auto& gates = constraint_system.gates();
-                        for (const auto& gate : gates) {
-                            for (const auto& constraint : gate.constraints) {
-                                size_t constraint_degree = visitor.compute_max_degree(constraint);
-                                if (gate.selector_index != PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED)
-                                    constraint_degree += 1; // selector multiplication.
-                                max_degree = std::max<size_t>(max_degree, constraint_degree);
-                            }
-                        }
-                        return max_degree;
-                    }
-
-                    // Generates 2 expressions that need to be computed and sumed up to create the
-                    // final polynomial.
-                    static inline std::vector<expression_type> get_gate_argument_expressions(
-                            const constraint_system_type& constraint_system,
-                            const value_type& theta
-                            ) {
-                        PROFILE_SCOPE("Gate argument build expression");
-                        std::vector<expression_type> expressions(2);
-
-                        size_t max_degree = get_gate_argument_max_degree(constraint_system);
-                        expression_max_degree_visitor<variable_type> visitor;
-
-                        // Every constraint has variable type 'variable_type', but we want it to use
-                        // 'polynomial_dfs_variable_type' instead. The only difference is the coefficient type
-                        // inside a term. We want the coefficients to be dfs polynomials here.
-                        auto value_type_to_polynomial_dfs = [](
-                            const typename variable_type::assignment_type& coeff) {
+                        // Every constraint has variable type 'variable_type', but we want
+                        // it to use 'polynomial_dfs_variable_type' instead.
+                        // The only difference is the coefficient type inside a term. We
+                        // want the coefficients to be dfs polynomials here.
+                        auto value_type_to_polynomial_dfs =
+                            [](const typename variable_type::assignment_type& coeff) {
                                 return polynomial_dfs_type(0, 1, coeff);
                             };
-                        expression_variable_type_converter<variable_type, polynomial_dfs_variable_type> converter(
-                            value_type_to_polynomial_dfs);
+                        expression_variable_type_converter<variable_type,
+                                                           polynomial_dfs_variable_type>
+                            converter(value_type_to_polynomial_dfs);
 
-                        auto theta_acc = value_type::one();
+                        std::vector<std::pair<
+                            std::vector<expression_evaluator_registration>, std::size_t>>
+                            registrationss;
 
-                        const auto& gates = constraint_system.gates();
-                        
-                        for (const auto& gate : gates) {
-                            std::vector<expression_type> gate_results(2);
-                            for (const auto& constraint : gate.constraints) {
-                                size_t constraint_degree = visitor.compute_max_degree(constraint);
-                                if (gate.selector_index != PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED)
-                                    constraint_degree += 1; // selector multiplication.
-                                
-                                if (constraint_degree > max_degree / 2) {
-                                    gate_results[0] += converter.convert(constraint * theta_acc);
-                                } else {
-                                    gate_results[1] += converter.convert(constraint * theta_acc);
-                                }
-
-                                theta_acc *= theta;
+                        for (const auto& gate : constraint_system.gates()) {
+                            std::vector<expression_evaluator_registration> registrations;
+                            for (const auto& expr : gate.constraints) {
+                                auto converted_expr = converter.convert(expr);
+                                registrations.push_back(
+                                    central_expr_evaluator.register_expression(
+                                        std::move(converted_expr),
+                                        gate.selector_index !=
+                                            PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED));
                             }
-
-                            if (gate.selector_index != PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED) {
-                                polynomial_dfs_variable_type selector(
-                                    gate.selector_index, 0, false,
-                                    polynomial_dfs_variable_type::column_type::selector);
-                                gate_results[0] *= selector;
-                                gate_results[1] *= selector;
-                            }
-                            expressions[0] += gate_results[0];
-                            expressions[1] += gate_results[1];
+                            registrationss.emplace_back(std::move(registrations),
+                                                        gate.selector_index);
                         }
-                        return expressions;
+                        return registrationss;
                     }
 
                     static inline std::array<polynomial_dfs_type, argument_size>
-                    prove_eval(
-                        const constraint_system_type& constraint_system,
-                        central_evaluator_type& central_expr_evaluator,
-                        const value_type& theta
-                    ) {
+                    prove_eval(const constraint_system_type& constraint_system,
+                               central_evaluator_type& central_expr_evaluator,
+                               const value_type& theta) {
                         PROFILE_SCOPE("Gate argument prove eval");
 
-                        std::vector<expression_type> exprs = get_gate_argument_expressions(constraint_system, theta);
+                        std::vector<std::pair<
+                            std::vector<expression_evaluator_registration>, std::size_t>>
+                            registrationss = register_gate_argument_expressions(
+                                constraint_system, central_expr_evaluator);
 
-
-                        central_expr_evaluator.register_expressions(exprs);
                         central_expr_evaluator.evaluate_all();
 
                         std::array<polynomial_dfs_type, argument_size> F;
                         F[0] = polynomial_dfs_type::zero();
-                        for (const auto& expr: exprs) {
-                            F[0] += central_expr_evaluator.get_expression_value(expr);
+                        value_type theta_acc = value_type::one();
+                        {
+                            PROFILE_SCOPE(
+                                "Gate argument combine with theta and selectors");
+                            for (const auto& [registrations, selector] : registrationss) {
+                                polynomial_dfs_type combined{};
+                                for (const auto& registration : registrations) {
+                                    // TODO(ioxid): categorize by max degree before adding
+                                    // up
+                                    combined +=
+                                        theta_acc *
+                                        central_expr_evaluator.get_expression_value(
+                                            registration);
+                                    theta_acc *= theta;
+                                }
+                                if (selector !=
+                                    PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED) {
+                                    auto selector_var = polynomial_dfs_variable_type(
+                                        selector, 0, false,
+                                        polynomial_dfs_variable_type::column_type::
+                                            selector);
+                                    central_expr_evaluator.ensure_cache({selector_var},
+                                                                        combined.size());
+                                    combined *= *central_expr_evaluator.get(
+                                        selector_var, combined.size());
+                                }
+                                F[0] += combined;
+                            }
                         }
                         return F;
                     }
