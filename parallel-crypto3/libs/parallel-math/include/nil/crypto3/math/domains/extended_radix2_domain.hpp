@@ -151,6 +151,16 @@ namespace nil {
                     }
                 }
 
+                void batch_fft(std::vector<std::vector<value_type>> &a) override {
+                    // TODO(martun): implement this.
+                    throw std::logic_error{"Not implemented yet"};
+                }
+
+                void batched_inverse_fft(std::vector<std::vector<value_type>> &a) override {
+                    // TODO(martun): implement this.
+                    throw std::logic_error{"Not implemented yet"};
+                }
+
                 std::vector<field_value_type> evaluate_all_lagrange_polynomials(const field_value_type &t) override {
                     const std::vector<field_value_type> T0 =
                         detail::basic_radix2_evaluate_all_lagrange_polynomials<FieldType>(small_m, t);
