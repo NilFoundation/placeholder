@@ -159,6 +159,16 @@ namespace nil {
                     newton_to_monomial_basis<FieldType>(a, subproduct_tree, this->m);
                 }
 
+                void batch_fft(std::vector<std::vector<value_type>> &a) override {
+                    // TODO(martun): implement this.
+                    throw std::logic_error{"Not implemented yet"};
+                }
+
+                void batched_inverse_fft(std::vector<std::vector<value_type>> &a) override {
+                    // TODO(martun): implement this.
+                    throw std::logic_error{"Not implemented yet"};
+                }
+
                 std::vector<field_value_type> evaluate_all_lagrange_polynomials(const field_value_type &t) override {
                     /* Compute Lagrange polynomial of size m, with m+1 points (x_0, y_0), ... ,(x_m, y_m) */
                     /* Evaluate for x = t */

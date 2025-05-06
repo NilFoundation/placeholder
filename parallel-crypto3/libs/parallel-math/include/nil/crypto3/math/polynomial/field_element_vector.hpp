@@ -3,6 +3,7 @@
 // Copyright (c) 2020-2021 Nikita Kaskov <nbering@nil.foundation>
 // Copyright (c) 2022 Aleksei Moskvin <alalmoskvin@nil.foundation>
 // Copyright (c) 2025 Andrey Nefedov <ioxid@nil.foundation>
+// Copyright (c) 2025 Martun Karapetyan <martun@nil.foundation>
 //
 // MIT License
 //
@@ -25,10 +26,10 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef PARALLEL_CRYPTO3_MATH_POLYNOMIAL_STATIC_SIMD_VECTOR_HPP
-#define PARALLEL_CRYPTO3_MATH_POLYNOMIAL_STATIC_SIMD_VECTOR_HPP
+#ifndef PARALLEL_CRYPTO3_MATH_POLYNOMIAL_FIELD_ELEMENT_VECTOR_HPP
+#define PARALLEL_CRYPTO3_MATH_POLYNOMIAL_FIELD_ELEMENT_VECTOR_HPP
 
-#ifdef CRYPTO3_MATH_POLYNOMIAL_STATIC_SIMD_VECTOR_HPP
+#ifdef CRYPTO3_MATH_POLYNOMIAL_DYNAMIC_SIMD_VECTOR_HPP
 #error "You're mixing parallel and non-parallel crypto3 versions"
 #endif
 
@@ -41,12 +42,14 @@
 
 #include <nil/crypto3/bench/scoped_profiler.hpp>
 
-#include <nil/crypto3/math/polynomial/polynomial_dfs.hpp>
-
 namespace nil::crypto3::math {
-    template<typename FieldValueType, std::size_t Size>
-    class static_simd_vector {
-        using container_type = std::array<FieldValueType, Size>;
+
+    // This is a wrapper over std::vector of field elements with operators+-*.
+    // Even though this is a parallelized math library, do NOT parallelize functions of this class.
+    // Usually it's size is <100.
+    template<typename FieldValueType>
+    class field_element_vector {
+        using container_type = std::vector<FieldValueType>;
 
         container_type val;
 
@@ -63,11 +66,13 @@ namespace nil::crypto3::math {
         typedef typename container_type::reverse_iterator reverse_iterator;
         typedef typename container_type::const_reverse_iterator const_reverse_iterator;
 
-        static_simd_vector() : static_simd_vector(FieldValueType::zero()) {}
+        field_element_vector() = default; 
 
-        static_simd_vector(const value_type& x) { val.fill(x); }
+        field_element_vector(std::size_t N) : val(N, value_type::zero()) {}
 
-        static_simd_vector(std::initializer_list<value_type> il) : val(il) {}
+        field_element_vector(std::size_t N, const value_type& x) : val(N, x) {}
+
+        field_element_vector(std::initializer_list<value_type> il) : val(il) {}
 
         container_type& get_storage() { return val; }
         const container_type& get_storage() const { return val; }
@@ -116,172 +121,116 @@ namespace nil::crypto3::math {
         const value_type* data() const noexcept { return val.data(); }
 
         void clear() noexcept { val.clear(); }
+        void resize(size_type _sz) { val.resize(_sz); }
 
-        void swap(static_simd_vector& other) noexcept { val.swap(other.val); }
+        void swap(field_element_vector& other) noexcept { val.swap(other.val); }
 
-        bool is_zero() const {
-            for (const auto& v : val) {
-                if (v != FieldValueType::zero()) return false;
-            }
-            return true;
-        }
-
-        bool is_one() const {
-            for (const auto& v : val) {
-                if (v != FieldValueType::one()) return false;
-            }
-            return true;
-        }
-
-        inline static static_simd_vector zero() { return static_simd_vector(); }
-
-        inline static static_simd_vector one() {
-            return static_simd_vector(value_type::one());
-        }
-
-        static_simd_vector operator+(const static_simd_vector& other) const {
-            static_simd_vector result;
-            for (std::size_t i = 0; i < Size; ++i) {
-                result[i] = (*this)[i] + other[i];
-            }
+        field_element_vector operator+(const field_element_vector& other) const {
+            field_element_vector result = *this;
+            result += other;
             return result;
         }
 
-        static_simd_vector& operator+=(const static_simd_vector& other) {
-            for (std::size_t i = 0; i < Size; ++i) {
-                (*this)[i] += other[i];
+        field_element_vector& operator+=(const field_element_vector& other) {
+            if (this->size() < other.size()) {
+                this->resize(other.size());
+            }
+            for (size_t i = 0; i < other.size(); ++i) {
+                this->val[i] += other[i];
+            }
+            return *this;
+        }
+        field_element_vector& operator+=(const FieldValueType& c) {
+            for (auto& v: val) {
+                v += c;
             }
             return *this;
         }
 
-        static_simd_vector& operator+=(const FieldValueType& c) {
-            for (std::size_t i = 0; i < Size; ++i) {
-                (*this)[i] += c;
-            }
-            return *this;
-        }
-
-        static_simd_vector operator-() const {
-            static_simd_vector result;
-            for (std::size_t i = 0; i < Size; ++i) {
-                result[i] = -(*this)[i];
-            }
+        field_element_vector operator-() const {
+            field_element_vector result(this->size());
+            std::transform(this->begin(), this->end(), result.begin(), std::negate<FieldValueType>());
             return result;
         }
 
-        static_simd_vector operator-(const static_simd_vector& other) const {
-            static_simd_vector result;
-            for (std::size_t i = 0; i < Size; ++i) {
-                result[i] = (*this)[i] - other[i];
-            }
+        field_element_vector operator-(const field_element_vector& other) const {
+            field_element_vector result = *this;
+            result -= other;
             return result;
         }
 
-        static_simd_vector& operator-=(const static_simd_vector& other) {
-            for (std::size_t i = 0; i < Size; ++i) {
-                (*this)[i] -= other[i];
+        field_element_vector& operator-=(const field_element_vector& other) {
+            if (this->size() < other.size()) {
+                this->resize(other.size());
+            }
+            for (size_t i = 0; i < other.size(); ++i) {
+                this->val[i] -= other[i];
             }
             return *this;
         }
 
-        static_simd_vector& operator-=(const FieldValueType& c) {
-            for (std::size_t i = 0; i < Size; ++i) {
-                (*this)[i] -= c;
+        field_element_vector& operator-=(const FieldValueType& c) {
+            for (auto& v: val) {
+                v -= c;
             }
             return *this;
         }
-
-        static_simd_vector operator*(const static_simd_vector& other) const {
-            static_simd_vector result;
-            for (std::size_t i = 0; i < Size; ++i) {
-                result[i] = (*this)[i] * other[i];
-            }
+        field_element_vector operator*(const field_element_vector& other) const {
+            field_element_vector result = *this;
+            result *= other;
             return result;
         }
 
-        static_simd_vector& operator*=(const static_simd_vector& other) {
-            for (std::size_t i = 0; i < Size; ++i) {
-                (*this)[i] *= other[i];
+        field_element_vector& operator*=(const field_element_vector& other) {
+            // It doesn't matter which one is longer, we assume the other one has zeros at the missing points.
+            if (this->size() != other.size()) {
+                this->resize(other.size());
+            }
+            for (size_t i = 0; i < other.size(); ++i) {
+                this->val[i] *= other[i];
             }
             return *this;
         }
 
-        static_simd_vector& operator*=(const FieldValueType& alpha) {
-            for (std::size_t i = 0; i < Size; ++i) {
-                (*this)[i] *= alpha;
+        field_element_vector& operator*=(const FieldValueType& c) {
+            for (auto& v: val) {
+                v *= c;
             }
             return *this;
         }
 
-        static_simd_vector pow(size_t power) const {
+        field_element_vector pow(size_t power) const {
             if (power == 1) {
                 return *this;
             }
 
-            static_simd_vector result;
+            field_element_vector result;
 
-            for (std::size_t i = 0; i < result.size(); ++i) {
+            for (std::size_t i = 0; i < this->size(); ++i) {
                 result[i] = (*this)[i].pow(power);
             }
 
             return result;
         }
 
-        constexpr auto operator<=>(const static_simd_vector& other) const {
+        constexpr auto operator<=>(const field_element_vector& other) const {
             return std::lexicographical_compare_three_way(this->begin(), this->end(),
                                                           other.begin(), other.end());
         }
 
-        constexpr bool operator==(const static_simd_vector& rhs) const {
+        constexpr bool operator==(const field_element_vector& rhs) const {
             return (*this <=> rhs) == 0;
         }
     };
 
-    template<std::size_t Size>
-    std::size_t count_chunks(std::size_t size) {
-        return (size + Size - 1) / Size;
-    }
-
-    template<std::size_t Size, typename FieldValueType>
-    static_simd_vector<FieldValueType, Size> get_chunk(
-        const polynomial_dfs<FieldValueType>& poly, std::size_t offset,
-        std::size_t number) {
-
-        // If we have a constant value, our polynomial will frequently have size = 1, but we still
-        // must return the chunk value.
-        if (poly.degree() == 0) {
-            return static_simd_vector<FieldValueType, Size>(poly[0]);
-        }
-        static_simd_vector<FieldValueType, Size> result;
-        for (std::size_t i = 0; i < Size; ++i) {
-            if (offset + number * Size + i >= poly.size()) {
-                break;
-            }
-            result[i] = poly[offset + number * Size + i];
-        }
-        return result;
-    }
-
-    template<std::size_t Size, typename FieldValueType>
-    void set_chunk(polynomial_dfs<FieldValueType>& poly, std::size_t offset,
-                   std::size_t number,
-                   const static_simd_vector<FieldValueType, Size>& chunk) {
-        for (std::size_t i = 0; i < Size; ++i) {
-            if (offset + number * Size + i >= poly.size()) {
-                break;
-            }
-            poly[offset + number * Size + i] = chunk[i];
-        }
-    }
-
     // Used in the unit tests, so we can use BOOST_CHECK_EQUALS and while debugging.
-    template<std::size_t Size, typename FieldValueType>
-    std::ostream& operator<<(std::ostream& os,const static_simd_vector<FieldValueType, Size>& chunk) {
+    template<typename FieldValueType>
+    std::ostream& operator<<(std::ostream& os,const field_element_vector<FieldValueType>& chunk) {
         os << "[";
-        for (std::size_t i = 0; i < Size; ++i) {
+        for (std::size_t i = 0; i < chunk.size(); ++i) {
             os << std::hex << std::showbase;
             os << chunk[i];
-            if (i != Size - 1) {
+            if (i != chunk.size() - 1) {
                 os << ", "; 
             }
         }
@@ -293,12 +242,12 @@ namespace nil::crypto3::math {
 
 // As our operator== returns false for vectors with different sizes, the same will happen here,
 // resized vector will have a different hash from the initial one.
-template<typename FieldValueType, std::size_t Size>
-struct std::hash<nil::crypto3::math::static_simd_vector<FieldValueType, Size>> {
+template<typename FieldValueType>
+struct std::hash<nil::crypto3::math::field_element_vector<FieldValueType>> {
     std::hash<FieldValueType> value_hasher;
 
     std::size_t operator()(
-        const nil::crypto3::math::static_simd_vector<FieldValueType, Size>& v) const {
+        const nil::crypto3::math::field_element_vector<FieldValueType>& v) const {
         std::size_t result = 0;
         for (const auto& val : v) {
             boost::hash_combine(result, value_hasher(val));
