@@ -39,24 +39,15 @@ namespace nil::blueprint::bbf::zkevm_small_field {
         using TYPE = typename generic_component<FieldType, stage>::TYPE;
 
         TYPE call_id;
-        TYPE bytecode_hash_hi;
-        TYPE bytecode_hash_lo;
-        TYPE pc;
+        TYPE bytecode_id;
+        TYPE pc;        // <24kb
         TYPE opcode;
-        TYPE gas_hi;
-        TYPE gas_lo;
-        TYPE stack_size;
+        TYPE gas;
+        TYPE stack_size;    // <1024
         TYPE memory_size;
         TYPE rw_counter;
 
-        TYPE row_counter;
-        TYPE step_start;
-        TYPE row_counter_inv;
-        TYPE opcode_parity;
-        TYPE is_even;
-
-        static std::size_t get_items_amout(){ return 15; }
-        static std::size_t get_wide_circuit_items_amout(){ return 10; }
+        static std::size_t get_items_amount(){ return 8; }
     };
 
     template <typename FieldType>
@@ -81,19 +72,15 @@ namespace nil::blueprint::bbf::zkevm_small_field {
         }
         TYPE gas(std::size_t row) const{
             BOOST_ASSERT(row < state.size() - 1);
-            return state[row].gas_hi * 0x10000 + state[row].gas_lo;
+            return state[row].gas;
         }
         TYPE rw_counter(std::size_t row) const{
             BOOST_ASSERT(row < state.size() - 1);
             return state[row].rw_counter;
         }
-        TYPE bytecode_hash_hi(std::size_t row) const{
+        TYPE bytecode_id(std::size_t row) const{
             BOOST_ASSERT(row < state.size() - 1);
-            return state[row].bytecode_hash_hi;
-        }
-        TYPE bytecode_hash_lo(std::size_t row) const{
-            BOOST_ASSERT(row < state.size() - 1);
-            return state[row].bytecode_hash_lo;
+            return state[row].bytecode_id;
         }
         TYPE opcode(std::size_t row) const{
             BOOST_ASSERT(row < state.size() - 1);
@@ -115,7 +102,6 @@ namespace nil::blueprint::bbf::zkevm_small_field {
             BOOST_ASSERT(row < state.size() - 1);
             return state[row].tx_finish;
         }       // convinent, but optional11.
-
         TYPE tx_hash_next() const{
             return state[state.size()-1].tx_hash;
         } // full transaction hash. Now it is not used. But it’ll be used some day
@@ -126,16 +112,13 @@ namespace nil::blueprint::bbf::zkevm_small_field {
             return state[state.size()-1].pc;
         }
         TYPE gas_next() const{
-            return state[state.size()-1].gas_hi * 0x10000 + state[state.size()-1].gas_lo;;
+            return state[state.size()-1].gas;
         }
         TYPE rw_counter_next() const{
             return state[state.size()-1].rw_counter;
         }
-        TYPE bytecode_hash_hi_next() const{
-            return state[state.size()-1].bytecode_hash_hi;
-        }
-        TYPE bytecode_hash_lo_next() const{
-            return state[state.size()-1].bytecode_hash_lo;
+        TYPE bytecode_id_next() const{
+            return state[state.size()-1].bytecode_id;
         }
         TYPE opcode_next() const{
             return state[state.size()-1].opcode;

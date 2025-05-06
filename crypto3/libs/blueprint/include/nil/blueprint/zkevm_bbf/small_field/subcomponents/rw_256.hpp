@@ -97,7 +97,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             std::vector<std::size_t> rw_256_table_area;
             for( std::size_t i = 0; i < rw_256_table_type::get_witness_amount(); i++ ) rw_256_table_area.push_back(current_column++);
             context_type rw_256_table_ct = context_object.subcontext(rw_256_table_area,0,max_rw_size);
-            rw_256_table_type t(rw_256_table_ct, input, max_rw_size, true);
+            rw_256_table_type t(rw_256_table_ct, input, max_rw_size);
 
             const std::vector<TYPE> &op = t.op;                                   // stack, call_context
             const std::vector<TYPE> &id = t.id;                                   // 2 chunks fitted in field element less than 2^25

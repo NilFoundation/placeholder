@@ -299,13 +299,13 @@ public:
             BOOST_LOG_TRIVIAL(info) << "circuit '" << zkevm_s_circuit << "'";
             typename zkevm_small_field::zkevm<BigFieldType, GenerationStage::ASSIGNMENT>::input_type zkevm_assignment_input;
             zkevm_assignment_input.rlc_challenge = 7;
-            // zkevm_wide_assignment_input.bytecodes = circuit_inputs.bytecodes();
-            // zkevm_wide_assignment_input.keccak_buffers = circuit_inputs.keccaks();
-            // zkevm_wide_assignment_input.rw_operations = circuit_inputs.short_rw_operations();
-            // zkevm_wide_assignment_input.copy_events = circuit_inputs.copy_events();
+            // zkevm_assignment_input.bytecodes = circuit_inputs.bytecodes();
+            // zkevm_assignment_input.keccak_buffers = circuit_inputs.keccaks();
+            zkevm_assignment_input.rw_operations = circuit_inputs.short_rw_operations();
+            // zkevm_assignment_input.copy_events = circuit_inputs.copy_events();
             zkevm_assignment_input.zkevm_states = circuit_inputs.zkevm_states();
-            // zkevm_wide_assignment_input.exponentiations = circuit_inputs.exponentiations();
-            // zkevm_wide_assignment_input.state_operations = circuit_inputs.state_operations();
+            // zkevm_assignment_input.exponentiations = circuit_inputs.exponentiations();
+            // zkevm_assignment_input.state_operations = circuit_inputs.state_operations();
 
             result = test_bbf_component<BigFieldType, nil::blueprint::bbf::zkevm_small_field::zkevm>(
                 "zkevm-s", {}, zkevm_assignment_input,

@@ -56,6 +56,8 @@
 #include <nil/blueprint/zkevm_bbf/big_field/circuits/zkevm_wide.hpp>
 
 #include <nil/blueprint/zkevm_bbf/small_field/circuits/rw.hpp>
+#include <nil/blueprint/zkevm_bbf/small_field/circuits/bytecode.hpp>
+#include <nil/blueprint/zkevm_bbf/small_field/circuits/zkevm.hpp>
 
 #include "../circuit_test_fixture.hpp"
 
@@ -89,6 +91,7 @@ public:
         std::size_t max_exponentiations = max_sizes.max_exponentiations;
         std::size_t max_exp_rows = max_sizes.max_exp_rows;
         std::size_t max_state = max_sizes.max_state;
+        std::size_t max_bytecodes_amount = max_sizes.max_bytecodes_amount;
 
         typename zkevm_big_field::zkevm_keccak<BigFieldType,nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type keccak_assignment_input;
         keccak_assignment_input.rlc_challenge = 7;
@@ -227,5 +230,41 @@ public:
             );
             BOOST_CHECK(result);
         }
+
+        const std::string small_bytecode_circuit = "bytecode-s";
+        if (should_run_circuit(small_bytecode_circuit)) {
+            BOOST_LOG_TRIVIAL(info) << std::endl << "circuit '" << small_bytecode_circuit << "'";
+            typename zkevm_small_field::bytecode<SmallFieldType, GenerationStage::ASSIGNMENT>::input_type bytecode_assignment_input;
+            bytecode_assignment_input.rlc_challenge = 7;
+            bytecode_assignment_input.bytecodes = circuit_inputs.bytecodes();
+            bytecode_assignment_input.keccak_buffers = circuit_inputs.keccaks();
+
+            result = test_bbf_component<SmallFieldType, nil::blueprint::bbf::zkevm_small_field::bytecode>(
+                "bytecode-s",
+                {7}, bytecode_assignment_input, max_bytecode, max_keccak_blocks, max_bytecodes_amount
+            );
+            BOOST_CHECK(result);
+        }
+
+        const std::string zkevm_s_circuit = "zkevm-s";
+        if (should_run_circuit(zkevm_s_circuit)) {
+            BOOST_LOG_TRIVIAL(info) << "circuit '" << zkevm_s_circuit << "'";
+            typename zkevm_small_field::zkevm<SmallFieldType, GenerationStage::ASSIGNMENT>::input_type zkevm_assignment_input;
+            zkevm_assignment_input.rlc_challenge = 7;
+            zkevm_assignment_input.bytecodes = circuit_inputs.bytecodes();
+            // zkevm_assignment_input.keccak_buffers = circuit_inputs.keccaks();
+            zkevm_assignment_input.rw_operations = circuit_inputs.short_rw_operations();
+            // zkevm_assignment_input.copy_events = circuit_inputs.copy_events();
+            zkevm_assignment_input.zkevm_states = circuit_inputs.zkevm_states();
+            // zkevm_assignment_input.exponentiations = circuit_inputs.exponentiations();
+            // zkevm_assignment_input.state_operations = circuit_inputs.state_operations();
+
+            result = test_bbf_component<SmallFieldType, nil::blueprint::bbf::zkevm_small_field::zkevm>(
+                "zkevm-s", {}, zkevm_assignment_input,
+                max_zkevm_rows, max_copy, max_rw, max_exponentiations, max_bytecode, max_state
+            );
+            BOOST_CHECK(result);
+        }
+
     }
 };

@@ -53,7 +53,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             return 23;
         }
 
-        rw_256_table(context_type &context_object, const input_type &input, std::size_t max_rw_size, bool register_dynamic_lookup)
+        rw_256_table(context_type &context_object, const input_type &input, std::size_t max_rw_size)
             :generic_component<FieldType,stage>(context_object),
             op(max_rw_size),
             id(max_rw_size),
@@ -151,23 +151,44 @@ namespace nil::blueprint::bbf::zkevm_small_field{
         //     };
         // }
 
-        // static std::vector<TYPE> stack_lookup(
-        //     TYPE call_id,
-        //     TYPE stack_pointer,
-        //     TYPE rw_counter,
-        //     TYPE is_write,
-        //     TYPE value_hi,
-        //     TYPE value_lo
-        // ){
-        //     return {
-        //         TYPE(std::size_t(rw_operation_type::stack)),
-        //         call_id,
-        //         stack_pointer,
-        //         rw_counter,
-        //         is_write,
-        //         value_hi,
-        //         value_lo
-        //     };
-        // }
+        static std::vector<TYPE> stack_16_bit_lookup(
+            TYPE call_id,
+            TYPE stack_pointer,
+            TYPE rw_counter,
+            TYPE is_write,
+            std::array<TYPE,16> value
+        ){
+            std::vector<TYPE> result = {
+                TYPE(std::size_t(rw_operation_type::stack)),
+                call_id,
+                stack_pointer,
+                rw_counter,
+                is_write
+            };
+            for( std::size_t i = 0; i < 16; i++ ){
+                result.push_back(value[i]);
+            }
+            return result;
+        }
+
+        static std::vector<TYPE> stack_8_bit_lookup(
+            TYPE call_id,
+            TYPE stack_pointer,
+            TYPE rw_counter,
+            TYPE is_write,
+            std::array<TYPE,32> value
+        ){
+            std::vector<TYPE> result = {
+                TYPE(std::size_t(rw_operation_type::stack)),
+                call_id,
+                stack_pointer,
+                rw_counter,
+                is_write
+            };
+            for( std::size_t i = 0; i < 32; i += 2 ){
+                result.push_back(value[i] * 256 + value[i+1]);
+            }
+            return result;
+        }
      };
 }

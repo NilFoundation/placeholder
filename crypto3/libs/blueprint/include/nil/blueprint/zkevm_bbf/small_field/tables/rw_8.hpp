@@ -53,7 +53,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             return 8;
         }
 
-        rw_8_table(context_type &context_object, const input_type &input, std::size_t max_rw_size, bool register_dynamic_lookup)
+        rw_8_table(context_type &context_object, const input_type &input, std::size_t max_rw_size)
             :generic_component<FieldType,stage>(context_object),
             op(max_rw_size),
             id(max_rw_size),
