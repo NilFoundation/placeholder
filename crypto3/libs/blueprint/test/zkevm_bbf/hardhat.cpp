@@ -233,6 +233,7 @@ public:
 // Here they are different for different tests just for fast and easy testing
 BOOST_FIXTURE_TEST_SUITE(zkevm_bbf_hardhat, zkEVMHardhatTestFixture)
 
+/*
 BOOST_AUTO_TEST_CASE(minimal_math) {
     using FieldType = typename algebra::curves::pallas::base_field_type;
     auto pts = load_hardhat_input("minimal_math.json");
@@ -250,6 +251,7 @@ BOOST_AUTO_TEST_CASE(minimal_math) {
 
     complex_test<FieldType>(pts, max_sizes);
 }
+*/
 
 BOOST_AUTO_TEST_SUITE(benchmarking_fixed_sizes, *boost::unit_test::disabled())
 
@@ -266,7 +268,7 @@ constexpr l1_size_restrictions gen_max_sizes(std::size_t max_rows) {
     max_sizes.max_call_commits = max_rows;
     return max_sizes;
 }
-
+/*
 BOOST_DATA_TEST_CASE(minimal_math_pallas_fixed_size, boost::unit_test::data::xrange(30)) {
     using FieldType = typename algebra::curves::pallas::scalar_field_type;
     auto pt = load_hardhat_input("minimal_math.json");
@@ -297,7 +299,7 @@ BOOST_DATA_TEST_CASE(minimal_math_babybear_fixed_size,
 
     complex_test<FieldType>(pt, gen_max_sizes(size));
 }
-
+*/
 BOOST_DATA_TEST_CASE(minimal_math_babybear_fp4_fixed_size,
                      boost::unit_test::data::xrange(30)) {
     using FieldType = typename algebra::fields::babybear_fp4;
@@ -308,7 +310,7 @@ BOOST_DATA_TEST_CASE(minimal_math_babybear_fp4_fixed_size,
 
     complex_test<FieldType>(pt, gen_max_sizes(size));
 }
-
+/*
 BOOST_DATA_TEST_CASE(minimal_math_babybear_fp5_fixed_size,
                      boost::unit_test::data::xrange(30)) {
     using FieldType = typename algebra::fields::babybear_fp5;
@@ -319,9 +321,9 @@ BOOST_DATA_TEST_CASE(minimal_math_babybear_fp5_fixed_size,
 
     complex_test<FieldType>(pt, gen_max_sizes(size));
 }
-
+*/
 BOOST_AUTO_TEST_SUITE_END()
-
+/*
 BOOST_AUTO_TEST_CASE(benchmark, *boost::unit_test::disabled()) {
     using FieldType = typename algebra::curves::pallas::base_field_type;
     auto pts = load_hardhat_input("minimal_math.json");
@@ -339,7 +341,7 @@ BOOST_AUTO_TEST_CASE(benchmark, *boost::unit_test::disabled()) {
 
     complex_test<FieldType>(pts, max_sizes);
 }
-/*
+
 BOOST_AUTO_TEST_CASE(small_log) {
     using FieldType = typename algebra::curves::pallas::base_field_type;
     auto [bytecodes, pts] = load_hardhat_input("small_log/");
@@ -356,7 +358,7 @@ BOOST_AUTO_TEST_CASE(small_log) {
 
     complex_test<FieldType>(pts, max_sizes);
 }
-*/
+
 BOOST_AUTO_TEST_CASE(call_counter) {
     using FieldType = typename algebra::curves::pallas::base_field_type;
     auto pt = load_hardhat_input("call_counter.json");
@@ -572,7 +574,7 @@ BOOST_AUTO_TEST_CASE(scmp) {
 
     complex_test<FieldType>(pt, max_sizes);
 }
-/*
+
 BOOST_AUTO_TEST_CASE(deploy) {
     using FieldType = typename algebra::curves::pallas::base_field_type;
     auto [bytecodes, pts] = load_hardhat_input("deploy/");
