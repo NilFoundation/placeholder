@@ -330,7 +330,7 @@ BOOST_AUTO_TEST_CASE(byte_ops) {
     max_sizes.max_mpt = 0;
     max_sizes.max_rw = 3000;
     max_sizes.max_copy = 500;
-    max_sizes.max_zkevm_rows = 500;
+    max_sizes.max_zkevm_rows = 600;
     max_sizes.max_exp_rows = 500;
     max_sizes.max_exponentiations = 50;
 
