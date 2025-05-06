@@ -31,7 +31,8 @@
 
 #include <nil/blueprint/zkevm_bbf/types/zkevm_word.hpp>
 #include <nil/blueprint/zkevm_bbf/types/state_item_address.hpp>
-#include <nil/blueprint/zkevm_bbf/types/rw_operation.hpp>
+#include <nil/blueprint/zkevm_bbf/types/short_rw_operation.hpp>
+#include <nil/blueprint/zkevm_bbf/types/state_operation.hpp>
 
 namespace nil {
     namespace blueprint {
@@ -79,9 +80,9 @@ namespace nil {
                 std::size_t         length;
 
                 std::size_t get_op(std::size_t i) const {
-                    if( bytes.size() != 0 ) return rw_op_to_num(rw_operation_type::memory);
+                    if( bytes.size() != 0 ) return std::size_t(rw_operation_type::memory);
                     BOOST_ASSERT(i < values.size());
-                    return rw_op_to_num(values[i].op);
+                    return std::size_t(values[i].op);
                 }
 
                 zkevm_word_type get_address(std::size_t i) const {
@@ -283,8 +284,24 @@ namespace nil {
                 return cpy;
             }
 
-            copy_event codecopy_copy_event(){
+            copy_event codecopy_copy_event(
+                zkevm_word_type bytecode_hash,
+                std::size_t src_offset,
+                std::size_t call_id,
+                std::size_t dst_offset,
+                std::size_t rw_counter,
+                std::size_t length
+            ){
                 copy_event cpy;
+                cpy.source_type = copy_operand_type::bytecode;
+                cpy.source_id = bytecode_hash;
+                cpy.src_counter_1 = src_offset; // Before copy reading
+                cpy.src_counter_2 = 0;
+                cpy.destination_type = copy_operand_type::memory;
+                cpy.destination_id = call_id;
+                cpy.dst_counter_1 = dst_offset; // Before copy writing
+                cpy.dst_counter_2 = rw_counter;
+                cpy.length = length;
                 return cpy;
             }
         } // namespace bbf
