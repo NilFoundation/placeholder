@@ -34,7 +34,7 @@
 #include <nil/blueprint/bbf/generic.hpp>
 #include <nil/blueprint/zkevm_bbf/util.hpp>
 #include <nil/blueprint/zkevm_bbf/subcomponents/rlp_table.hpp>
-#include <nil/blueprint/zkevm_bbf/subcomponents/mpt_leaf_table.hpp>
+// #include <nil/blueprint/zkevm_bbf/subcomponents/mpt_leaf_table.hpp>
 #include <nil/blueprint/zkevm_bbf/subcomponents/keccak_table.hpp>
 
 namespace nil::blueprint::bbf {
@@ -43,8 +43,16 @@ namespace nil::blueprint::bbf {
 
     enum class mpt_type { account_trie, storage_trie };
 
-    enum class inner_node_type { nonce, balance, storage_root, code_hash, storage_value, key };
-    enum class element_type { string_element, array_element };
+    enum class inner_node_type { 
+        nonce, 
+        balance, 
+        storage_root, 
+        code_hash, 
+        storage_value, 
+        key,
+        array 
+    };
+    // enum class element_type { string_element, array_element };
     
 
     struct _leaf_node {
@@ -63,8 +71,8 @@ namespace nil::blueprint::bbf {
         using typename generic_component<FieldType, stage>::context_type;
         using RLPTable = typename bbf::rlp_table<FieldType, stage>;
         using KeccakTable = typename bbf::keccak_table<FieldType, stage>;
-        using MPTLeafTable = typename bbf::mpt_leaf_table<FieldType, stage>;
-        using mpt_leaf_table_input_type = typename bbf::mpt_leaf_table<FieldType, stage>::input_type;
+        // using MPTLeafTable = typename bbf::mpt_leaf_table<FieldType, stage>;
+        // using mpt_leaf_table_input_type = typename bbf::mpt_leaf_table<FieldType, stage>::input_type;
         using generic_component<FieldType, stage>::allocate;
         using generic_component<FieldType, stage>::copy_constrain;
         using generic_component<FieldType, stage>::constrain;
@@ -79,11 +87,11 @@ namespace nil::blueprint::bbf {
         class rlp_header {
             public:
             // mpt_type trie_type;
-            element_type node_type;
+            inner_node_type node_type;
             std::array<TYPE, 3> prefix;
             std::array<TYPE, 3> prefix_rlc;
-            TYPE second_prefix_is_last;
-            TYPE third_prefix_is_last;
+            TYPE second_prefix_padding; // if 1 second prefix does not exist
+            TYPE third_prefix_padding; // if 1 third prefix does not exist
             std::array<TYPE, 3> prefix_index;
             TYPE len_low;
             TYPE len_high;
@@ -94,7 +102,7 @@ namespace nil::blueprint::bbf {
                 
             rlp_header(
                 // mpt_type _trie_t,
-                element_type _node_t
+                inner_node_type _node_t
             ):  
             // trie_type(_trie_t),
                 node_type(_node_t) {
@@ -102,105 +110,132 @@ namespace nil::blueprint::bbf {
                 }
     
             void initialize() {
-                this->second_prefix_is_last = 1;
-                this->third_prefix_is_last = 1;
-                this->prefix[0] = 0xC0;
+                second_prefix_padding = 1;
+                third_prefix_padding = 1;
+                prefix[0] = 0xC0;
             }
 
             void main_constraints(mpt_leaf<FieldType, stage> &comp, TYPE initial_index, TYPE not_padding) {
-                comp.constrain(this->second_prefix_is_last*(1 - this->second_prefix_is_last));
-                comp.constrain(this->prefix[1] * this->second_prefix_is_last);
-                comp.constrain(this->prefix[2] * this->third_prefix_is_last);
+                comp.constrain(second_prefix_padding*(1 - second_prefix_padding));
+                comp.constrain(prefix[1] * second_prefix_padding);
+                comp.constrain(prefix[2] * third_prefix_padding);
 
-                comp.constrain(this->prefix_index[0] - initial_index);
-                comp.constrain(this->prefix_index[1] - (1 - this->second_prefix_is_last) * (this->prefix_index[0] + 1));
-                comp.constrain(this->prefix_index[2] - (1 - this->third_prefix_is_last) * (this->prefix_index[1] + 1));
+                comp.constrain(prefix_index[0] - initial_index);
+                comp.constrain(prefix_index[1] - (1 - second_prefix_padding) * (prefix_index[0] + 1));
+                comp.constrain(prefix_index[2] - (1 - third_prefix_padding) * (prefix_index[1] + 1));
 
-                comp.constrain(this->prefix_rlc[1] - ((1 - this->second_prefix_is_last) * (this->prefix_rlc[0] * 53 + this->prefix[1]) + this->second_prefix_is_last * this->prefix_rlc[0]));
-                comp.constrain(this->prefix_rlc[2] - ((1 - this->third_prefix_is_last) *  (this->prefix_rlc[1] * 53 + this->prefix[2]) + this->third_prefix_is_last * this->prefix_rlc[1]));
+                comp.constrain(prefix_rlc[1] - ((1 - second_prefix_padding) * (prefix_rlc[0] * 53 + prefix[1]) + second_prefix_padding * prefix_rlc[0]));
+                comp.constrain(prefix_rlc[2] - ((1 - third_prefix_padding) *  (prefix_rlc[1] * 53 + prefix[2]) + third_prefix_padding * prefix_rlc[1]));
             }
     
             void set_indices(std::vector<std::uint8_t> &hash_input, std::size_t &rlp_encoding_index, TYPE &rlc_accumulator, 
-                TYPE rlc_challenge, zkevm_word_type value0) {
-                if (this->node_type == element_type::string_element) {
-                    // TODO length checks
-                    if (this->raw_data_length == 1 && value0 <= 0x7F) {
-                        // TODO
-                    } else if (this->raw_data_length <= 55) {
-                        this->prefix[0] = 0x80 + this->raw_data_length;
-                        this->prefix_index[0] = rlp_encoding_index;
-                        hash_input[rlp_encoding_index++] = uint8_t(0x80 + this->raw_data_length);
-    
-                        this->prefix_rlc[0] = rlc_accumulator * rlc_challenge + this->prefix[0];
-                        rlc_accumulator = this->prefix_rlc[0];
-                        this->prefix_rlc[1] = rlc_accumulator;
-                        this->prefix_rlc[2] = rlc_accumulator;
-                    } else {
-                        this->prefix[0] = 0xB8;
-                        this->prefix_index[0] = rlp_encoding_index;
-                        this->prefix[1] = this->raw_data_length;
-                        this->prefix_index[1] = rlp_encoding_index+1;
-                        this->second_prefix_is_last = 0;
-                        
-                        hash_input[rlp_encoding_index++] = uint8_t(0xB8);
-                        hash_input[rlp_encoding_index++] = this->raw_data_length;
-    
-                        this->prefix_rlc[0] = rlc_accumulator * rlc_challenge + this->prefix[0];
-                        rlc_accumulator = this->prefix_rlc[0];
-                        this->prefix_rlc[1] = rlc_accumulator * rlc_challenge + this->prefix[1];
-                        rlc_accumulator = this->prefix_rlc[1];
-                        this->prefix_rlc[2] = rlc_accumulator;
-                    }
-                } else if (this->node_type == element_type::array_element) {
-                    // TODO support for transaction trie is missing
-                    if (this->raw_data_length > 55) {
-                        std::size_t length_length = 0;
-                        std::size_t temp = this->raw_data_length;
-                        while(temp > 0) {
-                            temp >>= 8;
-                            length_length ++;
-                        }
-                        this->prefix[0] = 0xF7 + length_length;
-                        this->prefix[1] = this->raw_data_length;
-                        this->prefix[2] = 0;
-                        this->prefix_index[0] = rlp_encoding_index+1;
-    
-                        this->second_prefix_is_last = 0;
-                        this->third_prefix_is_last = 1;
-    
-                        hash_input[rlp_encoding_index++] = 0xF7 + length_length;
-                        hash_input[rlp_encoding_index++] = this->raw_data_length;
-    
-                        this->prefix_rlc[0] = (this->raw_data_length+2) * rlc_challenge + this->prefix[0];
-                        rlc_accumulator = this->prefix_rlc[0];
-                        this->prefix_rlc[1] = rlc_accumulator * rlc_challenge + this->prefix[1];
-                        rlc_accumulator = this->prefix_rlc[1];
-                        this->prefix_rlc[2] = rlc_accumulator;
-                    } else {
-                        std::cout << "inja miad????\n";
+                TYPE rlc_challenge, zkevm_word_type value0, bool initialize) {
+                uint8_t const1, const2;
 
-                        this->prefix[0] = 0xC0 + this->raw_data_length;
-                        this->second_prefix_is_last = 1;
-                        this->third_prefix_is_last = 1;
-                        this->prefix_index[0] = rlp_encoding_index;
+                if (node_type == inner_node_type::array) {
+                    const1 = 0xC0;
+                    const2 = 0xF7;
+                } else {
+                    const1 = 0x80;
+                    const2 = 0xB8;
+                }
+                
+                if (node_type != inner_node_type::array && raw_data_length == 1 && value0 <= 0x7F) {
+                        prefix[0] = value0;
+                        prefix_index[0] = rlp_encoding_index;
+                        hash_input[rlp_encoding_index++] = uint8_t(value0);
+                        second_prefix_padding = 1;
+                        third_prefix_padding = 1;
+                        prefix_index[1] = 0;
+                        prefix_index[2] = 0;
+
+                        prefix_rlc[0] = rlc_challenge + prefix[0];
+                        prefix_rlc[1] = prefix_rlc[0];
+                        prefix_rlc[2] = prefix_rlc[1];
+                } else if (raw_data_length <= 55) {
+                        prefix[0] = const1 + raw_data_length;
+                        second_prefix_padding = 1;
+                        third_prefix_padding = 1;
+                        prefix_index[0] = rlp_encoding_index;
     
-                        hash_input[rlp_encoding_index++] = uint8_t((0xC0 + this->raw_data_length) & 0xFF);
-                        this->prefix_rlc[0] = (this->raw_data_length+1) * rlc_challenge + this->prefix[0];
-                        rlc_accumulator = this->prefix_rlc[0];
-                        this->prefix_rlc[1] = rlc_accumulator;
-                        this->prefix_rlc[2] = rlc_accumulator;
+                        hash_input[rlp_encoding_index++] = uint8_t((const1 + raw_data_length) & 0xFF);
+                        if (initialize)
+                            prefix_rlc[0] = (raw_data_length+1) * rlc_challenge + prefix[0];
+                        else
+                            prefix_rlc[0] = rlc_accumulator * rlc_challenge + prefix[0];
+                        rlc_accumulator = prefix_rlc[0];
+                        prefix_rlc[1] = rlc_accumulator;
+                        prefix_rlc[2] = rlc_accumulator;
+                } else {
+                    std::size_t length_length = 0;
+                    std::size_t temp = raw_data_length;
+                    second_prefix_padding = 0;
+
+                    while(temp > 0) {
+                        temp >>= 8;
+                        length_length ++;
                     }
+                    prefix[0] = const2 + length_length;
+                    prefix_index[0] = rlp_encoding_index;
+                    hash_input[rlp_encoding_index++] = const2 + length_length;
+
+                    if (length_length == 1) {
+                        third_prefix_padding = 1;
+                        prefix[1] = raw_data_length;
+                        prefix_index[1] = rlp_encoding_index;
+                        hash_input[rlp_encoding_index++] = raw_data_length;
+                        
+                        // update rlc
+                        if (initialize)
+                            prefix_rlc[0] = (2 + raw_data_length) * rlc_challenge + prefix[0];
+                        else
+                            prefix_rlc[0] = rlc_accumulator * rlc_challenge + prefix[0];
+                        prefix_rlc[1] = prefix_rlc[0] * rlc_challenge + prefix[1];
+                        prefix_rlc[2] = prefix_rlc[1];
+                    }
+                    else if (len_high == 2) {
+                        third_prefix_padding = 0;
+                        prefix[1] = raw_data_length >> 8;
+                        prefix_index[1] = rlp_encoding_index;
+                        hash_input[rlp_encoding_index++] = raw_data_length >> 8;
+                        prefix[2] = raw_data_length & 0xFF;
+                        prefix_index[2] = rlp_encoding_index;
+                        hash_input[rlp_encoding_index++] = raw_data_length - (raw_data_length & 0xFF);
+                        
+                        // update rlc
+                        if (initialize)
+                            prefix_rlc[0] = (3 + raw_data_length) * rlc_challenge + prefix[0];
+                        else
+                            prefix_rlc[0] = rlc_accumulator * rlc_challenge + prefix[0];
+                        prefix_rlc[1] = prefix_rlc[0] * rlc_challenge + prefix[1];
+                        prefix_rlc[2] = prefix_rlc[1] * rlc_challenge + prefix[1];
+                    }
+                    BOOST_ASSERT_MSG(length_length <= 2, "Length of length too big!");
+                    rlc_accumulator = prefix_rlc[2];
                 }
             }
 
             void set_data_length(std::size_t _raw_data_length) {
+                if (this->node_type == inner_node_type::storage_value)
+                    BOOST_ASSERT_MSG(_raw_data_length <= 32, "Data size exceeded 32 bytes for storage values!");
+                else if (this->node_type == inner_node_type::array)
+                    BOOST_ASSERT_MSG(_raw_data_length <= 110, "We only support array of up to 110 bytes!");
+                else if (this->node_type == inner_node_type::nonce)
+                    BOOST_ASSERT_MSG(_raw_data_length <= 8, "Data size exceeded 8 bytes for nonce!");
+                else if (this->node_type == inner_node_type::balance)
+                    BOOST_ASSERT_MSG(_raw_data_length <= 32, "Data size exceeded 32 bytes for balance!");
+                else if (this->node_type == inner_node_type::storage_root)
+                    BOOST_ASSERT_MSG(_raw_data_length <= 32, "Data size exceeded 32 bytes for storage hash!");
+                else if (this->node_type == inner_node_type::code_hash)
+                    BOOST_ASSERT_MSG(_raw_data_length <= 32, "Data size exceeded 32 bytes for code hash!");
+                
                 this->raw_data_length = _raw_data_length;
                 this->len_low = this->raw_data_length & 0xFF;
                 this->len_high = (this->raw_data_length >> 8) & 0xFF;
             }
 
             std::size_t get_total_length() {
-                BOOST_ASSERT_MSG(this->node_type == element_type::array_element, "wrong emthod is called!");
+                BOOST_ASSERT_MSG(this->node_type == inner_node_type::array, "wrong emthod is called!");
                 if (this->raw_data_length <= 55) {
                     return this->raw_data_length + 1;
                 } else {
@@ -215,14 +250,19 @@ namespace nil::blueprint::bbf {
             }
 
             std::size_t get_total_length(TYPE first_byte) {
-                BOOST_ASSERT_MSG(this->node_type == element_type::string_element, "wrong emthod is called!");
-                BOOST_ASSERT_MSG(this->raw_data_length <= 110, "None of our supported byte arrays should go beyond this number yet!");
+                BOOST_ASSERT_MSG(this->node_type != inner_node_type::array, "wrong emthod is called!");
                 if (this->raw_data_length == 1 && first_byte <= 0x7F) {
                     return 1;
                 } else if (this->raw_data_length <= 55) {
                     return this->raw_data_length + 1;
                 } else {
-                    return this->raw_data_length + 2;
+                    std::size_t len_len=0;
+                    std::size_t tmp = this->raw_data_length;
+                    while (tmp > 0) {
+                        len_len += 1;
+                        tmp >>= 4;
+                    }
+                    return len_len + tmp;
                 }
                 // if ( this->key_type== inner_node_type::key) {
                 //     BOOST_ASSERT_MSG(length <= 32, "leaf node key length exceeded!");
@@ -238,27 +278,27 @@ namespace nil::blueprint::bbf {
             }
         
             void rlp_lookup_constraints(generic_component<FieldType, stage> &comp, TYPE first_element, TYPE first_element_flag) {
-                std::cout << "injaa " << std::hex << this->prefix[0] << std::dec << " "
-                << std::hex << this->prefix[1] * this->second_prefix_is_last << std::dec << " "
-                << std::hex << this->prefix[2] * this->third_prefix_is_last << std::dec << " "
-                << std::hex << first_element << std::dec << " "
-                << std::hex << first_element_flag << std::dec << " "
-                << int(this->node_type == element_type::string_element) << " "
-                << std::hex << this->len_low << std::dec << " "
-                << std::hex << this->len_high << std::dec << " "
-                << std::hex << this->second_prefix_is_last << std::dec << " "
-                << std::hex << this->third_prefix_is_last << std::dec << " \n";
+                // std::cout << "injaa " << std::hex << this->prefix[0] << std::dec << " "
+                // << std::hex << this->prefix[1] * this->second_prefix_padding << std::dec << " "
+                // << std::hex << this->prefix[2] * this->third_prefix_padding << std::dec << " "
+                // << std::hex << first_element << std::dec << " "
+                // << std::hex << first_element_flag << std::dec << " "
+                // << int(this->node_type != inner_node_type::array) << " "
+                // << std::hex << this->len_low << std::dec << " "
+                // << std::hex << this->len_high << std::dec << " "
+                // << std::hex << this->second_prefix_padding << std::dec << " "
+                // << std::hex << this->third_prefix_padding << std::dec << " \n";
                 std::vector<TYPE> node_rlp_lookup = {
                     this->prefix[0],
                     this->prefix[1],
                     this->prefix[2],
                     first_element,
                     first_element_flag,
-                    this->node_type == element_type::string_element,
+                    this->node_type != inner_node_type::array,
                     this->len_low, 
                     this->len_high,
-                    this->second_prefix_is_last,
-                    this->third_prefix_is_last
+                    this->second_prefix_padding,
+                    this->third_prefix_padding
                 };
                 comp.lookup(node_rlp_lookup, "rlp_table");
             }
@@ -269,8 +309,8 @@ namespace nil::blueprint::bbf {
                 comp.allocate(this->len_high, column_index ++, row_index);
                 comp.allocate(this->hash_low, column_index ++, row_index);
                 comp.allocate(this->hash_high, column_index ++, row_index);
-                comp.allocate(this->second_prefix_is_last, column_index ++, row_index);
-                comp.allocate(this->third_prefix_is_last, column_index ++, row_index);
+                comp.allocate(this->second_prefix_padding, column_index ++, row_index);
+                comp.allocate(this->third_prefix_padding, column_index ++, row_index);
                 // pefix
                 comp.allocate(this->prefix[0], column_index ++, row_index);
                 comp.allocate(this->prefix_rlc[0], column_index ++, row_index);
@@ -286,8 +326,7 @@ namespace nil::blueprint::bbf {
         class node_inner {
             public:
             rlp_header header;
-            inner_node_type key_type;
-            element_type e_type;
+            inner_node_type node_type;
             mpt_type trie_type;
             std::vector<TYPE> data;
             std::vector<TYPE> index;
@@ -296,21 +335,20 @@ namespace nil::blueprint::bbf {
             std::vector<TYPE> is_last;
             std::vector<TYPE> rlc;
             std::vector<zkevm_word_type> raw;
-            TYPE first_element_flag;
+            TYPE first_element_flag; // if 0 prefix[0] must be data[0]
             TYPE first_element;
     
             // in case this node is of array_element type
             std::vector<node_inner> inners;
     
-            node_inner(inner_node_type _k_type, mpt_type _trie_type, element_type _e_type): header(_e_type), key_type(_k_type), trie_type(_trie_type), e_type(_e_type){
-                this->header = rlp_header(_e_type);
-                if (_e_type == element_type::array_element) {
+            node_inner(inner_node_type _n_type, mpt_type _trie_type): header(_n_type), node_type(_n_type), trie_type(_trie_type){
+                if (_n_type == inner_node_type::array) {
                     if (_trie_type == mpt_type::account_trie) {
                         // TODO
-                        this->inners.push_back(node_inner(inner_node_type::nonce, _trie_type, element_type::string_element));
-                        this->inners.push_back(node_inner(inner_node_type::balance, _trie_type, element_type::string_element));
-                        this->inners.push_back(node_inner(inner_node_type::storage_root, _trie_type, element_type::string_element));
-                        this->inners.push_back(node_inner(inner_node_type::code_hash, _trie_type, element_type::string_element));
+                        this->inners.push_back(node_inner(inner_node_type::nonce, _trie_type));
+                        this->inners.push_back(node_inner(inner_node_type::balance, _trie_type));
+                        this->inners.push_back(node_inner(inner_node_type::storage_root, _trie_type));
+                        this->inners.push_back(node_inner(inner_node_type::code_hash, _trie_type));
                     }
                 } else {
                 }
@@ -328,7 +366,7 @@ namespace nil::blueprint::bbf {
             }
 
             void set_data(std::vector<zkevm_word_type> raw) {
-                if (this->e_type == element_type::array_element) {
+                if (this->node_type == inner_node_type::array) {
                     // TODO
                 } else {
                     this->_set_data(raw);
@@ -337,7 +375,7 @@ namespace nil::blueprint::bbf {
             }
 
             std::size_t get_total_length() {
-                if (this->e_type == element_type::array_element) {
+                if (this->node_type == inner_node_type::array) {
                     // TODO read length of all the internals
                     return this->header.get_total_length();
                 } else {
@@ -346,8 +384,8 @@ namespace nil::blueprint::bbf {
             }
     
             void set_indices(std::vector<std::uint8_t> &hash_input, std::size_t &rlp_encoding_index, TYPE &rlc_accumulator, TYPE rlc_challenge) {
-                this->header.set_indices(hash_input, rlp_encoding_index, rlc_accumulator, rlc_challenge, 0 ? this->e_type == element_type::array_element : this->raw[0]);
-                if (this->e_type == element_type::string_element) {
+                this->header.set_indices(hash_input, rlp_encoding_index, rlc_accumulator, rlc_challenge, 0 ? this->node_type == inner_node_type::array : this->raw[0], false);
+                if (this->node_type != inner_node_type::array) {
                     for (size_t j = 0; j < this->raw.size(); j++) {
                         this->index[j] = rlp_encoding_index;
                         hash_input[rlp_encoding_index++] = uint8_t(this->raw[j]);
@@ -358,7 +396,7 @@ namespace nil::blueprint::bbf {
                     for (size_t j = this->raw.size(); j < this->rlc.size(); j++) {
                         this->rlc[j] = rlc_accumulator;
                     }
-                } else if (this->e_type == element_type::array_element) {
+                } else {
                     // TODO fix this
                 }
             }
@@ -407,7 +445,7 @@ namespace nil::blueprint::bbf {
                 constraint_first_rlp_prefix_rlc(comp, previous_rlc, not_padding);
                 this->header.main_constraints(comp, initial_index, not_padding);
 
-                TYPE first_data_index = this->header.prefix_index[0] + 1 + 1 - this->header.second_prefix_is_last + 1 - this->header.third_prefix_is_last;
+                TYPE first_data_index = this->header.prefix_index[0] + 1 + 1 - this->header.second_prefix_padding + 1 - this->header.third_prefix_padding;
                 comp.constrain(this->index[0] - first_data_index);
                 comp.constrain(this->rlc[0] - (this->header.prefix_rlc[2] * 53 + this->data[0]));
 
@@ -437,7 +475,7 @@ namespace nil::blueprint::bbf {
                 this->header.initialize();
             }
             void _initialize_body() {
-                if (this->e_type == element_type::array_element) {
+                if (this->node_type == inner_node_type::array) {
                     for (auto &i : this->inners) {
                         i.initialize();
                     }
@@ -452,7 +490,7 @@ namespace nil::blueprint::bbf {
             }
             void _set_data(std::vector<zkevm_word_type> _raw) {
                 this->raw = _raw;
-                if (this->e_type == element_type::string_element) {
+                if (this->node_type!= inner_node_type::array) {
                     // if (this->type == inner_node_type::key) {
                     //     BOOST_ASSERT_MSG(this->raw.size() <= 33, "key length exceeds!");
                     // } else if (this->type == inner_node_type::nonce) {
@@ -508,25 +546,12 @@ namespace nil::blueprint::bbf {
                 mpt_type _trie_t,
                 TYPE _not_padding
             ): trie_type(_trie_t),
-               header(element_type::array_element),
+               header(inner_node_type::array),
                not_padding(_not_padding),
-               key(inner_node_type::key, _trie_t, element_type::string_element),
-               value(inner_node_type::storage_root, _trie_t, element_type::string_element) {
+               key(inner_node_type::key, _trie_t),
+               value(_trie_t == mpt_type::storage_trie ? inner_node_type::storage_value : inner_node_type::array, _trie_t) {
 
                 this->hash_input.resize(532);
-                if (_trie_t == mpt_type::storage_trie) {
-                    this->value = node_inner(
-                        inner_node_type::storage_value,
-                        _trie_t,
-                        element_type::string_element
-                    );
-                } else if (_trie_t == mpt_type::account_trie) {
-                    this->value = node_inner(
-                        inner_node_type::storage_root, // this argument is ignored
-                        _trie_t,
-                        element_type::string_element
-                    );
-                }
             }
     
             void initialize() {
@@ -549,7 +574,7 @@ namespace nil::blueprint::bbf {
 
             void set_indices(TYPE rlc_challenge) {
                 // last argument doesn't matter because length is always more than one byte
-                this->header.set_indices(this->hash_input, this->rlp_encoding_index, this->rlc_accumulator, rlc_challenge, 0);
+                this->header.set_indices(this->hash_input, this->rlp_encoding_index, this->rlc_accumulator, rlc_challenge, 0, true);
                 this->key.set_indices(this->hash_input, this->rlp_encoding_index, this->rlc_accumulator, rlc_challenge);
                 this->value.set_indices(this->hash_input, this->rlp_encoding_index, this->rlc_accumulator, rlc_challenge);
                 set_is_last();
@@ -585,7 +610,7 @@ namespace nil::blueprint::bbf {
                         << std::hex << this->header.prefix_index[1] << std::dec << std::endl;
                 
                 std::cout << "node rlp second prefix is last:\n "
-                        << std::hex << this->header.second_prefix_is_last << std::dec << std::endl;
+                        << std::hex << this->header.second_prefix_padding << std::dec << std::endl;
                 std::cout << "node rlp len low and high: \n"
                         << std::hex << this->header.len_low << std::dec << "\t"
                         << std::hex << this->header.len_high << std::dec << std::endl;
@@ -594,8 +619,8 @@ namespace nil::blueprint::bbf {
                 std::cout << std::hex << this->key.header.prefix[0] << std::dec << "\t"
                         << std::hex << this->key.header.prefix_index[0] << std::dec << std::endl;
                 std::cout << "second is last\tthird is last\tlen_low\tlen_high\tfirst_element_flag\tfirst_element\tfirst rlc\tsecond rlc\tthird rlc\n\t";
-                std::cout << std::hex << this->key.header.second_prefix_is_last << std::dec << "\t"
-                        << std::hex << this->key.header.third_prefix_is_last << std::dec << "\t\t"
+                std::cout << std::hex << this->key.header.second_prefix_padding << std::dec << "\t"
+                        << std::hex << this->key.header.third_prefix_padding << std::dec << "\t\t"
                         << std::hex << this->key.header.len_low << std::dec << "\t"
                         << std::hex << this->key.header.len_high << std::dec << "\t\t"
                         << std::hex << this->key.first_element_flag << std::dec << "\t\t\t"
@@ -619,7 +644,7 @@ namespace nil::blueprint::bbf {
                         << std::hex << this->value.header.prefix_index[1] << std::dec << std::endl;
 
                 std::cout << "second is last\tlen_high\tlen_low\tfirst_element_flag\tfirst_element\n\t";
-                std::cout << std::hex << this->value.header.second_prefix_is_last << std::dec << "\t"
+                std::cout << std::hex << this->value.header.second_prefix_padding << std::dec << "\t"
                         << std::hex << this->value.header.len_high << std::dec << "\t"
                         << std::hex << this->value.header.len_low << std::dec << "\t"
                         << std::hex << this->value.first_element_flag << std::dec << "\t\t"
@@ -680,22 +705,22 @@ namespace nil::blueprint::bbf {
                 
                 comp.constrain(this->not_padding * (-(this->header.len_low + 0x100 * this->header.len_high) + 
                         (this->key.header.len_low + 0x100 * this->key.header.len_high + 
-                         this->value.header.len_low + 0x100 * this->value.header.len_high + 3 - this->value.header.second_prefix_is_last)));
+                         this->value.header.len_low + 0x100 * this->value.header.len_high + 3 - this->value.header.second_prefix_padding)));
 
                 // node first rlp prefix is always keccak 0 index
                 this->header.main_constraints(comp, 0, this->not_padding);
-                TYPE key_initial_index = this->not_padding + (1 - this->header.second_prefix_is_last) + (1 - this->header.third_prefix_is_last);
+                TYPE key_initial_index = this->not_padding + (1 - this->header.second_prefix_padding) + (1 - this->header.third_prefix_padding);
                 TYPE key_previous_rlc = this->header.prefix_rlc[2];
                 this->key.main_constraints(comp, key_previous_rlc, key_initial_index, this->not_padding);
 
-                TYPE value_initial_index = this->key.header.len_low + this->key.header.len_high * 0x100 + this->key.header.prefix_index[0] + 1 + 1 - this->key.header.second_prefix_is_last;
+                TYPE value_initial_index = this->key.header.len_low + this->key.header.len_high * 0x100 + this->key.header.prefix_index[0] + 1 + 1 - this->key.header.second_prefix_padding;
                 TYPE value_previous_rlc = this->key.rlc[this->key.rlc.size()-1];
                 this->value.main_constraints(comp, value_previous_rlc, value_initial_index, this->not_padding);
             }
 
             void constraint_first_rlp_prefix_rlc(mpt_leaf<FieldType, stage> &comp) {
                 comp.constrain(this->not_padding * (this->header.prefix_rlc[0] - 
-                    /* total length */      ((1 + 1 - this->header.second_prefix_is_last + 1 - this->header.third_prefix_is_last + this->header.len_low + 0x100 * this->header.len_high)
+                    /* total length */      ((1 + 1 - this->header.second_prefix_padding + 1 - this->header.third_prefix_padding + this->header.len_low + 0x100 * this->header.len_high)
                                             * 53 + this->header.prefix[0])));
             }
 
@@ -737,8 +762,8 @@ namespace nil::blueprint::bbf {
         //     header_type node_type;
         //     std::array<TYPE, 3> prefix;
         //     std::array<TYPE, 3> prefix_rlc;
-        //     TYPE second_prefix_is_last;
-        //     TYPE third_prefix_is_last;
+        //     TYPE second_prefix_padding;
+        //     TYPE third_prefix_padding;
         //     std::array<TYPE, 2> prefix_index;
         //     TYPE len_low;
         //     TYPE len_high;
@@ -756,7 +781,7 @@ namespace nil::blueprint::bbf {
         //     // std::array<std::array<TYPE, 2>,   2> prefix;
         //     // std::array<std::array<TYPE, 2>,   2> prefix_index;
         //     // std::array<std::array<TYPE, 2>,   2> prefix_rlc;
-        //     // std::array<TYPE, 2> second_prefix_is_last;
+        //     // std::array<TYPE, 2> second_prefix_padding;
         //     // lengths without considering rlp prefixes
         //     // std::array<TYPE, 2> len_low;
         //     // std::array<TYPE, 2> len_high;
@@ -794,7 +819,7 @@ namespace nil::blueprint::bbf {
             std::vector<std::size_t> rlp_lookup_area;
             // std::vector<TYPE> node_type(max_mpt_query_size);
             std::vector<std::size_t> leaf_table_lookup_area;
-            mpt_leaf_table_input_type leaf_table_inputs;
+            // mpt_leaf_table_input_type leaf_table_inputs;
             // std::vector<TYPE> node_type_inv_2(max_mpt_query_size);
             // std::vector<TYPE> r(max_mpt_query_size);
             std::size_t node_num = 0;
@@ -877,8 +902,8 @@ namespace nil::blueprint::bbf {
 //                 // prefix
 //                 allocate(nodes[i].prefix[0], column_index ++, i);
 //                 allocate(nodes[i].prefix_rlc[0], column_index ++, i);
-//                 allocate(nodes[i].second_prefix_is_last, column_index ++, i);
-//                 allocate(nodes[i].third_prefix_is_last, column_index ++, i);
+//                 allocate(nodes[i].second_prefix_padding, column_index ++, i);
+//                 allocate(nodes[i].third_prefix_padding, column_index ++, i);
 //                 allocate(nodes[i].prefix[1], column_index ++, i);
 //                 allocate(nodes[i].prefix_rlc[1], column_index ++, i);
 //                 allocate(nodes[i].prefix_index[0], column_index ++, i);
@@ -898,7 +923,7 @@ namespace nil::blueprint::bbf {
 //                     allocate(nodes[i].content.prefix[j][1], column_index++, i);
 //                     allocate(nodes[i].content.prefix_rlc[j][1], column_index++, i);
 //                     allocate(nodes[i].content.prefix_index[j][1], column_index++, i);
-//                     allocate(nodes[i].content.second_prefix_is_last[j], column_index++, i);
+//                     allocate(nodes[i].content.second_prefix_padding[j], column_index++, i);
 //                     allocate(nodes[i].content.first_element_flag[j], column_index++, i);
 
 //                     // encoding
@@ -944,15 +969,15 @@ namespace nil::blueprint::bbf {
 
                 // std::vector<TYPE> node_rlp_lookup = {
                 //     n.header.prefix[0],
-                //     n.header.prefix[1] * n.header.second_prefix_is_last,
-                //     n.header.prefix[2] * n.header.third_prefix_is_last,
+                //     n.header.prefix[1] * n.header.second_prefix_padding,
+                //     n.header.prefix[2] * n.header.third_prefix_padding,
                 //     0,
                 //     0,
                 //     n.header.node_type == element_type::string_element,
                 //     n.header.len_low, 
                 //     n.header.len_high,
-                //     n.header.second_prefix_is_last,
-                //     n.header.third_prefix_is_last
+                //     n.header.second_prefix_padding,
+                //     n.header.third_prefix_padding
                 // };
                 // lookup(node_rlp_lookup, "rlp_table");
 
@@ -980,8 +1005,8 @@ namespace nil::blueprint::bbf {
 //                     0,
 //                     n.len_low, 
 //                     n.len_high,
-//                     n.second_prefix_is_last,
-//                     n.third_prefix_is_last
+//                     n.second_prefix_padding,
+//                     n.third_prefix_padding
 //                 };
 
 //                 std::vector<TYPE> key_rlp_lookup = {
@@ -994,7 +1019,7 @@ namespace nil::blueprint::bbf {
 //                     c.len_low[0], 
 //                     c.len_high[0],
 //                     // 1,
-//                     c.second_prefix_is_last[0],
+//                     c.second_prefix_padding[0],
 //                     1
 //                 };
 
@@ -1007,7 +1032,7 @@ namespace nil::blueprint::bbf {
 //                     1,
 //                     c.len_low[1], 
 //                     c.len_high[1],
-//                     c.second_prefix_is_last[1],
+//                     c.second_prefix_padding[1],
 //                     1
 //                 };
 
@@ -1023,38 +1048,38 @@ namespace nil::blueprint::bbf {
 //                 context_object.relative_lookup(context_object.relativize(keccak_lookup, 0), "keccak_table", 0, max_mpt_query_size - 1);
                 
 //                 std::vector<TYPE> consts;
-//                 consts.push_back(context_object.relativize((n.second_prefix_is_last*(1 - n.second_prefix_is_last)), 0));
-//                 consts.push_back(context_object.relativize((n.prefix[1] * n.second_prefix_is_last), 0));
-//                 consts.push_back(context_object.relativize((n.prefix[2] * n.third_prefix_is_last), 0));
-//                 consts.push_back(context_object.relativize((c.second_prefix_is_last[1] * (1 - c.second_prefix_is_last[1])), 0));
-//                 consts.push_back(context_object.relativize((c.second_prefix_is_last[0] * (1 - c.second_prefix_is_last[0])), 0));
+//                 consts.push_back(context_object.relativize((n.second_prefix_padding*(1 - n.second_prefix_padding)), 0));
+//                 consts.push_back(context_object.relativize((n.prefix[1] * n.second_prefix_padding), 0));
+//                 consts.push_back(context_object.relativize((n.prefix[2] * n.third_prefix_padding), 0));
+//                 consts.push_back(context_object.relativize((c.second_prefix_padding[1] * (1 - c.second_prefix_padding[1])), 0));
+//                 consts.push_back(context_object.relativize((c.second_prefix_padding[0] * (1 - c.second_prefix_padding[0])), 0));
 //                 consts.push_back(context_object.relativize((n.not_padding * (n.prefix_rlc[0] - 
-// /* total length */      ((1 + 1 - n.second_prefix_is_last + 1 - n.third_prefix_is_last + n.len_low + 0x100 * n.len_high)
+// /* total length */      ((1 + 1 - n.second_prefix_padding + 1 - n.third_prefix_padding + n.len_low + 0x100 * n.len_high)
 //                         * 53 + n.prefix[0]))), 0));
 
-//                 consts.push_back(context_object.relativize((n.prefix_rlc[1] - ((1 - n.second_prefix_is_last) * (n.prefix_rlc[0] * 53 + n.prefix[1]) + n.second_prefix_is_last * n.prefix_rlc[0])), 0));
-//                 consts.push_back(context_object.relativize((n.prefix_rlc[2] - ((1 - n.third_prefix_is_last) *  (n.prefix_rlc[1] * 53 + n.prefix[2]) + n.third_prefix_is_last * n.prefix_rlc[1])), 0));
+//                 consts.push_back(context_object.relativize((n.prefix_rlc[1] - ((1 - n.second_prefix_padding) * (n.prefix_rlc[0] * 53 + n.prefix[1]) + n.second_prefix_padding * n.prefix_rlc[0])), 0));
+//                 consts.push_back(context_object.relativize((n.prefix_rlc[2] - ((1 - n.third_prefix_padding) *  (n.prefix_rlc[1] * 53 + n.prefix[2]) + n.third_prefix_padding * n.prefix_rlc[1])), 0));
 
 //                 consts.push_back(context_object.relativize((n.not_padding * (-(n.len_low + 0x100 * n.len_high)
 //                         + c.len_low[0] + 0x100 * c.len_high[0] 
 //                         + c.len_low[1] + 0x100 * c.len_high[1] 
-//                         + 3 - c.second_prefix_is_last[1])), 0));
+//                         + 3 - c.second_prefix_padding[1])), 0));
 
 //                 // node first rlp prefix is always keccak 0 index
-//                 consts.push_back(context_object.relativize((n.prefix_index[0] - (1 - n.second_prefix_is_last)), 0));
-//                 consts.push_back(context_object.relativize((n.prefix_index[1] * n.third_prefix_is_last + (2-n.prefix_index[1])*(1-n.third_prefix_is_last)), 0));
+//                 consts.push_back(context_object.relativize((n.prefix_index[0] - (1 - n.second_prefix_padding)), 0));
+//                 consts.push_back(context_object.relativize((n.prefix_index[1] * n.third_prefix_padding + (2-n.prefix_index[1])*(1-n.third_prefix_padding)), 0));
 //                 for (size_t k = 0; k < 2; k++) {
 //                     if (k == 0) {
-//                         consts.push_back(context_object.relativize(c.prefix_index[k][0] - n.not_padding - (1 - n.second_prefix_is_last) + (1 - n.third_prefix_is_last), 0));
+//                         consts.push_back(context_object.relativize(c.prefix_index[k][0] - n.not_padding - (1 - n.second_prefix_padding) + (1 - n.third_prefix_padding), 0));
 //                         consts.push_back(context_object.relativize(c.prefix_rlc[k][0] - (n.prefix_rlc[2] * 53 + c.prefix[0][0]), 0));
 //                     } else {
 //                         consts.push_back(context_object.relativize(c.prefix_index[k][0] - 
-//                             (c.len_low[k-1] + c.len_high[k-1] * 0x100 + c.prefix_index[k-1][0] + n.not_padding - c.second_prefix_is_last[k-1] + 1), 0));
+//                             (c.len_low[k-1] + c.len_high[k-1] * 0x100 + c.prefix_index[k-1][0] + n.not_padding - c.second_prefix_padding[k-1] + 1), 0));
 //                         consts.push_back(context_object.relativize(c.prefix_rlc[k][0] - (c.rlc[k-1][leaf_data_size-1] * 53 + c.prefix[k][0]), 0));
 //                     }
-//                     consts.push_back(context_object.relativize(c.prefix_index[k][1] - (1 - c.second_prefix_is_last[k]) * (c.prefix_index[k][0] + n.not_padding), 0));
-//                     consts.push_back(context_object.relativize(c.prefix_rlc[k][1] - ((1 - c.second_prefix_is_last[k]) * (c.prefix_rlc[k][0] * 53 + c.prefix[k][1]) + c.second_prefix_is_last[k] * c.prefix_rlc[k][0]), 0));
-//                     consts.push_back(context_object.relativize(c.index[k][0] - (1 - c.second_prefix_is_last[k]) - c.prefix_index[k][0] - n.not_padding, 0));
+//                     consts.push_back(context_object.relativize(c.prefix_index[k][1] - (1 - c.second_prefix_padding[k]) * (c.prefix_index[k][0] + n.not_padding), 0));
+//                     consts.push_back(context_object.relativize(c.prefix_rlc[k][1] - ((1 - c.second_prefix_padding[k]) * (c.prefix_rlc[k][0] * 53 + c.prefix[k][1]) + c.second_prefix_padding[k] * c.prefix_rlc[k][0]), 0));
+//                     consts.push_back(context_object.relativize(c.index[k][0] - (1 - c.second_prefix_padding[k]) - c.prefix_index[k][0] - n.not_padding, 0));
 //                     consts.push_back(context_object.relativize(c.rlc[k][0] - (c.prefix_rlc[k][1] * 53 + c.data[k][0]), 0));
 
 //                     consts.push_back(context_object.relativize(c.data[k][0] * c.is_last[k][0], 0));
@@ -1107,8 +1132,8 @@ namespace nil::blueprint::bbf {
         //         node.prefix[2] = 0;
         //         node.prefix_index[0] = rlp_encoding_index+1;
 
-        //         node.second_prefix_is_last = 0;
-        //         node.third_prefix_is_last = 1;
+        //         node.second_prefix_padding = 0;
+        //         node.third_prefix_padding = 1;
 
         //         hash_input[rlp_encoding_index++] = 0xF7 + length_length;
         //         hash_input[rlp_encoding_index++] = total_length;
@@ -1120,8 +1145,8 @@ namespace nil::blueprint::bbf {
         //         node.prefix_rlc[2] = rlc_accumulator;
         //     } else {
         //         node.prefix[0] = 0xC0 + total_length;
-        //         node.second_prefix_is_last = 1;
-        //         node.third_prefix_is_last = 1;
+        //         node.second_prefix_padding = 1;
+        //         node.third_prefix_padding = 1;
         //         node.prefix_index[0] = 0;
 
         //         hash_input[rlp_encoding_index++] = uint8_t((0xC0 + total_length) & 0xFF);
@@ -1168,7 +1193,7 @@ namespace nil::blueprint::bbf {
         //         // TODO child_prefix_is_last[nodenum][0][0] must be true
         //     } else if (key.size() <= 33) {
         //         content.prefix[0][0] = 0x80 + key.size();
-        //         content.second_prefix_is_last[0] = 1;
+        //         content.second_prefix_padding[0] = 1;
         //         content.prefix_index[0][0] = rlp_encoding_index;
 
         //         hash_input[rlp_encoding_index++] = uint8_t(0x80 + key.size());
@@ -1214,7 +1239,7 @@ namespace nil::blueprint::bbf {
         //         content.prefix_index[1][0] = rlp_encoding_index;
         //         content.prefix[1][1] = value.size();
         //         content.prefix_index[1][1] = rlp_encoding_index+1;
-        //         content.second_prefix_is_last[1] = 0;
+        //         content.second_prefix_padding[1] = 0;
                 
         //         hash_input[rlp_encoding_index++] = uint8_t(0xB8);
         //         hash_input[rlp_encoding_index++] = value.size();
@@ -1275,7 +1300,7 @@ namespace nil::blueprint::bbf {
         //               << std::hex << node.prefix_index[1] << std::dec << std::endl;
             
         //     std::cout << "node rlp second prefix is last:\n "
-        //               << std::hex << node.second_prefix_is_last << std::dec << std::endl;
+        //               << std::hex << node.second_prefix_padding << std::dec << std::endl;
         //     std::cout << "node rlp len low and high: \n"
         //               << std::hex << node.len_low << std::dec << "\t"
         //               << std::hex << node.len_high << std::dec << std::endl;
@@ -1284,7 +1309,7 @@ namespace nil::blueprint::bbf {
         //     std::cout << std::hex << content.prefix[0][0] << std::dec << "\t"
         //               << std::hex << content.prefix_index[0][0] << std::dec << std::endl;
         //     std::cout << "second is last\tlen_low\tlen_high\tfirst_element_flag\tfirst_element\n\t";
-        //     std::cout << std::hex << content.second_prefix_is_last[0] << std::dec << "\t"
+        //     std::cout << std::hex << content.second_prefix_padding[0] << std::dec << "\t"
         //               << std::hex << content.len_low[0] << std::dec << "\t"
         //               << std::hex << content.len_high[0] << std::dec << "\t\t"
         //               << std::hex << content.first_element_flag[0] << std::dec << "\t\t"
@@ -1305,7 +1330,7 @@ namespace nil::blueprint::bbf {
         //               << std::hex << content.prefix_index[1][1] << std::dec << std::endl;
 
         //     std::cout << "second is last\tlen_high\tlen_low\tfirst_element_flag\tfirst_element\n\t";
-        //     std::cout << std::hex << content.second_prefix_is_last[1] << std::dec << "\t"
+        //     std::cout << std::hex << content.second_prefix_padding[1] << std::dec << "\t"
         //               << std::hex << content.len_high[1] << std::dec << "\t"
         //               << std::hex << content.len_low[1] << std::dec << "\t"
         //               << std::hex << content.first_element_flag[1] << std::dec << "\t\t"
