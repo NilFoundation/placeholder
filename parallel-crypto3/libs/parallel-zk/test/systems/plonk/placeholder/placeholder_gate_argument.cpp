@@ -39,6 +39,8 @@
 #include <nil/crypto3/algebra/fields/arithmetic_params/bls12.hpp>
 #include <nil/crypto3/hash/poseidon.hpp>
 
+#include <nil/crypto3/zk/math/centralized_expression_evaluator.hpp>
+
 #include <nil/crypto3/zk/snark/systems/plonk/placeholder/prover.hpp>
 #include <nil/crypto3/zk/snark/systems/plonk/placeholder/verifier.hpp>
 #include <nil/crypto3/zk/snark/systems/plonk/placeholder/gates_argument.hpp>
@@ -61,7 +63,8 @@ using namespace nil::crypto3::zk::snark;
 BOOST_AUTO_TEST_SUITE(placeholder_gate_argument)
     using curve_type = algebra::curves::bls12<381>;
     using field_type = typename curve_type::scalar_field_type;
-    using polynomial_dfs_type = typename math::polynomial_dfs<typename field_type::value_type>;
+    using value_type = typename field_type::value_type;
+    using polynomial_dfs_type = typename math::polynomial_dfs<value_type>;
 
     struct placeholder_test_params {
         using merkle_hash_type = hashes::keccak_1600<256>;
@@ -91,7 +94,7 @@ BOOST_AUTO_TEST_SUITE(placeholder_gate_argument)
     using kzg_type = commitments::batched_kzg<curve_type, typename placeholder_test_params::transcript_hash_type>;
     using kzg_scheme_type = typename commitments::kzg_commitment_scheme<kzg_type>;
     using kzg_placeholder_params_type = nil::crypto3::zk::snark::placeholder_params<circuit_t_params, kzg_scheme_type>;
-    using dfs_cache_type = dfs_cache<field_type>;
+    using central_evaluator_type = CentralAssignmentTableExpressionEvaluator<field_type>;
 
     BOOST_FIXTURE_TEST_CASE(parallel_placeholder_gate_argument_test, test_tools::random_test_initializer<field_type>) {
         auto pi0 = alg_random_engines.template get_alg_engine<field_type>()();
@@ -131,38 +134,35 @@ BOOST_AUTO_TEST_SUITE(placeholder_gate_argument)
                 constraint_system, assignments.private_table(), desc
         );
 
-        auto polynomial_table =
-                plonk_polynomial_dfs_table<field_type>(
-                        preprocessed_private_data.private_polynomial_table,
-                        preprocessed_public_data.public_polynomial_table);
+        auto polynomial_table = std::make_shared<plonk_polynomial_dfs_table<field_type>>(
+            preprocessed_private_data.private_polynomial_table,
+            preprocessed_public_data.public_polynomial_table);
 
         transcript::fiat_shamir_heuristic_sequential<placeholder_test_params::transcript_hash_type> prover_transcript = transcript;
         transcript::fiat_shamir_heuristic_sequential<placeholder_test_params::transcript_hash_type> verifier_transcript = transcript;
 
-        math::polynomial_dfs<typename field_type::value_type> mask_polynomial(
+        math::polynomial_dfs<value_type> mask_polynomial(
                 0, preprocessed_public_data.common_data->basic_domain->m,
-                typename field_type::value_type(1)
+                value_type(1)
         );
         mask_polynomial -= preprocessed_public_data.q_last;
         mask_polynomial -= preprocessed_public_data.q_blind;
 
-        dfs_cache_type dfs_cache(
+        std::unique_ptr<central_evaluator_type> central_evaluator = std::make_unique<central_evaluator_type>(
             polynomial_table,
             mask_polynomial,
             preprocessed_public_data.common_data->lagrange_0
         );
 
-        std::array<math::polynomial_dfs<typename field_type::value_type>, 1> prover_res =
+        value_type theta = prover_transcript.template challenge<field_type>();
+        std::array<math::polynomial_dfs<value_type>, 1> prover_res =
                 placeholder_gates_argument<field_type, lpc_placeholder_params_type>::prove_eval(
-                        constraint_system, polynomial_table, preprocessed_public_data.common_data->basic_domain,
-                        preprocessed_public_data.common_data->max_gates_degree,
-                        prover_transcript,
-                        dfs_cache
+                        constraint_system, *central_evaluator, theta
                 );
 
         // Challenge phase
-        typename field_type::value_type y = algebra::random_element<field_type>();
-        typename field_type::value_type omega = preprocessed_public_data.common_data->basic_domain->get_domain_element(
+        value_type y = algebra::random_element<field_type>();
+        value_type omega = preprocessed_public_data.common_data->basic_domain->get_domain_element(
                 1);
 
         typename policy_type::evaluation_map columns_at_y;
@@ -172,8 +172,8 @@ BOOST_AUTO_TEST_SUITE(placeholder_gate_argument)
 
             for (int rotation: preprocessed_public_data.common_data->columns_rotations[i_global_index]) {
                 auto key = std::make_tuple(i, rotation,
-                                           plonk_variable<typename field_type::value_type>::column_type::witness);
-                columns_at_y[key] = polynomial_table.witness(i).evaluate(y * omega.pow(rotation));
+                                           plonk_variable<value_type>::column_type::witness);
+                columns_at_y[key] = polynomial_table->witness(i).evaluate(y * omega.pow(rotation));
             }
         }
         for (std::size_t i = 0; i < 0 + desc.public_input_columns; i++) {
@@ -183,9 +183,9 @@ BOOST_AUTO_TEST_SUITE(placeholder_gate_argument)
             for (int rotation: preprocessed_public_data.common_data->columns_rotations[i_global_index]) {
 
                 auto key = std::make_tuple(i, rotation,
-                                           plonk_variable<typename field_type::value_type>::column_type::public_input);
+                                           plonk_variable<value_type>::column_type::public_input);
 
-                columns_at_y[key] = polynomial_table.public_input(i).evaluate(y * omega.pow(rotation));
+                columns_at_y[key] = polynomial_table->public_input(i).evaluate(y * omega.pow(rotation));
             }
         }
         for (std::size_t i = 0; i < 0 + desc.constant_columns; i++) {
@@ -195,9 +195,9 @@ BOOST_AUTO_TEST_SUITE(placeholder_gate_argument)
 
             for (int rotation: preprocessed_public_data.common_data->columns_rotations[i_global_index]) {
                 auto key = std::make_tuple(i, rotation,
-                                           plonk_variable<typename field_type::value_type>::column_type::constant);
+                                           plonk_variable<value_type>::column_type::constant);
 
-                columns_at_y[key] = polynomial_table.constant(i).evaluate(y * omega.pow(rotation));
+                columns_at_y[key] = polynomial_table->constant(i).evaluate(y * omega.pow(rotation));
             }
         }
         for (std::size_t i = 0; i < desc.selector_columns; i++) {
@@ -206,9 +206,9 @@ BOOST_AUTO_TEST_SUITE(placeholder_gate_argument)
 
             for (int rotation: preprocessed_public_data.common_data->columns_rotations[i_global_index]) {
                 auto key = std::make_tuple(i, rotation,
-                                           plonk_variable<typename field_type::value_type>::column_type::selector);
+                                           plonk_variable<value_type>::column_type::selector);
 
-                columns_at_y[key] = polynomial_table.selector(i).evaluate(y * omega.pow(rotation));
+                columns_at_y[key] = polynomial_table->selector(i).evaluate(y * omega.pow(rotation));
             }
         }
 
@@ -217,20 +217,20 @@ BOOST_AUTO_TEST_SUITE(placeholder_gate_argument)
 
         // All rows selector
         {
-                auto key = std::make_tuple( PLONK_SPECIAL_SELECTOR_ALL_USABLE_ROWS_SELECTED, 0, plonk_variable<typename field_type::value_type>::column_type::selector);
+                auto key = std::make_tuple( PLONK_SPECIAL_SELECTOR_ALL_USABLE_ROWS_SELECTED, 0, plonk_variable<value_type>::column_type::selector);
                 columns_at_y[key] = mask_value;
         }
         // All rows selector except the first row
         {
-                auto key = std::make_tuple( PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED, 0, plonk_variable<typename field_type::value_type>::column_type::selector);
+                auto key = std::make_tuple( PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED, 0, plonk_variable<value_type>::column_type::selector);
                 columns_at_y[key] = mask_value - preprocessed_public_data.common_data->lagrange_0.evaluate(y);
         }
-        std::array<typename field_type::value_type, 1> verifier_res =
+        std::array<value_type, 1> verifier_res =
                 placeholder_gates_argument<field_type, lpc_placeholder_params_type>::verify_eval(
                         constraint_system.gates(), columns_at_y, y, mask_value, verifier_transcript);
 
-        typename field_type::value_type verifier_next_challenge = verifier_transcript.template challenge<field_type>();
-        typename field_type::value_type prover_next_challenge = prover_transcript.template challenge<field_type>();
+        value_type verifier_next_challenge = verifier_transcript.template challenge<field_type>();
+        value_type prover_next_challenge = prover_transcript.template challenge<field_type>();
         BOOST_CHECK(verifier_next_challenge == prover_next_challenge);
 
         BOOST_CHECK(prover_res[0].evaluate(y) == verifier_res[0]);

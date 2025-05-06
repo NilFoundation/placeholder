@@ -49,7 +49,8 @@
 template<typename BlueprintFieldType>
 std::size_t clz(typename BlueprintFieldType::value_type value) {
     std::size_t count = 0;
-    typename BlueprintFieldType::integral_type integral = typename BlueprintFieldType::integral_type(value.data);
+    typename BlueprintFieldType::integral_type integral =
+        typename BlueprintFieldType::integral_type(value.to_integral());
     while (integral != 0) {
         integral >>= 1;
         ++count;
@@ -86,8 +87,8 @@ auto test_range_check(typename BlueprintFieldType::value_type input,
     typename component_type::input_type instance_input = {x};
 
     #ifdef BLUEPRINT_PLONK_PROFILING_ENABLED
-    std::cout << "range_check_test_input: " << std::hex << public_input[0].data << "\n";
-    #endif
+    std::cout << "range_check_test_input: " << std::hex << public_input[0] << "\n";
+#endif
 
     auto result_check = [](AssignmentType &assignment, typename component_type::result_type &real_res) {};
     const bool expected_to_pass = input < value_type(2).pow(R);
@@ -160,9 +161,9 @@ void test_range_check_random_inputs() {
 
     for (std::size_t i = 0; i < RandomTestsAmount; i++){
         value_type input = generate_random();
-    	integral_type input_integral = integral_type(input.data);
-        input_integral = input_integral & integral_type((max_value - 1).data);
-    	value_type input_scalar = input_integral;
+        integral_type input_integral = integral_type(input.to_integral());
+        input_integral = input_integral & integral_type((max_value - 1).to_integral());
+        value_type input_scalar = input_integral;
         // Sanity check
         assert(input_scalar < max_value);
         test_range_check<BlueprintFieldType, WitnessesAmount, R>(input_scalar);
@@ -179,11 +180,13 @@ void test_range_check_fail_random_inputs(){
     generate_random.seed(seed_seq);
 
     value_type max_value = value_type(2).pow(R);
-    integral_type restriction_modulus = BlueprintFieldType::modulus - integral_type(max_value.data);
+    integral_type restriction_modulus =
+        BlueprintFieldType::modulus - integral_type(max_value.to_integral());
 
     for (std::size_t i = 0; i < RandomTestsAmount; i++){
         value_type input = generate_random();
-        input = max_value + (value_type(integral_type(input.data) % restriction_modulus));
+        input = max_value +
+                (value_type(integral_type(input.to_integral()) % restriction_modulus));
         // Sanity check
         assert(input >= max_value);
         test_range_check<BlueprintFieldType, WitnessesAmount, R>(input);

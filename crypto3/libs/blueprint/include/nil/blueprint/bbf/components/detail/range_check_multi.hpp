@@ -102,7 +102,7 @@ namespace nil {
 
                             for (std::size_t i = 0; i < num_chunks; ++i) {
                                 X[i] = input_x[i];
-                                x_integral = integral_type(X[i].data);
+                                x_integral = integral_type(X[i].to_integral());
                                 for (std::size_t j = 0; j < num_rc_chunks; ++j) {
                                     y_integral = x_integral & mask;
                                     Y[i][j] = y_integral;

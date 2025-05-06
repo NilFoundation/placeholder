@@ -77,7 +77,7 @@ void test_field_range(const std::vector<typename BlueprintFieldType::value_type>
             #ifdef BLUEPRINT_PLONK_PROFILING_ENABLED
             std::cout << "________________________________________________________________________\ninput: " << std::hex << std::endl;
             for (int i = 0; i < 4; i++){
-                std::cout << public_input[3-i].data << " ";
+                std::cout << public_input[3 - i] << " ";
             }
             std::cout << std::endl;
             #endif

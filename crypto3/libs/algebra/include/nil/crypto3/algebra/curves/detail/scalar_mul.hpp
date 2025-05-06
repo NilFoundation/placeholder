@@ -85,7 +85,8 @@ namespace nil {
                             typename CurveElementType::params_type::scalar_field_type::value_type const& scalar)
                     {
                         using scalar_integral_type = typename CurveElementType::params_type::scalar_field_type::integral_type;
-                        scalar_mul_inplace(point, static_cast<scalar_integral_type>(scalar.data));
+                        scalar_mul_inplace(point, static_cast<scalar_integral_type>(
+                                                      scalar.to_integral()));
                         return point;
                     }
 
@@ -96,7 +97,8 @@ namespace nil {
                     {
                         using scalar_integral_type = typename CurveElementType::params_type::scalar_field_type::integral_type;
                         CurveElementType res = point;
-                        scalar_mul_inplace(res, static_cast<scalar_integral_type>(scalar.data));
+                        scalar_mul_inplace(
+                            res, static_cast<scalar_integral_type>(scalar.to_integral()));
                         return res;
                     }
 
@@ -107,7 +109,8 @@ namespace nil {
                     {
                         using scalar_integral_type = typename CurveElementType::params_type::scalar_field_type::integral_type;
                         CurveElementType res = point;
-                        scalar_mul_inplace(res, static_cast<scalar_integral_type>(scalar.data));
+                        scalar_mul_inplace(
+                            res, static_cast<scalar_integral_type>(scalar.to_integral()));
                         return res;
                     }
 

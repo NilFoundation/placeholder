@@ -145,11 +145,15 @@ namespace nil {
 
                 std::size_t row = start_row_index;
                 typename BlueprintFieldType::integral_type base = 1;
-                std::array<typename BlueprintFieldType::integral_type, 4> ed25519_value = {
-                    typename BlueprintFieldType::integral_type(var_value(assignment, instance_input.input[0]).data),
-                    typename BlueprintFieldType::integral_type(var_value(assignment, instance_input.input[1]).data),
-                    typename BlueprintFieldType::integral_type(var_value(assignment, instance_input.input[2]).data),
-                    typename BlueprintFieldType::integral_type(var_value(assignment, instance_input.input[3]).data)};
+                std::array<typename BlueprintFieldType::integral_type, 4> ed25519_value =
+                    {typename BlueprintFieldType::integral_type(
+                         var_value(assignment, instance_input.input[0]).to_integral()),
+                     typename BlueprintFieldType::integral_type(
+                         var_value(assignment, instance_input.input[1]).to_integral()),
+                     typename BlueprintFieldType::integral_type(
+                         var_value(assignment, instance_input.input[2]).to_integral()),
+                     typename BlueprintFieldType::integral_type(
+                         var_value(assignment, instance_input.input[3]).to_integral())};
                 assignment.witness(component.W(0), row) = ed25519_value[0];
                 assignment.witness(component.W(1), row) = ed25519_value[1];
                 assignment.witness(component.W(2), row) = ed25519_value[2];

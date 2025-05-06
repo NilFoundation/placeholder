@@ -114,7 +114,7 @@ void test_field_add_all_cases(){
     typename NonNativeFieldType::value_type f = 0xf;
     typename NonNativeFieldType::integral_type f_integral;
     for (std::size_t i = 0; i < 63; i++) {
-        f_integral = typename NonNativeFieldType::integral_type(f.data);
+        f_integral = typename NonNativeFieldType::integral_type(f.to_integral());
         f_integral = (f_integral << 4) + 0xf;
         f = typename NonNativeFieldType::value_type(f_integral);
         test_field_add_useable<FieldType, NonNativeFieldType>(f, f);

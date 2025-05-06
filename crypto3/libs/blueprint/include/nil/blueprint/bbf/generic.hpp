@@ -334,7 +334,7 @@ namespace nil {
                     //   BOOST_LOG_TRIVIAL(warning) << "RE-allocation of " << t << " cell at col = " << col << ", row = " << row << ".\n";
                     }
                     if (t == column_type::constant) {
-                        auto [has_vars, min_row, max_row] = nil::crypto3::math::expression_row_range_visitor<var>::row_range(C);
+                        auto [has_vars, min_row, max_row] = nil::crypto3::zk::snark::expression_row_range_visitor<var>::row_range(C);
                         if (has_vars) {
                             std::stringstream error;
                             error << "Trying to assign constraint " << C << " to constant cell!";
@@ -355,15 +355,15 @@ namespace nil {
                 }
 
                 void copy_constrain(const TYPE &A, const TYPE &B) {
-                    auto is_var = nil::crypto3::math::expression_is_variable_visitor<var>::is_var;
+                    auto is_var = nil::crypto3::zk::snark::expression_is_variable_visitor<var>::is_var;
 
                     if (!is_var(A) || !is_var(B)) {
                         BOOST_LOG_TRIVIAL(error) << "Copy constraint applied to non-variable: " << A << " = " << B << ".\n";
                     }
                     BOOST_ASSERT(is_var(A) && is_var(B));
 
-                    var A_var = boost::get<crypto3::math::term<var>>(A.get_expr()).get_vars()[0];
-                    var B_var = boost::get<crypto3::math::term<var>>(B.get_expr()).get_vars()[0];
+                    var A_var = boost::get<nil::crypto3::zk::snark::term<var>>(A.get_expr()).get_vars()[0];
+                    var B_var = boost::get<nil::crypto3::zk::snark::term<var>>(B.get_expr()).get_vars()[0];
 
                     if (A_var != B_var) {
                         copy_constraints->push_back({A_var,B_var});
@@ -395,7 +395,7 @@ namespace nil {
                         throw std::logic_error(ss.str());
                     }
 
-                    auto [has_vars, min_row, max_row] = nil::crypto3::math::expression_row_range_visitor<var>::row_range(C);
+                    auto [has_vars, min_row, max_row] = nil::crypto3::zk::snark::expression_row_range_visitor<var>::row_range(C);
                     if (!has_vars) {
                         BOOST_LOG_TRIVIAL(error) << "Constraint " << C << " has no variables!\n";
                     }
@@ -442,7 +442,7 @@ namespace nil {
                     // up to 3 different rows for relativization. We take the intersection for all expressions in
                     // the constraint.
                     for(TYPE c_part : C) {
-                        auto [has_vars, min_row, max_row] = nil::crypto3::math::expression_row_range_visitor<var>::row_range(c_part);
+                        auto [has_vars, min_row, max_row] = nil::crypto3::zk::snark::expression_row_range_visitor<var>::row_range(c_part);
                         if (has_vars) { // NB: not having variables seems to be ok for a part of a lookup expression
                             if (max_row - min_row > 2) {
                                 BOOST_LOG_TRIVIAL(warning) << "Expression " << c_part << " in lookup constraint spans over 3 rows!\n";

@@ -338,6 +338,7 @@ namespace nil {
                         : _private_table(std::make_shared<private_table_type>(witnesses_amount))
                         , _public_table(std::make_shared<public_table_type>(public_inputs_amount, constants_amount, selectors_amount)) {
                     }
+                    plonk_table(const plonk_table<FieldType, ColumnType>&) = default;
 
                     crypto3::zk::snark::plonk_table_description<FieldType> get_description() const {
                         return crypto3::zk::snark::plonk_table_description<FieldType>(

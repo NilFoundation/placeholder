@@ -49,8 +49,9 @@ void test_negation_mod_p(
     extended_integral_type x = 0, p = 0, pow = 1;
     // Populate x, p
     for (std::size_t i = 0; i < num_chunks; ++i) {
-        x += extended_integral_type(integral_type(public_input[i].data)) * pow;
-        p += extended_integral_type(integral_type(public_input[i + num_chunks].data)) *
+        x += extended_integral_type(integral_type(public_input[i].to_integral())) * pow;
+        p += extended_integral_type(
+                 integral_type(public_input[i + num_chunks].to_integral())) *
              pow;
         pow <<= bit_size_chunk;
     }
@@ -74,7 +75,7 @@ void test_negation_mod_p(
         extended_integral_type R = 0;
         pow = 1;
         for (std::size_t i = 0; i < num_chunks; i++) {
-            R += extended_integral_type(integral_type(A.r[i].data)) * pow;
+            R += extended_integral_type(integral_type(A.r[i].to_integral())) * pow;
             pow <<= bit_size_chunk;
         }
 #ifdef BLUEPRINT_PLONK_PROFILING_ENABLED
@@ -137,10 +138,13 @@ void negation_mod_p_tests() {
     for (std::size_t i = 0; i < RandomTestsAmount; i++) {
         std::vector<typename BlueprintFieldType::value_type> public_input;
 
-        extended_foreign_integral_type x = extended_foreign_integral_type(foreign_integral_type(generate_random().data)),
-                               extended_base = 1,
-                               ext_pow = extended_base << (num_chunks * bit_size_chunk),
-                               p = NonNativeFieldType::modulus;
+        extended_foreign_integral_type x = extended_foreign_integral_type(
+                                           foreign_integral_type(
+                                               generate_random().to_integral())),
+                                       extended_base = 1,
+                                       ext_pow = extended_base
+                                                 << (num_chunks * bit_size_chunk),
+                                       p = NonNativeFieldType::modulus;
         extended_foreign_integral_type pp = ext_pow - p;
 
         public_input.resize(4 * num_chunks);

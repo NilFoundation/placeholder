@@ -147,28 +147,28 @@ TEST_F(AssignmentTableWriterTest, WriteFullTextAssignment)
         for (auto col = 0; col < table_.witnesses_amount(); col++) {
             auto expected = table_.witness(col)[row];
             auto str = read_stringified_field(mem_stream);
-            ASSERT_EQ(expected.data.str(std::ios_base::hex), str) << "row: " << row << " col: " << col;
+            ASSERT_EQ(expected.to_integral().str(std::ios_base::hex), str) << "row: " << row << " col: " << col;
         }
         read_separator(mem_stream);
 
         for (auto col = 0; col < table_.public_inputs_amount(); col++) {
             auto expected = table_.public_input(col)[row];
             auto str = read_stringified_field(mem_stream);
-            ASSERT_EQ(expected.data.str(std::ios_base::hex), str) << "row: " << row << " col: " << col;
+            ASSERT_EQ(expected.to_integral().str(std::ios_base::hex), str) << "row: " << row << " col: " << col;
         }
         read_separator(mem_stream);
 
         for (auto col = 0; col < table_.constants_amount(); col++) {
             auto expected = table_.constant(col)[row];
             auto str = read_stringified_field(mem_stream);
-            ASSERT_EQ(expected.data.str(std::ios_base::hex), str) << "row: " << row << " col: " << col;
+            ASSERT_EQ(expected.to_integral().str(std::ios_base::hex), str) << "row: " << row << " col: " << col;
         }
         read_separator(mem_stream);
 
         for (auto col = 0; col < table_.selectors_amount(); col++) {
             auto expected = table_.selector(col)[row];
             auto str = read_stringified_field(mem_stream);
-            ASSERT_EQ(expected.data.str(std::ios_base::hex), str) << "row: " << row << " col: " << col;
+            ASSERT_EQ(expected.to_integral().str(std::ios_base::hex), str) << "row: " << row << " col: " << col;
         }
         read_rest_of_line(mem_stream);
     }
@@ -191,7 +191,7 @@ TEST_F(AssignmentTableWriterTest, WritePartialColumns)
         for (auto col = 0; col <= WitnessColumnsToDump; col++) {
             auto expected = table_.witness(col)[row];
             auto str = read_stringified_field(mem_stream);
-            ASSERT_EQ(expected.data.str(std::ios_base::hex), str) << "row: " << row << " col: " << col;
+            ASSERT_EQ(expected.to_integral().str(std::ios_base::hex), str) << "row: " << row << " col: " << col;
         }
 
         read_separator(mem_stream); // witnesses
@@ -231,14 +231,14 @@ TEST_F(AssignmentTableWriterTest, TextWrite_Smoke)
         for (auto col = 0; col <= 2; col++) {
             auto expected = table_.witness(col)[row];
             auto str = read_stringified_field(mem_stream);
-            ASSERT_EQ(expected.data.str(std::ios_base::hex), str) << "row: " << row << " col: " << col;
+            ASSERT_EQ(expected.to_integral().str(std::ios_base::hex), str) << "row: " << row << " col: " << col;
         }
         read_separator(mem_stream); // witnesses
 
         for (auto col = 0; col < table_.public_inputs_amount(); col++) {
             auto expected = table_.public_input(col)[row];
             auto str = read_stringified_field(mem_stream);
-            ASSERT_EQ(expected.data.str(std::ios_base::hex), str) << "row: " << row << " col: " << col;
+            ASSERT_EQ(expected.to_integral().str(std::ios_base::hex), str) << "row: " << row << " col: " << col;
         }
         read_separator(mem_stream); // public inputs
 
@@ -246,12 +246,12 @@ TEST_F(AssignmentTableWriterTest, TextWrite_Smoke)
         for (auto col = 1; col <= 3; col++) {
             auto expected = table_.constant(col)[row];
             auto str = read_stringified_field(mem_stream);
-            ASSERT_EQ(expected.data.str(std::ios_base::hex), str) << "row: " << row << " col: " << col;
+            ASSERT_EQ(expected.to_integral().str(std::ios_base::hex), str) << "row: " << row << " col: " << col;
         }
         for (auto col = 5; col <= 7; col++) {
             auto expected = table_.constant(col)[row];
             auto str = read_stringified_field(mem_stream);
-            ASSERT_EQ(expected.data.str(std::ios_base::hex), str) << "row: " << row << " col: " << col;
+            ASSERT_EQ(expected.to_integral().str(std::ios_base::hex), str) << "row: " << row << " col: " << col;
         }
         read_separator(mem_stream); // constants
 

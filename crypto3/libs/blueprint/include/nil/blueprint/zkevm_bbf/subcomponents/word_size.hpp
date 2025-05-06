@@ -51,8 +51,8 @@ namespace nil {
                     TYPE words, R;
 
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                        words = (integral_type(byte_size_input.data) + 31) / 32;
-                        R = (integral_type(byte_size_input.data) + 31) % 32;
+                        words = (byte_size_input.to_integral() + 31) / 32;
+                        R = (byte_size_input.to_integral() + 31) % 32;
                     }
 
                     allocate(byte_size_input, 0, 0);

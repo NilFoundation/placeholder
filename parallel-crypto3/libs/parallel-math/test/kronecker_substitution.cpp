@@ -57,7 +57,7 @@ BOOST_AUTO_TEST_CASE(standard_polynomial_multiplication) {
     multiplication(c_answer, a, b);
 
     for (std::size_t i = 0; i < c_answer.size(); i++) {
-        BOOST_CHECK_EQUAL(c_answer[i].data, c[i].data);
+        BOOST_CHECK_EQUAL(c_answer[i], c[i]);
     }
 }
 
@@ -73,7 +73,7 @@ BOOST_AUTO_TEST_CASE(squared_polynomial_multiplication) {
     multiplication(c_answer, a, b);
 
     for (std::size_t i = 0; i < c_answer.size(); i++) {
-        BOOST_CHECK_EQUAL(c_answer[i].data, c[i].data);
+        BOOST_CHECK_EQUAL(c_answer[i], c[i]);
     }
 }
 

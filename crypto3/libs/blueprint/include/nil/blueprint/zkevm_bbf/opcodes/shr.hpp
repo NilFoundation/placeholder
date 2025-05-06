@@ -245,9 +245,9 @@ namespace nil {
 
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
                         // caluclate first row carries
-                        auto first_row_carries = first_carryless.data.base() >> 128;
+                        auto first_row_carries = first_carryless.to_integral() >> 128;
 
-                        c_1 = value_type(first_row_carries & (two_64 - 1).data.base());
+                        c_1 = value_type(first_row_carries & (two_64 - 1).to_integral());
                         c_2 = value_type(first_row_carries >> 64);
                         BOOST_ASSERT(first_carryless - c_1 * two_128 - c_2 * two_192 == 0);
                         c_1_chunks = chunk_64_to_16<FieldType>(c_1);

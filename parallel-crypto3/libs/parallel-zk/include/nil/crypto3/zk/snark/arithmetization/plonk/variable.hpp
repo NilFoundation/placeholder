@@ -37,204 +37,209 @@
 #include <map>
 #include <boost/functional/hash.hpp>
 
-namespace nil {
-    namespace crypto3 {
-        namespace math {
+namespace nil::crypto3::zk::snark {
+    /**
+     * Forward declaration.
+     */
+    template<typename VariableType>
+    class term;
 
-            /**
-             * Forward declaration.
-             */
-            template<typename VariableType>
-            class term;
+    /**
+     * Forward declaration.
+     */
+    template<typename VariableType>
+    class expression;
 
-            /**
-             * Forward declaration.
-             */
-            template<typename VariableType>
-            class expression;
-        }    // namespace math
+    /********************************* Variable **********************************/
 
-        namespace zk {
-            namespace snark {
+    /**
+     * A variable represents a formal expression of the form "w^{index}_{rotation}" and type type.
+     */
+    template<typename AssignmentType>
+    class plonk_variable {
 
-                /********************************* Variable **********************************/
+    public:
+        using assignment_type = AssignmentType;
 
-                /**
-                 * A variable represents a formal expression of the form "w^{index}_{rotation}" and type type.
-                 */
-                template<typename AssignmentType>
-                class plonk_variable {
+        enum column_type : std::uint8_t {
+            witness, public_input, constant, selector, uninitialized
+        };
 
-                public:
-                    using assignment_type = AssignmentType;
+        /**
+         * Mnemonic typedefs.
+         */
+        std::size_t index;
+        std::int32_t rotation;
+        bool relative;
+        column_type type;
 
-                    enum column_type : std::uint8_t {
-                        witness, public_input, constant, selector, uninitialized
-                    };
+        constexpr plonk_variable() : index(0), rotation(0), relative(false), type(column_type::uninitialized) {}
 
-                    /**
-                     * Mnemonic typedefs.
-                     */
-                    std::size_t index;
-                    std::int32_t rotation;
-                    bool relative;
-                    column_type type;
+        constexpr plonk_variable(const std::size_t index,
+                                 std::int32_t rotation,
+                                 bool relative = true,
+                                 column_type type = column_type::witness) :
+                index(index),
+                rotation(rotation), relative(relative), type(type) {}
 
-                    constexpr plonk_variable() : index(0), rotation(0), relative(false), type(column_type::uninitialized) {}
+        // Allow conversions from any other variable type.
+        template<typename AnotherAssignmentType>
+        constexpr plonk_variable(const plonk_variable<AnotherAssignmentType>& other)
+                : index(other.index)
+                , rotation(other.rotation)
+                , relative(other.relative)
+                , type(static_cast<column_type>(other.type)) {}
 
-                    constexpr plonk_variable(const std::size_t index,
-                                             std::int32_t rotation,
-                                             bool relative = true,
-                                             column_type type = column_type::witness) :
-                            index(index),
-                            rotation(rotation), relative(relative), type(type) {}
+        expression<plonk_variable<AssignmentType>> pow(const std::size_t power) const {
+            return term<plonk_variable<AssignmentType>>(*this).pow(power);
+        }
 
-                    // Allow conversions from any other variable type.
-                    template<typename AnotherAssignmentType>
-                    constexpr plonk_variable(const plonk_variable<AnotherAssignmentType>& other)
-                            : index(other.index)
-                            , rotation(other.rotation)
-                            , relative(other.relative)
-                            , type(static_cast<column_type>(other.type)) {}
+        term<plonk_variable<AssignmentType>>
+        operator*(const assignment_type &field_coeff) const {
+            return term<plonk_variable<AssignmentType>>(*this) * field_coeff;
+        }
 
-                    math::expression<plonk_variable<AssignmentType>> pow(const std::size_t power) const {
-                        return math::term<plonk_variable<AssignmentType>>(*this).pow(power);
-                    }
+        term<plonk_variable<AssignmentType>> operator*(const plonk_variable &other) const {
+            return term<plonk_variable<AssignmentType>>(*this) * other;
+        }
 
-                    math::term<plonk_variable<AssignmentType>>
-                    operator*(const assignment_type &field_coeff) const {
-                        return math::term<plonk_variable<AssignmentType>>(*this) * field_coeff;
-                    }
+        expression<plonk_variable<AssignmentType>>
+        operator+(const expression<plonk_variable<AssignmentType>> &other) const {
+            expression<plonk_variable<AssignmentType>> result(*this);
+            result += other;
+            return result;
+        }
 
-                    math::term<plonk_variable<AssignmentType>> operator*(const plonk_variable &other) const {
-                        return math::term<plonk_variable<AssignmentType>>(*this) * other;
-                    }
+        expression<plonk_variable<AssignmentType>>
+        operator-(const expression<plonk_variable<AssignmentType>> &other) const {
+            expression<plonk_variable<AssignmentType>> result(*this);
+            result -= other;
+            return result;
+        }
 
-                    math::expression<plonk_variable<AssignmentType>>
-                    operator+(const math::expression<plonk_variable<AssignmentType>> &other) const {
-                        math::expression<plonk_variable<AssignmentType>> result(*this);
-                        result += other;
-                        return result;
-                    }
+        term<plonk_variable<AssignmentType>> operator-() const {
+            return -term<plonk_variable<AssignmentType>>(*this);
+        }
 
-                    math::expression<plonk_variable<AssignmentType>>
-                    operator-(const math::expression<plonk_variable<AssignmentType>> &other) const {
-                        math::expression<plonk_variable<AssignmentType>> result(*this);
-                        result -= other;
-                        return result;
-                    }
+        bool operator==(const plonk_variable &other) const {
+            return ((this->index == other.index) && (this->rotation == other.rotation) &&
+                    this->type == other.type && this->relative == other.relative);
+        }
 
-                    math::term<plonk_variable<AssignmentType>> operator-() const {
-                        return -math::term<plonk_variable<AssignmentType>>(*this);
-                    }
+        bool operator!=(const plonk_variable &other) const {
+            return !(*this == other);
+        }
 
-                    bool operator==(const plonk_variable &other) const {
-                        return ((this->index == other.index) && (this->rotation == other.rotation) &&
-                                this->type == other.type && this->relative == other.relative);
-                    }
+        bool operator<(const plonk_variable &other) const {
+            if (this->index != other.index)
+                return this->index < other.index;
+            if (this->rotation != other.rotation)
+                return this->rotation < other.rotation;
+            if (this->type != other.type)
+                return this->type < other.type;
+            return this->relative < other.relative;
+        }
 
-                    bool operator!=(const plonk_variable &other) const {
-                        return !(*this == other);
-                    }
+        bool operator>(const plonk_variable &other) const {
+            return *this != other && !(*this < other);
+        }
+    };
 
-                    bool operator<(const plonk_variable &other) const {
-                        if (this->index != other.index)
-                            return this->index < other.index;
-                        if (this->rotation != other.rotation)
-                            return this->rotation < other.rotation;
-                        if (this->type != other.type)
-                            return this->type < other.type;
-                        return this->relative < other.relative;
-                    }
+    template<typename AssignmentType, typename LeftType,
+            typename = std::enable_if_t<
+                    std::is_same<LeftType, AssignmentType>::value || std::is_integral<LeftType>::value>>
+    term<plonk_variable<AssignmentType>>
+    operator*(const LeftType &field_coeff, const plonk_variable<AssignmentType> &var) {
+        return var * field_coeff;
+    }
 
-                    bool operator>(const plonk_variable &other) const {
-                        return *this != other && !(*this < other);
-                    }
-                };
+    template<typename AssignmentType, typename LeftType,
+            typename = std::enable_if_t<
+                    std::is_same<LeftType, AssignmentType>::value || std::is_integral<LeftType>::value>>
+    expression<plonk_variable<AssignmentType>>
+    operator+(const LeftType &field_val, const plonk_variable<AssignmentType> &var) {
+        return var + field_val;
+    }
 
-                template<typename AssignmentType, typename LeftType,
-                        typename = std::enable_if_t<
-                                std::is_same<LeftType, AssignmentType>::value || std::is_integral<LeftType>::value>>
-                math::term<plonk_variable<AssignmentType>>
-                operator*(const LeftType &field_coeff, const plonk_variable<AssignmentType> &var) {
-                    return var * field_coeff;
-                }
+    template<typename AssignmentType, typename LeftType,
+            typename = std::enable_if_t<
+                    std::is_same<LeftType, AssignmentType>::value || std::is_integral<LeftType>::value>>
+    expression<plonk_variable<AssignmentType>>
+    operator-(const LeftType &field_val, const plonk_variable<AssignmentType> &var) {
+        return -(var - field_val);
+    }
 
-                template<typename AssignmentType, typename LeftType,
-                        typename = std::enable_if_t<
-                                std::is_same<LeftType, AssignmentType>::value || std::is_integral<LeftType>::value>>
-                math::expression<plonk_variable<AssignmentType>>
-                operator+(const LeftType &field_val, const plonk_variable<AssignmentType> &var) {
-                    return var + field_val;
-                }
+    // Used in the unit test, so we can use BOOST_CHECK_EQUALS, and see
+    // the values of terms, when the check fails.
+    template<typename AssignmentType>
+    std::ostream &operator<<(std::ostream &os, const plonk_variable<AssignmentType> &var) {
+        std::map<typename plonk_variable<AssignmentType>::column_type, std::string> type_map = {
+                {plonk_variable<AssignmentType>::column_type::witness,      "w"},
+                {plonk_variable<AssignmentType>::column_type::public_input, "pub"},
+                {plonk_variable<AssignmentType>::column_type::constant,     "c"},
+                {plonk_variable<AssignmentType>::column_type::selector,     "sel"},
+                {plonk_variable<AssignmentType>::column_type::uninitialized,"NaN"}
+        };
+        os << type_map[var.type] << "_" << var.index;
+        if (!var.relative) {
+            os << "_abs";
+        }
+        if (var.rotation != 0) {
+            os << "_rot(" << var.rotation << ")";
+        }
+        return os;
+    }
 
-                template<typename AssignmentType, typename LeftType,
-                        typename = std::enable_if_t<
-                                std::is_same<LeftType, AssignmentType>::value || std::is_integral<LeftType>::value>>
-                math::expression<plonk_variable<AssignmentType>>
-                operator-(const LeftType &field_val, const plonk_variable<AssignmentType> &var) {
-                    return -(var - field_val);
-                }
+    /**
+     * A non-relative variable with no rotation.
+     */
+    template<typename AssignmentType>
+    class plonk_variable_without_rotation {
 
-                // Used in the unit test, so we can use BOOST_CHECK_EQUALS, and see
-                // the values of terms, when the check fails.
-                template<typename AssignmentType>
-                std::ostream &operator<<(std::ostream &os, const plonk_variable<AssignmentType> &var) {
-                    std::map<typename plonk_variable<AssignmentType>::column_type, std::string> type_map = {
-                            {plonk_variable<AssignmentType>::column_type::witness,      "w"},
-                            {plonk_variable<AssignmentType>::column_type::public_input, "pub"},
-                            {plonk_variable<AssignmentType>::column_type::constant,     "c"},
-                            {plonk_variable<AssignmentType>::column_type::selector,     "sel"},
-                            {plonk_variable<AssignmentType>::column_type::uninitialized,"NaN"}
-                    };
-                    os << type_map[var.type] << "_" << var.index;
-                    if (!var.relative) {
-                        os << "_abs";
-                    }
-                    if (var.rotation != 0) {
-                        os << "_rot(" << var.rotation << ")";
-                    }
-                    return os;
-                }
+    public:
+        using assignment_type = AssignmentType;
 
-                /**
-                 * A non-relative variable with no rotation.
-                 */
-                template<typename AssignmentType>
-                class plonk_variable_without_rotation {
+        enum column_type : std::uint8_t {
+            witness, public_input, constant, selector, uninitialized
+        };
 
-                public:
-                    using assignment_type = AssignmentType;
+        std::size_t index;
+        column_type type;
 
-                    enum column_type : std::uint8_t {
-                        witness, public_input, constant, selector, uninitialized
-                    };
+        constexpr plonk_variable_without_rotation()
+            : index(0)
+            , type(column_type::uninitialized) {}
 
-                    std::size_t index;
-                    column_type type;
+        plonk_variable_without_rotation(const plonk_variable_without_rotation&) = default;
+        plonk_variable_without_rotation(const plonk_variable<AssignmentType>& var)
+            : index(var.index)
+            , type(static_cast<column_type>(var.type)) {}
 
-                    constexpr plonk_variable_without_rotation()
-                        : index(0)
-                        , type(column_type::uninitialized) {}
+        // Allow conversions from any other variable type.
+        template<typename AnotherAssignmentType>
+        constexpr plonk_variable_without_rotation(
+            const plonk_variable_without_rotation<AnotherAssignmentType>& other)
+                : index(other.index)
+                , type(other.type) {}
 
-                    plonk_variable_without_rotation(const plonk_variable_without_rotation&) = default;
-                    plonk_variable_without_rotation(const plonk_variable<AssignmentType>& var)
-                        : index(var.index)
-                        , type(static_cast<column_type>(var.type)) {}
+        auto operator<=>(plonk_variable_without_rotation const &) const = default;
+    };
 
-                    // Allow conversions from any other variable type.
-                    template<typename AnotherAssignmentType>
-                    constexpr plonk_variable_without_rotation(
-                        const plonk_variable_without_rotation<AnotherAssignmentType>& other)
-                            : index(other.index)
-                            , type(other.type) {}
-
-                    auto operator<=>(plonk_variable_without_rotation const &) const = default;
-                };
-            }    // namespace snark
-        }        // namespace zk
-    }            // namespace crypto3
-}    // namespace nil
+    // Used in the unit test, so we can use BOOST_CHECK_EQUALS, and see
+    // the values of terms, when the check fails.
+    template<typename AssignmentType>
+    std::ostream &operator<<(std::ostream &os, const plonk_variable_without_rotation<AssignmentType> &var) {
+        std::map<typename plonk_variable_without_rotation<AssignmentType>::column_type, std::string> type_map = {
+                {plonk_variable_without_rotation<AssignmentType>::column_type::witness,      "w"},
+                {plonk_variable_without_rotation<AssignmentType>::column_type::public_input, "pub"},
+                {plonk_variable_without_rotation<AssignmentType>::column_type::constant,     "c"},
+                {plonk_variable_without_rotation<AssignmentType>::column_type::selector,     "sel"},
+                {plonk_variable_without_rotation<AssignmentType>::column_type::uninitialized,"NaN"}
+        };
+        os << type_map[var.type] << "_" << var.index;
+        return os;
+    }
+} // namespace nil::crypto3::zk::snark
 
 template<typename AssignmentType>
 struct std::hash<nil::crypto3::zk::snark::plonk_variable<AssignmentType>> {
