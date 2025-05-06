@@ -38,7 +38,7 @@
 #include <nil/crypto3/math/polynomial/polynomial_dfs.hpp>
 
 #include <nil/crypto3/math/algorithms/make_evaluation_domain.hpp>
-#include <nil/crypto3/zk/math/dfs_cache.hpp>
+#include <nil/crypto3/zk/math/cached_assignment_table.hpp>
 #include <nil/crypto3/zk/math/dag_expression.hpp>
 #include <nil/crypto3/zk/math/dag_expression_evaluator.hpp>
 
@@ -56,7 +56,7 @@ BOOST_AUTO_TEST_CASE(dag_expression_evaluator_test) {
     using value_type = typename FieldType::value_type;
     using polynomial_dfs_type = math::polynomial_dfs<value_type>;
     using var = plonk_variable<polynomial_dfs_type>;
-    using cached_assignment_table_type = dfs_cache<FieldType>;
+    using cached_assignment_table_type = cached_assignment_table<FieldType>;
 
     test_tools::random_test_initializer<FieldType> random_test_initializer;
 

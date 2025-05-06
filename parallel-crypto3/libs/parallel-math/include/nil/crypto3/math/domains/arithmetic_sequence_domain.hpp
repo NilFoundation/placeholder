@@ -164,7 +164,7 @@ namespace nil {
                     throw std::logic_error{"Not implemented yet"};
                 }
 
-                void batched_inverse_fft(std::vector<std::vector<value_type>> &a) override {
+                void batch_inverse_fft(std::vector<std::vector<value_type>> &a) override {
                     // TODO(martun): implement this.
                     throw std::logic_error{"Not implemented yet"};
                 }

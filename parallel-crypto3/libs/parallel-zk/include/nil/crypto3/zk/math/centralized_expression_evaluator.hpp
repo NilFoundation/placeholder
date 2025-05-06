@@ -37,7 +37,7 @@
 #include <nil/crypto3/math/polynomial/polynomial_dfs.hpp>
 #include <nil/crypto3/math/polynomial/shift.hpp>
 
-#include <nil/crypto3/zk/math/dfs_cache.hpp>
+#include <nil/crypto3/zk/math/cached_assignment_table.hpp>
 #include <nil/crypto3/zk/math/expression.hpp>
 #include <nil/crypto3/zk/math/expression_visitors.hpp>
 #include <nil/crypto3/zk/math/dag_expression.hpp>
@@ -70,7 +70,7 @@ namespace nil::crypto3::zk::snark {
         using value_type = typename FieldType::value_type;
         using polynomial_type = math::polynomial<value_type>;
         using polynomial_dfs_type = math::polynomial_dfs<value_type>;
-        using cached_assignment_table_type = dfs_cache<FieldType>;
+        using cached_assignment_table_type = cached_assignment_table<FieldType>;
 
         static constexpr std::size_t mini_chunk_size = 64;
         using variable_type = plonk_variable<value_type>;
@@ -173,7 +173,7 @@ namespace nil::crypto3::zk::snark {
             _dag_expr_half_degree = _dag_expr_builder_half_degree.build();
 
             // Prepare the cache for calculation, precompute all variable values in required sizes.
-            const size_t extended_domain_size = _cached_assignment_table.original_domain_size * max_degree;
+            const size_t extended_domain_size = _cached_assignment_table.get_original_domain_size() * max_degree;
             _cached_assignment_table.ensure_cache(variables_set_half_degree, extended_domain_size / 2);
             _cached_assignment_table.ensure_cache(variables_set_full_degree, extended_domain_size);
 

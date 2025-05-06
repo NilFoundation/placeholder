@@ -56,7 +56,7 @@ namespace nil::crypto3::zk::snark {
         using value_type = typename FieldType::value_type;
         using polynomial_type = math::polynomial<value_type>;
         using polynomial_dfs_type = math::polynomial_dfs<value_type>;
-        using cached_assignment_table_type = dfs_cache<FieldType>;
+        using cached_assignment_table_type = cached_assignment_table<FieldType>;
 
         static constexpr std::size_t mini_chunk_size = 64;
         using simd_vector_type = math::static_simd_vector<
@@ -84,7 +84,7 @@ namespace nil::crypto3::zk::snark {
          *  The provided cache must already contain all the required variables in the required sizes.
          */
         std::vector<polynomial_dfs_type> evaluate(const cached_assignment_table_type& _cached_assignment_table) {
-            const size_t extended_domain_size = _cached_assignment_table.original_domain_size * _max_degree;
+            const size_t extended_domain_size = _cached_assignment_table.get_original_domain_size() * _max_degree;
 
             // Create empty dfs polynomials of degree 'extended_domain_size - 1' and size 'extended_domain_size'.
             std::vector<polynomial_dfs_type> result;
@@ -92,7 +92,7 @@ namespace nil::crypto3::zk::snark {
             // For each polynomial in the results compute and set the correct degree. This is useful, since in some 
             // cases a poly of degree 3*N is stored in size 4*N, and it is later multiplied by a selector or a poly in lookup argument.
             for (size_t i = 0; i < _expr.get_root_nodes_count(); ++i) {
-                size_t degree = _cached_assignment_table.original_domain_size * _expr.get_root_node_degree(i);
+                size_t degree = _cached_assignment_table.get_original_domain_size() * _expr.get_root_node_degree(i);
                 result.push_back(polynomial_dfs_type(degree - 1, extended_domain_size));
             }
 
