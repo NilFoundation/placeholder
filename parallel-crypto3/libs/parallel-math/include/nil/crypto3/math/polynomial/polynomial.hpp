@@ -106,6 +106,14 @@ namespace nil {
                 polynomial(std::initializer_list<value_type> il, const allocator_type& a) : val(il, a) {
                 }
 
+                template<typename Subfield>
+                polynomial(const polynomial<Subfield>& x) {
+                    val.resize(x.size());
+                    for (std::size_t i = 0; i < val.size(); ++i) {
+                        val[i] = x[i];
+                    }
+                }
+
                 polynomial(polynomial&& x, const allocator_type& a) : val(std::move(x.val), a) {
                 }
 
