@@ -41,6 +41,8 @@ namespace nil {
                 struct pallas_base_field : public field<255> {
                     typedef field<255> policy_type;
 
+                    using small_subfield = pallas_base_field;
+
                     constexpr static const std::size_t modulus_bits = policy_type::modulus_bits;
                     constexpr static const std::size_t number_bits = policy_type::number_bits;
                     constexpr static const std::size_t value_bits = modulus_bits;
