@@ -224,38 +224,38 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
         }
         
         for (std::size_t i = 0; i < chunk_amount; i++) {
-            allocate(input_b_chunks[i], i + chunk_amount, 3);
-            allocate(r_chunks[i], i + chunk_amount, 2);
-            allocate(r_chunks_copy1[i], i + 2 * chunk_amount, 4);
+            // allocate(input_b_chunks[i], i + chunk_amount, 3);
+            // allocate(r_chunks[i], i + chunk_amount, 2);
+            // allocate(r_chunks_copy1[i], i + 2 * chunk_amount, 4);
             allocate(r_chunks_copy2[i], i + 2 * chunk_amount, 6);
-            allocate(r_chunks_copy3[i], i + 2 * chunk_amount, 8);
-            allocate(r_chunks_copy4[i], i, 9);
+            // allocate(r_chunks_copy3[i], i + 2 * chunk_amount, 8);
+            // allocate(r_chunks_copy4[i], i, 9);
             allocate(a_chunks[i], i + chunk_amount, 9);
             allocate(b_chunks[i], i + 2 * chunk_amount, 3);
-            allocate(b_chunks_copy1[i], i + 2 * chunk_amount, 5);
-            allocate(q_chunks[i], i, 5);
+            // allocate(b_chunks_copy1[i], i + 2 * chunk_amount, 5);
+            // allocate(q_chunks[i], i, 5);
             allocate(q_chunks_copy1[i], i + 2 * chunk_amount, 7);
-            allocate(v_chunks[i], i + chunk_amount, 5);
+            // allocate(v_chunks[i], i + chunk_amount, 5);
         }
         for (std::size_t i = 0; i < chunk_8_amount; i++) {
             allocate(b8_chunks[i], i, 6);
-            allocate(b8_chunks_check[i], i, 4);
+            // allocate(b8_chunks_check[i], i, 4);
         }
-        allocate(a_chunks15_copy1, 40, 2);
-        allocate(input_b0_lower, 0, 2);
-        allocate(input_b0_upper, 1, 2);
-        allocate(input_b0_lower_check, 2, 2);
-        allocate(input_b0_upper_check, 3, 2);
-        allocate(upper_inverse, 32, 2);
+        // allocate(a_chunks15_copy1, 40, 2);
+        // allocate(input_b0_lower, 0, 2);
+        // allocate(input_b0_upper, 1, 2);
+        // allocate(input_b0_lower_check, 2, 2);
+        // allocate(input_b0_upper_check, 3, 2);
+        // allocate(upper_inverse, 32, 2);
 
-        for (std::size_t i = 0; i < chunk_amount; i++) {
-            constrain(b_chunks[i] - b_chunks_copy1[i]);
-            constrain(r_chunks[i] - r_chunks_copy1[i]);
-            constrain(r_chunks_copy1[i] - r_chunks_copy2[i]);
-            constrain(r_chunks_copy2[i] - r_chunks_copy3[i]);
-            constrain(r_chunks_copy3[i] - r_chunks_copy4[i]);
-            constrain(q_chunks[i] - q_chunks_copy1[i]);
-        }
+        // for (std::size_t i = 0; i < chunk_amount; i++) {
+        //     constrain(b_chunks[i] - b_chunks_copy1[i]);
+        //     constrain(r_chunks[i] - r_chunks_copy1[i]);
+        //     constrain(r_chunks_copy1[i] - r_chunks_copy2[i]);
+        //     constrain(r_chunks_copy2[i] - r_chunks_copy3[i]);
+        //     constrain(r_chunks_copy3[i] - r_chunks_copy4[i]);
+        //     constrain(q_chunks[i] - q_chunks_copy1[i]);
+        // }
         
         for (std::size_t i = 0; i < chunk_8_amount; i++) {
             mul8_carryless_chunks[i] = carryless_mul(r_chunks_copy2, b8_chunks, i);
@@ -264,17 +264,17 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
                 auto mask8 = (1 << 8) - 1;
                 TYPE prev_carry = (i > 0) ? mul8_carries[i - 1] : 0;
                 mul8_chunks[i] = (mul8_carryless_chunks[i] + prev_carry).to_integral() & mask8;
-                mul8_carries[i] = (mul8_carryless_chunks[i] + prev_carry).to_integral() >> 8;
-                BOOST_ASSERT(mul8_carryless_chunks[i] + prev_carry == mul8_chunks[i] + 256 * mul8_carries[i]);
+                // mul8_carries[i] = (mul8_carryless_chunks[i] + prev_carry).to_integral() >> 8;
+                // BOOST_ASSERT(mul8_carryless_chunks[i] + prev_carry == mul8_chunks[i] + 256 * mul8_carries[i]);
             }
-            allocate(m8_chunks_check[i], i, 10);
+            // allocate(m8_chunks_check[i], i, 10);
             allocate(mul8_chunks[i], i, 8);
-            allocate(mul8_carries[i], i, 7);
+            // allocate(mul8_carries[i], i, 7);
         }
-        constrain(mul8_carryless_chunks[0] - mul8_chunks[0] - mul8_carries[0] * 256);
-        for (std::size_t i = 1; i < chunk_8_amount; i++) {
-            constrain(mul8_carryless_chunks[i] + mul8_carries[i-1] - mul8_chunks[i] - mul8_carries[i] * 256);
-        }
+        // constrain(mul8_carryless_chunks[0] - mul8_chunks[0] - mul8_carries[0] * 256);
+        // for (std::size_t i = 1; i < chunk_8_amount; i++) {
+        //     constrain(mul8_carryless_chunks[i] + mul8_carries[i-1] - mul8_chunks[i] - mul8_carries[i] * 256);
+        // }
         
         
         for (std::size_t i = 0; i < chunk_amount; i++) {
@@ -288,277 +288,276 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
             allocate(construct_carries[i], i + 2 * chunk_amount, 9); // TODO: do I need to constrain these?
         }
         // TODO: these are also problematic
-        // TODO: use the same strategy as with more_carries?
-        // constrain(construct_carryless_chunks[0] - construct_carries[0] * two_16);
-        // for (std::size_t i = 1; i < 16; i++) {
-        //     constrain(construct_carryless_chunks[i] + construct_carries[i-1] - construct_carries[i] * two_16 );
+        constrain(construct_carryless_chunks[0] - construct_carries[0] * two_16);
+        for (std::size_t i = 1; i < 16; i++) {
+            constrain(construct_carryless_chunks[i] + construct_carries[i-1] - construct_carries[i] * two_16 );
+        }
+
+        // constrain(input_b0_lower * 256 - input_b0_lower_check);
+        // constrain(input_b0_upper * 256 - input_b0_upper_check);
+        // // input_b_chunks[0] is decomposed into input_b0_lower, input_b0_upper
+        // constrain(input_b_chunks[0] - input_b0_lower - 256 * input_b0_upper);
+
+        // // allocation and decomposition of shift_value
+        // allocate(shift_value, 37, 2);
+        // allocate(shift_lower, 4, 2);
+        // allocate(shift_upper, 5, 2);
+
+        // // shift_lower and shift_upper are 4-bit values
+        // shift_lower_check = 4096 * shift_lower;
+        // shift_upper_check = 4096 * shift_upper;
+        // allocate(shift_lower_check, 6, 2);
+        // allocate(shift_upper_check, 7, 2);
+
+        // // shift_value is decomposed into shift_lower, shift_higher
+        // constrain(shift_value - shift_lower - 16 * shift_upper);
+
+        // // b_partial_sum is the sum of all 16-bit chunks of input_b, except for the least significant chunk. 
+        // // We use b_partial_sum as an aggregate way of checking whether all of these chunks are 0. 
+
+        // // This works because it is a sum of non-negative values that cannot overflow. 
+        // // b_partial_sum < (chunk_amount-1) * max_i {input_b_chunks[i]} < 2^4 * 2^16 = 2^20.
+
+        // // // Calculate partial sum and inverse
+        // input_b_partial_sum = 0;
+        // for (std::size_t i = 1; i < chunk_amount; i++) {
+        //      input_b_partial_sum += input_b_chunks[i];
         // }
 
-        constrain(input_b0_lower * 256 - input_b0_lower_check);
-        constrain(input_b0_upper * 256 - input_b0_upper_check);
-        // input_b_chunks[0] is decomposed into input_b0_lower, input_b0_upper
-        constrain(input_b_chunks[0] - input_b0_lower - 256 * input_b0_upper);
+        // if constexpr (stage == GenerationStage::ASSIGNMENT) {
+        //     sum_inverse_partial = input_b_partial_sum.is_zero() ? 0 : input_b_partial_sum.inversed();
+        // }
 
-        // allocation and decomposition of shift_value
-        allocate(shift_value, 37, 2);
-        allocate(shift_lower, 4, 2);
-        allocate(shift_upper, 5, 2);
+        // // sum_inverse_partial is the inverse of b_partial_sum, unless this is zero
+        // allocate(sum_inverse_partial, 34, 2);
+        // // partial_sum_check = 0  <=>  input_b_partial_sum > 0,
+        // // partial_sum_check = 1  <=>  input_b_partial_sum = 0.
+        // TYPE partial_sum_check = 1 - input_b_partial_sum * sum_inverse_partial;
+        // allocate(partial_sum_check, 35, 2);
+        // // either input_b_partial_sum = 0 (i.e. all chunks except for the least significant are 0), or partial_sum_check = 0
+        // constrain(input_b_partial_sum * partial_sum_check);   
 
-        // shift_lower and shift_upper are 4-bit values
-        shift_lower_check = 4096 * shift_lower;
-        shift_upper_check = 4096 * shift_upper;
-        allocate(shift_lower_check, 6, 2);
-        allocate(shift_upper_check, 7, 2);
-
-        // shift_value is decomposed into shift_lower, shift_higher
-        constrain(shift_value - shift_lower - 16 * shift_upper);
-
-        // b_partial_sum is the sum of all 16-bit chunks of input_b, except for the least significant chunk. 
-        // We use b_partial_sum as an aggregate way of checking whether all of these chunks are 0. 
-
-        // This works because it is a sum of non-negative values that cannot overflow. 
-        // b_partial_sum < (chunk_amount-1) * max_i {input_b_chunks[i]} < 2^4 * 2^16 = 2^20.
-
-        // // Calculate partial sum and inverse
-        input_b_partial_sum = 0;
-        for (std::size_t i = 1; i < chunk_amount; i++) {
-             input_b_partial_sum += input_b_chunks[i];
-        }
-
-        if constexpr (stage == GenerationStage::ASSIGNMENT) {
-            sum_inverse_partial = input_b_partial_sum.is_zero() ? 0 : input_b_partial_sum.inversed();
-        }
-
-        // sum_inverse_partial is the inverse of b_partial_sum, unless this is zero
-        allocate(sum_inverse_partial, 34, 2);
-        // partial_sum_check = 0  <=>  input_b_partial_sum > 0,
-        // partial_sum_check = 1  <=>  input_b_partial_sum = 0.
-        TYPE partial_sum_check = 1 - input_b_partial_sum * sum_inverse_partial;
-        allocate(partial_sum_check, 35, 2);
-        // either input_b_partial_sum = 0 (i.e. all chunks except for the least significant are 0), or partial_sum_check = 0
-        constrain(input_b_partial_sum * partial_sum_check);   
-
-        // connection of shift_value with input_b_chunks[0]
-        // is_shift_large = 0  <=>  input_b > 255
-        // is_shift_large = 1  <=>  input_b <= 255
+        // // connection of shift_value with input_b_chunks[0]
+        // // is_shift_large = 0  <=>  input_b > 255
+        // // is_shift_large = 1  <=>  input_b <= 255
         
-        // the shift is large (> 255 bits) if one of these conditions hold:
-        //  - b0_upper has an inverse, and thus is non-zero.
-        //  - partial_sum_check = 0, which means that some 16-bit chunk of input_b beyond the least significant one is non-zero.
-        is_shift_large = (1 - input_b0_upper * upper_inverse) * partial_sum_check; // 0 if shift >= 256, 1 otherwise
-        allocate(is_shift_large, 36, 2);
+        // // the shift is large (> 255 bits) if one of these conditions hold:
+        // //  - b0_upper has an inverse, and thus is non-zero.
+        // //  - partial_sum_check = 0, which means that some 16-bit chunk of input_b beyond the least significant one is non-zero.
+        // is_shift_large = (1 - input_b0_upper * upper_inverse) * partial_sum_check; // 0 if shift >= 256, 1 otherwise
+        // allocate(is_shift_large, 36, 2);
 
-        // Ensure that shift_value matches input_b, or 255 in the case of a large shift.
-        constrain( (1 - is_shift_large) * (shift_value - 255) + is_shift_large * (shift_value - input_b_chunks[0]) );
+        // // Ensure that shift_value matches input_b, or 255 in the case of a large shift.
+        // constrain( (1 - is_shift_large) * (shift_value - 255) + is_shift_large * (shift_value - input_b_chunks[0]) );
 
-        // indicator functions
-        for (std::size_t i = 0; i < chunk_amount; i++) {
-            if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                // is zero when shift_lower = i.
-                indic_1[i] = (shift_lower - i).is_zero()
-                                    ? 0
-                                    : (shift_lower - i).inversed();
-                // same as above, but for shift_upper
-                indic_2[i] = (shift_upper - i).is_zero()
-                                    ? 0
-                                    : (shift_upper - i).inversed();
-            }
-            allocate(indic_1[i], i + 2 * chunk_amount, 0);
-            allocate(indic_2[i], i + 2 * chunk_amount, 1);
-            // indic_1[i] = 0                        =>  shift_lower = i       // AFAICS the other implication is not enforced. Is this a problem?
-            // indic_1[i] = (shift_lower - i)^(-1)  <=>  shift_lower != i
-            // same for indic_2.
-            constrain((shift_lower - i) * (1 - (shift_lower - i) * indic_1[i]));
-            constrain((shift_upper - i) * (1 - (shift_upper - i) * indic_2[i]));
-        }
+        // // indicator functions
+        // for (std::size_t i = 0; i < chunk_amount; i++) {
+        //     if constexpr (stage == GenerationStage::ASSIGNMENT) {
+        //         // is zero when shift_lower = i.
+        //         indic_1[i] = (shift_lower - i).is_zero()
+        //                             ? 0
+        //                             : (shift_lower - i).inversed();
+        //         // same as above, but for shift_upper
+        //         indic_2[i] = (shift_upper - i).is_zero()
+        //                             ? 0
+        //                             : (shift_upper - i).inversed();
+        //     }
+        //     allocate(indic_1[i], i + 2 * chunk_amount, 0);
+        //     allocate(indic_2[i], i + 2 * chunk_amount, 1);
+        //     // indic_1[i] = 0                        =>  shift_lower = i       // AFAICS the other implication is not enforced. Is this a problem?
+        //     // indic_1[i] = (shift_lower - i)^(-1)  <=>  shift_lower != i
+        //     // same for indic_2.
+        //     constrain((shift_lower - i) * (1 - (shift_lower - i) * indic_1[i]));
+        //     constrain((shift_upper - i) * (1 - (shift_upper - i) * indic_2[i]));
+        // }
 
-        // Calculate power series for shift_lower. 
-        // We will place this in the correct chunk to recover b = 2^(shift_value)
-        shift_power = 0;
-        unsigned int pow = 1;
-        // shift_power = 2^(shift_lower)
-        for (std::size_t i = 0; i < chunk_amount; i++) {
-            shift_power += (1 - (shift_lower - i) * indic_1[i]) * pow;
-            pow *= 2;
-        }
-        allocate(shift_power, 38, 2);
+        // // Calculate power series for shift_lower. 
+        // // We will place this in the correct chunk to recover b = 2^(shift_value)
+        // shift_power = 0;
+        // unsigned int pow = 1;
+        // // shift_power = 2^(shift_lower)
+        // for (std::size_t i = 0; i < chunk_amount; i++) {
+        //     shift_power += (1 - (shift_lower - i) * indic_1[i]) * pow;
+        //     pow *= 2;
+        // }
+        // allocate(shift_power, 38, 2);
 
-        // connection between b_chunks and input_b_chunks (implicitly via shift_lower & shift_upper)
-        // Recall that b is the actual shift performed, in power-of-2 form.
-        for (std::size_t i = 0; i < chunk_amount; i++) {
-            // b_chunks[i] = shift_power * (1 - (shift_upper - i) * indic_2[i]) 
-            // shift_upper = i   <=>  b_chunks[i] = shift_power = 2^(shift_lower)
-            // shift_upper != i  <=>  b_chunks[i] = 0
-            constrain(b_chunks[i] - shift_power * (1 - (shift_upper - i) * indic_2[i]));
-        }
+        // // connection between b_chunks and input_b_chunks (implicitly via shift_lower & shift_upper)
+        // // Recall that b is the actual shift performed, in power-of-2 form.
+        // for (std::size_t i = 0; i < chunk_amount; i++) {
+        //     // b_chunks[i] = shift_power * (1 - (shift_upper - i) * indic_2[i]) 
+        //     // shift_upper = i   <=>  b_chunks[i] = shift_power = 2^(shift_lower)
+        //     // shift_upper != i  <=>  b_chunks[i] = 0
+        //     constrain(b_chunks[i] - shift_power * (1 - (shift_upper - i) * indic_2[i]));
+        // }
 
-        // Examples of the above. 
+        // // Examples of the above. 
         
-        // 4-bit shift.
-        // shift_lower = 4
-        // shift_upper = 0
-        // indic_1[4] = 0, and indic_1[i] = (shift_lower - 4)^(-1) for all other i.
-        // indic_2[0] = 0, and indic_2[i] = (shift_upper - 0)^(-1) for all other i.
-        // shift_power = 2^4
-        // b_chunks[0] = 2^4, and b_chunks[i] = 0 for all other i.
+        // // 4-bit shift.
+        // // shift_lower = 4
+        // // shift_upper = 0
+        // // indic_1[4] = 0, and indic_1[i] = (shift_lower - 4)^(-1) for all other i.
+        // // indic_2[0] = 0, and indic_2[i] = (shift_upper - 0)^(-1) for all other i.
+        // // shift_power = 2^4
+        // // b_chunks[0] = 2^4, and b_chunks[i] = 0 for all other i.
 
-        // 128-bit shift.
-        // shift_lower = 0
-        // shift_upper = 8
-        // indic_1[0] = 0, and indic_1[i] = (shift_lower - 0)^(-1) for all other i.
-        // indic_2[8] = 0, and indic_1[i] = (shift_lower - 8)^(-1) for all other i.
-        // shift_power = 2^0 = 1.
-        // b_chunks[8] = 1, and b_chunks[i] = 0 for all other i.
-        // That is, b = 0b_1..(followed by 8 chunks of 16 zeros) = 2^128.
+        // // 128-bit shift.
+        // // shift_lower = 0
+        // // shift_upper = 8
+        // // indic_1[0] = 0, and indic_1[i] = (shift_lower - 0)^(-1) for all other i.
+        // // indic_2[8] = 0, and indic_1[i] = (shift_lower - 8)^(-1) for all other i.
+        // // shift_power = 2^0 = 1.
+        // // b_chunks[8] = 1, and b_chunks[i] = 0 for all other i.
+        // // That is, b = 0b_1..(followed by 8 chunks of 16 zeros) = 2^128.
 
-        // 167-bit shift.
-        // 167 = 10 * 2^4 + 7
-        // shift_lower = 7
-        // shift_upper = 10
-        // indic_1[7]  = 0, and indic_1[i] = (shift_lower - 7)^(-1)  for all other i.
-        // indic_2[10] = 0, and indic_2[i] = (shift_upper - 10)^(-1) for all other i.
-        // shift_power = 2^7 
-        // b_chunks[10] = 2^7, and b_chunks[i] = 0 for all other i.
-        // That is, b = 2^7..(followed by 10 chunks of 16 zeros) = 2^7 * 2^(10*16) = 2^167.
+        // // 167-bit shift.
+        // // 167 = 10 * 2^4 + 7
+        // // shift_lower = 7
+        // // shift_upper = 10
+        // // indic_1[7]  = 0, and indic_1[i] = (shift_lower - 7)^(-1)  for all other i.
+        // // indic_2[10] = 0, and indic_2[i] = (shift_upper - 10)^(-1) for all other i.
+        // // shift_power = 2^7 
+        // // b_chunks[10] = 2^7, and b_chunks[i] = 0 for all other i.
+        // // That is, b = 2^7..(followed by 10 chunks of 16 zeros) = 2^7 * 2^(10*16) = 2^167.
 
-        // Carry propagation constraints for the v + b = q + 2^256 equality
-        if constexpr (stage == GenerationStage::ASSIGNMENT) {
-            for (std::size_t i = 0; i < chunk_amount - 1; i++) {
-                TYPE prev_carry = (i > 0) ? more_carries[i-1] : 0;
-                more_carries[i] = (v_chunks[i] + b_chunks_copy1[i] + prev_carry).to_integral() >> 16;
-            }
-        }
+        // // Carry propagation constraints for the v + b = q + 2^256 equality
+        // if constexpr (stage == GenerationStage::ASSIGNMENT) {
+        //     for (std::size_t i = 0; i < chunk_amount - 1; i++) {
+        //         TYPE prev_carry = (i > 0) ? more_carries[i-1] : 0;
+        //         more_carries[i] = (v_chunks[i] + b_chunks_copy1[i] + prev_carry).to_integral() >> 16;
+        //     }
+        // }
 
-        for (std::size_t i = 0; i < chunk_amount - 1; i++) {
-            allocate(more_carries[i], i, 3);
-        }
-        constrain(v_chunks[0] + b_chunks_copy1[0] - q_chunks[0] - more_carries[0] * two_16);
-        constrain(more_carries[0] * (1 - more_carries[0]));
-        for (std::size_t i = 1; i < chunk_amount - 2; i++) {
-            constrain(v_chunks[i] + b_chunks_copy1[i] + more_carries[i - 1] - q_chunks[i] - more_carries[i] * two_16);
-            constrain(more_carries[i] * (1 - more_carries[i]));
-        }
-        constrain(v_chunks[chunk_amount - 1] + b_chunks_copy1[chunk_amount - 1] + more_carries[chunk_amount - 2] - q_chunks[chunk_amount - 1] - two_16);
+        // for (std::size_t i = 0; i < chunk_amount - 1; i++) {
+        //     allocate(more_carries[i], i, 3);
+        // }
+        // constrain(v_chunks[0] + b_chunks_copy1[0] - q_chunks[0] - more_carries[0] * two_16);
+        // constrain(more_carries[0] * (1 - more_carries[0]));
+        // for (std::size_t i = 1; i < chunk_amount - 2; i++) {
+        //     constrain(v_chunks[i] + b_chunks_copy1[i] + more_carries[i - 1] - q_chunks[i] - more_carries[i] * two_16);
+        //     constrain(more_carries[i] * (1 - more_carries[i]));
+        // }
+        // constrain(v_chunks[chunk_amount - 1] + b_chunks_copy1[chunk_amount - 1] + more_carries[chunk_amount - 2] - q_chunks[chunk_amount - 1] - two_16);
 
-        // Sign extension handling
-        for (std::size_t i = 0; i < chunk_amount; i++) {
-            // allocate(y_chunks[i], i + chunk_amount, 3);
-            allocate(y_chunks[i], i, 1);
-            res[i] = y_chunks[i];
-        }
+        // // Sign extension handling
+        // for (std::size_t i = 0; i < chunk_amount; i++) {
+        //     // allocate(y_chunks[i], i + chunk_amount, 3);
+        //     allocate(y_chunks[i], i, 1);
+        //     res[i] = y_chunks[i];
+        // }
 
-        // allocate(sign_bit, 15, 3);
+        // // allocate(sign_bit, 15, 3);
+        // // constrain(sign_bit * (1 - sign_bit));  // Ensure sign_bit is 0 or 1
+        // // lower_chunk_bits = a_chunks[15] - sign_bit * two_15;
+        // // allocate(lower_chunk_bits, 14, 3);
+        // // // Ensure that the highest chunk (without the sign bit) is 15-bits.
+        // // lower_bits_range = 2 * lower_chunk_bits;
+
+        // allocate(sign_bit, 41, 2);
         // constrain(sign_bit * (1 - sign_bit));  // Ensure sign_bit is 0 or 1
-        // lower_chunk_bits = a_chunks[15] - sign_bit * two_15;
-        // allocate(lower_chunk_bits, 14, 3);
+        // lower_chunk_bits = a_chunks15_copy1 - sign_bit * two_15;
+        // allocate(lower_chunk_bits, 8, 2);
         // // Ensure that the highest chunk (without the sign bit) is 15-bits.
         // lower_bits_range = 2 * lower_chunk_bits;
+        // allocate(lower_bits_range, 9, 2);
 
-        allocate(sign_bit, 41, 2);
-        constrain(sign_bit * (1 - sign_bit));  // Ensure sign_bit is 0 or 1
-        lower_chunk_bits = a_chunks15_copy1 - sign_bit * two_15;
-        allocate(lower_chunk_bits, 8, 2);
-        // Ensure that the highest chunk (without the sign bit) is 15-bits.
-        lower_bits_range = 2 * lower_chunk_bits;
-        allocate(lower_bits_range, 9, 2);
+        // // Sign extension logic
+        // // is_sign[i] signals whether a chunk should be completely filled with sign bits
+        // // is_transition[i] signals whether a chunk has some sign bits and some "meaningful" bits
+        // std::vector<TYPE> is_transition(chunk_amount);
+        // std::vector<TYPE> is_sign(chunk_amount);
+        // for (std::size_t i = 0; i < chunk_amount; i++) {
+        //     // To know in which chunk the transition happens, we just need to look at shift_upper
+        //     // Small shift means the transition happens in most significant chunks, and vice versa. Hence the index reversal.
+        //     // indic_2[i_inv] = 0                           => shift_upper = i_inv  => is_transition[i] = 1
+        //     // indic_2[i_inv] = (shift_upper - i_inv)^(-1)  => shift_upper != i     => is_transition[i] = 0
+        //     size_t i_inv = chunk_amount - 1 - i;
+        //     is_transition[i] = (1 - (shift_upper - i_inv) * indic_2[i_inv]);
+        //     // Let i* be the unique index such that is_transition[i*] = 1.
+        //     // is_sign[i] = {
+        //     //      0 <=> i <= i*
+        //     //      1 <=> i > i*    
+        //     // }
+        //     for (std::size_t j = i + 1; j < chunk_amount; j++) {
+        //         is_sign[j] += is_transition[i];
+        //     }
+        // }
 
-        // Sign extension logic
-        // is_sign[i] signals whether a chunk should be completely filled with sign bits
-        // is_transition[i] signals whether a chunk has some sign bits and some "meaningful" bits
-        std::vector<TYPE> is_transition(chunk_amount);
-        std::vector<TYPE> is_sign(chunk_amount);
-        for (std::size_t i = 0; i < chunk_amount; i++) {
-            // To know in which chunk the transition happens, we just need to look at shift_upper
-            // Small shift means the transition happens in most significant chunks, and vice versa. Hence the index reversal.
-            // indic_2[i_inv] = 0                           => shift_upper = i_inv  => is_transition[i] = 1
-            // indic_2[i_inv] = (shift_upper - i_inv)^(-1)  => shift_upper != i     => is_transition[i] = 0
-            size_t i_inv = chunk_amount - 1 - i;
-            is_transition[i] = (1 - (shift_upper - i_inv) * indic_2[i_inv]);
-            // Let i* be the unique index such that is_transition[i*] = 1.
-            // is_sign[i] = {
-            //      0 <=> i <= i*
-            //      1 <=> i > i*    
-            // }
-            for (std::size_t j = i + 1; j < chunk_amount; j++) {
-                is_sign[j] += is_transition[i];
-            }
-        }
+        // // Calculate transition chunk
+        // // indic_2[i_inv] = (shift_upper - i_inv)^(-1)  => transition_chunk = r_chunks[i] + (sign mask -- more on this below)
+        // transition_chunk = 0;
+        // // shift_upper determines which chunk is the transition chunk
+        // for (std::size_t i = 0; i < chunk_amount; i++) {
+        //     size_t i_inv = chunk_amount - 1 - i;
+        //     transition_chunk +=
+        //         r_chunks[i] * (1 - (shift_upper - i_inv) * indic_2[i_inv]);
+        // }
+        // // shift_lower determines which exact mask should be added (how many sign bits)
+        // for (std::size_t i = 0; i < chunk_amount; i++) {
+        //     // It's really the chunk_size, not chunk_amount that matters, although in this case they're the same.
+        //     unsigned int mask = ((1 << i) - 1) << (chunk_amount - i); // 11...1100...00 = 1{i}0{chunk_amount - i}
+        //     transition_chunk +=
+        //         (1 - (shift_lower - i) * indic_1[i]) * mask * sign_bit;
+        // }
+        // // allocate(transition_chunk, 38, 1);
+        // allocate(transition_chunk, 39, 2);
 
-        // Calculate transition chunk
-        // indic_2[i_inv] = (shift_upper - i_inv)^(-1)  => transition_chunk = r_chunks[i] + (sign mask -- more on this below)
-        transition_chunk = 0;
-        // shift_upper determines which chunk is the transition chunk
-        for (std::size_t i = 0; i < chunk_amount; i++) {
-            size_t i_inv = chunk_amount - 1 - i;
-            transition_chunk +=
-                r_chunks[i] * (1 - (shift_upper - i_inv) * indic_2[i_inv]);
-        }
-        // shift_lower determines which exact mask should be added (how many sign bits)
-        for (std::size_t i = 0; i < chunk_amount; i++) {
-            // It's really the chunk_size, not chunk_amount that matters, although in this case they're the same.
-            unsigned int mask = ((1 << i) - 1) << (chunk_amount - i); // 11...1100...00 = 1{i}0{chunk_amount - i}
-            transition_chunk +=
-                (1 - (shift_lower - i) * indic_1[i]) * mask * sign_bit;
-        }
-        // allocate(transition_chunk, 38, 1);
-        allocate(transition_chunk, 39, 2);
-
-        // connect the result (y_chunks) with r_chunks and sign_bit
-        for (std::size_t i = 0; i < chunk_amount; i++) {
-            constrain(
-                // Recall that y = r + sign extension. We adjust the chunks of y accordingly.
-                // is_sign[i] = 1           => y_chunks[i] = 0x0000 or 0xFFFF (depending on sign_bit)
-                // is_transition[i] = 1     => y_chunks[i] = transition
-                // both of the above are 0  => y_chunks[i] = r_chunks[i] 
-                y_chunks[i] - is_sign[i] * sign_bit * 0xFFFF  // Sign fill
-                - is_transition[i] * transition_chunk  // Transition chunk
-                - (1 - is_sign[i] - is_transition[i]) * r_chunks[i]);  // Original chunks
-        }
+        // // connect the result (y_chunks) with r_chunks and sign_bit
+        // for (std::size_t i = 0; i < chunk_amount; i++) {
+        //     constrain(
+        //         // Recall that y = r + sign extension. We adjust the chunks of y accordingly.
+        //         // is_sign[i] = 1           => y_chunks[i] = 0x0000 or 0xFFFF (depending on sign_bit)
+        //         // is_transition[i] = 1     => y_chunks[i] = transition
+        //         // both of the above are 0  => y_chunks[i] = r_chunks[i] 
+        //         y_chunks[i] - is_sign[i] * sign_bit * 0xFFFF  // Sign fill
+        //         - is_transition[i] * transition_chunk  // Transition chunk
+        //         - (1 - is_sign[i] - is_transition[i]) * r_chunks[i]);  // Original chunks
+        // }
     
-        // Convert to 128-bit chunks for stack operations
-        auto A_128 = chunks16_to_chunks128_reversed<TYPE>(a_chunks);
-        auto B_128 = chunks16_to_chunks128_reversed<TYPE>(input_b_chunks);
-        auto Res_128 = chunks16_to_chunks128_reversed<TYPE>(res);
+        // // Convert to 128-bit chunks for stack operations
+        // auto A_128 = chunks16_to_chunks128_reversed<TYPE>(a_chunks);
+        // auto B_128 = chunks16_to_chunks128_reversed<TYPE>(input_b_chunks);
+        // auto Res_128 = chunks16_to_chunks128_reversed<TYPE>(res);
 
-        TYPE A0, A1, B0, B1, Res0, Res1;
-        A0 = A_128.first;
-        A1 = A_128.second;
-        B0 = B_128.first;
-        B1 = B_128.second;
-        Res0 = Res_128.first;
-        Res1 = Res_128.second;
+        // TYPE A0, A1, B0, B1, Res0, Res1;
+        // A0 = A_128.first;
+        // A1 = A_128.second;
+        // B0 = B_128.first;
+        // B1 = B_128.second;
+        // Res0 = Res_128.first;
+        // Res1 = Res_128.second;
 
-        if constexpr (stage == GenerationStage::CONSTRAINTS) {
-            // State transition constraints
-            constrain(current_state.pc_next() - current_state.pc(10) -
-                      1);  // PC increment
-            constrain(current_state.gas(10) - current_state.gas_next() -
-                      3);  // Gas cost
-            constrain(current_state.stack_size(10) -
-                      current_state.stack_size_next() - 1);  // Stack pop
-            constrain(current_state.memory_size(10) -
-                      current_state.memory_size_next());  // Memory unchanged
-            constrain(current_state.rw_counter_next() -
-                      current_state.rw_counter(10) - 3);  // RW counter
+        // if constexpr (stage == GenerationStage::CONSTRAINTS) {
+        //     // State transition constraints
+        //     constrain(current_state.pc_next() - current_state.pc(10) -
+        //               1);  // PC increment
+        //     constrain(current_state.gas(10) - current_state.gas_next() -
+        //               3);  // Gas cost
+        //     constrain(current_state.stack_size(10) -
+        //               current_state.stack_size_next() - 1);  // Stack pop
+        //     constrain(current_state.memory_size(10) -
+        //               current_state.memory_size_next());  // Memory unchanged
+        //     constrain(current_state.rw_counter_next() -
+        //               current_state.rw_counter(10) - 3);  // RW counter
 
-            // TODO: these make tests crash, even though I haven't changed anything in here
-            // Stack lookup constraints
-            // std::vector<TYPE> tmp;
-            // tmp = rw_table<FieldType, stage>::stack_lookup(
-            //     current_state.call_id(1), current_state.stack_size(1) - 1,
-            //     current_state.rw_counter(1), TYPE(0), B0, B1);
-            // lookup(tmp, "zkevm_rw");
-            // tmp = rw_table<FieldType, stage>::stack_lookup(
-            //     current_state.call_id(1), current_state.stack_size(1) - 2,
-            //     current_state.rw_counter(1) + 1, TYPE(0), A0, A1);
-            // lookup(tmp, "zkevm_rw");
-            // tmp = rw_table<FieldType, stage>::stack_lookup(
-            //     current_state.call_id(3), current_state.stack_size(3) - 2,
-            //     current_state.rw_counter(3) + 2, TYPE(1), Res0, Res1);
-            // lookup(tmp, "zkevm_rw");
+        //     // TODO: these make tests crash, even though I haven't changed anything in here
+        //     // Stack lookup constraints
+        //     // std::vector<TYPE> tmp;
+        //     // tmp = rw_table<FieldType, stage>::stack_lookup(
+        //     //     current_state.call_id(1), current_state.stack_size(1) - 1,
+        //     //     current_state.rw_counter(1), TYPE(0), B0, B1);
+        //     // lookup(tmp, "zkevm_rw");
+        //     // tmp = rw_table<FieldType, stage>::stack_lookup(
+        //     //     current_state.call_id(1), current_state.stack_size(1) - 2,
+        //     //     current_state.rw_counter(1) + 1, TYPE(0), A0, A1);
+        //     // lookup(tmp, "zkevm_rw");
+        //     // tmp = rw_table<FieldType, stage>::stack_lookup(
+        //     //     current_state.call_id(3), current_state.stack_size(3) - 2,
+        //     //     current_state.rw_counter(3) + 2, TYPE(1), Res0, Res1);
+        //     // lookup(tmp, "zkevm_rw");
 
-            // TODO: add lookup for a_chunks15_copy1
-        }
+        //     // TODO: add lookup for a_chunks15_copy1
+        // }
     }
 };
 
