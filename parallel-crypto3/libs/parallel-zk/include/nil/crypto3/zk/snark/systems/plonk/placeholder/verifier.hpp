@@ -55,29 +55,35 @@ namespace nil {
             namespace snark {
                 template<typename FieldType, typename ParamsType>
                 class placeholder_verifier {
-                    using transcript_hash_type = typename ParamsType::transcript_hash_type;
+                    using SmallFieldType = typename FieldType::small_subfield;
+                    using transcript_hash_type =
+                        typename ParamsType::transcript_hash_type;
                     using policy_type = detail::placeholder_policy<FieldType, ParamsType>;
-                    using public_preprocessor_type = placeholder_public_preprocessor<FieldType, ParamsType>;
+                    using public_preprocessor_type =
+                        placeholder_public_preprocessor<SmallFieldType, ParamsType>;
 
                     using proof_type = placeholder_proof<FieldType, ParamsType>;
-                    using commitment_scheme_type = typename ParamsType::commitment_scheme_type;
-                    using commitment_type = typename commitment_scheme_type::commitment_type;
+                    using commitment_scheme_type =
+                        typename ParamsType::commitment_scheme_type;
+                    using commitment_type =
+                        typename commitment_scheme_type::commitment_type;
                     using eval_storage_type = commitments::eval_storage<FieldType>;
-                    using transcript_type = typename commitment_scheme_type::transcript_type;
+                    using transcript_type =
+                        typename commitment_scheme_type::transcript_type;
 
                     constexpr static const std::size_t gate_parts = 1;
                     constexpr static const std::size_t permutation_parts = 3;
                     constexpr static const std::size_t lookup_parts = 4;
                     constexpr static const std::size_t f_parts = 8;
 
-                public:
-
-                    // TODO(martun): this function is pretty similar to the one in prover, we should de-duplicate it.
+                  public:
+                    // TODO(martun): this function is pretty similar to the one in prover,
+                    // we should de-duplicate it.
                     static void generate_evaluation_points(
                         commitment_scheme_type &_commitment_scheme,
                         const typename public_preprocessor_type::preprocessed_data_type::common_data_type &common_data,
-                        const plonk_constraint_system<FieldType> &constraint_system,
-                        const plonk_table_description<FieldType> &table_description,
+                        const plonk_constraint_system<SmallFieldType> &constraint_system,
+                        const plonk_table_description<SmallFieldType> &table_description,
                         const typename FieldType::value_type& challenge,
                         bool _is_lookup_enabled
                     ) {
@@ -186,15 +192,15 @@ namespace nil {
                     // Takes out values of different polynomials at challenge point 'Y' from the evaluation proofs.
                     // All arguments except 'Z' and 'constraint_system' are output arguments.
                     static inline void prepare_verifier_inputs(
-                            const eval_storage_type& Z,
-                            const plonk_constraint_system<FieldType> &constraint_system,
-                            const typename public_preprocessor_type::preprocessed_data_type::common_data_type &common_data,
-                            std::vector<typename FieldType::value_type>& counts,
-                            typename FieldType::value_type& U_value,
-                            typename FieldType::value_type& U_shifted_value,
-                            std::vector<typename FieldType::value_type>& hs,
-                            std::vector<typename FieldType::value_type>& gs) {
-
+                        const eval_storage_type &Z,
+                        const plonk_constraint_system<SmallFieldType> &constraint_system,
+                        const typename public_preprocessor_type::preprocessed_data_type::
+                            common_data_type &common_data,
+                        std::vector<typename FieldType::value_type> &counts,
+                        typename FieldType::value_type &U_value,
+                        typename FieldType::value_type &U_shifted_value,
+                        std::vector<typename FieldType::value_type> &hs,
+                        std::vector<typename FieldType::value_type> &gs) {
                         // Get lookup inputs and lookup values sizes from the constraint system.
                         size_t lookup_inputs_count = 0;
                         for (const auto& gate: constraint_system.lookup_gates()) {
@@ -231,12 +237,12 @@ namespace nil {
                     }
 
                     static inline bool process(
-                        const typename public_preprocessor_type::preprocessed_data_type::common_data_type &common_data,
+                        const typename public_preprocessor_type::preprocessed_data_type::
+                            common_data_type &common_data,
                         const proof_type &proof,
-                        const plonk_table_description<FieldType> &table_description,
-                        const plonk_constraint_system<FieldType> &constraint_system,
-                        commitment_scheme_type& commitment_scheme
-                    ) {
+                        const plonk_table_description<SmallFieldType> &table_description,
+                        const plonk_constraint_system<SmallFieldType> &constraint_system,
+                        commitment_scheme_type &commitment_scheme) {
                         PROFILE_SCOPE("Verifier");
                         auto& Z = proof.eval_proof.eval_proof.z;
                         transcript::fiat_shamir_heuristic_sequential<transcript_hash_type> transcript(std::vector<std::uint8_t>({}));
@@ -269,16 +275,17 @@ namespace nil {
                     }
 
                     static inline bool verify_partial_proof(
-                        const typename public_preprocessor_type::preprocessed_data_type::common_data_type &common_data,
+                        const typename public_preprocessor_type::preprocessed_data_type::
+                            common_data_type &common_data,
                         const proof_type &proof,
-                        const plonk_table_description<FieldType> &table_description,
-                        const plonk_constraint_system<FieldType> &constraint_system,
-                        commitment_scheme_type& commitment_scheme,
-                        const std::vector<std::vector<typename FieldType::value_type>> &public_input,
+                        const plonk_table_description<SmallFieldType> &table_description,
+                        const plonk_constraint_system<SmallFieldType> &constraint_system,
+                        commitment_scheme_type &commitment_scheme,
+                        const std::vector<std::vector<typename FieldType::value_type>>
+                            &public_input,
                         transcript_type &transcript,
-                        typename FieldType::value_type& F_consolidated_out,
-                        const typename FieldType::value_type& evaluation_challenge
-                    ) {
+                        typename FieldType::value_type &F_consolidated_out,
+                        const typename FieldType::value_type &evaluation_challenge) {
                         // TODO: process rotations for public input.
                         
                         // If public input sizes are set, all of them should be set.
@@ -321,14 +328,14 @@ namespace nil {
                      *  point challenge for convenience.
                      */
                     static inline void fill_challenge_queue(
-                        const typename public_preprocessor_type::preprocessed_data_type::common_data_type &common_data,
+                        const typename public_preprocessor_type::preprocessed_data_type::
+                            common_data_type &common_data,
                         const proof_type &proof,
-                        const plonk_constraint_system<FieldType> &constraint_system,
-                        commitment_scheme_type& commitment_scheme,
+                        const plonk_constraint_system<SmallFieldType> &constraint_system,
+                        commitment_scheme_type &commitment_scheme,
                         transcript_type &transcript,
-                        std::queue<typename FieldType::value_type>& queue,
-                        typename FieldType::value_type& evaluation_challenge_out
-                    ) {
+                        std::queue<typename FieldType::value_type> &queue,
+                        typename FieldType::value_type &evaluation_challenge_out) {
                         transcript(common_data.vk.constraint_system_with_params_hash);
                         transcript(common_data.vk.fixed_values_commitment);
 
@@ -388,15 +395,15 @@ namespace nil {
                      *  \returns true if partial proof passes, false otherwise.
                      */
                     static inline bool verify_partial_proof(
-                        const typename public_preprocessor_type::preprocessed_data_type::common_data_type &common_data,
+                        const typename public_preprocessor_type::preprocessed_data_type::
+                            common_data_type &common_data,
                         const proof_type &proof,
-                        const plonk_table_description<FieldType> &table_description,
-                        const plonk_constraint_system<FieldType> &constraint_system,
-                        commitment_scheme_type& commitment_scheme,
+                        const plonk_table_description<SmallFieldType> &table_description,
+                        const plonk_constraint_system<SmallFieldType> &constraint_system,
+                        commitment_scheme_type &commitment_scheme,
                         transcript_type &transcript,
-                        typename FieldType::value_type& F_consolidated_out,
-                        const typename FieldType::value_type& evaluation_challenge
-                    ) {
+                        typename FieldType::value_type &F_consolidated_out,
+                        const typename FieldType::value_type &evaluation_challenge) {
                         auto& Z = proof.eval_proof.eval_proof.z;
 
                         // We cannot add eval points unless everything is committed, so when verifying assume it's committed.
@@ -426,7 +433,10 @@ namespace nil {
                         std::vector<typename FieldType::value_type> special_selector_values(3);
                         {
                             PROFILE_SCOPE("Evaluate lagrange_0 at challenge");
-                            special_selector_values[0] = common_data.lagrange_0.evaluate(evaluation_challenge);
+                            special_selector_values[0] =
+                                math::polynomial_dfs<typename FieldType::value_type>(
+                                    common_data.lagrange_0)
+                                    .evaluate(evaluation_challenge);
                         }
                         special_selector_values[1] = Z.get(
                             FIXED_VALUES_BATCH, 2*common_data.permuted_columns.size(), 0);
@@ -566,7 +576,11 @@ namespace nil {
                                 plonk_variable<typename FieldType::value_type>::column_type::selector
                             );
                             PROFILE_SCOPE("Evaluate lagrange_0 for selectors 0");
-                            columns_at_y[key] = mask_value - common_data.lagrange_0.evaluate(evaluation_challenge);
+                            columns_at_y[key] =
+                                mask_value -
+                                math::polynomial_dfs<typename FieldType::value_type>(
+                                    common_data.lagrange_0)
+                                    .evaluate(evaluation_challenge);
                         }
                         {
                             auto key = std::make_tuple(
@@ -574,8 +588,13 @@ namespace nil {
                                 plonk_variable<typename FieldType::value_type>::column_type::selector
                             );
                             PROFILE_SCOPE("Evaluate lagrange_0 for selectors 1");
-                            columns_at_y[key] = shifted_mask_value - common_data.lagrange_0.evaluate(
-                                evaluation_challenge * common_data.basic_domain->get_domain_element(1));
+                            columns_at_y[key] =
+                                shifted_mask_value -
+                                math::polynomial_dfs<typename FieldType::value_type>(
+                                    common_data.lagrange_0)
+                                    .evaluate(
+                                        evaluation_challenge *
+                                        common_data.basic_domain->get_domain_element(1));
                         }
 
                         {
@@ -590,8 +609,13 @@ namespace nil {
                                 PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED, 1,
                                 plonk_variable<typename FieldType::value_type>::column_type::selector
                             );
-                            columns_at_y[key] = FieldType::value_type::one() - common_data.lagrange_0.evaluate(
-                                evaluation_challenge * common_data.basic_domain->get_domain_element(1));
+                            columns_at_y[key] =
+                                FieldType::value_type::one() -
+                                math::polynomial_dfs<typename FieldType::value_type>(
+                                    common_data.lagrange_0)
+                                    .evaluate(
+                                        evaluation_challenge *
+                                        common_data.basic_domain->get_domain_element(1));
                         }
 
                         // 6. lookup argument
@@ -679,7 +703,10 @@ namespace nil {
                         PROFILE_SCOPE("Final check");
 
                         // Z is polynomial -1, 0 ...., 0, 1
-                        typename FieldType::value_type Z_at_challenge = common_data.Z.evaluate(challenge);
+                        typename FieldType::value_type Z_at_challenge =
+                            math::polynomial<typename FieldType::value_type>(
+                                common_data.Z)
+                                .evaluate(challenge);
                         if (F_consolidated != Z_at_challenge * T_consolidated) {
                             BOOST_LOG_TRIVIAL(info) << "Verification failed: F consolidated polynomial mismatch.";
                             return false;
@@ -690,13 +717,13 @@ namespace nil {
 
                     // maybe rename this to something like prepare_batches_and_eval_points?
                     static inline void prepare_polynomials(
-                            const typename proof_type::evaluation_proof &eval_proof,
-                            const typename public_preprocessor_type::preprocessed_data_type::common_data_type &common_data,
-                            const plonk_table_description<FieldType> &table_description,
-                            const plonk_constraint_system<FieldType> &constraint_system,
-                            commitment_scheme_type &commitment_scheme,
-                            const typename FieldType::value_type& evaluation_challenge) {
-
+                        const typename proof_type::evaluation_proof &eval_proof,
+                        const typename public_preprocessor_type::preprocessed_data_type::
+                            common_data_type &common_data,
+                        const plonk_table_description<SmallFieldType> &table_description,
+                        const plonk_constraint_system<SmallFieldType> &constraint_system,
+                        commitment_scheme_type &commitment_scheme,
+                        const typename FieldType::value_type &evaluation_challenge) {
                         commitment_scheme.set_batch_size(VARIABLE_VALUES_BATCH,
                             eval_proof.eval_proof.z.get_batch_size(VARIABLE_VALUES_BATCH));
                         commitment_scheme.set_batch_size(FIXED_VALUES_BATCH,
@@ -714,9 +741,9 @@ namespace nil {
                             commitment_scheme.set_batch_size(LOOKUP_BATCH,
                                 eval_proof.eval_proof.z.get_batch_size(LOOKUP_BATCH));
 
-                        generate_evaluation_points(commitment_scheme, common_data, constraint_system,
-                                                   table_description, evaluation_challenge, is_lookup_enabled);
-
+                        generate_evaluation_points(
+                            commitment_scheme, common_data, constraint_system,
+                            table_description, evaluation_challenge, is_lookup_enabled);
                     }
                 };
             }    // namespace snark
