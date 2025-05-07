@@ -43,6 +43,8 @@ namespace nil {
                 class vesta_base_field : public field<255> {
                 public:
                     typedef field<255> policy_type;
+                    
+                    using small_subfield = vesta_base_field;
 
                     constexpr static const std::size_t modulus_bits = policy_type::modulus_bits;
                     constexpr static const std::size_t number_bits = policy_type::number_bits;

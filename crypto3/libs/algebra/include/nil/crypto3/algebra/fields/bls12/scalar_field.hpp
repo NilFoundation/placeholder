@@ -49,6 +49,8 @@ namespace nil {
                 struct bls12_scalar_field<381> : public field<255> {
                     typedef field<255> policy_type;
 
+                    using small_subfield = bls12_scalar_field;
+
                     constexpr static const std::size_t modulus_bits = policy_type::modulus_bits;
                     constexpr static const std::size_t number_bits = policy_type::number_bits;
                     constexpr static const std::size_t value_bits = modulus_bits;
@@ -69,6 +71,8 @@ namespace nil {
                 template<>
                 struct bls12_scalar_field<377> : public field<253> {
                     typedef field<253> policy_type;
+
+                    using small_subfield = bls12_scalar_field;
 
                     constexpr static const std::size_t modulus_bits = policy_type::modulus_bits;
                     constexpr static const std::size_t number_bits = policy_type::number_bits;

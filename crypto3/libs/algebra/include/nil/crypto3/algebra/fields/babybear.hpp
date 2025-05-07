@@ -47,6 +47,8 @@ namespace nil::crypto3::algebra::fields {
       public:
         using policy_type = field<31>;
 
+        using small_subfield = babybear;
+
         constexpr static std::size_t value_bits = modulus_bits;
         constexpr static std::size_t arity = 1;
 
@@ -93,10 +95,14 @@ namespace nil::crypto3::algebra::fields {
     }  // namespace detail
 
     struct babybear_fp4
-        : public fpn<detail::babybear_fp4_binomial_extension_params<babybear_fp4>> {};
+        : public fpn<detail::babybear_fp4_binomial_extension_params<babybear_fp4>> {
+        using small_subfield = babybear;
+    };
 
     struct babybear_fp5
-        : public fpn<detail::babybear_fp5_binomial_extension_params<babybear_fp5>> {};
+        : public fpn<detail::babybear_fp5_binomial_extension_params<babybear_fp5>> {
+        using small_subfield = babybear;
+    };
 }  // namespace nil::crypto3::algebra::fields
 
 #endif  // CRYPTO3_ALGEBRA_FIELDS_BABYBEAR_HPP

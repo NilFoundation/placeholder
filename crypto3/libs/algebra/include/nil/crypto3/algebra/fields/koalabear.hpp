@@ -44,6 +44,8 @@ namespace nil::crypto3::algebra::fields {
       public:
         using policy_type = field<31>;
 
+        using small_subfield = koalabear;
+
         constexpr static std::size_t value_bits = modulus_bits;
         constexpr static std::size_t arity = 1;
 
