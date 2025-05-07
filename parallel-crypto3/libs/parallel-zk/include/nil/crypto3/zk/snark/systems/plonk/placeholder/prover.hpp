@@ -414,7 +414,7 @@ namespace nil::crypto3::zk::snark {
                 _commitment_scheme.append_eval_point(PERMUTATION_BATCH, 0, evaluation_challenge * _omega);
 
             if (_is_lookup_enabled) {
-                // For polynomail U, we need the shifted value as well.
+                // For polynomial U, we need the shifted value as well.
                 _commitment_scheme.append_eval_point(PERMUTATION_BATCH, preprocessed_public_data.common_data->permutation_parts,
                     evaluation_challenge * _omega);
                 _commitment_scheme.append_eval_point(LOOKUP_BATCH, evaluation_challenge);
