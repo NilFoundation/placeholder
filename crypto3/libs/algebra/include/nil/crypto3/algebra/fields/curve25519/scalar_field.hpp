@@ -47,6 +47,8 @@ namespace nil {
                 public:
                     typedef field<253> policy_type;
 
+                    using small_subfield = curve25519_scalar_field;
+
                     constexpr static const std::size_t modulus_bits = policy_type::modulus_bits;
                     constexpr static const std::size_t number_bits = policy_type::number_bits;
                     constexpr static const std::size_t value_bits = modulus_bits;
