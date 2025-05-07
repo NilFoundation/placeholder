@@ -243,27 +243,34 @@ namespace nil {
                         return root;
                     }
 
-                    void append_to_batch(std::size_t index, const polynomial_type& poly){
+                    void append_to_batch(std::size_t index, std::initializer_list<typename polynomial_type::value_type> il) {
+                        append_to_batch(index, polynomial_type(il));
+                    }
+
+                    // This is used to append polynomials in subfields
+                    template<typename Poly>
+                        requires std::constructible_from<polynomial_type, Poly>
+                    void append_to_batch(std::size_t index, Poly &&poly) {
                         if (_locked.find(index) == _locked.end())
                             _locked[index] = false;
 
                         // We cannot modify batch after commitment
                         BOOST_ASSERT(!_locked[index]);
 
-                        _polys[index].push_back(poly);
+                        _polys[index].emplace_back(std::forward<Poly>(poly));
                     }
 
-                    template<typename container_type>
-                    void append_many_to_batch(std::size_t index, const container_type& polys){
+                    template<std::ranges::range Range>
+                        requires std::constructible_from<
+                            polynomial_type, std::ranges::range_value_t<Range>>
+                    void append_many_to_batch(std::size_t index, Range &&polys) {
                         if (_locked.find(index) == _locked.end())
                             _locked[index] = false;
 
                         BOOST_ASSERT(!_locked[index]); // We cannot modify batch after commitment
-                        // We need this 'if' statement, otherwise we're segfaulting if the map entry does not exist.
-                        if (_polys.find(index) == _polys.end()) {
-                            _polys[index] = polys;
-                        } else {
-                            _polys[index].insert(std::end(_polys[index]), std::begin(polys), std::end(polys));
+                        auto &target = _polys[index];
+                        for (const auto &poly : polys) {
+                            target.emplace_back(poly);
                         }
                     }
 
