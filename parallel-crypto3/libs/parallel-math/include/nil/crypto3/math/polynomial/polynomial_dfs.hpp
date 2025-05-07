@@ -146,7 +146,7 @@ namespace nil {
                                      "DFS optimal polynomial size must be a power of two");
                 }
 
-                polynomial_dfs(size_t d, container_type&& c) : val(c), _d(d) {
+                polynomial_dfs(size_t d, container_type&& c) : val(std::move(c)), _d(d) {
                     BOOST_ASSERT_MSG(val.size() == detail::power_of_two(val.size()),
                                      "DFS optimal polynomial size must be a power of two");
                 }
@@ -291,7 +291,7 @@ namespace nil {
                 }
 
                 void push_back(value_type&& _x) {
-                    val.emplace_back(_x);
+                    val.emplace_back(std::move(_x));
                 }
 
                 template<class... Args>
@@ -308,7 +308,7 @@ namespace nil {
                 }
 
                 iterator insert(const_iterator _position, value_type&& _x) {
-                    return val.insert(_position, _x);
+                    return val.insert(_position, std::move(_x));
                 }
                 template<class... Args>
                 iterator emplace(const_iterator _position, Args&&... _args) {
@@ -854,6 +854,8 @@ namespace nil {
             template<typename FieldType>
             polynomial_dfs<typename FieldType::value_type> polynomial_sum(
                     std::vector<math::polynomial_dfs<typename FieldType::value_type>> addends) {
+                PROFILE_SCOPE("Polynomial Batch sum");
+
                 using FieldValueType = typename FieldType::value_type;
 
                 if (addends.empty()) {
@@ -924,6 +926,8 @@ namespace nil {
             template<typename FieldType>
             polynomial_dfs<typename FieldType::value_type> polynomial_product(
                     std::vector<math::polynomial_dfs<typename FieldType::value_type>> multipliers) {
+                PROFILE_SCOPE("Polynomial Batch product");
+
                 // Pre-create all the domains. We could do this on-the-go, but we want this function to be more
                 // parallelization-friendly. This single-threaded version may look a bit complicated,
                 // but it's now very similar to what we have in parallel code.
@@ -991,6 +995,8 @@ namespace nil {
             std::vector<math::polynomial<typename FieldType::value_type>> polynomial_batch_to_coefficients(
                     std::vector<math::polynomial_dfs<typename FieldType::value_type>> polys_dfs,
                     std::shared_ptr<evaluation_domain<FieldType>> domain) {
+                PROFILE_SCOPE("Polynomial Batch conversion to coefficients form");
+
                 std::vector<std::vector<typename FieldType::value_type>> data;
                 data.reserve(polys_dfs.size());
                 for (auto& poly: polys_dfs) {
@@ -1003,6 +1009,36 @@ namespace nil {
                 result.reserve(data.size());
                 for (auto& coeffs: data) {
                     result.emplace_back(std::move(coeffs));
+                }
+                return result;
+            }
+
+            /// Converts batch of polynomials to DFS format in the given domain.
+            template<typename FieldType>
+            std::vector<math::polynomial_dfs<typename FieldType::value_type>> polynomial_batch_from_coefficients(
+                    std::vector<math::polynomial<typename FieldType::value_type>> polys,
+                    std::shared_ptr<evaluation_domain<FieldType>> domain) {
+                if (polys.size() == 0)
+                    return {};
+
+                PROFILE_SCOPE("Polynomial Batch conversion from coefficients form");
+
+                size_t input_size = polys[0].size();
+
+                std::vector<std::vector<typename FieldType::value_type>> data;
+                data.reserve(polys.size());
+                for (auto& poly: polys) {
+                    if (poly.size() != input_size)
+                        throw std::logic_error("Polynomials of different size are not permitted in a batch conversion to DFS format");
+                    data.emplace_back(std::move(poly.get_storage()));
+                }
+
+                domain->batch_fft(data);
+                std::vector<math::polynomial_dfs<typename FieldType::value_type>> result;
+                result.reserve(data.size());
+                for (size_t i = 0; i < data.size(); ++i) {
+                    auto& dfs = data[i];
+                    result.emplace_back(input_size - 1, std::move(dfs));
                 }
                 return result;
             }
