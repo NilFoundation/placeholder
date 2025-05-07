@@ -154,7 +154,7 @@ namespace nil::crypto3::zk::snark {
             dag_expression_builder<polynomial_dfs_variable_type>
                 _dag_expr_builder_full_degree;
 
-            // Split expressions into 2 sets, thoese with degree <= D/2, and the rest.
+            // Split expressions into 2 sets, those with degree <= D/2, and the rest.
             for (const auto& expr: _registered_exprs) {
                 std::size_t degree = _max_degree_visitor.compute_max_degree(expr);
                 if (degree <= max_degree / 2) {
