@@ -529,7 +529,7 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
             tmp = rw_table<FieldType, stage>::stack_lookup(
                 current_state.call_id(1), current_state.stack_size(1) - 2,
                 current_state.rw_counter(1) + 1, TYPE(0), A0, A1);
-            // lookup(tmp, "zkevm_rw");
+            lookup(tmp, "zkevm_rw");
             tmp = rw_table<FieldType, stage>::stack_lookup(
                 current_state.call_id(3), current_state.stack_size(3) - 2,
                 current_state.rw_counter(3) + 2, TYPE(1), Res0, Res1);
