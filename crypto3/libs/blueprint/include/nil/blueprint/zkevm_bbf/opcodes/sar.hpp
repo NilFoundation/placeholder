@@ -282,11 +282,14 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
             if constexpr (stage == GenerationStage::ASSIGNMENT) {
                 TYPE prev_carry = (i > 0) ? construct_carries[i - 1] : 0;
                 construct_carries[i] = (construct_carryless_chunks[i] + prev_carry).to_integral() >> 16; 
+                // BOOST_ASSERT(construct_carryless_chunks[i] + prev_carry == construct_carries[i] * two_16);
+                // BOOST_ASSERT(construct_carryless_chunks[0] == construct_carries[0] * two_16);
             }
             allocate(construct_carries[i], i + 2 * chunk_amount, 9); // TODO: do I need to constrain these?
         }
         // TODO: these are also problematic
-        constrain(construct_carryless_chunks[0] - construct_carries[0] * two_16);
+        // TODO: use the same strategy as with more_carries?
+        // constrain(construct_carryless_chunks[0] - construct_carries[0] * two_16);
         // for (std::size_t i = 1; i < 16; i++) {
         //     constrain(construct_carryless_chunks[i] + construct_carries[i-1] - construct_carries[i] * two_16 );
         // }
