@@ -282,6 +282,7 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
             if constexpr (stage == GenerationStage::ASSIGNMENT) {
                 TYPE prev_carry = (i > 0) ? construct_carries[i - 1] : 0;
                 construct_carries[i] = (construct_carryless_chunks[i] + prev_carry).to_integral() >> 16; 
+                BOOST_ASSERT(construct_carryless_chunks[i] == 0);
                 BOOST_ASSERT(construct_carryless_chunks[i] + prev_carry == construct_carries[i] * two_16);
             }
             allocate(construct_carries[i], i + 2 * chunk_amount, 9); // TODO: do I need to constrain these?
@@ -389,26 +390,7 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
             constrain(b_chunks[i] - shift_power * (1 - (shift_upper - i) * indic_2[i]));
         }
 
-        // Examples of the above. 
-        
-        // 4-bit shift.
-        // shift_lower = 4
-        // shift_upper = 0
-        // indic_1[4] = 0, and indic_1[i] = (shift_lower - 4)^(-1) for all other i.
-        // indic_2[0] = 0, and indic_2[i] = (shift_upper - 0)^(-1) for all other i.
-        // shift_power = 2^4
-        // b_chunks[0] = 2^4, and b_chunks[i] = 0 for all other i.
-
-        // 128-bit shift.
-        // shift_lower = 0
-        // shift_upper = 8
-        // indic_1[0] = 0, and indic_1[i] = (shift_lower - 0)^(-1) for all other i.
-        // indic_2[8] = 0, and indic_1[i] = (shift_lower - 8)^(-1) for all other i.
-        // shift_power = 2^0 = 1.
-        // b_chunks[8] = 1, and b_chunks[i] = 0 for all other i.
-        // That is, b = 0b_1..(followed by 8 chunks of 16 zeros) = 2^128.
-
-        // 167-bit shift.
+        // Example of the above: 167-bit shift.
         // 167 = 10 * 2^4 + 7
         // shift_lower = 7
         // shift_upper = 10
@@ -443,13 +425,6 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
             allocate(y_chunks[i], i, 1);
             res[i] = y_chunks[i];
         }
-
-        // allocate(sign_bit, 15, 3);
-        // constrain(sign_bit * (1 - sign_bit));  // Ensure sign_bit is 0 or 1
-        // lower_chunk_bits = a_chunks[15] - sign_bit * two_15;
-        // allocate(lower_chunk_bits, 14, 3);
-        // // Ensure that the highest chunk (without the sign bit) is 15-bits.
-        // lower_bits_range = 2 * lower_chunk_bits;
 
         allocate(sign_bit, 41, 2);
         constrain(sign_bit * (1 - sign_bit));  // Ensure sign_bit is 0 or 1
@@ -548,7 +523,7 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
             tmp = rw_table<FieldType, stage>::stack_lookup(
                 current_state.call_id(1), current_state.stack_size(1) - 2,
                 current_state.rw_counter(1) + 1, TYPE(0), A0, A1);
-            lookup(tmp, "zkevm_rw");
+            // lookup(tmp, "zkevm_rw");
             tmp = rw_table<FieldType, stage>::stack_lookup(
                 current_state.call_id(3), current_state.stack_size(3) - 2,
                 current_state.rw_counter(3) + 2, TYPE(1), Res0, Res1);
