@@ -638,13 +638,7 @@ namespace nil {
                         return params;
                     }
 
-                    bool operator==(const lpc_commitment_scheme& other) const {
-                        return _trees == other._trees &&
-                            _fri_params == other._fri_params &&
-                            _etha == other._etha &&
-                            _batch_fixed == other._batch_fixed &&
-                            _fixed_polys_values == other._fixed_polys_values;
-                    }
+                    bool operator==(const lpc_commitment_scheme& rhs) const = default;
                 };
 
                 template<typename MerkleTreeHashType, typename TranscriptHashType,
@@ -714,63 +708,34 @@ namespace nil {
                     using eval_storage_type = eval_storage<field_type>;
 
                     struct proof_type {
-                        bool operator==(const proof_type &rhs) const {
-                            return fri_proof == rhs.fri_proof && z == rhs.z;
-                        }
-
-                        bool operator!=(const proof_type &rhs) const {
-                            return !(rhs == *this);
-                        }
-
                         eval_storage_type z;
                         typename basic_fri::proof_type fri_proof;
+
+                        bool operator==(const proof_type& rhs) const = default;
                     };
 
                     // Represents an initial proof, which must be created for each of the N provers.
                     struct lpc_proof_type {
-                        bool operator==(const lpc_proof_type &rhs) const {
-                            return initial_fri_proofs == rhs.initial_fri_proofs && z == rhs.z;
-                        }
-
-                        bool operator!=(const lpc_proof_type &rhs) const {
-                            return !(rhs == *this);
-                        }
-
                         eval_storage_type z;
                         typename basic_fri::initial_proofs_batch_type initial_fri_proofs;
+
+                        bool operator==(const lpc_proof_type& rhs) const = default;
                     };
 
                     // Represents a round proof, which must be created just once on the main prover.
                     struct fri_proof_type {
-                        bool operator==(const fri_proof_type &rhs) const {
-                            return fri_round_proof == rhs.fri_round_proof &&
-                                fri_commitments_proof_part == rhs.fri_commitments_proof_part;
-                        }
-
-                        bool operator!=(const fri_proof_type &rhs) const {
-                            return !(rhs == *this);
-                        }
-
                         // We have a single round proof for checking that F(X) is a low degree polynomial.
                         typename basic_fri::round_proofs_batch_type fri_round_proof;
 
                         // Contains fri_roots and final_polynomial that correspond to the polynomial F(x).
                         typename basic_fri::commitments_part_of_proof fri_commitments_proof_part;
+
+                        bool operator==(const fri_proof_type& rhs) const = default;
                     };
 
                     // A single instance of this class will store all the LPC proofs for a group of provers
                     // when aggregated FRI is used.
                     struct aggregated_proof_type {
-                        bool operator==(const aggregated_proof_type &rhs) const {
-                            return fri_proof == rhs.fri_proof &&
-                                initial_proofs_per_prover == rhs.initial_proofs_per_prover &&
-                                proof_of_work == rhs.proof_of_work;
-                        }
-
-                        bool operator!=(const proof_type &rhs) const {
-                            return !(rhs == *this);
-                        }
-
                         // We have a single round proof for checking that F(X) is a low degree polynomial.
                         fri_proof_type fri_proof;
 
@@ -778,23 +743,10 @@ namespace nil {
                         std::vector<lpc_proof_type> initial_proofs_per_prover;
 
                         typename LPCParams::grinding_type::output_type proof_of_work;
+
+                        bool operator==(const aggregated_proof_type& rhs) const = default;
                     };
                 };
-
-                template<typename FieldType, typename LPCParams>
-                using batched_lpc = batched_list_polynomial_commitment<
-                        FieldType, commitments::list_polynomial_commitment_params<
-                            typename LPCParams::merkle_hash_type, typename LPCParams::transcript_hash_type,
-                            LPCParams::m,
-                            typename LPCParams::grinding_type
-                        >>;
-                template<typename FieldType, typename LPCParams>
-                using lpc = batched_list_polynomial_commitment<
-                        FieldType, list_polynomial_commitment_params<
-                            typename LPCParams::merkle_hash_type, typename LPCParams::transcript_hash_type,
-                            LPCParams::m,
-                            typename LPCParams::grinding_type
-                        >>;
 
                 template<typename FieldType, typename LPCParams>
                 using list_polynomial_commitment = batched_list_polynomial_commitment<FieldType, LPCParams>;
