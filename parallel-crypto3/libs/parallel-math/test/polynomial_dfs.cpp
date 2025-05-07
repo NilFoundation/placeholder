@@ -1494,12 +1494,16 @@ BOOST_AUTO_TEST_CASE(polynomial_dfs_batch_conversion_test) {
 
     polynomial<typename FieldType::value_type> a_coeffs(a.coefficients());
     polynomial<typename FieldType::value_type> b_coeffs(b.coefficients());
-
+    
     std::shared_ptr<evaluation_domain<FieldType>> domain = make_evaluation_domain<FieldType>(a.size());
 
     std::vector<polynomial<typename FieldType::value_type>> coeffs = 
         polynomial_batch_to_coefficients({a, b}, domain);
 
+    // polynomial_batch_to_coefficients always returns the initial size, does not contract the polynomial if
+    // higher degree coefficients are zeros.
+    a_coeffs.resize(8);
+    b_coeffs.resize(8);
     BOOST_CHECK_EQUAL(coeffs[0], a_coeffs);
     BOOST_CHECK_EQUAL(coeffs[1], b_coeffs);
 }

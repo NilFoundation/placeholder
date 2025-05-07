@@ -37,9 +37,10 @@
 #include <nil/crypto3/math/domains/evaluation_domain.hpp>
 #include <nil/crypto3/math/domains/detail/basic_radix2_domain_aux.hpp>
 #include <nil/crypto3/math/algorithms/unity_root.hpp>
-#include <nil/crypto3/math/polynomial/field_element_vector.hpp>
 #include <nil/crypto3/math/polynomial/polynomial.hpp>
 #include <nil/actor/core/parallelization_utils.hpp>
+
+#include <nil/crypto3/bench/scoped_profiler.hpp>
 
 namespace nil {
     namespace crypto3 {
@@ -99,50 +100,10 @@ namespace nil {
                     detail::basic_radix2_fft_cached<FieldType>(a, fft_cache->first);
                 }
 
-                /** Transforms the matrix of values. Usually the first dimension is much smaller than second, I.E. N << M.
-                 */
-                std::vector<field_element_vector<value_type>> transpose(std::vector<std::vector<value_type>> &a) {
-                    size_t N = a.size();
-                    size_t M = 0; 
-                    for (const auto& p: a) {
-                        M = std::max<size_t>(M, p.size());
-                    }
-                    std::vector<field_element_vector<value_type>> result(M, field_element_vector<value_type>(N));
-                    parallel_for(0, M, [&a, &result, N](std::size_t j) {
-                        for (size_t i = 0; i < N; ++i) {
-                            result[j][i] = a[i][j];
-                        }
-                    }, ThreadPool::PoolLevel::LOW);
-                    return result;
-                }
-
-                /** Transforms the matrix of values. N >> M.
-                 */
-                void transpose(const std::vector<field_element_vector<value_type>>& input,
-                               std::vector<std::vector<value_type>> &result) {
-                    size_t N = input.size();
-                    size_t M = input[0].size(); 
-                    parallel_for(0, N, [&input, &result, M](std::size_t i) {
-                        for (size_t j = 0; j < M; ++j) {
-                            result[j][i] = input[i][j];
-                        }
-                    }, ThreadPool::PoolLevel::LOW);
-                }
-
-                /** \brief Batch version of the upper function. Used for vectorization.
-                 *  \param[in] a - Each element of a a[i] represents coefficients of a polynomial.
-                 */
-                void batch_fft(std::vector<std::vector<value_type>> &a) override {
-                    if (a.size() == 0)
-                        return;
-                    resize_to_domain_size(a);
-
-                    std::vector<field_element_vector<value_type>> V = transpose(a);
-                    detail::basic_radix2_fft_cached<FieldType>(V, fft_cache->first);
-                    transpose(V, a);
-                }
-
                 void resize_to_domain_size(std::vector<std::vector<value_type>> &a) {
+                    PARALLEL_PROFILE_SCOPE("resize_to_domain_size {} vectors from size {} to {}",
+                        a.size(), a[0].size(), this->m);
+
                     for (auto& p: a) {
                         if (p.size() != this->m) {
                             if (p.size() < this->m) {
@@ -154,19 +115,36 @@ namespace nil {
                     }
                 }
 
-                void batch_inverse_fft(std::vector<std::vector<value_type>> &a) override {
-                    if (a.size() == 0)
+                /** \brief Batch version of the 'fft' function. Used for vectorization.
+                 *  \param[in] a - Each element of a a[i] represents coefficients of a polynomial.
+                 */
+                void batch_fft(std::vector<std::vector<value_type>> &polys) override {
+                    if (polys.size() == 0)
                         return;
-                    resize_to_domain_size(a);
+                    resize_to_domain_size(polys);
 
-                    std::vector<field_element_vector<value_type>> V = transpose(a);
-                    detail::basic_radix2_fft_cached<FieldType>(V, fft_cache->second);
+                    nil::crypto3::parallel_foreach(polys.begin(), polys.end(),
+                        [this](std::vector<value_type>& p) {
+                            detail::basic_radix2_fft_cached<FieldType>(p, this->fft_cache->first);
+                    }, ThreadPool::PoolLevel::HIGH);
+                }
+
+                /** \brief Batch version of the 'fft' function. Used for vectorization.
+                 *  \param[in] a - Each element of a a[i] represents DFS values of a polynomial.
+                 */
+                void batch_inverse_fft(std::vector<std::vector<value_type>> &polys) override {
+                    if (polys.size() == 0)
+                        return;
+                    resize_to_domain_size(polys);
 
                     const field_value_type sconst = field_value_type(this->m).inversed();
-                    nil::crypto3::parallel_foreach(V.begin(), V.end(), [&sconst](field_element_vector<value_type>& v_i){
-                        v_i *= sconst;
-                    }, ThreadPool::PoolLevel::LOW);
-                    transpose(V, a);
+                    nil::crypto3::parallel_foreach(polys.begin(), polys.end(),
+                        [&sconst, this](std::vector<value_type>& p) {
+                            detail::basic_radix2_fft_cached<FieldType>(p, this->fft_cache->second);
+                            nil::crypto3::parallel_foreach(p.begin(), p.end(), [&sconst](value_type& p_i) {
+                                p_i *= sconst;
+                            });
+                    }, ThreadPool::PoolLevel::HIGH);
                 }
 
                 void inverse_fft(std::vector<value_type> &a) override {

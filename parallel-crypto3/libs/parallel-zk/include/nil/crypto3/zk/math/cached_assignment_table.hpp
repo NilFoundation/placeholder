@@ -66,13 +66,20 @@ namespace nil::crypto3::zk::snark {
 
         using var_and_size_pair_type = std::pair<var_without_rotation_type, std::size_t>;
 
-        
         cached_assignment_table(
                 std::shared_ptr<plonk_polynomial_dfs_table> table,
                 const polynomial_dfs_type& mask_assignment,
                 const polynomial_dfs_type& lagrange_0)
             : _original_domain_size(mask_assignment.size())
             , _domain(get_domain(_original_domain_size)) {
+
+            cache_assignment_table_in_coefficients_form(table, mask_assignment, lagrange_0);
+        }
+
+        void cache_assignment_table_in_coefficients_form(
+                std::shared_ptr<plonk_polynomial_dfs_table> table,
+                const polynomial_dfs_type& mask_assignment,
+                const polynomial_dfs_type& lagrange_0) {
 
             // Copy all column values to a single vector.
             std::vector<polynomial_dfs_type> all_columns;
@@ -113,16 +120,16 @@ namespace nil::crypto3::zk::snark {
             }
 
             // Now create coefficients forms for special selectors.
-            var_without_rotation_type v1(
+            var_without_rotation_type v_all_rows(
                 PLONK_SPECIAL_SELECTOR_ALL_USABLE_ROWS_SELECTED,
                 var_without_rotation_type::column_type::selector);
-            _assignment_table_coefficients[v1] = std::make_shared<polynomial_type>(
+            _assignment_table_coefficients[v_all_rows] = std::make_shared<polynomial_type>(
                 mask_assignment.coefficients(_domain));
 
-            var_without_rotation_type v2(
+            var_without_rotation_type v_all_non_first_rows(
                 PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED,
                 var_without_rotation_type::column_type::selector);
-            _assignment_table_coefficients[v2] = std::make_shared<polynomial_type>(
+            _assignment_table_coefficients[v_all_non_first_rows] = std::make_shared<polynomial_type>(
                 (mask_assignment - lagrange_0).coefficients(_domain));
         }
 
@@ -157,11 +164,9 @@ namespace nil::crypto3::zk::snark {
 
             if (_original_domain_size > size) {
                 throw std::invalid_argument(
-                    "Column size is more than the requested "
-                    "size");
+                    "Column size is more than the requested size");
             }
             ensure_domain(size);
-            
 
             // Ensure we have the required variable in the cache with rotation = 0.
             std::set<var_without_rotation_type> new_vars_set;
@@ -187,15 +192,18 @@ namespace nil::crypto3::zk::snark {
 
             std::vector<var_without_rotation_type> new_vars(new_vars_set.begin(), new_vars_set.end());
 
-            parallel_for(
-                0, new_vars.size(),
-                [&new_vars, size, this](std::size_t i) {
-                    // Here we take from _assignment_table_coefficients the variable value without rotation.
-                    auto value_dfs = std::make_shared<polynomial_dfs_type>();
-                    value_dfs->from_coefficients(*_assignment_table_coefficients[new_vars[i]], get_domain(size));
-                    _cache[std::make_pair(new_vars[i], size)][0] = value_dfs;
-                },
-                ThreadPool::PoolLevel::HIGH);
+            std::vector<polynomial_type> polys;
+            polys.reserve(new_vars.size());
+            for (size_t i = 0; i < new_vars.size(); ++i) {
+                polys.push_back(*_assignment_table_coefficients[new_vars[i]]);
+            }
+            auto domain = get_domain(size);
+            std::vector<polynomial_dfs_type> polys_dfs = 
+                polynomial_batch_from_coefficients(std::move(polys), domain); 
+            for (size_t i = 0; i < new_vars.size(); ++i) {
+                _cache[std::make_pair(new_vars[i], size)][0] = 
+                    std::make_shared<polynomial_dfs_type>(std::move(polys_dfs[i]));
+            }
 
             // Ensure we have the required variable in the cache with required rotation.
             parallel_for(
@@ -203,6 +211,7 @@ namespace nil::crypto3::zk::snark {
                 [&new_variables_with_rotation, size, this](std::size_t i) {
                     auto v_with_rotation = new_variables_with_rotation[i];
                     var_without_rotation_type v(v_with_rotation);
+
                     _cache[var_and_size_pair_type(v, size)][v_with_rotation.rotation] = 
                         std::make_shared<polynomial_dfs_type>(
                             math::polynomial_shift(*_cache[var_and_size_pair_type(v, size)][0],

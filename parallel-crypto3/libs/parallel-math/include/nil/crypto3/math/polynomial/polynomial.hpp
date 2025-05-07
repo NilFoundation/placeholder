@@ -142,7 +142,7 @@ namespace nil {
                 }
 
                 polynomial& operator=(polynomial&& x) {
-                    val = x.val;
+                    val = std::move(x.val);
                     return *this;
                 }
 
@@ -152,7 +152,7 @@ namespace nil {
                 }
 
                 polynomial& operator=(container_type&& x) {
-                    val = x;
+                    val = std::move(x);
                     return *this;
                 }
 
@@ -312,7 +312,7 @@ namespace nil {
                 }
 
                 void push_back(value_type&& _x) {
-                    val.push_back(_x);
+                    val.push_back(std::move(_x));
                 }
 
                 template<class... Args>
