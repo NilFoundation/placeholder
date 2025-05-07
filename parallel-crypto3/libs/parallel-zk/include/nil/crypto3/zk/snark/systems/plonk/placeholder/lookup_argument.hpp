@@ -74,16 +74,26 @@ namespace nil {
             namespace snark {
                 template<typename FieldType, typename CommitmentSchemeTypePermutation, typename ParamsType>
                 class placeholder_lookup_argument_prover {
+                    using SmallFieldType = typename FieldType::small_subfield;
                     using value_type = typename FieldType::value_type;
+                    using small_field_value_type = typename SmallFieldType::value_type;
 
                     using transcript_hash_type = typename ParamsType::transcript_hash_type;
                     using transcript_type = transcript::fiat_shamir_heuristic_sequential<transcript_hash_type>;
                     using polynomial_dfs_type = math::polynomial_dfs<value_type>;
+                    using small_field_polynomial_dfs_type =
+                        math::polynomial_dfs<small_field_value_type>;
                     using variable_type = plonk_variable<value_type>;
+                    using small_field_variable_type =
+                        plonk_variable<small_field_value_type>;
                     using polynomial_dfs_variable_type = plonk_variable<polynomial_dfs_type>;
+                    using small_field_polynomial_dfs_variable_type =
+                        plonk_variable<small_field_polynomial_dfs_type>;
                     using commitment_scheme_type = CommitmentSchemeTypePermutation;
-                    using expression_type = expression<polynomial_dfs_variable_type>;
-                    using central_evaluator_type = CentralAssignmentTableExpressionEvaluator<FieldType>;
+                    using expression_type =
+                        expression<small_field_polynomial_dfs_variable_type>;
+                    using central_evaluator_type =
+                        CentralAssignmentTableExpressionEvaluator<SmallFieldType>;
 
                     static constexpr std::size_t argument_size = 4;
 
@@ -97,25 +107,27 @@ namespace nil {
                     };
 
                     placeholder_lookup_argument_prover(
-                            const plonk_constraint_system<FieldType> &constraint_system,
-                            const typename placeholder_public_preprocessor<FieldType, ParamsType>::preprocessed_data_type
-                                &preprocessed_data,
-                            central_evaluator_type& central_expr_evaluator,
-                            const plonk_polynomial_dfs_table<FieldType>& plonk_columns,
-                            commitment_scheme_type &commitment_scheme,
-                            transcript_type &transcript)
-                        : constraint_system(constraint_system)
-                        , preprocessed_data(preprocessed_data)
-                        , _central_expr_evaluator(central_expr_evaluator)
-                        , plonk_columns(plonk_columns)
-                        , commitment_scheme(commitment_scheme)
-                        , transcript(transcript)
-                        , basic_domain(preprocessed_data.common_data->basic_domain)
-                        , lookup_gates(constraint_system.lookup_gates())
-                        , lookup_tables(constraint_system.lookup_tables())
-                        , lookup_chunks(0)
-                        , usable_rows_amount(preprocessed_data.common_data->desc.usable_rows_amount)
-                    {
+                        const plonk_constraint_system<SmallFieldType>& constraint_system,
+                        const typename placeholder_public_preprocessor<
+                            SmallFieldType, ParamsType>::preprocessed_data_type&
+                            preprocessed_data,
+                        central_evaluator_type& central_expr_evaluator,
+                        const plonk_polynomial_dfs_table<SmallFieldType>& plonk_columns,
+                        commitment_scheme_type& commitment_scheme,
+                        transcript_type& transcript)
+                        : constraint_system(constraint_system),
+                          preprocessed_data(preprocessed_data),
+                          _central_expr_evaluator(central_expr_evaluator),
+                          plonk_columns(plonk_columns),
+                          commitment_scheme(commitment_scheme),
+                          transcript(transcript),
+                          basic_domain_size(
+                              preprocessed_data.common_data->basic_domain->m),
+                          lookup_gates(constraint_system.lookup_gates()),
+                          lookup_tables(constraint_system.lookup_tables()),
+                          lookup_chunks(0),
+                          usable_rows_amount(
+                              preprocessed_data.common_data->desc.usable_rows_amount) {
                         // $/theta = \challenge$
                         theta = transcript.template challenge<FieldType>();
                     }
@@ -127,7 +139,7 @@ namespace nil {
 
                         value_type one = FieldType::value_type::one();
 
-                        polynomial_dfs_type one_polynomial(0, basic_domain->m, one);
+                        polynomial_dfs_type one_polynomial(0, basic_domain_size, one);
 
                         // We wanted to collect all the expressions and evaluate them at once, but usage of transcript does not allow that.
                         // So we are computing the required values for each prover step separately.
@@ -150,21 +162,27 @@ namespace nil {
                         auto& reduced_value = *reduced_value_ptr;
 
                         for (std::size_t i = 0; i < lookup_value.size(); i++) {
-                            reduced_value.push_back(reduce_dfs_polynomial_domain(lookup_value[i], basic_domain->m));
+                            reduced_value.push_back(reduce_dfs_polynomial_domain(
+                                lookup_value[i], basic_domain_size));
                         }
                         auto reduced_input_ptr = std::make_unique<std::vector<polynomial_dfs_type>>();
                         auto& reduced_input = *reduced_input_ptr;
 
                         reduced_input.resize(lookup_input.size(), polynomial_dfs_type::zero());
 
-                        parallel_for(0, lookup_input.size(),
+                        parallel_for(
+                            0, lookup_input.size(),
                             [&reduced_input, &lookup_input, this](std::size_t i) {
-                                reduced_input[i] = reduce_dfs_polynomial_domain(lookup_input[i], this->basic_domain->m);
-                            }, ThreadPool::PoolLevel::HIGH);
+                                reduced_input[i] = reduce_dfs_polynomial_domain(
+                                    lookup_input[i], this->basic_domain_size);
+                            },
+                            ThreadPool::PoolLevel::HIGH);
 
                         // Compute the counts of how many times a lookup input appears in the lookup values.
-                        std::vector<polynomial_dfs_type> counts = count_lookup_input_appearances(
-                            reduced_input, reduced_value, basic_domain->m, usable_rows_amount);
+                        std::vector<polynomial_dfs_type> counts =
+                            count_lookup_input_appearances(reduced_input, reduced_value,
+                                                           basic_domain_size,
+                                                           usable_rows_amount);
 
                         // Commit to the counts.
                         commitment_scheme.append_to_batch(LOOKUP_BATCH, counts);
@@ -185,7 +203,8 @@ namespace nil {
 
                         // Compute polynomial U: U(wX) - U(X) = Sum(hs) + Sum(gs).
                         polynomial_dfs_type sum_H_G = polynomial_sum<FieldType>(hs) + polynomial_sum<FieldType>(gs);
-                        polynomial_dfs_type U(basic_domain->m - 1, basic_domain->m, FieldType::value_type::zero());
+                        polynomial_dfs_type U(basic_domain_size - 1, basic_domain_size,
+                                              FieldType::value_type::zero());
 
                         U[0] = FieldType::value_type::zero();
                         for (std::size_t i = 1; i <= usable_rows_amount; i++) {
@@ -263,24 +282,26 @@ namespace nil {
                         {
                             PROFILE_SCOPE("Lookup argument compute F_dfs[1]");
                             // Check that U[0] == 0.
-                            F_dfs[1] = preprocessed_data.common_data->lagrange_0 * U;
+                            F_dfs[1] = polynomial_dfs_type(
+                                           preprocessed_data.common_data->lagrange_0) *
+                                       U;
                         }
 
                         {
                             PROFILE_SCOPE("Lookup argument compute F_dfs[2]");
                             // Check that U[Nu] == 0.
-                            F_dfs[2] = preprocessed_data.q_last * U;
+                            F_dfs[2] = polynomial_dfs_type(preprocessed_data.q_last) * U;
                         }
 
                         {
                             PROFILE_SCOPE("Lookup argument compute F_dfs[3]");
                             // Check that Mask(X) * (U(wX) - U(X) - Sum(hs) - Sum(gs)) ==
                             // 0.
-                            F_dfs[3] = math::polynomial_shift(U, 1, basic_domain->m) - U -
-                                       sum_H_G;
-                            F_dfs[3] *=
-                                (preprocessed_data.q_last + preprocessed_data.q_blind) -
-                                one_polynomial;
+                            F_dfs[3] = math::polynomial_shift(U, 1, basic_domain_size) -
+                                       U - sum_H_G;
+                            F_dfs[3] *= polynomial_dfs_type(preprocessed_data.q_last +
+                                                            preprocessed_data.q_blind) -
+                                        one_polynomial;
                         }
 
                         return {
@@ -331,7 +352,7 @@ namespace nil {
                      */
                     std::pair<std::vector<std::vector<
                                   std::vector<expression_evaluator_registration>>>,
-                              std::set<polynomial_dfs_variable_type>>
+                              std::set<small_field_polynomial_dfs_variable_type>>
                     register_lookup_value_expressions() {
                         PROFILE_SCOPE(
                             "Lookup argument input values: registering expresions");
@@ -339,14 +360,16 @@ namespace nil {
                         std::vector<
                             std::vector<std::vector<expression_evaluator_registration>>>
                             registrationsss;
-                        std::set<polynomial_dfs_variable_type> lookup_tags;
+                        std::set<small_field_polynomial_dfs_variable_type> lookup_tags;
 
                         for (std::size_t t_id = 0; t_id < lookup_tables.size(); t_id++) {
-                            const plonk_lookup_table<FieldType> &l_table = lookup_tables[t_id];
+                            const plonk_lookup_table<SmallFieldType>& l_table =
+                                lookup_tables[t_id];
 
-                            polynomial_dfs_variable_type lookup_tag(
-                                        l_table.tag_index, 0, false,
-                                        polynomial_dfs_variable_type::column_type::selector);
+                            small_field_polynomial_dfs_variable_type lookup_tag(
+                                l_table.tag_index, 0, false,
+                                small_field_polynomial_dfs_variable_type::column_type::
+                                    selector);
 
                             lookup_tags.insert(lookup_tag);
                             std::vector<std::vector<expression_evaluator_registration>>
@@ -376,16 +399,21 @@ namespace nil {
 
                         std::vector<polynomial_dfs_type> lookup_value;
                         for (std::size_t t_id = 0; t_id < lookup_tables.size(); t_id++) {
-                            const plonk_lookup_table<FieldType> &l_table = lookup_tables[t_id];
-                            polynomial_dfs_variable_type lookup_tag_selector(
+                            const plonk_lookup_table<SmallFieldType>& l_table =
+                                lookup_tables[t_id];
+                            small_field_polynomial_dfs_variable_type lookup_tag_selector(
                                 l_table.tag_index, 0, false,
-                                polynomial_dfs_variable_type::column_type::selector);
+                                small_field_polynomial_dfs_variable_type::column_type::
+                                    selector);
 
                             // Get the selector value in double size, since computations below
                             // will resize everything to double size.
-                            std::shared_ptr<polynomial_dfs_type> lookup_tag = _central_expr_evaluator.get(
-                                lookup_tag_selector,  _central_expr_evaluator.get_original_domain_size() * 2);
-                            
+                            auto lookup_tag =
+                            polynomial_dfs_type(*_central_expr_evaluator.get(
+                                    lookup_tag_selector,
+                                    _central_expr_evaluator.get_original_domain_size() *
+                                        2));
+
                             // Increase the size to fit the next table values.
                             std::size_t lookup_values_used = lookup_value.size();
                             lookup_value.resize(lookup_values_used +
@@ -398,13 +426,13 @@ namespace nil {
                                 [this, t_id, &l_table, &lookup_tag, &lookup_value,
                                  lookup_values_used, &registrationss](std::size_t o_id) {
                                     polynomial_dfs_type v =
-                                        (value_type(t_id + 1)) * (*lookup_tag);
+                                        (value_type(t_id + 1)) * lookup_tag;
                                     value_type theta_acc = this->theta;
                                     for (std::size_t i = 0; i < l_table.columns_number;
                                          i++) {
-                                        v += theta_acc * this->_central_expr_evaluator
+                                        v += theta_acc * polynomial_dfs_type(this->_central_expr_evaluator
                                                              .get_expression_value(
-                                                                 registrationss[o_id][i]);
+                                                                 registrationss[o_id][i]));
                                         theta_acc *= this->theta;
                                     }
                                     lookup_value[lookup_values_used + o_id] = v;
@@ -425,12 +453,15 @@ namespace nil {
                         // Every constraint has variable type 'variable_type', but we want it to use
                         // 'polynomial_dfs_variable_type' instead. The only difference is the coefficient type
                         // inside a term. We want the coefficients to be dfs polynomials here.
-                        auto value_type_to_polynomial_dfs = [](
-                            const typename variable_type::assignment_type& coeff) {
-                                return polynomial_dfs_type(0, 1, coeff);
+                        auto value_type_to_polynomial_dfs =
+                            [](const typename small_field_variable_type::assignment_type&
+                                   coeff) {
+                                return small_field_polynomial_dfs_type(0, 1, coeff);
                             };
-                        expression_variable_type_converter<variable_type, polynomial_dfs_variable_type> converter(
-                            value_type_to_polynomial_dfs);
+                        expression_variable_type_converter<
+                            small_field_variable_type,
+                            small_field_polynomial_dfs_variable_type>
+                            converter(value_type_to_polynomial_dfs);
 
                         std::vector<expression_evaluator_registration> registrations;
 
@@ -522,14 +553,18 @@ namespace nil {
                     }
 
                     central_evaluator_type& _central_expr_evaluator;
-                    const plonk_constraint_system<FieldType> &constraint_system;
-                    const typename placeholder_public_preprocessor<FieldType, ParamsType>::preprocessed_data_type& preprocessed_data;
-                    const plonk_polynomial_dfs_table<FieldType>& plonk_columns;
+                    const plonk_constraint_system<SmallFieldType>& constraint_system;
+                    const typename placeholder_public_preprocessor<
+                        SmallFieldType, ParamsType>::preprocessed_data_type&
+                        preprocessed_data;
+                    const plonk_polynomial_dfs_table<SmallFieldType>& plonk_columns;
                     commitment_scheme_type& commitment_scheme;
                     transcript_type& transcript;
-                    std::shared_ptr<math::evaluation_domain<FieldType>> basic_domain;
-                    const std::vector<plonk_lookup_gate<FieldType, plonk_lookup_constraint<FieldType>>>& lookup_gates;
-                    const std::vector<plonk_lookup_table<FieldType>>& lookup_tables;
+                    std::size_t basic_domain_size;
+                    const std::vector<plonk_lookup_gate<
+                        SmallFieldType, plonk_lookup_constraint<SmallFieldType>>>&
+                        lookup_gates;
+                    const std::vector<plonk_lookup_table<SmallFieldType>>& lookup_tables;
                     value_type theta;
                     std::size_t lookup_chunks;
                     const size_t usable_rows_amount;
@@ -537,6 +572,7 @@ namespace nil {
 
                 template<typename FieldType, typename CommitmentSchemeTypePermutation, typename ParamsType>
                 class placeholder_lookup_argument_verifier {
+                    using SmallFieldType = typename FieldType::small_subfield;
                     using value_type = typename FieldType::value_type;
 
                     using transcript_hash_type = typename ParamsType::transcript_hash_type;
@@ -554,8 +590,8 @@ namespace nil {
                 public:
 
                     void fill_challenge_queue(
-                        const typename placeholder_public_preprocessor<FieldType, ParamsType>::preprocessed_data_type::common_data_type &common_data,
-                        const plonk_constraint_system<FieldType> &constraint_system,
+                        const typename placeholder_public_preprocessor<SmallFieldType, ParamsType>::preprocessed_data_type::common_data_type &common_data,
+                        const plonk_constraint_system<SmallFieldType> &constraint_system,
                         // sorted_batch_values. Pair value/shifted_value
                         const std::vector<std::vector<value_type>> &sorted,
                         // Commitment
@@ -583,9 +619,9 @@ namespace nil {
                      * \returns A list of lookup argument values that are used as a part of the final zero-check pprotocol.
                      */
                     std::array<value_type, argument_size> verify_eval(
-                        const typename placeholder_public_preprocessor<FieldType, ParamsType>::preprocessed_data_type::common_data_type &common_data,
+                        const typename placeholder_public_preprocessor<SmallFieldType, ParamsType>::preprocessed_data_type::common_data_type &common_data,
                         const std::vector<value_type> &special_selector_values,
-                        const plonk_constraint_system<FieldType> &constraint_system,
+                        const plonk_constraint_system<SmallFieldType> &constraint_system,
                         const value_type &challenge,
                         typename policy_type::evaluation_map &evaluations,
                         const std::vector<value_type>& counts,
@@ -596,9 +632,11 @@ namespace nil {
                         const typename CommitmentSchemeTypePermutation::commitment_type &lookup_commitment,
                         transcript_type &transcript = transcript_type()
                     ) {
-                        const std::vector<plonk_lookup_gate<FieldType, plonk_lookup_constraint<FieldType>>> &lookup_gates =
-                            constraint_system.lookup_gates();
-                        const std::vector<plonk_lookup_table<FieldType>> &lookup_tables = constraint_system.lookup_tables();
+                        const std::vector<plonk_lookup_gate<
+                            SmallFieldType, plonk_lookup_constraint<SmallFieldType>>>&
+                            lookup_gates = constraint_system.lookup_gates();
+                        const std::vector<plonk_lookup_table<SmallFieldType>>&
+                            lookup_tables = constraint_system.lookup_tables();
 
                         std::array<value_type, argument_size> F;
                         // 1. Get theta

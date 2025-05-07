@@ -66,18 +66,27 @@ namespace nil {
 
                 template<typename FieldType, typename ParamsType>
                 struct placeholder_gates_argument {
+                    using SmallFieldType = typename FieldType::small_subfield;
                     using value_type = typename FieldType::value_type;
+                    using small_field_value_type = typename SmallFieldType::value_type;
 
                     using transcript_hash_type = typename ParamsType::transcript_hash_type;
                     using transcript_type = transcript::fiat_shamir_heuristic_sequential<
                         transcript_hash_type>;
+                    using small_field_polynomial_dfs_type =
+                        math::polynomial_dfs<small_field_value_type>;
                     using polynomial_dfs_type = math::polynomial_dfs<value_type>;
-                    using variable_type = plonk_variable<value_type>;
-                    using polynomial_dfs_variable_type = plonk_variable<polynomial_dfs_type>;
-                    using expression_type = expression<polynomial_dfs_variable_type>;
-                    using central_evaluator_type = CentralAssignmentTableExpressionEvaluator<FieldType>;
+                    using variable_type = plonk_variable<small_field_value_type>;
+                    using polynomial_dfs_variable_type =
+                        plonk_variable<polynomial_dfs_type>;
+                    using small_field_polynomial_dfs_variable_type =
+                        plonk_variable<small_field_polynomial_dfs_type>;
+                    using expression_type =
+                        expression<small_field_polynomial_dfs_variable_type>;
+                    using central_evaluator_type =
+                        CentralAssignmentTableExpressionEvaluator<SmallFieldType>;
 
-                    typedef detail::placeholder_policy<FieldType, ParamsType> policy_type;
+                    using policy_type = detail::placeholder_policy<FieldType, ParamsType>;
                     using constraint_system_type = typename policy_type::constraint_system_type;
 
                     constexpr static const std::size_t argument_size = 1;
@@ -117,9 +126,9 @@ namespace nil {
                         // inside a term. We want the coefficients to be dfs polynomials here.
                         auto value_type_to_polynomial_dfs = [](
                             const typename variable_type::assignment_type& coeff) {
-                                return polynomial_dfs_type(0, 1, coeff);
+                                return small_field_polynomial_dfs_type(0, 1, coeff);
                             };
-                        expression_variable_type_converter<variable_type, polynomial_dfs_variable_type> converter(
+                        expression_variable_type_converter<variable_type, small_field_polynomial_dfs_type> converter(
                             value_type_to_polynomial_dfs);
 
                         auto theta_acc = value_type::one();
@@ -180,12 +189,11 @@ namespace nil {
                         return F;
                     }
 
-                    static inline std::array<value_type, argument_size>
-                    verify_eval(
-                        const std::vector<plonk_gate<FieldType, plonk_constraint<FieldType>>>& gates,
+                    static inline std::array<value_type, argument_size> verify_eval(
+                        const std::vector<plonk_gate<
+                            SmallFieldType, plonk_constraint<SmallFieldType>>>& gates,
                         typename policy_type::evaluation_map& evaluations,
-                        const value_type& /*challenge*/,
-                        value_type /*mask_value*/,
+                        const value_type& /*challenge*/, value_type /*mask_value*/,
                         transcript_type& transcript) {
                         value_type theta =
                             transcript.template challenge<FieldType>();
