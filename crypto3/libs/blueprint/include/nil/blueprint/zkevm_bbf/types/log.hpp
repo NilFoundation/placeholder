@@ -23,24 +23,38 @@
 //---------------------------------------------------------------------------//
 
 #pragma once
-#include <nil/crypto3/hash/type_traits.hpp>
 #include <nil/crypto3/hash/algorithm/hash.hpp>
+#include <nil/crypto3/hash/type_traits.hpp>
 
-#include <nil/blueprint/components/hashes/keccak/util.hpp> //Move needed utils to bbf
 #include <nil/blueprint/bbf/generic.hpp>
-
-
+#include <nil/blueprint/components/hashes/keccak/util.hpp>  //Move needed utils to bbf
 
 namespace nil {
     namespace blueprint {
         namespace bbf {
-            struct zkevm_log{
+            struct zkevm_log {
                 zkevm_word_type id;
                 zkevm_word_type index;
                 zkevm_word_type address;
-                // std::vector<zkevm_word_type> data;
                 std::vector<zkevm_word_type> topics;
             };
-        } // namespace bbf
-    } // namespace blueprint
-} // namespace nil
+            struct zkevm_filter_indices {
+                zkevm_word_type id;
+                zkevm_word_type index;
+                zkevm_word_type value;
+                zkevm_word_type type;
+                zkevm_word_type indice;
+                zkevm_word_type is_last;
+                std::vector<zkevm_word_type> filter;
+            };
+
+            enum class indice_type: std::uint8_t {
+                address = 0,              
+                topic_1 = 1,              
+                topic_2 = 2,
+                topic_3 = 3,
+                topic_4 = 4
+            };
+        }  // namespace bbf
+    }  // namespace blueprint
+}  // namespace nil

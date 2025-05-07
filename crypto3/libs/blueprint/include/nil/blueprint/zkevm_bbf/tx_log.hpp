@@ -58,7 +58,7 @@ namespace nil {
                 struct input_type {
                     TYPE rlc_challenge;
 
-                    LogTable::input_type logs;
+                    LogTable::input_type filter_indices;
                     KeccakTable::private_input_type keccak_buffers;
                 };
 
@@ -70,25 +70,25 @@ namespace nil {
                 constexpr static const value two_16 = 65536;
 
                 static table_params get_minimal_requirements(
-                    std::size_t max_log_indices, std::size_t max_keccak_blocks) {
+                    std::size_t max_filter_indices, std::size_t max_keccak_blocks) {
                     return {.witnesses = LogTable::get_witness_amount() +
                                          KeccakTable::get_witness_amount() + 21 +
                                          filter_chunks_amount + 2 * filter_bit_per_chunk,
                             .public_inputs = 1,
                             .constants = 1,
-                            .rows = std::max(max_log_indices, max_keccak_blocks)};
+                            .rows = std::max(max_filter_indices, max_keccak_blocks)};
                 }
 
                 static void allocate_public_inputs(context_type &context,
                                                    input_type &input,
-                                                   std::size_t max_log_indices,
+                                                   std::size_t max_filter_indices,
                                                    std::size_t max_keccak_blocks) {
                     context.allocate(input.rlc_challenge, 0, 0,
                                      column_type::public_input);
                 }
 
                 tx_log(context_type &context_object, const input_type &input,
-                       std::size_t max_log_indices, std::size_t max_keccak_blocks)
+                       std::size_t max_filter_indices, std::size_t max_keccak_blocks)
                     : generic_component<FieldType, stage>(context_object) {
                     std::vector<std::size_t> log_lookup_area;
                     std::vector<std::size_t> keccak_lookup_area;
@@ -99,11 +99,12 @@ namespace nil {
                         keccak_lookup_area.push_back(current_column++);
 
                     context_type log_ct =
-                        context_object.subcontext(log_lookup_area, 0, max_log_indices);
+                        context_object.subcontext(log_lookup_area, 0, max_filter_indices);
                     context_type keccak_ct = context_object.subcontext(
                         keccak_lookup_area, 0, max_keccak_blocks);
 
-                    LogTable l_t = LogTable(log_ct, input.logs, max_log_indices);
+                    // LogTable l_t = LogTable(log_ct, input.logs, max_filter_indices);
+                    LogTable l_t = LogTable(log_ct, input.filter_indices, max_filter_indices);
                     KeccakTable k_t = KeccakTable(
                         keccak_ct, {input.rlc_challenge, input.keccak_buffers},
                         max_keccak_blocks);
@@ -120,45 +121,42 @@ namespace nil {
 
                     // Allocated cells
                     std::vector<TYPE> selector(
-                        max_log_indices);  // 0 when outside the assigned cells
-                    std::vector<TYPE> is_zero_index(max_log_indices);
-                    std::vector<TYPE> is_zero_type(max_log_indices);
-                    std::vector<TYPE> is_zero_indice(max_log_indices);
-                    std::vector<TYPE> indice_is_2(max_log_indices);
+                        max_filter_indices);  // 0 when outside the assigned cells
+                    std::vector<TYPE> is_zero_index(max_filter_indices);
+                    std::vector<TYPE> is_zero_type(max_filter_indices);
+                    std::vector<TYPE> is_zero_indice(max_filter_indices);
+                    std::vector<TYPE> indice_is_2(max_filter_indices);
                     // hash of the value (address or topic)
-                    std::vector<TYPE> hash_hi(max_log_indices);
-                    std::vector<TYPE> hash_lo(max_log_indices);
+                    std::vector<TYPE> hash_hi(max_filter_indices);
+                    std::vector<TYPE> hash_lo(max_filter_indices);
 
-                    std::vector<std::vector<TYPE>> hash_hi_chunks(max_log_indices,
+                    std::vector<std::vector<TYPE>> hash_hi_chunks(max_filter_indices,
                                                                   std::vector<TYPE>(8));
                     // Hash chunk corresponding to the indice
-                    std::vector<TYPE> indice_chunk(max_log_indices);
+                    std::vector<TYPE> indice_chunk(max_filter_indices);
                     // Low 11 bits of the indice chunk
                     // This is the value applied to the previous filter
-                    std::vector<TYPE> index(max_log_indices);
+                    std::vector<TYPE> index(max_filter_indices);
                     // 1 if the index was not in the previous filter
-                    std::vector<TYPE> index_selector(max_log_indices);
+                    std::vector<TYPE> index_selector(max_filter_indices);
                     // Hi 5 bits of the indice chunk
-                    std::vector<TYPE> chunks_remainder(max_log_indices);
+                    std::vector<TYPE> chunks_remainder(max_filter_indices);
                     // Byte position of the index
-                    std::vector<TYPE> byte_pos(max_log_indices);
+                    std::vector<TYPE> byte_pos(max_filter_indices);
                     // Bit position of the index
-                    std::vector<TYPE> bit_pos(max_log_indices);
+                    std::vector<TYPE> bit_pos(max_filter_indices);
                     // 0 for every chunk except the chunk at byte_pos
                     std::vector<std::vector<TYPE>> index_chunk(
-                        max_log_indices, std::vector<TYPE>(filter_chunks_amount));
+                        max_filter_indices, std::vector<TYPE>(filter_chunks_amount));
                     // 0 for every position except at bit_pos
                     std::vector<std::vector<TYPE>> index_bit_selector(
-                        max_log_indices, std::vector<TYPE>(filter_bit_per_chunk));
+                        max_filter_indices, std::vector<TYPE>(filter_bit_per_chunk));
                     // Previous filter chunk corresponding to the index_chunk
                     std::vector<std::vector<TYPE>> transition_chunk_bits(
-                        max_log_indices, std::vector<TYPE>(filter_bit_per_chunk));
+                        max_filter_indices, std::vector<TYPE>(filter_bit_per_chunk));
 
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                        for (std::size_t i = 0; i < max_log_indices; i++) {
-                            if (value_lo[i].is_zero()) {
-                                break;
-                            }
+                        for (std::size_t i = 0; i < input.filter_indices.size(); i++) {
                             selector[i] = 1;
                             is_zero_index[i] = log_index[i].is_zero();
                             is_zero_indice[i] = indice[i].is_zero();
@@ -234,29 +232,29 @@ namespace nil {
                             }
 
                             if (i != 0) {
-                                for (std::size_t j = 0; j < filter_chunks_amount; j++) {
-                                    std::cout << "i: " << i << ", j: " << j << std::endl;
-                                    std::cout << "current_filter[i][j]: "
-                                              << current_filter[i][j] << std::endl;
-                                    std::cout << "current_filter[i-1][j]: "
-                                              << current_filter[i - 1][j] << std::endl;
-                                    std::cout
-                                        << "index_chunk[i][j]: " << index_chunk[i][j]
-                                        << std::endl;
-                                    std::cout
-                                        << "index_selector[i]: " << index_selector[i]
-                                        << std::endl;
-                                    std::cout << "constrain: "
-                                              << current_filter[i][j] -
-                                                     current_filter[i - 1][j] -
-                                                     index_selector[i] * index_chunk[i][j]
-                                              << std::endl;
-                                }
+                                // for (std::size_t j = 0; j < filter_chunks_amount; j++) {
+                                //     std::cout << "i: " << i << ", j: " << j << std::endl;
+                                //     std::cout << "current_filter[i][j]: "
+                                //               << current_filter[i][j] << std::endl;
+                                //     std::cout << "current_filter[i-1][j]: "
+                                //               << current_filter[i - 1][j] << std::endl;
+                                //     std::cout
+                                //         << "index_chunk[i][j]: " << index_chunk[i][j]
+                                //         << std::endl;
+                                //     std::cout
+                                //         << "index_selector[i]: " << index_selector[i]
+                                //         << std::endl;
+                                //     std::cout << "constrain: "
+                                //               << current_filter[i][j] -
+                                //                      current_filter[i - 1][j] -
+                                //                      index_selector[i] * index_chunk[i][j]
+                                //               << std::endl;
+                                // }
                             }
                         }
                     }
 
-                    for (std::size_t i = 0; i < max_log_indices; i++) {
+                    for (std::size_t i = 0; i < max_filter_indices; i++) {
                         if (i % 20 == 0) std::cout << ".";
                         std::cout.flush();
                         std::size_t cur_column = LogTable::get_witness_amount() +
@@ -468,27 +466,27 @@ namespace nil {
                             PROFILE_SCOPE("Log circuit constraints row definition")
                             std::vector<std::size_t> every_row;
                             std::vector<std::size_t> non_first_row;
-                            for (std::size_t i = 0; i < max_log_indices; i++) {
+                            for (std::size_t i = 0; i < max_filter_indices; i++) {
                                 every_row.push_back(i);
                                 if (i != 0) non_first_row.push_back(i);
                             }
                             for (auto &constraint : every_row_constraints) {
                                 context_object.relative_constrain(constraint, 0,
-                                                                  max_log_indices - 1);
+                                                                  max_filter_indices - 1);
                             }
                             for (auto &constraint : chunked_16_lookups) {
                                 std::vector<TYPE> tmp = {constraint};
                                 context_object.relative_lookup(tmp, "chunk_16_bits/full",
-                                                               0, max_log_indices - 1);
+                                                               0, max_filter_indices - 1);
                             }
                             for (auto &constraint : non_first_row_lookups) {
                                 std::vector<TYPE> tmp = {constraint};
                                 context_object.relative_lookup(tmp, "chunk_16_bits/full",
-                                                               1, max_log_indices - 1);
+                                                               1, max_filter_indices - 1);
                             }
                             for (auto &constraint : non_first_row_constraints) {
                                 context_object.relative_constrain(constraint, 1,
-                                                                  max_log_indices - 1);
+                                                                  max_filter_indices - 1);
                             }
                         }
                     }

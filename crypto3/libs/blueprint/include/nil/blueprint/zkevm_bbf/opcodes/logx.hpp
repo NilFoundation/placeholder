@@ -27,6 +27,7 @@
 #include <algorithm>
 #include <numeric>
 
+#include <nil/blueprint/zkevm_bbf/subcomponents/log_table.hpp>
 #include <nil/blueprint/zkevm_bbf/subcomponents/memory_cost.hpp>
 #include <nil/blueprint/zkevm_bbf/types/opcode.hpp>
 #include <nil/blueprint/zkevm_bbf/types/zkevm_word.hpp>
@@ -46,8 +47,6 @@ namespace nil {
                 using generic_component<FieldType, stage>::lookup;
                 using generic_component<FieldType, stage>::lookup_table;
 
-                static constexpr std::size_t filter_chunks_amount = 128;
-
               public:
                 using typename generic_component<FieldType, stage>::TYPE;
 
@@ -58,21 +57,20 @@ namespace nil {
                     using Memory_Cost = typename bbf::memory_cost<FieldType, stage>;
 
                     TYPE offset, length, current_mem, next_mem, memory_expansion_size,
-                        memory_expansion_cost, S;
+                        memory_expansion_cost, S, tx_id, call_context_address_hi,
+                        call_context_address_lo, log_index;
                     std::vector<TYPE> topics_lo(x);
                     std::vector<TYPE> topics_hi(x);
-                    // std::vector<std::vector<TYPE>> filters(3 * (x + 1) + 1,
-                    //                                        filter_chunks_amount);
-                    // should have current filter and next filter
 
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
+                        tx_id = current_state.tx_id();
+                        auto call_context_address = current_state.call_context_address();
+                        call_context_address_hi = w_hi<FieldType>(call_context_address);
+                        call_context_address_lo = w_lo<FieldType>(call_context_address);
+                        log_index = current_state.log_index();
                         offset = w_lo<FieldType>(current_state.stack_top());
                         length = w_lo<FieldType>(current_state.stack_top(1));
                         current_mem = current_state.memory_size();
-                        // current_state.current_filter();
-                        // current_state.next_filter();
-                        // add constrains x = 0 -> value = topic
-                        // x = 1 -> value = topic x
                         next_mem = length.is_zero()
                                        ? current_mem
                                        : std::max(offset + length, current_mem);
@@ -90,6 +88,11 @@ namespace nil {
                     allocate(current_mem, 34, 0);
                     allocate(next_mem, 35, 0);
                     allocate(S, 36, 0);
+                    allocate(tx_id, 44, 1);
+                    allocate(call_context_address_hi, 45, 1);
+                    allocate(call_context_address_lo, 46, 1);
+                    allocate(log_index, 47, 1);
+
                     for (std::size_t i = 0; i < x; i++) {
                         allocate(topics_lo[i], 37 + 2 * i, 0);
                         allocate(topics_hi[i], 38 + 2 * i, 0);
@@ -155,6 +158,15 @@ namespace nil {
                                 topics_hi[i], topics_lo[i]);
                             lookup(tmp, "zkevm_rw");
                         }
+                        if (x) {
+                            tmp = log_table<FieldType, stage>::log_lookup(
+                                tx_id, log_index, topics_hi[x - 1], topics_lo[x - 1], x);
+                        } else {
+                            tmp = log_table<FieldType, stage>::log_lookup(
+                                tx_id, log_index, call_context_address_hi,
+                                call_context_address_lo, x);
+                        }
+                        lookup(tmp, "zkevm_logs");
                     }
                 }
             };
