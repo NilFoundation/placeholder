@@ -268,7 +268,7 @@ constexpr l1_size_restrictions gen_max_sizes(std::size_t max_rows) {
     max_sizes.max_call_commits = max_rows;
     return max_sizes;
 }
-/*
+
 BOOST_DATA_TEST_CASE(minimal_math_pallas_fixed_size, boost::unit_test::data::xrange(30)) {
     using FieldType = typename algebra::curves::pallas::scalar_field_type;
     auto pt = load_hardhat_input("minimal_math.json");
@@ -299,7 +299,7 @@ BOOST_DATA_TEST_CASE(minimal_math_babybear_fixed_size,
 
     complex_test<FieldType>(pt, gen_max_sizes(size));
 }
-*/
+
 BOOST_DATA_TEST_CASE(minimal_math_babybear_fp4_fixed_size,
                      boost::unit_test::data::xrange(30)) {
     using FieldType = typename algebra::fields::babybear_fp4;
@@ -310,7 +310,7 @@ BOOST_DATA_TEST_CASE(minimal_math_babybear_fp4_fixed_size,
 
     complex_test<FieldType>(pt, gen_max_sizes(size));
 }
-/*
+
 BOOST_DATA_TEST_CASE(minimal_math_babybear_fp5_fixed_size,
                      boost::unit_test::data::xrange(30)) {
     using FieldType = typename algebra::fields::babybear_fp5;
@@ -321,7 +321,7 @@ BOOST_DATA_TEST_CASE(minimal_math_babybear_fp5_fixed_size,
 
     complex_test<FieldType>(pt, gen_max_sizes(size));
 }
-*/
+
 BOOST_AUTO_TEST_SUITE_END()
 /*
 BOOST_AUTO_TEST_CASE(benchmark, *boost::unit_test::disabled()) {
