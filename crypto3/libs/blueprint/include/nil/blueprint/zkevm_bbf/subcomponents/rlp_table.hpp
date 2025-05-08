@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------//
-// Copyright (c) 2024 Elena Tatuzova   <e.tatuzova@nil.foundation>
+// Copyright (c) 2024 Elen_imagea Tatuzova   <e.tatuzova@nil.foundation>
 // Copyright (c) 2024 Alexey Yashunsky <a.yashunsky@nil.foundation>
 //
 // MIT License
@@ -56,149 +56,208 @@ namespace nil {
 
                 std::size_t max_rows;
 
-                std::vector<TYPE> rlp_prefix_0  = std::vector<TYPE>(max_rows);
-                std::vector<TYPE> rlp_prefix_1  = std::vector<TYPE>(max_rows);
-                std::vector<TYPE> rlp_prefix_2  = std::vector<TYPE>(max_rows);
-                // if `first_element_flag` is one, `first_element` should be equal to the actual first element. 
-                // otherwise `first_element` is zero and the actual first element can be arbitrary
+                std::vector<TYPE> prefix_first         = std::vector<TYPE>(max_rows);
+                std::vector<TYPE> prefix_second_image  = std::vector<TYPE>(max_rows);
+                std::vector<TYPE> prefix_third         = std::vector<TYPE>(max_rows);
+                // if `prefix_second_flag` is one, `prefix_second_image` should be equal to the real second prefix. 
+                // otherwise `prefix_second` is zero and the real second prefix can be arbitrary. 
+                // when prefix_second_flag is zero, len_image will be zero and the real len_imagegth is prefix_second * 0x100 + prefix_third
+                std::vector<TYPE> prefix_second_flag  = std::vector<TYPE>(max_rows);
+                
+                // the following are only for conveniences 
+                std::vector<TYPE> prefix_first_exists  = std::vector<TYPE>(max_rows);
+                std::vector<TYPE> prefix_second_exists = std::vector<TYPE>(max_rows);
+                // if prefix_third_exists is zero, len_image must be equal to real length, otherwise the real length is prefix_second * 0x100 + prefix_third
+                std::vector<TYPE> prefix_third_exists  = std::vector<TYPE>(max_rows);
+                
+                // if `first_element_flag` is one, `first_element_image` should be equal to the real first element. 
+                // otherwise `first_element` is zero and the real first element can be arbitrary
                 std::vector<TYPE> first_element_flag  = std::vector<TYPE>(max_rows);
-                std::vector<TYPE> first_element       = std::vector<TYPE>(max_rows);
+                std::vector<TYPE> first_element_image = std::vector<TYPE>(max_rows);
                 std::vector<TYPE> element_type        = std::vector<TYPE>(max_rows); // 0 for array (used in node encoding) and 1 for string (used in child encoding)
-                std::vector<TYPE> len_high            = std::vector<TYPE>(max_rows); // highest part of the length
-                std::vector<TYPE> len_low             = std::vector<TYPE>(max_rows); // lowest part of the length
-                std::vector<TYPE> rlp_prefix_1_is_zero    = std::vector<TYPE>(max_rows); // 0 if rlp_prefix_1 is zero, otherwise 1
-                std::vector<TYPE> rlp_prefix_2_is_zero    = std::vector<TYPE>(max_rows); // 0 if rlp_prefix_2 is zero, otherwise 1
+                std::vector<TYPE> len_image           = std::vector<TYPE>(max_rows); // len_imagegth
 
                 static std::size_t get_witness_amount(){
-                    return 10;
+                    return 8;
                 }
 
                 rlp_table(context_type &context_object) :
-                    max_rows(2178),
+                    max_rows(1168),
                     generic_component<FieldType,stage>(context_object) {
                     size_t row_index = 0;
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
+                        
+                        // string encoding with zero len_imagegth
+                        prefix_first_exists[row_index] = 1;
+                        prefix_second_exists[row_index] = 0;
+                        prefix_third_exists[row_index] = 0;
+
+                        prefix_first[row_index] = 0x80;
+                        prefix_second_image[row_index] = 0;
+                        prefix_second_flag[row_index] = 1;
+                        prefix_third[row_index] = 0;
+                        first_element_image[row_index] = 0;
+                        first_element_flag[row_index] = 1;
+                        element_type[row_index] = 1;
+                        len_image[row_index] = 0;
+                        row_index++;
+
                         // string encoding with single bytes and value less than 128
-                        for (size_t i = 0; i <= 127; i++) {
-                            rlp_prefix_0[row_index] = 0;
-                            rlp_prefix_1[row_index] = 0;
-                            rlp_prefix_1_is_zero[row_index] = 1;
-                            rlp_prefix_2_is_zero[row_index] = 1;
-                            first_element[row_index] = i;
+                        for (size_t i = 0; i < 128; i++) {
+                            prefix_first_exists[row_index] = 0;
+                            prefix_second_exists[row_index] = 0;
+                            prefix_third_exists[row_index] = 0;
+
+                            prefix_first[row_index] = 0;
+                            prefix_second_image[row_index] = 0;
+                            prefix_second_flag[row_index] = 1;
+                            prefix_third[row_index] = 0;
+                            first_element_image[row_index] = i;
                             first_element_flag[row_index] = 1;
                             element_type[row_index] = 1;
                             if (i == 0)
-                                len_low[row_index] = 0;
+                                len_image[row_index] = 0;
                             else
-                                len_low[row_index] = 1;
-                            len_high[row_index] = 0;
+                                len_image[row_index] = 1;
                             row_index++;
                         }
 
-                        // string encoding with zero length
-                        rlp_prefix_0[row_index] = 0x80;
-                        rlp_prefix_1[row_index] = 0;
-                        rlp_prefix_1_is_zero[row_index] = 1;
-                        rlp_prefix_2_is_zero[row_index] = 1;
-                        first_element[row_index] = 0;
-                        first_element_flag[row_index] = 1;
-                        element_type[row_index] = 1;
-                        len_low[row_index] = 0;
-                        len_high[row_index] = 0;
-                        row_index++;
+                        // string encoding with single bytes and value between 128 and 256
+                        for (size_t i = 128; i < 256; i++) {
+                            prefix_first_exists[row_index] = 1;
+                            prefix_second_exists[row_index] = 0;
+                            prefix_third_exists[row_index] = 0;
 
-                        // string encoding with 1 to 55 bytes length
-                        for (size_t i = 1; i <= 55; i++) {
-                            rlp_prefix_0[row_index] = 0x80 + i;
-                            rlp_prefix_1[row_index] = 0;
-                            rlp_prefix_2[row_index] = 0;
-                            rlp_prefix_1_is_zero[row_index] = 1;
-                            rlp_prefix_2_is_zero[row_index] = 1;
-                            first_element[row_index] = 0;
+                            prefix_first[row_index] = 0x81;
+                            prefix_second_image[row_index] = 0;
+                            prefix_second_flag[row_index] = 1;
+                            prefix_third[row_index] = 0;
+                            first_element_image[row_index] = i;
+                            first_element_flag[row_index] = 1;
+                            element_type[row_index] = 1;
+                            len_image[row_index] = 1;
+                            row_index++;
+                        }
+
+                        // string encoding with len_imagegth between 2 to 55 bytes
+                        for (size_t i = 2; i < 56; i++) {
+                            prefix_first_exists[row_index] = 1;
+                            prefix_second_exists[row_index] = 0;
+                            prefix_third_exists[row_index] = 0;
+
+                            prefix_first[row_index] = 0x80 + i;
+                            prefix_second_image[row_index] = 0;
+                            prefix_second_flag[row_index] = 1;
+                            prefix_third[row_index] = 0;
+                            first_element_image[row_index] = 0;
                             first_element_flag[row_index] = 0;
                             element_type[row_index] = 1;
-                            len_low[row_index] = i;
-                            len_high[row_index] = 0;
+                            len_image[row_index] = i;
                             row_index++;
                         }
 
-                        // string encoding with length more than 55 (1024 is not enough for transaction and receipt rlp encoding)
-                        for (size_t i = 56; i <= 1024; i++) {
-                            if (i < 256) {
-                                rlp_prefix_0[row_index] = 0xB7 + 1;
-                                rlp_prefix_1[row_index] = i;
-                                rlp_prefix_2[row_index] = 0;
-                                rlp_prefix_1_is_zero[row_index] = 0;
-                                rlp_prefix_2_is_zero[row_index] = 1;
-                            } else {
-                                rlp_prefix_0[row_index] = 0xB7 + 2;
-                                rlp_prefix_1[row_index] = (i >> 8) & 0xFF;
-                                rlp_prefix_2[row_index] = i & 0xFF;
-                                rlp_prefix_1_is_zero[row_index] = 0;
-                                rlp_prefix_2_is_zero[row_index] = 0;
-                            }
-                            first_element[row_index] = 0;
+                        // string encoding with length between 56 and 255
+                        for (size_t i = 56; i < 256; i++) {
+                            prefix_first_exists[row_index] = 1;
+                            prefix_second_exists[row_index] = 1;
+                            prefix_third_exists[row_index] = 0;
+
+                            prefix_first[row_index] = 0xB7 + 1;
+                            prefix_second_image[row_index] = i;
+                            prefix_second_flag[row_index] = 1;
+
+                            prefix_third[row_index] = 0;
+                            first_element_image[row_index] = 0;
                             first_element_flag[row_index] = 0;
                             element_type[row_index] = 1;
-                            len_low[row_index] = i & 0xFF;
-                            len_high[row_index] = (i >> 8) & 0xFF;
+                            len_image[row_index] = i;
                             row_index++;
                         }
 
-                        // array encoding with length less than 55 bytes
-                        for (size_t i = 0; i <= 55; i++) {
-                            rlp_prefix_0[row_index] = 0xC0 + i;
-                            rlp_prefix_1[row_index] = 0;
-                            rlp_prefix_2[row_index] = 0;
-                            rlp_prefix_1_is_zero[row_index] = 1;
-                            rlp_prefix_2_is_zero[row_index] = 1;
-                            first_element[row_index] = 0;
+                        // string encoding with length between 255 and 65535
+                        for (size_t i = 56; i < 256; i++) {
+                            prefix_first_exists[row_index] = 1;
+                            prefix_second_exists[row_index] = 1;
+                            prefix_third_exists[row_index] = 1;
+
+                            prefix_first[row_index] = 0xB7 + 2;
+                            prefix_second_image[row_index] = 0;
+                            prefix_second_flag[row_index] = 0;
+
+                            prefix_third[row_index] = i;
+                            first_element_image[row_index] = 0;
+                            first_element_flag[row_index] = 0;
+                            element_type[row_index] = 1;
+                            len_image[row_index] = 0;
+                            row_index++;
+                        }
+
+                        // array encoding with lenth less than 56 bytes
+                        for (size_t i = 0; i < 56; i++) {
+                            prefix_first_exists[row_index] = 1;
+                            prefix_second_exists[row_index] = 0;
+                            prefix_third_exists[row_index] = 0;
+
+                            prefix_first[row_index] = 0xC0 + i;
+                            prefix_second_image[row_index] = 0;
+                            prefix_second_flag[row_index] = 1;
+                            prefix_third[row_index] = 0;
+                            first_element_image[row_index] = 0;
                             first_element_flag[row_index] = 0;
                             element_type[row_index] = 0;
-                            len_low[row_index] = i;
-                            len_high[row_index] = 0;
+                            len_image[row_index] = i;
                             row_index++;
                         }
 
-                        // array encoding with length more than 55 (1024 is not enough for transaction and receipt rlp encoding)
-                        for (size_t i = 56; i <= 1024; i++) {
-                            if (i < 256) {
-                                rlp_prefix_0[row_index] = 0xF7 + 1;
-                                rlp_prefix_1[row_index] = i;
-                                rlp_prefix_2[row_index] = 0;
-                                rlp_prefix_1_is_zero[row_index] = 0;
-                                rlp_prefix_2_is_zero[row_index] = 1;
-                            } else {
-                                rlp_prefix_0[row_index] = 0xF7 + 2;
-                                rlp_prefix_1[row_index] = (i >> 8) & 0xFF;
-                                rlp_prefix_2[row_index] = i & 0xFF;
-                                rlp_prefix_1_is_zero[row_index] = 0;
-                                rlp_prefix_2_is_zero[row_index] = 0;
-                            }
-                            first_element[row_index] = 0;
+                        // array encoding with len_imagegth between 56 and 255
+                        for (size_t i = 56; i < 256; i++) {
+                            prefix_first_exists[row_index] = 1;
+                            prefix_second_exists[row_index] = 1;
+                            prefix_third_exists[row_index] = 0;
+
+                            prefix_first[row_index] = 0xF7 + 1;
+                            prefix_second_image[row_index] = i;
+                            prefix_second_flag[row_index] = 1;
+
+                            prefix_third[row_index] = 0;
+                            first_element_image[row_index] = 0;
                             first_element_flag[row_index] = 0;
                             element_type[row_index] = 0;
-                            len_low[row_index] = i & 0xFF;
-                            len_high[row_index] = (i >> 8) & 0xFF;
+                            len_image[row_index] = i;
                             row_index++;
-
                         }
 
-                        for (size_t i = 0; i < row_index; i++)
-                        {
-                            allocate(rlp_prefix_0[i],           0, i);
-                            allocate(rlp_prefix_1[i],           1, i);
-                            allocate(rlp_prefix_2[i],           2, i);
-                            allocate(first_element[i],          3, i);
-                            allocate(first_element_flag[i],     4, i);
-                            allocate(element_type[i],           5, i);
-                            allocate(len_low[i],                6, i);
-                            allocate(len_high[i],               7, i);
-                            allocate(rlp_prefix_1_is_zero[i],   8, i);
-                            allocate(rlp_prefix_2_is_zero[i],   9, i);
+                        // array encoding with len_imagegth between 256 and 65535
+                        for (size_t i = 56; i < 256; i++) {
+                            prefix_first_exists[row_index] = 1;
+                            prefix_second_exists[row_index] = 1;
+                            prefix_third_exists[row_index] = 1;
+
+                            prefix_first[row_index] = 0xF7 + 2;
+                            prefix_second_image[row_index] = 0;
+                            prefix_second_flag[row_index] = 0;
+
+                            prefix_third[row_index] = i;
+                            first_element_image[row_index] = 0;
+                            first_element_flag[row_index] = 0;
+                            element_type[row_index] = 0;
+                            len_image[row_index] = 0;
+                            row_index++;
+                        }
+
+
+                        for (size_t i = 0; i < row_index; i++) {
+                            allocate(prefix_first[i],        0, i);
+                            allocate(prefix_second_image[i], 1, i);
+                            allocate(prefix_third[i],        2, i);
+                            allocate(prefix_second_flag[i],  3, i);
+                            allocate(first_element_flag[i],  4, i);
+                            allocate(first_element_image[i], 5, i);
+                            allocate(element_type[i],        6, i);
+                            allocate(len_image[i],           7, i);
                         }
                     }
-                    lookup_table("rlp_table",std::vector<std::size_t>({0, 1, 2, 3, 4, 5, 6, 7, 8, 9}),0,max_rows);
+                    lookup_table("rlp_table",std::vector<std::size_t>({0, 1, 2, 3, 4, 5, 6, 7}),0,max_rows);
                 };
             };
         } // namespace bbf
