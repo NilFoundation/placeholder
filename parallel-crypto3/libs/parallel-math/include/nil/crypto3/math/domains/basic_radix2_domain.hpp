@@ -41,6 +41,8 @@
 #include <nil/crypto3/math/polynomial/polynomial.hpp>
 #include <nil/actor/core/parallelization_utils.hpp>
 
+#include <nil/crypto3/bench/scoped_profiler.hpp>
+
 namespace nil {
     namespace crypto3 {
         namespace math {
@@ -120,6 +122,8 @@ namespace nil {
                  */
                 void transpose(const std::vector<field_element_vector<value_type>>& input,
                                std::vector<std::vector<value_type>> &result) {
+                    PARALLEL_PROFILE_SCOPE("transpose");
+
                     size_t N = input.size();
                     size_t M = input[0].size(); 
                     parallel_for(0, N, [&input, &result, M](std::size_t i) {
@@ -129,10 +133,35 @@ namespace nil {
                     }, ThreadPool::PoolLevel::LOW);
                 }
 
-                /** \brief Batch version of the upper function. Used for vectorization.
+                /** \brief Batch version of the 'fft' function. Used for vectorization.
                  *  \param[in] a - Each element of a a[i] represents coefficients of a polynomial.
                  */
                 void batch_fft(std::vector<std::vector<value_type>> &a) override {
+PROFILE_SCOPE("Batch FFT");
+                    // Split into groups, 4 elements per group. 4 looks optimal for now,
+                    // may change to 8 later.
+                    size_t elements_per_group = 4;
+                    size_t group_count = (a.size() + elements_per_group - 1) / elements_per_group;
+                    // Divide into 4 parts of give a bit of mutlithreading on the upper layer.
+                    std::vector<std::vector<std::vector<value_type>>> a_parts(group_count);
+                    for (size_t i = 0; i < a.size(); ++i) {
+                        a_parts[i / elements_per_group].emplace_back(std::move(a[i]));
+                    }
+                    nil::crypto3::parallel_foreach(a_parts.begin(), a_parts.end(),
+                        [this](std::vector<std::vector<value_type>>& part){
+                            this->batch_fft_inner(part);
+                        }, ThreadPool::PoolLevel::HIGH);
+                    size_t idx = 0;
+                    for (size_t i = 0; i < group_count; ++i) {
+                        for (size_t j = 0; j < a_parts[i].size(); ++j) {
+                            a[idx] = std::move(a_parts[i][j]);
+                            idx++;
+                        }
+                    }
+                }
+
+                void batch_fft_inner(std::vector<std::vector<value_type>> &a) {
+                    PARALLEL_PROFILE_SCOPE("Inner batch FFT of size {}", a.size());
                     if (a.size() == 0)
                         return;
                     resize_to_domain_size(a);
@@ -143,6 +172,9 @@ namespace nil {
                 }
 
                 void resize_to_domain_size(std::vector<std::vector<value_type>> &a) {
+                    PARALLEL_PROFILE_SCOPE("resize_to_domain_size {} vectors from size {} to {}",
+                        a.size(), a[0].size(), this->m);
+
                     for (auto& p: a) {
                         if (p.size() != this->m) {
                             if (p.size() < this->m) {
@@ -154,6 +186,9 @@ namespace nil {
                     }
                 }
 
+                /** \brief Batch version of the 'fft' function. Used for vectorization.
+                 *  \param[in] a - Each element of a a[i] represents DFS values of a polynomial.
+                 */
                 void batch_inverse_fft(std::vector<std::vector<value_type>> &a) override {
                     if (a.size() == 0)
                         return;

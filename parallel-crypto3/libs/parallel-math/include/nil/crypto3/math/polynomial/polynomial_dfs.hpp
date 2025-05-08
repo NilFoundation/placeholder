@@ -146,7 +146,7 @@ namespace nil {
                                      "DFS optimal polynomial size must be a power of two");
                 }
 
-                polynomial_dfs(size_t d, container_type&& c) : val(c), _d(d) {
+                polynomial_dfs(size_t d, container_type&& c) : val(std::move(c)), _d(d) {
                     BOOST_ASSERT_MSG(val.size() == detail::power_of_two(val.size()),
                                      "DFS optimal polynomial size must be a power of two");
                 }
@@ -291,7 +291,7 @@ namespace nil {
                 }
 
                 void push_back(value_type&& _x) {
-                    val.emplace_back(_x);
+                    val.emplace_back(std::move(_x));
                 }
 
                 template<class... Args>
@@ -308,7 +308,7 @@ namespace nil {
                 }
 
                 iterator insert(const_iterator _position, value_type&& _x) {
-                    return val.insert(_position, _x);
+                    return val.insert(_position, std::move(_x));
                 }
                 template<class... Args>
                 iterator emplace(const_iterator _position, Args&&... _args) {
@@ -1026,22 +1026,29 @@ namespace nil {
                 size_t input_size = polys[0].size();
 
                 std::vector<std::vector<typename FieldType::value_type>> data;
+    {
+                PROFILE_SCOPE("Polynomial Batch conversion from coefficients form - copying data");
                 data.reserve(polys.size());
                 for (auto& poly: polys) {
                     if (poly.size() != input_size)
                         throw std::logic_error("Polynomials of different size are not permitted in a batch conversion to DFS format");
                     data.emplace_back(std::move(poly.get_storage()));
                 }
+    }
 
+    {
+                PROFILE_SCOPE("Polynomial Batch conversion from coefficients form - call to batch FFT");
                 domain->batch_fft(data);
-
+    }
                 std::vector<math::polynomial_dfs<typename FieldType::value_type>> result;
+    {
+                PROFILE_SCOPE("Polynomial Batch conversion from coefficients form - copying results back");
                 result.reserve(data.size());
                 for (size_t i = 0; i < data.size(); ++i) {
                     auto& dfs = data[i];
-                    size_t degree = polys[i].size();
-                    result.emplace_back(input_size, std::move(dfs));
+                    result.emplace_back(input_size - 1, std::move(dfs));
                 }
+    }
                 return result;
             }
         }    // namespace math

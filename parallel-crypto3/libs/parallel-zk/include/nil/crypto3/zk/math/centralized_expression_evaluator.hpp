@@ -90,6 +90,8 @@ namespace nil::crypto3::zk::snark {
         }
 
         void ensure_cache(const std::set<polynomial_dfs_variable_type> &variables, std::size_t size) {
+std::cout << "Ensuring cache for " << variables.size() << " variables of size " << size << std::endl;
+
             PROFILE_SCOPE("Central ensure cache");
             _cached_assignment_table.ensure_cache(variables, size);
         }
