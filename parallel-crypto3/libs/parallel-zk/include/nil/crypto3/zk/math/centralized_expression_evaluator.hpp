@@ -132,7 +132,7 @@ namespace nil::crypto3::zk::snark {
 
             // TODO(martun): optimize the expressions here, before converting to a DAG!
 
-            std::size_t max_degree = get_max_degree(_registered_exprs);
+            std::size_t max_degree = std::max<std::size_t>(get_max_degree(_registered_exprs), 2);
             // Round the max degree up to nearest power of 2.
             max_degree = std::pow(2, ceil(std::log2(max_degree)));
 
