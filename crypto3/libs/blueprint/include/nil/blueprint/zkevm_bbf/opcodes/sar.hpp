@@ -191,7 +191,6 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
             r_chunks_copy1 = zkevm_word_to_field_element<FieldType>(r);
             r_chunks_copy2 = zkevm_word_to_field_element<FieldType>(r);
             q_chunks = zkevm_word_to_field_element<FieldType>(q);
-            q_chunks_copy1 = zkevm_word_to_field_element<FieldType>(q);
             v_chunks = zkevm_word_to_field_element<FieldType>(v);
             y_chunks = zkevm_word_to_field_element<FieldType>(result);
 
