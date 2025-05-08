@@ -138,7 +138,7 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
         std::vector<TYPE> mul8_chunks(chunk_8_amount);              // 8-bit chunks of r*b
         std::vector<TYPE> mul8_carries(chunk_8_amount);             // Carries for the above
         std::vector<TYPE> mul8_chunk_check(chunk_8_amount);          // Range checks for mul8_chunks
-        std::vector<TYPE> mul8_carries_check(chunk_8_amount);          // Range checks for mul8_carries (< 2^7)
+        std::vector<TYPE> mul8_carries_check(chunk_8_amount);          // Range checks for mul8_carries (< 2^15)
         std::vector<TYPE> construct_carryless_chunks(chunk_amount); // Chunks for the carryless terms of r*b + q - a
 
         // Indicator vectors for shift position
