@@ -170,9 +170,9 @@ public:
 BOOST_FIXTURE_TEST_SUITE(zkevm_bbf_mpt, zkEVMMPTTestFixture)
     using field_type = nil::crypto3::algebra::curves::alt_bn128_254::scalar_field_type;
 BOOST_AUTO_TEST_CASE(one_mpt_path) {
-    // test_zkevm_mpt<field_type>("mpt_path_0.json", 20);
-    // test_zkevm_mpt<field_type>("mpt_path_1.json", 20);
-    // test_zkevm_mpt<field_type>("mpt_path_2.json", 20);
+    test_zkevm_mpt<field_type>("mpt_path_0.json", 20);
+    test_zkevm_mpt<field_type>("mpt_path_1.json", 20);
+    test_zkevm_mpt<field_type>("mpt_path_2.json", 20);
     // test_zkevm_mpt<field_type>("mpt_path_3.json", 20);
 }
 BOOST_AUTO_TEST_CASE(mpt_leafs) {
