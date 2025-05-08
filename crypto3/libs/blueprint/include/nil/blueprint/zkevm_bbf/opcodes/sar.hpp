@@ -138,7 +138,6 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
         std::vector<TYPE> mul8_carries(chunk_8_amount);             // Carries for the above
         std::vector<TYPE> m8_chunks_check(chunk_8_amount);          // Range checks for mul8_chunks
         std::vector<TYPE> construct_carryless_chunks(chunk_amount); // Chunks for the carryless terms of r*b + q - a
-        std::vector<TYPE> construct_carries(chunk_amount);          // Carries for the above
 
         // Indicator vectors for shift position
         std::vector<TYPE> indic_1(chunk_amount);  // First shift position indicators -- marks transition bit within transition chunk
@@ -277,14 +276,8 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
         // The carryless constructs are already 0, so we don't need to separate the carries from the strict 16-bit chunks.
         for (std::size_t i = 0; i < chunk_amount; i++) {
             construct_carryless_chunks[i] = carryless_construct(mul8_chunks, q_chunks_copy1, a_chunks, i);
-            if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                TYPE prev_carry = (i > 0) ? construct_carries[i - 1] : 0;
-                BOOST_ASSERT(construct_carryless_chunks[i] == 0); 
-            }
-        } 
-        for (std::size_t i = 0; i < 16; i++) {
             constrain(construct_carryless_chunks[i]);
-        }
+        } 
 
         // Carry propagation constraints for the v + b = q + 2^256 equality
         for (std::size_t i = 0; i < chunk_amount - 1; i++) {
