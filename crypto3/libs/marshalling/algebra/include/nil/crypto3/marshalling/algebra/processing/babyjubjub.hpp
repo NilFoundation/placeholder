@@ -98,8 +98,9 @@ namespace nil {
                         uint8_t s = detail::sign_gf_p<base_field_type>(point_affine.X) ? (0x40) : 0;
 
                         auto tmp_iter = std::begin(encoded_value);
-                        multiprecision::processing::write_data<encoded_size, endianness>(static_cast<base_integral_type>(point_affine.Y.data),
-                                tmp_iter);
+                        multiprecision::processing::write_data<encoded_size, endianness>(
+                            static_cast<base_integral_type>(point_affine.Y.to_integral()),
+                            tmp_iter);
                         assert(!(encoded_value[encoded_size - 1] & 0xC0));
 
                         encoded_value[encoded_size - 1] |= s;

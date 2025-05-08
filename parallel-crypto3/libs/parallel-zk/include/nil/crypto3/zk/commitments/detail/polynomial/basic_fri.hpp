@@ -423,7 +423,6 @@ namespace nil {
                 precommit(const math::polynomial_dfs<typename FRI::field_type::value_type> &f,
                           std::shared_ptr<math::evaluation_domain<typename FRI::field_type>> D,
                           const std::size_t fri_step) {
-                    PROFILE_SCOPE("FRI precommit dfs");
                     if (f.size() != D->size()) {
                         throw std::runtime_error("Polynomial size does not match the domain size in FRI precommit.");
                     }
@@ -789,11 +788,9 @@ namespace nil {
                             // Calculate next f
                             if constexpr (std::is_same<math::polynomial_dfs<typename FRI::field_type::value_type>,
                                     PolynomialType>::value) {
-                                PROFILE_SCOPE("Fold polynomial dfs");
                                 f = commitments::detail::fold_polynomial<typename FRI::field_type>(f, alpha,
                                                                                                    fri_params.D[t]);
                             } else {
-                                PROFILE_SCOPE("Fold polynomial");
                                 f = commitments::detail::fold_polynomial<typename FRI::field_type>(f, alpha);
                             }
                         }
@@ -889,7 +886,6 @@ namespace nil {
                     > &g_coeffs,
                     std::uint64_t x_index)
                 {
-                    PARALLEL_PROFILE_SCOPE("Build inital proof");
                     std::vector<std::array<typename FRI::field_type::value_type, FRI::m>> s;
                     std::vector<std::array<std::size_t, FRI::m>> s_indices;
                     std::tie(s, s_indices) = calculate_s<FRI>(x_index, fri_params.step_list[0], fri_params.D[0]);
@@ -1053,7 +1049,7 @@ namespace nil {
                     for (std::size_t query_id = 0; query_id < fri_params.lambda; query_id++) {
                         std::size_t domain_size = fri_params.D[0]->size();
                         std::uint64_t x_index = static_cast<std::uint64_t>(
-                            challenges[query_id].data.base() % domain_size);
+                            challenges[query_id].to_integral() % domain_size);
                         auto x = fri_params.D[0]->get_domain_element(x_index);
 
                         // Fill round proofs
@@ -1101,7 +1097,7 @@ namespace nil {
                          &challenges](std::size_t query_id) {
                             std::size_t domain_size = fri_params.D[0]->size();
                             std::uint64_t x_index = static_cast<std::uint64_t>(
-                                challenges[query_id].data.base() % domain_size);
+                                challenges[query_id].to_integral() % domain_size);
                             auto x = fri_params.D[0]->get_domain_element(x_index);
 
                             std::map<std::size_t, typename FRI::initial_proof_type>
@@ -1501,8 +1497,8 @@ namespace nil {
                     typename FRI::field_type::value_type x_challenge =
                         transcript.template challenge<typename FRI::field_type>();
 
-                    x_index_out =
-                        static_cast<std::uint64_t>(x_challenge.data.base() % domain_size);
+                    x_index_out = static_cast<std::uint64_t>(x_challenge.to_integral() %
+                                                             domain_size);
                     x_out = fri_params.D[0]->get_domain_element(x_index_out);
 
                     std::vector<std::array<typename FRI::field_type::value_type, FRI::m>> s;

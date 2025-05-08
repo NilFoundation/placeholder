@@ -32,6 +32,9 @@
 #include <nil/crypto3/multiprecision/literals.hpp>
 
 #include <nil/crypto3/algebra/fields/detail/element/fp.hpp>
+#include <nil/crypto3/algebra/fields/detail/element/fpn.hpp>
+
+#include <nil/crypto3/algebra/fields/fpn.hpp>
 
 #include <nil/crypto3/algebra/fields/field.hpp>
 #include <nil/crypto3/algebra/fields/params.hpp>
@@ -68,6 +71,32 @@ namespace nil::crypto3::algebra::fields {
         using modular_type = nil::crypto3::multiprecision::big_mod_impl<nil::crypto3::multiprecision::detail::modular_ops_storage_ct<multiprecision::babybear_modulus, nil::crypto3::multiprecision::detail::simple_31_bit_modular_ops>>;
         using value_type = detail::element_fp<params<babybear_simple_31_bit>>;
     };
+
+    namespace detail {
+        template<typename FieldType>
+        struct babybear_fp4_binomial_extension_params {
+            constexpr static std::size_t dimension = 4;
+            using field_type = FieldType;
+            using base_field_type = babybear;
+            constexpr static base_field_type::value_type non_residue = 11;
+            constexpr static base_field_type::value_type dim_unity_root = 1728404513;
+        };
+
+        template<typename FieldType>
+        struct babybear_fp5_binomial_extension_params {
+            constexpr static std::size_t dimension = 5;
+            using field_type = FieldType;
+            using base_field_type = babybear;
+            constexpr static base_field_type::value_type non_residue = 2;
+            constexpr static base_field_type::value_type dim_unity_root = 815036133;
+        };
+    }  // namespace detail
+
+    struct babybear_fp4
+        : public fpn<detail::babybear_fp4_binomial_extension_params<babybear_fp4>> {};
+
+    struct babybear_fp5
+        : public fpn<detail::babybear_fp5_binomial_extension_params<babybear_fp5>> {};
 }  // namespace nil::crypto3::algebra::fields
 
 #endif  // CRYPTO3_ALGEBRA_FIELDS_BABYBEAR_HPP

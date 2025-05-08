@@ -29,7 +29,7 @@ template <typename BlueprintFieldType>
 typename BlueprintFieldType::value_type pack(typename BlueprintFieldType::value_type value) {
     using value_type = typename BlueprintFieldType::value_type;
     using integral_type = typename BlueprintFieldType::integral_type;
-    integral_type value_integral = integral_type(value.data);
+    integral_type value_integral = integral_type(value.to_integral());
     integral_type result_integral = 0;
     integral_type power = 1;
     for (int i = 0; i < 64; ++i) {
@@ -45,7 +45,7 @@ template<typename BlueprintFieldType>
 typename BlueprintFieldType::value_type unpack(typename BlueprintFieldType::value_type value) {
     using value_type = typename BlueprintFieldType::value_type;
     using integral_type = typename BlueprintFieldType::integral_type;
-    integral_type value_integral = integral_type(value.data);
+    integral_type value_integral = integral_type(value.to_integral());
     integral_type result_integral = 0;
     integral_type power = 1;
     while (value_integral >= 1) {
@@ -74,7 +74,7 @@ template <typename BlueprintFieldType>
 std::array<typename BlueprintFieldType::value_type,4> sparsed_64bits_to_4_chunks(typename BlueprintFieldType::value_type num){
     using integral_type = typename BlueprintFieldType::integral_type;
     using value_type = typename BlueprintFieldType::value_type;
-    integral_type n(num.data);
+    integral_type n(num.to_integral());
     integral_type mask = (integral_type(1) << 48) - 1;
 
     std::array<typename BlueprintFieldType::value_type,4> result;
@@ -89,7 +89,7 @@ std::array<typename BlueprintFieldType::value_type,4> sparsed_64bits_to_4_chunks
 // For 16-bit numbers placed into field element
 template <typename BlueprintFieldType>
 typename BlueprintFieldType::value_type swap_bytes( typename BlueprintFieldType::value_type i ){
-    typename BlueprintFieldType::integral_type n(i.data);
+    typename BlueprintFieldType::integral_type n(i.to_integral());
     assert( n < 65536 );
 
     return ((n & 0xFF) << 8) + ((n & 0xFF00) >> 8);

@@ -60,7 +60,7 @@ template<typename BlueprintFieldType>
 typename BlueprintFieldType::value_type to_sparse(typename BlueprintFieldType::value_type value) {
     using value_type = typename BlueprintFieldType::value_type;
     using integral_type = typename BlueprintFieldType::integral_type;
-    integral_type value_integral = integral_type(value.data);
+    integral_type value_integral = integral_type(value.to_integral());
     integral_type result_integral = 0;
     integral_type power = 1;
     for (int i = 0; i < 64; ++i) {
@@ -80,14 +80,16 @@ std::array<typename BlueprintFieldType::value_type, 25> sparse_round_function(st
 
     std::array<std::array<integral_type, 5>, 5> inner_state_integral;
     std::array<integral_type, 17> padded_message_chunk_integral;
-    integral_type RC_integral = integral_type(RC.data);
+    integral_type RC_integral = integral_type(RC.to_integral());
     for (int x = 0; x < 5; ++x) {
         for (int y = 0; y < 5; ++y) {
-            inner_state_integral[x][y] = integral_type(inner_state[x + 5 * y].data);
+            inner_state_integral[x][y] =
+                integral_type(inner_state[x + 5 * y].to_integral());
         }
     }
     for (int i = 0; i < 17; ++i) {
-        padded_message_chunk_integral[i] = integral_type(padded_message_chunk[i].data);
+        padded_message_chunk_integral[i] =
+            integral_type(padded_message_chunk[i].to_integral());
     }
 
     auto rot = [](integral_type x, const int s) {
@@ -107,7 +109,8 @@ std::array<typename BlueprintFieldType::value_type, 25> sparse_round_function(st
         }
         if (last_round_call) {
             value_type last_round_const = to_sparse<BlueprintFieldType>(value_type(0x8000000000000000));
-            integral_type last_round_const_integral = integral_type(last_round_const.data);
+            integral_type last_round_const_integral =
+                integral_type(last_round_const.to_integral());
             inner_state_integral[1][3] = inner_state_integral[1][3] ^ padded_message_chunk_integral[16] ^ last_round_const_integral;
         }
     }

@@ -67,7 +67,7 @@ void range_check_tests() {
         std::vector<typename BlueprintFieldType::value_type> public_input;
         for (std::size_t j = 0; j < num_chunks; j++) {
             public_input.push_back(
-                value_type(integral_type(generate_random().data) & mask));
+                value_type(integral_type(generate_random().to_integral()) & mask));
         }
         test_range_check<BlueprintFieldType, num_chunks, bit_size_chunk>(public_input);
     }
@@ -89,11 +89,12 @@ void range_check_tests_to_fail() {
         integral_type most_significant_bit = integral_type(1) << (bit_size_chunk);
         std::vector<typename BlueprintFieldType::value_type> public_input;
         // Adding a faulty bits
-        public_input.push_back(value_type(integral_type(generate_random().data) & mask |
-                                          most_significant_bit));
+        public_input.push_back(
+            value_type(integral_type(generate_random().to_integral()) & mask |
+                       most_significant_bit));
         for (std::size_t j = 1; j < num_chunks; j++) {
             public_input.push_back(
-                value_type(integral_type(generate_random().data) & mask));
+                value_type(integral_type(generate_random().to_integral()) & mask));
         }
         test_range_check<BlueprintFieldType, num_chunks, bit_size_chunk, false>(
             public_input);

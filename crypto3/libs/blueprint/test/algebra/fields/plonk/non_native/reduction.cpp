@@ -76,11 +76,12 @@ void test_reduction(std::vector<typename BlueprintFieldType::value_type> public_
             #ifdef BLUEPRINT_PLONK_PROFILING_ENABLED
             std::cout << std::hex << "___________________________________________________________________________________________________\ninput: ";
             for (std::size_t i = 0; i < 8; i++) {
-                std::cout << public_input[7-i].data << " ";
+                std::cout << public_input[7 - i] << " ";
             }
-            std::cout << "\nexpected: " << expected_res.data << "\n";
-            std::cout << "real    : " << var_value(assignment, real_res.output).data << std::endl;
-            #endif
+            std::cout << "\nexpected: " << expected_res << "\n";
+            std::cout << "real    : " << var_value(assignment, real_res.output)
+                      << std::endl;
+#endif
             assert(expected_res == var_value(assignment, real_res.output));
     };
 

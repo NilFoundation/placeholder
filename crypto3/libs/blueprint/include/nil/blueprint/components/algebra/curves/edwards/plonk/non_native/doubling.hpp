@@ -234,28 +234,45 @@ namespace nil {
                         var_value(assignment, instance_input.T.y[2]),
                         var_value(assignment, instance_input.T.y[3])};
 
-                    typename Ed25519Type::template g1_type<nil::crypto3::algebra::curves::coordinates::affine>::value_type T(
-                        (typename Ed25519Type::base_field_type::integral_type(T_x_array[0].data) +
-                         typename Ed25519Type::base_field_type::integral_type(T_x_array[1].data) * (base << 66) +
-                         typename Ed25519Type::base_field_type::integral_type(T_x_array[2].data) * (base << 132) +
-                         typename Ed25519Type::base_field_type::integral_type(T_x_array[3].data) * (base << 198)),
-                        (typename Ed25519Type::base_field_type::integral_type(T_y_array[0].data) +
-                         typename Ed25519Type::base_field_type::integral_type(T_y_array[1].data) * (base << 66) +
-                         typename Ed25519Type::base_field_type::integral_type(T_y_array[2].data) * (base << 132) +
-                         typename Ed25519Type::base_field_type::integral_type(T_y_array[3].data) * (base << 198)));
+                    typename Ed25519Type::template g1_type<
+                        nil::crypto3::algebra::curves::coordinates::affine>::value_type
+                        T((typename Ed25519Type::base_field_type::integral_type(
+                               T_x_array[0].to_integral()) +
+                           typename Ed25519Type::base_field_type::integral_type(
+                               T_x_array[1].to_integral()) *
+                               (base << 66) +
+                           typename Ed25519Type::base_field_type::integral_type(
+                               T_x_array[2].to_integral()) *
+                               (base << 132) +
+                           typename Ed25519Type::base_field_type::integral_type(
+                               T_x_array[3].to_integral()) *
+                               (base << 198)),
+                          (typename Ed25519Type::base_field_type::integral_type(
+                               T_y_array[0].to_integral()) +
+                           typename Ed25519Type::base_field_type::integral_type(
+                               T_y_array[1].to_integral()) *
+                               (base << 66) +
+                           typename Ed25519Type::base_field_type::integral_type(
+                               T_y_array[2].to_integral()) *
+                               (base << 132) +
+                           typename Ed25519Type::base_field_type::integral_type(
+                               T_y_array[3].to_integral()) *
+                               (base << 198)));
 
                     typename Ed25519Type::template g1_type<nil::crypto3::algebra::curves::coordinates::affine>::value_type P = T + T;
 
                     typename Ed25519Type::base_field_type::integral_type mask = (base << 66) - 1;
 
                     typename Ed25519Type::base_field_type::integral_type Px_integral =
-                        typename Ed25519Type::base_field_type::integral_type(P.X.data);
+                        typename Ed25519Type::base_field_type::integral_type(
+                            P.X.to_integral());
                     std::array<typename Ed25519Type::base_field_type::integral_type, 4> x3 = {
                         Px_integral & mask, (Px_integral >> 66) & mask, (Px_integral >> 132) & mask,
                         (Px_integral >> 198) & mask};
 
                     typename Ed25519Type::base_field_type::integral_type Py_integral =
-                        typename Ed25519Type::base_field_type::integral_type(P.Y.data);
+                        typename Ed25519Type::base_field_type::integral_type(
+                            P.Y.to_integral());
                     std::array<typename Ed25519Type::base_field_type::integral_type, 4> y3 = {
                         Py_integral & mask, (Py_integral >> 66) & mask, (Py_integral >> 132) & mask,
                         (Py_integral >> 198) & mask};

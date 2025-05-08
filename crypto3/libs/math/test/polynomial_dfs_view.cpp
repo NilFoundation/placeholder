@@ -63,7 +63,7 @@ BOOST_AUTO_TEST_CASE(polynomial_dfs_view_from_coefficients_less_degree) {
 
     BOOST_CHECK_EQUAL(c_res.size(), a.size());
     for (std::size_t i = 0; i < c_res.size(); i++) {
-        BOOST_CHECK_EQUAL(c_res[i].data, a[i].data);
+        BOOST_CHECK_EQUAL(c_res[i], a[i]);
     }
 }
 
@@ -88,7 +88,7 @@ BOOST_AUTO_TEST_CASE(polynomial_dfs_view_coefficients_less_degree) {
 
     BOOST_CHECK_EQUAL(c_res.size(), c.size());
     for (std::size_t i = 0; i < c_res.size(); i++) {
-        BOOST_CHECK_EQUAL(c_res[i].data, c[i].data);
+        BOOST_CHECK_EQUAL(c_res[i], c[i]);
     }
 }
 
@@ -108,7 +108,7 @@ BOOST_AUTO_TEST_CASE(polynomial_dfs_view_coefficients_same_degree) {
 
     BOOST_CHECK_EQUAL(c_res.size(), c.size());
     for (std::size_t i = 0; i < c_res.size(); i++) {
-        BOOST_CHECK_EQUAL(c_res[i].data, c[i].data);
+        BOOST_CHECK_EQUAL(c_res[i], c[i]);
     }
 }
 BOOST_AUTO_TEST_SUITE_END()
@@ -154,7 +154,7 @@ BOOST_AUTO_TEST_CASE(polynomial_dfs_view_addition_equal) {
     polynomial_dfs_view<typename FieldType::value_type> c_res = {7, c_v};
     BOOST_CHECK_EQUAL(c_res.size(), a.size());
     for (std::size_t i = 0; i < c_res.size(); i++) {
-        BOOST_CHECK_EQUAL(c_res[i].data, a[i].data);
+        BOOST_CHECK_EQUAL(c_res[i], a[i]);
     }
     BOOST_CHECK_EQUAL(c_res.degree(), a.degree());
 }
@@ -190,7 +190,7 @@ BOOST_AUTO_TEST_CASE(polynomial_dfs_view_addition_less_b) {
     polynomial_dfs_view<typename FieldType::value_type> c_res = {7, c_v};
     BOOST_CHECK_EQUAL(c_res.size(), a.size());
     for (std::size_t i = 0; i < c_res.size(); i++) {
-        BOOST_CHECK_EQUAL(c_res[i].data, a[i].data);
+        BOOST_CHECK_EQUAL(c_res[i], a[i]);
     }
     BOOST_CHECK_EQUAL(c_res.degree(), a.degree());
 }
@@ -227,7 +227,7 @@ BOOST_AUTO_TEST_CASE(polynomial_dfs_view_addition_less_a) {
     polynomial_dfs_view<typename FieldType::value_type> c_res = {7, c_v};
     BOOST_CHECK_EQUAL(c_res.size(), a.size());
     for (std::size_t i = 0; i < c_res.size(); i++) {
-        BOOST_CHECK_EQUAL(c_res[i].data, a[i].data);
+        BOOST_CHECK_EQUAL(c_res[i], a[i]);
     }
     BOOST_CHECK_EQUAL(c_res.degree(), a.degree());
 }
@@ -280,7 +280,7 @@ BOOST_AUTO_TEST_CASE(polynomial_dfs_view_subtraction_equal) {
 
     BOOST_CHECK_EQUAL(c_res.size(), a.size());
     for (std::size_t i = 0; i < c_res.size(); i++) {
-        BOOST_CHECK_EQUAL(c_res[i].data, a[i].data);
+        BOOST_CHECK_EQUAL(c_res[i], a[i]);
     }
     BOOST_CHECK_EQUAL(a.degree(), c_res.degree());
 }
@@ -327,7 +327,7 @@ BOOST_AUTO_TEST_CASE(polynomial_dfs_view_subtraction_less_b) {
 
     BOOST_CHECK_EQUAL(c_res.size(), a.size());
     for (std::size_t i = 0; i < c_res.size(); i++) {
-        BOOST_CHECK_EQUAL(c_res[i].data, a[i].data);
+        BOOST_CHECK_EQUAL(c_res[i], a[i]);
     }
     BOOST_CHECK_EQUAL(a.degree(), c_res.degree());
 }
@@ -377,7 +377,7 @@ BOOST_AUTO_TEST_CASE(polynomial_dfs_view_subtraction_less_a) {
 
     BOOST_CHECK_EQUAL(c_res.size(), a.size());
     for (std::size_t i = 0; i < c_res.size(); i++) {
-        BOOST_CHECK_EQUAL(c_res[i].data, a[i].data);
+        BOOST_CHECK_EQUAL(c_res[i], a[i]);
     }
     BOOST_CHECK_EQUAL(a.degree(), c_res.degree());
 }
@@ -427,7 +427,7 @@ BOOST_AUTO_TEST_CASE(polynomial_dfs_view_multiplication_without_resize) {
 
     BOOST_CHECK_EQUAL(c_res.size(), a.size());
     for (std::size_t i = 0; i < c_res.size(); i++) {
-        BOOST_CHECK_EQUAL(c_res[i].data, a[i].data);
+        BOOST_CHECK_EQUAL(c_res[i], a[i]);
     }
     BOOST_CHECK_EQUAL(c_res.degree(), a.degree());
 }
@@ -477,7 +477,7 @@ BOOST_AUTO_TEST_CASE(polynomial_dfs_view_multiplication_resize_a) {
 
     BOOST_CHECK_EQUAL(c_res.size(), a.size());
     for (std::size_t i = 0; i < c_res.size(); i++) {
-        BOOST_CHECK_EQUAL(c_res[i].data, a[i].data);
+        BOOST_CHECK_EQUAL(c_res[i], a[i]);
     }
     BOOST_CHECK_EQUAL(c_res.degree(), a.degree());
 }
@@ -527,7 +527,7 @@ BOOST_AUTO_TEST_CASE(polynomial_dfs_view_multiplication_resize_b) {
 
     BOOST_CHECK_EQUAL(c_res.size(), a.size());
     for (std::size_t i = 0; i < c_res.size(); i++) {
-        BOOST_CHECK_EQUAL(c_res[i].data, a[i].data);
+        BOOST_CHECK_EQUAL(c_res[i], a[i]);
     }
     BOOST_CHECK_EQUAL(c_res.degree(), a.degree());
 }
@@ -573,7 +573,7 @@ BOOST_AUTO_TEST_CASE(polynomial_dfs_view_multiplication_resize_both) {
 
     BOOST_CHECK_EQUAL(c_res.size(), a.size());
     for (std::size_t i = 0; i < c_res.size(); i++) {
-        BOOST_CHECK_EQUAL(c_res[i].data, a[i].data);
+        BOOST_CHECK_EQUAL(c_res[i], a[i]);
     }
     BOOST_CHECK_EQUAL(c_res.degree(), a.degree());
 }
@@ -617,7 +617,7 @@ BOOST_AUTO_TEST_CASE(polynomial_dfs_view_division) {
 
     BOOST_CHECK_EQUAL(q_ans.size(), a.size());
     for (std::size_t i = 0; i < a.size(); i++) {
-        BOOST_CHECK_EQUAL(q_ans[i].data, a[i].data);
+        BOOST_CHECK_EQUAL(q_ans[i], a[i]);
     }
     BOOST_CHECK_EQUAL(q_ans.degree(), a.degree());
 }
@@ -651,7 +651,7 @@ BOOST_AUTO_TEST_CASE(polynomial_dfs_view_modulus) {
 
     BOOST_CHECK_EQUAL(r_ans.size(), a.size());
     for (std::size_t i = 0; i < a.size(); i++) {
-        BOOST_CHECK_EQUAL(r_ans[i].data, a[i].data);
+        BOOST_CHECK_EQUAL(r_ans[i], a[i]);
     }
     BOOST_CHECK_EQUAL(r_ans.degree(), a.degree());
 }

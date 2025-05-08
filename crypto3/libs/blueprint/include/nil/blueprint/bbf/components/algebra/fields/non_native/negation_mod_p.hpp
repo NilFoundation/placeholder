@@ -120,10 +120,10 @@ namespace nil {
                             // Populate x, p
                             for (std::size_t i = 0; i < num_chunks; ++i) {
                                 x += extended_integral_type(
-                                         integral_type(input.x[i].data)) *
+                                         integral_type(input.x[i].to_integral())) *
                                      pow;
                                 p += extended_integral_type(
-                                         integral_type(input.p[i].data)) *
+                                         integral_type(input.p[i].to_integral())) *
                                      pow;
                                 pow <<= bit_size_chunk;
                             }

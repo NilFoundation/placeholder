@@ -94,21 +94,36 @@ void test_field_sub(const std::vector<typename BlueprintFieldType::value_type> &
 
         std::cout << "_________________________________________________________________________________________________________________________________________________\n";
         std::cout << "input   : ";
-        for (std::size_t i = 0; i < 4; i++) {std::cout << x[3-i].data << " ";}
-        std::cout << "(" << glue_non_native<BlueprintFieldType, NonNativeFieldType>(x).data << ")\n";
+        for (std::size_t i = 0; i < 4; i++) {
+            std::cout << x[3 - i] << " ";
+        }
+        std::cout << "(" << glue_non_native<BlueprintFieldType, NonNativeFieldType>(x)
+                  << ")\n";
 
         std::cout << "          ";
-        for (std::size_t i = 0; i < 4; i++) {std::cout << y[3-i].data << " ";}
-        std::cout << "(" << glue_non_native<BlueprintFieldType, NonNativeFieldType>(y).data << ")\n";
+        for (std::size_t i = 0; i < 4; i++) {
+            std::cout << y[3 - i] << " ";
+        }
+        std::cout << "(" << glue_non_native<BlueprintFieldType, NonNativeFieldType>(y)
+                  << ")\n";
 
         std::cout << "expected: ";
-        for (std::size_t i = 0; i < 4; i++) {std::cout << expected_chunks[3-i].data << " ";}
-        std::cout << "(" << glue_non_native<BlueprintFieldType, NonNativeFieldType>(expected_chunks).data << ")\n";
+        for (std::size_t i = 0; i < 4; i++) {
+            std::cout << expected_chunks[3 - i] << " ";
+        }
+        std::cout << "("
+                  << glue_non_native<BlueprintFieldType, NonNativeFieldType>(
+                         expected_chunks)
+                  << ")\n";
 
         std::cout << "real    : ";
-        for (std::size_t i = 0; i < 4; i++) {std::cout << real_chunks[3-i].data << " ";}
-        std::cout << "(" << glue_non_native<BlueprintFieldType, NonNativeFieldType>(real_chunks).data << ")\n";
-        #endif
+        for (std::size_t i = 0; i < 4; i++) {
+            std::cout << real_chunks[3 - i] << " ";
+        }
+        std::cout << "("
+                  << glue_non_native<BlueprintFieldType, NonNativeFieldType>(real_chunks)
+                  << ")\n";
+#endif
 
         for (std::size_t i = 0; i < 4; i++) {
             assert(expected_res[i] == var_value(assignment, real_res.output[i]));
@@ -144,7 +159,7 @@ void test_field_sub_all_cases(){
     typename NonNativeFieldType::value_type f = 0xf;
     typename NonNativeFieldType::integral_type f_integral;
     for (std::size_t i = 0; i < 63; i++) {
-        f_integral = typename NonNativeFieldType::integral_type(f.data);
+        f_integral = typename NonNativeFieldType::integral_type(f.to_integral());
         f_integral = (f_integral << 4) + 0xf;
         f = typename NonNativeFieldType::value_type(f_integral);
         test_field_sub_useable<FieldType, NonNativeFieldType>(f, f);

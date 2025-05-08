@@ -107,26 +107,29 @@ namespace nil {
                                                                        10>;
 
                 public:
-                    constexpr static const typename BlueprintFieldType::value_type endo =
-                        typename BlueprintFieldType::value_type(
-                            algebra::fields::arithmetic_params<BlueprintFieldType>::multiplicative_generator)
-                            .pow(typename BlueprintFieldType::integral_type(
-                                ((BlueprintFieldType::value_type::zero() - BlueprintFieldType::value_type::one()) *
-                                 (typename BlueprintFieldType::value_type(3)).inversed())
-                                    .data));
-                    constexpr static const std::size_t selector_seed = 0x0f02;
-                    constexpr static const std::size_t rows_amount =
-                        33 + multiplication_component::rows_amount + unified_addition_component::rows_amount * 2;
-                    constexpr static const std::size_t gates_amount = 1;
+                  constexpr static const typename BlueprintFieldType::value_type endo =
+                      typename BlueprintFieldType::value_type(
+                          algebra::fields::arithmetic_params<
+                              BlueprintFieldType>::multiplicative_generator)
+                          .pow(typename BlueprintFieldType::integral_type(
+                              ((BlueprintFieldType::value_type::zero() -
+                                BlueprintFieldType::value_type::one()) *
+                               (typename BlueprintFieldType::value_type(3)).inversed())
+                                  .to_integral()));
+                  constexpr static const std::size_t selector_seed = 0x0f02;
+                  constexpr static const std::size_t rows_amount =
+                      33 + multiplication_component::rows_amount +
+                      unified_addition_component::rows_amount * 2;
+                  constexpr static const std::size_t gates_amount = 1;
 
-                    struct params_type {
-                        struct var_ec_point {
-                            var x;
-                            var y;
-                        };
+                  struct params_type {
+                      struct var_ec_point {
+                          var x;
+                          var y;
+                      };
 
-                        var_ec_point T;
-                        var b;
+                      var_ec_point T;
+                      var b;
                     };
 
                     struct result_type {
@@ -170,7 +173,8 @@ namespace nil {
                         typename CurveType::template g1_type<algebra::curves::coordinates::affine>::value_type R;
                         typename CurveType::template g1_type<algebra::curves::coordinates::affine>::value_type Q;
                         typename CurveType::scalar_field_type::integral_type integral_b =
-                            typename CurveType::scalar_field_type::integral_type(b.data);
+                            typename CurveType::scalar_field_type::integral_type(
+                                b.to_integral());
 
                         std::array<bool, 128> bits = {false};
                         {

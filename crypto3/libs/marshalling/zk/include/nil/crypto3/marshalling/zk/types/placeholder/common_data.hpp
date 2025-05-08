@@ -147,7 +147,10 @@ namespace nil {
                     if constexpr(nil::crypto3::algebra::is_field_element<
                         typename CommonDataType::transcript_hash_type::word_type
                     >::value) {
-                        auto integral = typename CommonDataType::field_type::integral_type(common_data.vk.constraint_system_with_params_hash.data);
+                        auto integral =
+                            typename CommonDataType::field_type::integral_type(
+                                common_data.vk.constraint_system_with_params_hash
+                                    .to_integral());
                         std::vector<unsigned char> blob;
                         integral.export_bits(std::back_inserter(blob), 8);
                         for( std::size_t i = blob.size(); i > 0; i--){

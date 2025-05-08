@@ -67,7 +67,8 @@ void test_fri_cosets(std::vector<typename FieldType::value_type> public_input,
     typename component_type::input_type instance_input = {
         var(0, 0, false, var::column_type::public_input)};
 
-    typename BlueprintFieldType::integral_type pi_num = typename BlueprintFieldType::integral_type(public_input[0].data);
+    typename BlueprintFieldType::integral_type pi_num =
+        typename BlueprintFieldType::integral_type(public_input[0].to_integral());
 
     std::vector<std::array<typename BlueprintFieldType::value_type,3>> expected_res = {};
 
@@ -91,15 +92,17 @@ void test_fri_cosets(std::vector<typename FieldType::value_type> public_input,
 	    typename component_type::result_type &real_res) {
             #ifdef BLUEPRINT_PLONK_PROFILING_ENABLED
             std::cout << "fri_cosets test: " << "\n";
-            std::cout << "input   : " << std::hex << public_input[0].data << " " << std::hex << omega.data << "\n";
-            std::cout << "expected: {" <<  std::hex <<expected_res[0][0].data << "," <<
-                                           std::hex << expected_res[0][1].data << "," <<
-                                           std::dec << expected_res[0][2].data << ",...}\n";
+            std::cout << "input   : " << std::hex << public_input[0] << " " << std::hex
+                      << omega << "\n";
+            std::cout << "expected: {" << std::hex << expected_res[0][0] << ","
+                      << std::hex << expected_res[0][1] << "," << std::dec
+                      << expected_res[0][2] << ",...}\n";
             std::cout << "real    : {";
             for(std::size_t i = 0; i < n; i++) {
-                std::cout << std::hex << var_value(assignment, real_res.output[i][0]).data << "," <<
-                                          std::hex << var_value(assignment, real_res.output[i][1]).data << "," <<
-                                          std::dec << var_value(assignment, real_res.output[i][2]).data;
+                std::cout << std::hex << var_value(assignment, real_res.output[i][0])
+                          << "," << std::hex
+                          << var_value(assignment, real_res.output[i][1]) << ","
+                          << std::dec << var_value(assignment, real_res.output[i][2]);
                 if (i < n-1) { std::cout << ",\n"; }
             }
             std::cout << "}\n\n";

@@ -246,6 +246,12 @@ namespace nil::crypto3::math {
     static_simd_vector<FieldValueType, Size> get_chunk(
         const polynomial_dfs<FieldValueType>& poly, std::size_t offset,
         std::size_t number) {
+
+        // If we have a constant value, our polynomial will frequently have size = 1, but we still
+        // must return the chunk value.
+        if (poly.degree() == 0) {
+            return static_simd_vector<FieldValueType, Size>(poly[0]);
+        }
         static_simd_vector<FieldValueType, Size> result;
         for (std::size_t i = 0; i < Size; ++i) {
             if (offset + number * Size + i >= poly.size()) {
@@ -267,6 +273,22 @@ namespace nil::crypto3::math {
             poly[offset + number * Size + i] = chunk[i];
         }
     }
+
+    // Used in the unit tests, so we can use BOOST_CHECK_EQUALS and while debugging.
+    template<std::size_t Size, typename FieldValueType>
+    std::ostream& operator<<(std::ostream& os,const static_simd_vector<FieldValueType, Size>& chunk) {
+        os << "[";
+        for (std::size_t i = 0; i < Size; ++i) {
+            os << std::hex << std::showbase;
+            os << chunk[i];
+            if (i != Size - 1) {
+                os << ", "; 
+            }
+        }
+        os << "]" << std::dec;
+        return os;
+    }
+
 }  // namespace nil::crypto3::math
 
 // As our operator== returns false for vectors with different sizes, the same will happen here,

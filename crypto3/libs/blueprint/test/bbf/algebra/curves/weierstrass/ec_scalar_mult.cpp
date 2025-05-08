@@ -72,8 +72,8 @@ void test_ec_scalar_mult(
         assert(pass == true);
         non_native_integral_type xR = 0, yR = 0, pow = 1;
         for (std::size_t i = 0; i < num_chunks; i++) {
-            xR += non_native_integral_type(integral_type(A.xR[i].data)) * pow;
-            yR += non_native_integral_type(integral_type(A.yR[i].data)) * pow;
+            xR += non_native_integral_type(integral_type(A.xR[i].to_integral())) * pow;
+            yR += non_native_integral_type(integral_type(A.yR[i].to_integral())) * pow;
             pow <<= bit_size_chunk;
         }
 #ifdef BLUEPRINT_PLONK_PROFILING_ENABLED
@@ -159,11 +159,11 @@ void ec_scalar_mult_tests() {
         ec_point_value_type P = ec_point_value_type::one() * D, R = P * S;
 
         public_input.resize(8 * num_chunks);
-        foreign_integral_type s = foreign_integral_type(S.data);
-        foreign_integral_type x = foreign_integral_type(P.X.data);
-        foreign_integral_type y = foreign_integral_type(P.Y.data);
-        foreign_integral_type xR = foreign_integral_type(R.X.data);
-        foreign_integral_type yR = foreign_integral_type(R.Y.data);
+        foreign_integral_type s = foreign_integral_type(S.to_integral());
+        foreign_integral_type x = foreign_integral_type(P.X.to_integral());
+        foreign_integral_type y = foreign_integral_type(P.Y.to_integral());
+        foreign_integral_type xR = foreign_integral_type(R.X.to_integral());
+        foreign_integral_type yR = foreign_integral_type(R.Y.to_integral());
         for (std::size_t j = 0; j < num_chunks; j++) {
             public_input[j] = value_type(s & mask);
             s >>= bit_size_chunk;

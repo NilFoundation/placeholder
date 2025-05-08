@@ -159,11 +159,11 @@ namespace nil {
 
                             for (std::size_t i = 0; i < num_chunks; ++i) {
                                 s += non_native_integral_type(
-                                          integral_type(input.s[i].data)) *
-                                      pow;
+                                         integral_type(input.s[i].to_integral())) *
+                                     pow;
                                 n += non_native_integral_type(
-                                          integral_type(input.n[i].data)) *
-                                      pow;
+                                         integral_type(input.n[i].to_integral())) *
+                                     pow;
                                 pow <<= bit_size_chunk;
                             }
 
@@ -185,7 +185,7 @@ namespace nil {
                                 non_native_integral_type mask =
                                     (non_native_integral_type(1) << bit_size_chunk) - 1;
                                 non_native_integral_type x_value =
-                                    non_native_integral_type(x.data);
+                                    non_native_integral_type(x.to_integral());
                                 for (std::size_t i = 0; i < num_chunks; i++) {
                                     res[i] = TYPE(x_value & mask);
                                     x_value >>= bit_size_chunk;

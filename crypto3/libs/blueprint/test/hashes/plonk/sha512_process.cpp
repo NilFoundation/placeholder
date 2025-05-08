@@ -122,54 +122,91 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_sha512_process) {
     }
     std::array<typename BlueprintFieldType::integral_type, 80> message_schedule_array;
     for (std::size_t i = 0; i < 16; i++) {
-        message_schedule_array[i] = typename BlueprintFieldType::integral_type(public_input[8 + i].data);
+        message_schedule_array[i] =
+            typename BlueprintFieldType::integral_type(public_input[8 + i].to_integral());
     }
     for(std::size_t i = 16; i < 80; i ++){
-        typename BlueprintFieldType::integral_type s0 = ((message_schedule_array[i - 15] >> 1)|((message_schedule_array[i - 15] << (64 - 1))
-        & typename BlueprintFieldType::integral_type((typename BlueprintFieldType::value_type(2).pow(64) - 1).data))) ^
-        ((message_schedule_array[i - 15] >> 8)|((message_schedule_array[i - 15] << (64 - 8))
-        & typename BlueprintFieldType::integral_type((typename BlueprintFieldType::value_type(2).pow(64) - 1).data)))
-         ^ (message_schedule_array[i - 15] >> 7);
-        typename BlueprintFieldType::integral_type s1 = ((message_schedule_array[i - 2] >> 19)|((message_schedule_array[i - 2] << (64 - 19))
-        & typename BlueprintFieldType::integral_type((typename BlueprintFieldType::value_type(2).pow(64) - 1).data))) ^
-        ((message_schedule_array[i - 2] >> 61)|((message_schedule_array[i - 2] << (64 - 61))
-        & typename BlueprintFieldType::integral_type((typename BlueprintFieldType::value_type(2).pow(64) - 1).data)))
-         ^ (message_schedule_array[i - 2] >> 6);
-        message_schedule_array[i] = (message_schedule_array[i - 16] + s0 + s1 + message_schedule_array[i - 7])%
-        typename BlueprintFieldType::integral_type(typename BlueprintFieldType::value_type(2).pow(64).data);
+        typename BlueprintFieldType::integral_type s0 =
+            ((message_schedule_array[i - 15] >> 1) |
+             ((message_schedule_array[i - 15] << (64 - 1)) &
+              typename BlueprintFieldType::integral_type(
+                  (typename BlueprintFieldType::value_type(2).pow(64) - 1)
+                      .to_integral()))) ^
+            ((message_schedule_array[i - 15] >> 8) |
+             ((message_schedule_array[i - 15] << (64 - 8)) &
+              typename BlueprintFieldType::integral_type(
+                  (typename BlueprintFieldType::value_type(2).pow(64) - 1)
+                      .to_integral()))) ^
+            (message_schedule_array[i - 15] >> 7);
+        typename BlueprintFieldType::integral_type s1 =
+            ((message_schedule_array[i - 2] >> 19) |
+             ((message_schedule_array[i - 2] << (64 - 19)) &
+              typename BlueprintFieldType::integral_type(
+                  (typename BlueprintFieldType::value_type(2).pow(64) - 1)
+                      .to_integral()))) ^
+            ((message_schedule_array[i - 2] >> 61) |
+             ((message_schedule_array[i - 2] << (64 - 61)) &
+              typename BlueprintFieldType::integral_type(
+                  (typename BlueprintFieldType::value_type(2).pow(64) - 1)
+                      .to_integral()))) ^
+            (message_schedule_array[i - 2] >> 6);
+        message_schedule_array[i] =
+            (message_schedule_array[i - 16] + s0 + s1 + message_schedule_array[i - 7]) %
+            typename BlueprintFieldType::integral_type(
+                typename BlueprintFieldType::value_type(2).pow(64).to_integral());
     }
     typename ArithmetizationType::field_type::integral_type a =
-        typename ArithmetizationType::field_type::integral_type(public_input[0].data);
+        typename ArithmetizationType::field_type::integral_type(
+            public_input[0].to_integral());
     typename ArithmetizationType::field_type::integral_type b =
-        typename ArithmetizationType::field_type::integral_type(public_input[1].data);
+        typename ArithmetizationType::field_type::integral_type(
+            public_input[1].to_integral());
     typename ArithmetizationType::field_type::integral_type c =
-        typename ArithmetizationType::field_type::integral_type(public_input[2].data);
+        typename ArithmetizationType::field_type::integral_type(
+            public_input[2].to_integral());
     typename ArithmetizationType::field_type::integral_type d =
-        typename ArithmetizationType::field_type::integral_type(public_input[3].data);
+        typename ArithmetizationType::field_type::integral_type(
+            public_input[3].to_integral());
     typename ArithmetizationType::field_type::integral_type e =
-        typename ArithmetizationType::field_type::integral_type(public_input[4].data);
+        typename ArithmetizationType::field_type::integral_type(
+            public_input[4].to_integral());
     typename ArithmetizationType::field_type::integral_type f =
-        typename ArithmetizationType::field_type::integral_type(public_input[5].data);
+        typename ArithmetizationType::field_type::integral_type(
+            public_input[5].to_integral());
     typename ArithmetizationType::field_type::integral_type g =
-        typename ArithmetizationType::field_type::integral_type(public_input[6].data);
+        typename ArithmetizationType::field_type::integral_type(
+            public_input[6].to_integral());
     typename ArithmetizationType::field_type::integral_type h =
-        typename ArithmetizationType::field_type::integral_type(public_input[7].data);
+        typename ArithmetizationType::field_type::integral_type(
+            public_input[7].to_integral());
     for (std::size_t i = 0; i < 80; i++) {
         typename BlueprintFieldType::integral_type S0 =
-            ((a >> 28) | ((a << (64 - 28)) & typename BlueprintFieldType::integral_type(
-                                                 (typename BlueprintFieldType::value_type(2).pow(64) - 1).data))) ^
-            ((a >> 34) | ((a << (64 - 34)) & typename BlueprintFieldType::integral_type(
-                                                 (typename BlueprintFieldType::value_type(2).pow(64) - 1).data))) ^
-            ((a >> 39) | ((a << (64 - 39)) & typename BlueprintFieldType::integral_type(
-                                                 (typename BlueprintFieldType::value_type(2).pow(64) - 1).data)));
+            ((a >> 28) | ((a << (64 - 28)) &
+                          typename BlueprintFieldType::integral_type(
+                              (typename BlueprintFieldType::value_type(2).pow(64) - 1)
+                                  .to_integral()))) ^
+            ((a >> 34) | ((a << (64 - 34)) &
+                          typename BlueprintFieldType::integral_type(
+                              (typename BlueprintFieldType::value_type(2).pow(64) - 1)
+                                  .to_integral()))) ^
+            ((a >> 39) | ((a << (64 - 39)) &
+                          typename BlueprintFieldType::integral_type(
+                              (typename BlueprintFieldType::value_type(2).pow(64) - 1)
+                                  .to_integral())));
 
         typename BlueprintFieldType::integral_type S1 =
-            ((e >> 14) | ((e << (64 - 14)) & typename BlueprintFieldType::integral_type(
-                                                 (typename BlueprintFieldType::value_type(2).pow(64) - 1).data))) ^
-            ((e >> 18) | ((e << (64 - 18)) & typename BlueprintFieldType::integral_type(
-                                                 (typename BlueprintFieldType::value_type(2).pow(64) - 1).data))) ^
-            ((e >> 41) | ((e << (64 - 41)) & typename BlueprintFieldType::integral_type(
-                                                 (typename BlueprintFieldType::value_type(2).pow(64) - 1).data)));
+            ((e >> 14) | ((e << (64 - 14)) &
+                          typename BlueprintFieldType::integral_type(
+                              (typename BlueprintFieldType::value_type(2).pow(64) - 1)
+                                  .to_integral()))) ^
+            ((e >> 18) | ((e << (64 - 18)) &
+                          typename BlueprintFieldType::integral_type(
+                              (typename BlueprintFieldType::value_type(2).pow(64) - 1)
+                                  .to_integral()))) ^
+            ((e >> 41) | ((e << (64 - 41)) &
+                          typename BlueprintFieldType::integral_type(
+                              (typename BlueprintFieldType::value_type(2).pow(64) - 1)
+                                  .to_integral())));
 
         typename BlueprintFieldType::integral_type maj = (a & b) ^ (a & c) ^ (b & c);
         typename BlueprintFieldType::integral_type ch = (e & f) ^ ((~e) & g);
@@ -178,34 +215,56 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_sha512_process) {
         h = g;
         g = f;
         f = e;
-        e = (d + tmp1)%
-        typename BlueprintFieldType::integral_type(typename BlueprintFieldType::value_type(2).pow(64).data);
+        e = (d + tmp1) %
+            typename BlueprintFieldType::integral_type(
+                typename BlueprintFieldType::value_type(2).pow(64).to_integral());
         d = c;
         c = b;
         b = a;
-        a = (tmp1 + tmp2)%
-        typename BlueprintFieldType::integral_type(typename BlueprintFieldType::value_type(2).pow(64).data);
+        a = (tmp1 + tmp2) %
+            typename BlueprintFieldType::integral_type(
+                typename BlueprintFieldType::value_type(2).pow(64).to_integral());
     }
-    std::array<typename BlueprintFieldType::integral_type, 8> result_state = {(a + typename ArithmetizationType::field_type::integral_type(public_input[0].data))%
-        typename BlueprintFieldType::integral_type(typename BlueprintFieldType::value_type(2).pow(64).data),
-    (b + typename ArithmetizationType::field_type::integral_type(public_input[1].data))%
-        typename BlueprintFieldType::integral_type(typename BlueprintFieldType::value_type(2).pow(64).data),
-    (c + typename ArithmetizationType::field_type::integral_type(public_input[2].data))%
-        typename BlueprintFieldType::integral_type(typename BlueprintFieldType::value_type(2).pow(64).data),
-    (d + typename ArithmetizationType::field_type::integral_type(public_input[3].data))%
-        typename BlueprintFieldType::integral_type(typename BlueprintFieldType::value_type(2).pow(64).data),
-    (e + typename ArithmetizationType::field_type::integral_type(public_input[4].data))%
-        typename BlueprintFieldType::integral_type(typename BlueprintFieldType::value_type(2).pow(64).data),
-    (f + typename ArithmetizationType::field_type::integral_type(public_input[5].data))%
-        typename BlueprintFieldType::integral_type(typename BlueprintFieldType::value_type(2).pow(64).data),
-    (g + typename ArithmetizationType::field_type::integral_type(public_input[6].data))%
-        typename BlueprintFieldType::integral_type(typename BlueprintFieldType::value_type(2).pow(64).data),
-    (h + typename ArithmetizationType::field_type::integral_type(public_input[7].data))%
-        typename BlueprintFieldType::integral_type(typename BlueprintFieldType::value_type(2).pow(64).data)};
+    std::array<typename BlueprintFieldType::integral_type, 8> result_state = {
+        (a + typename ArithmetizationType::field_type::integral_type(
+                 public_input[0].to_integral())) %
+            typename BlueprintFieldType::integral_type(
+                typename BlueprintFieldType::value_type(2).pow(64).to_integral()),
+        (b + typename ArithmetizationType::field_type::integral_type(
+                 public_input[1].to_integral())) %
+            typename BlueprintFieldType::integral_type(
+                typename BlueprintFieldType::value_type(2).pow(64).to_integral()),
+        (c + typename ArithmetizationType::field_type::integral_type(
+                 public_input[2].to_integral())) %
+            typename BlueprintFieldType::integral_type(
+                typename BlueprintFieldType::value_type(2).pow(64).to_integral()),
+        (d + typename ArithmetizationType::field_type::integral_type(
+                 public_input[3].to_integral())) %
+            typename BlueprintFieldType::integral_type(
+                typename BlueprintFieldType::value_type(2).pow(64).to_integral()),
+        (e + typename ArithmetizationType::field_type::integral_type(
+                 public_input[4].to_integral())) %
+            typename BlueprintFieldType::integral_type(
+                typename BlueprintFieldType::value_type(2).pow(64).to_integral()),
+        (f + typename ArithmetizationType::field_type::integral_type(
+                 public_input[5].to_integral())) %
+            typename BlueprintFieldType::integral_type(
+                typename BlueprintFieldType::value_type(2).pow(64).to_integral()),
+        (g + typename ArithmetizationType::field_type::integral_type(
+                 public_input[6].to_integral())) %
+            typename BlueprintFieldType::integral_type(
+                typename BlueprintFieldType::value_type(2).pow(64).to_integral()),
+        (h + typename ArithmetizationType::field_type::integral_type(
+                 public_input[7].to_integral())) %
+            typename BlueprintFieldType::integral_type(
+                typename BlueprintFieldType::value_type(2).pow(64).to_integral())};
     auto result_check = [result_state](AssignmentType &assignment,
         component_type::result_type &real_res) {
             for (std::size_t i = 0; i < 8; i++) {
-                assert(result_state[i] == typename ArithmetizationType::field_type::integral_type(var_value(assignment, real_res.output_state[i]).data));
+                assert(
+                    result_state[i] ==
+                    typename ArithmetizationType::field_type::integral_type(
+                        var_value(assignment, real_res.output_state[i]).to_integral()));
             }
     };
     typename component_type::input_type instance_input = {input_state_var, input_words_var};

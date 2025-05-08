@@ -73,13 +73,14 @@ void print_merkle_proof(MerkleProofIterator merkle_proof_begin, MerkleProofItera
 
 template<typename FpCurveGroupElement>
 void print_fp_curve_group_element(FpCurveGroupElement e) {
-    std::cout << e.X.data << " " << e.Y.data << " " << e.Z.data << std::endl;
+    std::cout << e.X << " " << e.Y << " " << e.Z << std::endl;
 }
 
 template<typename Fp2CurveGroupElement>
 void print_fp2_curve_group_element(Fp2CurveGroupElement e) {
-    std::cout << "(" << e.X.data[0].data << " " << e.X.data[1].data << ") (" << e.Y.data[0].data << " "
-              << e.Y.data[1].data << ") (" << e.Z.data[0].data << " " << e.Z.data[1].data << ")" << std::endl;
+    std::cout << "(" << e.X.data[0] << " " << e.X.data[1] << ") (" << e.Y.data[0] << " "
+              << e.Y.data[1] << ") (" << e.Z.data[0] << " " << e.Z.data[1] << ")"
+              << std::endl;
 }
 
 template<typename ValueType, std::size_t N>
