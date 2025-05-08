@@ -282,8 +282,7 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
                 BOOST_ASSERT(construct_carryless_chunks[i] == 0); 
             }
         } 
-        constrain(construct_carryless_chunks[0]);
-        for (std::size_t i = 1; i < 16; i++) {
+        for (std::size_t i = 0; i < 16; i++) {
             constrain(construct_carryless_chunks[i]);
         }
 
