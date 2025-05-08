@@ -249,6 +249,7 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
 
         // PART 2: ensuring that r*b + q - a == 0
         // mul == r*b
+        // NOTE: only one of b_chunks[i] is non-zero. Maybe we can simplify this and not store all multiplication carries.
         for (std::size_t i = 0; i < chunk_8_amount; i++) {
             mul8_carryless_chunks[i] = carryless_mul(r_chunks, b8_chunks, i);
             mul8_chunk_check[i] = mul8_chunks[i] * 256;
@@ -258,13 +259,14 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
                 mul8_chunks[i] = (mul8_carryless_chunks[i] + prev_carry).to_integral() & mask8;
                 mul8_carries[i] = (mul8_carryless_chunks[i] + prev_carry).to_integral() >> 8; 
                 BOOST_ASSERT(mul8_carryless_chunks[i] + prev_carry == mul8_chunks[i] + 256 * mul8_carries[i]);
-                mul8_carries_check[i] = 512 * mul8_carries[i];
+                mul8_carries_check[i] = mul8_carries[i] * 2;
             }
-            allocate(mul8_chunk_check[i], i, 1);
             allocate(mul8_chunks[i], i, 3);
             allocate(mul8_carries[i], i, 4);
+            allocate(mul8_chunk_check[i], i, 1);
+            allocate(mul8_carries_check[i], i, 6);
             // Note that this bound only works because only one of the chunks of b is non-zero. In general, it would be a bit higher
-            constrain(mul8_carries_check[i] - 512 * mul8_carries[i]);
+            constrain(mul8_carries_check[i] - mul8_carries[i] * 2);
         }
         constrain(mul8_carryless_chunks[0] - mul8_chunks[0] - mul8_carries[0] * 256);
         for (std::size_t i = 1; i < chunk_8_amount; i++) {
