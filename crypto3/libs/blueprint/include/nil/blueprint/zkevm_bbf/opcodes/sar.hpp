@@ -122,14 +122,12 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
         std::vector<TYPE> input_b_chunks(chunk_amount);     // Input shift amount chunks
         std::vector<TYPE> a_chunks(chunk_amount);           // Input value chunks
         std::vector<TYPE> b_chunks(chunk_amount);           // Shift power chunks
-        std::vector<TYPE> b_chunks_copy1(chunk_amount);     // Shift amount chunks
+        std::vector<TYPE> b_chunks_copy1(chunk_amount);     // Copy of the above
+        std::vector<TYPE> b_chunks_copy2(chunk_amount);     // Copy of the above
         std::vector<TYPE> r_chunks(chunk_amount);           // Shift result chunks (without sign extension)
         std::vector<TYPE> r_chunks_copy1(chunk_amount);     // Copy of the above
         std::vector<TYPE> r_chunks_copy2(chunk_amount);     // Copy of the above
-        std::vector<TYPE> r_chunks_copy3(chunk_amount);     // Copy of the above
-        std::vector<TYPE> r_chunks_copy4(chunk_amount);     // Copy of the above
         std::vector<TYPE> q_chunks(chunk_amount);           // Division remainder chunks
-        std::vector<TYPE> q_chunks_copy1(chunk_amount);     // Copy of the above
         std::vector<TYPE> v_chunks(chunk_amount);           // Difference chunks (q - b)
         std::vector<TYPE> b8_chunks(chunk_8_amount);        // Shift power in 8-bit chunks
         std::vector<TYPE> b8_chunks_check(chunk_8_amount);  // Range check for b8_chunks
@@ -189,13 +187,11 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
             a_chunks15_copy1 = a_chunks[15];
             b_chunks = zkevm_word_to_field_element<FieldType>(b);
             b_chunks_copy1 = zkevm_word_to_field_element<FieldType>(b);
+            b_chunks_copy2 = zkevm_word_to_field_element<FieldType>(b);
             r_chunks = zkevm_word_to_field_element<FieldType>(r);
             r_chunks_copy1 = zkevm_word_to_field_element<FieldType>(r);
             r_chunks_copy2 = zkevm_word_to_field_element<FieldType>(r);
-            r_chunks_copy3 = zkevm_word_to_field_element<FieldType>(r);
-            r_chunks_copy4 = zkevm_word_to_field_element<FieldType>(r);
             q_chunks = zkevm_word_to_field_element<FieldType>(q);
-            q_chunks_copy1 = zkevm_word_to_field_element<FieldType>(q);
             v_chunks = zkevm_word_to_field_element<FieldType>(v);
             y_chunks = zkevm_word_to_field_element<FieldType>(result);
 
@@ -221,45 +217,42 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
         
         // Some values are copied around to satisfy the limitation of three adjacent rows per constraint
         for (std::size_t i = 0; i < chunk_amount; i++) {
-            allocate(input_b_chunks[i], i + chunk_amount, 3);
-            allocate(r_chunks[i], i + chunk_amount, 2);
-            allocate(r_chunks_copy1[i], i + 2 * chunk_amount, 4);
-            allocate(r_chunks_copy2[i], i + 2 * chunk_amount, 6);
-            allocate(r_chunks_copy3[i], i + 2 * chunk_amount, 8);
-            allocate(r_chunks_copy4[i], i, 9);
-            allocate(a_chunks[i], i + chunk_amount, 9);
+            allocate(input_b_chunks[i], i, 8);
+            allocate(r_chunks[i], i + 2 * chunk_amount, 4);
+            allocate(r_chunks_copy1[i], i + 2 * chunk_amount, 6);
+            allocate(r_chunks_copy2[i], i + chunk_amount, 8);
+            allocate(a_chunks[i], i, 5);
             allocate(b_chunks[i], i + 2 * chunk_amount, 3);
             allocate(b_chunks_copy1[i], i + 2 * chunk_amount, 5);
-            allocate(q_chunks[i], i, 5);
-            allocate(q_chunks_copy1[i], i + 2 * chunk_amount, 7);
-            allocate(v_chunks[i], i + chunk_amount, 5);
+            allocate(b_chunks_copy2[i], i + 2 * chunk_amount, 7);
+            allocate(q_chunks[i], i + chunk_amount, 5);
+            allocate(v_chunks[i], i + chunk_amount, 7);
         }
+        allocate(a_chunks15_copy1, 15, 7);
         for (std::size_t i = 0; i < chunk_8_amount; i++) {
-            allocate(b8_chunks[i], i, 6);
-            allocate(b8_chunks_check[i], i, 4);
+            allocate(b8_chunks[i], i, 2);
+            allocate(b8_chunks_check[i], i, 0);
         }
-        allocate(a_chunks15_copy1, 40, 2);
-        allocate(input_b0_lower, 0, 2);
-        allocate(input_b0_upper, 1, 2);
-        allocate(input_b0_lower_check, 2, 2);
-        allocate(input_b0_upper_check, 3, 2);
-        allocate(upper_inverse, 32, 2);
+        allocate(input_b0_lower, 0, 9);
+        allocate(input_b0_upper, 1, 9);
+        allocate(input_b0_lower_check, 2, 9);
+        allocate(input_b0_upper_check, 3, 9);
+        allocate(upper_inverse, 32, 8);
 
         // Ensure consistency between copied values
+        constrain(a_chunks[15] - a_chunks15_copy1);
         for (std::size_t i = 0; i < chunk_amount; i++) {
-            constrain(b_chunks[i] - b_chunks_copy1[i]);
             constrain(r_chunks[i] - r_chunks_copy1[i]);
             constrain(r_chunks_copy1[i] - r_chunks_copy2[i]);
-            constrain(r_chunks_copy2[i] - r_chunks_copy3[i]);
-            constrain(r_chunks_copy3[i] - r_chunks_copy4[i]);
-            constrain(q_chunks[i] - q_chunks_copy1[i]);
         }
+
+        // TODO: consistency between b_chunks and b8_chunks
         
 
         // PART 2: ensuring that r*b + q - a = 0
         // mul = r*b
         for (std::size_t i = 0; i < chunk_8_amount; i++) {
-            mul8_carryless_chunks[i] = carryless_mul(r_chunks_copy2, b8_chunks, i);
+            mul8_carryless_chunks[i] = carryless_mul(r_chunks, b8_chunks, i);
             m8_chunks_check[i] = mul8_chunks[i] * 256;
             if constexpr (stage == GenerationStage::ASSIGNMENT) {
                 auto mask8 = (1 << 8) - 1;
@@ -269,9 +262,9 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
                                                                                                 // 2^9 * (mul8_carries[i] + 1) < 2^16
                 BOOST_ASSERT(mul8_carryless_chunks[i] + prev_carry == mul8_chunks[i] + 256 * mul8_carries[i]);
             }
-            allocate(m8_chunks_check[i], i, 10);
-            allocate(mul8_chunks[i], i, 8);
-            allocate(mul8_carries[i], i, 7);
+            allocate(m8_chunks_check[i], i, 1);
+            allocate(mul8_chunks[i], i, 3);
+            allocate(mul8_carries[i], i, 4);
         }
         constrain(mul8_carryless_chunks[0] - mul8_chunks[0] - mul8_carries[0] * 256);
         for (std::size_t i = 1; i < chunk_8_amount; i++) {
@@ -281,7 +274,7 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
         // mul + q - a = 0
         // The carryless constructs are already 0, so we don't need to separate the carries from the strict 16-bit chunks.
         for (std::size_t i = 0; i < chunk_amount; i++) {
-            construct_carryless_chunks[i] = carryless_construct(mul8_chunks, q_chunks_copy1, a_chunks, i);
+            construct_carryless_chunks[i] = carryless_construct(mul8_chunks, q_chunks, a_chunks, i);
             constrain(construct_carryless_chunks[i]);
         } 
 
@@ -291,7 +284,7 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
                 TYPE prev_carry = (i > 0) ? add_carries[i-1] : 0;
                 add_carries[i] = (v_chunks[i] + b_chunks_copy1[i] + prev_carry).to_integral() >> 16;
             }
-            allocate(add_carries[i], i, 3);
+            allocate(add_carries[i], i, 7);
             constrain(add_carries[i] * (1 - add_carries[i]));
         }
 
@@ -309,15 +302,15 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
         constrain(input_b_chunks[0] - input_b0_lower - 256 * input_b0_upper);
 
         // allocation and decomposition of shift_value
-        allocate(shift_value, 37, 2);
-        allocate(shift_lower, 4, 2);
-        allocate(shift_upper, 5, 2);
+        allocate(shift_value, 37, 8);
+        allocate(shift_lower, 4, 9);
+        allocate(shift_upper, 5, 9);
 
         // shift_lower and shift_upper are 4-bit values
         shift_lower_check = 4096 * shift_lower;
         shift_upper_check = 4096 * shift_upper;
-        allocate(shift_lower_check, 6, 2);
-        allocate(shift_upper_check, 7, 2);
+        allocate(shift_lower_check, 6, 9);
+        allocate(shift_upper_check, 7, 9);
 
         // shift_value is decomposed into shift_lower, shift_higher
         constrain(shift_value - shift_lower - 16 * shift_upper);
@@ -338,11 +331,11 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
         }
 
         // sum_inverse_partial is the inverse of b_partial_sum, unless this is zero
-        allocate(sum_inverse_partial, 34, 2);
+        allocate(sum_inverse_partial, 34, 8);
         // partial_sum_check = 0  <=>  input_b_partial_sum > 0,
         // partial_sum_check = 1  <=>  input_b_partial_sum = 0.
         TYPE partial_sum_check = 1 - input_b_partial_sum * sum_inverse_partial;
-        allocate(partial_sum_check, 35, 2);
+        allocate(partial_sum_check, 35, 8);
         // either input_b_partial_sum = 0 (i.e. all chunks except for the least significant are 0), or partial_sum_check = 0
         constrain(input_b_partial_sum * partial_sum_check);   
 
@@ -354,7 +347,7 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
         //  - b0_upper has an inverse, and thus is non-zero.
         //  - partial_sum_check = 0, which means that some 16-bit chunk of input_b beyond the least significant one is non-zero.
         is_shift_large = (1 - input_b0_upper * upper_inverse) * partial_sum_check; // 0 if shift >= 256, 1 otherwise
-        allocate(is_shift_large, 36, 2);
+        allocate(is_shift_large, 36, 8);
 
         // Ensure that shift_value matches input_b, or 255 in the case of a large shift.
         constrain( (1 - is_shift_large) * (shift_value - 255) + is_shift_large * (shift_value - input_b_chunks[0]) );
@@ -371,8 +364,8 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
                                     ? 0
                                     : (shift_upper - i).inversed();
             }
-            allocate(indic_1[i], i + 2 * chunk_amount, 0);
-            allocate(indic_2[i], i + 2 * chunk_amount, 1);
+            allocate(indic_1[i], i + 2 * chunk_amount, 10);
+            allocate(indic_2[i], i + 2 * chunk_amount, 9);
             // indic_1[i] = 0                        =>  shift_lower = i       // AFAICS the other implication is not enforced. Is this a problem?
             // indic_1[i] = (shift_lower - i)^(-1)  <=>  shift_lower != i
             // same for indic_2.
@@ -389,7 +382,7 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
             shift_lower_power += (1 - (shift_lower - i) * indic_1[i]) * pow;
             pow *= 2;
         }
-        allocate(shift_lower_power, 38, 2);
+        allocate(shift_lower_power, 38, 8);
 
         // connection between b_chunks and input_b_chunks (implicitly via shift_lower & shift_upper)
         // Recall that b is the actual shift performed, in power-of-2 form.
@@ -397,7 +390,7 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
             // b_chunks[i] = shift_power * (1 - (shift_upper - i) * indic_2[i]) 
             // shift_upper = i   <=>  b_chunks[i] = shift_power = 2^(shift_lower)
             // shift_upper != i  <=>  b_chunks[i] = 0
-            constrain(b_chunks[i] - shift_lower_power * (1 - (shift_upper - i) * indic_2[i]));
+            constrain(b_chunks_copy2[i] - shift_lower_power * (1 - (shift_upper - i) * indic_2[i]));
         }
 
         // Example of the above: 167-bit shift.
@@ -412,17 +405,17 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
 
         // PART 4: sign extension
         for (std::size_t i = 0; i < chunk_amount; i++) {
-            allocate(y_chunks[i], i, 1);
+            allocate(y_chunks[i], i + chunk_amount, 9);
             res[i] = y_chunks[i];
         }
 
-        allocate(sign_bit, 41, 2);
+        allocate(sign_bit, 41, 8);
         constrain(sign_bit * (1 - sign_bit));  // Ensure sign_bit is 0 or 1
         lower_chunk_bits = a_chunks15_copy1 - sign_bit * two_15;
-        allocate(lower_chunk_bits, 8, 2);
+        allocate(lower_chunk_bits, 8, 9);
         // Ensure that the highest chunk (without the sign bit) is 15-bits.
         lower_bits_range = 2 * lower_chunk_bits;
-        allocate(lower_bits_range, 9, 2);
+        allocate(lower_bits_range, 9, 9);
 
         // Sign extension logic
         // is_sign[i] signals whether a chunk should be completely filled with sign bits
@@ -453,7 +446,7 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
         for (std::size_t i = 0; i < chunk_amount; i++) {
             size_t i_inv = chunk_amount - 1 - i;
             transition_chunk +=
-                r_chunks[i] * (1 - (shift_upper - i_inv) * indic_2[i_inv]);
+                r_chunks_copy2[i] * (1 - (shift_upper - i_inv) * indic_2[i_inv]);
         }
         // shift_lower determines which exact mask should be added (how many sign bits)
         for (std::size_t i = 0; i < chunk_amount; i++) {
@@ -462,8 +455,7 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
             transition_chunk +=
                 (1 - (shift_lower - i) * indic_1[i]) * mask * sign_bit;
         }
-        // allocate(transition_chunk, 38, 1);
-        allocate(transition_chunk, 39, 2);
+        allocate(transition_chunk, 39, 8);
 
         // connect the result (y_chunks) with r_chunks and sign_bit
         for (std::size_t i = 0; i < chunk_amount; i++) {
@@ -474,7 +466,7 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
                 // both of the above are 0  => y_chunks[i] = r_chunks[i] 
                 y_chunks[i] - is_sign[i] * sign_bit * 0xFFFF  // Sign fill
                 - is_transition[i] * transition_chunk  // Transition chunk
-                - (1 - is_sign[i] - is_transition[i]) * r_chunks[i]);  // Original chunks
+                - (1 - is_sign[i] - is_transition[i]) * r_chunks_copy2[i]);  // Original chunks
         }
     
         // PART 5: consistency with the stack
@@ -509,16 +501,16 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
             // The arguments for call_id, stack_size and rw_counter corresponds to the indices of the rows that contains the data read from the rw_table
             std::vector<TYPE> tmp;
             tmp = rw_table<FieldType, stage>::stack_lookup(
-                current_state.call_id(3), current_state.stack_size(3) - 1,
-                current_state.rw_counter(3), TYPE(0), B0, B1);
+                current_state.call_id(8), current_state.stack_size(8) - 1,
+                current_state.rw_counter(8), TYPE(0), B0, B1);
+            lookup(tmp, "zkevm_rw");
+            tmp = rw_table<FieldType, stage>::stack_lookup(
+                current_state.call_id(5), current_state.stack_size(5) - 2,
+                current_state.rw_counter(5) + 1, TYPE(0), A0, A1);
             lookup(tmp, "zkevm_rw");
             tmp = rw_table<FieldType, stage>::stack_lookup(
                 current_state.call_id(9), current_state.stack_size(9) - 2,
-                current_state.rw_counter(9) + 1, TYPE(0), A0, A1);
-            lookup(tmp, "zkevm_rw");
-            tmp = rw_table<FieldType, stage>::stack_lookup(
-                current_state.call_id(1), current_state.stack_size(1) - 2,
-                current_state.rw_counter(1) + 2, TYPE(1), Res0, Res1);
+                current_state.rw_counter(9) + 2, TYPE(1), Res0, Res1);
             lookup(tmp, "zkevm_rw");
 
             // TODO: add lookup for a_chunks15_copy1
