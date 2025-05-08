@@ -266,7 +266,8 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
                 auto mask8 = (1 << 8) - 1;
                 TYPE prev_carry = (i > 0) ? mul8_carries[i - 1] : 0;
                 mul8_chunks[i] = (mul8_carryless_chunks[i] + prev_carry).to_integral() & mask8;
-                mul8_carries[i] = (mul8_carryless_chunks[i] + prev_carry).to_integral() >> 8;
+                mul8_carries[i] = (mul8_carryless_chunks[i] + prev_carry).to_integral() >> 8;   // TODO: constrain these:
+                                                                                                // 2^9 * (mul8_carries[i] + 1) < 2^16
                 BOOST_ASSERT(mul8_carryless_chunks[i] + prev_carry == mul8_chunks[i] + 256 * mul8_carries[i]);
             }
             allocate(m8_chunks_check[i], i, 10);
@@ -279,19 +280,17 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
         }
         
         // mul + q - a = 0
+        // The carryless constructs are already 0, so we don't need to separate the carries from the strict 16-bit chunks.
         for (std::size_t i = 0; i < chunk_amount; i++) {
             construct_carryless_chunks[i] = carryless_construct(mul8_chunks, q_chunks_copy1, a_chunks, i);
             if constexpr (stage == GenerationStage::ASSIGNMENT) {
                 TYPE prev_carry = (i > 0) ? construct_carries[i - 1] : 0;
-                construct_carries[i] = (construct_carryless_chunks[i] + prev_carry).to_integral() >> 16; 
-                BOOST_ASSERT(construct_carryless_chunks[i] == 0);
-                BOOST_ASSERT(construct_carryless_chunks[i] + prev_carry == construct_carries[i] * two_16);
+                BOOST_ASSERT(construct_carryless_chunks[i] == 0); 
             }
-            allocate(construct_carries[i], i + 2 * chunk_amount, 9); // TODO: do I need to constrain these?
-        }
-        constrain(construct_carryless_chunks[0] - construct_carries[0] * two_16);
+        } 
+        constrain(construct_carryless_chunks[0]);
         for (std::size_t i = 1; i < 16; i++) {
-            constrain(construct_carryless_chunks[i] + construct_carries[i-1] - construct_carries[i] * two_16 );
+            constrain(construct_carryless_chunks[i]);
         }
 
         // Carry propagation constraints for the v + b = q + 2^256 equality
