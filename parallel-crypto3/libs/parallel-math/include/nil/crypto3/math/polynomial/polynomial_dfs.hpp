@@ -32,12 +32,13 @@
 #endif
 
 #include <algorithm>
+#include <stdexcept>
+#include <iterator>
 #include <limits>
 #include <memory>
-#include <vector>
 #include <ostream>
-#include <iterator>
 #include <unordered_map>
+#include <vector>
 
 #include <nil/crypto3/math/algorithms/make_evaluation_domain.hpp>
 #include <nil/crypto3/math/domains/evaluation_domain.hpp>
@@ -52,8 +53,7 @@
 namespace nil {
     namespace crypto3 {
         namespace math {
-            //size_t __global_from_coefficients_counter_test = 0;
-            //size_t __global_coefficients_counter_test = 0;
+
             // Optimal val.size must be power of two, if it's not true we have points that we will never use
             template<typename FieldValueType, typename Allocator = std::allocator<FieldValueType>>
             class polynomial_dfs {
@@ -61,6 +61,15 @@ namespace nil {
 
                 container_type val;
                 size_t _d;
+
+                static constexpr void check_is_correct_degree_for_size(std::size_t degree,
+                                                                       std::size_t size) {
+                    if (size <= degree) {
+                        throw std::logic_error(
+                            "Size less than or equal to degree is prohibited: can't "
+                            "restore the polynomial in the future.");
+                    }
+                }
 
             public:
                 typedef typename container_type::value_type value_type;
@@ -76,99 +85,61 @@ namespace nil {
                 typedef typename container_type::reverse_iterator reverse_iterator;
                 typedef typename container_type::const_reverse_iterator const_reverse_iterator;
 
+                // Main constructor
+                polynomial_dfs(size_t d, container_type&& c) : val(std::move(c)), _d(d) {
+                    check_is_correct_degree_for_size(d, val.size());
+                    BOOST_ASSERT_MSG(
+                        val.size() == detail::power_of_two(val.size()),
+                        "DFS optimal polynomial size must be a power of two");
+                }
+
+                polynomial_dfs(size_t d, const container_type& c)
+                    : polynomial_dfs(d, container_type(c)) {}
+
+                polynomial_dfs(size_t d, size_type n, const value_type& x)
+                    : polynomial_dfs(d, container_type(n, x)) {}
+
+                polynomial_dfs(size_t d, size_type n, const value_type& x,
+                               const allocator_type& a)
+                    : polynomial_dfs(d, container_type(n, x, a)) {}
+
                 // Default constructor creates a zero polynomial of degree 0 and size 1.
-                polynomial_dfs() : val(1, FieldValueType::zero()), _d(0) {
-                }
+                polynomial_dfs() : polynomial_dfs(0, 1, FieldValueType::zero()) {}
 
-                explicit polynomial_dfs(size_t d, size_type n) : val(n, FieldValueType::zero()), _d(d) {
-                    BOOST_ASSERT_MSG(n == detail::power_of_two(n), "DFS optimal polynomial size must be a power of two");
-                }
+                explicit polynomial_dfs(size_t d, size_type n)
+                    : polynomial_dfs(d, n, FieldValueType::zero()) {}
 
-                explicit polynomial_dfs(size_t d, size_type n, const allocator_type& a) : val(n, FieldValueType::zero(), a), _d(d) {
-                    BOOST_ASSERT_MSG(n == detail::power_of_two(n), "DFS optimal polynomial size must be a power of two");
-                }
-
-                polynomial_dfs(size_t d, size_type n, const value_type& x) : val(n, x), _d(d) {
-                    BOOST_ASSERT_MSG(n == detail::power_of_two(n), "DFS optimal polynomial size must be a power of two");
-                }
-
-                polynomial_dfs(size_t d, size_type n, const value_type& x, const allocator_type& a) :
-                    val(n, x, a), _d(d) {
-                    BOOST_ASSERT_MSG(n == detail::power_of_two(n), "DFS optimal polynomial size must be a power of two");
-                }
+                explicit polynomial_dfs(size_t d, size_type n, const allocator_type& a)
+                    : polynomial_dfs(d, n, FieldValueType::zero(), a) {}
 
                 template<typename InputIterator>
-                polynomial_dfs(size_t d, InputIterator first, InputIterator last) : val(first, last), _d(d) {
-                    BOOST_ASSERT_MSG(
-                        std::size_t(std::distance(first, last)) == detail::power_of_two(std::distance(first, last)),
-                        "DFS optimal polynomial size must be a power of two");
-                }
+                polynomial_dfs(size_t d, InputIterator first, InputIterator last)
+                    : polynomial_dfs(d, container_type(first, last)) {}
 
                 template<typename InputIterator>
-                polynomial_dfs(size_t d, InputIterator first, InputIterator last, const allocator_type& a) :
-                    val(first, last, a), _d(d) {
-                    BOOST_ASSERT_MSG(
-                        std::size_t(std::distance(first, last)) == detail::power_of_two(std::distance(first, last)),
-                        "DFS optimal polynomial size must be a power of two");
-                }
-
-                polynomial_dfs(const polynomial_dfs& x) : val(x.val), _d(x._d) {
-                }
+                polynomial_dfs(size_t d, InputIterator first, InputIterator last,
+                               const allocator_type& a)
+                    : polynomial_dfs(d, container_type(first, last, a)) {}
 
                 polynomial_dfs(const polynomial_dfs& x, const allocator_type& a) : val(x.val, a), _d(x._d) {
                 }
 
-                polynomial_dfs(std::size_t d, std::initializer_list<value_type> il) : val(il), _d(d) {
-                }
+                // NOLINTNEXTLINE
+                polynomial_dfs(polynomial_dfs&& x, const allocator_type& a)
+                    : val(std::move(x.val), a), _d(x._d) {}
 
-                polynomial_dfs(size_t d, std::initializer_list<value_type> il, const allocator_type& a) :
-                    val(il, a), _d(d) {
-                    BOOST_ASSERT_MSG(val.size() == detail::power_of_two(val.size()),
-                                     "DFS optimal polynomial size must be a power of two");
-                }
+                polynomial_dfs(std::size_t d, std::initializer_list<value_type> il)
+                    : polynomial_dfs(d, container_type(std::move(il))) {}
+
+                polynomial_dfs(size_t d, std::initializer_list<value_type> il,
+                               const allocator_type& a)
+                    : polynomial_dfs(d, container_type(std::move(il), a)) {}
+
                 // TODO: add constructor with omega
 
-                polynomial_dfs(polynomial_dfs&& x)
-                    BOOST_NOEXCEPT(std::is_nothrow_move_constructible<allocator_type>::value)
-                    : val(std::move(x.val))
-                    , _d(x._d) {
-                }
+                bool operator==(const polynomial_dfs& rhs) const = default;
 
-                polynomial_dfs(polynomial_dfs&& x, const allocator_type& a)
-                    : val(std::move(x.val), a)
-                    , _d(x._d) {
-                }
-
-                polynomial_dfs(size_t d, const container_type& c) : val(c), _d(d) {
-                    BOOST_ASSERT_MSG(val.size() == detail::power_of_two(val.size()),
-                                     "DFS optimal polynomial size must be a power of two");
-                }
-
-                polynomial_dfs(size_t d, container_type&& c) : val(std::move(c)), _d(d) {
-                    BOOST_ASSERT_MSG(val.size() == detail::power_of_two(val.size()),
-                                     "DFS optimal polynomial size must be a power of two");
-                }
-
-                polynomial_dfs& operator=(const polynomial_dfs& x) {
-                    val = x.val;
-                    _d = x._d;
-                    return *this;
-                }
-
-                polynomial_dfs& operator=(polynomial_dfs&& x) {
-                    val = std::move(x.val);
-                    _d = x._d;
-                    return *this;
-                }
-
-                bool operator==(const polynomial_dfs& rhs) const {
-                    return val == rhs.val && _d == rhs._d;
-                }
-                bool operator!=(const polynomial_dfs& rhs) const {
-                    return !(rhs == *this && _d == rhs._d);
-                }
-
-                allocator_type get_allocator() const BOOST_NOEXCEPT {
+                allocator_type get_allocator() const noexcept {
                     return this->val.__alloc();
                 }
 
@@ -176,84 +147,46 @@ namespace nil {
                     return val;
                 }
 
-                iterator begin() BOOST_NOEXCEPT {
-                    return val.begin();
-                }
+                iterator begin() noexcept { return val.begin(); }
 
-                const_iterator begin() const BOOST_NOEXCEPT {
-                    return val.begin();
-                }
-                iterator end() BOOST_NOEXCEPT {
-                    return val.end();
-                }
-                const_iterator end() const BOOST_NOEXCEPT {
-                    return val.end();
-                }
+                const_iterator begin() const noexcept { return val.begin(); }
+                iterator end() noexcept { return val.end(); }
+                const_iterator end() const noexcept { return val.end(); }
 
-                reverse_iterator rbegin() BOOST_NOEXCEPT {
-                    return val.rbegin();
-                }
+                reverse_iterator rbegin() noexcept { return val.rbegin(); }
 
-                const_reverse_iterator rbegin() const BOOST_NOEXCEPT {
-                    return val.rbegin();
-                }
+                const_reverse_iterator rbegin() const noexcept { return val.rbegin(); }
 
-                reverse_iterator rend() BOOST_NOEXCEPT {
-                    return reverse_iterator(begin());
-                }
+                reverse_iterator rend() noexcept { return reverse_iterator(begin()); }
 
-                const_reverse_iterator rend() const BOOST_NOEXCEPT {
+                const_reverse_iterator rend() const noexcept {
                     return const_reverse_iterator(begin());
                 }
 
-                const_iterator cbegin() const BOOST_NOEXCEPT {
-                    return begin();
-                }
+                const_iterator cbegin() const noexcept { return begin(); }
 
-                const_iterator cend() const BOOST_NOEXCEPT {
-                    return end();
-                }
+                const_iterator cend() const noexcept { return end(); }
 
-                const_reverse_iterator crbegin() const BOOST_NOEXCEPT {
-                    return rbegin();
-                }
+                const_reverse_iterator crbegin() const noexcept { return rbegin(); }
 
-                const_reverse_iterator crend() const BOOST_NOEXCEPT {
-                    return rend();
-                }
+                const_reverse_iterator crend() const noexcept { return rend(); }
 
-                size_type size() const BOOST_NOEXCEPT {
-                    return val.size();
-                }
+                size_type size() const noexcept { return val.size(); }
 
-                size_type degree() const BOOST_NOEXCEPT {
-                    return _d;
-                }
+                size_type degree() const noexcept { return _d; }
 
-                size_type max_degree() const BOOST_NOEXCEPT {
-                    return this->size();
-                }
+                size_type max_degree() const noexcept { return this->size(); }
 
-                size_type capacity() const BOOST_NOEXCEPT {
-                    return val.capacity();
-                }
-                bool empty() const BOOST_NOEXCEPT {
-                    return val.empty();
-                }
-                size_type max_size() const BOOST_NOEXCEPT {
-                    return val.max_size();
-                }
+                size_type capacity() const noexcept { return val.capacity(); }
+                bool empty() const noexcept { return val.empty(); }
+                size_type max_size() const noexcept { return val.max_size(); }
                 void reserve(size_type _n) {
                     return val.reserve(_n);
                 }
-                void shrink_to_fit() BOOST_NOEXCEPT {
-                    return val.shrink_to_fit();
-                }
+                void shrink_to_fit() noexcept { return val.shrink_to_fit(); }
 
-                reference operator[](size_type _n) BOOST_NOEXCEPT {
-                    return val[_n];
-                }
-                const_reference operator[](size_type _n) const BOOST_NOEXCEPT {
+                reference operator[](size_type _n) noexcept { return val[_n]; }
+                const_reference operator[](size_type _n) const noexcept {
                     return val[_n];
                 }
                 reference at(size_type _n) {
@@ -263,38 +196,24 @@ namespace nil {
                     return val.at(_n);
                 }
 
-                reference front() BOOST_NOEXCEPT {
-                    return val.front();
-                }
-                const_reference front() const BOOST_NOEXCEPT {
-                    return val.front();
-                }
-                reference back() BOOST_NOEXCEPT {
-                    return val.back();
-                }
-                const_reference back() const BOOST_NOEXCEPT {
-                    return val.back();
-                }
+                reference front() noexcept { return val.front(); }
+                const_reference front() const noexcept { return val.front(); }
+                reference back() noexcept { return val.back(); }
+                const_reference back() const noexcept { return val.back(); }
 
-                value_type* data() BOOST_NOEXCEPT {
-                    return val.data();
-                }
+                value_type* data() noexcept { return val.data(); }
 
-                const value_type* data() const BOOST_NOEXCEPT {
-                    return val.data();
-                }
+                const value_type* data() const noexcept { return val.data(); }
 
                 void push_back(const_reference _x) {
                     val.push_back(_x);
                 }
 
-                void push_back(value_type&& _x) {
-                    val.emplace_back(std::move(_x));
-                }
+                void push_back(value_type&& _x) { val.emplace_back(std::move(_x)); }
 
                 template<class... Args>
                 reference emplace_back(Args&&... _args) {
-                    return val.template emplace_back<>(_args...);
+                    return val.template emplace_back<>(std::forward<Args>(_args)...);
                 }
 
                 void pop_back() {
@@ -310,7 +229,8 @@ namespace nil {
                 }
                 template<class... Args>
                 iterator emplace(const_iterator _position, Args&&... _args) {
-                    return val.template emplace<>(_position, _args...);
+                    return val.template emplace<>(_position,
+                                                  std::forward<Args>(_args)...);
                 }
 
                 iterator insert(const_iterator _position, size_type _n, const_reference _x) {
@@ -334,9 +254,7 @@ namespace nil {
                     return val.erase(_first, _last);
                 }
 
-                void clear() BOOST_NOEXCEPT {
-                    val.clear();
-                }
+                void clear() noexcept { val.clear(); }
 
                 void resize(size_type _sz,
                             std::shared_ptr<evaluation_domain<typename value_type::field_type>> old_domain = nullptr,
@@ -345,7 +263,7 @@ namespace nil {
                     {
                         return;
                     }
-                    BOOST_ASSERT_MSG(_sz >= _d, "Resizing DFS polynomial to a size less than degree is prohibited: can't restore the polynomial in the future.");
+                    check_is_correct_degree_for_size(_d, _sz);
 
                     if (this->degree() == 0) {
                         // Here we cannot write this->val.resize(_sz, this->val[0]), it will segfault.
@@ -369,7 +287,7 @@ namespace nil {
                     }
                 }
 
-                void swap(polynomial_dfs& other) {
+                void swap(polynomial_dfs& other) noexcept {
                     val.swap(other.val);
                     std::swap(_d, other._d);
                 }
