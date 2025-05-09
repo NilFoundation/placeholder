@@ -91,6 +91,8 @@ namespace nil {
                         allocate(B[i], i + 16, 0);
                         allocate(S[i], i, 1);
                     }
+                    auto A_128 = chunks16_to_chunks128<TYPE>(A);
+                    auto B_128 = chunks16_to_chunks128<TYPE>(B);
                     allocate(diff, 16, 1 );
                     allocate(diff_inv, 32, 0);
                     allocate(lt, 17, 1);
@@ -120,6 +122,11 @@ namespace nil {
                         zero_constraints[i] *= A[i] - B[i];
                         constrain(zero_constraints[i]);
                     }
+
+                    // If A != B, the first different chunk is marked
+                    constrain((1 - s_sum) * (A_128.first - B_128.first));
+                    constrain((1 - s_sum) * (A_128.second - B_128.second));
+
                     TYPE diff_constraint;
                     for( std::size_t i = 0; i < 16; i++ ){
                         diff_constraint += S[i] * (gt * (A[i] - B[i]) + lt *(B[i] - A[i]));
@@ -128,8 +135,6 @@ namespace nil {
                     constrain(diff * (diff * diff_inv - 1));
                     constrain(diff_inv * (diff * diff_inv - 1));
                     constrain(diff * diff_inv - lt - gt);
-                    auto A_128 = chunks16_to_chunks128<TYPE>(A);
-                    auto B_128 = chunks16_to_chunks128<TYPE>(B);
                     if constexpr( stage == GenerationStage::CONSTRAINTS ){
                         constrain(current_state.pc_next() - current_state.pc(1) - 1);                   // PC transition
                         constrain(current_state.gas(1) - current_state.gas_next() - 3);                 // GAS transition
