@@ -84,6 +84,8 @@ namespace nil::crypto3::zk::snark {
          *  The provided cache must already contain all the required variables in the required sizes.
          */
         std::vector<polynomial_dfs_type> evaluate(const cached_assignment_table_type& _cached_assignment_table) {
+            PROFILE_SCOPE("DAG evaluator: evaluate");
+
             const size_t extended_domain_size = _cached_assignment_table.original_domain_size * _max_degree;
 
             // Create empty dfs polynomials of degree 'extended_domain_size - 1' and size 'extended_domain_size'.

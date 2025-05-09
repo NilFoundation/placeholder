@@ -121,7 +121,7 @@ namespace nil::crypto3::zk::snark {
         }
 
         void ensure_cache(const std::set<variable_type> &variables, std::size_t size) {
-            PROFILE_SCOPE("Ensure Cache");
+            PROFILE_SCOPE("Ensure cache");
 
             if (variables.size() == 0)
                 return;

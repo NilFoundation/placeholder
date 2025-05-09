@@ -89,8 +89,8 @@ namespace nil::crypto3::zk::snark {
             _cached_assignment_table.cache_all_columns_for_degree(degree);
         }
 
-        void ensure_cache(const std::set<polynomial_dfs_variable_type> &variables, std::size_t size) {
-            PROFILE_SCOPE("Central ensure cache");
+        void ensure_cache(const std::set<polynomial_dfs_variable_type>& variables,
+                          std::size_t size) {
             _cached_assignment_table.ensure_cache(variables, size);
         }
 
@@ -149,8 +149,10 @@ namespace nil::crypto3::zk::snark {
                     variables_set_full_degree.insert(var);
             });
 
-            dag_expression_builder<polynomial_dfs_variable_type> _dag_expr_builder_full_degree;
-            dag_expression_builder<polynomial_dfs_variable_type> _dag_expr_builder_half_degree;
+            dag_expression_builder<polynomial_dfs_variable_type>
+                _dag_expr_builder_half_degree;
+            dag_expression_builder<polynomial_dfs_variable_type>
+                _dag_expr_builder_full_degree;
 
             // Split expressions into 2 sets, thoese with degree <= D/2, and the rest.
             for (const auto& expr: _registered_exprs) {
