@@ -225,12 +225,10 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
         allocate(a_chunks15_copy1, 15, 7);
         constrain(a_chunks[15] - a_chunks15_copy1);
 
-        // Range checks are by default for 16 bits, so we adjust accordingly
-        for (std::size_t i = 0; i < chunk_8_amount; i++) {
-            b8_chunks_check[i] = b8_chunks[i] * 256;
-        }
         for (std::size_t i = 0; i < chunk_8_amount; i++) {
             allocate(b8_chunks[i], i, 2);
+            // Range checks are by default for 16 bits, so we adjust accordingly
+            b8_chunks_check[i] = b8_chunks[i] * 256;
             allocate(b8_chunks_check[i], i, 0);
         }
 
@@ -261,10 +259,10 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
                 BOOST_ASSERT(mul8_carryless_chunks[i] + prev_carry == mul8_chunks[i] + 256 * mul8_carries[i]);
                 
             }
-            mul8_chunk_check[i] = mul8_chunks[i] * 256;
-            mul8_carries_check[i] = mul8_carries[i] * 2;// Note that this bound only works because only one of the chunks of b is non-zero. In general, it would be a bit higher
             allocate(mul8_chunks[i], i, 3);
+            mul8_chunk_check[i] = mul8_chunks[i] * 256;
             allocate(mul8_carries[i], i, 4);
+            mul8_carries_check[i] = mul8_carries[i] * 2;// Note that this bound only works because only one of the chunks of b is non-zero. In general, it would be a bit higher
             allocate(mul8_chunk_check[i], i, 1);
             allocate(mul8_carries_check[i], i, 6);
             constrain(mul8_carryless_chunks[i] + prev_carry - mul8_chunks[i] - mul8_carries[i] * 256);
@@ -457,7 +455,7 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
         }
         // shift_lower determines which exact mask should be added (how many sign bits)
         for (std::size_t i = 0; i < chunk_size; i++) {
-            unsigned int mask = ((1 << i) - 1) << (chunk_amount - i); // 11...1100...00 = 1{i}0{chunk_amount - i}
+            unsigned int mask = ((1 << i) - 1) << (chunk_size - i); // 11...1100...00 = 1{i}0{chunk_size - i}
             transition_chunk +=
                 (1 - (shift_lower - i) * indic_1[i]) * mask * sign_bit;
         }
