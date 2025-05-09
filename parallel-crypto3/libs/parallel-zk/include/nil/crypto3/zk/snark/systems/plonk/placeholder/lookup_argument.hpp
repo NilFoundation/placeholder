@@ -76,6 +76,10 @@ namespace nil {
                 class placeholder_lookup_argument_prover {
                     using value_type = typename FieldType::value_type;
 
+                    static constexpr std::size_t mini_chunk_size = 64;
+                    using simd_vector_type =
+                        math::static_simd_vector<value_type, mini_chunk_size>;
+
                     using transcript_hash_type = typename ParamsType::transcript_hash_type;
                     using transcript_type = transcript::fiat_shamir_heuristic_sequential<transcript_hash_type>;
                     using polynomial_dfs_type = math::polynomial_dfs<value_type>;
@@ -452,10 +456,12 @@ namespace nil {
                                         _central_expr_evaluator.register_expression(
                                             std::move(converted_expr),
                                             gate.tag_index !=
-                                                PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED));
+                                                PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED,
+                                            /*autofinish_batch=*/false));
                                 }
                                 registrationss.emplace_back(std::move(registrations),
                                                             gate.tag_index);
+                                _central_expr_evaluator.finish_batch();
                             }
                         }
                         return registrationss;
@@ -468,27 +474,96 @@ namespace nil {
                         PROFILE_SCOPE(
                             "Lookup argument input: combine with theta and selectors");
 
-                        std::vector<polynomial_dfs_type> result;
-                        result.reserve(input_data.size());
-                        for (const auto& [registrations, selector] : input_data) {
-                            polynomial_dfs_type combined{};
-                            for (const auto& registration :
-                                 registrations | std::ranges::views::reverse) {
-                                combined *= this->theta;
-                                combined += _central_expr_evaluator.get_expression_value(
-                                    registration);
+                        std::size_t maximum_domain_size =
+                            _central_expr_evaluator.get_maximum_domain_size();
+
+                        std::set<polynomial_dfs_variable_type> selectors_full;
+                        std::set<polynomial_dfs_variable_type> selectors_half;
+                        std::vector<polynomial_dfs_type> result(input_data.size());
+
+                        for (std::size_t i = 0; i < input_data.size(); ++i) {
+                            const auto& [registrations, selector] = input_data[i];
+                            std::size_t result_degree = 0;
+                            std::size_t result_size = 0;
+                            for (const auto& registration : registrations) {
+                                result_degree = std::max(
+                                    result_degree,
+                                    _central_expr_evaluator
+                                            .get_expression_value(registration)
+                                            .degree() +
+                                        (selector ==
+                                                 PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED
+                                             ? 0
+                                             : _central_expr_evaluator
+                                                       .get_original_domain_size() -
+                                                   1));
+                                result_size = std::max(
+                                    result.size(), _central_expr_evaluator
+                                                       .get_expression_value(registration)
+                                                       .size());
                             }
-                            if (selector != PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED) {
-                                auto selector_var = polynomial_dfs_variable_type(
-                                    selector, 0, false,
-                                    polynomial_dfs_variable_type::column_type::selector);
-                                _central_expr_evaluator.ensure_cache({selector_var},
-                                                                     combined.size());
-                                combined *= *_central_expr_evaluator.get(selector_var,
-                                                                         combined.size());
+                            result[i] = polynomial_dfs_type(result_degree, result_size);
+
+                            auto selector_var = polynomial_dfs_variable_type(
+                                selector, 0, false,
+                                polynomial_dfs_variable_type::column_type::selector);
+
+                            if (result_size == maximum_domain_size) {
+                                selectors_full.insert(selector_var);
+                            } else {
+                                selectors_half.insert(selector_var);
                             }
-                            result.push_back(std::move(combined));
                         }
+
+                        _central_expr_evaluator.ensure_cache(selectors_full,
+                                                             maximum_domain_size);
+                        _central_expr_evaluator.ensure_cache(selectors_half,
+                                                             maximum_domain_size / 2);
+
+                        wait_for_all(parallel_run_in_chunks<void>(
+                            maximum_domain_size / 2,
+                            [this, maximum_domain_size, &result, &input_data](
+                                std::size_t original_begin, std::size_t original_end) {
+                                for (std::size_t i = 0; i < input_data.size(); ++i) {
+                                    const auto& [registrations, selector] = input_data[i];
+
+                                    std::size_t begin = original_begin;
+                                    std::size_t end = original_end;
+                                    if (result[i].size() == maximum_domain_size) {
+                                        begin *= 2;
+                                        end *= 2;
+                                    }
+                                    auto count =
+                                        math::count_chunks<mini_chunk_size>(end - begin);
+                                    for (std::size_t j = 0; j < count; ++j) {
+                                        simd_vector_type combined{};
+                                        for (const auto& registration :
+                                             registrations |
+                                                 std::ranges::views::reverse) {
+                                            combined *= this->theta;
+                                            combined += math::get_chunk<mini_chunk_size>(
+                                                _central_expr_evaluator
+                                                    .get_expression_value(registration),
+                                                begin, j);
+                                        }
+                                        if (selector !=
+                                            PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED) {
+                                            auto selector_var =
+                                                polynomial_dfs_variable_type(
+                                                    selector, 0, false,
+                                                    polynomial_dfs_variable_type::
+                                                        column_type::selector);
+                                            combined *= get_chunk<mini_chunk_size>(
+                                                *_central_expr_evaluator.get(
+                                                    selector_var, result[i].size()),
+                                                begin, j);
+                                        }
+                                        set_chunk<mini_chunk_size>(result[i], begin, j,
+                                                                   std::move(combined));
+                                    }
+                                }
+                            },
+                            ThreadPool::PoolLevel::HIGH));
                         return result;
                     }
 
