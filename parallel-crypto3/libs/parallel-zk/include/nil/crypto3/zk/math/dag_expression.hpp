@@ -35,6 +35,8 @@
 #include <nil/crypto3/zk/math/expression.hpp>
 #include <nil/crypto3/math/polynomial/polynomial_dfs.hpp>
 
+#include <nil/crypto3/bench/scoped_profiler.hpp>
+
 namespace nil::crypto3::zk::snark {
     using dag_operands_vector_type = std::vector<size_t>;
 
@@ -229,17 +231,15 @@ namespace nil::crypto3::zk::snark {
 
         dag_node_statistics_visitor() = default;
 
-        void print_stats(const dag_expression<VariableType> &dag) {
+        void print_stats(const dag_expression<VariableType>& dag,
+                         std::string_view tag = "DAG operations") {
             additions = multiplications = copies = negations = 0;
             for (const auto& node: dag.get_nodes()) {
                 std::visit(*this, node);
             }
 
-            std::cout << "To compute the DAG you will need " << std::endl;
-            std::cout << "    Additions: " << additions << std::endl;
-            std::cout << "    Multiplications: " << multiplications << std::endl;
-            std::cout << "    Copies: " << copies << std::endl;
-            std::cout << "    Negations: " << negations << std::endl;
+            SCOPED_LOG("{}: add {}, mul: {}, neg: {}, copy: {}", tag, additions,
+                       multiplications, negations, copies);
         }
 
         void operator()(const dag_constant<VariableType>& n) {
@@ -348,30 +348,27 @@ namespace nil::crypto3::zk::snark {
         void squash_dag() {
             dag_node_statistics_visitor<VariableType> visitor;
 
-            PROFILE_SCOPE("Squashing DAG expression.");
-            //std::cout << "DAG before Squashing" << std::endl;
-            //visitor.print_stats(result);
+            PROFILE_SCOPE("Squashing DAG expression");
+
+            visitor.print_stats(result, "DAG before squashing");
 
             merge_children(/*only_those_that_occur_once=*/ false);
 
-            //std::cout << "DAG After merge children" << std::endl;
-            //visitor.print_stats(result);
+            visitor.print_stats(result, "DAG After merge children");
 
             remove_unreachable_nodes();
-            //std::cout << "DAG After remove unreachable nodes" << std::endl;
-            //visitor.print_stats(result);
+
+            visitor.print_stats(result, "DAG After remove unreachable nodes");
 
             remove_duplicates();
 
-            //std::cout << "DAG After removing duplicates" << std::endl;
-            //visitor.print_stats(result);
+            visitor.print_stats(result, "DAG After removing duplicates");
 
             // Now remove children that are the only child of their parent, and parent operation matches.
             merge_children(/*only_those_that_occur_once=*/ true);
             remove_unreachable_nodes();
 
-            //std::cout << "DAG after Squashing" << std::endl;
-            //visitor.print_stats(result);
+            visitor.print_stats(result, "DAG after squashing");
         }
 
         // Runs over the dag, looking at the addition and multiplication nodes. If it detects a pair of children than appear
