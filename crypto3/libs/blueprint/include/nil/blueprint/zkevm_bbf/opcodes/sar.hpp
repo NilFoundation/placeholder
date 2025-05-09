@@ -28,7 +28,6 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdio>
-#include <cstddef>
 #include <iostream>
 #include <nil/blueprint/zkevm_bbf/types/opcode.hpp>
 #include <numeric>
