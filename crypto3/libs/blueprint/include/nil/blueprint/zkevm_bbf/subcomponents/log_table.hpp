@@ -72,9 +72,9 @@ namespace nil {
 
                 static std::size_t get_witness_amount() { return 137; }
 
-                static std::vector<TYPE> log_lookup(TYPE block_id, TYPE tx_id, TYPE index,
-                                                    TYPE value_hi, TYPE value_lo,
-                                                    TYPE type, TYPE is_block) {
+                static std::vector<TYPE> log_tx_lookup(TYPE block_id, TYPE tx_id,
+                                                       TYPE index, TYPE value_hi,
+                                                       TYPE value_lo, TYPE type) {
                     std::vector<TYPE> result = {
                         block_id,
                         tx_id,     // transaction_id
@@ -84,7 +84,18 @@ namespace nil {
                         type,      // type
                         TYPE(2),   // indice
                         TYPE(1),   // is_last
-                        is_block   // is_block
+                        TYPE(0)    // is_block
+                    };
+                    return result;
+                }
+
+                static std::vector<TYPE> log_block_lookup(TYPE block_id, TYPE tx_id) {
+                    std::vector<TYPE> result = {
+                        block_id,
+                        tx_id,    // transaction_id
+                        TYPE(2),  // indice
+                        TYPE(1),  // is_last
+                        TYPE(1)   // is_block
                     };
                     return result;
                 }
@@ -147,8 +158,11 @@ namespace nil {
                             allocate(current_filter[i][j], 9 + j, i);
                         }
                     }
-                    lookup_table("zkevm_logs",
+                    lookup_table("zkevm_tx_logs",
                                  std::vector<std::size_t>({0, 1, 2, 3, 4, 5, 6, 7, 8}), 0,
+                                 max_filter_indices);
+                    lookup_table("zkevm_block_logs",
+                                 std::vector<std::size_t>({0, 1, 6, 7, 8}), 0,
                                  max_filter_indices);
                     std::vector<std::size_t> indices(137);
                     std::iota(indices.begin(), indices.end(), 0);

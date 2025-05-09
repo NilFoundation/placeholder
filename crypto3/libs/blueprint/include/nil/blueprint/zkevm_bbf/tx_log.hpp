@@ -60,11 +60,15 @@ namespace nil {
                 // block_id
                 // Hash -> indice_chunk
                 // Index -> index_chunk
-                // format the constraints better, organise the constraints better
+                // format the constraints better
+                // organise the constraints better
+                // make sure they are complete
+                // add constraints to make sure tx and block log are the same
+                // change relative constrain format to be like zkevm instead of rw
+                // 
                 //
                 // Outside of this file:
                 // Verify logbloom output with counter trace
-                // Add lookup in tx opcode
 
                 struct input_type {
                     TYPE rlc_challenge;
@@ -246,15 +250,13 @@ namespace nil {
                                     auto bit_index = 1 << int(bit_pos[i].to_integral());
                                     index_selector[i] =
                                         !(new_chunk == (new_chunk | bit_index));
-                                    auto temp_chunk = new_chunk;
-                                    // can we remove temp_chunk here?
 
                                     for (std::size_t k = 0; k < filter_bit_per_chunk;
                                          k++) {
                                         index_bit_selector[i][k] =
                                             k == bit_pos[i].to_integral() ? 0 : 1;
-                                        transition_chunk_bits[i][k] = temp_chunk % 2;
-                                        temp_chunk /= 2;
+                                        transition_chunk_bits[i][k] = new_chunk % 2;
+                                        new_chunk /= 2;
                                     }
                                 }
                             }
@@ -265,11 +267,14 @@ namespace nil {
                                                       (1 - tx_id_diff_and_not_block[i]) *
                                                       (1 - block_diff[i]);
                                     auto old_chunk = temp_chunk;
-                                    
-                                    std::cout << "block_diff[i]: " << block_diff[i] << std::endl;
-                                    std::cout << "tx_id_diff_and_not_block[i]: " << tx_id_diff_and_not_block[i] << std::endl;
+
+                                    std::cout << "block_diff[i]: " << block_diff[i]
+                                              << std::endl;
+                                    std::cout << "tx_id_diff_and_not_block[i]: "
+                                              << tx_id_diff_and_not_block[i] << std::endl;
                                     std::cout << "old_chunk: " << old_chunk << std::endl;
-                                    std::cout << "current_filter[i - 2][j]: " << current_filter[i - 2][j] << std::endl;
+                                    std::cout << "current_filter[i - 2][j]: "
+                                              << current_filter[i - 2][j] << std::endl;
                                     std::cout << "current_filter[2][j]: "
                                               << current_filter[i][j] << std::endl;
                                     std::cout

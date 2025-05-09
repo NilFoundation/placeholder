@@ -161,15 +161,15 @@ namespace nil {
                             lookup(tmp, "zkevm_rw");
                         }
                         if (x) {
-                            tmp = log_table<FieldType, stage>::log_lookup(
+                            tmp = log_table<FieldType, stage>::log_tx_lookup(
                                 block_id, tx_id, log_index, topics_hi[x - 1],
-                                topics_lo[x - 1], x, 0);
+                                topics_lo[x - 1], x);
                         } else {
-                            tmp = log_table<FieldType, stage>::log_lookup(
+                            tmp = log_table<FieldType, stage>::log_tx_lookup(
                                 block_id, tx_id, log_index, call_context_address_hi,
-                                call_context_address_lo, x, 0);
+                                call_context_address_lo, x);
                         }
-                        lookup(tmp, "zkevm_logs");
+                        lookup(tmp, "zkevm_tx_logs");
                     }
                 }
             };
