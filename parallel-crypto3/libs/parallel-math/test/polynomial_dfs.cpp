@@ -1372,6 +1372,7 @@ BOOST_AUTO_TEST_CASE(polynomial_dfs_2_levels_test) {
     }
 }
 
+// TODO(martun): move perf tests from here.
 BOOST_AUTO_TEST_CASE(polynomial_dfs_addition_perf_test, *boost::unit_test::disabled()) {
     std::vector<typename FieldType::value_type> values;
     for (std::size_t i = 0; i < 131072; i++) {
@@ -1463,6 +1464,44 @@ BOOST_AUTO_TEST_CASE(polynomial_dfs_equality_check_perf_test, *boost::unit_test:
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
 
     std::cout << "Equality check time: " << duration.count() << " microseconds." << std::endl;
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(polynomial_dfs_batch_VS_normal_conversion_test_suite)
+
+BOOST_AUTO_TEST_CASE(polynomial_dfs_batch_conversion_test) {
+    polynomial_dfs<typename FieldType::value_type> a = {
+        7,
+        {0x35_big_uint255,
+         0x26D37C08AED60085FDE335498E7DFEE2AFB1463D06E338219CD0E5DDAF27D68F_big_uint255,
+         0x73EDA753299D7D3FEB6ED7EF1F748FC77F90A3DE15D15BFEFFF0FFFEFFFFFFFD_big_uint255,
+         0x4871BC0D4FC8E6B9695B3B2BDCA6D2CACD64A30E404507B3A523C00D0FF4F223_big_uint255,
+         0x73EDA753299D7D483339D80809A1D80553BDA402FFFE5BFEFFFFFFFEFFFFFFF0_big_uint255,
+         0x4D1A2B4A7AC77CBEE56BD5E7B711BC3D1BFA5DB7350923DD63291A2150D82968_big_uint255,
+         0x847CB0018EA2D483DD42D0024EA2D0000000EFFFFFFFFFFFC_big_uint255,
+         0x2B7BEB45D9D4969219C969B2F10D22200E6B010383CB544B5AE23FF1F00B0DD4_big_uint255}};
+    polynomial_dfs<typename FieldType::value_type> b = {
+        5,
+        {0x13_big_uint,
+         0x515afe1189d5ef4dbc50a127ce5e634034a28d0005e1fafd70aeef634654d2e0_big_uint,
+         0x73eda753299d7d4193643e5a817d9e3a4399a3e577da5bfefff3ffff00000006_big_uint,
+         0x519843b006c2b71461725846c0416002ece7f29b47582f326bdcdd22024de904_big_uint,
+         0x73eda753299d7d483339d80809a1d80553bda402fffe5bfefffffffefffffff8_big_uint,
+         0x2292a9419fc78dfa76e936e03b4374c51f1b1702fa1c61018f51109bb9ab2d2b_big_uint,
+         0x69fd599ad882439cb1024001d88240000000c000000000005_big_uint,
+         0x225563a322dac633d1c77fc14960780266d5b167b8a62ccc942322dcfdb21707_big_uint}};
+
+    polynomial<typename FieldType::value_type> a_coeffs(a.coefficients());
+    polynomial<typename FieldType::value_type> b_coeffs(b.coefficients());
+
+    std::shared_ptr<evaluation_domain<FieldType>> domain = make_evaluation_domain<FieldType>(a.size());
+
+    std::vector<polynomial<typename FieldType::value_type>> coeffs = 
+        polynomial_batch_to_coefficients({a, b}, domain);
+
+    BOOST_CHECK_EQUAL(coeffs[0], a_coeffs);
+    BOOST_CHECK_EQUAL(coeffs[1], b_coeffs);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

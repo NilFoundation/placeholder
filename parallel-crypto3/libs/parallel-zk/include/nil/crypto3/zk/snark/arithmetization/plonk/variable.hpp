@@ -210,6 +210,10 @@ namespace nil::crypto3::zk::snark {
             : index(0)
             , type(column_type::uninitialized) {}
 
+        constexpr plonk_variable_without_rotation(std::size_t index, column_type type)
+            : index(index)
+            , type(type) {}
+
         plonk_variable_without_rotation(const plonk_variable_without_rotation&) = default;
         plonk_variable_without_rotation(const plonk_variable<AssignmentType>& var)
             : index(var.index)

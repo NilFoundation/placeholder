@@ -34,7 +34,7 @@
 
 #include <set>
 
-#include <nil/crypto3/zk/math/dfs_cache.hpp>
+#include <nil/crypto3/zk/math/cached_assignment_table.hpp>
 #include <nil/crypto3/zk/math/centralized_expression_evaluator.hpp>
 
 #include <nil/crypto3/zk/commitments/polynomial/lpc.hpp>

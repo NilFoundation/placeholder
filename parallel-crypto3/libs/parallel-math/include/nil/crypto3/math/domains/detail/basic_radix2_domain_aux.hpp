@@ -76,6 +76,8 @@ namespace nil {
                  */
                 template<typename FieldType, typename Range>
                 void basic_radix2_fft_cached(Range &a, const std::vector<typename FieldType::value_type> &omega_cache) {
+                    PARALLEL_PROFILE_SCOPE("basic_radix2_fft_cached");
+
                     typedef typename std::iterator_traits<decltype(std::begin(std::declval<Range>()))>::value_type
                         value_type;
                     BOOST_STATIC_ASSERT(algebra::is_field<FieldType>::value);
@@ -98,9 +100,7 @@ namespace nil {
                         }
                     );
 
-
                     // invariant: m = 2^{s-1}
-                    value_type t;
                     for (std::size_t s = 1, m = 1, inc = n / 2; s <= logn; ++s, m <<= 1, inc >>= 1) {
                         // w_m is 2^s-th root of unity now
                         size_t count_k = n / (2 * m) + (n % (2 * m) ? 1 : 0);
@@ -120,7 +120,9 @@ namespace nil {
                                     std::size_t idx = j * inc;
 
                                     for (; j < m; ++j, idx += inc) {
-                                        t = a[k + j + m];
+                                        // Swapping is faster than assigning here, because we use vectors.
+                                        // We don't want to move, not to lose the memory.
+                                        std::swap(t, a[k + j + m]);
                                         t *= omega_cache[idx];
                                         a[k + j + m] = a[k + j];
                                         a[k + j + m] -= t;
