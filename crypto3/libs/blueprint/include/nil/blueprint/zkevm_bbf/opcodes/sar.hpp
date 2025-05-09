@@ -52,17 +52,10 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
     const size_t number_of_rows = 10;
 
     constexpr static const std::size_t chunk_amount = 16;
+    constexpr static const std::size_t chunk_size = 256 / chunk_amount;
     constexpr static const std::size_t chunk_8_amount = 32;
-    constexpr static const std::size_t carry_amount = 16 / 3 + 1;
     constexpr static const value_type two_15 = 32768;
     constexpr static const value_type two_16 = 65536;
-    constexpr static const value_type two_32 = 4294967296;
-    constexpr static const value_type two_48 = 281474976710656;
-    constexpr static const value_type two_64 = 0x10000000000000000_big_uint254;
-    constexpr static const value_type two_128 =
-        0x100000000000000000000000000000000_big_uint254;
-    constexpr static const value_type two_192 =
-        0x1000000000000000000000000000000000000000000000000_big_uint254;
 
   public:
     using typename generic_component<FieldType, stage>::TYPE;
@@ -131,7 +124,7 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
         std::vector<TYPE> v_chunks(chunk_amount);           // Difference chunks (q - b)
         std::vector<TYPE> b8_chunks(chunk_8_amount);        // Shift power in 8-bit chunks
         std::vector<TYPE> b8_chunks_check(chunk_8_amount);  // Range check for b8_chunks
-        std::vector<TYPE> add_carries(chunk_amount);        // Carries for v + b
+        std::vector<TYPE> add_carries(chunk_amount - 1);    // Carries for v + b
         TYPE a_chunks15_copy1;                              // Copy of a_chunks[15]
 
         std::vector<TYPE> mul8_carryless_chunks(chunk_8_amount);    // 8-bit chunks for the carryless terms of r*b
@@ -198,10 +191,6 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
             // We also split b in 8-bit chunks to multiply without overflow 
             // (16-bit value) * (8-bit value)
             b8_chunks = zkevm_word_to_field_element_flexible<FieldType>(b, 32, 8);
-            // Range checks are default for 16 bits, so we adjust accordingly
-            for (std::size_t i = 0; i < chunk_8_amount; i++) {
-                b8_chunks_check[i] = b8_chunks[i] * 256;
-            }
 
             // Decompose shift amount
             shift_value = shift;
@@ -210,26 +199,37 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
 
             input_b0_lower = (input_b % 256);
             input_b0_upper = (input_b % 65536) / 256;
-            input_b0_lower_check = input_b0_lower * 256;
-            input_b0_upper_check = input_b0_upper * 256;
             upper_inverse = input_b0_upper.is_zero() ? 0 : input_b0_upper.inversed();
         }
         
         // Some values are copied around to satisfy the limitation of three adjacent rows per constraint
+        // We enforce equality between copied values
         for (std::size_t i = 0; i < chunk_amount; i++) {
             allocate(input_b_chunks[i], i, 8);
+            allocate(q_chunks[i], i + chunk_amount, 5);
+            allocate(v_chunks[i], i + chunk_amount, 7);
+            
+            allocate(a_chunks[i], i, 5);
+            
             allocate(r_chunks[i], i + 2 * chunk_amount, 4);
             allocate(r_chunks_copy1[i], i + 2 * chunk_amount, 6);
             allocate(r_chunks_copy2[i], i + chunk_amount, 8);
-            allocate(a_chunks[i], i, 5);
+            constrain(r_chunks[i] - r_chunks_copy1[i]);
+            constrain(r_chunks_copy1[i] - r_chunks_copy2[i]);
+            
             allocate(b_chunks[i], i + 2 * chunk_amount, 3);
             allocate(b_chunks_copy1[i], i + 2 * chunk_amount, 5);
             allocate(b_chunks_copy2[i], i + 2 * chunk_amount, 7);
-            allocate(q_chunks[i], i + chunk_amount, 5);
-            allocate(v_chunks[i], i + chunk_amount, 7);
+            constrain(b_chunks[i] - b_chunks_copy1[i]);
+            constrain(b_chunks_copy1[i] - b_chunks_copy2[i]);
         }
         allocate(a_chunks15_copy1, 15, 7);
+        constrain(a_chunks[15] - a_chunks15_copy1);
 
+        // Range checks are by default for 16 bits, so we adjust accordingly
+        for (std::size_t i = 0; i < chunk_8_amount; i++) {
+            b8_chunks_check[i] = b8_chunks[i] * 256;
+        }
         for (std::size_t i = 0; i < chunk_8_amount; i++) {
             allocate(b8_chunks[i], i, 2);
             allocate(b8_chunks_check[i], i, 0);
@@ -237,50 +237,52 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
 
         allocate(input_b0_lower, 0, 9);
         allocate(input_b0_upper, 1, 9);
+        input_b0_lower_check = input_b0_lower * 256;
+        input_b0_upper_check = input_b0_upper * 256;
         allocate(input_b0_lower_check, 2, 9);
         allocate(input_b0_upper_check, 3, 9);
         allocate(upper_inverse, 32, 8);
 
-        // Ensure consistency between copied values
-        for (std::size_t i = 0; i < chunk_amount; i++) {
-            constrain(r_chunks[i] - r_chunks_copy1[i]);
-            constrain(r_chunks_copy1[i] - r_chunks_copy2[i]);
-        }
-        constrain(a_chunks[15] - a_chunks15_copy1);
-        
         // Ensure consistency between b_chunks and b8_chunks
         for (std::size_t i = 0; i < chunk_amount; i++) {
             constrain(b_chunks[i] - b8_chunks[2 * i] - b8_chunks[2 * i + 1] * 256);
         }
+
 
         // PART 2: ensuring that r*b + q - a == 0
         // mul == r*b
         // NOTE: only one of b_chunks[i] is non-zero. Maybe we can simplify this and not store all multiplication carries.
         for (std::size_t i = 0; i < chunk_8_amount; i++) {
             mul8_carryless_chunks[i] = carryless_mul(r_chunks, b8_chunks, i);
-            mul8_chunk_check[i] = mul8_chunks[i] * 256;
+            TYPE prev_carry = (i > 0) ? mul8_carries[i - 1] : 0;
             if constexpr (stage == GenerationStage::ASSIGNMENT) {
                 auto mask8 = (1 << 8) - 1;
-                TYPE prev_carry = (i > 0) ? mul8_carries[i - 1] : 0;
                 mul8_chunks[i] = (mul8_carryless_chunks[i] + prev_carry).to_integral() & mask8;
                 mul8_carries[i] = (mul8_carryless_chunks[i] + prev_carry).to_integral() >> 8; 
                 BOOST_ASSERT(mul8_carryless_chunks[i] + prev_carry == mul8_chunks[i] + 256 * mul8_carries[i]);
-                mul8_carries_check[i] = mul8_carries[i] * 2;
+                
             }
+            mul8_chunk_check[i] = mul8_chunks[i] * 256;
+            mul8_carries_check[i] = mul8_carries[i] * 2;// Note that this bound only works because only one of the chunks of b is non-zero. In general, it would be a bit higher
             allocate(mul8_chunks[i], i, 3);
             allocate(mul8_carries[i], i, 4);
             allocate(mul8_chunk_check[i], i, 1);
             allocate(mul8_carries_check[i], i, 6);
-            // Note that this bound only works because only one of the chunks of b is non-zero. In general, it would be a bit higher
-            constrain(mul8_carries_check[i] - mul8_carries[i] * 2);
-        }
-        constrain(mul8_carryless_chunks[0] - mul8_chunks[0] - mul8_carries[0] * 256);
-        for (std::size_t i = 1; i < chunk_8_amount; i++) {
-            constrain(mul8_carryless_chunks[i] + mul8_carries[i-1] - mul8_chunks[i] - mul8_carries[i] * 256);
+            constrain(mul8_carryless_chunks[i] + prev_carry - mul8_chunks[i] - mul8_carries[i] * 256);
         }
         
         // mul + q - a == 0
-        // The carryless constructs are already 0, so we don't need to separate the carries from the strict 16-bit chunks.
+        // Normally, for independent mul, q, a, we would need to separate the carryless chunks into carries and strict 16-bit chunks, and then check that all 16-bit chunks are 0.
+        // However, in this case, recall that we have:
+        // r = a >> shift
+        // b = 2^shift
+        // q = a % b = a & (mask of shift 1's)
+        // so, for the ith bit of a = r*b + q, either:
+        //  - the ith bit r*b is zero (if i <= shift), or
+        //  - the ith bit of q is zero (if i > shift).
+        // Due to this no overlap situation, the operation generates no carries.
+        // Thus, checking that the strict 16-bit chunks are 0 is equivalent to checking that the carryless constructs are 0.
+        // Therefore, we don't need to separate the carries from the strict 16-bit chunks.
         for (std::size_t i = 0; i < chunk_amount; i++) {
             construct_carryless_chunks[i] = carryless_construct(mul8_chunks, q_chunks, a_chunks, i);
             constrain(construct_carryless_chunks[i]);
@@ -296,17 +298,14 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
             constrain(add_carries[i] * (1 - add_carries[i]));
         }
 
-        constrain(v_chunks[0] + b_chunks_copy1[0] - q_chunks[0] - add_carries[0] * two_16);
-        for (std::size_t i = 1; i < chunk_amount - 2; i++) {
-            constrain(v_chunks[i] + b_chunks_copy1[i] + add_carries[i - 1] - q_chunks[i] - add_carries[i] * two_16);
+        for (std::size_t i = 0; i < chunk_amount; i++) {
+            TYPE prev_carry = (i > 0) ? add_carries[i - 1] : 0;
+            TYPE current_carry = (i < chunk_amount - 1) ? add_carries[i] : 1; // Force the last carry to be 1
+            constrain(v_chunks[i] + b_chunks_copy1[i] + prev_carry - q_chunks[i] - current_carry * two_16);
         }
-        constrain(v_chunks[chunk_amount - 1] + b_chunks_copy1[chunk_amount - 1] + add_carries[chunk_amount - 2] - q_chunks[chunk_amount - 1] - two_16);
 
 
         // PART 3: the shift (without sign extension)
-        constrain(input_b0_lower * 256 - input_b0_lower_check);
-        constrain(input_b0_upper * 256 - input_b0_upper_check);
-
         // input_b_chunks[0] is decomposed into input_b0_lower, input_b0_upper
         constrain(input_b_chunks[0] - input_b0_lower - 256 * input_b0_upper);
 
@@ -458,8 +457,7 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
                 r_chunks_copy2[i] * (1 - (shift_upper - i_inv) * indic_2[i_inv]);
         }
         // shift_lower determines which exact mask should be added (how many sign bits)
-        for (std::size_t i = 0; i < chunk_amount; i++) {
-            // It's really the chunk_size, not chunk_amount that matters, although in this case they're the same.
+        for (std::size_t i = 0; i < chunk_size; i++) {
             unsigned int mask = ((1 << i) - 1) << (chunk_amount - i); // 11...1100...00 = 1{i}0{chunk_amount - i}
             transition_chunk +=
                 (1 - (shift_lower - i) * indic_1[i]) * mask * sign_bit;
