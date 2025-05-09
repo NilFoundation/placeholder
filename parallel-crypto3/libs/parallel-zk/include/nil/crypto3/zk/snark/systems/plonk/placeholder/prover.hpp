@@ -325,9 +325,8 @@ namespace nil::crypto3::zk::snark {
             return T_consolidated;
         }
 
-        typename lookup_argument_type::prover_lookup_result lookup_argument(central_evaluator_type& central_evaluator) {
-            PROFILE_SCOPE("Lookup argument");
-
+        typename lookup_argument_type::prover_lookup_result lookup_argument(
+            central_evaluator_type& central_evaluator) {
             typename lookup_argument_type::prover_lookup_result lookup_argument_result;
 
             lookup_argument_result.F_dfs[0] = lookup_argument_result.F_dfs[1] = lookup_argument_result.F_dfs[2] = 
