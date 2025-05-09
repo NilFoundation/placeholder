@@ -360,7 +360,7 @@ namespace nil {
                         // add constant columns if necessary
                         if (presets.constants_amount() < start_constant_column + table_columns_number) {
                             presets.resize_constants(start_constant_column + table_columns_number);
-                            }
+                        }
                         // assure all added columns have same amount of usable_rows and need no resizement later
                         for(std::size_t i = start_constant_column; i < start_constant_column + table_columns_number; i++)
                             presets.constant(i,usable_rows - 1) = 0;
