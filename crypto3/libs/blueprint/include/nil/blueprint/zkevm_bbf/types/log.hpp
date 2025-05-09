@@ -39,12 +39,14 @@ namespace nil {
                 std::vector<zkevm_word_type> topics;
             };
             struct zkevm_filter_indices {
-                zkevm_word_type id;
+                zkevm_word_type block_id;
+                zkevm_word_type tx_id;
                 zkevm_word_type index;
                 zkevm_word_type value;
                 zkevm_word_type type;
                 zkevm_word_type indice;
                 zkevm_word_type is_last;
+                zkevm_word_type is_block;
                 std::vector<zkevm_word_type> filter;
             };
 

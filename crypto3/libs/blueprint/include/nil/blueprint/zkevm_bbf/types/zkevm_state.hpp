@@ -58,7 +58,8 @@ namespace nil {
                 zkevm_word_type call_context_address;   // tx_to for transaction depends on CALL/DELEGATECALL opcodes
                 std::size_t     depth;
                 zkevm_word_type log_index;
-                std::vector<zkevm_word_type>  filter;
+                std::vector<zkevm_word_type>  tx_filter;
+                std::vector<zkevm_word_type>  block_filter;
 
                 std::vector<std::uint8_t> calldata;
             };
@@ -236,11 +237,6 @@ namespace nil {
                 zkevm_word_type log_index() const{
                     BOOST_ASSERT(needs_call_header_access);
                     return call_header.log_index;
-                }
-
-                std::vector<zkevm_word_type> filter_next() const{
-                    BOOST_ASSERT(needs_call_header_access);
-                    return call_header.filter;
                 }
 
                 std::size_t depth() const{

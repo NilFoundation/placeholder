@@ -53,7 +53,18 @@ namespace nil {
                 using KeccakTable = keccak_table<FieldType, stage>;
 
                 // TODO
+                // IN THIS FILE:
                 //  add keccak lookup for hash value
+                //
+                // constraints on
+                // block_id
+                // Hash -> indice_chunk
+                // Index -> index_chunk
+                // format the constraints better, organise the constraints better
+                //
+                // Outside of this file:
+                // Verify logbloom output with counter trace
+                // Add lookup in tx opcode
 
                 struct input_type {
                     TYPE rlc_challenge;
@@ -72,7 +83,7 @@ namespace nil {
                 static table_params get_minimal_requirements(
                     std::size_t max_filter_indices, std::size_t max_keccak_blocks) {
                     return {.witnesses = LogTable::get_witness_amount() +
-                                         KeccakTable::get_witness_amount() + 21 +
+                                         KeccakTable::get_witness_amount() + 24 +
                                          filter_chunks_amount + 2 * filter_bit_per_chunk,
                             .public_inputs = 1,
                             .constants = 1,
@@ -103,25 +114,30 @@ namespace nil {
                     context_type keccak_ct = context_object.subcontext(
                         keccak_lookup_area, 0, max_keccak_blocks);
 
-                    // LogTable l_t = LogTable(log_ct, input.logs, max_filter_indices);
-                    LogTable l_t = LogTable(log_ct, input.filter_indices, max_filter_indices);
+                    LogTable l_t =
+                        LogTable(log_ct, input.filter_indices, max_filter_indices);
                     KeccakTable k_t = KeccakTable(
                         keccak_ct, {input.rlc_challenge, input.keccak_buffers},
                         max_keccak_blocks);
 
-                    const std::vector<TYPE> &id = l_t.id;
+                    const std::vector<TYPE> &block_id = l_t.block_id;
+                    const std::vector<TYPE> &tx_id = l_t.tx_id;
                     const std::vector<TYPE> &log_index = l_t.log_index;
                     const std::vector<TYPE> &value_hi = l_t.value_hi;
                     const std::vector<TYPE> &value_lo = l_t.value_lo;
                     const std::vector<TYPE> &type = l_t.type;
                     const std::vector<TYPE> &indice = l_t.indice;
                     const std::vector<TYPE> &is_last = l_t.is_last;
+                    const std::vector<TYPE> &is_block = l_t.is_block;
                     const std::vector<std::vector<TYPE>> &current_filter =
                         l_t.current_filter;
 
                     // Allocated cells
-                    std::vector<TYPE> selector(
-                        max_filter_indices);  // 0 when outside the assigned cells
+                    // 0 when outside the assigned cells
+                    std::vector<TYPE> selector(max_filter_indices);
+                    std::vector<TYPE> tx_id_diff(max_filter_indices);
+                    std::vector<TYPE> tx_id_diff_and_not_block(max_filter_indices);
+                    std::vector<TYPE> block_diff(max_filter_indices);
                     std::vector<TYPE> is_zero_index(max_filter_indices);
                     std::vector<TYPE> is_zero_type(max_filter_indices);
                     std::vector<TYPE> is_zero_indice(max_filter_indices);
@@ -207,7 +223,19 @@ namespace nil {
                             indice_chunk[i] = word;
 
                             for (std::size_t j = 0; j < filter_chunks_amount; j++) {
-                                auto new_chunk = i == 0 ? 0 : current_filter[i - 1][j];
+                                if (i > 1) {
+                                    block_diff[i] = (block_id[i] != block_id[i - 2]);
+                                    tx_id_diff[i] = (tx_id[i] != tx_id[i - 2]);
+                                    tx_id_diff_and_not_block[i] =
+                                        tx_id_diff[i] * (1 - is_block[i]);
+                                }
+
+                                int new_chunk =
+                                    (i < 2) ? 0
+                                            : int((current_filter[i - 2][j] *
+                                                   (1 - tx_id_diff_and_not_block[i]) *
+                                                   (1 - block_diff[i]))
+                                                      .to_integral());
 
                                 index_chunk[i][j] =
                                     (j == byte_pos[i].to_integral())
@@ -217,9 +245,9 @@ namespace nil {
                                 if (index_chunk[i][j] != 0) {
                                     auto bit_index = 1 << int(bit_pos[i].to_integral());
                                     index_selector[i] =
-                                        !(new_chunk ==
-                                          (new_chunk.to_integral() | bit_index));
-                                    auto temp_chunk = new_chunk.to_integral();
+                                        !(new_chunk == (new_chunk | bit_index));
+                                    auto temp_chunk = new_chunk;
+                                    // can we remove temp_chunk here?
 
                                     for (std::size_t k = 0; k < filter_bit_per_chunk;
                                          k++) {
@@ -231,25 +259,32 @@ namespace nil {
                                 }
                             }
 
-                            if (i != 0) {
-                                // for (std::size_t j = 0; j < filter_chunks_amount; j++) {
-                                //     std::cout << "i: " << i << ", j: " << j << std::endl;
-                                //     std::cout << "current_filter[i][j]: "
-                                //               << current_filter[i][j] << std::endl;
-                                //     std::cout << "current_filter[i-1][j]: "
-                                //               << current_filter[i - 1][j] << std::endl;
-                                //     std::cout
-                                //         << "index_chunk[i][j]: " << index_chunk[i][j]
-                                //         << std::endl;
-                                //     std::cout
-                                //         << "index_selector[i]: " << index_selector[i]
-                                //         << std::endl;
-                                //     std::cout << "constrain: "
-                                //               << current_filter[i][j] -
-                                //                      current_filter[i - 1][j] -
-                                //                      index_selector[i] * index_chunk[i][j]
-                                //               << std::endl;
-                                // }
+                            if (i > 1) {
+                                for (std::size_t j = 0; j < filter_chunks_amount; j++) {
+                                    auto temp_chunk = current_filter[i - 2][j] *
+                                                      (1 - tx_id_diff_and_not_block[i]) *
+                                                      (1 - block_diff[i]);
+                                    auto old_chunk = temp_chunk;
+                                    
+                                    std::cout << "block_diff[i]: " << block_diff[i] << std::endl;
+                                    std::cout << "tx_id_diff_and_not_block[i]: " << tx_id_diff_and_not_block[i] << std::endl;
+                                    std::cout << "old_chunk: " << old_chunk << std::endl;
+                                    std::cout << "current_filter[i - 2][j]: " << current_filter[i - 2][j] << std::endl;
+                                    std::cout << "current_filter[2][j]: "
+                                              << current_filter[i][j] << std::endl;
+                                    std::cout
+                                        << "index_chunk[2][j]: " << index_chunk[i][j]
+                                        << std::endl;
+                                    std::cout
+                                        << "index_selector[2]: " << index_selector[i]
+                                        << std::endl;
+                                    std::cout
+                                        << "constrain: "
+                                        << ((current_filter[i][j] - old_chunk -
+                                             index_chunk[i][j] * index_selector[i]) *
+                                            selector[i])
+                                        << std::endl;
+                                }
                             }
                         }
                     }
@@ -263,6 +298,9 @@ namespace nil {
                         allocate(is_zero_indice[i], cur_column++, i);
                         allocate(is_zero_type[i], cur_column++, i);
                         allocate(selector[i], cur_column++, i);
+                        allocate(block_diff[i], cur_column++, i);
+                        allocate(tx_id_diff[i], cur_column++, i);
+                        allocate(tx_id_diff_and_not_block[i], cur_column++, i);
                         allocate(index_selector[i], cur_column++, i);
                         allocate(indice_is_2[i], cur_column++, i);
 
@@ -290,15 +328,22 @@ namespace nil {
                     std::cout << std::endl;
 
                     if constexpr (stage == GenerationStage::CONSTRAINTS) {
+                        std::vector<TYPE> first_rows_constraints;
                         std::vector<TYPE> every_row_constraints;
-                        std::vector<TYPE> non_first_row_constraints;
+                        std::vector<TYPE> non_first_rows_constraints;
                         std::vector<TYPE> chunked_16_lookups;
-                        std::vector<TYPE> non_first_row_lookups;
+                        std::vector<TYPE> non_first_rows_lookups;
 
                         // CONSTRAINS FOR ORDER
 
                         // first index is 0
-                        constrain(log_index[0]);
+                        first_rows_constraints.push_back(
+                            context_object.relativize(log_index[1], -1));
+
+                        constrain(is_block[0]);
+                        constrain(is_block[1] - 1);
+                        non_first_rows_constraints.push_back(context_object.relativize(
+                            (is_block[2] - is_block[0]) * selector[2], -1));
 
                         every_row_constraints.push_back(context_object.relativize(
                             is_zero_index[1] * (is_zero_index[1] - 1), -1));
@@ -314,11 +359,38 @@ namespace nil {
                             context_object.relativize(is_zero_indice[1] * indice[1], -1));
                         every_row_constraints.push_back(
                             context_object.relativize(is_last[1] * (is_last[1] - 1), -1));
+                        every_row_constraints.push_back(context_object.relativize(
+                            tx_id_diff[1] * (tx_id_diff[1] - 1), -1));
+                        every_row_constraints.push_back(context_object.relativize(
+                            block_diff[1] * (block_diff[1] - 1), -1));
+                        every_row_constraints.push_back(context_object.relativize(
+                            tx_id_diff_and_not_block[1] *
+                                (tx_id_diff_and_not_block[1] - 1),
+                            -1));
+                        non_first_rows_constraints.push_back(context_object.relativize(
+                            (1 - block_diff[2]) * (block_id[0] - block_id[2]) *
+                                selector[2],
+                            -1));
+                        non_first_rows_constraints.push_back(context_object.relativize(
+                            (1 - tx_id_diff[2]) * (tx_id[0] - tx_id[2]) * selector[2],
+                            -1));
+                        // if block_diff, block_id[2]>block_id[0]
+                        non_first_rows_lookups.push_back(context_object.relativize(
+                            (block_id[2] - block_id[0] - 1) * block_diff[2], -1));
+                        non_first_rows_lookups.push_back(context_object.relativize(
+                            (tx_id[2] - tx_id[0] - 1) * tx_id_diff[2], -1));
+
+                        non_first_rows_constraints.push_back(
+                            context_object.relativize((tx_id_diff_and_not_block[2] -
+                                                       tx_id_diff[2] * (1 - is_block[2])),
+                                                      -1));
 
                         chunked_16_lookups.push_back(
                             context_object.relativize(log_index[1], -1));
                         chunked_16_lookups.push_back(
-                            context_object.relativize(id[1], -1));
+                            context_object.relativize(tx_id[1], -1));
+                        chunked_16_lookups.push_back(
+                            context_object.relativize(block_id[1], -1));
 
                         chunked_16_lookups.push_back(
                             context_object.relativize(type[1], -1));
@@ -328,27 +400,29 @@ namespace nil {
                             type[1] + two_16 - 5, -1));  // 0 to 4
                         chunked_16_lookups.push_back(context_object.relativize(
                             indice[1] + two_16 - 3, -1));  // 0 to 2
-
-                        constrain(type[0]);    // first type is address
-                        constrain(indice[0]);  // first indice is 0
-                        constrain(is_last[0]);
+                        first_rows_constraints.push_back(context_object.relativize(
+                            type[1], -1));  // first type is address
+                        first_rows_constraints.push_back(context_object.relativize(
+                            indice[1], -1));  // first indice is 0
+                        first_rows_constraints.push_back(
+                            context_object.relativize(is_last[1], -1));
 
                         // indice is increasing by 1 if indice is not 0
-                        non_first_row_constraints.push_back(context_object.relativize(
-                            (indice[1] - indice[0] - 1) * indice[1], -1));
+                        non_first_rows_constraints.push_back(context_object.relativize(
+                            (indice[2] - indice[0] - 1) * indice[2], -1));
                         // if indice is 0, last indice is 2
-                        non_first_row_constraints.push_back(context_object.relativize(
-                            (indice[0] - 2) * is_zero_indice[1], -1));
+                        non_first_rows_constraints.push_back(context_object.relativize(
+                            (indice[0] - 2) * is_zero_indice[2], -1));
                         // type is the same if indice is not 0
-                        non_first_row_constraints.push_back(context_object.relativize(
-                            (type[1] - type[0]) * indice[1], -1));
+                        non_first_rows_constraints.push_back(context_object.relativize(
+                            (type[2] - type[0]) * indice[2], -1));
                         // type is increasing by 1 if last indice is 2 and not last
-                        non_first_row_constraints.push_back(context_object.relativize(
-                            (type[1] - type[0] - 1) * indice_is_2[0] * (1 - is_last[0]),
+                        non_first_rows_constraints.push_back(context_object.relativize(
+                            (type[2] - type[0] - 1) * indice_is_2[0] * (1 - is_last[0]),
                             -1));
                         // if is_last and indice 2, next_type is 0
-                        non_first_row_constraints.push_back(context_object.relativize(
-                            is_last[0] * indice_is_2[0] * type[1], -1));
+                        non_first_rows_constraints.push_back(context_object.relativize(
+                            is_last[0] * indice_is_2[0] * type[2], -1));
 
                         every_row_constraints.push_back(context_object.relativize(
                             indice_is_2[1] * (indice[1] - 2), -1));
@@ -357,28 +431,23 @@ namespace nil {
 
                         // if not last
                         // id = prev_id
-                        non_first_row_constraints.push_back(context_object.relativize(
-                            (1 - is_last[0]) * (id[1] - id[0]), -1));
+                        non_first_rows_constraints.push_back(context_object.relativize(
+                            (1 - is_last[0]) * (tx_id[2] - tx_id[0]), -1));
 
                         // if last and next log_index is 0
                         //  id > prev_id
-                        non_first_row_lookups.push_back(context_object.relativize(
-                            is_last[0] * (id[1] - id[0] - 1) * (1 - log_index[1]) *
-                                selector[1],
+                        non_first_rows_lookups.push_back(context_object.relativize(
+                            is_last[0] * (tx_id[2] - tx_id[0] - 1) * (1 - log_index[2]) *
+                                selector[2],
                             -1));
 
                         // if is_last next type and indice are 0
-                        non_first_row_constraints.push_back(
-                            context_object.relativize(is_last[0] * type[1], -1));
-                        non_first_row_constraints.push_back(
-                            context_object.relativize(is_last[0] * indice[1], -1));
+                        non_first_rows_constraints.push_back(
+                            context_object.relativize(is_last[0] * type[2], -1));
+                        non_first_rows_constraints.push_back(
+                            context_object.relativize(is_last[0] * indice[2], -1));
 
                         // CONSTRAINS FOR FILTER TRANSITION
-
-                        // TODO
-                        // Need constraints:
-                        // Hash -> indice_chunk
-                        // Index -> index_chunk
 
                         // indice chunk = index + remainder
                         every_row_constraints.push_back(context_object.relativize(
@@ -409,36 +478,47 @@ namespace nil {
                         for (std::size_t j = 0; j < filter_chunks_amount; j++) {
                             TYPE transition_sum;
                             int pow = 1;
-                            auto temp_chunk = current_filter[0][j];
+                            auto temp_chunk = current_filter[0][j] *
+                                              (1 - tx_id_diff_and_not_block[2]) *
+                                              (1 - block_diff[2]);
+                            auto old_chunk = temp_chunk;
+                            // temp_chunk = 0 if
+                            //   tx_filter and last id is different
+                            //   block_id is different
 
                             // The loop removes all bits of temp_chunk except the
                             // bit_index
                             for (std::size_t k = 0; k < filter_bit_per_chunk; k++) {
-                                temp_chunk -= transition_chunk_bits[1][k] *
-                                              index_bit_selector[1][k] * pow;
-                                transition_sum += transition_chunk_bits[1][k] * pow;
+                                temp_chunk -= transition_chunk_bits[2][k] *
+                                              index_bit_selector[2][k] * pow;
+                                transition_sum += transition_chunk_bits[2][k] * pow;
                                 pow *= 2;
                             }
 
                             // If temp_chunk is 0, the index was not in the
                             // previous_filter -> index_selector is 1
                             // If temp_chunk is not 0, it is equal to index_chunk
-                            non_first_row_constraints.push_back(context_object.relativize(
-                                (1 - index_selector[1]) *
-                                    (temp_chunk - index_chunk[1][j]) * index_chunk[1][j],
-                                -1));
+                            // id_diff
+
+                            non_first_rows_constraints.push_back(
+                                context_object.relativize(
+                                    (1 - index_selector[2]) *
+                                        (temp_chunk - index_chunk[2][j]) *
+                                        index_chunk[2][j],
+                                    -1));
 
                             // transition_sum = previous_chunk if address_index_chunk
-                            non_first_row_constraints.push_back(context_object.relativize(
-                                index_chunk[1][j] *
-                                    (transition_sum - current_filter[0][j]),
-                                -1));
+                            non_first_rows_constraints.push_back(
+                                context_object.relativize(
+                                    index_chunk[2][j] * (transition_sum - old_chunk),
+                                    -1));
 
-                            non_first_row_constraints.push_back(context_object.relativize(
-                                (current_filter[1][j] - current_filter[0][j] -
-                                 index_chunk[1][j] * index_selector[1]) *
-                                    selector[1],
-                                -1));
+                            non_first_rows_constraints.push_back(
+                                context_object.relativize(
+                                    (current_filter[2][j] - old_chunk -
+                                     index_chunk[2][j] * index_selector[2]) *
+                                        selector[2],
+                                    -1));
                         }
 
                         // first row constrain for the filter, temp_chunk = 0
@@ -448,18 +528,23 @@ namespace nil {
                             TYPE temp_chunk = 0;
 
                             for (std::size_t k = 0; k < filter_bit_per_chunk; k++) {
-                                temp_chunk -= transition_chunk_bits[0][k] *
-                                              index_bit_selector[0][k] * pow;
-                                transition_sum += transition_chunk_bits[0][k] * pow;
+                                temp_chunk -= transition_chunk_bits[1][k] *
+                                              index_bit_selector[1][k] * pow;
+                                transition_sum += transition_chunk_bits[1][k] * pow;
                                 pow *= 2;
                             }
-                            constrain((1 - index_selector[0]) *
-                                      (temp_chunk - index_chunk[0][j]) *
-                                      index_chunk[0][j]);
+                            first_rows_constraints.push_back(context_object.relativize(
+                                (1 - index_selector[1]) *
+                                    (temp_chunk - index_chunk[1][j]) * index_chunk[1][j],
+                                -1));
 
-                            constrain(index_chunk[0][j] * transition_sum);
-                            constrain(current_filter[0][j] -
-                                      index_chunk[0][j] * index_selector[0]);
+                            first_rows_constraints.push_back(context_object.relativize(
+                                index_chunk[1][j] * transition_sum, -1));
+
+                            first_rows_constraints.push_back(context_object.relativize(
+                                current_filter[1][j] -
+                                    index_chunk[1][j] * index_selector[1],
+                                -1));
                         }
 
                         {
@@ -479,14 +564,18 @@ namespace nil {
                                 context_object.relative_lookup(tmp, "chunk_16_bits/full",
                                                                0, max_filter_indices - 1);
                             }
-                            for (auto &constraint : non_first_row_lookups) {
+                            for (auto &constraint : non_first_rows_lookups) {
                                 std::vector<TYPE> tmp = {constraint};
                                 context_object.relative_lookup(tmp, "chunk_16_bits/full",
-                                                               1, max_filter_indices - 1);
+                                                               2, max_filter_indices - 1);
                             }
-                            for (auto &constraint : non_first_row_constraints) {
-                                context_object.relative_constrain(constraint, 1,
+                            for (auto &constraint : non_first_rows_constraints) {
+                                context_object.relative_constrain(constraint, 2,
                                                                   max_filter_indices - 1);
+                            }
+
+                            for (auto &constraint : first_rows_constraints) {
+                                context_object.relative_constrain(constraint, 0, 1);
                             }
                         }
                     }

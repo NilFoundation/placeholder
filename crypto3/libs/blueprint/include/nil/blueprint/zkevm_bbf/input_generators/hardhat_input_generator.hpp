@@ -89,8 +89,10 @@ namespace nil {
                 // internal execution
                 std::vector<zkevm_word_type> stack;
                 std::vector<zkevm_word_type> stack_next;
-                std::vector<zkevm_word_type> filter;
-                std::vector<zkevm_word_type> filter_next;
+                std::vector<zkevm_word_type> tx_filter;
+                std::vector<zkevm_word_type> tx_filter_next;
+                std::vector<zkevm_word_type> block_filter;
+                std::vector<zkevm_word_type> block_filter_next;
                 zkevm_word_type log_index;
                 std::vector<std::uint8_t> memory;
                 std::vector<std::uint8_t> memory_next;
@@ -122,7 +124,8 @@ namespace nil {
                     result.depth = depth;
                     result.calldata = calldata;
                     result.log_index = log_index;
-                    result.filter = filter;
+                    result.tx_filter = tx_filter;
+                    result.block_filter = block_filter;
 
                     return result;
                 }
@@ -216,6 +219,12 @@ namespace nil {
                     tx_id = 0;
                     depth = 1;
                     tx_hash = 0;
+
+                    block_filter_next = {};
+                    for (std::size_t j = 0; j < filter_chunks_amount; j++) {
+                        block_filter_next.push_back(zkevm_word_type(0));
+                    }
+                    block_filter = block_filter_next;
 
                     std::cout << "START BLOCK " << block_id << std::endl;
                     _zkevm_states.push_back(start_block_zkevm_state(block_hash, block_id));
@@ -312,10 +321,11 @@ namespace nil {
                     memory = {};
                     stack_next = {};
                     memory_next = {};
+                    tx_filter_next = {};
                     for (std::size_t j = 0; j < filter_chunks_amount; j++) {
-                        filter_next.push_back(zkevm_word_type(0));
+                        tx_filter_next.push_back(zkevm_word_type(0));
                     }
-                    filter = filter_next;
+                    tx_filter = tx_filter_next;
                     auto ptrace = tt.get_child("trace.structLogs");
                     for( auto it = ptrace.begin(); it!=ptrace.end(); it++){
                         std::string opcode = it->second.get_child("op").data();
@@ -461,7 +471,7 @@ namespace nil {
 
                         stack = stack_next;
                         memory = memory_next;
-                        filter = filter_next;
+                        tx_filter = tx_filter_next;
                     }
                 }
 
@@ -947,8 +957,7 @@ namespace nil {
                     }
 
                     
-                
-                    auto set_filter = [&](zkevm_word_type t_id, zkevm_word_type log_i, zkevm_word_type val,
+                    auto set_filter = [&](zkevm_word_type b_id, zkevm_word_type t_id, zkevm_word_type log_i, zkevm_word_type val,
                                          zkevm_word_type t, zkevm_word_type last, const std::array<std::size_t, 16> &hash_bytes) {
                         for (int i = 0; i < 3; ++i) {
                             uint16_t word = hash_bytes[i];
@@ -956,12 +965,18 @@ namespace nil {
                             uint16_t bit_index = 2047 - index;
                             size_t byte_pos = bit_index / 16;
                             uint8_t bit_pos = 15 - (bit_index % 16);
-                            auto current_value = filter_next[byte_pos];
-                            auto new_value = current_value | (1 << bit_pos);
-                            filter_next[byte_pos] = new_value;
+                            auto tx_value = tx_filter_next[byte_pos];
+                            auto new_value = tx_value | (1 << bit_pos);
+                            tx_filter_next[byte_pos] = new_value;
 
-                            _filter_indices.push_back({t_id, log_i, val, t, i,
-                                                       last == 1 && i == 2, filter_next});
+                            auto block_value = block_filter_next[byte_pos];
+                            new_value = block_value | (1 << bit_pos);
+                            block_filter_next[byte_pos] = new_value;
+
+                            _filter_indices.push_back({b_id, t_id, log_i, val, t, i,
+                                                       last == 1 && i == 2, 0, tx_filter_next});
+                            _filter_indices.push_back({b_id, t_id, log_i, val, t, i,
+                                                       last == 1 && i == 2, 1, block_filter_next});
                         }
                     };
 
@@ -974,7 +989,7 @@ namespace nil {
                     auto address_hash = zkevm_keccak_hash(address_buffer);
                     auto hash_bytes = w_to_16(address_hash);
 
-                    set_filter(tx_id, log_index, call_context_address, 0, l == 0, hash_bytes);
+                    set_filter(block_id, tx_id, log_index, call_context_address, 0, l == 0, hash_bytes);
 
                     for (std::size_t i = 0; i < l; i++) {
                         std::vector<uint8_t> topics_buffer(32);
@@ -986,7 +1001,7 @@ namespace nil {
                         auto topic_hash = zkevm_keccak_hash(topics_buffer);
 
                         auto topic_hash_bytes = w_to_16(topic_hash);
-                        set_filter(tx_id, log_index, topics[i], i + 1,
+                        set_filter(block_id, tx_id, log_index, topics[i], i + 1,
                                 (i == l - 1), topic_hash_bytes);
                     }
                     _logs.push_back({tx_id, log_index, call_context_address, topics});

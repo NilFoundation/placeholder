@@ -57,13 +57,14 @@ namespace nil {
                     using Memory_Cost = typename bbf::memory_cost<FieldType, stage>;
 
                     TYPE offset, length, current_mem, next_mem, memory_expansion_size,
-                        memory_expansion_cost, S, tx_id, call_context_address_hi,
-                        call_context_address_lo, log_index;
+                        memory_expansion_cost, S, block_id, tx_id,
+                        call_context_address_hi, call_context_address_lo, log_index;
                     std::vector<TYPE> topics_lo(x);
                     std::vector<TYPE> topics_hi(x);
 
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
                         tx_id = current_state.tx_id();
+                        block_id = current_state.block_id();
                         auto call_context_address = current_state.call_context_address();
                         call_context_address_hi = w_hi<FieldType>(call_context_address);
                         call_context_address_lo = w_lo<FieldType>(call_context_address);
@@ -88,6 +89,7 @@ namespace nil {
                     allocate(current_mem, 34, 0);
                     allocate(next_mem, 35, 0);
                     allocate(S, 36, 0);
+                    allocate(block_id, 47, 0);
                     allocate(tx_id, 44, 1);
                     allocate(call_context_address_hi, 45, 1);
                     allocate(call_context_address_lo, 46, 1);
@@ -160,11 +162,12 @@ namespace nil {
                         }
                         if (x) {
                             tmp = log_table<FieldType, stage>::log_lookup(
-                                tx_id, log_index, topics_hi[x - 1], topics_lo[x - 1], x);
+                                block_id, tx_id, log_index, topics_hi[x - 1],
+                                topics_lo[x - 1], x, 0);
                         } else {
                             tmp = log_table<FieldType, stage>::log_lookup(
-                                tx_id, log_index, call_context_address_hi,
-                                call_context_address_lo, x);
+                                block_id, tx_id, log_index, call_context_address_hi,
+                                call_context_address_lo, x, 0);
                         }
                         lookup(tmp, "zkevm_logs");
                     }
