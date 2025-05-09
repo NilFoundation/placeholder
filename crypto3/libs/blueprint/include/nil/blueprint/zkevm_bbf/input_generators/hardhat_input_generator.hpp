@@ -36,6 +36,7 @@
 #include <nil/blueprint/zkevm_bbf/types/zkevm_state.hpp>
 #include <nil/blueprint/zkevm_bbf/types/zkevm_account.hpp>
 #include <nil/blueprint/zkevm_bbf/types/call_context.hpp>
+#include <nil/blueprint/zkevm_bbf/types/log.hpp>
 
 #include <nil/blueprint/zkevm_bbf/types/zkevm_input_generator.hpp>
 #include <nil/blueprint/zkevm_bbf/opcodes/zkevm_opcodes.hpp>
@@ -43,6 +44,7 @@
 namespace nil {
     namespace blueprint {
         namespace bbf {
+        
             class zkevm_hardhat_input_generator:zkevm_abstract_input_generator{
             protected:
                 std::map<zkevm_word_type, zkevm_account>                _accounts_initial_state; // Initial state; Update it after block.
@@ -56,6 +58,8 @@ namespace nil {
                 std::vector<zkevm_state>                                 _zkevm_states;
                 std::vector<std::pair<zkevm_word_type, zkevm_word_type>> _exponentiations;
                 std::map<std::size_t,zkevm_call_commit>                   _call_commits;
+                std::vector<zkevm_log>                                    _logs;
+                std::vector<zkevm_filter_indices>                         _filter_indices;
                 std::map<std::tuple<rw_operation_type, zkevm_word_type, std::size_t, zkevm_word_type>, std::size_t>  last_write_rw_counter;
 
                 std::size_t     call_id;                // RW counter on start_call
@@ -85,8 +89,15 @@ namespace nil {
                 // internal execution
                 std::vector<zkevm_word_type> stack;
                 std::vector<zkevm_word_type> stack_next;
+                std::vector<zkevm_word_type> tx_filter;
+                std::vector<zkevm_word_type> tx_filter_next;
+                std::vector<zkevm_word_type> block_filter;
+                std::vector<zkevm_word_type> block_filter_next;
+                zkevm_word_type log_index;
                 std::vector<std::uint8_t> memory;
                 std::vector<std::uint8_t> memory_next;
+
+                const std::size_t filter_chunks_amount = 128;
 
                 basic_zkevm_state_part get_basic_zkevm_state_part(){
                     basic_zkevm_state_part result;
@@ -112,6 +123,9 @@ namespace nil {
                     result.call_context_address = call_context_address;
                     result.depth = depth;
                     result.calldata = calldata;
+                    result.log_index = log_index;
+                    result.tx_filter = tx_filter;
+                    result.block_filter = block_filter;
 
                     return result;
                 }
@@ -205,6 +219,12 @@ namespace nil {
                     tx_id = 0;
                     depth = 1;
                     tx_hash = 0;
+
+                    block_filter_next = {};
+                    for (std::size_t j = 0; j < filter_chunks_amount; j++) {
+                        block_filter_next.push_back(zkevm_word_type(0));
+                    }
+                    block_filter = block_filter_next;
 
                     std::cout << "START BLOCK " << block_id << std::endl;
                     _zkevm_states.push_back(start_block_zkevm_state(block_hash, block_id));
@@ -301,6 +321,11 @@ namespace nil {
                     memory = {};
                     stack_next = {};
                     memory_next = {};
+                    tx_filter_next = {};
+                    for (std::size_t j = 0; j < filter_chunks_amount; j++) {
+                        tx_filter_next.push_back(zkevm_word_type(0));
+                    }
+                    tx_filter = tx_filter_next;
                     auto ptrace = tt.get_child("trace.structLogs");
                     for( auto it = ptrace.begin(); it!=ptrace.end(); it++){
                         std::string opcode = it->second.get_child("op").data();
@@ -446,6 +471,7 @@ namespace nil {
 
                         stack = stack_next;
                         memory = memory_next;
+                        tx_filter = tx_filter_next;
                     }
                 }
 
@@ -914,12 +940,71 @@ namespace nil {
                     _rw_operations.push_back(stack_rw_operation(call_id,  stack_next.size()-1, rw_counter++, true, stack_next[stack_next.size()-1]));
                 }
                 void logx( std::size_t l){
-                    _zkevm_states.push_back(simple_zkevm_state(get_basic_zkevm_state_part()));
-                    _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-1, rw_counter++, false, stack[stack.size()-1]));
-                    _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-2, rw_counter++, false, stack[stack.size()-2]));
-                    for( std::size_t i = 0; i < l; i++){
-                        _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-3-i, rw_counter++, false, stack[stack.size()-3-i]));
+                    log_index = _logs.empty() ? 0
+                                            : _logs.back().id != tx_id
+                                                ? 0
+                                                : _logs.back().index + 1;
+                    _zkevm_states.push_back(storage_zkevm_state(get_basic_zkevm_state_part(), get_call_header_state_part(), get_world_state_state_part()));
+                    std::size_t offset = std::size_t(stack[stack.size() - 1]);
+                    std::size_t length = std::size_t(stack[stack.size() - 2]);
+                    _rw_operations.push_back(stack_rw_operation(call_id, stack.size() - 1, rw_counter++, false, stack[stack.size() - 1]));
+                    _rw_operations.push_back(stack_rw_operation(call_id, stack.size() - 2, rw_counter++, false, stack[stack.size() - 2]));
+
+                    std::vector<zkevm_word_type> topics;
+                    for (std::size_t i = 0; i < l; i++) {
+                        _rw_operations.push_back(stack_rw_operation(call_id, stack.size() - 3 - i, rw_counter++, false, stack[stack.size() - 3 - i]));
+                        topics.push_back(stack[stack.size() - 3 - i]);
                     }
+
+                    
+                    auto set_filter = [&](zkevm_word_type b_id, zkevm_word_type t_id, zkevm_word_type log_i, zkevm_word_type val,
+                                         zkevm_word_type t, zkevm_word_type last, const std::array<std::size_t, 16> &hash_bytes) {
+                        for (int i = 0; i < 3; ++i) {
+                            uint16_t word = hash_bytes[i];
+                            uint16_t index = word & 0x7FF;
+                            uint16_t bit_index = 2047 - index;
+                            size_t byte_pos = bit_index / 16;
+                            uint8_t bit_pos = 15 - (bit_index % 16);
+                            auto tx_value = tx_filter_next[byte_pos];
+                            auto new_value = tx_value | (1 << bit_pos);
+                            tx_filter_next[byte_pos] = new_value;
+
+                            auto block_value = block_filter_next[byte_pos];
+                            new_value = block_value | (1 << bit_pos);
+                            block_filter_next[byte_pos] = new_value;
+
+                            _filter_indices.push_back({b_id, t_id, log_i, val, t, i,
+                                                       last == 1 && i == 2, 0, tx_filter_next});
+                            _filter_indices.push_back({b_id, t_id, log_i, val, t, i,
+                                                       last == 1 && i == 2, 1, block_filter_next});
+                        }
+                    };
+
+                    std::vector<uint8_t> address_buffer(20);
+                    for (std::size_t i = 0; i < 20; i++) {
+                        address_buffer[19 - i] = uint8_t(call_context_address >> (8 * i) &
+                                                         0xFF);  // Big-endian
+                    }
+
+                    auto address_hash = zkevm_keccak_hash(address_buffer);
+                    auto hash_bytes = w_to_16(address_hash);
+
+                    set_filter(block_id, tx_id, log_index, call_context_address, 0, l == 0, hash_bytes);
+
+                    for (std::size_t i = 0; i < l; i++) {
+                        std::vector<uint8_t> topics_buffer(32);
+                        for (std::size_t j = 0; j < 32; j++) {
+                            topics_buffer[31 - j] =
+                                uint8_t(topics[i] >> (8 * j) & 0xFF);  // Big-endian
+                        }
+
+                        auto topic_hash = zkevm_keccak_hash(topics_buffer);
+
+                        auto topic_hash_bytes = w_to_16(topic_hash);
+                        set_filter(block_id, tx_id, log_index, topics[i], i + 1,
+                                (i == l - 1), topic_hash_bytes);
+                    }
+                    _logs.push_back({tx_id, log_index, call_context_address, topics});
                 }
 
                 void call(){
@@ -1324,6 +1409,8 @@ namespace nil {
                 virtual zkevm_keccak_buffers keccaks() override {return _keccaks;}
                 virtual zkevm_keccak_buffers bytecodes() override { return _bytecodes;}
                 virtual rw_operations_vector rw_operations() override {return _rw_operations;}
+                virtual std::vector<zkevm_log> logs() override {return _logs;}
+                virtual std::vector<zkevm_filter_indices> filter_indices() override {return _filter_indices;}
                 virtual std::map<std::size_t,zkevm_call_commit> call_commits() override {return _call_commits;}
                 virtual std::vector<copy_event> copy_events() override { return _copy_events;}
                 virtual std::vector<zkevm_state> zkevm_states() override{ return _zkevm_states;}
