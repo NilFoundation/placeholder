@@ -75,7 +75,7 @@ namespace nil {
                 std::vector<TYPE> first_element_flag  = std::vector<TYPE>(max_rows);
                 std::vector<TYPE> first_element_image = std::vector<TYPE>(max_rows);
                 std::vector<TYPE> element_type        = std::vector<TYPE>(max_rows); // 0 for array (used in node encoding) and 1 for string (used in child encoding)
-                std::vector<TYPE> len_image           = std::vector<TYPE>(max_rows); // len_imagegth
+                std::vector<TYPE> len_image           = std::vector<TYPE>(max_rows); // len_image
 
                 static std::size_t get_witness_amount(){
                     return 8;
@@ -139,7 +139,7 @@ namespace nil {
                             row_index++;
                         }
 
-                        // string encoding with len_imagegth between 2 to 55 bytes
+                        // string encoding with len_image between 2 to 55 bytes
                         for (size_t i = 2; i < 56; i++) {
                             prefix_first_exists[row_index] = 1;
                             prefix_second_exists[row_index] = 0;
