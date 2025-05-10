@@ -164,8 +164,8 @@ namespace nil {
                         std::size_t maximum_domain_size =
                             central_expr_evaluator.get_maximum_domain_size();
 
-                        std::set<polynomial_dfs_variable_type> selectors_full;
-                        std::set<polynomial_dfs_variable_type> selectors_half;
+                        std::set<small_field_polynomial_dfs_variable_type> selectors_full;
+                        std::set<small_field_polynomial_dfs_variable_type> selectors_half;
 
                         std::array<
                             std::vector<std::pair<

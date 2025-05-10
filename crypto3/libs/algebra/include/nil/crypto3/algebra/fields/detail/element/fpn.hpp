@@ -159,6 +159,12 @@ namespace nil::crypto3::algebra::fields::detail {
             return result;
         }
 
+        constexpr element_fpn operator+(const underlying_type &b) const {
+            element_fpn result = *this;
+            result += b;
+            return result;
+        }
+
         constexpr element_fpn operator-(const element_fpn &B) const {
             element_fpn result = *this;
             result -= B;
@@ -169,6 +175,11 @@ namespace nil::crypto3::algebra::fields::detail {
             for (std::size_t i = 0; i < dimension; ++i) {
                 data[i] += B.data[i];
             }
+            return *this;
+        }
+
+        constexpr element_fpn &operator+=(const underlying_type &b) {
+            data[0] += b;
             return *this;
         }
 

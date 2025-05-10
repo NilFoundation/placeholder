@@ -147,7 +147,8 @@ namespace nil::crypto3::math {
             return result;
         }
 
-        static_simd_vector& operator+=(const static_simd_vector& other) {
+        template<typename T>
+        static_simd_vector& operator+=(const static_simd_vector<T, Size>& other) {
             for (std::size_t i = 0; i < Size; ++i) {
                 (*this)[i] += other[i];
             }
@@ -199,7 +200,17 @@ namespace nil::crypto3::math {
             return result;
         }
 
-        static_simd_vector& operator*=(const static_simd_vector& other) {
+        template<typename T>
+        static_simd_vector<T, Size> operator*(const T& other) const {
+            static_simd_vector<T, Size> result;
+            for (std::size_t i = 0; i < Size; ++i) {
+                result[i] = (*this)[i] * other;
+            }
+            return result;
+        }
+
+        template<typename T>
+        static_simd_vector& operator*=(const static_simd_vector<T, Size>& other) {
             for (std::size_t i = 0; i < Size; ++i) {
                 (*this)[i] *= other[i];
             }

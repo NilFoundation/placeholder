@@ -508,8 +508,8 @@ namespace nil {
                         std::size_t maximum_domain_size =
                             _central_expr_evaluator.get_maximum_domain_size();
 
-                        std::set<polynomial_dfs_variable_type> selectors_full;
-                        std::set<polynomial_dfs_variable_type> selectors_half;
+                        std::set<small_field_polynomial_dfs_variable_type> selectors_full;
+                        std::set<small_field_polynomial_dfs_variable_type> selectors_half;
                         std::vector<polynomial_dfs_type> result(input_data.size());
 
                         for (std::size_t i = 0; i < input_data.size(); ++i) {
@@ -535,9 +535,10 @@ namespace nil {
                             }
                             result[i] = polynomial_dfs_type(result_degree, result_size);
 
-                            auto selector_var = polynomial_dfs_variable_type(
+                            auto selector_var = small_field_polynomial_dfs_variable_type(
                                 selector, 0, false,
-                                polynomial_dfs_variable_type::column_type::selector);
+                                small_field_polynomial_dfs_variable_type::column_type::
+                                    selector);
 
                             if (result_size == maximum_domain_size) {
                                 selectors_full.insert(selector_var);
