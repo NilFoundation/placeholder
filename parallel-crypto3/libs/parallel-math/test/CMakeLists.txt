@@ -47,7 +47,8 @@ set(TESTS_NAMES
     "polynomial_dfs"
     "polynomial_dfs_view"
     "lagrange_interpolation"
-    "basic_radix2_domain")
+    "basic_radix2_domain"
+    "fpn")
 
 foreach(TEST_NAME ${TESTS_NAMES})
     define_math_test(${TEST_NAME})

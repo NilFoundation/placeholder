@@ -56,6 +56,7 @@ set(RUNTIME_TESTS_NAMES
         "pairing"
         "type_traits"
         "multiexp"
+        "fpn"
 )
 
 set(COMPILE_TIME_TESTS_NAMES

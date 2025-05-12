@@ -120,8 +120,6 @@ namespace nil {
                         central_evaluator_type& central_expr_evaluator,
                         const value_type& theta) {
                         PROFILE_SCOPE("Gate argument build expression");
-                        std::array<std::array<expression_type, extension_dimension>, 2>
-                            expressions;
 
                         size_t max_degree = get_gate_argument_max_degree(constraint_system);
                         expression_max_degree_visitor<variable_type> visitor;
@@ -136,20 +134,24 @@ namespace nil {
                         expression_variable_type_converter<variable_type, small_field_polynomial_dfs_variable_type> converter(
                             value_type_to_polynomial_dfs);
 
+                        std::array<std::array<expression_type, extension_dimension>, 2>
+                            expressions;
+
                         auto theta_acc = value_type::one();
 
-                        const auto& gates = constraint_system.gates();
-                        
-                        for (const auto& gate : gates) {
+                        for (const auto& gate : constraint_system.gates()) {
                             std::array<std::array<expression_type, extension_dimension>,
                                        2>
                                 gate_results;
                             for (const auto& constraint : gate.constraints) {
-                                size_t constraint_degree = visitor.compute_max_degree(constraint);
-                                if (gate.selector_index != PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED)
-                                    constraint_degree += 1; // selector multiplication.
+                                size_t constraint_degree =
+                                    visitor.compute_max_degree(constraint);
+                                if (gate.selector_index !=
+                                    PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED)
+                                    constraint_degree += 1;  // selector multiplication.
 
-                                bool high_degree = constraint_degree > max_degree / 2;
+                                bool high_degree =
+                                    true;  // constraint_degree > max_degree / 2;
 
                                 for (std::size_t i = 0; i < extension_dimension; ++i) {
                                     gate_results[high_degree][i] += converter.convert(
@@ -160,10 +162,12 @@ namespace nil {
                                 theta_acc *= theta;
                             }
 
-                            if (gate.selector_index != PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED) {
+                            if (gate.selector_index !=
+                                PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED) {
                                 small_field_polynomial_dfs_variable_type selector(
                                     gate.selector_index, 0, false,
-                                    small_field_polynomial_dfs_variable_type::column_type::selector);
+                                    small_field_polynomial_dfs_variable_type::
+                                        column_type::selector);
                                 for (std::size_t i = 0; i < extension_dimension; ++i) {
                                     gate_results[0][i] *= selector;
                                     gate_results[1][i] *= selector;
@@ -210,14 +214,14 @@ namespace nil {
                                        extension_dimension>
                                 coefficients;
                             for (std::size_t i = 0; i < extension_dimension; ++i) {
-                                coefficients[i] =
+                                coefficients.at(i) =
                                     &central_expr_evaluator.get_expression_value(
-                                        registration[i]);
+                                        registration.at(i));
                             }
                             auto combined =
                                 polynomial_dfs_type::extension_from_coefficients(
                                     coefficients);
-                            F[0] += std::move(combined);
+                            F[0] += combined;
                         }
                         return F;
                     }

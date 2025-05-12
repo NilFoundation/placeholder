@@ -135,7 +135,7 @@ namespace nil::crypto3::zk::snark {
                       preprocessed_private_data.private_polynomial_table,
                       preprocessed_public_data.public_polynomial_table)),
               transcript(std::vector<std::uint8_t>({})),
-              _is_lookup_enabled(constraint_system.lookup_gates().size() > 0),
+              _is_lookup_enabled(false),  // constraint_system.lookup_gates().size() > 0),
               _commitment_scheme(commitment_scheme),
               _skip_commitment_scheme_eval_proofs(skip_commitment_scheme_eval_proofs) {
             // Initialize transcript.

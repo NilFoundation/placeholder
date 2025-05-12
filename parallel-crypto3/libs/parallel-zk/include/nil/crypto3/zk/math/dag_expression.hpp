@@ -338,7 +338,7 @@ namespace nil::crypto3::zk::snark {
                 std::size_t degree = max_degree_visitor.compute_max_degree(expr);
                 result.root_node_degrees.push_back(degree);
             }
-            squash_dag();
+            // squash_dag();
             return std::move(result);
         }
 
