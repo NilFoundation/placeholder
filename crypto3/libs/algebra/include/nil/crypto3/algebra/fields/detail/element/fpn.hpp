@@ -153,6 +153,10 @@ namespace nil::crypto3::algebra::fields::detail {
 
         constexpr std::strong_ordering operator<=>(const element_fpn &B) const = default;
 
+        underlying_type binomial_extension_coefficient(std::size_t index) const {
+            return data.at(index);
+        }
+
         constexpr element_fpn operator+(const element_fpn &B) const {
             element_fpn result = *this;
             result += B;

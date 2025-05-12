@@ -64,6 +64,10 @@ namespace nil {
 
                         constexpr element_fp(const data_type &data) : data(data) {}
 
+                        constexpr element_fp(
+                            const std::array<element_fp, 1> &coefficients)
+                            : element_fp(coefficients[0]) {}
+
                         template<multiprecision::integral T>
                         constexpr element_fp(const T &data) : data(data) {}
 
@@ -91,6 +95,16 @@ namespace nil {
 
                         constexpr bool operator==(const element_fp &B) const {
                             return data == B.data;
+                        }
+
+                        element_fp binomial_extension_coefficient(
+                            std::size_t index) const {
+                            if (index != 0) {
+                                throw std::logic_error(
+                                    "FP is degree 1 extension of itself, but trying to "
+                                    "access more coefficients");
+                            }
+                            return *this;
                         }
 
                         constexpr element_fp operator+(const element_fp &B) const {
