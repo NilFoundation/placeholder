@@ -143,6 +143,30 @@ namespace nil {
                                const allocator_type& a)
                     : polynomial_dfs(d, container_type(std::move(il), a)) {}
 
+                template<typename SmallFieldValueType, std::size_t dimension>
+                    requires std::constructible_from<
+                        FieldValueType, std::array<SmallFieldValueType, dimension>>
+                static polynomial_dfs extension_from_coefficients(
+                    std::array<polynomial_dfs<SmallFieldValueType>*, dimension>
+                        coefficients) {
+                    polynomial_dfs result(coefficients[0]->degree(), coefficients[0]->size());
+                    for (std::size_t i = 0; i < result.size(); ++i) {
+                        std::array<SmallFieldValueType, dimension> element;
+                        for (std::size_t j = 0; j < dimension; ++j) {
+                            element[j] = (*coefficients[j])[i];
+                        }
+                        result[i] = element;
+                    }
+                    return result;
+                }
+
+                static polynomial_dfs extension_from_coefficients(
+                    std::array<polynomial_dfs*, 1>
+                        coefficients) {
+                    polynomial_dfs result(std::move(*coefficients[0]));
+                    return result;
+                }
+
                 // TODO: add constructor with omega
 
                 bool operator==(const polynomial_dfs& rhs) const = default;
