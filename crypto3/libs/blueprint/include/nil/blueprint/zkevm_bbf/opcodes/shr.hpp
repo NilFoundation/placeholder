@@ -134,21 +134,21 @@ namespace nil {
                     TYPE second_carryless;
                     TYPE third_carryless;
 
-                    TYPE b0p;
-                    TYPE b0pp;
-                    TYPE b0ppp;
-                    TYPE b0p_range_check;
+                    TYPE b0p;                   // lowest 4 bits of input_b
+                    TYPE b0pp;                  // next 4 bits of input_b
+                    TYPE b0ppp;                 // next 8 bits of input_b
+                    TYPE b0p_range_check;       
                     TYPE b0pp_range_check;
                     TYPE b0ppp_range_check;
-                    TYPE I1;
-                    TYPE I2;
-                    TYPE z;
-                    TYPE tp;
-                    TYPE two_powers;
-                    TYPE sum_part_b;
-                    TYPE b_sum;
-                    TYPE b_sum_inverse;
-                    TYPE b_zero;
+                    TYPE I1;                    // inverse of b0ppp (bits 8-15 of input_b)
+                    TYPE I2;                    // inverse of sum_parts_b (sum of chunks of input_b, except for the first)
+                    TYPE z;                     // indicator for large shift
+                    TYPE tp;                    // z * 2^b0p
+                    TYPE two_powers;            // 2^b0p
+                    TYPE sum_part_b;            // sum of all chunks of input_b, except for the first
+                    TYPE b_sum;                 // sum of all chunks of input_b
+                    TYPE b_sum_inverse;         // inverse of b_sum
+                    TYPE b_zero;                // indicator for non-zero b
 
                     std::vector<TYPE> a_64_chunks(4);
                     std::vector<TYPE> b_64_chunks(4);
@@ -184,10 +184,13 @@ namespace nil {
                         int shift = (input_b < 256) ? int(input_b) : 256;
                         zkevm_word_type result = a >> shift;
 
+                        // b == 2^shift
                         zkevm_word_type b = zkevm_word_type(1) << shift;
-
+                        
+                        // a == r * b + q
                         zkevm_word_type q = b != 0u ? a % b : a;
 
+                        // We ensure that q < b by showing that there is always a carry in v + b == q
                         zkevm_word_type v = wrapping_sub(q, b);
 
                         input_b_chunks = zkevm_word_to_field_element<FieldType>(input_b);
@@ -224,6 +227,8 @@ namespace nil {
                             pow *= 2;
                         }
 
+                        BOOST_ASSERT(tp == two_powers * z);
+
 
                         // note that we don't assign 64-chunks for a/b, as we can build them from
                         // 16-chunks with constraints under the same logic we only assign the 16 -
@@ -244,7 +249,7 @@ namespace nil {
                     third_carryless = third_carryless_construct<TYPE>(b_64_chunks, r_64_chunks);
 
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                        // caluclate first row carries
+                        // calculate first row carries
                         auto first_row_carries = first_carryless.to_integral() >> 128;
 
                         c_1 = value_type(first_row_carries & (two_64 - 1).to_integral());
