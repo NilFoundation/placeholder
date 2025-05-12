@@ -99,18 +99,18 @@ namespace nil {
                     TYPE first_carryless;
                     TYPE second_carryless;
 
-                    TYPE b0p;
-                    TYPE b0pp;
-                    TYPE b0ppp;
+                    TYPE b0p;           // lowest 4 bits of input_b
+                    TYPE b0pp;          // next 4 bits of input_b
+                    TYPE b0ppp;         // next 8 bits of input_b
                     TYPE b0p_range_check;
                     TYPE b0pp_range_check;
                     TYPE b0ppp_range_check;
-                    TYPE I1;
-                    TYPE I2;
-                    TYPE z;
-                    TYPE tp;
-                    TYPE two_powers;
-                    TYPE sum_b;
+                    TYPE I1;            // inverse of b0ppp (bits 8-15 of input_b)
+                    TYPE I2;            // inverse of sum_b
+                    TYPE z;             // indicator for large shift
+                    TYPE tp;            // z * 2^b0p
+                    TYPE two_powers;    // 2^b0p
+                    TYPE sum_b;         // sum of chunks of input_b, except for the first
 
                     std::vector<TYPE> a_64_chunks(4);
                     std::vector<TYPE> b_64_chunks(4);
@@ -143,6 +143,7 @@ namespace nil {
                         zkevm_word_type result = a << shift;
 
                         zkevm_word_type b = zkevm_word_type(1) << shift;
+                        // r == a * b
 
                         input_b_chunks = zkevm_word_to_field_element<FieldType>(input_b);
                         a_chunks = zkevm_word_to_field_element<FieldType>(a);
