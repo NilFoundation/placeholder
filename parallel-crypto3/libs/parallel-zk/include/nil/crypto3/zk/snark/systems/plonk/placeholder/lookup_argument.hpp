@@ -442,10 +442,13 @@ namespace nil {
                         return lookup_value;
                     }
 
+                    static constexpr std::size_t extension_dimension = FieldType::arity;
+
                     /** Returns all the expressions' registrations that are required for
                      * lookup inputs.
                      */
-                    std::vector<expression_evaluator_registration>
+                    std::vector<std::array<expression_evaluator_registration,
+                                           extension_dimension>>
                     register_lookup_input_expressions() {
                         PROFILE_SCOPE(
                             "Lookup argument register lookup input expressions");
@@ -463,41 +466,67 @@ namespace nil {
                             small_field_polynomial_dfs_variable_type>
                             converter(value_type_to_polynomial_dfs);
 
-                        std::vector<expression_evaluator_registration> registrations;
+                        std::vector<std::array<expression_evaluator_registration,
+                                               extension_dimension>>
+                            registrations;
 
                         for (const auto &gate : lookup_gates) {
                             // Register all expressions
                             for (const auto& constraint : gate.constraints) {
-                                expression_type l = value_type_to_polynomial_dfs(constraint.table_id);
+                                std::array<expression_type, extension_dimension> l;
+                                l[0] = value_type_to_polynomial_dfs(constraint.table_id);
                                 value_type theta_acc = this->theta;
                                 for (const auto& expr : constraint.lookup_input) {
-                                    l += converter.convert(theta_acc * expr);
+                                    for (std::size_t i = 0; i < extension_dimension;
+                                         ++i) {
+                                        l[i] += converter.convert(
+                                            theta_acc.binomial_extension_coefficient(i) *
+                                            expr);
+                                    }
                                     theta_acc *= this->theta;
                                 }
                                 if (gate.tag_index != PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED) {
-                                    l *= polynomial_dfs_variable_type(
+                                    small_field_polynomial_dfs_variable_type selector(
                                         gate.tag_index, 0, false,
-                                        polynomial_dfs_variable_type::column_type::selector);
+                                        small_field_polynomial_dfs_variable_type::
+                                            column_type::selector);
+                                    for (std::size_t i = 0; i < extension_dimension;
+                                         ++i) {
+                                        l[i] *= selector;
+                                    }
                                 }
 
-                                registrations.push_back(
-                                    _central_expr_evaluator.register_expression(
-                                        std::move(l)));
+                                registrations.emplace_back();
+                                for (std::size_t i = 0; i < extension_dimension; ++i) {
+                                    registrations.back()[i] =
+                                        _central_expr_evaluator.register_expression(
+                                            std::move(l[i]));
+                                }
                             }
                         }
                         return registrations;
                     }
 
                     std::vector<polynomial_dfs_type> get_lookup_input(
-                        std::vector<expression_evaluator_registration>&& input_data) {
+                        std::vector<std::array<expression_evaluator_registration,
+                                               extension_dimension>>&& input_data) {
                         PROFILE_SCOPE("Lookup argument preparing lookup input");
 
                         std::vector<polynomial_dfs_type> lookup_input;
                         lookup_input.reserve(input_data.size());
                         for (const auto& registration : input_data) {
-                            lookup_input.push_back(
-                                _central_expr_evaluator.get_expression_value(
-                                    registration));
+                            std::array<small_field_polynomial_dfs_type*,
+                                       extension_dimension>
+                                coefficients;
+                            for (std::size_t i = 0; i < extension_dimension; ++i) {
+                                coefficients[i] =
+                                    &_central_expr_evaluator.get_expression_value(
+                                        registration[i]);
+                            }
+                            auto combined =
+                                polynomial_dfs_type::extension_from_coefficients(
+                                    coefficients);
+                            lookup_input.push_back(std::move(combined));
                         }
                         return lookup_input;
                     }
