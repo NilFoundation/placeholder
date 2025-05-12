@@ -191,23 +191,37 @@ namespace nil {
                     //                         typename Field::value_type>::type
                     typename Field::value_type challenge() {
                         using digest_value_type = typename hash_type::digest_type::value_type;
-                        const std::size_t digest_value_bits = sizeof(digest_value_type) * CHAR_BIT;
-                        const std::size_t element_size = Field::number_bits / digest_value_bits +
+                        constexpr std::size_t digest_value_bits =
+                            sizeof(digest_value_type) * CHAR_BIT;
+                        constexpr std::size_t element_size =
+                            Field::number_bits / digest_value_bits +
                             (Field::number_bits % digest_value_bits == 0 ? 0 : 1);
 
-                        std::array<digest_value_type, element_size> data;
                         state = hash<hash_type>(state);
-                        // TODO(martun): for now we copy 256 bits into a larger group element. For example for 
-                        // mnt6_base_field<298ul> the first 42 bits will be zero.
-                        // Use something like hash to field(h2f.hpp) for this.
-                        std::size_t count = std::min(data.size(), state.size());
-                        std::copy(state.begin(), state.begin() + count, data.begin() + data.size() - count);
-                        
-                        nil::crypto3::marshalling::status_type status;
-                        big_uint_of_hash_size raw_result =
-                            nil::crypto3::marshalling::pack(state, status);
-                        THROW_IF_ERROR_STATUS(status, "fiat_shamir_heuristic_sequential::challenge");
-                        return raw_result;
+
+                        std::array<typename Field::small_subfield::value_type,
+                                   Field::arity>
+                            elems;
+
+                        for (std::size_t i = 0; i < Field::arity; ++i) {
+                            multiprecision::big_uint<digest_value_bits * element_size>
+                                elem_big_uint;
+
+                            // TODO(martun): for now we copy 256 bits into a larger group
+                            // element. For example for mnt6_base_field<298ul> the first
+                            // 42 bits will be zero. Use something like hash to
+                            // field(h2f.hpp) for this.
+
+                            auto start_it =
+                                state.begin() + std::min(i * element_size, state.size());
+                            auto end_it = state.begin() +
+                                          std::min((i + 1) * element_size, state.size());
+
+                            elem_big_uint.import_bits(start_it, end_it);
+                            elems[i] = elem_big_uint;
+                        }
+
+                        return typename Field::value_type(elems);
                     }
 
                     template<typename Integral>
