@@ -34,22 +34,9 @@
 #include <nil/blueprint/zkevm_bbf/util.hpp>
 #include <nil/blueprint/zkevm_bbf/subcomponents/child_hash_table.hpp>
 
+#include <nil/blueprint/zkevm_bbf/types/mpt_trie.hpp>
+
 namespace nil::blueprint::bbf {
-
-enum mpt_node_type { extension = 0, branch = 1, leaf = 2 };
-
-struct mpt_node {
-   enum mpt_node_type type;
-   std::vector<zkevm_word_type> value;
-};
-
-struct mpt_path {
-    zkevm_word_type slotNumber; // TODO change this
-    std::vector<mpt_node> proof;
-};
-
-class mpt_paths_vector : public std::vector<mpt_path> {
-};
 
 template<typename FieldType, GenerationStage stage>
 class mpt : public generic_component<FieldType, stage> {
@@ -114,7 +101,7 @@ public:
         // node_num_of_bytes: number of bytes that compose the size of node = 1 or 2
         std::vector<TYPE> node_num_of_bytes(max_mpt_size);      // node_num_of_bytes[max_mpt_size]
 
-        // node_length: bytes that compose the size of node 
+        // node_length: bytes that compose the size of node
         std::array<std::vector<TYPE>,2> node_length;            // node_length[2][max_mpt_size]
 
         // child_choice: selector columns -> 1 for the right child, 0 for all the rest
@@ -474,7 +461,7 @@ public:
                 allocate(key_part[j][i], 570 + j, i);
             }
             allocate(key_part_length[i], 602,i);
-            
+
             allocate(node_type[i],  603,i);
             allocate(depth[i],      604,i);
 
@@ -516,7 +503,7 @@ public:
             lookup_cols.push_back(i);
         }
 
-        std::vector<TYPE> lookup_table_input(64);  
+        std::vector<TYPE> lookup_table_input(64);
         lookup_table("dynamic_child_hash",lookup_cols,max_mpt_size,max_mpt_size + max_mpt_size);
         for(std::size_t i = 0; i < max_mpt_size - 1; i++) {
             for(std::size_t b = 0; b < 32; b++) {
@@ -536,7 +523,7 @@ public:
         std::cout << "max_mpt_size = " << max_mpt_size << std::endl;
         ChildTable ch_t(test_ct, child_hash_tab_input, max_mpt_size);
 
-        std::vector<TYPE> lookup_table_sub_input(65);  
+        std::vector<TYPE> lookup_table_sub_input(65);
         for(std::size_t i = 0; i < max_mpt_size - 1; i++) {
             lookup_table_sub_input[0] = path_num[i];
             for(std::size_t b = 0; b < 32; b++) {
@@ -568,7 +555,7 @@ public:
                 allocate(child_sum_inverse[j][i], 647 + j, i);
                 child_is_zero[j][i] = 1 - child_sum_inverse[j][i] * child_sum[j][i];
                 constrain(child_sum[j][i] * child_is_zero[j][i]);
-                
+
                 // constraints for branch node RLP
                 constrain(is_padding[i] * node_type[i] * (2 - node_type[i]) * (160 - rlp_child[j][i]) * (128 - rlp_child[j][i]) );
                 constrain(is_padding[i] * node_type[i] * (2 - node_type[i]) * (247 + node_num_of_bytes[i] - rlp_node[0][i]) );
@@ -603,7 +590,7 @@ public:
 
         for(std::size_t i = 0; i < max_mpt_size - 1; i++) {
             for(std::size_t b = 0; b < 32; b++) {
-                constrain(is_padding[i] * (2 - node_type[i]) * ( parent_hash[b][i + 1] - (child[0][b][i]  * child_choice[0][i] 
+                constrain(is_padding[i] * (2 - node_type[i]) * ( parent_hash[b][i + 1] - (child[0][b][i]  * child_choice[0][i]
                                                                                         + child[1][b][i]  * child_choice[1][i]
                                                                                         + child[2][b][i]  * child_choice[2][i]
                                                                                         + child[3][b][i]  * child_choice[3][i]
@@ -618,11 +605,11 @@ public:
                                                                                         + child[12][b][i] * child_choice[12][i]
                                                                                         + child[13][b][i] * child_choice[13][i]
                                                                                         + child[14][b][i] * child_choice[14][i]
-                                                                                        + child[15][b][i] * child_choice[15][i]) ) );                                                              
+                                                                                        + child[15][b][i] * child_choice[15][i]) ) );
             }
-            constrain(is_padding[i] * (2 - node_type[i]) * ( 1 - (child_choice[0][i] + child_choice[1][i] + child_choice[2][i] + child_choice[3][i] 
-                                     + child_choice[4][i] + child_choice[5][i] + child_choice[6][i] + child_choice[7][i] 
-                                     + child_choice[8][i] + child_choice[9][i] + child_choice[10][i] + child_choice[11][i] 
+            constrain(is_padding[i] * (2 - node_type[i]) * ( 1 - (child_choice[0][i] + child_choice[1][i] + child_choice[2][i] + child_choice[3][i]
+                                     + child_choice[4][i] + child_choice[5][i] + child_choice[6][i] + child_choice[7][i]
+                                     + child_choice[8][i] + child_choice[9][i] + child_choice[10][i] + child_choice[11][i]
                                      + child_choice[12][i] + child_choice[13][i] + child_choice[14][i] + child_choice[15][i]) ) );
             constrain( child_choice[0][i] * (1 - child_choice[0][i]) );
             constrain( child_choice[1][i] * (1 - child_choice[1][i]) );

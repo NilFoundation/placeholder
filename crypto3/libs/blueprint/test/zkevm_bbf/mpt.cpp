@@ -45,6 +45,7 @@
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
 #include <nil/blueprint/zkevm_bbf/mpt.hpp>
 #include <nil/blueprint/zkevm_bbf/mpt_leaf.hpp>
+#include <nil/blueprint/zkevm_bbf/mpt_dynamic.hpp>
 
 #include "./circuit_test_fixture.hpp"
 
@@ -92,7 +93,7 @@ public:
         for(const auto &v : proof_path) {
             boost::property_tree::ptree node = v.second;
 
-            mpt_node single_node = {extension, {}};
+            mpt_node single_node = {extension, {}, {}};
             if (node.size() == 17) {
                 single_node.type = branch;
             }
@@ -103,16 +104,17 @@ public:
                 std::string hash_value = w.second.data();
                 // std::cout << "    value = " << hash_value << std::endl;
                 single_node.value.push_back(zkevm_word_from_string(hash_value));
+                single_node.len.push_back(hash_value.length());
             }
             // std::cout << "]" << std::endl;
             single_path.proof.push_back(single_node);
         }
         if (single_path.proof.back().value.size() != 17){ // the last node is either a leaf node or a branch node (if leaf doesn't exist)
-            single_path.proof.back().type = leaf; 
+            single_path.proof.back().type = leaf;
         }
         paths.push_back(single_path);
 
-
+/*
         bool result = test_bbf_component<field_type, mpt>(
             "mpt",                 //  Circuit name
             {} ,                   //  Public input
@@ -120,8 +122,17 @@ public:
             max_mpt_size           //  Maximum size of mpt circuit
         );
         BOOST_CHECK((!check_satisfiability && !generate_proof) || result == expected_result); // Max_rw, Max_mpt
+*/
+        bool result = test_bbf_component<field_type, mpt_dynamic>(
+            "mpt_dynamic",         //  Circuit name
+            {} ,                   //  Public input
+            paths,                 //  Assignment input (paths to prove)
+            max_mpt_size           //  Maximum size of mpt circuit
+        );
+        BOOST_CHECK((!check_satisfiability && !generate_proof) || result == expected_result); // Max_rw, Max_mpt
+
     }
-    
+
     template <typename field_type>
     void test_zkevm_mpt_leaf(
         std::string data_source,
@@ -147,6 +158,7 @@ public:
                 if (hash_value.length() % 2 == 1) {
                     std::string highest_byte(1, hash_value[0]);
                     value.push_back(zkevm_word_from_string(highest_byte));
+
                     hash_value = hash_value.substr(1, hash_value.length()-1);
                 }
                 for (unsigned i = 0; i < hash_value.length(); i += 2) {
@@ -170,12 +182,12 @@ public:
 BOOST_FIXTURE_TEST_SUITE(zkevm_bbf_mpt, zkEVMMPTTestFixture)
     using field_type = nil::crypto3::algebra::curves::alt_bn128_254::scalar_field_type;
 BOOST_AUTO_TEST_CASE(one_mpt_path) {
-    test_zkevm_mpt<field_type>("mpt_path_0.json", 20);
-    test_zkevm_mpt<field_type>("mpt_path_1.json", 20);
-    test_zkevm_mpt<field_type>("mpt_path_2.json", 20);
-    // test_zkevm_mpt<field_type>("mpt_path_3.json", 20);
+    test_zkevm_mpt<field_type>("mpt_path_0.json", 500);
+    test_zkevm_mpt<field_type>("mpt_path_1.json", 500);
+    test_zkevm_mpt<field_type>("mpt_path_2.json", 500);
+    test_zkevm_mpt<field_type>("mpt_path_3.json", 500);
 }
 BOOST_AUTO_TEST_CASE(mpt_leafs) {
-    test_zkevm_mpt_leaf<field_type>("mpt_hash_0.json", 1, 10); 
+    test_zkevm_mpt_leaf<field_type>("mpt_hash_0.json", 1, 10);
 }
 BOOST_AUTO_TEST_SUITE_END()
