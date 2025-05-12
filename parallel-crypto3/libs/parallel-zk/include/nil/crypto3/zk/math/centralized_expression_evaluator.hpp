@@ -50,13 +50,15 @@
 
 namespace nil::crypto3::zk::snark {
 
+    using expression_evaluator_registration = std::size_t;
+
     // This class is responsible for returning the values of assignment table in the required sizes, re-using the values
     // by storing them in a cache. It also allows to register expressions and later get the values of those expressions.
     // Expressions will be computed in 2 sizes, those with Maximal degree N will be computed together, while everying of degree
     // < N / 2 will be computed separately.
     template<typename FieldType>
     class CentralAssignmentTableExpressionEvaluator {
-    public:
+      public:
         enum class State : std::uint8_t{
             ADDING_EXPRESSIONS = 0,  // Currently adding expressions
             EVALUATED = 1            // Evaluation has completed
@@ -95,17 +97,13 @@ namespace nil::crypto3::zk::snark {
         }
 
         // Rememebers the expression to evaluate later.
-        void register_expression(const expr_type& expr) {
+        [[nodiscard]] expression_evaluator_registration register_expression(
+            const expr_type& expr, std::size_t additional_degree = 0) {
             if (_state != State::ADDING_EXPRESSIONS) {
                 throw std::logic_error("Can't add expressions after evaluation is done.");
             }
-            _registered_exprs.push_back(expr);
-        }
-
-        void register_expressions(const std::vector<expr_type>& exprs) {
-            for (const auto& expr: exprs) {
-                register_expression(expr);
-            }
+            _registered_exprs.emplace_back(expr, additional_degree);
+            return _registered_exprs.size() - 1;
         }
 
         // Call to this function will drop all the expressions registered and starting again. Only the
@@ -115,7 +113,7 @@ namespace nil::crypto3::zk::snark {
             _dag_expr_half_degree = dag_expression<polynomial_dfs_variable_type>();
 
             _registered_exprs.clear();
-            _registered_expr_to_result_id_map.clear();
+            _registration_to_result_id_map.clear();
             _results_half_degree.clear();
             _results_full_degree.clear();
             _state = State::ADDING_EXPRESSIONS;
@@ -132,7 +130,7 @@ namespace nil::crypto3::zk::snark {
 
             // TODO(martun): optimize the expressions here, before converting to a DAG!
 
-            std::size_t max_degree = get_max_degree(_registered_exprs);
+            std::size_t max_degree = get_max_degree();
             // Round the max degree up to nearest power of 2.
             max_degree = std::pow(2, ceil(std::log2(max_degree)));
 
@@ -154,19 +152,25 @@ namespace nil::crypto3::zk::snark {
             dag_expression_builder<polynomial_dfs_variable_type>
                 _dag_expr_builder_full_degree;
 
+            _registration_to_result_id_map.resize(_registered_exprs.size());
+
             // Split expressions into 2 sets, those with degree <= D/2, and the rest.
-            for (const auto& expr: _registered_exprs) {
-                std::size_t degree = _max_degree_visitor.compute_max_degree(expr);
+            for (std::size_t i = 0; i < _registered_exprs.size(); ++i) {
+                const auto& expr_data = _registered_exprs[i];
+                const auto& expr = expr_data.first;
+                std::size_t degree = get_max_degree(expr_data);
                 if (degree <= max_degree / 2) {
                     _dag_expr_builder_half_degree.add_expression(expr);
                     half_degree_visitor.visit(expr);
-                    _registered_expr_to_result_id_map[expr] = {
-                        DAG_Type::HALF_DEGREE, _dag_expr_builder_half_degree.get_expression_count() - 1};
+                    _registration_to_result_id_map[i] = {
+                        DAG_Type::HALF_DEGREE,
+                        _dag_expr_builder_half_degree.get_expression_count() - 1};
                 } else {
                     _dag_expr_builder_full_degree.add_expression(expr);
                     full_degree_visitor.visit(expr);
-                    _registered_expr_to_result_id_map[expr] = {
-                        DAG_Type::MAX_DEGREE, _dag_expr_builder_full_degree.get_expression_count() - 1};
+                    _registration_to_result_id_map[i] = {
+                        DAG_Type::MAX_DEGREE,
+                        _dag_expr_builder_full_degree.get_expression_count() - 1};
                 }
             }
 
@@ -195,14 +199,12 @@ namespace nil::crypto3::zk::snark {
         }
 
         // Returns the value of given expression. You cannot call this before calling evaluate_all.
-        const polynomial_dfs_type& get_expression_value(const expr_type& expr) const {
-            if (expr == expr_type()) {
-                return zero;
-            }
+        const polynomial_dfs_type& get_expression_value(
+            const expression_evaluator_registration& registration) const {
             if (_state != State::EVALUATED) {
                 throw std::logic_error("Can't return expression value before evaluation is done.");
             }
-            auto [dag_type, index] = _registered_expr_to_result_id_map.at(expr);
+            auto [dag_type, index] = _registration_to_result_id_map.at(registration);
             if (dag_type == DAG_Type::HALF_DEGREE) {
                 return _results_half_degree.at(index);
             }
@@ -210,29 +212,35 @@ namespace nil::crypto3::zk::snark {
         }
 
         // You can call this function to free up some memory.
-        void erase_expression_value(const expr_type& expr) {
+        void erase_expression_value(
+            const expression_evaluator_registration& registartion) {
             if (_state != State::EVALUATED) {
                 throw std::logic_error("Can't erase expression value before evaluation is done.");
             }
-            auto [dag_type, index] = _registered_expr_to_result_id_map[expr];
+            auto [dag_type, index] = _registration_to_result_id_map.at(registartion);
             if (dag_type == DAG_Type::HALF_DEGREE)
                 _results_half_degree[index] = polynomial_dfs_type();
             else
                 _results_full_degree[index] = polynomial_dfs_type();
         }
 
-    private:
- 
-        std::size_t get_max_degree(const std::vector<expr_type>& exprs) const {
+      private:
+        std::size_t get_max_degree(
+            const std::pair<expr_type, std::size_t>& expr_data) const {
+            return _max_degree_visitor.compute_max_degree(expr_data.first) +
+                    expr_data.second;
+        }
+
+        std::size_t get_max_degree() const {
             std::size_t max_degree = 0;
-            for (const auto& expr: exprs) {
-                std::size_t degree = _max_degree_visitor.compute_max_degree(expr);
+            for (const auto& expr_data : _registered_exprs) {
+                std::size_t degree = get_max_degree(expr_data);
                 max_degree = std::max<std::size_t>(max_degree, degree);
             }
             return max_degree;
         }
 
-    private:
+      private:
         State _state;
         cached_assignment_table_type _cached_assignment_table;
 
@@ -242,12 +250,12 @@ namespace nil::crypto3::zk::snark {
         dag_expression<polynomial_dfs_variable_type> _dag_expr_half_degree;
 
         // We store all registered expressions to be able to compute maximal degree 'max_degree' from it.
-        std::vector<expr_type> _registered_exprs;
+        std::vector<std::pair<expr_type, std::size_t>> _registered_exprs;
 
         // For each registered expression, before the evaluation we will link it to the DAG and the number of
         // result inside that DAG.
-        std::unordered_map<expr_type, std::pair<DAG_Type, size_t>> _registered_expr_to_result_id_map;
-        
+        std::vector<std::pair<DAG_Type, size_t>> _registration_to_result_id_map;
+
         // TODO(martun): change these to shared_ptr, so we don't need to copy much.
         // Contains computation results for each expression of degree <= D/2.
         std::vector<polynomial_dfs_type> _results_half_degree;
