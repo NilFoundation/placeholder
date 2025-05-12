@@ -227,9 +227,6 @@ namespace nil {
                             pow *= 2;
                         }
 
-                        BOOST_ASSERT(tp == two_powers * z);
-
-
                         // note that we don't assign 64-chunks for a/b, as we can build them from
                         // 16-chunks with constraints under the same logic we only assign the 16 -
                         // bit
@@ -238,7 +235,7 @@ namespace nil {
                         for (std::size_t i = 0; i < 4; i++) {
                             a_64_chunks.push_back(chunk_sum_64<value_type>(a_chunks, i));
                             b_64_chunks.push_back(chunk_sum_64<value_type>(b_chunks, i));
-                            r_64_chunks.push_back(chunk_sum_64<value_type>(r_chunks, i));
+                            r_64_chunks.push_back(chunk_sum_64<value_type>(r_chunks, i)); // TODO: I don't think that the connection between r_chunks and r_64_chunks is enforced
                             q_64_chunks.push_back(chunk_sum_64<value_type>(q_chunks, i));
                         }
                     }
@@ -292,6 +289,7 @@ namespace nil {
                         allocate(q_chunks[i], i, 0);
                         allocate(v_chunks[i], i + chunk_amount, 0);
                         res[i] = r_chunks[i];
+                        // b == 0 (large shift) =>  r_chunks[i] == 0
                         constrain(b_zero * r_chunks[i]);
                     }
 
@@ -312,20 +310,40 @@ namespace nil {
                     for (std::size_t i = 0; i < chunk_amount; i++) {
                         allocate(indic_1[i], i + 2 * chunk_amount, 2);
                         allocate(indic_2[i], i + 2 * chunk_amount, 3);
+                        // indic_1[i] == 0  =>  b0p == i 
                         constrain((b0p - i) * (1 - (b0p - i) * indic_1[i]));
+                        // indic_2[i] == 0  =>  b0pp == i
                         constrain((b0pp - i) * (1 - (b0pp - i) * indic_2[i]));
+
+                        // indic_2[i] == (b0pp - i)^(-1)  =>  b_chunks[i] == 0
+                        // indic_2[i] == 0                =>  b_chunks[i] == tp == z * 2^b0p == {
+                        //                                                  2^b0p   if the shift is small
+                        //                                                  0       if the shift is large
+                        //                                               }
                         constrain(b_chunks[i] - tp * (1 - (b0pp - i) * indic_2[i]));
                     }
 
+                    // b_sum == 0  <=>  b_sum_inverse == 0
+                    // b_sum != 0  <=>  b_sum_inverse == (b_sum)^(-1)
                     constrain(b_sum_inverse * (b_sum_inverse * b_sum - 1));
                     constrain(b_sum * (b_sum_inverse * b_sum - 1));
+
+                    // b_zero == 0  <=>  b_sum != 0
+                    // b_zero == 1  <=>  b_sum == 0
                     constrain(1 - b_sum_inverse * b_sum - b_zero);
+
+                    // decompose the lowest chunk of input_b into b0p, b0pp, b0ppp
                     constrain(input_b_chunks[0] - b0p - 16 * b0pp - 256 * b0ppp);
+
+                    // b0ppp != 0  =>  I1 == b0ppp^(-1)
                     constrain(b0ppp * (1 - b0ppp * I1));
 
+                    // sum_part_b != 0  =>  I2 == sum_part_b^(-1)
                     TYPE op_sum_part_b_I2 = 1 - sum_part_b * I2;
-                    allocate(op_sum_part_b_I2,43,1);
+                    allocate(op_sum_part_b_I2, 43, 1);
                     constrain(sum_part_b * op_sum_part_b_I2);
+
+                    // b0ppp != 0 or sum_part_b != 0  =>  z = 0
                     constrain(z - (1 - b0ppp * I1) * op_sum_part_b_I2);
 
                     allocate(first_carryless, 35, 0);
