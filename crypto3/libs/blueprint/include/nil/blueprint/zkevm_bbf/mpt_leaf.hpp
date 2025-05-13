@@ -45,7 +45,7 @@ namespace nil::blueprint::bbf {
     using child = typename std::vector<zkevm_word_type>;
     
     template<typename FieldType, GenerationStage stage>
-    class leaf_node  : public generic_component<FieldType, stage> {
+    class leaf_node  : public node_inner_array<FieldType, stage> {
         using typename generic_component<FieldType, stage>::context_type;
         using RLPTable = typename bbf::rlp_table<FieldType, stage>;
         using KeccakTable = typename bbf::keccak_table<FieldType, stage>;
@@ -60,6 +60,7 @@ namespace nil::blueprint::bbf {
         using typename generic_component<FieldType, stage>::table_params;
         using typename generic_component<FieldType, stage>::TYPE;
         using value_type = typename std::vector<zkevm_word_type>;
+        using node_inner = node_inner<FieldType, stage>;
         using node_inner_array = node_inner_array<FieldType, stage>;
         using node_header_array = node_header_array<FieldType, stage>;
         using node_inner_string = node_inner_string<FieldType, stage>;
@@ -70,12 +71,10 @@ namespace nil::blueprint::bbf {
             return hash;
         }
 
-        mpt_type trie_type;
-        node_header_array header;
-
-        node_inner_string key;
-        node_inner_string value;
-
+        node_inner_string* key;
+        node_inner_string* value;
+        TYPE hash_low;
+        TYPE hash_high;
         TYPE not_padding;
         std::size_t rlp_encoding_index = 0;
         TYPE rlc_accumulator = 0;
@@ -86,127 +85,110 @@ namespace nil::blueprint::bbf {
             mpt_type _trie_t,
             TYPE _not_padding,
             TYPE _rlc_challenge
-        ): generic_component<FieldType, stage>(context_object),
-           trie_type(_trie_t),
-           header(context_object, inner_node_type::array, _rlc_challenge),
+        ): node_inner_array(context_object, _trie_t, _rlc_challenge),
            not_padding(_not_padding),
-           key(context_object, inner_node_type::key, _trie_t, _rlc_challenge),
-           value(context_object, _trie_t == mpt_type::storage_trie ? inner_node_type::storage_value : inner_node_type::array, _trie_t, _rlc_challenge),
            rlc_challenge(_rlc_challenge) {
-
             hash_input.resize(532);
-        }
-
-
-        void initialize() {
-            _initialize_header();
-            key.initialize();
-            value.initialize();
+            this->add_inner(context_object, inner_node_type::key);
+            this->add_inner(context_object, inner_node_type::storage_value);
+            key = dynamic_cast<node_inner_string*>(this->inners[0]);
+            value = dynamic_cast<node_inner_string*>(this->inners[1]);
         }
 
         void set_data(std::vector<zkevm_word_type> key_raw, std::vector<zkevm_word_type> value_raw) {
-            key.set_data(key_raw);
-            value.set_data(value_raw); 
-              
-            std::size_t internals_length = key.get_total_length() + value.get_total_length();
+            key->set_data(key_raw);
+            this->inners[1]->set_data(value_raw); 
+            std::size_t internals_length = key->get_total_length() + value->get_total_length();
 
-            header.set_data_length(internals_length);
+            this->header->set_data_length(internals_length);
         }
 
         void set_metadata() {
-            // last argument doesn't matter because length is always more than one byte
-            rlc_accumulator = header.get_total_length();
-            header.set_metadata(hash_input, rlp_encoding_index, rlc_accumulator);
-            key.set_metadata(hash_input, rlp_encoding_index, rlc_accumulator);
-            value.set_metadata(hash_input, rlp_encoding_index, rlc_accumulator);
+            rlc_accumulator = _get_header()->get_total_length();
+            this->_set_metadata(hash_input, rlp_encoding_index, rlc_accumulator);
         }
 
         std::vector<uint8_t> calculate_and_sotore_hash() {
-            this->store_hash(calculate_keccak(this->hash_input, this->rlp_encoding_index));
-            return std::vector<uint8_t>(this->hash_input.begin(), this->hash_input.begin() + this->rlp_encoding_index);
+            store_hash(calculate_keccak(hash_input, rlp_encoding_index));
+            return std::vector<uint8_t>(hash_input.begin(), hash_input.begin() + rlp_encoding_index);
         }
 
         void store_hash(zkevm_word_type hash) {
-            this->header.hash_low = w_lo<FieldType>(hash);
-            this->header.hash_high = w_hi<FieldType>(hash);
+            hash_low = w_lo<FieldType>(hash);
+            hash_high = w_hi<FieldType>(hash);
         }
 
-        void print_leaf_node() {
+        void print() {
             
             std::cout << "rlp prefix:\n" << std::endl;
             std::cout << "hash: "
-                    << std::hex << header.hash_high << std::dec << "\t"
-                    << std::hex << header.hash_low << std::dec << "\n";
-            header.print();
+                    << std::hex << hash_high << std::dec << "\t"
+                    << std::hex << hash_low << std::dec << "\n";
+            this->header->print();
 
             std::cout << "key prefix:\n";
-            key.header.print();
+            key->header->print();
             std::cout << "key:\n\tdata\tindex\n";
-            for (size_t i = 0; i < key.raw.size(); i++) {
-                std::cout << "\t"
-                        << std::hex << key.data[i] << std::dec << "\t" 
-                        << std::hex << key.index[i] << std::dec << std::endl;
-            }
+            key->print();
         
             std::cout << "value prefix:\n";
-            value.header.print();
+            value->header->print();
             std::cout << "value: \n";
-            for (size_t i = 0; i < value.raw.size(); i++) {
-                std::cout << "\t"
-                        << std::hex << value.data[i] << std::dec << "\t" 
-                        << std::hex << value.index[i] << std::dec << std::endl;
-            }
-            std::cout << "rlc: " << value.rlc[value.rlc.size()-1] << std::endl;
+            value->print();
+            std::cout << "rlc: " << this->last_rlc() << std::endl;
         }
 
         void allocate_witness(){
             std::size_t column_index = 0;
             std::size_t row_index = 0;
             allocate(rlc_challenge, column_index ++, row_index);
-            header.allocate_witness(column_index, row_index);
-            key.allocate_witness(column_index, row_index);
-            value.allocate_witness(column_index, row_index);
+            allocate(hash_low, column_index ++, row_index);
+            allocate(hash_high, column_index ++, row_index);
+            this->header->allocate_witness(column_index, row_index);
+            key->allocate_witness(column_index, row_index);
+            value->allocate_witness(column_index, row_index);
             std::cout << "witnessesss " << column_index << std::endl;
         }
 
-        void rlp_lookup_constraints() {
-            header.rlp_lookup_constraints();
-            key.rlp_lookup_constraints();
-            value.rlp_lookup_constraints();
-        }
-
         void keccak_lookup_constraint() {
-            std::size_t leaf_data_size = value.rlc.size()-1;
             std::vector<TYPE> keccak_lookup = {
                 1,
-                value.rlc[leaf_data_size] * not_padding,
-                header.hash_high,
-                header.hash_low
+                this->last_rlc() * not_padding,
+                hash_high,
+                hash_low
             };
             lookup(keccak_lookup, "keccak_table");
         }
 
         void main_constraints() {
-            TYPE initial_rlc = header.get_total_length_constraint();
-            
-            constrain(not_padding * (header.len - (key.get_total_length_constraint() + value.get_total_length_constraint())));
-            // constrain(1 - header.prefix_first_exists);
+            TYPE initial_rlc = this->header->get_total_length_constraint();
+            this->_main_constraints(initial_rlc, 0, not_padding);
 
-            header.main_constraints(initial_rlc, 0, not_padding);
-            TYPE key_initial_index = header.get_prefix_length();
-            TYPE key_previous_rlc = header.prefix_rlc[2];
-            key.main_constraints(key_previous_rlc, key_initial_index, not_padding);
+            // constrain(header->len - (key.get_total_length_constraint() + value.get_total_length_constraint()));
+            // constrain(1 - header->prefix_first_exists);
 
-            TYPE value_initial_index = key_initial_index + key.get_total_length_constraint();
-            TYPE value_previous_rlc = key.rlc[key.rlc.size()-1];
-            value.main_constraints(value_previous_rlc, value_initial_index, not_padding);
+            // header->main_constraints(initial_rlc, 0, not_padding);
+            // TYPE key_initial_index = header->get_prefix_length();
+            // TYPE key_previous_rlc = header->prefix_rlc[2];
+            // key.main_constraints(key_previous_rlc, key_initial_index, not_padding);
+
+            // TYPE value_initial_index = key_initial_index + key.get_total_length_constraint();
+            // TYPE value_previous_rlc = key.rlc[key.rlc.size()-1];
+            // value.main_constraints(value_previous_rlc, value_initial_index, not_padding);
+        }
+
+        void constraints() {
+            this->rlp_lookup_constraints();
+            this->keccak_lookup_constraint();
+            this->main_constraints();
         }
 
         private:
         std::vector<std::uint8_t> hash_input;
-        void _initialize_header() {
-            header.initialize();
-            store_hash(calculate_keccak({}, 0));
+
+
+        node_header_array* _get_header() {
+            return dynamic_cast<node_header_array*>(this->header);
         }
     };
 
@@ -245,6 +227,7 @@ namespace nil::blueprint::bbf {
       public:
         using typename generic_component<FieldType, stage>::table_params;
         using typename generic_component<FieldType, stage>::TYPE;
+        using node_inner_string = node_inner_string<FieldType, stage>;
 
         struct input_type {
             std::vector<mpt_query> queries;
@@ -292,7 +275,6 @@ namespace nil::blueprint::bbf {
             }
             context_type leaf_ct = context_object.subcontext( leaf_area, 0, max_mpt_query_size);
 
-
             for (size_t i = 0; i < max_mpt_query_size; i++) {
                 nodes.push_back(leaf_node<FieldType, stage>(leaf_ct, mpt_type::storage_trie, 1, input.rlc_challenge));
                 // nodes[i].set_challenge(input.rlc_challenge);
@@ -317,8 +299,7 @@ namespace nil::blueprint::bbf {
                     nodes[i].set_metadata();
 
                     std::vector<std::uint8_t> buf = nodes[i].calculate_and_sotore_hash();
-                    for (size_t i = 0; i < buf.size(); i++)
-                    {
+                    for (size_t i = 0; i < buf.size(); i++) {
                         if (buf[i] <= 0x0F)
                             std::cout << "0" << std::hex << int(buf[i]) << std::dec;
                         else
@@ -353,7 +334,7 @@ namespace nil::blueprint::bbf {
                     // leaf_table_inputs[i].index = index;
                 }
             }
-            nodes[0].print_leaf_node();
+            // nodes[0].print();
 
 
             for( std::size_t i = 0; i < KeccakTable::get_witness_amount(); i++){
@@ -374,13 +355,9 @@ namespace nil::blueprint::bbf {
 
             if constexpr (stage == GenerationStage::CONSTRAINTS) {
                 for (size_t i = 0; i < max_mpt_query_size; i++) {
-                    nodes[i].rlp_lookup_constraints();
-                    nodes[i].keccak_lookup_constraint();
-                    nodes[i].main_constraints();
+                    nodes[i].constraints();
                 }
-                
             }
-
         }
     };
 }  // namespace nil::blueprint::bbf
