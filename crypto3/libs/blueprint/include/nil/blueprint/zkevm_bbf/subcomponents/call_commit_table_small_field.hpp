@@ -94,7 +94,7 @@ namespace nil {
                                     call_commit.items[i].storage_key);
                                 field_type[row] = call_commit.items[i].field;
                                 counter[row] = i + 1;
-                                storage_key[i] = zkevm_word_to_field_element<FieldType>(
+                                value[i] = zkevm_word_to_field_element<FieldType>(
                                     call_commit.items[i].value_before);
                             }
                         }
