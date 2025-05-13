@@ -56,11 +56,10 @@ class zkevm_shr_bbf : public generic_component<FieldType, stage> {
     using typename generic_component<FieldType, stage>::context_type;
 
     // Computes the terms of r*b with coefficient 2^(16 * chunk_index)
-    template<typename T, typename V = T>
-    T carryless_mul(const std::vector<T> &r_16_chunks,
-                                const std::vector<T> &b_8_chunks,
+    TYPE carryless_mul(const std::vector<TYPE> &r_16_chunks,
+                                const std::vector<TYPE> &b_8_chunks,
                                 const unsigned char chunk_index) const {
-        T res = 0;
+        TYPE res = 0;
         for (int i = 0; i <= chunk_index; i++) {
             if ((i < 16) && (chunk_index - 2*i >= 0)) {
                 res += r_16_chunks[i] * b_8_chunks[chunk_index - 2*i];
@@ -70,10 +69,9 @@ class zkevm_shr_bbf : public generic_component<FieldType, stage> {
     }
     
     // Computes the terms of rb + q - a with coefficient 2^(16 * chunk_index)
-    template<typename T, typename V = T>
-    T carryless_construct(const std::vector<T> &rb_8_chunks,
-                                const std::vector<T> &q_16_chunks,
-                                const std::vector<T> &a_16_chunks,
+    TYPE carryless_construct(const std::vector<TYPE> &rb_8_chunks,
+                                const std::vector<TYPE> &q_16_chunks,
+                                const std::vector<TYPE> &a_16_chunks,
                                 const unsigned char chunk_index) const {
         auto res = rb_8_chunks[2 * chunk_index] + rb_8_chunks[2 * chunk_index + 1] * 256 + q_16_chunks[chunk_index] - a_16_chunks[chunk_index];
         return res;
@@ -142,8 +140,14 @@ class zkevm_shr_bbf : public generic_component<FieldType, stage> {
             zkevm_word_type a = current_state.stack_top(1);         // Value to shift
 
             // Calculate shift and result
-            // any shift of 256 bits or more is equivalent
-            // to a 255 (NB! not 256) bit shift, which leaves us with just the sign bit
+            // shift >= 256  =>  result = 0
+            // shfit < 256   =>  result = a >> shift
+
+            // We compute the shift clamped to 255. This ensures that b != 0, and allows us to keep 
+            // exactly the same constraints from the SAR opcode. However, if shift >= 256, we will
+            // set the result to 0 anyway. In the constraint phase, this is achieved by multiplying
+            // each chunk of the result by the indicator is_shift_large. 
+            
             int shift = (input_b < 256) ? int(input_b) : 255;
             zkevm_word_type r = a >> shift;         // Shift result (small shift)
 
@@ -307,7 +311,7 @@ class zkevm_shr_bbf : public generic_component<FieldType, stage> {
         // This works because it is a sum of non-negative values that cannot overflow. 
         // b_partial_sum < (chunk_amount-1) * max_i {input_b_chunks[i]} < 2^4 * 2^16 == 2^20.
 
-        // // Calculate partial sum and inverse
+        // Calculate partial sum and inverse
         input_b_partial_sum = 0;
         for (std::size_t i = 1; i < chunk_amount; i++) {
              input_b_partial_sum += input_b_chunks[i];
