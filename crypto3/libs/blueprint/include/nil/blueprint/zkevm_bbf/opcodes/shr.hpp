@@ -123,7 +123,6 @@ class zkevm_shr_bbf : public generic_component<FieldType, stage> {
         std::vector<TYPE> b8_chunks(chunk_8_amount);        // Shift power in 8-bit chunks
         std::vector<TYPE> b8_chunks_check(chunk_8_amount);  // Range check for b8_chunks
         std::vector<TYPE> add_carries(chunk_amount - 1);    // Carries for v + b
-        TYPE a_chunks15_copy1;                              // Copy of a_chunks[15]
 
         std::vector<TYPE> mul8_carryless_chunks(chunk_8_amount);        // carryless terms of r*b with coefficients 2^(8*i), 0 <= i < 32
         std::vector<TYPE> mul8_carryless_chunks_high(chunk_8_amount);   // carryless terms of r*b with coefficients 2^(8*i), 32 <= i < 62 (i = 62 and i = 63 are zero anyway)
@@ -174,7 +173,6 @@ class zkevm_shr_bbf : public generic_component<FieldType, stage> {
             // Convert to field elements
             input_b_chunks = zkevm_word_to_field_element<FieldType>(input_b);
             a_chunks = zkevm_word_to_field_element<FieldType>(a);
-            a_chunks15_copy1 = a_chunks[15];
             b_chunks = zkevm_word_to_field_element<FieldType>(b);
             b_chunks_copy1 = zkevm_word_to_field_element<FieldType>(b);
             b_chunks_copy2 = zkevm_word_to_field_element<FieldType>(b);
@@ -219,8 +217,6 @@ class zkevm_shr_bbf : public generic_component<FieldType, stage> {
             constrain(b_chunks[i] - b_chunks_copy1[i]);
             constrain(b_chunks_copy1[i] - b_chunks_copy2[i]);
         }
-        allocate(a_chunks15_copy1, 15, 7);
-        constrain(a_chunks[15] - a_chunks15_copy1);
 
         for (std::size_t i = 0; i < chunk_8_amount; i++) {
             allocate(b8_chunks[i], i, 2);
