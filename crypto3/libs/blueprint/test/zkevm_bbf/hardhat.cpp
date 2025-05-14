@@ -76,17 +76,11 @@ using namespace nil::blueprint::bbf;
 
 class zkEVMHardhatTestFixture: public CircuitTestFixture {
 public:
-    template <typename field_type>
-    void complex_test(
-        const boost::property_tree::ptree  &trace,
-        const l1_size_restrictions         &max_sizes
-    ){
+    template<typename FieldType>
+    void complex_test(const boost::property_tree::ptree &trace,
+                        const l1_size_restrictions &max_sizes) {
+        using SmallFieldType = typename FieldType::small_subfield;
         nil::blueprint::bbf::zkevm_hardhat_input_generator circuit_inputs(trace);
-
-        using integral_type = typename field_type::integral_type;
-        using value_type = typename field_type::value_type;
-
-        integral_type base16 = integral_type(1) << 16;
 
         std::size_t max_keccak_blocks = max_sizes.max_keccak_blocks;
         std::size_t max_bytecode = max_sizes.max_bytecode;
@@ -98,7 +92,8 @@ public:
         std::size_t max_exp_rows = max_sizes.max_exp_rows;
         std::size_t max_call_commits = max_sizes.max_call_commits;
 
-        typename copy<field_type, GenerationStage::ASSIGNMENT>::input_type copy_assignment_input;
+        typename copy<SmallFieldType, GenerationStage::ASSIGNMENT>::input_type
+            copy_assignment_input;
         copy_assignment_input.rlc_challenge = 7;
         copy_assignment_input.bytecodes = circuit_inputs.bytecodes();
         copy_assignment_input.keccak_buffers = circuit_inputs.keccaks();
@@ -106,7 +101,8 @@ public:
         copy_assignment_input.copy_events = circuit_inputs.copy_events();
         copy_assignment_input.call_commits = circuit_inputs.call_commits();
 
-        typename zkevm<field_type, GenerationStage::ASSIGNMENT>::input_type zkevm_assignment_input;
+        typename zkevm<SmallFieldType, GenerationStage::ASSIGNMENT>::input_type
+            zkevm_assignment_input;
         zkevm_assignment_input.rlc_challenge = 7;
         zkevm_assignment_input.bytecodes = circuit_inputs.bytecodes();
         zkevm_assignment_input.keccak_buffers = circuit_inputs.keccaks();
@@ -115,27 +111,28 @@ public:
         zkevm_assignment_input.zkevm_states = circuit_inputs.zkevm_states();
         zkevm_assignment_input.exponentiations = circuit_inputs.exponentiations();
 
-        typename rw<field_type, GenerationStage::ASSIGNMENT>::input_type
+        typename rw<SmallFieldType, GenerationStage::ASSIGNMENT>::input_type
             rw_assignment_input;
         rw_assignment_input.rw_operations = circuit_inputs.rw_operations();
         rw_assignment_input.call_commits = circuit_inputs.call_commits();
 
-        typename rw_small_field<field_type, GenerationStage::ASSIGNMENT>::input_type
+        typename rw_small_field<SmallFieldType, GenerationStage::ASSIGNMENT>::input_type
             rw_small_field_assignment_input;
         rw_small_field_assignment_input.rw_operations = circuit_inputs.rw_operations();
         rw_small_field_assignment_input.call_commits = circuit_inputs.call_commits();
 
-        typename call_commit<field_type, GenerationStage::ASSIGNMENT>::input_type
+        typename call_commit<SmallFieldType, GenerationStage::ASSIGNMENT>::input_type
             call_commit_assignment_input;
         call_commit_assignment_input.rw_operations = circuit_inputs.rw_operations();
         call_commit_assignment_input.call_commits = circuit_inputs.call_commits();
 
-        typename zkevm_keccak<field_type, GenerationStage::ASSIGNMENT>::input_type
+        typename zkevm_keccak<SmallFieldType, GenerationStage::ASSIGNMENT>::input_type
             keccak_assignment_input;
         keccak_assignment_input.rlc_challenge = 7;
         keccak_assignment_input.private_input = circuit_inputs.keccaks();
 
-        typename bytecode<field_type, GenerationStage::ASSIGNMENT>::input_type bytecode_assignment_input;
+        typename bytecode<SmallFieldType, GenerationStage::ASSIGNMENT>::input_type
+            bytecode_assignment_input;
         bytecode_assignment_input.rlc_challenge = 7;
         bytecode_assignment_input.bytecodes = circuit_inputs.bytecodes();
         bytecode_assignment_input.keccak_buffers = circuit_inputs.keccaks();
@@ -149,15 +146,9 @@ public:
             std::cout << "circuit '" << zkevm_circuit << "'" << std::endl;
 
             // Max_rows, max_bytecode, max_rw
-            result = test_bbf_component<field_type, nil::blueprint::bbf::zkevm>(
-                zkevm_circuit,
-                {}, zkevm_assignment_input,
-                max_zkevm_rows,
-                max_copy,
-                max_rw,
-                max_exponentiations,
-                max_bytecode
-            );
+            result = test_bbf_component<FieldType, nil::blueprint::bbf::zkevm>(
+                zkevm_circuit, {}, zkevm_assignment_input, max_zkevm_rows, max_copy, max_rw,
+                max_exponentiations, max_bytecode);
             BOOST_ASSERT(result);
         }
 
@@ -165,23 +156,22 @@ public:
         if (should_run_circuit(rw_small_field_circuit)) {
             std::cout << "circuit '" << rw_small_field_circuit << "'" << std::endl;
             // Max_rw, Max_mpt
-            result = test_bbf_component<field_type, nil::blueprint::bbf::rw_small_field>(
+            result = test_bbf_component<FieldType, nil::blueprint::bbf::rw_small_field>(
                 rw_small_field_circuit, {}, rw_small_field_assignment_input, max_rw,
                 max_mpt, max_call_commits);
             BOOST_ASSERT(result);
             std::cout << std::endl;
         }
 
-        if constexpr (field_type::modulus_bits >= 250) {
+        if constexpr (SmallFieldType::modulus_bits >= 250) {
             const std::string exp_circuit = "exp";
             if (should_run_circuit(exp_circuit)) {
                 std::cout << "circuit '" << exp_circuit << "'" << std::endl;
 
                 // Max_copy, Max_rw, Max_keccak, Max_bytecode
-                result =
-                    test_bbf_component<field_type, nil::blueprint::bbf::exponentiation>(
-                        exp_circuit, {}, exp_assignment_input, max_exp_rows,
-                        max_exponentiations);
+                result = test_bbf_component<FieldType, nil::blueprint::bbf::exponentiation>(
+                    exp_circuit, {}, exp_assignment_input, max_exp_rows,
+                    max_exponentiations);
                 BOOST_ASSERT(result);
                 std::cout << std::endl;
             }
@@ -191,7 +181,7 @@ public:
                 std::cout << "circuit '" << copy_circuit << "'" << std::endl;
 
                 // Max_copy, Max_rw, Max_keccak, Max_bytecode
-                result = test_bbf_component<field_type, nil::blueprint::bbf::copy>(
+                result = test_bbf_component<FieldType, nil::blueprint::bbf::copy>(
                     copy_circuit, {7}, copy_assignment_input, max_copy, max_rw,
                     max_keccak_blocks, max_bytecode, max_call_commits);
                 BOOST_ASSERT(result);
@@ -203,9 +193,8 @@ public:
                 std::cout << "circuit '" << keccak_circuit << "'" << std::endl;
 
                 // Max_keccak
-                result =
-                    test_bbf_component<field_type, nil::blueprint::bbf::zkevm_keccak>(
-                        keccak_circuit, {}, keccak_assignment_input, max_keccak_blocks);
+                result = test_bbf_component<FieldType, nil::blueprint::bbf::zkevm_keccak>(
+                    keccak_circuit, {}, keccak_assignment_input, max_keccak_blocks);
                 BOOST_ASSERT(result);
                 std::cout << std::endl;
             }
@@ -215,7 +204,7 @@ public:
                 std::cout << "circuit '" << bytecode_circuit << "'" << std::endl;
 
                 // Max_bytecode, max_bytecode
-                result = test_bbf_component<field_type, nil::blueprint::bbf::bytecode>(
+                result = test_bbf_component<FieldType, nil::blueprint::bbf::bytecode>(
                     bytecode_circuit, {7}, bytecode_assignment_input, max_bytecode,
                     max_keccak_blocks);
                 BOOST_ASSERT(result);
@@ -227,9 +216,8 @@ public:
                 std::cout << "circuit '" << rw_circuit << "'" << std::endl;
 
                 // Max_rw, Max_mpt
-                result = test_bbf_component<field_type, nil::blueprint::bbf::rw>(
-                    rw_circuit, {}, rw_assignment_input, max_rw, max_mpt,
-                    max_call_commits);
+                result = test_bbf_component<FieldType, nil::blueprint::bbf::rw>(
+                    rw_circuit, {}, rw_assignment_input, max_rw, max_mpt, max_call_commits);
                 BOOST_ASSERT(result);
             }
 
@@ -238,7 +226,7 @@ public:
                 std::cout << "circuit '" << call_commit_circuit << "'" << std::endl;
 
                 // Max_rw, Max_mpt
-                result = test_bbf_component<field_type, nil::blueprint::bbf::call_commit>(
+                result = test_bbf_component<FieldType, nil::blueprint::bbf::call_commit>(
                     call_commit_circuit, {}, call_commit_assignment_input, max_rw,
                     max_call_commits);
                 BOOST_ASSERT(result);
@@ -253,7 +241,7 @@ public:
 BOOST_FIXTURE_TEST_SUITE(zkevm_bbf_hardhat, zkEVMHardhatTestFixture)
 
 BOOST_AUTO_TEST_CASE(minimal_math) {
-    using field_type = typename algebra::curves::pallas::base_field_type;
+    using FieldType = typename algebra::curves::pallas::base_field_type;
     auto pts = load_hardhat_input("minimal_math.json");
     l1_size_restrictions max_sizes;
 
@@ -267,7 +255,7 @@ BOOST_AUTO_TEST_CASE(minimal_math) {
     max_sizes.max_exp_rows = 500;
     max_sizes.max_call_commits = 500;
 
-    complex_test<field_type>(pts, max_sizes);
+    complex_test<FieldType>(pts, max_sizes);
 }
 
 BOOST_AUTO_TEST_SUITE(benchmarking_fixed_sizes, *boost::unit_test::disabled())
@@ -287,62 +275,62 @@ constexpr l1_size_restrictions gen_max_sizes(std::size_t max_rows) {
 }
 
 BOOST_DATA_TEST_CASE(minimal_math_pallas_fixed_size, boost::unit_test::data::xrange(30)) {
-    using field_type = typename algebra::curves::pallas::scalar_field_type;
+    using FieldType = typename algebra::curves::pallas::scalar_field_type;
     auto pt = load_hardhat_input("minimal_math.json");
     l1_size_restrictions max_sizes;
 
     std::size_t size = (1 << sample) - 2;
 
-    complex_test<field_type>(pt, gen_max_sizes(size));
+    complex_test<FieldType>(pt, gen_max_sizes(size));
 }
 
 BOOST_DATA_TEST_CASE(minimal_math_bn254_fixed_size, boost::unit_test::data::xrange(30)) {
-    using field_type = typename algebra::curves::alt_bn128_254::scalar_field_type;
+    using FieldType = typename algebra::curves::alt_bn128_254::scalar_field_type;
     auto pt = load_hardhat_input("minimal_math.json");
     l1_size_restrictions max_sizes;
 
     std::size_t size = (1 << sample) - 2;
 
-    complex_test<field_type>(pt, gen_max_sizes(size));
+    complex_test<FieldType>(pt, gen_max_sizes(size));
 }
 
 BOOST_DATA_TEST_CASE(minimal_math_babybear_fixed_size,
                      boost::unit_test::data::xrange(30)) {
-    using field_type = typename algebra::fields::babybear;
+    using FieldType = typename algebra::fields::babybear;
     auto pt = load_hardhat_input("minimal_math.json");
     l1_size_restrictions max_sizes;
 
     std::size_t size = (1 << sample) - 2;
 
-    complex_test<field_type>(pt, gen_max_sizes(size));
+    complex_test<FieldType>(pt, gen_max_sizes(size));
 }
 
 BOOST_DATA_TEST_CASE(minimal_math_babybear_fp4_fixed_size,
                      boost::unit_test::data::xrange(30)) {
-    using field_type = typename algebra::fields::babybear_fp4;
+    using FieldType = typename algebra::fields::babybear_fp4;
     auto pt = load_hardhat_input("minimal_math.json");
     l1_size_restrictions max_sizes;
 
     std::size_t size = (1 << sample) - 2;
 
-    complex_test<field_type>(pt, gen_max_sizes(size));
+    complex_test<FieldType>(pt, gen_max_sizes(size));
 }
 
 BOOST_DATA_TEST_CASE(minimal_math_babybear_fp5_fixed_size,
                      boost::unit_test::data::xrange(30)) {
-    using field_type = typename algebra::fields::babybear_fp5;
+    using FieldType = typename algebra::fields::babybear_fp5;
     auto pt = load_hardhat_input("minimal_math.json");
     l1_size_restrictions max_sizes;
 
     std::size_t size = (1 << sample) - 2;
 
-    complex_test<field_type>(pt, gen_max_sizes(size));
+    complex_test<FieldType>(pt, gen_max_sizes(size));
 }
 
 BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_CASE(benchmark, *boost::unit_test::disabled()) {
-    using field_type = typename algebra::curves::pallas::base_field_type;
+    using FieldType = typename algebra::curves::pallas::base_field_type;
     auto pts = load_hardhat_input("minimal_math.json");
     l1_size_restrictions max_sizes;
 
@@ -356,11 +344,11 @@ BOOST_AUTO_TEST_CASE(benchmark, *boost::unit_test::disabled()) {
     max_sizes.max_exp_rows = 500;
     max_sizes.max_call_commits = 500;
 
-    complex_test<field_type>(pts, max_sizes);
+    complex_test<FieldType>(pts, max_sizes);
 }
 /*
 BOOST_AUTO_TEST_CASE(small_log) {
-    using field_type = typename algebra::curves::pallas::base_field_type;
+    using FieldType = typename algebra::curves::pallas::base_field_type;
     auto [bytecodes, pts] = load_hardhat_input("small_log/");
     l1_size_restrictions max_sizes;
 
@@ -373,11 +361,11 @@ BOOST_AUTO_TEST_CASE(small_log) {
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
 
-    complex_test<field_type>(pts, max_sizes);
+    complex_test<FieldType>(pts, max_sizes);
 }
 */
 BOOST_AUTO_TEST_CASE(call_counter) {
-    using field_type = typename algebra::curves::pallas::base_field_type;
+    using FieldType = typename algebra::curves::pallas::base_field_type;
     auto pt = load_hardhat_input("call_counter.json");
     l1_size_restrictions max_sizes;
 
@@ -391,11 +379,11 @@ BOOST_AUTO_TEST_CASE(call_counter) {
     max_sizes.max_exp_rows = 500;
     max_sizes.max_call_commits = 500;
 
-    complex_test<field_type>(pt, max_sizes);
+    complex_test<FieldType>(pt, max_sizes);
 }
 
 BOOST_AUTO_TEST_CASE(delegatecall_counter) {
-    using field_type = typename algebra::curves::pallas::base_field_type;
+    using FieldType = typename algebra::curves::pallas::base_field_type;
     auto pt = load_hardhat_input("delegatecall.json");
     l1_size_restrictions max_sizes;
 
@@ -409,11 +397,11 @@ BOOST_AUTO_TEST_CASE(delegatecall_counter) {
     max_sizes.max_exp_rows = 500;
     max_sizes.max_call_commits = 500;
 
-    complex_test<field_type>(pt, max_sizes);
+    complex_test<FieldType>(pt, max_sizes);
 }
 
 BOOST_AUTO_TEST_CASE(counter) {
-    using field_type = typename algebra::curves::pallas::base_field_type;
+    using FieldType = typename algebra::curves::pallas::base_field_type;
     auto pt = load_hardhat_input("counter.json");
     l1_size_restrictions max_sizes;
 
@@ -427,11 +415,11 @@ BOOST_AUTO_TEST_CASE(counter) {
     max_sizes.max_exp_rows = 500;
     max_sizes.max_call_commits = 500;
 
-    complex_test<field_type>(pt, max_sizes);
+    complex_test<FieldType>(pt, max_sizes);
 }
 
 BOOST_AUTO_TEST_CASE(keccak) {
-    using field_type = typename algebra::curves::pallas::base_field_type;
+    using FieldType = typename algebra::curves::pallas::base_field_type;
     auto pt = load_hardhat_input("keccak.json");
     l1_size_restrictions max_sizes;
 
@@ -445,11 +433,11 @@ BOOST_AUTO_TEST_CASE(keccak) {
     max_sizes.max_exp_rows = 500;
     max_sizes.max_call_commits = 500;
 
-    complex_test<field_type>(pt, max_sizes);
+    complex_test<FieldType>(pt, max_sizes);
 }
 
 BOOST_AUTO_TEST_CASE(call_keccak) {
-    using field_type = typename algebra::curves::pallas::base_field_type;
+    using FieldType = typename algebra::curves::pallas::base_field_type;
     auto pt = load_hardhat_input("call_keccak.json");
     l1_size_restrictions max_sizes;
 
@@ -463,11 +451,11 @@ BOOST_AUTO_TEST_CASE(call_keccak) {
     max_sizes.max_exp_rows = 500;
     max_sizes.max_call_commits = 500;
 
-    complex_test<field_type>(pt, max_sizes);
+    complex_test<FieldType>(pt, max_sizes);
 }
 
 BOOST_AUTO_TEST_CASE(indexed_log) {
-    using field_type = typename algebra::curves::pallas::base_field_type;
+    using FieldType = typename algebra::curves::pallas::base_field_type;
     auto pt = load_hardhat_input("indexed_log.json");
     l1_size_restrictions max_sizes;
 
@@ -481,11 +469,11 @@ BOOST_AUTO_TEST_CASE(indexed_log) {
     max_sizes.max_exp_rows = 500;
     max_sizes.max_call_commits = 500;
 
-    complex_test<field_type>(pt, max_sizes);
+    complex_test<FieldType>(pt, max_sizes);
 }
 
 BOOST_AUTO_TEST_CASE(cold_sstore) {
-    using field_type = typename algebra::curves::pallas::base_field_type;
+    using FieldType = typename algebra::curves::pallas::base_field_type;
     auto pt = load_hardhat_input("cold_sstore.json");
     l1_size_restrictions max_sizes;
 
@@ -499,11 +487,11 @@ BOOST_AUTO_TEST_CASE(cold_sstore) {
     max_sizes.max_exp_rows = 500;
     max_sizes.max_call_commits = 500;
 
-    complex_test<field_type>(pt, max_sizes);
+    complex_test<FieldType>(pt, max_sizes);
 }
 
 BOOST_AUTO_TEST_CASE(try_catch) {
-    using field_type = typename algebra::curves::pallas::base_field_type;
+    using FieldType = typename algebra::curves::pallas::base_field_type;
     auto pt = load_hardhat_input("try_catch.json");
     l1_size_restrictions max_sizes;
 
@@ -517,11 +505,11 @@ BOOST_AUTO_TEST_CASE(try_catch) {
     max_sizes.max_exp_rows = 500;
     max_sizes.max_call_commits = 500;
 
-    complex_test<field_type>(pt, max_sizes);
+    complex_test<FieldType>(pt, max_sizes);
 }
 
 BOOST_AUTO_TEST_CASE(try_catch2) {
-    using field_type = typename algebra::curves::pallas::base_field_type;
+    using FieldType = typename algebra::curves::pallas::base_field_type;
     auto pt = load_hardhat_input("try_catch2.json");
     l1_size_restrictions max_sizes;
 
@@ -535,11 +523,11 @@ BOOST_AUTO_TEST_CASE(try_catch2) {
     max_sizes.max_exp_rows = 500;
     max_sizes.max_call_commits = 500;
 
-    complex_test<field_type>(pt, max_sizes);
+    complex_test<FieldType>(pt, max_sizes);
 }
 
 BOOST_AUTO_TEST_CASE(try_catch_cold) {
-    using field_type = typename algebra::curves::pallas::base_field_type;
+    using FieldType = typename algebra::curves::pallas::base_field_type;
     auto pt = load_hardhat_input("try_catch_cold.json");
     l1_size_restrictions max_sizes;
 
@@ -553,11 +541,11 @@ BOOST_AUTO_TEST_CASE(try_catch_cold) {
     max_sizes.max_exp_rows = 500;
     max_sizes.max_call_commits = 500;
 
-    complex_test<field_type>(pt, max_sizes);
+    complex_test<FieldType>(pt, max_sizes);
 }
 
 BOOST_AUTO_TEST_CASE(sar) {
-    using field_type = typename algebra::curves::pallas::base_field_type;
+    using FieldType = typename algebra::curves::pallas::base_field_type;
     auto pt = load_hardhat_input("sar.json");
     l1_size_restrictions max_sizes;
 
@@ -571,11 +559,11 @@ BOOST_AUTO_TEST_CASE(sar) {
     max_sizes.max_exp_rows = 500;
     max_sizes.max_call_commits = 500;
 
-    complex_test<field_type>(pt, max_sizes);
+    complex_test<FieldType>(pt, max_sizes);
 }
 
 BOOST_AUTO_TEST_CASE(scmp) {
-    using field_type = typename algebra::curves::pallas::base_field_type;
+    using FieldType = typename algebra::curves::pallas::base_field_type;
     auto pt = load_hardhat_input("scmp.json");
     l1_size_restrictions max_sizes;
 
@@ -589,11 +577,11 @@ BOOST_AUTO_TEST_CASE(scmp) {
     max_sizes.max_exp_rows = 500;
     max_sizes.max_call_commits = 500;
 
-    complex_test<field_type>(pt, max_sizes);
+    complex_test<FieldType>(pt, max_sizes);
 }
 /*
 BOOST_AUTO_TEST_CASE(deploy) {
-    using field_type = typename algebra::curves::pallas::base_field_type;
+    using FieldType = typename algebra::curves::pallas::base_field_type;
     auto [bytecodes, pts] = load_hardhat_input("deploy/");
     l1_size_restrictions max_sizes;
 
@@ -606,11 +594,11 @@ BOOST_AUTO_TEST_CASE(deploy) {
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
 
-    complex_test<field_type>(pts, max_sizes);
+    complex_test<FieldType>(pts, max_sizes);
 }
 
 BOOST_AUTO_TEST_CASE(modular_operations) {
-    using field_type = typename algebra::curves::pallas::scalar_field_type;
+    using FieldType = typename algebra::curves::pallas::scalar_field_type;
     auto [bytecodes, pts] = load_hardhat_input("modular_operations/");
     l1_size_restrictions max_sizes;
 
@@ -623,11 +611,11 @@ BOOST_AUTO_TEST_CASE(modular_operations) {
     max_sizes.max_exponentiations = 10;
     max_sizes.max_exp_rows = 100;
 
-    complex_test<field_type>(pts, max_sizes);
+    complex_test<FieldType>(pts, max_sizes);
 }
 
 BOOST_AUTO_TEST_CASE(exp) {
-    using field_type = typename algebra::curves::pallas::scalar_field_type;
+    using FieldType = typename algebra::curves::pallas::scalar_field_type;
     auto [bytecodes, pts] = load_hardhat_input("exp/");
     l1_size_restrictions max_sizes;
 
@@ -640,11 +628,11 @@ BOOST_AUTO_TEST_CASE(exp) {
     max_sizes.max_exponentiations = 10;
     max_sizes.max_exp_rows = 100;
 
-    complex_test<field_type>(pts, max_sizes);
+    complex_test<FieldType>(pts, max_sizes);
 }
 
 BOOST_AUTO_TEST_CASE(keccak) {
-    using field_type = typename algebra::curves::pallas::scalar_field_type;
+    using FieldType = typename algebra::curves::pallas::scalar_field_type;
     auto [bytecodes, pts] = load_hardhat_input("keccak/");
     l1_size_restrictions max_sizes;
 
@@ -657,11 +645,11 @@ BOOST_AUTO_TEST_CASE(keccak) {
     max_sizes.max_exponentiations = 10;
     max_sizes.max_exp_rows = 100;
 
-    complex_test<field_type>(pts, max_sizes);
+    complex_test<FieldType>(pts, max_sizes);
 }
 
 BOOST_AUTO_TEST_CASE(mstore8) {
-    using field_type = typename algebra::curves::pallas::scalar_field_type;
+    using FieldType = typename algebra::curves::pallas::scalar_field_type;
     auto [bytecodes, pts] = load_hardhat_input("mstore8/");
     l1_size_restrictions max_sizes;
 
@@ -674,11 +662,11 @@ BOOST_AUTO_TEST_CASE(mstore8) {
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
 
-    complex_test<field_type>(pts, max_sizes);
+    complex_test<FieldType>(pts, max_sizes);
 }
 
 BOOST_AUTO_TEST_CASE(meminit) {
-    using field_type = typename algebra::curves::pallas::scalar_field_type;
+    using FieldType = typename algebra::curves::pallas::scalar_field_type;
     auto [bytecodes, pts] = load_hardhat_input("mem_init/");
     l1_size_restrictions max_sizes;
 
@@ -691,11 +679,11 @@ BOOST_AUTO_TEST_CASE(meminit) {
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
 
-    complex_test<field_type>(pts, max_sizes);
+    complex_test<FieldType>(pts, max_sizes);
 }
 
 BOOST_AUTO_TEST_CASE(calldatacopy) {
-    using field_type = typename algebra::curves::pallas::scalar_field_type;
+    using FieldType = typename algebra::curves::pallas::scalar_field_type;
     auto [bytecodes, pts] = load_hardhat_input("calldatacopy/");
     l1_size_restrictions max_sizes;
 
@@ -708,11 +696,11 @@ BOOST_AUTO_TEST_CASE(calldatacopy) {
     max_sizes.max_exponentiations = 10;
     max_sizes.max_exp_rows = 100;
 
-    complex_test<field_type>(pts, max_sizes);
+    complex_test<FieldType>(pts, max_sizes);
 }
 
 BOOST_AUTO_TEST_CASE(logger) {
-    using field_type = typename algebra::curves::pallas::scalar_field_type;
+    using FieldType = typename algebra::curves::pallas::scalar_field_type;
     auto [bytecodes, pts] = load_hardhat_input("logger/");
     l1_size_restrictions max_sizes;
 
@@ -725,11 +713,11 @@ BOOST_AUTO_TEST_CASE(logger) {
     max_sizes.max_exponentiations = 25;
     max_sizes.max_exp_rows = 500;
 
-    complex_test<field_type>(pts, max_sizes);
+    complex_test<FieldType>(pts, max_sizes);
 }
 
 BOOST_AUTO_TEST_CASE(codecopy) {
-    using field_type = typename algebra::curves::pallas::scalar_field_type;
+    using FieldType = typename algebra::curves::pallas::scalar_field_type;
     auto [bytecodes, pts] = load_hardhat_input("codecopy/");
     l1_size_restrictions max_sizes;
 
@@ -743,11 +731,11 @@ BOOST_AUTO_TEST_CASE(codecopy) {
     max_sizes.max_exp_rows = 500;
 
 
-    complex_test<field_type>(pts, max_sizes);
+    complex_test<FieldType>(pts, max_sizes);
 }
 
 BOOST_AUTO_TEST_CASE(returndatacopy) {
-    using field_type = typename algebra::curves::pallas::scalar_field_type;
+    using FieldType = typename algebra::curves::pallas::scalar_field_type;
     auto [bytecodes, pts] = load_hardhat_input("returndatacopy/");
     l1_size_restrictions max_sizes;
 
@@ -759,7 +747,7 @@ BOOST_AUTO_TEST_CASE(returndatacopy) {
     max_sizes.max_zkevm_rows = 2500;
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
-    complex_test<field_type>(pts, max_sizes);
+    complex_test<FieldType>(pts, max_sizes);
 }
 */
 
