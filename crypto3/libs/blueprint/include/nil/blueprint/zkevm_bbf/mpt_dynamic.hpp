@@ -35,7 +35,10 @@
 // #include <nil/blueprint/zkevm_bbf/subcomponents/child_hash_table.hpp>
 
 #include <nil/blueprint/zkevm_bbf/types/mpt_trie.hpp>
+#include <nil/blueprint/zkevm_bbf/mpt_nodes/mpt_branch.hpp>
+#include <nil/blueprint/zkevm_bbf/mpt_nodes/mpt_extension.hpp>
 #include <nil/blueprint/zkevm_bbf/mpt_nodes/mpt_subtree.hpp>
+#include <nil/blueprint/zkevm_bbf/mpt_nodes/mpt_leaf.hpp>
 
 namespace nil::blueprint::bbf {
 
@@ -47,7 +50,6 @@ class mpt_dynamic : public generic_component<FieldType, stage> {
     using generic_component<FieldType, stage>::constrain;
     using generic_component<FieldType, stage>::lookup;
     using generic_component<FieldType, stage>::lookup_table;
-//    using ChildTable = child_hash_table<FieldType, stage>;
 
 public:
     using typename generic_component<FieldType, stage>::table_params;
@@ -116,7 +118,7 @@ public:
         // Now prepare a list of nodes to be processed (compatible with both assignment and constraints stages)
         // For the assignment stage we convert a list of paths into a unified list of nodes,
         // appending the additional "subtree" nodes.
-        std::unordered_map<mpt_node_id, mpt_node> new_deploy_plan;
+        std::unordered_map<mpt_node_id, mpt_node> deploy_plan;
 
         if constexpr (stage == GenerationStage::ASSIGNMENT) {
            for(auto &p : input) { // enumerate paths
@@ -155,11 +157,11 @@ public:
                    zkevm_word_type node_key_before_accum = path_key >> 4*(64 - accumulated_length);
 
                    mpt_node_id n_id = { trie_id, node_key_before_accum, accumulated_length };
-                   if (new_deploy_plan.find(n_id) != new_deploy_plan.end()) {
+                   if (deploy_plan.find(n_id) != deploy_plan.end()) {
                        // TODO process node _replacement_
                        std::cout << "We have a replacement" << std::endl;
                    } else {
-                       new_deploy_plan[n_id] = n;
+                       deploy_plan[n_id] = n;
                    }
 
                    if (n.type == branch) {
@@ -174,15 +176,15 @@ public:
                                mpt_node_id subtree_node_id = { trie_id, subtree_prefix, accumulated_length + 1 };
                                mpt_node subtree_node = { subtree, {parent_hash}, {static_cast<std::size_t>(parent_hash.is_zero() ? 0 : 64)}};
 
-                               std::unordered_map<mpt_node_id, mpt_node>::const_iterator preexisting = new_deploy_plan.find(subtree_node_id);
-                               if (preexisting != new_deploy_plan.end()) {
+                               std::unordered_map<mpt_node_id, mpt_node>::const_iterator preexisting = deploy_plan.find(subtree_node_id);
+                               if (preexisting != deploy_plan.end()) {
                                    // normally we shouldn't be doing anything, but for a subtree we can check consistency
                                    if (preexisting->second.type == subtree) {
                                        BOOST_ASSERT(preexisting->second.value.at(0) == subtree_node.value.at(0) &&
                                                     preexisting->second.len.at(0) == subtree_node.len.at(0));
                                    }
                                } else {
-                                   new_deploy_plan[subtree_node_id] = subtree_node;
+                                   deploy_plan[subtree_node_id] = subtree_node;
                                }
                            }
                        }
@@ -194,9 +196,10 @@ public:
            mpt_node_id n_id = {0, 0, 0};
            for(std::size_t virtual_node = 0; virtual_node < NODE_TYPE_COUNT; virtual_node++) {
                n_id.key_prefix_length = virtual_node; // just smth to ensure all node ids are different
-               new_deploy_plan[n_id] = mpt_node({mpt_node_type(virtual_node), {0}, {0}});
+               deploy_plan[n_id] = mpt_node({mpt_node_type(virtual_node), {0}, {0}});
            }
         }
+        // at this point deploy_plan contains all the information we need
 
         // Some bit-decompositions we'll need in the process. Computed here to save time.
         std::array<std::array<TYPE,6>,32> J;
@@ -210,7 +213,7 @@ public:
 
         // the main cycle (Assignments & constraints)
         std::size_t node_num = 0; // = row number, since we have 1 row per node
-        for(auto nr : new_deploy_plan) {
+        for(auto nr : deploy_plan) {
             mpt_node_id n_id = nr.first;
             mpt_node n = nr.second;
             std::cout << "\nnode " << node_num << " type = " << n.type << std::endl;
@@ -312,6 +315,38 @@ public:
             // allocate one row as a fresh subcontext:
             context_type node_row_context = context_object.fresh_subcontext(subcontext_columns, node_num, 1);
 
+            // preparing input for the subcomponents
+            mpt_node_input_type<FieldType, stage> node_input;
+            for(std::size_t type_index = 0; type_index < NODE_TYPE_COUNT; type_index++) {
+                // a selector-based expression for node_type
+                node_input.node_type += node_selector[node_num][type_index]*type_index;
+            }
+            node_input.node_key_prefix = node_key_prefix[node_num];
+            node_input.key_prefix_length = key_prefix_length[node_num];
+            if constexpr (stage == GenerationStage::ASSIGNMENT) {
+                // actual node data is only available at assignment stage
+                node_input.node_data = n;
+            }
+
+            switch(n.type) {
+                case branch:    mpt_branch(node_row_context, node_input); break;
+                case extension: mpt_extension(node_row_context, node_input); break;
+                case subtree:   mpt_subtree(node_row_context, node_input); break;
+                case leaf:      mpt_leaf(node_row_context, node_input); break;
+                default: break;
+            }
+
+            if constexpr (stage == GenerationStage::CONSTRAINTS) {
+               auto selector = context_object.relativize(node_selector[0][static_cast<std::size_t>(n.type)], 0);
+               auto row_constraints = node_row_context.get_constraints();
+               for (const auto &constr_list: row_constraints) {
+                    BOOST_ASSERT(constr_list.first.size() == 1); // there should only be one row in the subcomponent
+                    for (auto [constraint, name]: constr_list.second) {
+                        context_object.relative_constrain(constraint * selector, 0, max_mpt_size - 1, name);
+                    }
+               }
+               auto row_lookup_constraints = node_row_context.get_lookup_constraints();
+            }
             node_num++;
         }
     }

@@ -22,6 +22,7 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 #pragma once
+#include <nil/blueprint/bbf/generic.hpp>
 
 namespace nil::blueprint::bbf {
 
@@ -52,6 +53,20 @@ struct mpt_path {
 
 class mpt_paths_vector : public std::vector<mpt_path> {
 };
+
+template<typename FieldType, GenerationStage stage>
+using node_private_input = typename std::conditional<stage==GenerationStage::ASSIGNMENT, mpt_node, std::nullptr_t>::type;
+
+template<typename FieldType, GenerationStage stage>
+struct mpt_node_input_type {
+    using TYPE = typename generic_component<FieldType, stage>::TYPE;
+
+    TYPE node_type;
+    std::array<TYPE,32> node_key_prefix;
+    TYPE key_prefix_length;
+    node_private_input<FieldType, stage> node_data;
+};
+
 } // namespace nil::blueprint::bbf
 
 template<>
