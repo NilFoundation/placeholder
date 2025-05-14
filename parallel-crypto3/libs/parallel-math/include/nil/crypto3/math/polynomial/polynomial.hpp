@@ -32,6 +32,7 @@
 #endif
 
 #include <algorithm>
+#include <ranges>
 #include <vector>
 
 #include <nil/crypto3/math/polynomial/basic_operations.hpp>
@@ -362,9 +363,9 @@ namespace nil {
                     val.swap(other.val);
                 }
 
-                template<typename Range>
+                template<std::ranges::random_access_range Range>
+                    requires(std::ranges::sized_range<Range>)
                 FieldValueType evaluate(const Range& values) const {
-
                     assert(values.size() + 1 == this->size());
 
                     FieldValueType result = (*this)[0];
@@ -375,8 +376,10 @@ namespace nil {
                     return result;
                 }
 
-                FieldValueType evaluate(const FieldValueType& value) const {
-                    FieldValueType result = FieldValueType::zero();
+                template<typename EvaluationFieldValueType>
+                EvaluationFieldValueType evaluate(
+                    const EvaluationFieldValueType& value) const {
+                    auto result = EvaluationFieldValueType::zero();
                     auto end = this->end();
                     while (end != this->begin()) {
                         result = result * value + *--end;
