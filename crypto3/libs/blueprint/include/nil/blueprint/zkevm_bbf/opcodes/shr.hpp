@@ -250,7 +250,6 @@ class zkevm_shr_bbf : public generic_component<FieldType, stage> {
                 mul8_chunks[i] = (mul8_carryless_chunks[i] + prev_carry).to_integral() & mask8;
                 mul8_carries[i] = (mul8_carryless_chunks[i] + prev_carry).to_integral() >> 8; 
                 BOOST_ASSERT(mul8_carryless_chunks[i] + prev_carry == mul8_chunks[i] + 256 * mul8_carries[i]);
-                
             }
             allocate(mul8_chunks[i], i, 3);
             mul8_chunk_check[i] = mul8_chunks[i] * 256;
@@ -384,7 +383,7 @@ class zkevm_shr_bbf : public generic_component<FieldType, stage> {
         // We will place this in the correct chunk to recover b == 2^(shift_value)
         shift_lower_power = 0;
         unsigned int pow = 1;
-        // shift_power == 2^(shift_lower)
+        // shift_lower_power == 2^(shift_lower)
         for (std::size_t i = 0; i < chunk_amount; i++) {
             shift_lower_power += (1 - (shift_lower - i) * indic_1[i]) * pow;
             pow *= 2;
@@ -394,8 +393,8 @@ class zkevm_shr_bbf : public generic_component<FieldType, stage> {
         // connection between b_chunks and input_b_chunks (implicitly via shift_lower & shift_upper)
         // Recall that b is the actual shift performed, in power-of-2 form.
         for (std::size_t i = 0; i < chunk_amount; i++) {
-            // b_chunks[i] == shift_power * (1 - (shift_upper - i) * indic_2[i]) 
-            // shift_upper == i  <=>  b_chunks[i] == shift_power == 2^(shift_lower)
+            // b_chunks[i] == shift_lower_power * (1 - (shift_upper - i) * indic_2[i]) 
+            // shift_upper == i  <=>  b_chunks[i] == shift_lower_power == 2^(shift_lower)
             // shift_upper != i  <=>  b_chunks[i] == 0
             constrain(b_chunks_copy2[i] - shift_lower_power * (1 - (shift_upper - i) * indic_2[i]));
         }
@@ -406,7 +405,7 @@ class zkevm_shr_bbf : public generic_component<FieldType, stage> {
         // shift_upper == 10
         // indic_1[7]  == 0, and indic_1[i] == (shift_lower - 7)^(-1)  for all other i.
         // indic_2[10] == 0, and indic_2[i] == (shift_upper - 10)^(-1) for all other i.
-        // shift_power == 2^7 
+        // shift_lower_power == 2^7 
         // b_chunks[10] == 2^7, and b_chunks[i] = 0 for all other i.
         // That is, b == 2^7..(followed by 10 chunks of 16 zeros) == 2^7 * 2^(10*16) == 2^167.
 
