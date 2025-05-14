@@ -382,9 +382,11 @@ namespace nil {
                     std::swap(_d, other._d);
                 }
 
-                FieldValueType evaluate(const FieldValueType& value) const {
+                template<typename EvaluationFieldValueType>
+                EvaluationFieldValueType evaluate(
+                    const EvaluationFieldValueType& value) const {
                     std::vector<FieldValueType> tmp = this->coefficients();
-                    FieldValueType result = FieldValueType::zero();
+                    auto result = EvaluationFieldValueType::zero();
                     auto end = tmp.end();
                     // TODO(martun): parallelize the lower loop.
                     while (end != tmp.begin()) {
