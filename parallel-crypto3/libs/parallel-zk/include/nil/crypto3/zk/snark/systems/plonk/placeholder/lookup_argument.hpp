@@ -35,10 +35,11 @@
 #error "You're mixing parallel and non-parallel crypto3 versions"
 #endif
 
-#include <unordered_map>
-#include <queue>
-#include <thread>
 #include <format>
+#include <queue>
+#include <ranges>
+#include <thread>
+#include <unordered_map>
 
 #include <nil/crypto3/math/algorithms/make_evaluation_domain.hpp>
 #include <nil/crypto3/math/domains/evaluation_domain.hpp>
@@ -130,19 +131,18 @@ namespace nil {
 
                         // We wanted to collect all the expressions and evaluate them at once, but usage of transcript does not allow that.
                         // So we are computing the required values for each prover step separately.
-                        _central_expr_evaluator.register_expressions(this->get_lookup_input_expressions());
-                        auto [lookup_value_expressions, lookup_tags] = this->get_lookup_value_expressions();
-                        _central_expr_evaluator.register_expressions(lookup_value_expressions);
+                        auto input_registrations =
+                            this->register_lookup_input_expressions();
+                        auto [value_registrations, lookup_tags] =
+                            this->register_lookup_value_expressions();
                         // We use these lookup tags in double sized evaluation domain.
                         _central_expr_evaluator.ensure_cache(lookup_tags, _central_expr_evaluator.get_original_domain_size() * 2);
                         _central_expr_evaluator.evaluate_all();
 
-                        std::unique_ptr<std::vector<polynomial_dfs_type>> lookup_value_ptr =
-                            get_lookup_values();
-                        auto& lookup_value = *lookup_value_ptr;
-
-                        std::unique_ptr<std::vector<polynomial_dfs_type>> lookup_input_ptr = get_lookup_input();
-                        auto& lookup_input = *lookup_input_ptr;
+                        auto lookup_value =
+                            get_lookup_values(std::move(value_registrations));
+                        auto lookup_input =
+                            get_lookup_input(std::move(input_registrations));
 
                         // Lookup_input and lookup_value are ready
                         // Reduce value and input, count how many times lookup inputs appear in lookup values.
@@ -329,10 +329,16 @@ namespace nil {
 
                     /** Returns all the expressions that are required for lookup value computation.
                      */
-                    std::pair<std::vector<expression_type>, std::set<polynomial_dfs_variable_type>> get_lookup_value_expressions() {
-                        PROFILE_SCOPE("Lookup argument preparing lookup value expressions");
+                    std::pair<std::vector<std::vector<
+                                  std::vector<expression_evaluator_registration>>>,
+                              std::set<polynomial_dfs_variable_type>>
+                    register_lookup_value_expressions() {
+                        PROFILE_SCOPE(
+                            "Lookup argument register lookup value expressions");
 
-                        std::vector<expression_type> expressions;
+                        std::vector<
+                            std::vector<std::vector<expression_evaluator_registration>>>
+                            registrationsss;
                         std::set<polynomial_dfs_variable_type> lookup_tags;
 
                         for (std::size_t t_id = 0; t_id < lookup_tables.size(); t_id++) {
@@ -343,19 +349,32 @@ namespace nil {
                                         polynomial_dfs_variable_type::column_type::selector);
 
                             lookup_tags.insert(lookup_tag);
+                            std::vector<std::vector<expression_evaluator_registration>>
+                                registrationss;
                             for (size_t o_id = 0; o_id < l_table.lookup_options.size(); ++o_id) {
+                                std::vector<expression_evaluator_registration>
+                                    registrations;
                                 for (std::size_t i = 0; i < l_table.columns_number; i++) {
-                                    expressions.push_back(lookup_tag * l_table.lookup_options[o_id][i]);
+                                    auto expr =
+                                        lookup_tag * l_table.lookup_options[o_id][i];
+                                    registrations.push_back(
+                                        _central_expr_evaluator.register_expression(
+                                            std::move(expr)));
                                 }
+                                registrationss.push_back(std::move(registrations));
                             }
+                            registrationsss.push_back(std::move(registrationss));
                         }
-                        return {expressions, lookup_tags};
+                        return {registrationsss, lookup_tags};
                     }
 
-                    std::unique_ptr<std::vector<polynomial_dfs_type>> get_lookup_values() {
+                    std::vector<polynomial_dfs_type> get_lookup_values(
+                        std::vector<
+                            std::vector<std::vector<expression_evaluator_registration>>>&&
+                            registrationsss) {
                         PROFILE_SCOPE("Lookup argument preparing lookup value");
 
-                        auto lookup_value_ptr = std::make_unique<std::vector<polynomial_dfs_type>>();
+                        std::vector<polynomial_dfs_type> lookup_value;
                         for (std::size_t t_id = 0; t_id < lookup_tables.size(); t_id++) {
                             const plonk_lookup_table<FieldType> &l_table = lookup_tables[t_id];
                             polynomial_dfs_variable_type lookup_tag_selector(
@@ -368,30 +387,40 @@ namespace nil {
                                 lookup_tag_selector,  _central_expr_evaluator.get_original_domain_size() * 2);
                             
                             // Increase the size to fit the next table values.
-                            std::size_t lookup_values_used = lookup_value_ptr->size();
-                            lookup_value_ptr->resize(lookup_values_used + l_table.lookup_options.size());
+                            std::size_t lookup_values_used = lookup_value.size();
+                            lookup_value.resize(lookup_values_used +
+                                                l_table.lookup_options.size());
 
-                            parallel_for(0, l_table.lookup_options.size(),
-                                [&l_table, t_id, &lookup_tag, &lookup_tag_selector, this, &lookup_value_ptr, lookup_values_used]
-                                (std::size_t o_id) {
-                                    polynomial_dfs_type v = (value_type(t_id + 1)) * (*lookup_tag);
+                            const auto& registrationss = registrationsss[t_id];
+
+                            parallel_for(
+                                0, registrationss.size(),
+                                [this, t_id, &l_table, &lookup_tag, &lookup_value,
+                                 lookup_values_used, &registrationss](std::size_t o_id) {
+                                    polynomial_dfs_type v =
+                                        (value_type(t_id + 1)) * (*lookup_tag);
                                     value_type theta_acc = this->theta;
-                                    for (std::size_t i = 0; i < l_table.columns_number; i++) {
-                                        v += theta_acc * this->_central_expr_evaluator.get_expression_value(
-                                            lookup_tag_selector * l_table.lookup_options[o_id][i]);
+                                    for (std::size_t i = 0; i < l_table.columns_number;
+                                         i++) {
+                                        v += theta_acc * this->_central_expr_evaluator
+                                                             .get_expression_value(
+                                                                 registrationss[o_id][i]);
                                         theta_acc *= this->theta;
                                     }
-                                    (*lookup_value_ptr)[lookup_values_used + o_id] = v;
-                                }, ThreadPool::PoolLevel::HIGH);
+                                    lookup_value[lookup_values_used + o_id] = v;
+                                },
+                                ThreadPool::PoolLevel::HIGH);
                         }
-                        return std::move(lookup_value_ptr);
+                        return lookup_value;
                     }
 
-                    /** Returns all the expressions that are required for lookup inputs.
-                     *  We don't use theta here, multiplication by theta powers will be done separately.
+                    /** Returns all the expressions' registrations that are required for
+                     * lookup inputs.
                      */
-                    std::vector<expression_type> get_lookup_input_expressions() {
-                        PROFILE_SCOPE("Lookup argument preparing lookup input expressions");
+                    std::vector<expression_evaluator_registration>
+                    register_lookup_input_expressions() {
+                        PROFILE_SCOPE(
+                            "Lookup argument register lookup input expressions");
 
                         // Every constraint has variable type 'variable_type', but we want it to use
                         // 'polynomial_dfs_variable_type' instead. The only difference is the coefficient type
@@ -402,11 +431,11 @@ namespace nil {
                             };
                         expression_variable_type_converter<variable_type, polynomial_dfs_variable_type> converter(
                             value_type_to_polynomial_dfs);
- 
-                        std::vector<expression_type> expressions;
+
+                        std::vector<expression_evaluator_registration> registrations;
 
                         for (const auto &gate : lookup_gates) {
-                            // Build all expressions
+                            // Register all expressions
                             for (const auto& constraint : gate.constraints) {
                                 expression_type l = value_type_to_polynomial_dfs(constraint.table_id);
                                 value_type theta_acc = this->theta;
@@ -420,23 +449,26 @@ namespace nil {
                                         polynomial_dfs_variable_type::column_type::selector);
                                 }
 
-                                expressions.push_back(std::move(l));
+                                registrations.push_back(
+                                    _central_expr_evaluator.register_expression(
+                                        std::move(l)));
                             }
                         }
-                        return expressions;
+                        return registrations;
                     }
 
-                    std::unique_ptr<std::vector<polynomial_dfs_type>> get_lookup_input() {
+                    std::vector<polynomial_dfs_type> get_lookup_input(
+                        std::vector<expression_evaluator_registration>&& input_data) {
                         PROFILE_SCOPE("Lookup argument preparing lookup input");
 
-                        std::vector<expression_type> exprs = get_lookup_input_expressions();
-                        
-                        auto lookup_input_ptr = std::make_unique<std::vector<polynomial_dfs_type>>();
-                        lookup_input_ptr->reserve(exprs.size());
-                        for (const auto& expr: exprs) {
-                            lookup_input_ptr->push_back(_central_expr_evaluator.get_expression_value(expr));
+                        std::vector<polynomial_dfs_type> lookup_input;
+                        lookup_input.reserve(input_data.size());
+                        for (const auto& registration : input_data) {
+                            lookup_input.push_back(
+                                _central_expr_evaluator.get_expression_value(
+                                    registration));
                         }
-                        return lookup_input_ptr;
+                        return lookup_input;
                     }
 
                     polynomial_dfs_type reduce_dfs_polynomial_domain(

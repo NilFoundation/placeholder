@@ -35,6 +35,7 @@
 #include <iostream>
 #include <memory>
 #include <queue>
+#include <ranges>
 #include <unordered_map>
 
 #include <nil/crypto3/math/polynomial/polynomial_dfs.hpp>
@@ -98,14 +99,15 @@ namespace nil {
                         return max_degree;
                     }
 
-                    // Generates 2 expressions that need to be computed and sumed up to create the
-                    // final polynomial.
-                    static inline std::vector<expression_type> get_gate_argument_expressions(
-                            const constraint_system_type& constraint_system,
-                            const value_type& theta
-                            ) {
-                        PROFILE_SCOPE("Gate argument build expression");
-                        std::vector<expression_type> expressions(2);
+                    // Registers 2 expressions that need to be computed and sumed up to
+                    // create the final polynomial.
+                    static inline std::array<expression_evaluator_registration, 2>
+                    register_gate_argument_expressions(
+                        const constraint_system_type& constraint_system,
+                        central_evaluator_type& central_expr_evaluator,
+                        const value_type& theta) {
+                        PROFILE_SCOPE("Gate argument register expressions");
+                        std::array<expression_type, 2> expressions;
 
                         size_t max_degree = get_gate_argument_max_degree(constraint_system);
                         expression_max_degree_visitor<variable_type> visitor;
@@ -125,7 +127,7 @@ namespace nil {
                         const auto& gates = constraint_system.gates();
                         
                         for (const auto& gate : gates) {
-                            std::vector<expression_type> gate_results(2);
+                            std::array<expression_type, 2> gate_results;
                             for (const auto& constraint : gate.constraints) {
                                 size_t constraint_degree = visitor.compute_max_degree(constraint);
                                 if (gate.selector_index != PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED)
@@ -150,7 +152,10 @@ namespace nil {
                             expressions[0] += gate_results[0];
                             expressions[1] += gate_results[1];
                         }
-                        return expressions;
+
+                        return {
+                            central_expr_evaluator.register_expression(expressions[0]),
+                            central_expr_evaluator.register_expression(expressions[1])};
                     }
 
                     static inline std::array<polynomial_dfs_type, argument_size>
@@ -161,16 +166,20 @@ namespace nil {
                     ) {
                         PROFILE_SCOPE("Gate argument prove eval");
 
-                        std::vector<expression_type> exprs = get_gate_argument_expressions(constraint_system, theta);
+                        auto registrations = register_gate_argument_expressions(
+                            constraint_system, central_expr_evaluator, theta);
 
-
-                        central_expr_evaluator.register_expressions(exprs);
                         central_expr_evaluator.evaluate_all();
 
+                            
                         std::array<polynomial_dfs_type, argument_size> F;
                         F[0] = polynomial_dfs_type::zero();
-                        for (const auto& expr: exprs) {
-                            F[0] += central_expr_evaluator.get_expression_value(expr);
+                        {
+                            PROFILE_SCOPE("Combine evaluation results");
+                            for (const auto& registration : registrations) {
+                                F[0] += central_expr_evaluator.get_expression_value(
+                                    registration);
+                            }
                         }
                         return F;
                     }
