@@ -266,7 +266,7 @@ namespace nil::crypto3::algebra::fields::detail {
 
         constexpr element_fpn doubled() const {
             element_fpn result = *this;
-            for (auto &c : data) {
+            for (auto &c : result.data) {
                 c.double_inplace();
             }
             return result;
