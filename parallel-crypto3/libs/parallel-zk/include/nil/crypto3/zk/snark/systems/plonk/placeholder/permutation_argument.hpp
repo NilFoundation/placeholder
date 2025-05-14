@@ -61,7 +61,7 @@ namespace nil {
             namespace snark {
                 template<typename FieldType, typename ParamsType>
                 class placeholder_permutation_argument {
-
+                    using SmallFieldType = typename FieldType::small_subfield;
                     using transcript_hash_type = typename ParamsType::transcript_hash_type;
                     using transcript_type = transcript::fiat_shamir_heuristic_sequential<transcript_hash_type>;
 
@@ -78,22 +78,25 @@ namespace nil {
                     };
 
                     static inline prover_result_type prove_eval(
-                        const plonk_constraint_system<FieldType> &constraint_system,
-                        const typename placeholder_public_preprocessor<FieldType, ParamsType>::preprocessed_data_type
+                        const plonk_constraint_system<SmallFieldType> &constraint_system,
+                        const typename placeholder_public_preprocessor<
+                            SmallFieldType, ParamsType>::preprocessed_data_type
                             preprocessed_data,
-                        const plonk_table_description<FieldType> &table_description,
-                        const plonk_polynomial_dfs_table<FieldType>& column_polynomials,
-                        typename ParamsType::commitment_scheme_type& commitment_scheme,
-                        transcript_type& transcript
-                    ) {
+                        const plonk_table_description<SmallFieldType> &table_description,
+                        const plonk_polynomial_dfs_table<SmallFieldType>
+                            &column_polynomials,
+                        typename ParamsType::commitment_scheme_type &commitment_scheme,
+                        transcript_type &transcript) {
                         PROFILE_SCOPE("Permutation argument prove eval");
 
-                        const std::vector<math::polynomial_dfs<typename FieldType::value_type>> &S_sigma =
-                            preprocessed_data.permutation_polynomials;
-                        const std::vector<math::polynomial_dfs<typename FieldType::value_type>> &S_id =
-                            preprocessed_data.identity_polynomials;
-                        std::shared_ptr<math::evaluation_domain<FieldType>> basic_domain =
-                            preprocessed_data.common_data->basic_domain;
+                        const std::vector<
+                            math::polynomial_dfs<typename SmallFieldType::value_type>>
+                            &S_sigma = preprocessed_data.permutation_polynomials;
+                        const std::vector<
+                            math::polynomial_dfs<typename SmallFieldType::value_type>>
+                            &S_id = preprocessed_data.identity_polynomials;
+                        std::shared_ptr<math::evaluation_domain<SmallFieldType>>
+                            basic_domain = preprocessed_data.common_data->basic_domain;
 
                         auto permuted_columns = constraint_system.permuted_columns();
                         std::vector<std::size_t> global_indices;
@@ -110,8 +113,16 @@ namespace nil {
                         math::polynomial_dfs<typename FieldType::value_type> V_P(basic_domain->size() - 1,
                                                                                  basic_domain->size());
 
-                        std::vector<math::polynomial_dfs<typename FieldType::value_type>> g_v = S_id;
-                        std::vector<math::polynomial_dfs<typename FieldType::value_type>> h_v = S_sigma;
+                        std::vector<math::polynomial_dfs<typename FieldType::value_type>>
+                            g_v;
+                        for (const auto &p : S_id) {
+                            g_v.emplace_back(p);
+                        }
+                        std::vector<math::polynomial_dfs<typename FieldType::value_type>>
+                            h_v;
+                        for (const auto &p : S_sigma) {
+                            h_v.emplace_back(p);
+                        }
                         BOOST_ASSERT(global_indices.size() == S_id.size());
                         BOOST_ASSERT(global_indices.size() == S_sigma.size());
 
@@ -247,7 +258,11 @@ namespace nil {
                             auto &h = hs[last];
                             F_dfs_1_parts.back() = previous_poly * g - V_P_shifted * h;
                             F_dfs[1] += polynomial_sum<FieldType>(std::move(F_dfs_1_parts));
-                            F_dfs[1] *= (preprocessed_data.q_last + preprocessed_data.q_blind) - one_polynomial;
+                            F_dfs[1] *=
+                                math::polynomial_dfs<typename FieldType::value_type>(
+                                    preprocessed_data.q_last +
+                                    preprocessed_data.q_blind) -
+                                one_polynomial;
                         }
 
                         /* F_dfs[2] = preprocessed_data.q_last * V_P * (V_P - one_polynomial); */
@@ -262,11 +277,11 @@ namespace nil {
                     }
 
                     static inline void fill_challenge_queue(
-                        const typename placeholder_public_preprocessor<FieldType, ParamsType>::preprocessed_data_type::common_data_type
-                            &common_data,
+                        const typename placeholder_public_preprocessor<SmallFieldType,
+                                                                       ParamsType>::
+                            preprocessed_data_type::common_data_type &common_data,
                         transcript_type &transcript,
-                        std::queue<typename FieldType::value_type>& queue
-                    ) {
+                        std::queue<typename FieldType::value_type> &queue) {
                         // Beta and Gamma
                         queue.push(transcript.template challenge<FieldType>());
                         queue.push(transcript.template challenge<FieldType>());
@@ -276,23 +291,29 @@ namespace nil {
                         }
                     }
 
-                    static inline std::array<typename FieldType::value_type, argument_size> verify_eval(
-                        const typename placeholder_public_preprocessor<FieldType, ParamsType>::preprocessed_data_type::common_data_type
-                            &common_data,
+                    static inline std::array<typename FieldType::value_type,
+                                             argument_size>
+                    verify_eval(
+                        const typename placeholder_public_preprocessor<SmallFieldType,
+                                                                       ParamsType>::
+                            preprocessed_data_type::common_data_type &common_data,
                         const std::vector<typename FieldType::value_type> &S_id,
                         const std::vector<typename FieldType::value_type> &S_sigma,
-                        const std::vector<typename FieldType::value_type> &special_selector_values,
+                        const std::vector<typename FieldType::value_type>
+                            &special_selector_values,
                         // y
                         const typename FieldType::value_type &challenge,
                         // f(y):
-                        const std::vector<typename FieldType::value_type> &column_polynomials_values,
+                        const std::vector<typename FieldType::value_type>
+                            &column_polynomials_values,
                         // V_P(y):
                         const typename FieldType::value_type &perm_polynomial_value,
                         // V_P(omega * y):
-                        const typename FieldType::value_type &perm_polynomial_shifted_value,
-                        const std::vector<typename FieldType::value_type> &perm_partitions,
-                        transcript_type &transcript
-                    ) {
+                        const typename FieldType::value_type
+                            &perm_polynomial_shifted_value,
+                        const std::vector<typename FieldType::value_type>
+                            &perm_partitions,
+                        transcript_type &transcript) {
                         // 1. Get beta, gamma
                         typename FieldType::value_type beta = transcript.template challenge<FieldType>();
                         typename FieldType::value_type gamma = transcript.template challenge<FieldType>();

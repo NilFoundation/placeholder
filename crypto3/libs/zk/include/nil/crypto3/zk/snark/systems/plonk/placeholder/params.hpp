@@ -49,7 +49,7 @@ namespace nil {
 
                 template<typename CircuitParams, typename CommitmentScheme>
                 struct placeholder_params {
-                    using field_type = typename CircuitParams::field_type;
+                    using field_type = typename CommitmentScheme::field_type;
 
                     using constraint_system_type = typename CircuitParams::constraint_system_type;
                     using assignment_table_type = typename CircuitParams::assignment_table_type;
