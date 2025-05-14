@@ -101,7 +101,7 @@ namespace nil {
                 }
 
                 void resize_to_domain_size(std::vector<std::vector<value_type>> &a) {
-                    PARALLEL_PROFILE_SCOPE("resize_to_domain_size {} vectors from size {} to {}",
+                    PROFILE_SCOPE("resize_to_domain_size {} vectors from size {} to {}",
                         a.size(), a[0].size(), this->m);
 
                     for (auto& p: a) {
@@ -115,8 +115,10 @@ namespace nil {
                     }
                 }
 
-                /** \brief Batch version of the 'fft' function. Used for vectorization.
-                 *  \param[in] a - Each element of a a[i] represents coefficients of a polynomial.
+                /** \brief Batch version of the 'fft' function
+                 *  \param[in] polys - Each element of 'polys' represents coefficients of a polynomial.
+                 *                  So if we have 100 polynomials of size 2^20 to FFT, the dimensions of
+                 *                  'polys' will be [100x2^20].
                  */
                 void batch_fft(std::vector<std::vector<value_type>> &polys) override {
                     if (polys.size() == 0)
@@ -129,8 +131,10 @@ namespace nil {
                     }, ThreadPool::PoolLevel::HIGH);
                 }
 
-                /** \brief Batch version of the 'fft' function. Used for vectorization.
-                 *  \param[in] a - Each element of a a[i] represents DFS values of a polynomial.
+                /** \brief Batch version of the 'inverse_fft' function
+                 *  \param[in] polys - Each element of 'polys' represents coefficients of a polynomial.
+                 *                  So if we have 100 polynomials of size 2^20 to FFT, the dimensions of
+                 *                  'polys' will be [100x2^20].
                  */
                 void batch_inverse_fft(std::vector<std::vector<value_type>> &polys) override {
                     if (polys.size() == 0)
