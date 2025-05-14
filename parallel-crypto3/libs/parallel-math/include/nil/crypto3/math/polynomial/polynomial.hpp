@@ -99,8 +99,7 @@ namespace nil {
 
                 ~polynomial() = default;
 
-                polynomial(const polynomial& x) : val(x.val) {
-                }
+                polynomial(const polynomial& x) = default;
 
                 polynomial(const polynomial& x, const allocator_type& a) : val(x.val, a) {
                 }
@@ -111,10 +110,7 @@ namespace nil {
                 polynomial(std::initializer_list<value_type> il, const allocator_type& a) : val(il, a) {
                 }
 
-                polynomial(polynomial&& x) BOOST_NOEXCEPT
-                    (std::is_nothrow_move_constructible<allocator_type>::value) :
-                    val(std::move(x.val)) {
-                }
+                polynomial(polynomial&& x) = default;
 
                 polynomial(polynomial&& x, const allocator_type& a) : val(std::move(x.val), a) {
                 }
@@ -136,15 +132,9 @@ namespace nil {
                     this->operator[](power) = value;
                 }
 
-                polynomial& operator=(const polynomial& x) {
-                    val = x.val;
-                    return *this;
-                }
+                polynomial& operator=(const polynomial& x) = default;
 
-                polynomial& operator=(polynomial&& x) {
-                    val = std::move(x.val);
-                    return *this;
-                }
+                polynomial& operator=(polynomial&& x) = default;
 
                 polynomial& operator=(const container_type& x) {
                     val = x;
