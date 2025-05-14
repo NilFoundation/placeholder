@@ -27,9 +27,14 @@
 #pragma once
 
 #include <algorithm>
+#include <cassert>
+#include <cstdio>
 #include <iostream>
 #include <nil/blueprint/zkevm_bbf/types/opcode.hpp>
 #include <numeric>
+#include <vector>
+#include "nil/blueprint/bbf/enums.hpp"
+#include "nil/blueprint/bbf/row_selector.hpp"
 
 namespace nil::blueprint::bbf {
 template<typename FieldType>
@@ -55,20 +60,21 @@ class zkevm_shr_bbf : public generic_component<FieldType, stage> {
     using typename generic_component<FieldType, stage>::TYPE;
     using typename generic_component<FieldType, stage>::context_type;
 
-    // Computes the terms of r*b with coefficient 2^(16 * chunk_index)
+    // Computes the terms of r*b with coefficient 2^(8 * chunk_index)
     TYPE carryless_mul(const std::vector<TYPE> &r_16_chunks,
                                 const std::vector<TYPE> &b_8_chunks,
                                 const unsigned char chunk_index) const {
         TYPE res = 0;
         for (int i = 0; i <= chunk_index; i++) {
-            if ((i < 16) && (chunk_index - 2*i >= 0)) {
-                res += r_16_chunks[i] * b_8_chunks[chunk_index - 2*i];
+            int j = chunk_index - 2 * i;
+            if ((i < chunk_amount) && (j >= 0) && (j < chunk_8_amount)) {
+                res += r_16_chunks[i] * b_8_chunks[j];
             }
         }
         return res;
     }
     
-    // Computes the terms of rb + q - a with coefficient 2^(16 * chunk_index)
+    // Computes the terms of rb + q - a with coefficient 2^(8 * chunk_index)
     TYPE carryless_construct(const std::vector<TYPE> &rb_8_chunks,
                                 const std::vector<TYPE> &q_16_chunks,
                                 const std::vector<TYPE> &a_16_chunks,
@@ -119,12 +125,13 @@ class zkevm_shr_bbf : public generic_component<FieldType, stage> {
         std::vector<TYPE> add_carries(chunk_amount - 1);    // Carries for v + b
         TYPE a_chunks15_copy1;                              // Copy of a_chunks[15]
 
-        std::vector<TYPE> mul8_carryless_chunks(chunk_8_amount);    // 8-bit chunks for the carryless terms of r*b
-        std::vector<TYPE> mul8_chunks(chunk_8_amount);              // 8-bit chunks of r*b
-        std::vector<TYPE> mul8_carries(chunk_8_amount);             // Carries for the above
-        std::vector<TYPE> mul8_chunk_check(chunk_8_amount);          // Range checks for mul8_chunks
-        std::vector<TYPE> mul8_carries_check(chunk_8_amount);          // Range checks for mul8_carries (< 2^15)
-        std::vector<TYPE> construct_carryless_chunks(chunk_amount); // Chunks for the carryless terms of r*b + q - a
+        std::vector<TYPE> mul8_carryless_chunks(chunk_8_amount);        // carryless terms of r*b with coefficients 2^(8*i), 0 <= i < 32
+        std::vector<TYPE> mul8_carryless_chunks_high(chunk_8_amount);   // carryless terms of r*b with coefficients 2^(8*i), 32 <= i < 62 (i = 62 and i = 63 are zero anyway)
+        std::vector<TYPE> mul8_chunks(chunk_8_amount);                  // 8-bit chunks of r*b
+        std::vector<TYPE> mul8_carries(chunk_8_amount);                 // Carries for the above
+        std::vector<TYPE> mul8_chunk_check(chunk_8_amount);             // Range checks for mul8_chunks
+        std::vector<TYPE> mul8_carries_check(chunk_8_amount);           // Range checks for mul8_carries (< 2^15)
+        std::vector<TYPE> construct_carryless_chunks(chunk_amount);     // Chunks for the carryless terms of r*b + q - a
 
         // Indicator vectors for shift position
         std::vector<TYPE> indic_1(chunk_amount);  // First shift position indicators -- marks transition bit within transition chunk
@@ -156,9 +163,13 @@ class zkevm_shr_bbf : public generic_component<FieldType, stage> {
 
             zkevm_word_type q = a % b;  // Division remainder -- this results in the shift least significant bits of a, 
                                         // i.e. those that will disappear as a result of the shift operation.
-            // Now we have a = r * b + q
-            zkevm_word_type v = wrapping_sub(q, b);   // Difference v = q-b
+            // Now we have a == r * b + q
+            // Note that it is not enough to enforce the above modulo 2^256, we need it over the integers.
+            // An attack would be as follows: take a valid r, set r' = 2^255 + r. This also satisfies the
+            // constraints for any b == 0 (mod 2).
+
             // To prove that q < b, we'll show that v + b = q + 2^256 (i.e. there is always a carry)
+            zkevm_word_type v = wrapping_sub(q, b);   // Difference v = q-b
 
             // Convert to field elements
             input_b_chunks = zkevm_word_to_field_element<FieldType>(input_b);
@@ -233,7 +244,7 @@ class zkevm_shr_bbf : public generic_component<FieldType, stage> {
 
 
         // PART 2: ensuring that r*b + q - a == 0
-        // mul == r*b
+        // mul == r*b (mod 2^256)
         // NOTE: only one of b_chunks[i] is non-zero. Maybe we can simplify this and not store all multiplication carries.
         for (std::size_t i = 0; i < chunk_8_amount; i++) {
             mul8_carryless_chunks[i] = carryless_mul(r_chunks, b8_chunks, i);
@@ -253,7 +264,16 @@ class zkevm_shr_bbf : public generic_component<FieldType, stage> {
             allocate(mul8_carries_check[i], i, 6);
             constrain(mul8_carryless_chunks[i] + prev_carry - mul8_chunks[i] - mul8_carries[i] * 256);
         }
-        
+
+        // To extend the result modulo 2^256 to the integers, we check that all higher-order carryless chunks are 0.
+        // Note the -2 in the index range. This is because the highest-order non-zero term is 
+        // r_chunks[15] * b8_chunks[30] * 2^(8 * 61).
+        // The terms corresponding to chunk_index = 62 and 63 are 0, so we skip them to avoid empty constraints.
+        for (std::size_t i = 0; i < chunk_8_amount - 2; i++) {
+            mul8_carryless_chunks_high[i] = carryless_mul(r_chunks, b8_chunks, i + chunk_8_amount);
+            constrain(mul8_carryless_chunks_high[i]);
+        }
+            
         // mul + q - a == 0
         // Normally, for independent mul, q, a, we would need to separate the carryless chunks into carries and strict 16-bit chunks, and then check that all 16-bit chunks are 0.
         // However, in this case, recall that we have:
