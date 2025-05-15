@@ -1,6 +1,7 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2024 Dmitrii Tabalin <d.tabalin@nil.foundation>
 // Copyright (c) 2024 Alexey Yashunsky <a.yashunsky@nil.foundation>
+// Copyright (c) 2025 Javier Silva <javier.silva@nil.foundation>
 //
 // MIT License
 //
@@ -25,216 +26,235 @@
 
 #pragma once
 
+#include <alloca.h>
+#include <cstddef>
 #include <numeric>
 #include <algorithm>
 
 #include <nil/blueprint/zkevm_bbf/types/opcode.hpp>
+#include <vector>
+#include "nil/blueprint/bbf/enums.hpp"
+#include "nil/blueprint/zkevm_bbf/types/zkevm_word.hpp"
 
-namespace nil {
-    namespace blueprint {
-        namespace bbf{
-            template<typename FieldType>
-            class opcode_abstract;
+namespace nil::blueprint::bbf {
+template<typename FieldType>
+class opcode_abstract;
 
-            template<typename FieldType, GenerationStage stage>
-            class zkevm_mul_bbf : generic_component<FieldType, stage> {
-                using typename generic_component<FieldType, stage>::context_type;
-                using generic_component<FieldType, stage>::allocate;
-                using generic_component<FieldType, stage>::copy_constrain;
-                using generic_component<FieldType, stage>::constrain;
-                using generic_component<FieldType, stage>::lookup;
-                using generic_component<FieldType, stage>::lookup_table;
-            public:
-                using typename generic_component<FieldType,stage>::TYPE;
+template<typename FieldType, GenerationStage stage>
+class zkevm_mul_bbf : generic_component<FieldType, stage> {
+    using generic_component<FieldType, stage>::allocate;
+    using generic_component<FieldType, stage>::copy_constrain;
+    using generic_component<FieldType, stage>::constrain;
+    using generic_component<FieldType, stage>::lookup;
+    using generic_component<FieldType, stage>::lookup_table;
 
-                constexpr static const typename FieldType::value_type two_64 =
-                    0x10000000000000000_big_uint256;
-                constexpr static const typename FieldType::value_type two_128 = 0x100000000000000000000000000000000_big_uint254;
-                constexpr static const typename FieldType::value_type two_192 = 0x1000000000000000000000000000000000000000000000000_big_uint254;
+    using value_type = typename FieldType::value_type;
 
-                TYPE chunk_sum_64(const std::vector<TYPE> &chunks, const unsigned char chunk_idx) const {
-                    BOOST_ASSERT(chunk_idx < 4);
-                    TYPE result;
-                    result =  chunks[4 * chunk_idx];     result *= 0x10000;
-                    result += chunks[4 * chunk_idx + 1]; result *= 0x10000;
-                    result += chunks[4 * chunk_idx + 2]; result *= 0x10000;
-                    result += chunks[4 * chunk_idx + 3];
-                    return result;
-                }
+    constexpr static const std::size_t chunk_amount = 16;
+    constexpr static const std::size_t chunk_size = 256 / chunk_amount;
+    constexpr static const std::size_t chunk_8_amount = 32;
+    constexpr static const value_type two_15 = 32768;
+    constexpr static const value_type two_16 = 65536;
 
-                TYPE lo_carryless_construct(
-                    const std::vector<TYPE> &a_64_chunks,
-                    const std::vector<TYPE> &b_64_chunks,
-                    const std::vector<TYPE> &r_64_chunks
-                ) const {
-                    return
-                        a_64_chunks[3] * b_64_chunks[3] +
-                        two_64 * (a_64_chunks[3] * b_64_chunks[2] + a_64_chunks[2] * b_64_chunks[3]) - r_64_chunks[3] - two_64 * r_64_chunks[2];
-                }
+public:
+    using typename generic_component<FieldType,stage>::TYPE;
+    using typename generic_component<FieldType, stage>::context_type;
 
+    constexpr static const typename FieldType::value_type two_64 =
+        0x10000000000000000_big_uint256;
+    constexpr static const typename FieldType::value_type two_128 = 0x100000000000000000000000000000000_big_uint254;
+    constexpr static const typename FieldType::value_type two_192 = 0x1000000000000000000000000000000000000000000000000_big_uint254;
 
-                TYPE hi_carryless_construct(
-                    const std::vector<TYPE> &a_64_chunks,
-                    const std::vector<TYPE> &b_64_chunks,
-                    const std::vector<TYPE> &r_64_chunks
-                ) {
-                    return
-                       (a_64_chunks[3] * b_64_chunks[1] + a_64_chunks[2] * b_64_chunks[2] +
-                        a_64_chunks[1] * b_64_chunks[3] - r_64_chunks[1]) +
-                        two_64 * (a_64_chunks[3] * b_64_chunks[0] + a_64_chunks[1] * b_64_chunks[2] +
-                            a_64_chunks[2] * b_64_chunks[1] + a_64_chunks[0] * b_64_chunks[3] - r_64_chunks[0]);
-                }
+    // Computes the terms of r*b with coefficient 2^(8 * chunk_index)
+    TYPE carryless_mul(const std::vector<TYPE> &a_8_chunks,
+                                const std::vector<TYPE> &b_8_chunks,
+                                const unsigned char chunk_index) const {
+        TYPE res = 0;
+        // std::cout << "chunk_index = " << chunk_index << std::endl;
+        for (int i = 0; i <= chunk_index; i++) {
+            int j = chunk_index - i;
+            if ((i < chunk_8_amount) && (j >= 0) && (j < chunk_8_amount)) {
+                // std::cout << "i = " << i << ", j = " << j << std::endl;
+                res += a_8_chunks[i] * b_8_chunks[j];
+            }
+        }
+        return res;
+    }
 
-                zkevm_mul_bbf(context_type &context_object, const opcode_input_type<FieldType, stage> &current_state):
-                    generic_component<FieldType,stage>(context_object, false)
-                {
-                    std::vector<TYPE> A(16);
-                    std::vector<TYPE> B(16);
-                    std::vector<TYPE> R(16);
-                    std::vector<TYPE> A_64(4);
-                    std::vector<TYPE> B_64(4);
-                    std::vector<TYPE> R_64(4);
-                    TYPE C0;
-                    TYPE C0_check;
-                    std::vector<TYPE> C1(4);
-                    TYPE C2;
-                    std::vector<TYPE> C3(4);
+    // TODO: add comment
+    TYPE count_cross_terms(const unsigned char chunk_index) const {
+        int i = chunk_index + 1;
+        return (i <= 32) ? i : 2 * chunk_8_amount - i;
+    }
 
-                    if constexpr( stage == GenerationStage::ASSIGNMENT ){
-                        auto a = w_to_16(current_state.stack_top());
-                        auto b = w_to_16(current_state.stack_top(1));
-                        auto r = w_to_16(wrapping_mul(current_state.stack_top(), current_state.stack_top(1)));
-                        std::cout << "\ta = " << std::hex << current_state.stack_top() << std::dec << std::endl;
-                        std::cout << "\tb = " << std::hex << current_state.stack_top(1) << std::dec << std::endl;
-                        std::cout << "\tr = " << std::hex << wrapping_mul(current_state.stack_top(), current_state.stack_top(1)) << std::dec << std::endl;
-                        for( std::size_t i = 0; i < 16; i++){
-                            A[i] = a[i];
-                            B[i] = b[i];
-                            R[i] = r[i];
-                        }
-                    }
-                    for( std::size_t i = 0; i < 16; i++){
-                        allocate(A[i], i, 0);
-                        allocate(B[i], i + 16, 0);
-                        allocate(R[i], i, 1);
-                    }
+    // NOTE ON OVERALL APPROACH: unlike in the SHL, SHR, SAR opcodes, here we perform multiplication
+    // by splitting both inputs into 8-bit chunks, as opposed to one in 16-bit chunks and the other in
+    // 8-bit chunks. This is because the 16-8 approach produces carries that are in general larger than
+    // 16 bits, so they need to be split for range-checking. This was not necessary in the shift opcodes,
+    // as the special nature of one of the factors ensured that there was never a 16-bit overflow.
+    // Because of this, the 16-8 approach ends up taking as much space as the 8-8 approach. We favor 
+    // the 8-8 approach for conceptual simplicity.
+    zkevm_mul_bbf(context_type &context_object, const opcode_input_type<FieldType, stage> &current_state):
+        generic_component<FieldType,stage>(context_object, false)
+    {
+        // 16-bit chunks
+        std::vector<TYPE> a_chunks(chunk_amount);                      // First input chunks
+        std::vector<TYPE> b_chunks(chunk_amount);                      // Second input chunks
+        std::vector<TYPE> r_chunks(chunk_amount);                      // Result of a*b
 
-                    A_64[0] = chunk_sum_64(A, 0);
-                    A_64[1] = chunk_sum_64(A, 1);
-                    A_64[2] = chunk_sum_64(A, 2);
-                    A_64[3] = chunk_sum_64(A, 3);
+        // 8-bit chunks
+        std::vector<TYPE> a8_chunks(chunk_8_amount);
+        std::vector<TYPE> b8_chunks(chunk_8_amount);
+        std::vector<TYPE> r8_chunks(chunk_8_amount);                   // Result of a*b in 8-bit chunks
+        std::vector<TYPE> r8_carryless_chunks(chunk_8_amount);         // a8_chunks[i] * b8_chunks[i] = r8_carryless_chunks[i]
+        std::vector<TYPE> r8_carries(chunk_8_amount);                  // Carries containing whatever overflows 8 bits: 
+                                                                       // a8_chunks[i] * b8_chunks[i] = r8_chunks[i] + r8_carries[i]
+        std::vector<TYPE> r8_carries_copy1(chunk_8_amount);
+        std::vector<TYPE> r8_carries_copy2(chunk_8_amount);
 
-                    B_64[0] = chunk_sum_64(B, 0);
-                    B_64[1] = chunk_sum_64(B, 1);
-                    B_64[2] = chunk_sum_64(B, 2);
-                    B_64[3] = chunk_sum_64(B, 3);
-
-                    R_64[0] = chunk_sum_64(R, 0);
-                    R_64[1] = chunk_sum_64(R, 1);
-                    R_64[2] = chunk_sum_64(R, 2);
-                    R_64[3] = chunk_sum_64(R, 3);
+        // Range checks associated with the values above
+        std::vector<TYPE> a8_chunks_check(chunk_8_amount);
+        std::vector<TYPE> b8_chunks_check(chunk_8_amount);
+        std::vector<TYPE> r8_chunks_check(chunk_8_amount);
+        std::vector<TYPE> r8_carries_check(chunk_8_amount);
 
 
-                    if constexpr( stage == GenerationStage::ASSIGNMENT ){
-                        TYPE lo_carries = lo_carryless_construct(A_64, B_64, R_64);
-                        TYPE hi_carries = hi_carryless_construct(A_64, B_64, R_64);
+        // PART 1: computing the opcode and splitting values in chunks
+        if constexpr (stage == GenerationStage:: ASSIGNMENT) {
+            // Extract input values from stack
+            zkevm_word_type b = current_state.stack_top();    
+            zkevm_word_type a = current_state.stack_top(1);   
 
-                        zkevm_word_type c_first_i = lo_carries.to_integral() >> 128;
-                        auto c_first = w_to_16(c_first_i);
-                        zkevm_word_type c_second_i =
-                            (hi_carries.to_integral() + c_first_i) >> 128;
-                        auto c_second = w_to_16(c_second_i);
-                        C3[3] = c_first[15]; C3[2] = c_first[14]; C3[1] = c_first[13]; C3[0] = c_first[12];
-                        C2 = c_first[11];
-                        C1[3] = c_second[15]; C1[2] = c_second[14]; C1[1] = c_second[13]; C1[0] = c_second[12];
-                        C0 = c_second[11];
-                    }
+            zkevm_word_type r = wrapping_mul(a, b);      // Result
 
-                    TYPE lo_carries = lo_carryless_construct(A_64, B_64, R_64);
-                    TYPE hi_carries = hi_carryless_construct(A_64, B_64, R_64);
+            // 16-bit chunks
+            a_chunks = zkevm_word_to_field_element<FieldType>(a);
+            b_chunks = zkevm_word_to_field_element<FieldType>(b);
+            r_chunks = zkevm_word_to_field_element<FieldType>(r);
+            for (std::size_t i = 0; i < chunk_amount; i++) {
+                allocate(a_chunks[i], 2 * chunk_amount + i, 6);
+                allocate(b_chunks[i], 2 * chunk_amount + i, 7);
+                allocate(r_chunks[i], 2 * chunk_amount + i, 8);
+            }
 
-                    allocate(C3[0], 17, 1);
-                    allocate(C3[1], 18, 1);
-                    allocate(C3[2], 19, 1);
-                    allocate(C3[3], 20, 1);
-                    TYPE C3_64 = chunk_sum_64(C3, 0);
-                    allocate(C2, 21, 1);
+            // 8-bit chunks
+            a8_chunks = zkevm_word_to_field_element_flexible<FieldType>(a, chunk_8_amount, 8);
+            b8_chunks = zkevm_word_to_field_element_flexible<FieldType>(b, chunk_8_amount, 8);
+            for (std::size_t i = 0; i < chunk_8_amount; i++) {
+                allocate(a8_chunks[i], i, 4);
+                allocate(b8_chunks[i], i, 5);
+                a8_chunks_check[i] = a8_chunks[i] * 256;
+                b8_chunks_check[i] = b8_chunks[i] * 256;
+                allocate(a8_chunks_check[i], i, 2);
+                allocate(b8_chunks_check[i], i, 3);
+            }
+        }
 
-                    allocate(C1[0], 22, 1);
-                    allocate(C1[1], 23, 1);
-                    allocate(C1[2], 24, 1);
-                    allocate(C1[3], 25, 1);
-                    TYPE C1_64 = chunk_sum_64(C1, 0);
-                    allocate(C0, 26, 1);
 
-                    constrain(C2 * (C2 - 1));
-                    // constrain(C0 * (C0 - 1) * (C0 - 2) * (C0 - 3));
-                    C0_check = C0 * 16384; // 16-bit range-check on C0_check <=> C0 < 4
-                    allocate(C0_check, 27, 1);
+        // PART 2: enforcing the multiplication a*b = r (mod 2^256)
+        for (std::size_t i = 0; i < chunk_8_amount; i++) {
+            r8_carryless_chunks[i] = carryless_mul(a8_chunks, b8_chunks, i);
+            TYPE prev_carry = (i > 0) ? r8_carries[i-1] : 0;
+            if constexpr (stage == GenerationStage::ASSIGNMENT) {
+                auto mask8 = (1 << 8) - 1;
+                r8_chunks[i] = (r8_carryless_chunks[i] + prev_carry).to_integral() & mask8;
+                r8_carries[i] = (r8_carryless_chunks[i] + prev_carry).to_integral() >> 8;
+                // std::cout << r8_carryless_chunks[i] <<std::endl;
+                BOOST_ASSERT(r8_carryless_chunks[i] + prev_carry == r8_chunks[i] + 256 * r8_carries[i]);
+            }
+            allocate(r8_chunks[i], i, 6);
 
-                    constrain(lo_carries - C3_64 * two_128 - C2 * two_192);
-                    constrain(hi_carries + C3_64 + C2 * two_64 - C1_64 * two_128 - C0 * two_192);
+            r8_chunks_check[i] = r8_chunks[i] * 256; 
+            allocate(r8_chunks_check[i], i, 7);
+        }
 
-                    auto A_128 = chunks16_to_chunks128<TYPE>(A);
-                    auto B_128 = chunks16_to_chunks128<TYPE>(B);
-                    auto R_128 = chunks16_to_chunks128<TYPE>(R);
-                    if constexpr( stage == GenerationStage::CONSTRAINTS ){
-                        constrain(current_state.pc_next() - current_state.pc(1) - 1);                   // PC transition
-                        constrain(current_state.gas(1) - current_state.gas_next() - 5);                 // GAS transition
-                        constrain(current_state.stack_size(1) - current_state.stack_size_next() - 1);   // stack_size transition
-                        constrain(current_state.memory_size(1) - current_state.memory_size_next());     // memory_size transition
-                        constrain(current_state.rw_counter_next() - current_state.rw_counter(1) - 3);   // rw_counter transition
-                        std::vector<TYPE> tmp;
-                        tmp = rw_table<FieldType, stage>::stack_lookup(
-                            current_state.call_id(0),
-                            current_state.stack_size(0) - 1,
-                            current_state.rw_counter(0),
-                            TYPE(0),// is_write
-                            A_128.first,
-                            A_128.second
-                        );
-                        lookup(tmp, "zkevm_rw");
-                        tmp = rw_table<FieldType, stage>::stack_lookup(
-                            current_state.call_id(0),
-                            current_state.stack_size(0) - 2,
-                            current_state.rw_counter(0) + 1,
-                            TYPE(0),// is_write
-                            B_128.first,
-                            B_128.second
-                        );
-                        lookup(tmp, "zkevm_rw");
-                        tmp = rw_table<FieldType, stage>::stack_lookup(
-                            current_state.call_id(1),
-                            current_state.stack_size(1) - 2,
-                            current_state.rw_counter(1) + 2,
-                            TYPE(1),// is_write
-                            R_128.first,
-                            R_128.second
-                        );
-                        lookup(tmp, "zkevm_rw");
-                    }
-                }
-            };
+        for (std::size_t i = 0; i < chunk_8_amount; i++) {
+            // The carries are stored in two columns
+            int column_offset = i % chunk_amount;
+            // int row_offset = i / chunk_amount;
+            int row_offset = (i < 16) ? 0 : 1;
+            allocate(r8_carries[i], 2 * chunk_amount + column_offset, 4 + row_offset);
 
-            template<typename FieldType>
-            class zkevm_mul_operation : public opcode_abstract<FieldType> {
-            public:
-                virtual void fill_context(
-                    typename generic_component<FieldType, GenerationStage::ASSIGNMENT>::context_type &context,
-                    const opcode_input_type<FieldType, GenerationStage::ASSIGNMENT> &current_state
-                ) override  {
-                    zkevm_mul_bbf<FieldType, GenerationStage::ASSIGNMENT> bbf_obj(context, current_state);
-                }
-                virtual void fill_context(
-                    typename generic_component<FieldType, GenerationStage::CONSTRAINTS>::context_type &context,
-                    const opcode_input_type<FieldType, GenerationStage::CONSTRAINTS> &current_state
-                ) override  {
-                    zkevm_mul_bbf<FieldType, GenerationStage::CONSTRAINTS> bbf_obj(context, current_state);
-                }
-                virtual std::size_t rows_amount() override {
-                    return 2;
-                }
-            };
-        } // namespace bbf
-    }   // namespace blueprint
-}   // namespace nil
+            // Copy the carries to range-checked columns
+            r8_carries_copy1[i] = r8_carries[i];
+            allocate(r8_carries_copy1[i], 2 * chunk_amount + column_offset, 2 + row_offset);
+            r8_carries_copy2[i] = r8_carries_copy1[i];
+            allocate(r8_carries_copy2[i], i, 1);     // This copy fits in a single row
+        }
+
+        // TODO: these range checks should fail for large a, b.
+        for (std::size_t i = 0; i < chunk_8_amount; i++) {
+            r8_carries_check[i] = r8_carries_copy2[i] * 256;
+            allocate(r8_carries_check[i], i, 0);
+        }
+    
+        // Ensure consistency between r_chunks and r8_chunks
+        for (std::size_t i = 0; i < chunk_8_amount; i++) {
+            constrain(r_chunks[i] - r8_chunks[2*i] - r8_chunks[2*i + 1] * 256);
+            // TODO: link r_chunks with the actual result
+        }
+
+
+        // PART 3: consistency with the stack
+        // TODO. update this part
+        auto A_128 = chunks16_to_chunks128<TYPE>(A);
+        auto B_128 = chunks16_to_chunks128<TYPE>(B);
+        auto R_128 = chunks16_to_chunks128<TYPE>(R);
+        if constexpr( stage == GenerationStage::CONSTRAINTS ){
+            constrain(current_state.pc_next() - current_state.pc(1) - 1);                   // PC transition
+            constrain(current_state.gas(1) - current_state.gas_next() - 5);                 // GAS transition
+            constrain(current_state.stack_size(1) - current_state.stack_size_next() - 1);   // stack_size transition
+            constrain(current_state.memory_size(1) - current_state.memory_size_next());     // memory_size transition
+            constrain(current_state.rw_counter_next() - current_state.rw_counter(1) - 3);   // rw_counter transition
+            std::vector<TYPE> tmp;
+            tmp = rw_table<FieldType, stage>::stack_lookup(
+                current_state.call_id(0),
+                current_state.stack_size(0) - 1,
+                current_state.rw_counter(0),
+                TYPE(0),// is_write
+                A_128.first,
+                A_128.second
+            );
+            lookup(tmp, "zkevm_rw");
+            tmp = rw_table<FieldType, stage>::stack_lookup(
+                current_state.call_id(0),
+                current_state.stack_size(0) - 2,
+                current_state.rw_counter(0) + 1,
+                TYPE(0),// is_write
+                B_128.first,
+                B_128.second
+            );
+            lookup(tmp, "zkevm_rw");
+            tmp = rw_table<FieldType, stage>::stack_lookup(
+                current_state.call_id(1),
+                current_state.stack_size(1) - 2,
+                current_state.rw_counter(1) + 2,
+                TYPE(1),// is_write
+                R_128.first,
+                R_128.second
+            );
+            lookup(tmp, "zkevm_rw");
+        }
+    }
+};
+
+template<typename FieldType>
+class zkevm_mul_operation : public opcode_abstract<FieldType> {
+public:
+    virtual void fill_context(
+        typename generic_component<FieldType, GenerationStage::ASSIGNMENT>::context_type &context,
+        const opcode_input_type<FieldType, GenerationStage::ASSIGNMENT> &current_state
+    ) override  {
+        zkevm_mul_bbf<FieldType, GenerationStage::ASSIGNMENT> bbf_obj(context, current_state);
+    }
+    virtual void fill_context(
+        typename generic_component<FieldType, GenerationStage::CONSTRAINTS>::context_type &context,
+        const opcode_input_type<FieldType, GenerationStage::CONSTRAINTS> &current_state
+    ) override  {
+        zkevm_mul_bbf<FieldType, GenerationStage::CONSTRAINTS> bbf_obj(context, current_state);
+    }
+    virtual std::size_t rows_amount() override {
+        return 9;
+    }
+};
+}   // namespace nil::blueprint::bbf

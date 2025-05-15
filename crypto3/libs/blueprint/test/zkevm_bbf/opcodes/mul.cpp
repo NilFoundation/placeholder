@@ -119,6 +119,11 @@ BOOST_AUTO_TEST_CASE(mul) {
     opcode_tester.push_opcode(zkevm_opcode::PUSH32, 0x1e);
     opcode_tester.push_opcode(zkevm_opcode::PUSH32, 0x1e);
     opcode_tester.push_opcode(zkevm_opcode::MUL);
+    opcode_tester.push_opcode(
+        zkevm_opcode::PUSH32,
+        0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_big_uint256);
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_big_uint256);
+    opcode_tester.push_opcode(zkevm_opcode::MUL);
     opcode_tester.push_opcode(zkevm_opcode::STOP);
 
     max_sizes.max_keccak_blocks = 10;
