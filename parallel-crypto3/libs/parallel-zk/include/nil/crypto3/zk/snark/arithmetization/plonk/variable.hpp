@@ -50,6 +50,10 @@ namespace nil::crypto3::zk::snark {
     template<typename VariableType>
     class expression;
 
+    enum plonk_variable_column_type : std::uint8_t {
+        witness, public_input, constant, selector, uninitialized
+    };
+
     /********************************* Variable **********************************/
 
     /**
@@ -61,9 +65,7 @@ namespace nil::crypto3::zk::snark {
     public:
         using assignment_type = AssignmentType;
 
-        enum column_type : std::uint8_t {
-            witness, public_input, constant, selector, uninitialized
-        };
+        using column_type = plonk_variable_column_type;
 
         /**
          * Mnemonic typedefs.
