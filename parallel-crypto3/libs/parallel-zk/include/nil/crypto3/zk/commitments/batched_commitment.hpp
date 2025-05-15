@@ -254,7 +254,7 @@ namespace nil {
                     }
 
                     template<typename container_type>
-                    void append_to_batch(std::size_t index, const container_type& polys){
+                    void append_many_to_batch(std::size_t index, const container_type& polys){
                         if (_locked.find(index) == _locked.end())
                             _locked[index] = false;
 
