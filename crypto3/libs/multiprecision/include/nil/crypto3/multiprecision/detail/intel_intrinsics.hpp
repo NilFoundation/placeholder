@@ -20,6 +20,6 @@
 
 #define NIL_CO3_MP_HAS_INTRINSICS
 
-#include <immintrin.h>  // IWYU pragma: keep (this is a portable umbrella header for intrinsics)
+#include <immintrin.h>  // IWYU pragma: export (this is a portable umbrella header for intrinsics)
 
 #endif

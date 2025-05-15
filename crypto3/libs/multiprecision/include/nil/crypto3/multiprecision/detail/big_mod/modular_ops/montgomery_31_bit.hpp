@@ -36,11 +36,11 @@ namespace nil::crypto3::multiprecision::detail {
         constexpr montgomery_31_bit_modular_ops(const base_type &m)
             : simple_31_bit_modular_ops(m), m_montgomery_mu(montgomery_inverse(m)) {}
 
-      private:
         constexpr base_type to_montgomery(const base_type &input) const {
             return (static_cast<std::uint64_t>(input) << MontgomeryBits) % mod();
         }
 
+      private:
         constexpr base_type montgomery_reduce(const std::uint64_t &input) const {
             auto t =
                 (static_cast<std::uint64_t>(input) * m_montgomery_mu) & MontgomeryMask;

@@ -37,12 +37,18 @@
 #include <nil/crypto3/algebra/fields/detail/element/operations.hpp>
 #include <nil/crypto3/algebra/fields/detail/exponentiation.hpp>
 
+#include <nil/crypto3/multiprecision/detail/big_mod/modular_ops/babybear_vec_mul.hpp>
+
 namespace nil::crypto3::marshalling::types::detail {
     template<typename FieldValueType>
     typename std::enable_if<algebra::is_extended_field_element<FieldValueType>::value,
                             std::array<typename FieldValueType::field_type::integral_type,
                                        FieldValueType::field_type::arity>>::type
     fill_field_data(const FieldValueType &field_elem);
+}
+
+namespace nil::crypto3::algebra::fields {
+    struct babybear;
 }
 
 namespace nil::crypto3::algebra::fields::detail {
@@ -59,11 +65,15 @@ namespace nil::crypto3::algebra::fields::detail {
         } -> std::convertible_to<typename T::base_field_type::value_type>;
     } && is_field<typename T::base_field_type>::value;
 
+    struct FieldArchetype;
+
     struct FieldValueArchetype {
       private:
         using self = FieldValueArchetype;
 
       public:
+        using field_type = FieldArchetype;
+
         static constexpr self zero() { return {}; }
         static constexpr self one() { return {}; }
         constexpr std::strong_ordering operator<=>(const self &) const = default;
@@ -196,6 +206,12 @@ namespace nil::crypto3::algebra::fields::detail {
         }
 
         constexpr element_fpn operator*(const element_fpn &B) const {
+            if constexpr (dimension == 4 &&
+                            std::is_same_v<typename underlying_type::field_type,
+                                            babybear>) {
+                return nil::crypto3::multiprecision::detail::babybear::babybear_fp4_vec_mul(
+                    data, B.data);
+            }
             element_fpn result;
             for (std::size_t j = 0; j < dimension; ++j) {
                 result.data[j] += data[0] * B.data[j];
