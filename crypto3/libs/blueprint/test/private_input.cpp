@@ -119,14 +119,14 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_private_input_copy_constraints) {
         public_2 = var(0, 1, false, var::column_type::public_input);
 
     bp.add_copy_constraint({private_1, private_2});
-    BOOST_ASSERT(bp.copy_constraints().size() == 0);
+    BOOST_CHECK(bp.copy_constraints().size() == 0);
 
     bp.add_copy_constraint({private_1, public_1});
-    BOOST_ASSERT(bp.copy_constraints().size() == 0);
+    BOOST_CHECK(bp.copy_constraints().size() == 0);
 
     bp.add_copy_constraint({public_2, private_2});
-    BOOST_ASSERT(bp.copy_constraints().size() == 0);
+    BOOST_CHECK(bp.copy_constraints().size() == 0);
 
     bp.add_copy_constraint({public_1, public_2});
-    BOOST_ASSERT(bp.copy_constraints().size() == 1);
+    BOOST_CHECK(bp.copy_constraints().size() == 1);
 }

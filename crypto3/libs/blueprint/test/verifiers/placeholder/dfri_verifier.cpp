@@ -454,7 +454,7 @@ void test_dfri_verifier(
     );
     if(input_vars.all_vars().size() != test_input.vector().size())
         std::cout << "Wrong public input column length " << input_vars.all_vars().size() << " != " << test_input.vector().size() << std::endl;
-    BOOST_ASSERT(input_vars.all_vars().size() == test_input.vector().size());
+    BOOST_CHECK(input_vars.all_vars().size() == test_input.vector().size());
 
     table_description_type desc(WitnessAmount, 1, 1, 35); //Witness, public inputs, constants, selectors
 

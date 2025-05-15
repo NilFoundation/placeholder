@@ -124,24 +124,24 @@ BOOST_AUTO_TEST_CASE(plonk_copy_constraint_constructor_test) {
     var w(0, 0, true);
 
 //    copy_constraint_type copy_constraint(w0, w0); // Fails with assersion
-    copy_constraint_type cp0({w0, w0_1});  BOOST_ASSERT(cp0.first == w0 && cp0.second == w0_1);
-    copy_constraint_type cp1({w0_1, w0}); BOOST_ASSERT(cp1.first == w0 && cp1.second == w0_1);
-    copy_constraint_type cp2({w0, w1});   BOOST_ASSERT(cp2.first == w0 && cp2.second == w1);
-    copy_constraint_type cp3({w1, w0});   BOOST_ASSERT(cp3.first == w0 && cp3.second == w1);
-    copy_constraint_type cp4({w0_1, w1});   BOOST_ASSERT(cp4.first == w0_1 && cp4.second == w1);
-    copy_constraint_type cp5({w1, w0_1});   BOOST_ASSERT(cp5.first == w0_1 && cp5.second == w1);
-    copy_constraint_type cp6({w0, p0});   BOOST_ASSERT(cp6.first == w0 && cp6.second == p0);
-    copy_constraint_type cp7({p0, w0});   BOOST_ASSERT(cp7.first == w0 && cp7.second == p0);
-    copy_constraint_type cp8({w0, c0});   BOOST_ASSERT(cp8.first == w0 && cp8.second == c0);
-    copy_constraint_type cp9({c0, w0});   BOOST_ASSERT(cp9.first == w0 && cp9.second == c0);
-    copy_constraint_type cp10({w0, s0});   BOOST_ASSERT(cp10.first == w0 && cp10.second == s0);
-    copy_constraint_type cp11({s0, w0});   BOOST_ASSERT(cp11.first == w0 && cp11.second == s0);
-    copy_constraint_type cp12({p0, c0});   BOOST_ASSERT(cp12.first == p0 && cp12.second == c0);
-    copy_constraint_type cp13({c0, p0});   BOOST_ASSERT(cp13.first == p0 && cp13.second == c0);
-    copy_constraint_type cp14({p0, s0});   BOOST_ASSERT(cp14.first == p0 && cp14.second == s0);
-    copy_constraint_type cp15({s0, p0});   BOOST_ASSERT(cp15.first == p0 && cp15.second == s0);
-    copy_constraint_type cp16({c0, s0});   BOOST_ASSERT(cp16.first == c0 && cp16.second == s0);
-    copy_constraint_type cp17({s0, c0});   BOOST_ASSERT(cp17.first == c0 && cp17.second == s0);
+    copy_constraint_type cp0({w0, w0_1});  BOOST_CHECK(cp0.first == w0 && cp0.second == w0_1);
+    copy_constraint_type cp1({w0_1, w0}); BOOST_CHECK(cp1.first == w0 && cp1.second == w0_1);
+    copy_constraint_type cp2({w0, w1});   BOOST_CHECK(cp2.first == w0 && cp2.second == w1);
+    copy_constraint_type cp3({w1, w0});   BOOST_CHECK(cp3.first == w0 && cp3.second == w1);
+    copy_constraint_type cp4({w0_1, w1});   BOOST_CHECK(cp4.first == w0_1 && cp4.second == w1);
+    copy_constraint_type cp5({w1, w0_1});   BOOST_CHECK(cp5.first == w0_1 && cp5.second == w1);
+    copy_constraint_type cp6({w0, p0});   BOOST_CHECK(cp6.first == w0 && cp6.second == p0);
+    copy_constraint_type cp7({p0, w0});   BOOST_CHECK(cp7.first == w0 && cp7.second == p0);
+    copy_constraint_type cp8({w0, c0});   BOOST_CHECK(cp8.first == w0 && cp8.second == c0);
+    copy_constraint_type cp9({c0, w0});   BOOST_CHECK(cp9.first == w0 && cp9.second == c0);
+    copy_constraint_type cp10({w0, s0});   BOOST_CHECK(cp10.first == w0 && cp10.second == s0);
+    copy_constraint_type cp11({s0, w0});   BOOST_CHECK(cp11.first == w0 && cp11.second == s0);
+    copy_constraint_type cp12({p0, c0});   BOOST_CHECK(cp12.first == p0 && cp12.second == c0);
+    copy_constraint_type cp13({c0, p0});   BOOST_CHECK(cp13.first == p0 && cp13.second == c0);
+    copy_constraint_type cp14({p0, s0});   BOOST_CHECK(cp14.first == p0 && cp14.second == s0);
+    copy_constraint_type cp15({s0, p0});   BOOST_CHECK(cp15.first == p0 && cp15.second == s0);
+    copy_constraint_type cp16({c0, s0});   BOOST_CHECK(cp16.first == c0 && cp16.second == s0);
+    copy_constraint_type cp17({s0, c0});   BOOST_CHECK(cp17.first == c0 && cp17.second == s0);
 //    copy_constraint_type cp18({w0, w}); // Fails with assertion
 }
 

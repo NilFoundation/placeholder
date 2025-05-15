@@ -149,7 +149,7 @@ public:
                 max_exponentiations,
                 max_bytecode
             );
-            BOOST_ASSERT(result);
+            BOOST_CHECK(result);
         }
 
         const std::string exp_circuit = "exp";
@@ -161,7 +161,7 @@ public:
                 max_exp_rows,
                 max_exponentiations
             );
-            BOOST_ASSERT(result);
+            BOOST_CHECK(result);
             std::cout << std::endl;
         }
 
@@ -175,7 +175,7 @@ public:
                 {7}, copy_assignment_input,
                 max_copy, max_rw, max_keccak_blocks, max_bytecode, max_call_commits
             );
-            BOOST_ASSERT(result);
+            BOOST_CHECK(result);
             std::cout << std::endl;
         }
 
@@ -188,7 +188,7 @@ public:
                 keccak_circuit,
                 {}, keccak_assignment_input,max_keccak_blocks
             );
-            BOOST_ASSERT(result);
+            BOOST_CHECK(result);
             std::cout << std::endl;
         }
 
@@ -201,7 +201,7 @@ public:
                 bytecode_circuit,
                 {7}, bytecode_assignment_input, max_bytecode, max_keccak_blocks
             );
-            BOOST_ASSERT(result);
+            BOOST_CHECK(result);
             std::cout << std::endl;
         }
 
@@ -213,13 +213,13 @@ public:
                 result = test_bbf_component<field_type, nil::blueprint::bbf::rw>(
                     rw_circuit, {}, rw_assignment_input, max_rw, max_mpt,
                     max_call_commits);
-                BOOST_ASSERT(result);
+                BOOST_CHECK(result);
 
                 // Max_rw, Max_mpt
                 result = test_bbf_component<small_field_type, nil::blueprint::bbf::rw_small_field>(
                     rw_circuit, {}, rw_small_field_assignment_input, max_rw, max_mpt, 
                     max_call_commits);
-                BOOST_ASSERT(result);
+                BOOST_CHECK(result);
                 std::cout << std::endl;
             }
 
@@ -232,7 +232,7 @@ public:
                 call_commit_circuit,
                 {}, call_commit_assignment_input, max_rw, max_call_commits
             );
-            BOOST_ASSERT(result);
+            BOOST_CHECK(result);
             std::cout << std::endl;
         }
     }

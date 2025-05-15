@@ -108,7 +108,7 @@ void test_dfri_linear_check(const std::vector<typename BlueprintFieldType::value
         // std::cout << "expected: " << expected_res << std::endl;
         // std::cout << "real res: " << var_value(assignment, real_res.output) <<
         // std::endl;
-        BOOST_ASSERT(var_value(assignment, real_res.output) == expected_res);
+        BOOST_CHECK(var_value(assignment, real_res.output) == expected_res);
     };
 
     std::array<std::uint32_t, WitnessColumns> witnesses;

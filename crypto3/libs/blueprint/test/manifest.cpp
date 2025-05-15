@@ -49,22 +49,22 @@ void test_manifest_range_intersect(std::int32_t start_1, std::int32_t end_1, std
         new_end = std::min(end_1, end_2);
         new_step = step_1;
         if (new_start >= new_end) {
-            BOOST_ASSERT(get_manifest_param_type(result) == manifest_param::type::UNSAT);
+            BOOST_CHECK(get_manifest_param_type(result) == manifest_param::type::UNSAT);
         } else if (new_start == new_end - 1) {
-            BOOST_ASSERT(get_manifest_param_type(result) == manifest_param::type::SINGLE_VALUE);
+            BOOST_CHECK(get_manifest_param_type(result) == manifest_param::type::SINGLE_VALUE);
             manifest_single_value_param* res = dynamic_cast<manifest_single_value_param*>(result.get());
-            BOOST_ASSERT(res->value == std::size_t(new_start));
+            BOOST_CHECK(res->value == std::size_t(new_start));
         } else {
-            BOOST_ASSERT(get_manifest_param_type(result) == manifest_param::type::RANGE);
+            BOOST_CHECK(get_manifest_param_type(result) == manifest_param::type::RANGE);
             manifest_range_param* res = dynamic_cast<manifest_range_param*>(result.get());
-            BOOST_ASSERT(res->start == new_start);
-            BOOST_ASSERT(res->finish == new_end);
-            BOOST_ASSERT(res->step == std::size_t(new_step));
+            BOOST_CHECK(res->start == new_start);
+            BOOST_CHECK(res->finish == new_end);
+            BOOST_CHECK(res->step == std::size_t(new_step));
         }
     } else {
         auto [gcd, m, n] = boost::integer::extended_euclidean<std::int32_t>(step_1, step_2);
         if (start_1 % gcd != start_2 % gcd) {
-            BOOST_ASSERT(get_manifest_param_type(result) == manifest_param::type::UNSAT);
+            BOOST_CHECK(get_manifest_param_type(result) == manifest_param::type::UNSAT);
         } else {
             new_step = step_1 * (step_2 / gcd);
             std::uint32_t result_modulo_new_step =
@@ -73,17 +73,17 @@ void test_manifest_range_intersect(std::int32_t start_1, std::int32_t end_1, std
             new_start = new_start + (new_step + int(result_modulo_new_step - new_start) % new_step) % new_step;
             new_end = std::min(end_1, end_2);
             if (new_start >= new_end) {
-                BOOST_ASSERT(get_manifest_param_type(result) == manifest_param::type::UNSAT);
+                BOOST_CHECK(get_manifest_param_type(result) == manifest_param::type::UNSAT);
             } else if (new_start == new_end - 1) {
-                BOOST_ASSERT(get_manifest_param_type(result) == manifest_param::type::SINGLE_VALUE);
+                BOOST_CHECK(get_manifest_param_type(result) == manifest_param::type::SINGLE_VALUE);
                 manifest_single_value_param* res = dynamic_cast<manifest_single_value_param*>(result.get());
-                BOOST_ASSERT(res->value == std::size_t(new_start));
+                BOOST_CHECK(res->value == std::size_t(new_start));
             } else {
-                BOOST_ASSERT(get_manifest_param_type(result) == manifest_param::type::RANGE);
+                BOOST_CHECK(get_manifest_param_type(result) == manifest_param::type::RANGE);
                 manifest_range_param* res = dynamic_cast<manifest_range_param*>(result.get());
-                BOOST_ASSERT(res->start == new_start);
-                BOOST_ASSERT(res->finish == new_end);
-                BOOST_ASSERT(res->step == std::size_t(new_step));
+                BOOST_CHECK(res->start == new_start);
+                BOOST_CHECK(res->finish == new_end);
+                BOOST_CHECK(res->step == std::size_t(new_step));
             }
         }
     }
@@ -107,31 +107,31 @@ void test_operator(std::shared_ptr<manifest_param> param_1,
                                                                        std::shared_ptr<manifest_param>)> &oper) {
     std::shared_ptr<manifest_param> result = oper(param_1, param_2);
     std::shared_ptr<manifest_param> result_2 = oper(param_2, param_1);
-    BOOST_ASSERT(get_manifest_param_type(result) == get_manifest_param_type(expected_result));
-    BOOST_ASSERT(get_manifest_param_type(result_2) == get_manifest_param_type(expected_result));
+    BOOST_CHECK(get_manifest_param_type(result) == get_manifest_param_type(expected_result));
+    BOOST_CHECK(get_manifest_param_type(result_2) == get_manifest_param_type(expected_result));
     auto type = get_manifest_param_type(expected_result);
     if (type == manifest_param::type::UNSAT) {
         return;
     } else if (type == manifest_param::type::SINGLE_VALUE) {
         auto value_1 = dynamic_cast<manifest_single_value_param*>(result.get())->value;
         auto value_2 = dynamic_cast<manifest_single_value_param*>(expected_result.get())->value;
-        BOOST_ASSERT(value_1 == value_2);
+        BOOST_CHECK(value_1 == value_2);
         auto value_3 = dynamic_cast<manifest_single_value_param*>(result_2.get())->value;
-        BOOST_ASSERT(value_3 == value_2);
+        BOOST_CHECK(value_3 == value_2);
     } else if (type == manifest_param::type::SET) {
         auto set_1 = dynamic_cast<manifest_set_param*>(result.get())->set;
         auto set_2 = dynamic_cast<manifest_set_param*>(expected_result.get())->set;
-        BOOST_ASSERT(set_1 == set_2);
+        BOOST_CHECK(set_1 == set_2);
         auto set_3 = dynamic_cast<manifest_set_param*>(result_2.get())->set;
-        BOOST_ASSERT(set_3 == set_2);
+        BOOST_CHECK(set_3 == set_2);
     } else if (type == manifest_param::type::RANGE) {
         auto range_1 = dynamic_cast<manifest_range_param*>(result.get());
         auto range_2 = dynamic_cast<manifest_range_param*>(expected_result.get());
-        BOOST_ASSERT(*range_1 == *range_2);
+        BOOST_CHECK(*range_1 == *range_2);
         auto range_3 = dynamic_cast<manifest_range_param*>(result_2.get());
-        BOOST_ASSERT(*range_3 == *range_2);
+        BOOST_CHECK(*range_3 == *range_2);
     } else {
-        BOOST_ASSERT(false);
+        BOOST_CHECK(false);
     }
 }
 
@@ -200,10 +200,10 @@ BOOST_AUTO_TEST_CASE(test_manifest_iteration) {
     manifest_single_value_param param(5);
     std::size_t i = 0;
     for (auto val : param) {
-        BOOST_ASSERT(val == 5);
+        BOOST_CHECK(val == 5);
         ++i;
     }
-    BOOST_ASSERT(i == 1);
+    BOOST_CHECK(i == 1);
 
     using manifest_set_param = manifest_set_param;
     std::set<std::uint32_t> expected_set = {0, 1, 2, 3, 4, 5, 91, 11};
@@ -211,20 +211,20 @@ BOOST_AUTO_TEST_CASE(test_manifest_iteration) {
 
     std::size_t j = 0;
     for (auto val : param_set) {
-        BOOST_ASSERT(expected_set.find(val) != expected_set.end());
+        BOOST_CHECK(expected_set.find(val) != expected_set.end());
         ++j;
     }
-    BOOST_ASSERT(j == expected_set.size());
+    BOOST_CHECK(j == expected_set.size());
 
     using manifest_range_param = manifest_range_param;
     manifest_range_param param_range(1, 16, 2);
     std::set<std::int32_t> expected_range = {1, 3, 5, 7, 9, 11, 13, 15};
     std::size_t k = 0;
     for (auto val : param_range) {
-        BOOST_ASSERT(expected_range.find(val) != expected_range.end());
+        BOOST_CHECK(expected_range.find(val) != expected_range.end());
         ++k;
     }
-    BOOST_ASSERT(k == expected_range.size());
+    BOOST_CHECK(k == expected_range.size());
 }
 
 template<typename TestType1, typename TestType2 = TestType1>
@@ -234,10 +234,10 @@ void test_table_operation(const std::map<std::pair<TestType1, TestType2>, TestTy
         auto [type_1, type_2] = test_case.first;
         auto expected_result = test_case.second;
         auto result = operation(type_1, type_2);
-        BOOST_ASSERT(result == expected_result);
+        BOOST_CHECK(result == expected_result);
         if constexpr (std::is_same_v<TestType1, TestType2>) {
             auto second_result = operation(type_2, type_1);
-            BOOST_ASSERT(second_result == expected_result);
+            BOOST_CHECK(second_result == expected_result);
         }
     }
 }
@@ -325,7 +325,7 @@ BOOST_AUTO_TEST_CASE(test_manifest_intersect) {
     plonk_component_manifest expected_res_1 = plonk_component_manifest(
         std::make_shared<manifest_range_param>(3, 10, 3),
         manifest_constant_type::type::NONE);
-    BOOST_ASSERT(check_manifest_equality(manifest_res_1, expected_res_1));
+    BOOST_CHECK(check_manifest_equality(manifest_res_1, expected_res_1));
 
     plonk_component_manifest manifest_2(
         std::make_shared<manifest_range_param>(3, 12, 3),
@@ -334,7 +334,7 @@ BOOST_AUTO_TEST_CASE(test_manifest_intersect) {
     plonk_component_manifest expected_res_2 = plonk_component_manifest(
         std::make_shared<manifest_range_param>(3, 10, 3),
         manifest_constant_type::type::NONE);
-    BOOST_ASSERT(check_manifest_equality(manifest_res_2, expected_res_2));
+    BOOST_CHECK(check_manifest_equality(manifest_res_2, expected_res_2));
 
     plonk_component_manifest manifest_3(
         std::make_shared<manifest_single_value_param>(5),
@@ -343,7 +343,7 @@ BOOST_AUTO_TEST_CASE(test_manifest_intersect) {
     plonk_component_manifest expected_res_3 = plonk_component_manifest(
         std::make_shared<manifest_single_value_param>(5),
         manifest_constant_type::type::UNSAT);
-    BOOST_ASSERT(check_manifest_equality(manifest_res_3, expected_res_3));
+    BOOST_CHECK(check_manifest_equality(manifest_res_3, expected_res_3));
 
     compiler_manifest comp_manifest_2(20, true);
     plonk_component_manifest manifest_4(
@@ -353,7 +353,7 @@ BOOST_AUTO_TEST_CASE(test_manifest_intersect) {
     plonk_component_manifest expected_res_4 = plonk_component_manifest(
         std::make_shared<manifest_set_param>(std::set<std::uint32_t>{1, 2, 3, 11}),
         manifest_constant_type::type::REQUIRED);
-    BOOST_ASSERT(check_manifest_equality(manifest_res_4, expected_res_4));
+    BOOST_CHECK(check_manifest_equality(manifest_res_4, expected_res_4));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

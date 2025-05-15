@@ -76,7 +76,7 @@ void test_fri_lin_inter(const std::vector<typename BlueprintFieldType::value_typ
     auto result_check = [&expected_res](AssignmentType &assignment,
 	    typename component_type::result_type &real_res) {
 
-        BOOST_ASSERT(var_value(assignment, real_res.output) == expected_res);
+        BOOST_CHECK(var_value(assignment, real_res.output) == expected_res);
     };
 
     component_type component_instance({0, 1, 2, 3, 4}, {}, {});

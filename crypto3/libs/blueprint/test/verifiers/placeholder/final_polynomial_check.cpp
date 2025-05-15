@@ -110,7 +110,7 @@ void test_random_polynomials(boost::random::mt19937 &gen) {
     nil::crypto3::random::algebraic_engine<BlueprintFieldType> random_engine(gen);
     boost::random::uniform_int_distribution<> dist(0, 2 * Lambda - 1);
     // test case generation doesn't work otherwise
-    BOOST_ASSERT(2 * Lambda == Power + 1);
+    BOOST_CHECK(2 * Lambda == Power + 1);
     for (std::size_t i = 0; i < 15; i++) {
         std::vector<value_type> public_input;
         std::vector<value_type> points_with_m;
@@ -133,12 +133,12 @@ void test_random_polynomials(boost::random::mt19937 &gen) {
         }
         // now we use lagrange interpolation to create a polynomial which would be y at all the (s; -s)
         auto polynomial = nil::crypto3::math::lagrange_interpolation(points_values);
-        BOOST_ASSERT(polynomial.size() == 2 * Lambda);
+        BOOST_CHECK(polynomial.size() == 2 * Lambda);
         std::vector<value_type> coefficients;
         for (auto val : polynomial) {
             coefficients.push_back(val);
         }
-        BOOST_ASSERT(coefficients.size() == Power + 1);
+        BOOST_CHECK(coefficients.size() == Power + 1);
         std::reverse(coefficients.begin(), coefficients.end());
         public_input.insert(public_input.end(), coefficients.begin(), coefficients.end());
         test<BlueprintFieldType, WitnessAmount, Power, Lambda>(public_input, true);

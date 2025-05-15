@@ -81,7 +81,7 @@ BOOST_AUTO_TEST_CASE(bare) {
 
     auto result_check = [&x, &pow](AssignmentType &assignment,
 	    typename component_type::result_type &real_res) {
-            BOOST_ASSERT(var_value(assignment, real_res.y) == x.pow(pow));
+            BOOST_CHECK(var_value(assignment, real_res.y) == x.pow(pow));
     };
 
     std::array<std::uint32_t, WitnessColumns> witnesses;
@@ -109,7 +109,7 @@ BOOST_AUTO_TEST_CASE(print_to_file) {
 
     auto result_check = [&x, &pow](AssignmentType &assignment,
 	    typename component_type::result_type &real_res) {
-            BOOST_ASSERT(var_value(assignment, real_res.y) == x.pow(pow));
+            BOOST_CHECK(var_value(assignment, real_res.y) == x.pow(pow));
     };
 
     std::array<std::uint32_t, WitnessColumns> witnesses;
@@ -136,7 +136,7 @@ BOOST_AUTO_TEST_CASE(print_to_file) {
         "./test_plonk_component0_table.tbl"
     );
 
-    BOOST_ASSERT(check_placeholder_proof<BlueprintFieldType>(bp, desc, assignments));
+    BOOST_CHECK(check_placeholder_proof<BlueprintFieldType>(bp, desc, assignments));
 }
 
 BOOST_AUTO_TEST_CASE(verify_proof) {
@@ -152,7 +152,7 @@ BOOST_AUTO_TEST_CASE(verify_proof) {
 
     auto result_check = [&x, &pow](AssignmentType &assignment,
 	    typename component_type::result_type &real_res) {
-            BOOST_ASSERT(var_value(assignment, real_res.y) == x.pow(pow));
+            BOOST_CHECK(var_value(assignment, real_res.y) == x.pow(pow));
     };
 
     std::array<std::uint32_t, WitnessColumns> witnesses;
@@ -188,7 +188,7 @@ BOOST_AUTO_TEST_CASE(print_to_file_and_verify_proof) {
 
     auto result_check = [&x, &pow](AssignmentType &assignment,
 	    typename component_type::result_type &real_res) {
-            BOOST_ASSERT(var_value(assignment, real_res.y) == x.pow(pow));
+            BOOST_CHECK(var_value(assignment, real_res.y) == x.pow(pow));
     };
 
     std::array<std::uint32_t, WitnessColumns> witnesses;
@@ -217,7 +217,7 @@ BOOST_AUTO_TEST_CASE(print_to_file_and_verify_proof) {
         "./test_plonk_component1_table.tbl"
     );
 
-    BOOST_ASSERT(check_placeholder_proof<BlueprintFieldType>(bp, desc, assignments));
+    BOOST_CHECK(check_placeholder_proof<BlueprintFieldType>(bp, desc, assignments));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

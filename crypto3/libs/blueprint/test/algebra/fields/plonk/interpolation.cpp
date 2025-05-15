@@ -85,8 +85,8 @@ void test_linear_inter_coefs(const std::vector<typename BlueprintFieldType::valu
     auto result_check = [&expected_res](AssignmentType &assignment,
 	    typename component_type::result_type &real_res) {
 
-        BOOST_ASSERT(var_value(assignment, real_res.output[0]) == expected_res[0]);
-        BOOST_ASSERT(var_value(assignment, real_res.output[1]) == expected_res[1]);
+        BOOST_CHECK(var_value(assignment, real_res.output[0]) == expected_res[0]);
+        BOOST_CHECK(var_value(assignment, real_res.output[1]) == expected_res[1]);
     };
 
     component_type component_instance({0, 1, 2, 3, 4, 5, 6}, {}, {});
@@ -156,9 +156,9 @@ void test_quadratic_inter_coefs(const std::vector<typename BlueprintFieldType::v
     auto result_check = [&expected_res](AssignmentType &assignment,
 	    typename component_type::result_type &real_res) {
 
-        BOOST_ASSERT(var_value(assignment, real_res.output[0]) == expected_res[0]);
-        BOOST_ASSERT(var_value(assignment, real_res.output[1]) == expected_res[1]);
-        BOOST_ASSERT(var_value(assignment, real_res.output[2]) == expected_res[2]);
+        BOOST_CHECK(var_value(assignment, real_res.output[0]) == expected_res[0]);
+        BOOST_CHECK(var_value(assignment, real_res.output[1]) == expected_res[1]);
+        BOOST_CHECK(var_value(assignment, real_res.output[2]) == expected_res[2]);
     };
 
     component_type component_instance({0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, {}, {});

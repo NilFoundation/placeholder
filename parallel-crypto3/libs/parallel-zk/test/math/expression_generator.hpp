@@ -91,7 +91,7 @@ expression<VariableType> generate_random_constraint(
         linear_comb += engine();
         return linear_comb;
     } else {
-        BOOST_ASSERT_MSG(false, "max_degree must be > 0");
+        BOOST_CHECK_MESSAGE(false, "max_degree must be > 0");
     }
     __builtin_unreachable();
 }

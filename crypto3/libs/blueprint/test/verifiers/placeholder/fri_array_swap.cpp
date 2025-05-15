@@ -64,7 +64,7 @@ void test_array_swap(
 
     using component_type = blueprint::components::fri_array_swap<ArithmetizationType, BlueprintFieldType>;
 
-    BOOST_ASSERT(array.size() == 2 * ArraySize);
+    BOOST_CHECK(array.size() == 2 * ArraySize);
 
     typename component_type::input_type instance_input;
     instance_input.t = var(0, 0, false, var::column_type::public_input);
@@ -78,11 +78,11 @@ void test_array_swap(
 
     auto result_check = [&t, &array](AssignmentType &assignment,
 	    typename component_type::result_type &real_res) {
-        BOOST_ASSERT(real_res.output.size() == 2 * ArraySize);
+        BOOST_CHECK(real_res.output.size() == 2 * ArraySize);
         for (std::size_t i = 0; i < ArraySize; i++) {
-            BOOST_ASSERT(var_value(assignment, real_res.output[2 * i]) ==
+            BOOST_CHECK(var_value(assignment, real_res.output[2 * i]) ==
                          (t == 1 ? array[2 * i + 1] : array[2 * i]));
-            BOOST_ASSERT(var_value(assignment, real_res.output[2 * i + 1]) ==
+            BOOST_CHECK(var_value(assignment, real_res.output[2 * i + 1]) ==
                          (t == 1 ? array[2 * i] : array[2 * i + 1]));
         }
     };

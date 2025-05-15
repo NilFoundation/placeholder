@@ -76,10 +76,10 @@ void test(std::vector<typename BlueprintFieldType::value_type> &public_input,
                                       constraint);
 
     std::function<const value_type&(const var&)> get_var_value = [&var_map, &public_input](const var &v) -> const value_type& {
-        BOOST_ASSERT(var_map.count(v) > 0);
+        BOOST_CHECK(var_map.count(v) > 0);
         const var input_var = var_map[v];
-        BOOST_ASSERT(input_var.type == var::column_type::public_input);
-        BOOST_ASSERT(input_var.index == 0);
+        BOOST_CHECK(input_var.type == var::column_type::public_input);
+        BOOST_CHECK(input_var.index == 0);
         return public_input[input_var.rotation];
     };
     nil::crypto3::zk::snark::expression_evaluator<var> evaluator(constraint, get_var_value);
@@ -88,7 +88,7 @@ void test(std::vector<typename BlueprintFieldType::value_type> &public_input,
     typename component_type::input_type instance_input = {var_map};
 
     auto result_check = [&expected_res](AssignmentType &assignment, typename component_type::result_type &real_res) {
-        BOOST_ASSERT(var_value(assignment, real_res.output) == expected_res);
+        BOOST_CHECK(var_value(assignment, real_res.output) == expected_res);
     };
 
     crypto3::test_component<component_type, BlueprintFieldType, hash_type, Lambda>(

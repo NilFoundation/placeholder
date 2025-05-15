@@ -78,11 +78,11 @@ void test_flexible_swap(
 	    typename component_type::result_type &real_res
     ) {
         if( public_input[0] == 0){
-            BOOST_ASSERT(var_value(assignment, real_res.output[0]) == public_input[1]);
-            BOOST_ASSERT(var_value(assignment, real_res.output[1]) == public_input[2]);
+            BOOST_CHECK(var_value(assignment, real_res.output[0]) == public_input[1]);
+            BOOST_CHECK(var_value(assignment, real_res.output[1]) == public_input[2]);
         } else {
-            BOOST_ASSERT(var_value(assignment, real_res.output[0]) == public_input[2]);
-            BOOST_ASSERT(var_value(assignment, real_res.output[1]) == public_input[1]);
+            BOOST_CHECK(var_value(assignment, real_res.output[0]) == public_input[2]);
+            BOOST_CHECK(var_value(assignment, real_res.output[1]) == public_input[1]);
         }
     };
 

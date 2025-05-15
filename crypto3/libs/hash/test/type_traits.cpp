@@ -37,9 +37,9 @@ using namespace nil::crypto3::algebra;
 BOOST_AUTO_TEST_SUITE(hash_type_traits_manual_tests)
 
 BOOST_AUTO_TEST_CASE(test_hash_traits) {
-    BOOST_ASSERT(nil::crypto3::detail::has_digest_type<nil::crypto3::hashes::keccak_1600<256>>::value);
-    BOOST_ASSERT(nil::crypto3::detail::has_digest_bits<nil::crypto3::hashes::keccak_1600<256>>::value);
-    BOOST_ASSERT(nil::crypto3::detail::is_hash<nil::crypto3::hashes::keccak_1600<256>>::value);
+    BOOST_CHECK(nil::crypto3::detail::has_digest_type<nil::crypto3::hashes::keccak_1600<256>>::value);
+    BOOST_CHECK(nil::crypto3::detail::has_digest_bits<nil::crypto3::hashes::keccak_1600<256>>::value);
+    BOOST_CHECK(nil::crypto3::detail::is_hash<nil::crypto3::hashes::keccak_1600<256>>::value);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

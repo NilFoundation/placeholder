@@ -122,14 +122,14 @@ struct default_zkllvm_params {
     static table_description_type load_table_description(std::string filename){
         std::ifstream iassignment;
         iassignment.open(filename, std::ios_base::binary | std::ios_base::in);
-        BOOST_ASSERT(iassignment.is_open());
+        BOOST_CHECK(iassignment.is_open());
         std::vector<std::uint8_t> v;
         iassignment.seekg(0, std::ios_base::end);
         const auto fsize = iassignment.tellg();
         v.resize(fsize);
         iassignment.seekg(0, std::ios_base::beg);
         iassignment.read(reinterpret_cast<char*>(v.data()), fsize);
-        BOOST_ASSERT(iassignment);
+        BOOST_CHECK(iassignment);
         iassignment.close();
 
         table_marshalling_type marshalled_table_data;
@@ -148,7 +148,7 @@ struct default_zkllvm_params {
         {
             std::ifstream ifile;
             ifile.open(filename, std::ios_base::binary | std::ios_base::in);
-            BOOST_ASSERT(ifile.is_open());
+            BOOST_CHECK(ifile.is_open());
 
             std::vector<std::uint8_t> v;
             ifile.seekg(0, std::ios_base::end);
@@ -156,7 +156,7 @@ struct default_zkllvm_params {
             v.resize(fsize);
             ifile.seekg(0, std::ios_base::beg);
             ifile.read(reinterpret_cast<char*>(v.data()), fsize);
-            BOOST_ASSERT(ifile);
+            BOOST_CHECK(ifile);
             ifile.close();
 
             circuit_marshalling_type marshalled_data;
@@ -180,7 +180,7 @@ template<typename SrcParams>
 
     std::ifstream iproof;
     iproof.open(filename);
-    BOOST_ASSERT(iproof.is_open());
+    BOOST_CHECK(iproof.is_open());
     std::vector<std::uint8_t> v;
     if (!read_buffer_from_file(iproof, v))
         throw "Unable to read proof from file.";
@@ -205,7 +205,7 @@ template<typename PlaceholderParams>
 static std::shared_ptr<typename nil::crypto3::zk::snark::placeholder_public_preprocessor<typename PlaceholderParams::field_type, PlaceholderParams>::preprocessed_data_type::common_data_type> load_common_data(std::string filename){
     std::ifstream ifile;
     ifile.open(filename, std::ios_base::binary | std::ios_base::in);
-    BOOST_ASSERT(ifile.is_open());
+    BOOST_CHECK(ifile.is_open());
 
     std::vector<std::uint8_t> v;
     ifile.seekg(0, std::ios_base::end);
@@ -213,7 +213,7 @@ static std::shared_ptr<typename nil::crypto3::zk::snark::placeholder_public_prep
     v.resize(fsize);
     ifile.seekg(0, std::ios_base::beg);
     ifile.read(reinterpret_cast<char*>(v.data()), fsize);
-    BOOST_ASSERT(ifile);
+    BOOST_CHECK(ifile);
     ifile.close();
 
     using common_data_type = typename nil::crypto3::zk::snark::placeholder_public_preprocessor<typename PlaceholderParams::field_type, PlaceholderParams>::preprocessed_data_type::common_data_type;
@@ -315,7 +315,7 @@ gen_test_proof(
         );
     std::cout <<"Proof verified" << std::endl;
 
-    BOOST_ASSERT(verification_result);
+    BOOST_CHECK(verification_result);
 
     return std::make_tuple(public_preprocessed_data.common_data, fri_params, proof);
 }
@@ -352,7 +352,7 @@ void test_flexible_verifier(
     std::size_t value_vector_size = proof_ext.vector().size();
     std::cout << "value vector size = " << value_vector_size << std::endl;
     std::cout << "var vector size =   " << full_instance_input.vector().size() << std::endl;
-    BOOST_ASSERT(proof_ext.vector().size() == full_instance_input.vector().size());
+    BOOST_CHECK(proof_ext.vector().size() == full_instance_input.vector().size());
 
     std::vector<typename field_type::value_type> public_input = proof_ext.vector();
     typename component_type::input_type instance_input(full_instance_input);
