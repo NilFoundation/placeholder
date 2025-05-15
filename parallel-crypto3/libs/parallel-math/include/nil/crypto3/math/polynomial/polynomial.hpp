@@ -97,10 +97,6 @@ namespace nil {
                     }
                 }
 
-                ~polynomial() = default;
-
-                polynomial(const polynomial& x) = default;
-
                 polynomial(const polynomial& x, const allocator_type& a) : val(x.val, a) {
                 }
 
@@ -109,8 +105,6 @@ namespace nil {
 
                 polynomial(std::initializer_list<value_type> il, const allocator_type& a) : val(il, a) {
                 }
-
-                polynomial(polynomial&& x) = default;
 
                 polynomial(polynomial&& x, const allocator_type& a) : val(std::move(x.val), a) {
                 }
@@ -131,10 +125,6 @@ namespace nil {
                     : val(power + 1, FieldValueType::zero()) {
                     this->operator[](power) = value;
                 }
-
-                polynomial& operator=(const polynomial& x) = default;
-
-                polynomial& operator=(polynomial&& x) = default;
 
                 polynomial& operator=(const container_type& x) {
                     val = x;

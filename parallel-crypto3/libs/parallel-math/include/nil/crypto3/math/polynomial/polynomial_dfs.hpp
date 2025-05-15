@@ -112,8 +112,6 @@ namespace nil {
                         "DFS optimal polynomial size must be a power of two");
                 }
 
-                ~polynomial_dfs() = default;
-
                 polynomial_dfs(const polynomial_dfs& x) : val(x.val), _d(x._d) {
                 }
 
