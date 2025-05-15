@@ -105,7 +105,7 @@ struct placeholder_class_test_initializer {
 
         std::size_t batch_id = 0;
 
-        kzg.append_to_batch(batch_id, polys);
+        kzg.append_many_to_batch(batch_id, polys);
         std::map<std::size_t, typename kzg_scheme_type::commitment_type> commitments;
         commitments[batch_id] = kzg.commit(batch_id);
 

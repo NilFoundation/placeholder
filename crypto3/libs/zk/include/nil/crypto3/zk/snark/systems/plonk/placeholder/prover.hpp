@@ -137,8 +137,8 @@ namespace nil {
                         // BOOST_LOG_TRIVIAL(info) << "Running prover in single-threaded mode.";
 
                         // 2. Commit witness columns and public_input columns
-                        _commitment_scheme.append_to_batch(VARIABLE_VALUES_BATCH, _polynomial_table->witnesses());
-                        _commitment_scheme.append_to_batch(VARIABLE_VALUES_BATCH, _polynomial_table->public_inputs());
+                        _commitment_scheme.append_many_to_batch(VARIABLE_VALUES_BATCH, _polynomial_table->witnesses());
+                        _commitment_scheme.append_many_to_batch(VARIABLE_VALUES_BATCH, _polynomial_table->public_inputs());
                         {
                             PROFILE_SCOPE("Variable values precommit");
                             _proof.commitments[VARIABLE_VALUES_BATCH] = _commitment_scheme.commit(VARIABLE_VALUES_BATCH);
@@ -330,7 +330,7 @@ namespace nil {
 
                     commitment_type T_commit(const std::vector<polynomial_dfs_type>& T_splitted_dfs) {
                         PROFILE_SCOPE("T split precommit");
-                        _commitment_scheme.append_to_batch(QUOTIENT_BATCH, T_splitted_dfs);
+                        _commitment_scheme.append_many_to_batch(QUOTIENT_BATCH, T_splitted_dfs);
                         return _commitment_scheme.commit(QUOTIENT_BATCH);
                     }
 
