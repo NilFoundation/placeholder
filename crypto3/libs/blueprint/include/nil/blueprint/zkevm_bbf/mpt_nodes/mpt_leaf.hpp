@@ -126,7 +126,7 @@ public:
             }
             rlp_value_prefix = 128 + node_value_bytes;
             rlp_node_prefix0 = 192 + node_key_bytes + node_value_bytes + 2;
-            byte_vector.emplace(byte_vector.begin(), rlp_value_prefix);
+            value_byte_vector.emplace(value_byte_vector.begin(), rlp_value_prefix);
             hash_input.insert( hash_input.end(), value_byte_vector.begin(), value_byte_vector.end() );
             std::size_t total_value_length = hash_input.size();
             hash_input.emplace(hash_input.begin(), rlp_node_prefix0);
@@ -136,7 +136,7 @@ public:
             for(std::size_t i = 0; i < 32; i++) {
                 parent_hash[i] = hash_value_byte[i];
             }
-            std::cout << "hash value = " << std::hex << hash_value << std::dec << std::endl;
+            std::cout << "leaf hash value = " << std::hex << hash_value << std::dec << std::endl;
         }
 
         // NB: parent_hash allocations should precede everything else according to mpt_dynamic structure

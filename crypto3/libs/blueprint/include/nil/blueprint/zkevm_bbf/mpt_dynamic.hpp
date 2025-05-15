@@ -91,10 +91,11 @@ public:
         std::vector<TYPE> high_byte_hi(max_mpt_size);      // highest byte in key_prefix, high 4-bits
         std::vector<TYPE> key_prefix_length(max_mpt_size); // Length of the prefix in half-bytes (i.e. 4-bit chunks)
 
-        //                                                    /======= Excluded from key_to_hash lookup table ======\
-        // +---------+------------------+--------------------+-------------------------+--------------+--------------+-------------------+
-        // | trie_id | node_selector(~3)| node_key_prefix(32)| key_prefix_length_bit(6)| high_byte_lo | high_byte_hi | key_prefix_length |
-        // +---------+------------------+--------------------+-------------------------+--------------+--------------+-------------------+
+        //           / Excluded from k2h\              /===== Excluded from key_to_hash lookup table =====\
+        // +---------+---------------+----------------+----------------------+--------------+--------------+-------------------+
+        // | trie_id | node_selector | node_key_prefix| key_prefix_length_bit| high_byte_lo | high_byte_hi | key_prefix_length |
+        // +---------+---------------+----------------+----------------------+--------------+--------------+-------------------+
+        //      1     NODE_TYPE_COUNT       32         \                   column_skip                    /          1
 
         // All other columns are delegated to node-specific subcomponents. For them we'll create subcontexts.
         std::vector<std::size_t> subcontext_columns;
@@ -108,11 +109,12 @@ public:
             // skip NODE_TYPE_COUNT columns, add following 32 node_key_prefix cols into the table
             k2h_lookup_columns.push_back(1 + NODE_TYPE_COUNT + i);
         }
-        k2h_lookup_columns.push_back(1 + NODE_TYPE_COUNT + column_skip); // key_prefix_length column included
+        k2h_lookup_columns.push_back(1 + NODE_TYPE_COUNT + 32 + column_skip); // key_prefix_length column included
         // 32 more columns: hash for use in parent node
         for(std::size_t i = 0; i < 32; i++) {
             k2h_lookup_columns.push_back(1 + NODE_TYPE_COUNT + 32 + column_skip + 1 + i);
         }
+        // key_to_hash = { trie_id, node_key_prefix, key_prefix_length, parent_hash }
         lookup_table("key_to_hash", k2h_lookup_columns, 0, max_mpt_size);
 
         // Now prepare a list of nodes to be processed (compatible with both assignment and constraints stages)
@@ -155,6 +157,7 @@ public:
                    }
 
                    zkevm_word_type node_key_before_accum = path_key >> 4*(64 - accumulated_length);
+                   std::cout << "key prefix : " << std::hex << node_key_before_accum << std::dec << std::endl;
 
                    mpt_node_id n_id = { trie_id, node_key_before_accum, accumulated_length };
                    if (deploy_plan.find(n_id) != deploy_plan.end()) {
@@ -216,7 +219,7 @@ public:
         for(auto nr : deploy_plan) {
             mpt_node_id n_id = nr.first;
             mpt_node n = nr.second;
-            std::cout << "\nnode " << node_num << " type = " << n.type << std::endl;
+            // std::cout << "\nnode " << node_num << " type = " << n.type << std::endl;
 
             if constexpr (stage == GenerationStage::ASSIGNMENT) {
                 std::array<std::uint8_t,32> node_key_prefix_byte = w_to_8(n_id.key_prefix);
@@ -317,8 +320,9 @@ public:
 
             // preparing input for the subcomponents
             mpt_node_input_type<FieldType, stage> node_input;
+            node_input.trie_id = trie_id[node_num];
             for(std::size_t type_index = 0; type_index < NODE_TYPE_COUNT; type_index++) {
-                // a selector-based expression for node_type
+                // a selector-based expression for node_type. TODO : we probably don't need it at all
                 node_input.node_type += node_selector[node_num][type_index]*type_index;
             }
             node_input.node_key_prefix = node_key_prefix[node_num];
@@ -338,6 +342,7 @@ public:
 
             if constexpr (stage == GenerationStage::CONSTRAINTS) {
                auto selector = context_object.relativize(node_selector[0][static_cast<std::size_t>(n.type)], 0);
+
                auto row_constraints = node_row_context.get_constraints();
                for (const auto &constr_list: row_constraints) {
                     BOOST_ASSERT(constr_list.first.size() == 1); // there should only be one row in the subcomponent
@@ -346,7 +351,18 @@ public:
                     }
                }
                auto row_lookup_constraints = node_row_context.get_lookup_constraints();
+               for (const auto &constr_list: row_lookup_constraints) {
+                    BOOST_ASSERT(constr_list.first.size() == 1); // there should only be one row in the subcomponent
+                    for (auto lookup_constraint: constr_list.second) {
+                        auto exprs = lookup_constraint.second;
+                        for(auto &e : exprs) {
+                            e *= selector;
+                        }
+                        context_object.relative_lookup(exprs, lookup_constraint.first, 0, max_mpt_size - 1);
+                    }
+               }
             }
+
             node_num++;
         }
     }

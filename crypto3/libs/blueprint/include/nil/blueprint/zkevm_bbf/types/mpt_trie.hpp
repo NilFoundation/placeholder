@@ -61,6 +61,7 @@ template<typename FieldType, GenerationStage stage>
 struct mpt_node_input_type {
     using TYPE = typename generic_component<FieldType, stage>::TYPE;
 
+    TYPE trie_id;
     TYPE node_type;
     std::array<TYPE,32> node_key_prefix;
     TYPE key_prefix_length;

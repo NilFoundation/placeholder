@@ -145,10 +145,10 @@ public:
                 parent_hash[i] = hash_value_byte[i];
             }
 
-            std::cout << "hash value = " << std::hex << hash_value << std::dec << std::endl;
+//            std::cout << "hash value = " << std::hex << hash_value << std::dec << std::endl;
             std::size_t child_num = 0;
             for(auto &v : n.value) {
-                std::cout << "    value = " << std::hex << v << std::dec << std::endl;
+//                std::cout << "    value = " << std::hex << v << std::dec << std::endl;
                 if (child_num < 16) { // branch nodes have an empty 17-th value
                     std::array<std::uint8_t,32> child_value_byte = w_to_8(v);
                     for(std::size_t i = 0; i < 32; i++) {
@@ -198,6 +198,52 @@ public:
             constrain(247 + node_num_of_bytes - rlp_node[0] );
             // constrain((node_length[0] - rlp_node[1]) ); // TODO: do we really need two equal cells for that?!
             // constrain((node_length[1] - rlp_node[2]) ); // ibid
+        }
+
+        // computation of node_key_prefix << 4
+        std::array<TYPE,32> shifted_node_key_prefix; // the result goes here
+        std::array<TYPE,31> upper_next_node_key_prefix; // the upper 4 bits in each next byte of node_key_prefix except the last
+
+        for (std::size_t i = 0; i < 32; i++) {
+            // NB: all keys are in big-endian
+            if (i < 31) {
+                if constexpr (stage == GenerationStage::ASSIGNMENT) {
+                    unsigned char next_key_prefix_byte = static_cast<unsigned char>(input.node_key_prefix[i+1].data.base());
+                    upper_next_node_key_prefix[i] = next_key_prefix_byte >> 4;
+                }
+                allocate(upper_next_node_key_prefix[i]);
+                // upper_next_node_key_prefix[i] is 4 bits:
+                lookup(upper_next_node_key_prefix[i], "chunk_16_bits/8bits");
+                lookup(16 * upper_next_node_key_prefix[i], "chunk_16_bits/8bits");
+            }
+
+            TYPE next_overflow = (i < 31) ? upper_next_node_key_prefix[i] : 0;
+
+            if constexpr (stage == GenerationStage::ASSIGNMENT) {
+                unsigned char key_prefix_byte = static_cast<unsigned char>(input.node_key_prefix[i].data.base());
+                shifted_node_key_prefix[i] = ((key_prefix_byte << 4) & 0xff) + next_overflow;
+            }
+            allocate(shifted_node_key_prefix[i]);
+            // shifted_node_key_prefix[i] is 8 bits
+            lookup(shifted_node_key_prefix[i], "chunk_16_bits/8bits");
+
+            constrain( (input.node_key_prefix[i] * 16 + next_overflow)
+                       - (shifted_node_key_prefix[i] + 256 * (i > 0 ? upper_next_node_key_prefix[i-1] : 0)) );
+        }
+
+        // Establish node connections via key_to_hash table
+        for(std::size_t j = 0; j < 16; j++) { // loop through child nodes
+            std::vector<TYPE> k2h_query = {input.trie_id * (1 - child_is_zero[j])}; // the trie id
+            for(std::size_t i = 0; i < 31; i++) {
+                k2h_query.push_back(shifted_node_key_prefix[i] * (1 - child_is_zero[j])); // the key_prefix
+            }
+            // last byte of the key_prefix, we add the child number
+            k2h_query.push_back((shifted_node_key_prefix[31] + j) * (1 - child_is_zero[j]));
+            k2h_query.push_back((input.key_prefix_length + 1) * (1 - child_is_zero[j])); // key_prefix is 1 symbol longer
+            for(std::size_t i = 0; i < 32; i++) {
+                k2h_query.push_back(child[j][i]); // bytes of the hash to check
+            }
+            lookup(k2h_query, "key_to_hash");
         }
     }
 };
