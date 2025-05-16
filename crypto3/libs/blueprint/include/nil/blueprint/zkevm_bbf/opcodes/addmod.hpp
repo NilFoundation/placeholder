@@ -136,7 +136,7 @@ namespace nil {
                 zkevm_addmod_bbf(context_type &context_object,
                                  const opcode_input_type<FieldType, stage> &current_state,
                                  bool make_links = true)
-                    : generic_component<FieldType, stage>(context_object), res(chunk_amount) {
+                    : generic_component<FieldType, stage>(context_object, false), res(chunk_amount) {
                     std::vector<TYPE> c_1_chunks(4);
                     TYPE c_2;
                     TYPE c_3;

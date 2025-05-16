@@ -139,7 +139,7 @@ namespace nil {
                 zkevm_mulmod_bbf(context_type &context_object,
                                  const opcode_input_type<FieldType, stage> &current_state,
                                  bool make_links = true)
-                    : generic_component<FieldType, stage>(context_object), res(chunk_amount) {
+                    : generic_component<FieldType, stage>(context_object, false), res(chunk_amount) {
                     using extended_integral_type = nil::crypto3::multiprecision::big_uint<512>;
                     // The central relation is a * b = s = Nr + q, q < N.
 

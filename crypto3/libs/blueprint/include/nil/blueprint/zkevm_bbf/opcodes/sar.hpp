@@ -50,9 +50,6 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
 
     using value_type = typename FieldType::value_type;
 
-
-    const size_t number_of_rows = 10;
-
     constexpr static const std::size_t chunk_amount = 16;
     constexpr static const std::size_t chunk_size = 256 / chunk_amount;
     constexpr static const std::size_t chunk_8_amount = 32;
