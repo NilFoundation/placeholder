@@ -195,8 +195,8 @@ namespace nil::crypto3::zk::snark {
         }
 
         // Returns the value of given expression. You cannot call this before calling evaluate_all.
-        const polynomial_dfs_type& get_expression_value(
-            const expression_evaluator_registration& registration) const {
+        polynomial_dfs_type& get_expression_value(
+            const expression_evaluator_registration& registration) {
             if (_state != State::EVALUATED) {
                 throw std::logic_error("Can't return expression value before evaluation is done.");
             }
