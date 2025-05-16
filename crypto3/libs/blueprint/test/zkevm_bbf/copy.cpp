@@ -84,7 +84,7 @@ public:
         bool result = test_bbf_component<field_type, nil::blueprint::bbf::copy>(
             "copy", {7}, copy_assignment_input, max_copy, max_rw, max_keccak_blocks, max_bytecode, max_call_commits
         );
-        BOOST_ASSERT(result == expected_result);
+        BOOST_CHECK(result == expected_result);
     }
 };
 

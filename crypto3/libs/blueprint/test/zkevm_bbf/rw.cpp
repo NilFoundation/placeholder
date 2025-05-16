@@ -72,7 +72,7 @@ public:
         bool result = test_bbf_component<field_type, nil::blueprint::bbf::rw>(
             "rw", {}, rw_assignment_input, max_rw_size, 0, max_call_commits
         );
-        BOOST_ASSERT(result); // Max_rw, Max_mpt
+        BOOST_CHECK(result); // Max_rw, Max_mpt
     }
 };
 

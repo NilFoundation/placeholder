@@ -93,7 +93,7 @@ auto test_comparison_unchecked(typename BlueprintFieldType::value_type x,
             expected_to_pass &= x >= y;
             break;
         case comparison_mode::FLAG:
-            BOOST_ASSERT_MSG(false, "FLAG mode is not supported, use comparison_flag component instead.");
+            BOOST_CHECK_MESSAGE(false, "FLAG mode is not supported, use comparison_flag component instead.");
     }
 
     std::array<std::uint32_t, WitnessesAmount> witnesses;

@@ -146,7 +146,7 @@ BOOST_AUTO_TEST_CASE(component_batch_basic_test) {
         {var(0, 2, false, var::column_type::public_input), var(3, 0, false, var::column_type::witness)},
         {var(4, 0, false, var::column_type::witness), var(0, 3, false, var::column_type::public_input)}
     };
-    BOOST_ASSERT(compare_copy_constraint_vectors<field_type>(circuit.copy_constraints(), expected_copy_constraints));
+    BOOST_CHECK(compare_copy_constraint_vectors<field_type>(circuit.copy_constraints(), expected_copy_constraints));
 
     // assignment_table.export_table(std::cout);
     // circuit.export_circuit(std::cout);
@@ -217,7 +217,7 @@ BOOST_AUTO_TEST_CASE(component_batch_continuation_test) {
         {var(1, 3, false, var::column_type::witness), var(5, 2, false, var::column_type::witness)}
     };
 
-    BOOST_ASSERT(compare_copy_constraint_vectors<field_type>(circuit.copy_constraints(), expected_copy_constraints));
+    BOOST_CHECK(compare_copy_constraint_vectors<field_type>(circuit.copy_constraints(), expected_copy_constraints));
 
     // assignment_table.export_table(std::cout);
     // circuit.export_circuit(std::cout);
@@ -304,7 +304,7 @@ BOOST_AUTO_TEST_CASE(component_batch_multibatch_test) {
             BOOST_CHECK_EQUAL(gate_2.constraints[i], expected_constraints_add[i]);
         }
     }
-    BOOST_ASSERT((gate_1.constraints[0] == expected_constraints_mul[0] &&
+    BOOST_CHECK((gate_1.constraints[0] == expected_constraints_mul[0] &&
                   gate_2.constraints[0] == expected_constraints_add[0]) ||
                  (gate_1.constraints[0] == expected_constraints_add[0] &&
                   gate_2.constraints[0] == expected_constraints_mul[0]));
@@ -338,7 +338,7 @@ BOOST_AUTO_TEST_CASE(component_batch_multibatch_test) {
         {var(4, 3, false, var::column_type::witness), var(2, 1, false, var::column_type::witness)}
     };
 
-    BOOST_ASSERT(compare_copy_constraint_vectors<field_type>(circuit.copy_constraints(), expected_copy_constraints));
+    BOOST_CHECK(compare_copy_constraint_vectors<field_type>(circuit.copy_constraints(), expected_copy_constraints));
 
     // assignment_table.export_table(std::cout);
     // circuit.export_circuit(std::cout);
@@ -392,12 +392,12 @@ BOOST_AUTO_TEST_CASE(component_batch_const_batch_test) {
         assignment_table.add_batch_constant_variable(2);
     }
 
-    BOOST_ASSERT(assignment_table.constant(0, 0) == 1444);
-    BOOST_ASSERT(assignment_table.constant(0, 1) == 1);
-    BOOST_ASSERT(assignment_table.constant(0, 2) == 1445);
-    BOOST_ASSERT(assignment_table.constant(0, 3) == 1446);
-    BOOST_ASSERT(assignment_table.constant(0, 4) == 2);
-    BOOST_ASSERT(assignment_table.rows_amount() == 5);
+    BOOST_CHECK(assignment_table.constant(0, 0) == 1444);
+    BOOST_CHECK(assignment_table.constant(0, 1) == 1);
+    BOOST_CHECK(assignment_table.constant(0, 2) == 1445);
+    BOOST_CHECK(assignment_table.constant(0, 3) == 1446);
+    BOOST_CHECK(assignment_table.constant(0, 4) == 2);
+    BOOST_CHECK(assignment_table.rows_amount() == 5);
 
     const std::vector<copy_constraint_type> expected_copy_constraints = {
         {var(0, 0, false, var::column_type::public_input), var(0, 0, false, var::column_type::witness)},
@@ -409,7 +409,7 @@ BOOST_AUTO_TEST_CASE(component_batch_const_batch_test) {
         {var(7, 3, false, var::column_type::witness), var(0, 4, false, var::column_type::constant)}
     };
 
-    BOOST_ASSERT(compare_copy_constraint_vectors<field_type>(circuit.copy_constraints(), expected_copy_constraints));
+    BOOST_CHECK(compare_copy_constraint_vectors<field_type>(circuit.copy_constraints(), expected_copy_constraints));
 
     // assignment_table.export_table(std::cout);
     // circuit.export_circuit(std::cout);
@@ -479,7 +479,7 @@ BOOST_AUTO_TEST_CASE(component_batch_params_test) {
         {var(9, 0, false, var::column_type::witness), var(12, 0, false, var::column_type::witness)}
     };
 
-    BOOST_ASSERT(compare_copy_constraint_vectors<field_type>(circuit.copy_constraints(), expected_copy_constraints));
+    BOOST_CHECK(compare_copy_constraint_vectors<field_type>(circuit.copy_constraints(), expected_copy_constraints));
 
     // assignment_table.export_table(std::cout);
     // circuit.export_circuit(std::cout);
@@ -504,15 +504,15 @@ BOOST_AUTO_TEST_CASE(component_batch_generate_circuit_variant_basic_test) {
     typename multiplication_type::input_type input_2 = {public_input_var_maker(), public_input_var_maker()};
     auto res_1 = assignment_table.add_input_to_batch_circuit<multiplication_type>(input_1);
     auto res_2 = assignment_table.add_input_to_batch_circuit<multiplication_type>(input_2);
-    BOOST_ASSERT(var_value(assignment_table, res_1.output) == 0);
-    BOOST_ASSERT(var_value(assignment_table, res_2.output) == 0);
+    BOOST_CHECK(var_value(assignment_table, res_1.output) == 0);
+    BOOST_CHECK(var_value(assignment_table, res_2.output) == 0);
     res_1 = assignment_table.add_input_to_batch_assignment<multiplication_type>(input_1);
-    BOOST_ASSERT(var_value(assignment_table, res_1.output) == var_value(assignment_table, input_1.x) * var_value(assignment_table, input_1.y));
-    BOOST_ASSERT(var_value(assignment_table, res_1.output) != 0);
-    BOOST_ASSERT(var_value(assignment_table, res_2.output) == 0);
+    BOOST_CHECK(var_value(assignment_table, res_1.output) == var_value(assignment_table, input_1.x) * var_value(assignment_table, input_1.y));
+    BOOST_CHECK(var_value(assignment_table, res_1.output) != 0);
+    BOOST_CHECK(var_value(assignment_table, res_2.output) == 0);
     res_2 = assignment_table.add_input_to_batch_assignment<multiplication_type>(input_2);
-    BOOST_ASSERT(var_value(assignment_table, res_2.output) == var_value(assignment_table, input_2.x) * var_value(assignment_table, input_2.y));
-    BOOST_ASSERT(var_value(assignment_table, res_2.output) != 0);
+    BOOST_CHECK(var_value(assignment_table, res_2.output) == var_value(assignment_table, input_2.x) * var_value(assignment_table, input_2.y));
+    BOOST_CHECK(var_value(assignment_table, res_2.output) != 0);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

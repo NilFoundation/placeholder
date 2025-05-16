@@ -71,7 +71,7 @@ void test_flexible_constant_pow(
 
     auto result_check = [&x, &pow](AssignmentType &assignment,
 	    typename component_type::result_type &real_res) {
-            BOOST_ASSERT(var_value(assignment, real_res.y) == x.pow(pow));
+            BOOST_CHECK(var_value(assignment, real_res.y) == x.pow(pow));
     };
 
     std::array<std::uint32_t, WitnessColumns> witnesses;

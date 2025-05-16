@@ -75,13 +75,13 @@ void test_flexible_negate(const std::vector<typename BlueprintFieldType::value_t
 
     auto result_check = [&array](AssignmentType &assignment,
 	    typename component_type::result_type &real_res) {
-        BOOST_ASSERT(real_res.output.size() == ArraySize);
+        BOOST_CHECK(real_res.output.size() == ArraySize);
         for (std::size_t i = 0; i < ArraySize; i++) {
             if(var_value(assignment, real_res.output[i]) + array[i] != 0){
                 std::cout << "Block " << i << ": var = " << real_res.output[i] << " values = " << var_value(assignment, real_res.output[i]) << " != "
                     << (0-array[i]) << std::endl;
             }
-            BOOST_ASSERT(var_value(assignment, real_res.output[i]) +array[i] == 0);
+            BOOST_CHECK(var_value(assignment, real_res.output[i]) +array[i] == 0);
         }
     };
 

@@ -63,7 +63,7 @@ void test_pow_factor(
 
     using component_type = blueprint::components::pow_factor<ArithmetizationType, BlueprintFieldType>;
 
-    BOOST_ASSERT(coefficients.size() == power + 1);
+    BOOST_CHECK(coefficients.size() == power + 1);
 
     typename component_type::input_type instance_input;
     instance_input.theta = var(0, 0, false, var::column_type::public_input);
@@ -74,7 +74,7 @@ void test_pow_factor(
 
     std::vector<value_type> public_input = {theta};
     std::copy(coefficients.begin(), coefficients.end(), std::back_inserter(public_input));
-    BOOST_ASSERT(public_input.size() == power + 2);
+    BOOST_CHECK(public_input.size() == power + 2);
 
     auto result_check = [power, &theta, &coefficients](AssignmentType &assignment,
 	    typename component_type::result_type &real_res) {
@@ -83,7 +83,7 @@ void test_pow_factor(
         for (std::size_t i = 1; i < power + 1; i++) {
             poly_value = poly_value * theta + coefficients[i];
         }
-        BOOST_ASSERT(var_value(assignment, real_res.output) == poly_value);
+        BOOST_CHECK(var_value(assignment, real_res.output) == poly_value);
     };
 
     std::array<std::uint32_t, WitnessColumns> witnesses;

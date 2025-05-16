@@ -206,7 +206,7 @@ auto test_keccak_round_inner(std::array<typename BlueprintFieldType::value_type,
     };
 
     if (!(WitnessesAmount == 15 || WitnessesAmount == 9)) {
-        BOOST_ASSERT_MSG(false, "Please add support for WitnessesAmount that you passed here!") ;
+        BOOST_CHECK_MESSAGE(false, "Please add support for WitnessesAmount that you passed here!") ;
     }
     std::array<std::uint32_t, WitnessesAmount> witnesses;
     for (std::uint32_t i = 0; i < WitnessesAmount; i++) {

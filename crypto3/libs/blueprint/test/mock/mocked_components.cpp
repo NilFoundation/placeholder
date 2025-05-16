@@ -82,7 +82,7 @@ using namespace nil;
         auto result_check = [&expected_result](AssignmentType &assignment, \
             typename component_type::result_type &real_res) { \
     \
-            BOOST_ASSERT(expected_result == var_value(assignment, real_res.a)); \
+            BOOST_CHECK(expected_result == var_value(assignment, real_res.a)); \
         }; \
     \
         component_type component_instance({0u, 1u, 2u}, {}, {}); \
@@ -127,8 +127,8 @@ TEST_SMALL_UNSIGNED_GEN(test_small_unsigned_rem, unsigned_remainder_component_sm
         auto result_check = [&expected_result_sign, &expected_result_mod](AssignmentType &assignment, \
             typename component_type::result_type &real_res) { \
     \
-            BOOST_ASSERT(expected_result_sign == var_value(assignment, real_res.value[0])); \
-            BOOST_ASSERT(expected_result_mod == var_value(assignment, real_res.value[1])); \
+            BOOST_CHECK(expected_result_sign == var_value(assignment, real_res.value[0])); \
+            BOOST_CHECK(expected_result_mod == var_value(assignment, real_res.value[1])); \
         }; \
     \
         component_type component_instance({0u, 1u, 2u}, {}, {}); \
@@ -252,8 +252,8 @@ void test_small_signed_abs(
     auto result_check = [&expected_sign, &expected_mod](AssignmentType &assignment,
         typename component_type::result_type &real_res) {
 
-        BOOST_ASSERT(expected_sign == var_value(assignment, real_res.value[0]));
-        BOOST_ASSERT(expected_mod == var_value(assignment, real_res.value[1]));
+        BOOST_CHECK(expected_sign == var_value(assignment, real_res.value[0]));
+        BOOST_CHECK(expected_mod == var_value(assignment, real_res.value[1]));
     };
 
     component_type component_instance({0, 1, 2}, {}, {});
@@ -311,9 +311,9 @@ void test_big_signed_abs(
     auto result_check = [&expected_sign, &expected_first, &expected_second](AssignmentType &assignment,
         typename component_type::result_type &real_res) {
 
-        BOOST_ASSERT(expected_sign == var_value(assignment, real_res.value[0]));
-        BOOST_ASSERT(expected_first == var_value(assignment, real_res.value[1]));
-        BOOST_ASSERT(expected_second == var_value(assignment, real_res.value[2]));
+        BOOST_CHECK(expected_sign == var_value(assignment, real_res.value[0]));
+        BOOST_CHECK(expected_first == var_value(assignment, real_res.value[1]));
+        BOOST_CHECK(expected_second == var_value(assignment, real_res.value[2]));
     };
 
     component_type component_instance({0, 1, 2}, {}, {});
@@ -378,8 +378,8 @@ void test_big_signed_absolute() {
         auto result_check = [&expected_first, &expected_second](AssignmentType &assignment, \
             typename component_type::result_type &real_res) { \
     \
-            BOOST_ASSERT(expected_first == var_value(assignment, real_res.value[0])); \
-            BOOST_ASSERT(expected_second == var_value(assignment, real_res.value[1])); \
+            BOOST_CHECK(expected_first == var_value(assignment, real_res.value[0])); \
+            BOOST_CHECK(expected_second == var_value(assignment, real_res.value[1])); \
         }; \
     \
         component_type component_instance({0, 1, 2}, {}, {}); \
@@ -417,7 +417,7 @@ void test_big_signed_absolute() {
         auto result_check = [&expected_result](AssignmentType &assignment, \
             typename component_type::result_type &real_res) { \
     \
-            BOOST_ASSERT(expected_result == var_value(assignment, real_res.a)); \
+            BOOST_CHECK(expected_result == var_value(assignment, real_res.a)); \
         }; \
     \
         component_type component_instance({0, 1, 2}, {}, {}); \
@@ -472,9 +472,9 @@ TEST_BIG_UNSIGNED_BOOL_GEN(test_big_unsigned_greater_eq, unsinged_greater_equal_
         auto result_check = [&expected_sign, &expected_first, &expected_second](AssignmentType &assignment, \
             typename component_type::result_type &real_res) { \
     \
-            BOOST_ASSERT(expected_sign == var_value(assignment, real_res.value[0])); \
-            BOOST_ASSERT(expected_first == var_value(assignment, real_res.value[1])); \
-            BOOST_ASSERT(expected_second == var_value(assignment, real_res.value[2])); \
+            BOOST_CHECK(expected_sign == var_value(assignment, real_res.value[0])); \
+            BOOST_CHECK(expected_first == var_value(assignment, real_res.value[1])); \
+            BOOST_CHECK(expected_second == var_value(assignment, real_res.value[2])); \
         }; \
     \
         component_type component_instance({0, 1, 2}, {}, {}); \
@@ -522,7 +522,7 @@ TEST_BIG_SIGNED_GEN(test_big_signed_rem, signed_remainder_component_big)
         auto result_check = [&expected_result](AssignmentType &assignment, \
             typename component_type::result_type &real_res) { \
     \
-            BOOST_ASSERT(expected_result == var_value(assignment, real_res.a)); \
+            BOOST_CHECK(expected_result == var_value(assignment, real_res.a)); \
         }; \
     \
         component_type component_instance({0, 1, 2}, {}, {}); \

@@ -72,15 +72,15 @@ BOOST_AUTO_TEST_CASE(gate_id_sanity_tests) {
     gate_type gate(0, constraints);
 
     gate_id_type id(gate);
-    BOOST_ASSERT(id == id);
-    BOOST_ASSERT(!(id < id));
+    BOOST_CHECK(id == id);
+    BOOST_CHECK(!(id < id));
     std::vector<constraint_type> constraints_2;
     constraints_2.emplace_back(
         var(0, -1, true, var::column_type::witness) * var(1, 3, true, var::column_type::witness) -
         var(2, 0, true, var::column_type::witness));
     gate_id_type id_2(gate_type(0, constraints_2));
-    BOOST_ASSERT(id != id_2);
-    BOOST_ASSERT(id < id_2 || id_2 < id);
+    BOOST_CHECK(id != id_2);
+    BOOST_CHECK(id < id_2 || id_2 < id);
 
     std::vector<constraint_type> constraints_3;
     std::vector<constraint_type> constraints_4;
@@ -94,11 +94,11 @@ BOOST_AUTO_TEST_CASE(gate_id_sanity_tests) {
         var(0, 1, true, var::column_type::witness));
     gate_id_type id_3(constraints_3);
     gate_id_type id_4(constraints_4);
-    BOOST_ASSERT(id_3 != id_4);
+    BOOST_CHECK(id_3 != id_4);
 
     value_type power_100 = values.get_power(100);
     value_type power_101 = values.get_power(101);
-    BOOST_ASSERT(power_100 != power_101);
+    BOOST_CHECK(power_100 != power_101);
 
     // gate_id should be unordered -- order of constraints inside the gate should not matter
     std::vector<constraint_type> constraints_5;
@@ -116,7 +116,7 @@ BOOST_AUTO_TEST_CASE(gate_id_sanity_tests) {
 
     gate_id_type id_5(constraints_5),
                  id_6(constraints_6);
-    BOOST_ASSERT(id_5 == id_6);
+    BOOST_CHECK(id_5 == id_6);
 
     std::vector<constraint_type> constraints_7;
     constraints_7.emplace_back(var(0, 0, true, var::column_type::witness));
@@ -124,7 +124,7 @@ BOOST_AUTO_TEST_CASE(gate_id_sanity_tests) {
     constraints_8.emplace_back(var(0, 0, true, var::column_type::constant));
     gate_id_type id_7(constraints_7),
                  id_8(constraints_8);
-    BOOST_ASSERT(id_7 != id_8);
+    BOOST_CHECK(id_7 != id_8);
 }
 
 BOOST_AUTO_TEST_CASE(lookup_gate_id_sanity_tests) {
@@ -158,8 +158,8 @@ BOOST_AUTO_TEST_CASE(lookup_gate_id_sanity_tests) {
                      gate_2(1, constraints_2);
     lookup_gate_id_type id_1 = lookup_gate_id_type(gate_1),
                         id_2 = lookup_gate_id_type(gate_2);
-    BOOST_ASSERT(id_1 == id_2);
-    BOOST_ASSERT(!(id_1 < id_2) && !(id_2 < id_1));
+    BOOST_CHECK(id_1 == id_2);
+    BOOST_CHECK(!(id_1 < id_2) && !(id_2 < id_1));
     // Order of variables inside constraints should matter
     auto var_1 = var(0, -1, true, var::column_type::witness),
          var_2 = var(1, 3, true, var::column_type::witness);
@@ -167,13 +167,13 @@ BOOST_AUTO_TEST_CASE(lookup_gate_id_sanity_tests) {
                            constraint_4({0, {var_2, var_1}});
     lookup_gate_id_type id_3(constraint_3),
                         id_4(constraint_4);
-    BOOST_ASSERT(id_3 != id_4);
+    BOOST_CHECK(id_3 != id_4);
     // Table ids should matter
     lookup_constraint_type constraint_5({0, {var_1, var_2}}),
                            constraint_6({1, {var_1, var_2}});
     lookup_gate_id_type id_5(constraint_5),
                         id_6(constraint_6);
-    BOOST_ASSERT(id_5 != id_6);
+    BOOST_CHECK(id_5 != id_6);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

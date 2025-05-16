@@ -35,6 +35,8 @@
 #include <utility>
 #include <map>
 
+#include <boost/test/unit_test.hpp>
+
 #include <boost/random/random_device.hpp>
 #include <boost/random/uniform_int_distribution.hpp>
 #include <boost/random/mersenne_twister.hpp>
@@ -145,7 +147,7 @@ namespace nil {
                 ifile.open(circuit_path, std::ios_base::binary | std::ios_base::in);
                 if (!ifile.is_open()) {
                     std::cerr << "Cannot find input file " << circuit_path << std::endl;
-                    BOOST_ASSERT(false);
+                    BOOST_CHECK(false);
                 }
                 std::vector<std::uint8_t> v;
                 ifile.seekg(0, std::ios_base::end);
@@ -155,7 +157,7 @@ namespace nil {
                 ifile.read(reinterpret_cast<char*>(v.data()), fsize);
                 if (!ifile) {
                     std::cerr << "Cannot parse input file " << circuit_path << std::endl;
-                    BOOST_ASSERT(false);
+                    BOOST_CHECK(false);
                 }
                 ifile.close();
 
@@ -174,7 +176,7 @@ namespace nil {
                 iassignment.open(table_path, std::ios_base::binary | std::ios_base::in);
                 if (!iassignment) {
                     std::cerr << "Cannot open " << table_path << std::endl;
-                    BOOST_ASSERT(false);
+                    BOOST_CHECK(false);
                 }
                 std::vector<std::uint8_t> v;
                 iassignment.seekg(0, std::ios_base::end);
@@ -184,7 +186,7 @@ namespace nil {
                 iassignment.read(reinterpret_cast<char*>(v.data()), fsize);
                 if (!iassignment) {
                     std::cerr << "Cannot parse input file " << table_path << std::endl;
-                    BOOST_ASSERT(false);
+                    BOOST_CHECK(false);
                 }
                 iassignment.close();
                 nil::crypto3::marshalling::types::plonk_assignment_table<TTypeBase, AssignmentTableType> marshalled_table_data;
@@ -351,7 +353,7 @@ namespace nil {
                     std::cout << bp.num_gates() + bp.num_lookup_gates() << " != " << component_type::get_gate_manifest(component_instance.witness_amount(),
                                                                   component_static_info_args...).get_gates_amount() << std::endl;
                 }
-                BOOST_ASSERT_MSG(bp.num_gates() + bp.num_lookup_gates() ==
+                BOOST_CHECK_MESSAGE(bp.num_gates() + bp.num_lookup_gates() ==
                                 component_type::get_gate_manifest(component_instance.witness_amount(),
                                                                   component_static_info_args...).get_gates_amount(),
                                 "Component total gates amount does not match actual gates amount.");
@@ -360,12 +362,12 @@ namespace nil {
             if (start_row + component_instance.rows_amount >= public_input.size()) {
                 if ( assignment.rows_amount() - start_row != component_instance.rows_amount )
                     std::cout << assignment.rows_amount() << " != " << component_instance.rows_amount << std::endl;
-                BOOST_ASSERT_MSG(assignment.rows_amount() - start_row == component_instance.rows_amount,
+                BOOST_CHECK_MESSAGE(assignment.rows_amount() - start_row == component_instance.rows_amount,
                                 "Component rows amount does not match actual rows amount.");
                 // Stretched components do not have a manifest, as they are dynamically generated.
                 if constexpr (!blueprint::components::is_component_stretcher<
                                     BlueprintFieldType, ComponentType>::value) {
-                    BOOST_ASSERT_MSG(assignment.rows_amount() - start_row ==
+                    BOOST_CHECK_MESSAGE(assignment.rows_amount() - start_row ==
                                     component_type::get_rows_amount(component_instance.witness_amount(),
                                                                     component_static_info_args...),
                                     "Static component rows amount does not match actual rows amount.");
@@ -405,7 +407,7 @@ namespace nil {
                 // blueprint::detail::export_connectedness_zones(
                 //      zones, assignment, instance_input.all_vars(), start_row, rows_after_batching - start_row, std::cout);
 
-                BOOST_ASSERT_MSG(is_connected,
+                BOOST_CHECK_MESSAGE(is_connected,
                   "Component disconnected! See comment above this assert for a way to output a visual representation of the connectedness graph.");
             }
             desc.usable_rows_amount = assignment.rows_amount();
@@ -472,8 +474,8 @@ namespace nil {
             // bp.export_circuit(std::cout);
             result_check(assignment, component_result);
 
-            BOOST_ASSERT(bp.num_gates() == 0);
-            BOOST_ASSERT(bp.num_lookup_gates() == 0);
+            BOOST_CHECK(bp.num_gates() == 0);
+            BOOST_CHECK(bp.num_lookup_gates() == 0);
 
             return std::make_tuple(desc, bp, assignment);
         }
@@ -546,10 +548,10 @@ namespace nil {
                     bp, desc, assignments
                 );
                 if (expected_to_pass) {
-                    BOOST_ASSERT(verifier_res);
+                    BOOST_CHECK(verifier_res);
                 }
                 else {
-                    BOOST_ASSERT(!verifier_res);
+                    BOOST_CHECK(!verifier_res);
                 }
             }
         }

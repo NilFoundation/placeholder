@@ -75,7 +75,7 @@ public:
         bool result = test_bbf_component<field_type, nil::blueprint::bbf::call_commit>(
             "call_commit", {}, call_commit_assignment_input, max_rw, max_call_commits
         );
-        BOOST_ASSERT(result == expected_result);
+        BOOST_CHECK(result == expected_result);
     }
 };
 

@@ -103,7 +103,7 @@ void test_against_exhaustive_search(std::list<std::pair<std::size_t, std::size_t
     std::unordered_map<std::size_t, std::size_t> assignment = huang_lu(sizes, agent_amount);
     // Sanity check: all tasks are assigned
     for (std::size_t i = 0; i < sizes.size(); i++) {
-        BOOST_ASSERT(assignment.find(i) != assignment.end());
+        BOOST_CHECK(assignment.find(i) != assignment.end());
     }
     std::vector<std::size_t> tasks(sizes.size(), 0);
     for (auto [key, size] : sizes) {
@@ -123,8 +123,8 @@ void test_against_exhaustive_search(std::list<std::pair<std::size_t, std::size_t
         tasks,
         0,
         value);
-    BOOST_ASSERT(result_found);
-    BOOST_ASSERT(9 * value <= true_value * 11);
+    BOOST_CHECK(result_found);
+    BOOST_CHECK(9 * value <= true_value * 11);
 }
 
 // Reduce this if you want to make the instances bigger

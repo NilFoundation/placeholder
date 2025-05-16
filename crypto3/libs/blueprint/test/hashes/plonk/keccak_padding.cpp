@@ -135,7 +135,7 @@ auto test_keccak_padding_inner(std::vector<typename BlueprintFieldType::value_ty
     };
 
     if (!(WitnessesAmount == 15 || WitnessesAmount == 9)) {
-        BOOST_ASSERT_MSG(false, "Please add support for WitnessesAmount that you passed here!");
+        BOOST_CHECK_MESSAGE(false, "Please add support for WitnessesAmount that you passed here!");
     }
     std::array<std::uint32_t, WitnessesAmount> witnesses;
     for (std::uint32_t i = 0; i < WitnessesAmount; i++) {
