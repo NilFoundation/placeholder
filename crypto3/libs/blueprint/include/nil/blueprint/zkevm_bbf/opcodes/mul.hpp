@@ -61,27 +61,27 @@ public:
     using typename generic_component<FieldType,stage>::TYPE;
     using typename generic_component<FieldType, stage>::context_type;
 
-    // Computes the terms of r*b with coefficient 2^(8 * chunk_index)
-    TYPE carryless_mul(const std::vector<TYPE> &a_8_chunks,
-                                const std::vector<TYPE> &b_8_chunks,
-                                const unsigned char chunk_index) const {
-        TYPE res = 0;
-        // std::cout << "chunk_index = " << chunk_index << std::endl;
-        for (int i = 0; i <= chunk_index; i++) {
-            int j = chunk_index - i;
-            if ((i < chunk_8_amount) && (j >= 0) && (j < chunk_8_amount)) {
-                // std::cout << "i = " << i << ", j = " << j << std::endl;
-                res += a_8_chunks[i] * b_8_chunks[j];
-            }
-        }
-        return res;
-    }
+    // // Computes the terms of r*b with coefficient 2^(8 * chunk_index)
+    // TYPE carryless_mul(const std::vector<TYPE> &a_8_chunks,
+    //                             const std::vector<TYPE> &b_8_chunks,
+    //                             const unsigned char chunk_index) const {
+    //     TYPE res = 0;
+    //     // std::cout << "chunk_index = " << chunk_index << std::endl;
+    //     for (int i = 0; i <= chunk_index; i++) {
+    //         int j = chunk_index - i;
+    //         if ((i < chunk_8_amount) && (j >= 0) && (j < chunk_8_amount)) {
+    //             // std::cout << "i = " << i << ", j = " << j << std::endl;
+    //             res += a_8_chunks[i] * b_8_chunks[j];
+    //         }
+    //     }
+    //     return res;
+    // }
 
-    // TODO: add comment
-    TYPE count_cross_terms(const unsigned char chunk_index) const {
-        int i = chunk_index + 1;
-        return (i <= 32) ? i : 2 * chunk_8_amount - i;
-    }
+    // // TODO: add comment
+    // TYPE count_cross_terms(const unsigned char chunk_index) const {
+    //     int i = chunk_index + 1;
+    //     return (i <= 32) ? i : 2 * chunk_8_amount - i;
+    // }
 
     // NOTE ON OVERALL APPROACH: unlike in the SHL, SHR, SAR opcodes, here we perform multiplication
     // by splitting both inputs into 8-bit chunks, as opposed to one in 16-bit chunks and the other in
@@ -94,32 +94,33 @@ public:
         generic_component<FieldType,stage>(context_object, false)
     {
         // 16-bit chunks
-        std::vector<TYPE> a_chunks(chunk_amount);                      // First input chunks
-        std::vector<TYPE> b_chunks(chunk_amount);                      // Second input chunks
-        std::vector<TYPE> r_chunks(chunk_amount);                      // Result of a*b
+        // std::vector<TYPE> a_chunks(chunk_amount);                      // First input chunks
+        // std::vector<TYPE> b_chunks(chunk_amount);                      // Second input chunks
+        // std::vector<TYPE> r_chunks(chunk_amount);                      // Result of a*b
 
         // 8-bit chunks
-        std::vector<TYPE> a8_chunks(chunk_8_amount);
-        std::vector<TYPE> b8_chunks(chunk_8_amount);
-        std::vector<TYPE> r8_chunks(chunk_8_amount);                   // Result of a*b in 8-bit chunks
-        std::vector<TYPE> r8_carryless_chunks(chunk_8_amount);         // a8_chunks[i] * b8_chunks[i] = r8_carryless_chunks[i]
-        std::vector<TYPE> r8_carries(chunk_8_amount);                  // Carries containing whatever overflows 8 bits: 
-                                                                       // a8_chunks[i] * b8_chunks[i] = r8_chunks[i] + r8_carries[i]
-        std::vector<TYPE> r8_carries_copy1(chunk_8_amount);
-        std::vector<TYPE> r8_carries_copy2(chunk_8_amount);
+        // std::vector<TYPE> a8_chunks(chunk_8_amount);
+        // std::vector<TYPE> b8_chunks(chunk_8_amount);
+        // std::vector<TYPE> r8_chunks(chunk_8_amount);                   // Result of a*b in 8-bit chunks
+        // std::vector<TYPE> r8_carryless_chunks(chunk_8_amount);         // a8_chunks[i] * b8_chunks[i] = r8_carryless_chunks[i]
+        // std::vector<TYPE> r8_carries(chunk_8_amount);                  // Carries containing whatever overflows 8 bits: 
+        //                                                                // a8_chunks[i] * b8_chunks[i] = r8_chunks[i] + r8_carries[i]
+        // std::vector<TYPE> r8_carries_copy1(chunk_8_amount);
+        // std::vector<TYPE> r8_carries_copy2(chunk_8_amount);
 
-        // Range checks associated with the values above
-        std::vector<TYPE> a8_chunks_check(chunk_8_amount);
-        std::vector<TYPE> b8_chunks_check(chunk_8_amount);
-        std::vector<TYPE> r8_chunks_check(chunk_8_amount);
-        std::vector<TYPE> r8_carries_check(chunk_8_amount);
+        // // Range checks associated with the values above
+        // std::vector<TYPE> a8_chunks_check(chunk_8_amount);
+        // std::vector<TYPE> b8_chunks_check(chunk_8_amount);
+        // std::vector<TYPE> r8_chunks_check(chunk_8_amount);
+        // std::vector<TYPE> r8_carries_check(chunk_8_amount);
 
-        allocate(a8_chunks[0], 0, 5);   // This one crashes the tests:
+        TYPE test_value;
+        allocate(test_value, 0, 5);     // This one crashes the tests:
                                         // unknown location(0): fatal error: in "zkevm_opcode_test_suite/mul": std::runtime_error: Insufficient space for starting a new row.
 
-        allocate(a8_chunks[0], 1, 5);   // All of these work fine
-        allocate(a8_chunks[0], 0, 4);
-        allocate(a8_chunks[0], 0, 6);
+        allocate(test_value, 1, 5);   // All of these work fine
+        allocate(test_value, 0, 4);
+        allocate(test_value, 0, 6);
 
 
         // PART 1: computing the opcode and splitting values in chunks
