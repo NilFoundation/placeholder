@@ -87,7 +87,7 @@ namespace nil {
                     size_t row_index = 0;
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
                         
-                        // string encoding with zero len_imagegth
+                        // string encoding with zero len_image
                         prefix_first_exists[row_index] = 1;
                         prefix_second_exists[row_index] = 0;
                         prefix_third_exists[row_index] = 0;
@@ -97,7 +97,7 @@ namespace nil {
                         prefix_second_flag[row_index] = 1;
                         prefix_third[row_index] = 0;
                         first_element_image[row_index] = 0;
-                        first_element_flag[row_index] = 1;
+                        first_element_flag[row_index] = 0;
                         element_type[row_index] = 1;
                         len_image[row_index] = 0;
                         row_index++;
