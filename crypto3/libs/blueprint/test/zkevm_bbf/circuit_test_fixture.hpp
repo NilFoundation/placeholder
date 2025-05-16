@@ -78,9 +78,14 @@ std::vector<std::uint8_t> hex_string_to_bytes(std::string const &hex_string) {
 }
 
 boost::property_tree::ptree load_hardhat_input(std::string path){
+    namespace fs = std::filesystem;
+    fs::path source_path = __FILE__;
+    fs::path source_dir = source_path.parent_path();
+    fs::path json_path = source_dir / "data" / path;
+    std::cout << "Open file " << json_path << std::endl;
+
     std::ifstream ss;
-    std::cout << "Open file " << std::string(TEST_DATA_DIR) + path << std::endl;
-    ss.open(std::string(TEST_DATA_DIR) + path);
+    ss.open(json_path);
     boost::property_tree::ptree pt;
     boost::property_tree::read_json(ss, pt);
     ss.close();
