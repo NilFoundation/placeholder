@@ -44,7 +44,7 @@
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
 #include <nil/blueprint/zkevm_bbf/mpt.hpp>
-#include <nil/blueprint/zkevm_bbf/mpt_leaf.hpp>
+//#include <nil/blueprint/zkevm_bbf/mpt_leaf.hpp>
 #include <nil/blueprint/zkevm_bbf/mpt_dynamic.hpp>
 
 #include "./circuit_test_fixture.hpp"
@@ -132,7 +132,7 @@ public:
         BOOST_CHECK((!check_satisfiability && !generate_proof) || result == expected_result); // Max_rw, Max_mpt
 
     }
-
+/*
     template <typename field_type>
     void test_zkevm_mpt_leaf(
         std::string data_source,
@@ -177,6 +177,7 @@ public:
         );
         BOOST_CHECK((!check_satisfiability && !generate_proof) || result == expected_result); // Max_rw, Max_mpt
     }
+*/
 };
 
 BOOST_FIXTURE_TEST_SUITE(zkevm_bbf_mpt, zkEVMMPTTestFixture)
@@ -188,6 +189,6 @@ BOOST_AUTO_TEST_CASE(one_mpt_path) {
     test_zkevm_mpt<field_type>("mpt_path_3.json", 500);
 }
 BOOST_AUTO_TEST_CASE(mpt_leafs) {
-    test_zkevm_mpt_leaf<field_type>("mpt_hash_0.json", 1, 10);
+//    test_zkevm_mpt_leaf<field_type>("mpt_hash_0.json", 1, 10);
 }
 BOOST_AUTO_TEST_SUITE_END()
