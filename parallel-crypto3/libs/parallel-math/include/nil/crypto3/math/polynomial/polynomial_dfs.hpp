@@ -718,31 +718,30 @@ namespace nil {
                     _d = tmp.size() - 1;
                     val.assign(tmp.begin(), tmp.end());
                     val.resize(n, FieldValueType::zero());
-                    
-                    // We need this check, because we're unable to create an evaluation domain of size 1.
-                    if (n == 1)
-                        return;
 
                     if (domain == nullptr) {
-                        domain = make_evaluation_domain<FieldType>(this->size());
+                        value_type omega = unity_root<FieldType>(n);
+                        detail::basic_radix2_fft<FieldType>(val, omega);
+                    } else {
+                        domain->fft(this->val);
                     }
-                    domain->fft(this->val);
                 }
 
                 std::vector<FieldValueType> coefficients(
                         std::shared_ptr<evaluation_domain<typename value_type::field_type>> domain = nullptr) const {
                     typedef typename value_type::field_type FieldType;
+                    value_type omega = unity_root<FieldType>(this->size());
                     std::vector<FieldValueType> tmp(this->begin(), this->end());
 
-                    // We need this check, because we're unable to create an evaluation domain of size 1.
-                    if (this->size() == 1) {
-                        return tmp;
-                    }
-
                     if (domain == nullptr) {
-                         domain = make_evaluation_domain<FieldType>(this->size());
+                        detail::basic_radix2_fft<FieldType>(tmp, omega.inversed());
+                        const value_type sconst = value_type(this->size()).inversed();
+                        parallel_transform(tmp.begin(), tmp.end(), tmp.begin(),
+                                           std::bind(std::multiplies<value_type>(),
+                                                     sconst, std::placeholders::_1));
+                    } else {
+                        domain->inverse_fft(tmp);
                     }
-                    domain->inverse_fft(tmp);
 
                     size_t r_size = tmp.size();
                     while (r_size > 1 && tmp[r_size - 1] == FieldValueType::zero()) {

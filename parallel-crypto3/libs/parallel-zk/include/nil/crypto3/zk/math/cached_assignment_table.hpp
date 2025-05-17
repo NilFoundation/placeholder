@@ -193,18 +193,17 @@ namespace nil::crypto3::zk::snark {
 
             std::vector<var_without_rotation_type> new_vars(new_vars_set.begin(), new_vars_set.end());
 
-            std::vector<polynomial_type> polys;
-            polys.reserve(new_vars.size());
-            for (size_t i = 0; i < new_vars.size(); ++i) {
-                polys.push_back(*_assignment_table_coefficients[new_vars[i]]);
-            }
-            auto domain = get_domain(size);
-            std::vector<polynomial_dfs_type> polys_dfs = 
-                polynomial_batch_from_coefficients(std::move(polys), domain); 
-            for (size_t i = 0; i < new_vars.size(); ++i) {
-                _cache[std::make_pair(new_vars[i], size)][0] = 
-                    std::make_shared<polynomial_dfs_type>(std::move(polys_dfs[i]));
-            }
+            parallel_for(
+                0, new_vars.size(),
+                [&new_vars, size, this](std::size_t i) {
+                    // Here we take from _assignment_table_coefficients the variable value
+                    // without rotation.
+                    auto value_dfs = std::make_shared<polynomial_dfs_type>();
+                    value_dfs->from_coefficients(
+                        *_assignment_table_coefficients[new_vars[i]], get_domain(size));
+                    _cache[std::make_pair(new_vars[i], size)][0] = value_dfs;
+                },
+                ThreadPool::PoolLevel::HIGH);
 
             // Ensure we have the required variable in the cache with required rotation.
             parallel_for(
