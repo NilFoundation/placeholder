@@ -238,7 +238,7 @@ namespace nil::blueprint::bbf {
     };
 
     template<typename FieldType, GenerationStage stage>
-    class mpt_leaf : public generic_component<FieldType, stage> {
+    class mpt_leaf_node : public generic_component<FieldType, stage> {
         using typename generic_component<FieldType, stage>::context_type;
         using RLPTable = typename bbf::rlp_table<FieldType, stage>;
         using KeccakTable = typename bbf::keccak_table<FieldType, stage>;
@@ -278,7 +278,7 @@ namespace nil::blueprint::bbf {
         static void allocate_public_inputs(context_type &context, input_type &input,
                                            std::size_t max_mpt_query_size) {}
 
-        mpt_leaf(context_type &context_object, const input_type &input,
+        mpt_leaf_node(context_type &context_object, const input_type &input,
             std::size_t max_mpt_query_size)
             : generic_component<FieldType, stage>(context_object) {
 

@@ -44,7 +44,7 @@
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
 #include <nil/blueprint/zkevm_bbf/mpt.hpp>
-//#include <nil/blueprint/zkevm_bbf/mpt_leaf.hpp>
+#include <nil/blueprint/zkevm_bbf/mpt_leaf.hpp>
 #include <nil/blueprint/zkevm_bbf/mpt_dynamic.hpp>
 
 #include "./circuit_test_fixture.hpp"
@@ -132,7 +132,7 @@ public:
         BOOST_CHECK((!check_satisfiability && !generate_proof) || result == expected_result); // Max_rw, Max_mpt
 
     }
-/*
+
     template <typename field_type>
     void test_zkevm_mpt_leaf(
         std::string data_source,
@@ -140,7 +140,7 @@ public:
         std::size_t keccak_max_block,
         bool expected_result = true
     ) {
-        using input_type = typename mpt_leaf<field_type, GenerationStage::ASSIGNMENT>::input_type;
+        using input_type = typename mpt_leaf_node<field_type, GenerationStage::ASSIGNMENT>::input_type;
 
         input_type input;
         input.rlc_challenge = 53;
@@ -161,23 +161,22 @@ public:
 
                     hash_value = hash_value.substr(1, hash_value.length()-1);
                 }
-                for (unsigned i = 0; i < hash_value.length(); i += 2) {
-                    value.push_back(zkevm_word_from_string(hash_value.substr(i, 2)));
+                for (unsigned j = 0; j < hash_value.length(); j += 2) {
+                    value.push_back(zkevm_word_from_string(hash_value.substr(j, 2)));
                 }
                 l.data[i++] = value;
             }
             mpt_query single_query = {index, inner_node_type::storage_value, l};
             input.queries.push_back(single_query);
         }
-        bool result = test_bbf_component<field_type, mpt_leaf>(
-            "mpt_leaf",                 //  Circuit name
+        bool result = test_bbf_component<field_type, mpt_leaf_node>(
+            "mpt_leaf_node",                 //  Circuit name
             {} ,                   //  Public input
             input,                 //  Assignment input (paths to prove)
             max_mpt_leaf_size          //  Maximum size of mpt circuit,
         );
         BOOST_CHECK((!check_satisfiability && !generate_proof) || result == expected_result); // Max_rw, Max_mpt
     }
-*/
 };
 
 BOOST_FIXTURE_TEST_SUITE(zkevm_bbf_mpt, zkEVMMPTTestFixture)
@@ -189,6 +188,6 @@ BOOST_AUTO_TEST_CASE(one_mpt_path) {
     test_zkevm_mpt<field_type>("mpt_path_3.json", 500);
 }
 BOOST_AUTO_TEST_CASE(mpt_leafs) {
-//    test_zkevm_mpt_leaf<field_type>("mpt_hash_0.json", 1, 10);
+   test_zkevm_mpt_leaf<field_type>("mpt_leaf_0.json", 100, 10);
 }
 BOOST_AUTO_TEST_SUITE_END()
