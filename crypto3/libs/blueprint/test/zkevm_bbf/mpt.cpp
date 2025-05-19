@@ -188,6 +188,6 @@ BOOST_AUTO_TEST_CASE(one_mpt_path) {
     test_zkevm_mpt<field_type>("mpt_path_3.json", 500);
 }
 BOOST_AUTO_TEST_CASE(mpt_leafs) {
-//   test_zkevm_mpt_leaf<field_type>("mpt_leaf_0.json", 100, 10);
+  test_zkevm_mpt_leaf<field_type>("mpt_leaf_0.json", 100, 10);
 }
 BOOST_AUTO_TEST_SUITE_END()
