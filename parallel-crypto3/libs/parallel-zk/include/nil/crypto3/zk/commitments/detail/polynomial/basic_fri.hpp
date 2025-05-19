@@ -522,7 +522,7 @@ namespace nil {
                             0, poly.size(),
                             [&poly, &D](std::size_t i) {
                                 if (poly[i].size() != D->size()) {
-                                    poly[i].resize(D->size(), nullptr, D);
+                                    poly[i].resize(D->size(), nullptr, nullptr);
                                 }
                             },
                             ThreadPool::PoolLevel::HIGH);
