@@ -433,7 +433,7 @@ namespace nil {
                         special_selector_values[2] = Z.get(
                             FIXED_VALUES_BATCH, 2*common_data.permuted_columns.size() + 1, 0);
 
-                        // 4. prepare evaluaitons of the polynomials that are copy-constrained
+                        // 4. prepare evaluations of the polynomials that are copy-constrained
                         std::array<typename FieldType::value_type, f_parts> F;
                         std::size_t permutation_size = (Z.get_batch_size(FIXED_VALUES_BATCH) - 2 - constant_columns - selector_columns) / 2;
                         if (constraint_system.copy_constraints().size() > 0) {

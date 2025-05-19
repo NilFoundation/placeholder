@@ -211,16 +211,8 @@ namespace nil::crypto3::zk::snark {
                 boost::apply_visitor(*this, op.get_expr_left().get_expr());
             expression<DestinationVariableType> right =
                 boost::apply_visitor(*this, op.get_expr_right().get_expr());
-            switch (op.get_op()) {
-                case ArithmeticOperator::ADD:
-                    return left + right;
-                case ArithmeticOperator::SUB:
-                    return left - right;
-                case ArithmeticOperator::MULT:
-                    return left * right;
-                default:
-                    throw std::invalid_argument("ArithmeticOperator not found");
-            }
+            return binary_arithmetic_operation(std::move(left), std::move(right),
+                                               op.get_op());
         }
     private:
         std::function<typename DestinationVariableType::assignment_type(

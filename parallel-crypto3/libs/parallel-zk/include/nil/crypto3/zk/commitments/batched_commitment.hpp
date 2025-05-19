@@ -29,11 +29,13 @@
 #error "You're mixing parallel and non-parallel crypto3 versions"
 #endif
 
-#include <unordered_set>
-#include <set>
-#include <vector>
-#include <utility>
+#include <concepts>
 #include <map>
+#include <set>
+#include <type_traits>
+#include <unordered_set>
+#include <utility>
+#include <vector>
 
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
@@ -84,10 +86,7 @@ namespace nil {
 
                     std::map<std::size_t, std::vector<std::vector<value_type>>> _points;
 
-                    bool operator==(const polys_evaluator& other) const {
-                        return _z == other._z && _polys == other._polys &&
-                            _locked == other._locked && _points == other._points;
-                    }
+                    bool operator==(const polys_evaluator &other) const = default;
 
                     // We frequently search over the this->_points structure, and it's better to keep a hashmap that maps point to
                     // it's index in vector for faster search. We need to duplicate this data for now, because the order of points matters.
@@ -213,26 +212,28 @@ namespace nil {
                     }
 
                     void eval_polys() {
-                        for(auto const &[k, poly] : _polys) {
-                            _z.set_batch_size(k, poly.size());
-                            auto const &point = _points.at(k);
+                        for (auto const &[k, batch_polys] : _polys) {
+                            _z.set_batch_size(k, batch_polys.size());
+                            auto const &batch_points = _points.at(k);
 
-                            BOOST_ASSERT(poly.size() == point.size() || point.size() == 1);
+                            BOOST_ASSERT(batch_polys.size() == batch_points.size() ||
+                                         batch_points.size() == 1);
 
-                            for (std::size_t i = 0; i < poly.size(); ++i) {
-                                _z.set_poly_points_number(k, i, point[i].size());
+                            for (std::size_t i = 0; i < batch_polys.size(); ++i) {
+                                _z.set_poly_points_number(k, i, batch_points[i].size());
                             }
 
-                            // Lambda in parallel_for can not capture structured bindings [k, poly], until C++20
-                            auto k_capture = k;
-                            auto poly_capture = poly;
-
                             // We use HIGH level thread pool here, because "evaluate" may use the lower level one.
-                            parallel_for(0, poly.size(), [this, &point, k_capture, &poly_capture](std::size_t i) {
-                                for (std::size_t j = 0; j < point[i].size(); j++) {
-                                    _z.set(k_capture, i, j, poly_capture[i].evaluate(point[i][j]));
-                                }
-                            }, ThreadPool::PoolLevel::HIGH);
+                            parallel_for(
+                                0, batch_polys.size(),
+                                [this, &batch_points, k, &batch_polys](std::size_t i) {
+                                    for (std::size_t j = 0; j < batch_points[i].size();
+                                         j++) {
+                                        const auto &point = batch_points[i][j];
+                                        _z.set(k, i, j, batch_polys[i].evaluate(point));
+                                    }
+                                },
+                                ThreadPool::PoolLevel::HIGH);
                         }
                     }
 
@@ -242,27 +243,34 @@ namespace nil {
                         return root;
                     }
 
-                    void append_to_batch(std::size_t index, const polynomial_type& poly){
+                    void append_to_batch(std::size_t index, std::initializer_list<typename polynomial_type::value_type> il) {
+                        append_to_batch(index, polynomial_type(il));
+                    }
+
+                    // This is used to append polynomials in subfields
+                    template<typename Poly>
+                        requires std::constructible_from<polynomial_type, Poly>
+                    void append_to_batch(std::size_t index, Poly &&poly) {
                         if (_locked.find(index) == _locked.end())
                             _locked[index] = false;
 
                         // We cannot modify batch after commitment
                         BOOST_ASSERT(!_locked[index]);
 
-                        _polys[index].push_back(poly);
+                        _polys[index].emplace_back(std::forward<Poly>(poly));
                     }
 
-                    template<typename container_type>
-                    void append_to_batch(std::size_t index, const container_type& polys){
+                    template<std::ranges::range Range>
+                        requires std::constructible_from<
+                            polynomial_type, std::ranges::range_value_t<Range>>
+                    void append_many_to_batch(std::size_t index, Range &&polys) {
                         if (_locked.find(index) == _locked.end())
                             _locked[index] = false;
 
                         BOOST_ASSERT(!_locked[index]); // We cannot modify batch after commitment
-                        // We need this 'if' statement, otherwise we're segfaulting if the map entry does not exist.
-                        if (_polys.find(index) == _polys.end()) {
-                            _polys[index] = polys;
-                        } else {
-                            _polys[index].insert(std::end(_polys[index]), std::begin(polys), std::end(polys));
+                        auto &target = _polys[index];
+                        for (const auto &poly : polys) {
+                            target.emplace_back(poly);
                         }
                     }
 

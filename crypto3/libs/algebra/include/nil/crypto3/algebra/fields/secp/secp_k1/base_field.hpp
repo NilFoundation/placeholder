@@ -49,6 +49,8 @@ namespace nil {
                 struct secp_k1_base_field<160> : public field<160> {
                     typedef field<160> policy_type;
 
+                    using small_subfield = secp_k1_base_field;
+
                     constexpr static const std::size_t modulus_bits = policy_type::modulus_bits;
                     typedef typename policy_type::integral_type integral_type;
 
@@ -69,6 +71,8 @@ namespace nil {
                 template<>
                 struct secp_k1_base_field<192> : public field<192> {
                     typedef field<192> policy_type;
+
+                    using small_subfield = secp_k1_base_field;
 
                     constexpr static const std::size_t modulus_bits = policy_type::modulus_bits;
                     typedef typename policy_type::integral_type integral_type;
@@ -91,6 +95,8 @@ namespace nil {
                 struct secp_k1_base_field<224> : public field<224> {
                     typedef field<224> policy_type;
 
+                    using small_subfield = secp_k1_base_field;
+
                     constexpr static const std::size_t modulus_bits = policy_type::modulus_bits;
                     typedef typename policy_type::integral_type integral_type;
 
@@ -111,6 +117,8 @@ namespace nil {
                 template<>
                 struct secp_k1_base_field<256> : public field<256> {
                     typedef field<256> policy_type;
+
+                    using small_subfield = secp_k1_base_field;
 
                     constexpr static const std::size_t modulus_bits = policy_type::modulus_bits;
                     typedef typename policy_type::integral_type integral_type;

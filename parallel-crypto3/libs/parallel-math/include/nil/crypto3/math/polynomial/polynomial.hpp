@@ -32,6 +32,7 @@
 #endif
 
 #include <algorithm>
+#include <ranges>
 #include <vector>
 
 #include <nil/crypto3/math/polynomial/basic_operations.hpp>
@@ -97,11 +98,6 @@ namespace nil {
                     }
                 }
 
-                ~polynomial() = default;
-
-                polynomial(const polynomial& x) : val(x.val) {
-                }
-
                 polynomial(const polynomial& x, const allocator_type& a) : val(x.val, a) {
                 }
 
@@ -111,9 +107,12 @@ namespace nil {
                 polynomial(std::initializer_list<value_type> il, const allocator_type& a) : val(il, a) {
                 }
 
-                polynomial(polynomial&& x) BOOST_NOEXCEPT
-                    (std::is_nothrow_move_constructible<allocator_type>::value) :
-                    val(std::move(x.val)) {
+                template<typename Subfield>
+                polynomial(const polynomial<Subfield>& x) {
+                    val.resize(x.size());
+                    for (std::size_t i = 0; i < val.size(); ++i) {
+                        val[i] = x[i];
+                    }
                 }
 
                 polynomial(polynomial&& x, const allocator_type& a) : val(std::move(x.val), a) {
@@ -136,23 +135,13 @@ namespace nil {
                     this->operator[](power) = value;
                 }
 
-                polynomial& operator=(const polynomial& x) {
-                    val = x.val;
-                    return *this;
-                }
-
-                polynomial& operator=(polynomial&& x) {
-                    val = x.val;
-                    return *this;
-                }
-
                 polynomial& operator=(const container_type& x) {
                     val = x;
                     return *this;
                 }
 
                 polynomial& operator=(container_type&& x) {
-                    val = x;
+                    val = std::move(x);
                     return *this;
                 }
 
@@ -312,7 +301,7 @@ namespace nil {
                 }
 
                 void push_back(value_type&& _x) {
-                    val.push_back(_x);
+                    val.push_back(std::move(_x));
                 }
 
                 template<class... Args>
@@ -374,9 +363,9 @@ namespace nil {
                     val.swap(other.val);
                 }
 
-                template<typename Range>
+                template<std::ranges::random_access_range Range>
+                    requires(std::ranges::sized_range<Range>)
                 FieldValueType evaluate(const Range& values) const {
-
                     assert(values.size() + 1 == this->size());
 
                     FieldValueType result = (*this)[0];
@@ -387,8 +376,10 @@ namespace nil {
                     return result;
                 }
 
-                FieldValueType evaluate(const FieldValueType& value) const {
-                    FieldValueType result = FieldValueType::zero();
+                template<typename EvaluationFieldValueType>
+                EvaluationFieldValueType evaluate(
+                    const EvaluationFieldValueType& value) const {
+                    auto result = EvaluationFieldValueType::zero();
                     auto end = this->end();
                     while (end != this->begin()) {
                         result = result * value + *--end;

@@ -245,6 +245,29 @@ struct field_element_init<fields::detail::element_fp12_2over3over2<FieldParams>>
     }
 };
 
+template<typename FieldParams>
+struct field_element_init<fields::detail::element_fpn<FieldParams>> {
+    using element_type = fields::detail::element_fpn<FieldParams>;
+
+    template<typename ElementData>
+    static inline element_type process(const ElementData &element_data) {
+        using underlying_type = typename element_type::underlying_type;
+
+        std::array<underlying_type, element_type::dimension> element_values;
+
+        auto i = 0;
+        for (auto &element_value : element_data.second) {
+            element_values[i++] =
+                field_element_init<underlying_type>::process(element_value);
+        }
+        if (i != element_type::dimension) {
+            throw std::runtime_error("wrong number of elements");
+        }
+
+        return element_values;
+    }
+};
+
 template<typename element_type>
 void check_field_operations(const std::vector<element_type> &elements, const std::vector<constant_type> &constants) {
     BOOST_CHECK_EQUAL(elements[e1] + elements[e2], elements[e1_plus_e2]);
@@ -305,6 +328,14 @@ void check_field_operations(const std::vector<fields::detail::element_fp6_2over3
 template<typename FieldParams>
 void check_field_operations(const std::vector<fields::detail::element_fp12_2over3over2<FieldParams>> &elements,
                             const std::vector<constant_type> &constants) {
+    check_field_operations_wo_sqrt(elements, constants);
+    check_field_eq_operations(elements);
+}
+
+template<typename FieldParams>
+void check_field_operations(
+    const std::vector<fields::detail::element_fpn<FieldParams>> &elements,
+    const std::vector<constant_type> &constants) {
     check_field_operations_wo_sqrt(elements, constants);
     check_field_eq_operations(elements);
 }
@@ -375,6 +406,20 @@ BOOST_DATA_TEST_CASE(field_operation_test_koalabear,
 BOOST_DATA_TEST_CASE(field_operation_test_babybear,
                      string_data("field_operation_test_babybear"), data_set) {
     using policy_type = fields::babybear;
+
+    field_operation_test<policy_type>(data_set);
+}
+
+BOOST_DATA_TEST_CASE(field_operation_test_babybear_fp4,
+                     string_data("field_operation_test_babybear_fp4"), data_set) {
+    using policy_type = fields::babybear_fp4;
+
+    field_operation_test<policy_type>(data_set);
+}
+
+BOOST_DATA_TEST_CASE(field_operation_test_babybear_fp5,
+                     string_data("field_operation_test_babybear_fp5"), data_set) {
+    using policy_type = fields::babybear_fp5;
 
     field_operation_test<policy_type>(data_set);
 }

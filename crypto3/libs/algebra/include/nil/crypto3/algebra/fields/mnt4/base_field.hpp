@@ -49,6 +49,8 @@ namespace nil {
                 struct mnt4_base_field<298> : public field<298> {
                     typedef field<298> policy_type;
 
+                    using small_subfield = mnt4_base_field;
+
                     constexpr static const std::size_t modulus_bits = policy_type::modulus_bits;
                     typedef typename policy_type::integral_type integral_type;
 

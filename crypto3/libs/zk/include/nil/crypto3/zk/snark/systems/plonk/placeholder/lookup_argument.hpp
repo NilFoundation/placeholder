@@ -141,7 +141,7 @@ namespace nil {
                             reduced_input, reduced_value, basic_domain->m, usable_rows_amount);
 
                         // Commit to the counts.
-                        commitment_scheme.append_to_batch(LOOKUP_BATCH, counts);
+                        commitment_scheme.append_many_to_batch(LOOKUP_BATCH, counts);
 
                         typename commitment_scheme_type::commitment_type lookup_commitment = commitment_scheme.commit(LOOKUP_BATCH);
                         transcript(lookup_commitment);
@@ -168,8 +168,8 @@ namespace nil {
 
                         // Commit to hs, gs and U.
                         commitment_scheme.append_to_batch(PERMUTATION_BATCH, U);
-                        commitment_scheme.append_to_batch(PERMUTATION_BATCH, hs);
-                        commitment_scheme.append_to_batch(PERMUTATION_BATCH, gs);
+                        commitment_scheme.append_many_to_batch(PERMUTATION_BATCH, hs);
+                        commitment_scheme.append_many_to_batch(PERMUTATION_BATCH, gs);
 
                         std::array<polynomial_dfs_type, argument_size> F_dfs;
 

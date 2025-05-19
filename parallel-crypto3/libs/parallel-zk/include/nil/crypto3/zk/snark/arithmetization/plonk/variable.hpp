@@ -50,6 +50,14 @@ namespace nil::crypto3::zk::snark {
     template<typename VariableType>
     class expression;
 
+    enum plonk_column_type : std::uint8_t {
+        witness,
+        public_input,
+        constant,
+        selector,
+        uninitialized
+    };
+
     /********************************* Variable **********************************/
 
     /**
@@ -61,9 +69,7 @@ namespace nil::crypto3::zk::snark {
     public:
         using assignment_type = AssignmentType;
 
-        enum column_type : std::uint8_t {
-            witness, public_input, constant, selector, uninitialized
-        };
+        using column_type = plonk_column_type;
 
         /**
          * Mnemonic typedefs.
@@ -199,9 +205,7 @@ namespace nil::crypto3::zk::snark {
     public:
         using assignment_type = AssignmentType;
 
-        enum column_type : std::uint8_t {
-            witness, public_input, constant, selector, uninitialized
-        };
+        using column_type = plonk_column_type;
 
         std::size_t index;
         column_type type;
@@ -209,6 +213,10 @@ namespace nil::crypto3::zk::snark {
         constexpr plonk_variable_without_rotation()
             : index(0)
             , type(column_type::uninitialized) {}
+
+        constexpr plonk_variable_without_rotation(std::size_t index, column_type type)
+            : index(index)
+            , type(type) {}
 
         plonk_variable_without_rotation(const plonk_variable_without_rotation&) = default;
         plonk_variable_without_rotation(const plonk_variable<AssignmentType>& var)

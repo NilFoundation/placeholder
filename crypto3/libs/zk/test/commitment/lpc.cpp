@@ -297,13 +297,13 @@ BOOST_AUTO_TEST_SUITE(lpc_math_polynomial_suite);
         lpc_scheme_type lpc_scheme_verifier(fri_params);
 
         // Generate polynomials
-        lpc_scheme_prover.append_to_batch(0, generate_random_polynomial_batch<FieldType>(
+        lpc_scheme_prover.append_many_to_batch(0, generate_random_polynomial_batch<FieldType>(
                 dist_type(1, 10)(test_global_rnd_engine), d, test_global_alg_rnd_engine<FieldType>));
-        lpc_scheme_prover.append_to_batch(1, generate_random_polynomial_batch<FieldType>(
+        lpc_scheme_prover.append_many_to_batch(1, generate_random_polynomial_batch<FieldType>(
                 dist_type(1, 10)(test_global_rnd_engine), d, test_global_alg_rnd_engine<FieldType>));
-        lpc_scheme_prover.append_to_batch(2, generate_random_polynomial_batch<FieldType>(
+        lpc_scheme_prover.append_many_to_batch(2, generate_random_polynomial_batch<FieldType>(
                 dist_type(1, 10)(test_global_rnd_engine), d, test_global_alg_rnd_engine<FieldType>));
-        lpc_scheme_prover.append_to_batch(3, generate_random_polynomial_batch<FieldType>(
+        lpc_scheme_prover.append_many_to_batch(3, generate_random_polynomial_batch<FieldType>(
                 dist_type(1, 10)(test_global_rnd_engine), d, test_global_alg_rnd_engine<FieldType>));
 
         std::map<std::size_t, typename lpc_type::commitment_type> commitments;
@@ -391,13 +391,13 @@ BOOST_AUTO_TEST_SUITE(lpc_math_polynomial_suite);
 
         // Generate polynomials
         std::array<std::vector<math::polynomial_dfs<typename FieldType::value_type>>, 4> f;
-        lpc_scheme_prover.append_to_batch(0, generate_random_polynomial_dfs_batch<FieldType>(
+        lpc_scheme_prover.append_many_to_batch(0, generate_random_polynomial_dfs_batch<FieldType>(
                 dist_type(1, 10)(test_global_rnd_engine), d, test_global_alg_rnd_engine<FieldType>));
-        lpc_scheme_prover.append_to_batch(1, generate_random_polynomial_dfs_batch<FieldType>(
+        lpc_scheme_prover.append_many_to_batch(1, generate_random_polynomial_dfs_batch<FieldType>(
                 dist_type(1, 10)(test_global_rnd_engine), d, test_global_alg_rnd_engine<FieldType>));
-        lpc_scheme_prover.append_to_batch(2, generate_random_polynomial_dfs_batch<FieldType>(
+        lpc_scheme_prover.append_many_to_batch(2, generate_random_polynomial_dfs_batch<FieldType>(
                 dist_type(1, 10)(test_global_rnd_engine), d, test_global_alg_rnd_engine<FieldType>));
-        lpc_scheme_prover.append_to_batch(3, generate_random_polynomial_dfs_batch<FieldType>(
+        lpc_scheme_prover.append_many_to_batch(3, generate_random_polynomial_dfs_batch<FieldType>(
                 dist_type(1, 10)(test_global_rnd_engine), d, test_global_alg_rnd_engine<FieldType>));
 
         std::map<std::size_t, typename lpc_type::commitment_type> commitments;

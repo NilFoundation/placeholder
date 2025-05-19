@@ -44,6 +44,8 @@ namespace nil {
                 struct jubjub_scalar_field : public field<252> {
                     typedef field<252> policy_type;
 
+                    using small_subfield = jubjub_scalar_field;
+
                     constexpr static const std::size_t modulus_bits = policy_type::modulus_bits;
                     typedef typename policy_type::integral_type integral_type;
 

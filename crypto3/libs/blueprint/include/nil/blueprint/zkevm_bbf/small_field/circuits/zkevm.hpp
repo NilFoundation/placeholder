@@ -557,7 +557,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             }
         }
     protected:
-        static constexpr std::size_t max_opcode_height = 8;
+        static constexpr std::size_t max_opcode_height = 12;
         static constexpr std::size_t opcode_columns_amount = 64;
         static constexpr std::size_t range_checked_opcode_columns_amount = 32;
         std::vector<zkevm_opcode> implemented_opcodes = get_implemented_opcodes_list();

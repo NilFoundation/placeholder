@@ -34,7 +34,7 @@
 
 #include <set>
 
-#include <nil/crypto3/zk/math/dfs_cache.hpp>
+#include <nil/crypto3/zk/math/cached_assignment_table.hpp>
 #include <nil/crypto3/zk/math/centralized_expression_evaluator.hpp>
 
 #include <nil/crypto3/zk/commitments/polynomial/lpc.hpp>
@@ -161,8 +161,8 @@ namespace nil::crypto3::zk::snark {
                 _polynomial_table->selectors_amount());
 
             // 2. Commit witness columns and public_input columns
-            _commitment_scheme.append_to_batch(VARIABLE_VALUES_BATCH, _polynomial_table->witnesses());
-            _commitment_scheme.append_to_batch(VARIABLE_VALUES_BATCH, _polynomial_table->public_inputs());
+            _commitment_scheme.append_many_to_batch(VARIABLE_VALUES_BATCH, _polynomial_table->witnesses());
+            _commitment_scheme.append_many_to_batch(VARIABLE_VALUES_BATCH, _polynomial_table->public_inputs());
             {
                 PROFILE_SCOPE("Variable values precommit");
                 _proof.commitments[VARIABLE_VALUES_BATCH] = _commitment_scheme.commit(VARIABLE_VALUES_BATCH);
@@ -325,9 +325,8 @@ namespace nil::crypto3::zk::snark {
             return T_consolidated;
         }
 
-        typename lookup_argument_type::prover_lookup_result lookup_argument(central_evaluator_type& central_evaluator) {
-            PROFILE_SCOPE("Lookup argument");
-
+        typename lookup_argument_type::prover_lookup_result lookup_argument(
+            central_evaluator_type& central_evaluator) {
             typename lookup_argument_type::prover_lookup_result lookup_argument_result;
 
             lookup_argument_result.F_dfs[0] = lookup_argument_result.F_dfs[1] = lookup_argument_result.F_dfs[2] = 
@@ -351,7 +350,7 @@ namespace nil::crypto3::zk::snark {
 
         commitment_type T_commit(const std::vector<polynomial_dfs_type>& T_splitted_dfs) {
             PROFILE_SCOPE("T split precommit");
-            _commitment_scheme.append_to_batch(QUOTIENT_BATCH, T_splitted_dfs);
+            _commitment_scheme.append_many_to_batch(QUOTIENT_BATCH, T_splitted_dfs);
             return _commitment_scheme.commit(QUOTIENT_BATCH);
         }
 
@@ -415,7 +414,7 @@ namespace nil::crypto3::zk::snark {
                 _commitment_scheme.append_eval_point(PERMUTATION_BATCH, 0, evaluation_challenge * _omega);
 
             if (_is_lookup_enabled) {
-                // For polynomail U, we need the shifted value as well.
+                // For polynomial U, we need the shifted value as well.
                 _commitment_scheme.append_eval_point(PERMUTATION_BATCH, preprocessed_public_data.common_data->permutation_parts,
                     evaluation_challenge * _omega);
                 _commitment_scheme.append_eval_point(LOOKUP_BATCH, evaluation_challenge);

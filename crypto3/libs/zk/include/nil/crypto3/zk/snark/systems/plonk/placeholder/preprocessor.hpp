@@ -558,12 +558,12 @@ namespace nil {
                         std::array<polynomial_dfs_type, 2> &q_last_q_blind,
                         commitment_scheme_type &commitment_scheme
                     ) {
-                        commitment_scheme.append_to_batch(FIXED_VALUES_BATCH, id_perm_polys);
-                        commitment_scheme.append_to_batch(FIXED_VALUES_BATCH, sigma_perm_polys);
+                        commitment_scheme.append_many_to_batch(FIXED_VALUES_BATCH, id_perm_polys);
+                        commitment_scheme.append_many_to_batch(FIXED_VALUES_BATCH, sigma_perm_polys);
                         commitment_scheme.append_to_batch(FIXED_VALUES_BATCH, q_last_q_blind[0]);
                         commitment_scheme.append_to_batch(FIXED_VALUES_BATCH, q_last_q_blind[1]);
-                        commitment_scheme.append_to_batch(FIXED_VALUES_BATCH, public_table.constants());
-                        commitment_scheme.append_to_batch(FIXED_VALUES_BATCH, public_table.selectors());
+                        commitment_scheme.append_many_to_batch(FIXED_VALUES_BATCH, public_table.constants());
+                        commitment_scheme.append_many_to_batch(FIXED_VALUES_BATCH, public_table.selectors());
 
                         typename preprocessed_data_type::public_commitments_type result(
                             {commitment_scheme.commit(FIXED_VALUES_BATCH)});

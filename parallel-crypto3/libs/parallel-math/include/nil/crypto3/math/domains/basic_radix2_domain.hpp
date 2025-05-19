@@ -40,6 +40,8 @@
 #include <nil/crypto3/math/polynomial/polynomial.hpp>
 #include <nil/actor/core/parallelization_utils.hpp>
 
+#include <nil/crypto3/bench/scoped_profiler.hpp>
+
 namespace nil {
     namespace crypto3 {
         namespace math {
@@ -91,11 +93,62 @@ namespace nil {
                         if (a.size() < this->m) {
                             a.resize(this->m, value_type::zero());
                         } else {
-                            throw std::invalid_argument("basic_radix2: expected a.size() == this->m");
+                            throw std::invalid_argument("basic_radix2: expected a.size() <= this->m");
                         }
                     }
 
                     detail::basic_radix2_fft_cached<FieldType>(a, fft_cache->first);
+                }
+
+                void resize_to_domain_size(std::vector<std::vector<value_type>> &a) {
+                    PROFILE_SCOPE("resize_to_domain_size {} vectors from size {} to {}",
+                        a.size(), a[0].size(), this->m);
+
+                    for (auto& p: a) {
+                        if (p.size() != this->m) {
+                            if (p.size() < this->m) {
+                                p.resize(this->m, value_type::zero());
+                            } else {
+                                throw std::invalid_argument("Expected polynomail size <= domain size");
+                            }
+                        }
+                    }
+                }
+
+                /** \brief Batch version of the 'fft' function
+                 *  \param[in] polys - Each element of 'polys' represents coefficients of a polynomial.
+                 *                  So if we have 100 polynomials of size 2^20 to FFT, the dimensions of
+                 *                  'polys' will be [100x2^20].
+                 */
+                void batch_fft(std::vector<std::vector<value_type>> &polys) override {
+                    if (polys.size() == 0)
+                        return;
+                    resize_to_domain_size(polys);
+
+                    nil::crypto3::parallel_foreach(polys.begin(), polys.end(),
+                        [this](std::vector<value_type>& p) {
+                            detail::basic_radix2_fft_cached<FieldType>(p, this->fft_cache->first);
+                    }, ThreadPool::PoolLevel::HIGH);
+                }
+
+                /** \brief Batch version of the 'inverse_fft' function
+                 *  \param[in] polys - Each element of 'polys' represents coefficients of a polynomial.
+                 *                  So if we have 100 polynomials of size 2^20 to FFT, the dimensions of
+                 *                  'polys' will be [100x2^20].
+                 */
+                void batch_inverse_fft(std::vector<std::vector<value_type>> &polys) override {
+                    if (polys.size() == 0)
+                        return;
+                    resize_to_domain_size(polys);
+
+                    const field_value_type sconst = field_value_type(this->m).inversed();
+                    nil::crypto3::parallel_foreach(polys.begin(), polys.end(),
+                        [&sconst, this](std::vector<value_type>& p) {
+                            detail::basic_radix2_fft_cached<FieldType>(p, this->fft_cache->second);
+                            nil::crypto3::parallel_foreach(p.begin(), p.end(), [&sconst](value_type& p_i) {
+                                p_i *= sconst;
+                            });
+                    }, ThreadPool::PoolLevel::HIGH);
                 }
 
                 void inverse_fft(std::vector<value_type> &a) override {
@@ -109,7 +162,7 @@ namespace nil {
 
                     detail::basic_radix2_fft_cached<FieldType>(a, fft_cache->second);
 
-                    const field_value_type sconst = field_value_type(a.size()).inversed();
+                    const field_value_type sconst = field_value_type(this->m).inversed();
                     nil::crypto3::parallel_foreach(a.begin(), a.end(), [&sconst](value_type& a_i){
                         a_i *= sconst;
                     });

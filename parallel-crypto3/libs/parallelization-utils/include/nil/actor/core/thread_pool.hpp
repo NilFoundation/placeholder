@@ -41,6 +41,7 @@ namespace nil {
     namespace crypto3 {
 
         class ThreadPool {
+            public:
             static std::size_t core_count() {
 #if defined(__linux__) && !defined(__ANDROID__)
                 cpu_set_t cpuset;
@@ -53,12 +54,9 @@ namespace nil {
 #endif
                 return std::thread::hardware_concurrency();
             }
-
-          public:
             enum class PoolLevel {
                 LOW,
-                HIGH,
-                LASTPOOL
+                HIGH
             };
 
             /** Returns a thread pool, based on the pool_id. pool with LOW is normally used for low-level operations, like polynomial
@@ -69,15 +67,11 @@ namespace nil {
                 static std::size_t pool_size = core_count();
                 static ThreadPool instance_for_low_level(pool_size);
                 static ThreadPool instance_for_middle_level(pool_size);
-                static ThreadPool instance_for_high_level(pool_size);
                 
                 if (pool_id == PoolLevel::LOW)
                     return instance_for_low_level;
                 if (pool_id == PoolLevel::HIGH)
                     return instance_for_middle_level;
-                if (pool_id == PoolLevel::LASTPOOL)
-                    return instance_for_high_level;
-
                 throw std::invalid_argument("Invalid instance of thread pool requested.");
             }
 
