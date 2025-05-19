@@ -32,11 +32,11 @@
 #include <cstddef>
 #include <cstdio>
 #include <iostream>
-#include <nil/blueprint/zkevm_bbf/types/opcode.hpp>
+#include <nil/blueprint/zkevm_bbf/small_field/opcodes/abstract_opcode.hpp>
 #include <numeric>
 #include "nil/blueprint/utils/connectedness_check.hpp"
 
-namespace nil::blueprint::bbf {
+namespace nil::blueprint::bbf::zkevm_small_field {
 template<typename FieldType>
 class opcode_abstract;
 
@@ -514,19 +514,27 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
 
             // Stack lookup constraints
             // The arguments for call_id, stack_size and rw_counter corresponds to the indices of the rows that contains the data read from the rw_table
-            std::vector<TYPE> tmp;
-            tmp = rw_table<FieldType, stage>::stack_lookup(
-                current_state.call_id(8), current_state.stack_size(8) - 1,
-                current_state.rw_counter(8), TYPE(0), B0, B1);
-            lookup(tmp, "zkevm_rw");
-            tmp = rw_table<FieldType, stage>::stack_lookup(
-                current_state.call_id(5), current_state.stack_size(5) - 2,
-                current_state.rw_counter(5) + 1, TYPE(0), A0, A1);
-            lookup(tmp, "zkevm_rw");
-            tmp = rw_table<FieldType, stage>::stack_lookup(
-                current_state.call_id(9), current_state.stack_size(9) - 2,
-                current_state.rw_counter(9) + 2, TYPE(1), Res0, Res1);
-            lookup(tmp, "zkevm_rw");
+            lookup(rw_256_table<FieldType, stage>::stack_16_bit_lookup_reversed(
+                current_state.call_id(8),
+                current_state.stack_size(8) - 1,
+                current_state.rw_counter(8),
+                TYPE(0),// is_write
+                input_b_chunks
+            ), "zkevm_rw_256");
+            lookup(rw_256_table<FieldType, stage>::stack_16_bit_lookup_reversed(
+                current_state.call_id(5),
+                current_state.stack_size(5) - 2,
+                current_state.rw_counter(5) + 1,
+                TYPE(0),// is_write
+                a_chunks
+            ), "zkevm_rw_256");
+            lookup(rw_256_table<FieldType, stage>::stack_16_bit_lookup_reversed(
+                current_state.call_id(9),
+                current_state.stack_size(9) - 2,
+                current_state.rw_counter(9) + 2,
+                TYPE(1),// is_write
+                res
+            ), "zkevm_rw_256");
         }
     }
 };

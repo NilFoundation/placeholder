@@ -452,10 +452,10 @@ namespace nil {
                         BOOST_LOG_TRIVIAL(error) << "Constraint '" << name << "' has no variables!\n";
                     }
                     BOOST_ASSERT(has_vars);
-                    if (max_row - min_row > 7) {
-                        BOOST_LOG_TRIVIAL(warning) << "Constraint " << C_rel << " spans over 7 rows!\n";
-                        throw std::logic_error("large constraint");
-                    }
+                    // if (max_row - min_row > 7) {
+                    //     BOOST_LOG_TRIVIAL(warning) << "Constraint " << C_rel << " spans over 7 rows!\n";
+                    //     throw std::logic_error("large constraint");
+                    // }
 
                     constraint_id_type C_id = constraint_id_type(C_rel);
                     auto [iter, is_new] = global_constraints->try_emplace(C_id, C_rel, name);

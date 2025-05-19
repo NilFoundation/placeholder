@@ -66,9 +66,9 @@
 // #include <nil/blueprint/zkevm_bbf/small_field/opcodes/sstore.hpp>
 // #include <nil/blueprint/zkevm_bbf/small_field/opcodes/tload.hpp>
 // #include <nil/blueprint/zkevm_bbf/small_field/opcodes/tstore.hpp>
-// #include <nil/blueprint/zkevm_bbf/small_field/opcodes/shl.hpp>
-// #include <nil/blueprint/zkevm_bbf/small_field/opcodes/shr.hpp>
-// #include <nil/blueprint/zkevm_bbf/small_field/opcodes/sar.hpp>
+#include <nil/blueprint/zkevm_bbf/small_field/opcodes/shl.hpp>
+#include <nil/blueprint/zkevm_bbf/small_field/opcodes/shr.hpp>
+#include <nil/blueprint/zkevm_bbf/small_field/opcodes/sar.hpp>
 // #include <nil/blueprint/zkevm_bbf/small_field/opcodes/swapx.hpp>
 // #include <nil/blueprint/zkevm_bbf/small_field/opcodes/pop.hpp>
 // #include <nil/blueprint/zkevm_bbf/small_field/opcodes/eq.hpp>
@@ -126,9 +126,9 @@ namespace nil::blueprint::bbf::zkevm_small_field{
         // opcodes[zkevm_opcode::XOR] = std::make_shared<zkevm_bitwise_operation<BlueprintFieldType>>(bitwise_type::B_XOR);
         // opcodes[zkevm_opcode::NOT] = std::make_shared<zkevm_not_operation<BlueprintFieldType>>();
         // opcodes[zkevm_opcode::BYTE] = std::make_shared<zkevm_byte_operation<BlueprintFieldType>>();
-        // opcodes[zkevm_opcode::SHL] = std::make_shared<zkevm_shl_operation<BlueprintFieldType>>();
-        // opcodes[zkevm_opcode::SHR] = std::make_shared<zkevm_shr_operation<BlueprintFieldType>>();
-        // opcodes[zkevm_opcode::SAR] = std::make_shared<zkevm_sar_operation<BlueprintFieldType>>();
+        opcodes[zkevm_opcode::SHL] = std::make_shared<zkevm_shl_operation<BlueprintFieldType>>();
+        opcodes[zkevm_opcode::SHR] = std::make_shared<zkevm_shr_operation<BlueprintFieldType>>();
+        opcodes[zkevm_opcode::SAR] = std::make_shared<zkevm_sar_operation<BlueprintFieldType>>();
         // opcodes[zkevm_opcode::KECCAK256] = std::make_shared<zkevm_keccak_operation<BlueprintFieldType>>();
         // // Memory operations
         // opcodes[zkevm_opcode::MSTORE] = std::make_shared<zkevm_mstore_operation<BlueprintFieldType>>();

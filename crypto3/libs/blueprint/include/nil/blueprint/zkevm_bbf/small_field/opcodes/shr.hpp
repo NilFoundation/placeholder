@@ -30,13 +30,13 @@
 #include <cassert>
 #include <cstdio>
 #include <iostream>
-#include <nil/blueprint/zkevm_bbf/types/opcode.hpp>
+#include <nil/blueprint/zkevm_bbf/small_field/opcodes/abstract_opcode.hpp>
 #include <numeric>
 #include <vector>
 #include "nil/blueprint/bbf/enums.hpp"
 #include "nil/blueprint/bbf/row_selector.hpp"
 
-namespace nil::blueprint::bbf {
+namespace nil::blueprint::bbf::zkevm_small_field {
 template<typename FieldType>
 class opcode_abstract;
 
@@ -73,7 +73,7 @@ class zkevm_shr_bbf : public generic_component<FieldType, stage> {
         }
         return res;
     }
-    
+
     // Computes the terms of rb + q - a with coefficient 2^(8 * chunk_index)
     TYPE carryless_construct(const std::vector<TYPE> &rb_8_chunks,
                                 const std::vector<TYPE> &q_16_chunks,
@@ -149,18 +149,18 @@ class zkevm_shr_bbf : public generic_component<FieldType, stage> {
             // shift >= 256  =>  result = 0
             // shfit < 256   =>  result = a >> shift
 
-            // We compute the shift clamped to 255. This ensures that b != 0, and allows us to keep 
+            // We compute the shift clamped to 255. This ensures that b != 0, and allows us to keep
             // exactly the same constraints from the SAR opcode. However, if shift >= 256, we will
             // set the result to 0 anyway. In the constraint phase, this is achieved by multiplying
-            // each chunk of the result by the indicator is_shift_large. 
-            
+            // each chunk of the result by the indicator is_shift_large.
+
             int shift = (input_b < 256) ? int(input_b) : 255;
             zkevm_word_type r = a >> shift;         // Shift result (small shift)
 
             zkevm_word_type b = zkevm_word_type(1) << shift;      // Power of 2 for shift (shift < 256 => b != 0)
             zkevm_word_type result = (input_b < 256) ? r : zkevm_word_type(0);
 
-            zkevm_word_type q = a % b;  // Division remainder -- this results in the shift least significant bits of a, 
+            zkevm_word_type q = a % b;  // Division remainder -- this results in the shift least significant bits of a,
                                         // i.e. those that will disappear as a result of the shift operation.
             // Now we have a == r * b + q
             // Note that it is not enough to enforce the above modulo 2^256, we need it over the integers.
@@ -182,7 +182,7 @@ class zkevm_shr_bbf : public generic_component<FieldType, stage> {
             q_chunks = zkevm_word_to_field_element<FieldType>(q);
             v_chunks = zkevm_word_to_field_element<FieldType>(v);
 
-            // We also split b in 8-bit chunks to multiply without overflow 
+            // We also split b in 8-bit chunks to multiply without overflow
             // (16-bit value) * (8-bit value)
             b8_chunks = zkevm_word_to_field_element_flexible<FieldType>(b, 32, 8);
 
@@ -195,22 +195,22 @@ class zkevm_shr_bbf : public generic_component<FieldType, stage> {
             input_b0_upper = (input_b % 65536) / 256;
             upper_inverse = input_b0_upper.is_zero() ? 0 : input_b0_upper.inversed();
         }
-        
+
         // Some values are copied around to satisfy the limitation of three adjacent rows per constraint
         // We enforce equality between copied values
         for (std::size_t i = 0; i < chunk_amount; i++) {
             allocate(input_b_chunks[i], i, 8);
             allocate(q_chunks[i], i + chunk_amount, 5);
             allocate(v_chunks[i], i + chunk_amount, 7);
-            
+
             allocate(a_chunks[i], i, 5);
-            
+
             allocate(r_chunks[i], i + 2 * chunk_amount, 4);
             allocate(r_chunks_copy1[i], i + 2 * chunk_amount, 6);
             allocate(r_chunks_copy2[i], i + chunk_amount, 8);
             constrain(r_chunks[i] - r_chunks_copy1[i]);
             constrain(r_chunks_copy1[i] - r_chunks_copy2[i]);
-            
+
             allocate(b_chunks[i], i + 2 * chunk_amount, 3);
             allocate(b_chunks_copy1[i], i + 2 * chunk_amount, 5);
             allocate(b_chunks_copy2[i], i + 2 * chunk_amount, 7);
@@ -248,7 +248,7 @@ class zkevm_shr_bbf : public generic_component<FieldType, stage> {
             if constexpr (stage == GenerationStage::ASSIGNMENT) {
                 auto mask8 = (1 << 8) - 1;
                 mul8_chunks[i] = (mul8_carryless_chunks[i] + prev_carry).to_integral() & mask8;
-                mul8_carries[i] = (mul8_carryless_chunks[i] + prev_carry).to_integral() >> 8; 
+                mul8_carries[i] = (mul8_carryless_chunks[i] + prev_carry).to_integral() >> 8;
                 BOOST_ASSERT(mul8_carryless_chunks[i] + prev_carry == mul8_chunks[i] + 256 * mul8_carries[i]);
             }
             allocate(mul8_chunks[i], i, 3);
@@ -261,14 +261,14 @@ class zkevm_shr_bbf : public generic_component<FieldType, stage> {
         }
 
         // To extend the result modulo 2^256 to the integers, we check that all higher-order carryless chunks are 0.
-        // Note the -2 in the index range. This is because the highest-order non-zero term is 
+        // Note the -2 in the index range. This is because the highest-order non-zero term is
         // r_chunks[15] * b8_chunks[30] * 2^(8 * 61).
         // The terms corresponding to chunk_index = 62 and 63 are 0, so we skip them to avoid empty constraints.
         for (std::size_t i = 0; i < chunk_8_amount - 2; i++) {
             mul8_carryless_chunks_high[i] = carryless_mul(r_chunks, b8_chunks, i + chunk_8_amount);
             constrain(mul8_carryless_chunks_high[i]);
         }
-            
+
         // mul + q - a == 0
         // Normally, for independent mul, q, a, we would need to separate the carryless chunks into carries and strict 16-bit chunks, and then check that all 16-bit chunks are 0.
         // However, in this case, recall that we have:
@@ -284,7 +284,7 @@ class zkevm_shr_bbf : public generic_component<FieldType, stage> {
         for (std::size_t i = 0; i < chunk_amount; i++) {
             construct_carryless_chunks[i] = carryless_construct(mul8_chunks, q_chunks, a_chunks, i);
             constrain(construct_carryless_chunks[i]);
-        } 
+        }
 
         // Carry propagation constraints for the v + b == q + 2^256 equality
         for (std::size_t i = 0; i < chunk_amount - 1; i++) {
@@ -321,9 +321,9 @@ class zkevm_shr_bbf : public generic_component<FieldType, stage> {
         // shift_value is decomposed into shift_lower, shift_higher
         constrain(shift_value - shift_lower - 16 * shift_upper);
 
-        // b_partial_sum is the sum of all 16-bit chunks of input_b, except for the least significant chunk. 
-        // We use b_partial_sum as an aggregate way of checking whether all of these chunks are 0. 
-        // This works because it is a sum of non-negative values that cannot overflow. 
+        // b_partial_sum is the sum of all 16-bit chunks of input_b, except for the least significant chunk.
+        // We use b_partial_sum as an aggregate way of checking whether all of these chunks are 0.
+        // This works because it is a sum of non-negative values that cannot overflow.
         // b_partial_sum < (chunk_amount-1) * max_i {input_b_chunks[i]} < 2^4 * 2^16 == 2^20.
 
         // Calculate partial sum and inverse
@@ -343,12 +343,12 @@ class zkevm_shr_bbf : public generic_component<FieldType, stage> {
         TYPE partial_sum_check = 1 - input_b_partial_sum * sum_inverse_partial;
         allocate(partial_sum_check, 35, 8);
         // either input_b_partial_sum == 0 (i.e. all chunks except for the least significant are 0), or partial_sum_check == 0
-        constrain(input_b_partial_sum * partial_sum_check);   
+        constrain(input_b_partial_sum * partial_sum_check);
 
         // connection of shift_value with input_b_chunks[0]
         // is_shift_large == 0  <=>  input_b > 255
         // is_shift_large == 1  <=>  input_b <= 255
-        
+
         // the shift is large (> 255 bits) if one of these conditions hold:
         //  - b0_upper has an inverse, and thus is non-zero.
         //  - partial_sum_check == 0, which means that some 16-bit chunk of input_b beyond the least significant one is non-zero.
@@ -379,7 +379,7 @@ class zkevm_shr_bbf : public generic_component<FieldType, stage> {
             constrain((shift_upper - i) * (1 - (shift_upper - i) * indic_2[i]));
         }
 
-        // Calculate power series for shift_lower. 
+        // Calculate power series for shift_lower.
         // We will place this in the correct chunk to recover b == 2^(shift_value)
         shift_lower_power = 0;
         unsigned int pow = 1;
@@ -393,7 +393,7 @@ class zkevm_shr_bbf : public generic_component<FieldType, stage> {
         // connection between b_chunks and input_b_chunks (implicitly via shift_lower & shift_upper)
         // Recall that b is the actual shift performed, in power-of-2 form.
         for (std::size_t i = 0; i < chunk_amount; i++) {
-            // b_chunks[i] == shift_lower_power * (1 - (shift_upper - i) * indic_2[i]) 
+            // b_chunks[i] == shift_lower_power * (1 - (shift_upper - i) * indic_2[i])
             // shift_upper == i  <=>  b_chunks[i] == shift_lower_power == 2^(shift_lower)
             // shift_upper != i  <=>  b_chunks[i] == 0
             constrain(b_chunks_copy2[i] - shift_lower_power * (1 - (shift_upper - i) * indic_2[i]));
@@ -405,7 +405,7 @@ class zkevm_shr_bbf : public generic_component<FieldType, stage> {
         // shift_upper == 10
         // indic_1[7]  == 0, and indic_1[i] == (shift_lower - 7)^(-1)  for all other i.
         // indic_2[10] == 0, and indic_2[i] == (shift_upper - 10)^(-1) for all other i.
-        // shift_lower_power == 2^7 
+        // shift_lower_power == 2^7
         // b_chunks[10] == 2^7, and b_chunks[i] = 0 for all other i.
         // That is, b == 2^7..(followed by 10 chunks of 16 zeros) == 2^7 * 2^(10*16) == 2^167.
 
@@ -448,19 +448,41 @@ class zkevm_shr_bbf : public generic_component<FieldType, stage> {
 
             // Stack lookup constraints
             // The arguments for call_id, stack_size and rw_counter corresponds to the indices of the rows that contains the data read from the rw_table
-            std::vector<TYPE> tmp;
-            tmp = rw_table<FieldType, stage>::stack_lookup(
-                current_state.call_id(8), current_state.stack_size(8) - 1,
-                current_state.rw_counter(8), TYPE(0), B0, B1);
-            lookup(tmp, "zkevm_rw");
-            tmp = rw_table<FieldType, stage>::stack_lookup(
-                current_state.call_id(5), current_state.stack_size(5) - 2,
-                current_state.rw_counter(5) + 1, TYPE(0), A0, A1);
-            lookup(tmp, "zkevm_rw");
-            tmp = rw_table<FieldType, stage>::stack_lookup(
-                current_state.call_id(9), current_state.stack_size(9) - 2,
-                current_state.rw_counter(9) + 2, TYPE(1), Res0, Res1);
-            lookup(tmp, "zkevm_rw");
+            lookup(rw_256_table<FieldType, stage>::stack_16_bit_lookup_reversed(
+                current_state.call_id(8),
+                current_state.stack_size(8) - 1,
+                current_state.rw_counter(8),
+                TYPE(0),// is_write
+                input_b_chunks
+            ), "zkevm_rw_256");
+            lookup(rw_256_table<FieldType, stage>::stack_16_bit_lookup_reversed(
+                current_state.call_id(5),
+                current_state.stack_size(5) - 2,
+                current_state.rw_counter(5) + 1,
+                TYPE(0),// is_write
+                a_chunks
+            ), "zkevm_rw_256");
+            lookup(rw_256_table<FieldType, stage>::stack_16_bit_lookup_reversed(
+                current_state.call_id(9),
+                current_state.stack_size(9) - 2,
+                current_state.rw_counter(9) + 2,
+                TYPE(1),// is_write
+                res
+            ), "zkevm_rw_256");
+
+            // std::vector<TYPE> tmp;
+            // tmp = rw_table<FieldType, stage>::stack_lookup(
+            //     current_state.call_id(8), current_state.stack_size(8) - 1,
+            //     current_state.rw_counter(8), TYPE(0), B0, B1);
+            // lookup(tmp, "zkevm_rw");
+            // tmp = rw_table<FieldType, stage>::stack_lookup(
+            //     current_state.call_id(5), current_state.stack_size(5) - 2,
+            //     current_state.rw_counter(5) + 1, TYPE(0), A0, A1);
+            // lookup(tmp, "zkevm_rw");
+            // tmp = rw_table<FieldType, stage>::stack_lookup(
+            //     current_state.call_id(9), current_state.stack_size(9) - 2,
+            //     current_state.rw_counter(9) + 2, TYPE(1), Res0, Res1);
+            // lookup(tmp, "zkevm_rw");
         }
     }
 };
