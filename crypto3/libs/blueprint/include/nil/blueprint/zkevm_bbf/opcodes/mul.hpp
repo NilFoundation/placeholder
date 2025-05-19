@@ -37,6 +37,7 @@
 #include "nil/blueprint/bbf/enums.hpp"
 #include "nil/blueprint/zkevm_bbf/exp.hpp"
 #include "nil/blueprint/zkevm_bbf/types/zkevm_word.hpp"
+#include "nil/blueprint/zkevm_bbf/util/ptree.hpp"
 
 namespace nil::blueprint::bbf {
 template<typename FieldType>
@@ -62,6 +63,14 @@ public:
     using typename generic_component<FieldType,stage>::TYPE;
     using typename generic_component<FieldType, stage>::context_type;
 
+    // NOTE ON OVERALL APPROACH: unlike in the SHL, SHR, SAR opcodes, here we perform multiplication
+    // by splitting both inputs into 8-bit chunks, as opposed to one in 16-bit chunks and the other in
+    // 8-bit chunks. This is because the 16-8 approach produces carries that are in general larger than
+    // 16 bits, so they need to be split for range-checking. This was not necessary in the shift opcodes,
+    // as the special nature of one of the factors ensured that there was never a 16-bit overflow.
+    // Because of this, the 16-8 approach ends up taking as much space as the 8-8 approach. We favor 
+    // the 8-8 approach for conceptual simplicity.
+
     // Computes the terms of r*b with coefficient 2^(8 * chunk_index)
     TYPE carryless_mul(const std::vector<TYPE> &a_8_chunks,
                                 const std::vector<TYPE> &b_8_chunks,
@@ -85,15 +94,28 @@ public:
         return (i <= 32) ? i : 2 * chunk_8_amount - i;
     }
 
+    // Given a carryless chunk resulting from the function above, we will separate it into an
+    // 8-bit chunk and a carry, which contains whatever overflows 8 bits. This function computes
+    // the maximal value of such carry, for accurate range-checking.
+    TYPE max_carry(const unsigned char chunk_index) const {
+        // r8_carryless_chunks[i] + prev_carry == r8_chunks[i] + r8_carries[i] * 256
+        // To bound r8_carries[i], we need to bound r8_carryless_chunks[i] and prev_carry.
+        // r8_carryless_chunks[i] == (sum of some cross terms a_chunks[i] * b_chunks[j]).
+        // The largest carries happen when a_chunks[i] == b_chunks[i] == 2^8 - 1 for all 0 <= i < 32.
+        TYPE max_cross_term = 255 * 255;
+        // In this case, a_chunks[i] * b_chunks[j] == 2^16 - 2^9 + 1. Therefore,
+        // r8_carryless_chunks[i] <= n * (2^16 - 2^9 + 1), where n is the number of cross terms. 
+        // n is the amount of pairs (i, j) such that i + j == chunk_index, for 0 <= i, j < 32. 
+        TYPE number_of_cross_terms = count_cross_terms(chunk_index);
+        // 
+        TYPE prev_carry = (chunk_index > 0) ? max_carry(chunk_index - 1) : 0;
+        // Put it all together
+        TYPE max_carry = (number_of_cross_terms * max_cross_term + prev_carry) >> 256;
+        return max_carry;
+    }
+
     std::vector<TYPE> res;
 
-    // NOTE ON OVERALL APPROACH: unlike in the SHL, SHR, SAR opcodes, here we perform multiplication
-    // by splitting both inputs into 8-bit chunks, as opposed to one in 16-bit chunks and the other in
-    // 8-bit chunks. This is because the 16-8 approach produces carries that are in general larger than
-    // 16 bits, so they need to be split for range-checking. This was not necessary in the shift opcodes,
-    // as the special nature of one of the factors ensured that there was never a 16-bit overflow.
-    // Because of this, the 16-8 approach ends up taking as much space as the 8-8 approach. We favor 
-    // the 8-8 approach for conceptual simplicity.
     zkevm_mul_bbf(context_type &context_object, 
                   const opcode_input_type<FieldType, stage> &current_state)
         : generic_component<FieldType,stage>(context_object, false), 
@@ -190,6 +212,17 @@ public:
         for (std::size_t i = 0; i < chunk_8_amount; i++) {
             r8_carries_check[i] = 8 * (r8_carries_copy2[i] + (32 - count_cross_terms(i)) * 256);
             allocate(r8_carries_check[i], i, 0);
+        }
+
+        // TODO: checking something, remove this later.
+        if constexpr (stage == GenerationStage::CONSTRAINTS) {
+            TYPE mc = max_carry(0);
+            // BOOST_ASSERT(max_carry(0) == 256 - 2);
+            // BOOST_ASSERT(max_carry(0) == 512 - 3);
+            // BOOST_ASSERT(max_carry(0) == 1024 - 256 - 4);
+            for (std::size_t i = 0; i < 64; i++) {
+                // BOOST_ASSERT(max_carry(0) == 2^8 - 2);
+            }
         }
     
         for (std::size_t i = 0; i < chunk_amount; i++) {
