@@ -551,8 +551,6 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                 tmp[3] = context_object.relativize(evm_opcode_constraint, -1);
                 tmp[4] = context_object.relativize(evm_opcode_constraint * all_states[1].bytecode_id, -1);
 
-        //         // TODO(oclaw): bytecode check is to be adjusted between nil and placeholder
-        //         // https://github.com/NilFoundation/placeholder/issues/205
                 context_object.relative_lookup(tmp, "zkevm_bytecode", 1, max_zkevm_rows-1);
             }
         }
