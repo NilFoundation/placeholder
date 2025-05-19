@@ -43,6 +43,12 @@
 
 #include <nil/crypto3/math/polynomial/polynomial_dfs.hpp>
 
+#include <nil/crypto3/multiprecision/detail/big_mod/modular_ops/babybear_vec_mul.hpp>
+
+namespace nil::crypto3::algebra::fields {
+    struct babybear;
+}
+
 namespace nil::crypto3::math {
     template<typename FieldValueType, std::size_t Size>
     class static_simd_vector {
@@ -193,6 +199,24 @@ namespace nil::crypto3::math {
 
         static_simd_vector operator*(const static_simd_vector& other) const {
             static_simd_vector result;
+            if constexpr (std::is_same_v<typename FieldValueType::field_type,
+                                         algebra::fields::babybear>) {
+                static_assert(Size % 8 == 0);
+                for (std::size_t i = 0; i < Size / 8; ++i) {
+                    std::array<FieldValueType, 8> this_v, other_v;
+                    for (std::size_t j = 0; j < 8; ++j) {
+                        this_v[j] = (*this)[i * 8 + j];
+                        other_v[j] = other[i * 8 + j];
+                    }
+                    auto r =
+                        nil::crypto3::multiprecision::detail::babybear::babybear_mul8(
+                            this_v, other_v);
+                    for (std::size_t j = 0; j < 8; ++j) {
+                        result[i * 8 + j] = r[j];
+                    }
+                }
+                return result;
+            }
             for (std::size_t i = 0; i < Size; ++i) {
                 result[i] = (*this)[i] * other[i];
             }
@@ -200,6 +224,24 @@ namespace nil::crypto3::math {
         }
 
         static_simd_vector& operator*=(const static_simd_vector& other) {
+            if constexpr (std::is_same_v<typename FieldValueType::field_type,
+                                         algebra::fields::babybear>) {
+                static_assert(Size % 8 == 0);
+                for (std::size_t i = 0; i < Size / 8; ++i) {
+                    std::array<FieldValueType, 8> this_v, other_v;
+                    for (std::size_t j = 0; j < 8; ++j) {
+                        this_v[j] = (*this)[i * 8 + j];
+                        other_v[j] = other[i * 8 + j];
+                    }
+                    auto r =
+                        nil::crypto3::multiprecision::detail::babybear::babybear_mul8(
+                            this_v, other_v);
+                    for (std::size_t j = 0; j < 8; ++j) {
+                        (*this)[i * 8 + j] = r[j];
+                    }
+                }
+                return *this;
+            }
             for (std::size_t i = 0; i < Size; ++i) {
                 (*this)[i] *= other[i];
             }
