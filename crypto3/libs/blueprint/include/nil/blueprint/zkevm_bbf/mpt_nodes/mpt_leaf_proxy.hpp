@@ -38,7 +38,7 @@
 namespace nil::blueprint::bbf {
 
 template<typename FieldType, GenerationStage stage>
-class mpt_leaf : public generic_component<FieldType, stage> {
+class mpt_leaf_proxy : public generic_component<FieldType, stage> {
     using typename generic_component<FieldType, stage>::context_type;
     using generic_component<FieldType, stage>::allocate;
     using generic_component<FieldType, stage>::copy_constrain;
@@ -79,7 +79,7 @@ public:
     static void allocate_public_inputs(
             context_type &context, input_type &input) {}
 */
-    mpt_leaf(context_type &context_object,
+    mpt_leaf_proxy(context_type &context_object,
         const input_type &input) : generic_component<FieldType,stage>(context_object) {
 
         std::array<TYPE,32> parent_hash;

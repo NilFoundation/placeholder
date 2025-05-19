@@ -23,6 +23,7 @@
 //---------------------------------------------------------------------------//
 #pragma once
 #include <nil/blueprint/bbf/generic.hpp>
+#include <nil/blueprint/zkevm_bbf/subcomponents/keccak_table.hpp>
 
 namespace nil::blueprint::bbf {
 
@@ -60,12 +61,15 @@ using node_private_input = typename std::conditional<stage==GenerationStage::ASS
 template<typename FieldType, GenerationStage stage>
 struct mpt_node_input_type {
     using TYPE = typename generic_component<FieldType, stage>::TYPE;
+    using keccak_buffer_type = typename keccak_table<FieldType,stage>::private_input_type;
 
     TYPE trie_id;
-    TYPE node_type;
+    TYPE rlc_challenge;
     std::array<TYPE,32> node_key_prefix;
     TYPE key_prefix_length;
     node_private_input<FieldType, stage> node_data;
+
+    keccak_buffer_type* keccak_buffers;
 };
 
 } // namespace nil::blueprint::bbf

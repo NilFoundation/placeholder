@@ -54,7 +54,7 @@ public:
     using private_input = typename std::conditional<stage==GenerationStage::ASSIGNMENT, mpt_node, std::nullptr_t>::type;
 
     struct mpt_node_input_type {
-        TYPE node_type;
+        TYPE rlc_challenge;
         std::array<TYPE,32> node_key_prefix;
         TYPE key_prefix_length;
         private_input node_data;
@@ -69,7 +69,7 @@ public:
     // will probably be never used
     static table_params get_minimal_requirements() {
         return {
-            .witnesses = 850,
+            .witnesses = 900,
             .public_inputs = 0,
             .constants = 0,
             .rows = 1
@@ -82,13 +82,20 @@ public:
     mpt_branch(context_type &context_object,
         const input_type &input) : generic_component<FieldType,stage>(context_object) {
 
-        std::array<TYPE,32> parent_hash; // the hash for reference to the node from parent node
-        std::array<std::array<TYPE,32>,16> child; // 16 32-byte child hashes
-        std::array<TYPE,16> rlp_child; // RLP prefixes for each child
-        std::array<TYPE,2>  node_length; // length of the encoded node
-        TYPE node_num_of_bytes; // the number of bytes required to store node length (1 or 2)
-        std::array<TYPE,3>  rlp_node; // RLP prefix of the entire node
-        std::array<TYPE,16> child_sum_inverse; // inverses of child hash bytes' sums
+        std::array<TYPE, 32> parent_hash; // the hash for reference to the node from parent node
+        std::array<std::array<TYPE, 32>, 16> child; // 16 32-byte child hashes
+        std::array<TYPE, 16> child_sum_inverse; // inverses of child hash bytes' sums
+        std::array<TYPE, 16> child_is_zero; // child_is_zero[j] = 1 if child[j] = 0...0, 0 otherwise
+        std::array<TYPE, 2> node_length; // length of the encoded node, two bytes at most, big-endian
+        TYPE node_length_upper_inverse; // the inverse of node_length[0], if exists
+
+        // cells for computing a shift of node_key_prefix, precisely (node_key_prefix << 4)
+        std::array<TYPE, 32> shifted_node_key_prefix; // the result goes here
+        std::array<TYPE, 31> upper_next_node_key_prefix; // the upper 4 bits in each next byte of node_key_prefix except the last
+
+        // cells for computing RLC (for keccak connection)
+        TYPE rlc_value_node_prefix;
+        std::array<std::array<TYPE, 16>, 16> rlc_value_child;
 
         if constexpr (stage == GenerationStage::ASSIGNMENT) {
             std::size_t count0 = 0; // the number of zero entries in branch hashes
@@ -110,7 +117,6 @@ public:
                     byte_vector.emplace(byte_vector.begin(), rlp_child_prefix);
                     hash_input.insert( hash_input.end(), byte_vector.begin(), byte_vector.end() );
                 }
-                rlp_child[i] = rlp_child_prefix;
             }
             hash_input.push_back(128); //this is the RLP(value) for the value (which is always 0) in branch nodes
 
@@ -122,7 +128,6 @@ public:
                 rlp_node_prefix0 = 247 + 2;
                 node_length[1] = rlp_node_prefix2;
                 node_length[0] = rlp_node_prefix1;
-                node_num_of_bytes = 2;
                 hash_input.emplace(hash_input.begin(), rlp_node_prefix2);
                 hash_input.emplace(hash_input.begin(), rlp_node_prefix1);
                 hash_input.emplace(hash_input.begin(), rlp_node_prefix0);
@@ -130,25 +135,24 @@ public:
                 rlp_node_prefix2 = 0;
                 rlp_node_prefix1 = size_of_branch;
                 rlp_node_prefix0 = 247 + 1;
-                node_length[0] = size_of_branch;
-                node_num_of_bytes = 1;
+                node_length[1] = size_of_branch;
+                node_length[0] = 0;
                 hash_input.emplace(hash_input.begin(), rlp_node_prefix1);
                 hash_input.emplace(hash_input.begin(), rlp_node_prefix0);
             }
-            rlp_node[2] = rlp_node_prefix2;
-            rlp_node[1] = rlp_node_prefix1;
-            rlp_node[0] = rlp_node_prefix0;
 
             zkevm_word_type hash_value = nil::blueprint::zkevm_keccak_hash(hash_input);
+            input.keccak_buffers->new_buffer({hash_input, hash_value});
+
             std::array<std::uint8_t,32> hash_value_byte = w_to_8(hash_value);
             for(std::size_t i = 0; i < 32; i++) {
                 parent_hash[i] = hash_value_byte[i];
             }
 
-//            std::cout << "hash value = " << std::hex << hash_value << std::dec << std::endl;
+            // std::cout << "hash value = " << std::hex << hash_value << std::dec << std::endl;
             std::size_t child_num = 0;
             for(auto &v : n.value) {
-//                std::cout << "    value = " << std::hex << v << std::dec << std::endl;
+                // std::cout << "    value = " << std::hex << v << std::dec << std::endl;
                 if (child_num < 16) { // branch nodes have an empty 17-th value
                     std::array<std::uint8_t,32> child_value_byte = w_to_8(v);
                     for(std::size_t i = 0; i < 32; i++) {
@@ -169,20 +173,14 @@ public:
                 allocate(child[i][b]);
             }
         }
-        for(std::size_t i = 0; i < 16; i++) {
-            allocate(rlp_child[i]);
-        }
-        for(std::size_t i = 0; i < 3; i++) {
-            allocate(rlp_node[i]);
-        }
-
-        allocate(node_num_of_bytes);
-        constrain((node_num_of_bytes - 1) * (node_num_of_bytes - 2));
-
-        std::array<TYPE,16> child_sum;     // these two are non-allocated expressions
-        std::array<TYPE,16> child_is_zero; // child_is_zero[j] = 1 if child[j] = 0...0, 0 otherwise
 
         // constraints
+        std::array<TYPE,16> child_sum;     // these two are non-allocated expressions:
+        std::array<TYPE,16> rlp_child;     // RLP prefixes for each child (not allocated), 128 or 160, depending on child_is_zero[j]
+        std::array<TYPE,3>  rlp_node;      // RLP prefix of the entire node (not allocated)
+        TYPE count0_expr;                  // expression for counting 0 hashes in the node
+
+        // checking each hash for being 0 and computing each hash's RLP prefix
         for(std::size_t j = 0; j < 16; j++) {
             for(std::size_t b = 0; b < 32; b++) {
                 child_sum[j] += child[j][b];
@@ -191,21 +189,82 @@ public:
                 child_sum_inverse[j] = child_sum[j].is_zero() ? 0 : child_sum[j].inversed();
             }
             allocate(child_sum_inverse[j]);
+
             child_is_zero[j] = 1 - child_sum_inverse[j] * child_sum[j];
+            allocate(child_is_zero[j]);
+
             constrain(child_sum[j] * child_is_zero[j]);
 
-            constrain((160 - rlp_child[j]) * (128 - rlp_child[j])); // TODO : maybe this is implied by smth else?
-            constrain(247 + node_num_of_bytes - rlp_node[0] );
-            // constrain((node_length[0] - rlp_node[1]) ); // TODO: do we really need two equal cells for that?!
-            // constrain((node_length[1] - rlp_node[2]) ); // ibid
+            count0_expr += child_is_zero[j];
+
+            rlp_child[j] = child_is_zero[j] * 128 + (1 - child_is_zero[j]) * 160;
         }
 
-        // computation of node_key_prefix << 4
-        std::array<TYPE,32> shifted_node_key_prefix; // the result goes here
-        std::array<TYPE,31> upper_next_node_key_prefix; // the upper 4 bits in each next byte of node_key_prefix except the last
+        // node length in bytes and node RLP prefix
+        allocate(node_length[0]);
+        lookup(node_length[0], "chunk_16_bits/8bits");
+        allocate(node_length[1]);
+        lookup(node_length[1], "chunk_16_bits/8bits");
+        constrain(256*node_length[0] + node_length[1] - (count0_expr + 33*(16 - count0_expr) + 1));
+        if constexpr (stage == GenerationStage::ASSIGNMENT) {
+            node_length_upper_inverse = node_length[0].is_zero() ? 0 : node_length[0].inversed();
+        }
+        allocate(node_length_upper_inverse);
+        TYPE length_is_one_byte = 1 - node_length[0] * node_length_upper_inverse;
+        constrain(node_length[0] * length_is_one_byte);
+        rlp_node[0] = 247 + 2 - length_is_one_byte;
+        rlp_node[1] = length_is_one_byte * node_length[1] + (1 - length_is_one_byte) * node_length[0];
+        rlp_node[2] = (1 - length_is_one_byte) * node_length[1];
 
+        // RLC value computation
+        TYPE RLC = input.rlc_challenge;
+
+        // total length of hashed sequence = node_length + (2 or 3, depending on length_is_one_byte)
+        rlc_value_node_prefix = 256*node_length[0] + node_length[1] + 3 - length_is_one_byte;
+
+        // RLP node prefix
+        // the first two bytes of RLP node prefix are always present
+        for (std::size_t i = 0; i < 2; i++) {
+            rlc_value_node_prefix *= RLC;
+            rlc_value_node_prefix += rlp_node[i];
+        }
+        // the third byte is optional
+        rlc_value_node_prefix *= length_is_one_byte + (1 - length_is_one_byte)*RLC;
+        rlc_value_node_prefix += (1 - length_is_one_byte) * rlp_node[2];
+        allocate(rlc_value_node_prefix);
+
+        std::array<TYPE, 16> rlc_value_child_prefix; // non-allocated expressions for RLC of the RLP child prefix
+        // loop through the children
+        for (std::size_t j = 0; j < 16; j++) {
+             // we start with the node prefix or the last computed byte of an RLC for the previous child node
+             rlc_value_child_prefix[j] = (j == 0) ? rlc_value_node_prefix : rlc_value_child[j-1][15];
+             rlc_value_child_prefix[j] *= RLC;
+             rlc_value_child_prefix[j] += rlp_child[j];
+             // we store only _one_ RLC for each _pair_ of bytes in a child hash
+             // loop through pairs of bytes
+             for(std::size_t b = 0; b < 16; b++) {
+                 rlc_value_child[j][b] = (b == 0) ? rlc_value_child_prefix[j] : rlc_value_child[j][b-1];
+
+                 // Normally we should be multiplying the added bytes by (1 - child_is_zero[j]),
+                 // but if a child is zero, all its bytes are zero, and we can just add them thoughtlessly :)
+                 rlc_value_child[j][b] *= child_is_zero[j] + (1 - child_is_zero[j])*RLC;
+                 rlc_value_child[j][b] += child[j][2*b]; // first byte in pair
+
+                 rlc_value_child[j][b] *= child_is_zero[j] + (1 - child_is_zero[j])*RLC;
+                 rlc_value_child[j][b] += child[j][2*b + 1]; // second byte in pair
+
+                 allocate(rlc_value_child[j][b]);
+             }
+        }
+
+        TYPE rlc_result = rlc_value_child[15][15] * RLC + 128; // The last symdol in the buffer is a zero
+        zkevm_word_type power_of_2 = zkevm_word_type(1) << (31 * 8);
+        auto [w_hi, w_lo] = chunks8_to_chunks128<TYPE>(parent_hash);
+        std::cout << "rlc_result = " << rlc_result << std::endl;
+        lookup({TYPE(1), rlc_result, w_hi, w_lo}, "keccak_table");
+
+        // computation of (node_key_prefix << 4) NB: all keys are in big-endian
         for (std::size_t i = 0; i < 32; i++) {
-            // NB: all keys are in big-endian
             if (i < 31) {
                 if constexpr (stage == GenerationStage::ASSIGNMENT) {
                     unsigned char next_key_prefix_byte = static_cast<unsigned char>(input.node_key_prefix[i+1].data.base());

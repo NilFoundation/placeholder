@@ -43,6 +43,7 @@ namespace nil::blueprint::bbf {
 
     template<typename FieldType, GenerationStage stage>
     class node_inner: public generic_component<FieldType, stage> {
+      public:
         using typename generic_component<FieldType, stage>::context_type;
         using generic_component<FieldType, stage>::allocate;
         using generic_component<FieldType, stage>::copy_constrain;
@@ -50,8 +51,7 @@ namespace nil::blueprint::bbf {
         using generic_component<FieldType, stage>::lookup;
         using generic_component<FieldType, stage>::lookup_table;
 
-      public:
-      struct input_type {};
+        struct input_type {};
         using typename generic_component<FieldType, stage>::table_params;
         using typename generic_component<FieldType, stage>::TYPE;
 
@@ -63,17 +63,17 @@ namespace nil::blueprint::bbf {
 
         TYPE rlc_challenge;
 
-        node_inner( 
+        node_inner(
             context_type &context_object,
-            inner_node_type _n_type, 
+            inner_node_type _n_type,
             mpt_type _trie_type,
             TYPE _rlc_challenge
         ):
-            generic_component<FieldType, stage>(context_object, false), 
-            node_type(_n_type), 
+            generic_component<FieldType, stage>(context_object, false),
+            node_type(_n_type),
             trie_type(_trie_type),
             rlc_challenge(_rlc_challenge) {
-            
+
         }
 
         void initialize() {
@@ -131,7 +131,7 @@ namespace nil::blueprint::bbf {
         virtual void _initialize_body() {
             throw "Method not implemented!6";
         }
-        
+
         virtual void _set_data_finished() {
             throw "Method not implemented!9";
         }
@@ -148,6 +148,7 @@ namespace nil::blueprint::bbf {
 
     template<typename FieldType, GenerationStage stage>
     class node_inner_string: public node_inner<FieldType, stage> {
+    public:
         using typename generic_component<FieldType, stage>::context_type;
         using generic_component<FieldType, stage>::allocate;
         using generic_component<FieldType, stage>::copy_constrain;
@@ -155,7 +156,6 @@ namespace nil::blueprint::bbf {
         using generic_component<FieldType, stage>::lookup;
         using generic_component<FieldType, stage>::lookup_table;
 
-    public:
         struct input_type {};
         using typename generic_component<FieldType, stage>::table_params;
         using typename generic_component<FieldType, stage>::TYPE;
@@ -171,15 +171,15 @@ namespace nil::blueprint::bbf {
         TYPE first_element_image;
         TYPE first_element_flag;
 
-        node_inner_string( 
+        node_inner_string(
             context_type &context_object,
-            inner_node_type _n_type, 
+            inner_node_type _n_type,
             mpt_type _trie_type,
             TYPE _rlc_challenge
         ): node_inner(
-            context_object, 
-            _n_type, 
-            _trie_type, 
+            context_object,
+            _n_type,
+            _trie_type,
             _rlc_challenge
         ) {
             data.resize(33);
@@ -189,7 +189,7 @@ namespace nil::blueprint::bbf {
             data_finished.resize(33);
             rlc.resize(33);
         }
-        
+
         std::size_t extra_rows_count() {
             return 0;
         }
@@ -200,8 +200,8 @@ namespace nil::blueprint::bbf {
                 auto raw_data_length = static_cast<std::uint64_t>(this->header->len.data.base());
                 for (size_t i = 0; i < raw_data_length; i++) {
                     std::cout << "\t"
-                        << std::hex << this->data[i] << std::dec << "\t" 
-                        << std::hex << this->index[i] << std::dec <<"\t" 
+                        << std::hex << this->data[i] << std::dec << "\t"
+                        << std::hex << this->index[i] << std::dec <<"\t"
                         << std::hex << this->rlc[i] << std::dec << "\t" << std::endl;
                 }
             }
@@ -275,11 +275,11 @@ namespace nil::blueprint::bbf {
                     if ( index[j] - index[0] == len - 1) {
                         remainder_I[j] = 0;
                     } else {
-                        remainder_I[j] = 
+                        remainder_I[j] =
                             (len - 1 - (index[j] - index[0])).inversed();
                     }
-                    this->is_last_byte[j] = 1 - 
-                        (len - 1 - (index[j] - index[0])) 
+                    this->is_last_byte[j] = 1 -
+                        (len - 1 - (index[j] - index[0]))
                         * remainder_I[j];
                 }
             }
@@ -298,7 +298,7 @@ namespace nil::blueprint::bbf {
                 }
             }
         }
-       
+
         void _is_zero_constraints(TYPE is_zero, TYPE inverse, TYPE X) {
             constrain(is_zero - (1 - X * inverse));
             constrain(X * is_zero);
@@ -312,12 +312,12 @@ namespace nil::blueprint::bbf {
 
             constrain((1 - data_finished[0]) * data_finished[0]);
             constrain((this->header->len_is_zero + this->header->len_is_one) * (1 - this->data_finished[0]));
-            constrain(this->header->len_is_zero * index[0] + 
+            constrain(this->header->len_is_zero * index[0] +
                 (1 - this->header->len_is_zero) * (index[0] - first_data_index));
             constrain(this->header->len_is_zero * data[0]);
-            constrain(this->header->len_is_zero * (rlc[0] - this->header->prefix_rlc[2]) + 
+            constrain(this->header->len_is_zero * (rlc[0] - this->header->prefix_rlc[2]) +
                 (1 - this->header->len_is_zero) * (rlc[0] - (this->header->prefix_rlc[2] * 53 + data[0])));
-            
+
             for (size_t i = 1; i < data.size(); i++) {
                 constrain((1 - data_finished[i]) * data_finished[i]);
                 constrain((1 - data_finished[i]) * data_finished[i-1]);
@@ -347,15 +347,15 @@ namespace nil::blueprint::bbf {
         using node_header_string_encoder = node_header_string_encoder<FieldType, stage>;
         using node_inner_string = node_inner_string<FieldType, stage>;
 
-        node_inner_string_encoder( 
+        node_inner_string_encoder(
             context_type &context_object,
-            inner_node_type _n_type, 
+            inner_node_type _n_type,
             mpt_type _trie_type,
             TYPE _rlc_challenge
         ): node_inner_string(
-            context_object, 
-            _n_type, 
-            _trie_type, 
+            context_object,
+            _n_type,
+            _trie_type,
             _rlc_challenge
         ) {
 
@@ -366,7 +366,7 @@ namespace nil::blueprint::bbf {
             );
             this->header = h;
         }
-    
+
         void rlp_lookup_constraints() {
             h->rlp_lookup_constraints(this->first_element_image, this->data[0], this->first_element_flag);
         }
@@ -376,7 +376,7 @@ namespace nil::blueprint::bbf {
         void _set_header_data(std::vector<zkevm_word_type> &raw, std::size_t &rlp_encoding_index, TYPE &rlc_accumulator) {
             h->encode_data(raw, rlp_encoding_index, rlc_accumulator);
         }
-        
+
     };
 
 
@@ -391,15 +391,15 @@ namespace nil::blueprint::bbf {
         using node_header_string_decoder = node_header_string_decoder<FieldType, stage>;
         using node_inner_string = node_inner_string<FieldType, stage>;
 
-        node_inner_string_decoder( 
+        node_inner_string_decoder(
             context_type &context_object,
-            inner_node_type _n_type, 
+            inner_node_type _n_type,
             mpt_type _trie_type,
             TYPE _rlc_challenge
         ): node_inner_string(
-            context_object, 
-            _n_type, 
-            _trie_type, 
+            context_object,
+            _n_type,
+            _trie_type,
             _rlc_challenge
         ) {
             h = new node_header_string_decoder(
@@ -443,16 +443,16 @@ namespace nil::blueprint::bbf {
         TYPE first_element_flag;
         TYPE first_element_image;
 
-        node_inner_string_container( 
+        node_inner_string_container(
             context_type &context_object,
-            inner_node_type _n_type, 
+            inner_node_type _n_type,
             mpt_type _trie_type,
             TYPE _rlc_challenge
             // node_inner_string_decoder* _inner
         ): node_inner(
-            context_object, 
-            _n_type, 
-            _trie_type, 
+            context_object,
+            _n_type,
+            _trie_type,
             _rlc_challenge
         ) {
 
@@ -464,12 +464,12 @@ namespace nil::blueprint::bbf {
             this->header = h;
             inner = new node_inner_string_decoder(
                 context_object,
-                _n_type, 
+                _n_type,
                 _trie_type,
                 _rlc_challenge
             );
         }
-        
+
         std::size_t extra_rows_count() {
             return 0;
         }
@@ -495,7 +495,7 @@ namespace nil::blueprint::bbf {
 
         void rlp_lookup_constraints() {
             h->rlp_lookup_constraints(
-                first_element_image, 
+                first_element_image,
                 this->inner->header->prefix_exists[0] * this->inner->header->prefix[0] + (1 - this->inner->header->prefix_exists[0]) * this->inner->data[0],
                 first_element_flag);
             this->inner->rlp_lookup_constraints();
@@ -511,7 +511,7 @@ namespace nil::blueprint::bbf {
             this->inner->peek_and_set_data(raw, rlp_encoding_index, rlc_accumulator);
             if (this->inner->header->get_total_length() == 1) {
                 first_element_flag = 1;
-                first_element_image = this->inner->header->prefix_exists[0] * this->inner->header->prefix[0] 
+                first_element_image = this->inner->header->prefix_exists[0] * this->inner->header->prefix[0]
                                       + (1 - this->inner->header->prefix_exists[0]) * this->inner->data[0];
             } else {
                 first_element_flag = 0;
@@ -537,6 +537,7 @@ namespace nil::blueprint::bbf {
 
     template<typename FieldType, GenerationStage stage>
     class node_inner_array: public node_inner<FieldType, stage> {
+      public:
         using typename generic_component<FieldType, stage>::context_type;
         using generic_component<FieldType, stage>::allocate;
         using generic_component<FieldType, stage>::copy_constrain;
@@ -544,23 +545,22 @@ namespace nil::blueprint::bbf {
         using generic_component<FieldType, stage>::lookup;
         using generic_component<FieldType, stage>::lookup_table;
 
-      public:
-      struct input_type {};
+        struct input_type {};
         using typename generic_component<FieldType, stage>::table_params;
         using typename generic_component<FieldType, stage>::TYPE;
 
         using node_header_array_decoder = node_header_array_decoder<FieldType, stage>;
         using node_inner = node_inner<FieldType, stage>;
 
-        node_inner_array( 
+        node_inner_array(
             context_type &context_object,
             mpt_type _trie_type,
             TYPE _rlc_challenge
         ):
             node_inner(
-                context_object, 
-                inner_node_type::array, 
-                _trie_type, 
+                context_object,
+                inner_node_type::array,
+                _trie_type,
                 _rlc_challenge
             ){
 
@@ -592,7 +592,7 @@ namespace nil::blueprint::bbf {
         // std::size_t get_total_length() {
         //     return _get_header()->get_total_length();
         // }
-    
+
         std::vector<node_inner*> inners;
 
         void allocate_witness(std::size_t &column_index, std::size_t &row_index) {
@@ -607,7 +607,7 @@ namespace nil::blueprint::bbf {
                 i->initialize();
             }
         }
-    
+
         // std::size_t get_data_length() {
         //     std::size_t internals_length = 0;
         //     for (size_t i = 0; i < this->inners.size(); i++)
@@ -621,7 +621,7 @@ namespace nil::blueprint::bbf {
             for (auto &i : inners)
                 total_len += i->get_total_length_constraint();
             constrain(this->header->len - total_len);
-            
+
             TYPE next_index, previous_rlc;
             for (size_t i = 0; i < this->inners.size(); i++) {
                 if (i == 0) {

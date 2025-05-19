@@ -42,19 +42,19 @@ namespace nil::blueprint::bbf {
 
     enum class mpt_type { account_trie, storage_trie };
 
-    enum class inner_node_type { 
-        nonce, 
-        balance, 
-        storage_root, 
-        code_hash, 
-        storage_value, 
+    enum class inner_node_type {
+        nonce,
+        balance,
+        storage_root,
+        code_hash,
+        storage_value,
         key,
-        array 
+        array
     };
 
     template<typename T>
     class rlp_parser {};
-    
+
     template<typename T>
     class rlp_encoder: rlp_parser<T> {
         public:
@@ -65,7 +65,7 @@ namespace nil::blueprint::bbf {
             throw "Method not implemented!";
         }
     };
-    
+
     template<typename T>
     class rlp_decoder: rlp_parser<T> {
         public:
@@ -98,6 +98,7 @@ namespace nil::blueprint::bbf {
 
     template<typename FieldType, GenerationStage stage>
     class node_header: public generic_component<FieldType, stage> {
+      public:
         using typename generic_component<FieldType, stage>::context_type;
         using RLPTable = typename bbf::rlp_table<FieldType, stage>;
         using KeccakTable = typename bbf::keccak_table<FieldType, stage>;
@@ -109,7 +110,6 @@ namespace nil::blueprint::bbf {
         using generic_component<FieldType, stage>::lookup;
         using generic_component<FieldType, stage>::lookup_table;
 
-      public:
         using typename generic_component<FieldType, stage>::table_params;
         using typename generic_component<FieldType, stage>::TYPE;
         // mpt_type trie_type;
@@ -117,7 +117,7 @@ namespace nil::blueprint::bbf {
         std::array<TYPE, 3> prefix;
         std::array<TYPE, 3> prefix_rlc;
         std::array<TYPE, 3> prefix_exists;
-        
+
         TYPE prefix_1_flag;
         TYPE prefix_1_image;
         std::array<TYPE, 3> prefix_index;
@@ -130,7 +130,7 @@ namespace nil::blueprint::bbf {
         TYPE rlc_challenge;
 
         std::uint8_t rlp_constant;
-        
+
         node_header(
             context_type &context_object,
             // mpt_type _trie_t,
@@ -166,7 +166,7 @@ namespace nil::blueprint::bbf {
             constrain(prefix_index[0] - prefix_exists[0] * initial_index);
             constrain(prefix_index[1] - prefix_exists[1] * (prefix_index[0] + 1));
             constrain(prefix_index[2] - prefix_exists[2] * (prefix_index[1] + 1));
-            
+
             constrain(prefix_rlc[0] - (prefix_exists[0] * (previous_rlc * 53 + prefix[0]) + (1 - prefix_exists[0]) * previous_rlc));
             constrain(prefix_rlc[1] - (prefix_exists[1] * (prefix_rlc[0] * 53 + prefix[1]) + (1 - prefix_exists[1]) * prefix_rlc[0]));
             constrain(prefix_rlc[2] - (prefix_exists[2] *  (prefix_rlc[1] * 53 + prefix[2]) + (1 - prefix_exists[2]) * prefix_rlc[1]));
@@ -175,7 +175,7 @@ namespace nil::blueprint::bbf {
         TYPE get_prefix_length() {
             return prefix_exists[0] + prefix_exists[1] + prefix_exists[2];
         }
-    
+
         TYPE get_total_length_constraint() {
             return len + get_prefix_length();
         }
@@ -198,7 +198,7 @@ namespace nil::blueprint::bbf {
                 allocate(prefix_exists[i], column_index ++, row_index);
             }
         }
-    
+
         void print() {
             std::cout << "\tdata\tindex\trlc\n";
             std::cout << "\t" << std::hex << prefix[0] << std::dec << "\t"
@@ -210,8 +210,8 @@ namespace nil::blueprint::bbf {
             std::cout << "\t" << std::hex << prefix[2] << std::dec << "\t"
                       << std::hex << prefix_index[2] << std::dec << "\t"
                       << std::hex << prefix_rlc[2] << std::dec << std::endl;
-            
-            std::cout << "prefix exists: " << 
+
+            std::cout << "prefix exists: " <<
                     std::hex << prefix_exists[0] << std::dec << " " <<
                     std::hex << prefix_exists[1] << std::dec << " " <<
                     std::hex << prefix_exists[2] << std::dec << std::endl;
@@ -314,11 +314,11 @@ namespace nil::blueprint::bbf {
 
     template<typename FieldType, GenerationStage stage>
     class node_header_decoder: public node_header<FieldType, stage>, rlp_decoder<typename generic_component<FieldType, stage>::TYPE> {
-        using typename generic_component<FieldType, stage>::context_type;
         public:
+        using typename generic_component<FieldType, stage>::context_type;
         using typename generic_component<FieldType, stage>::TYPE;
         using node_header = node_header<FieldType, stage>;
-        
+
 
         node_header_decoder(
             context_type &context_object,
@@ -328,7 +328,7 @@ namespace nil::blueprint::bbf {
             std::uint8_t _rlp_constant
         ): node_header(context_object, _node_t, _rlc_challenge, _rlp_constant) {}
 
-        void peek_and_decode_data(std::vector<zkevm_word_type> &_raw, std::size_t &rlp_encoding_index, TYPE &rlc_accumulator) {            
+        void peek_and_decode_data(std::vector<zkevm_word_type> &_raw, std::size_t &rlp_encoding_index, TYPE &rlc_accumulator) {
             this->_peek_and_decode_data(_raw, rlp_encoding_index, rlc_accumulator);
             this->_set_prefix_rlc_and_index(rlp_encoding_index, rlc_accumulator);
             this->_set_length_info();
@@ -336,14 +336,14 @@ namespace nil::blueprint::bbf {
         }
 
         protected:
-        virtual void _peek_and_decode_data(std::vector<zkevm_word_type> &_raw, std::size_t &rlp_encoding_index, TYPE &rlc_accumulator) {            
+        virtual void _peek_and_decode_data(std::vector<zkevm_word_type> &_raw, std::size_t &rlp_encoding_index, TYPE &rlc_accumulator) {
             throw "Method not implemented!";
         }
 
-        void _peek_and_decode_data_non_single(std::vector<zkevm_word_type> &_raw, std::size_t &rlp_encoding_index, TYPE &rlc_accumulator) {            
+        void _peek_and_decode_data_non_single(std::vector<zkevm_word_type> &_raw, std::size_t &rlp_encoding_index, TYPE &rlc_accumulator) {
             BOOST_ASSERT_MSG(_raw.size() <= 65535, "data length more than 65535 bytes!");
             BOOST_ASSERT_MSG(_raw.size() >= 1, "data length zero!");
-            
+
             if (_raw[0] >= this->rlp_constant && _raw[0] <= this->rlp_constant + 55) {
                 // BOOST_ASSERT_MSG(_raw.size() >= _raw[0] - rlp_constant + 1, "Error in RLP decoding!");
                 this->prefix[0] = _raw[0];
@@ -398,12 +398,12 @@ namespace nil::blueprint::bbf {
 
     template<typename FieldType, GenerationStage stage>
     class node_header_encoder: public node_header<FieldType, stage>, rlp_encoder<typename generic_component<FieldType, stage>::TYPE> {
+        public:
         using typename generic_component<FieldType, stage>::context_type;
 
-        public:
         using typename generic_component<FieldType, stage>::TYPE;
         using node_header = node_header<FieldType, stage>;
-        
+
 
         node_header_encoder(
             context_type &context_object,
@@ -413,7 +413,7 @@ namespace nil::blueprint::bbf {
             std::uint8_t _rlp_constant
         ): node_header(context_object, _node_t, _rlc_challenge, _rlp_constant) {}
 
-        void encode_data(std::size_t raw_data_length, std::size_t &rlp_encoding_index, TYPE &rlc_accumulator, bool initialize_rlc=false) { 
+        void encode_data(std::size_t raw_data_length, std::size_t &rlp_encoding_index, TYPE &rlc_accumulator, bool initialize_rlc=false) {
             BOOST_ASSERT_MSG(raw_data_length <= 65535, "data length more than 65535 bytes!");
             this->_encode_data(raw_data_length);
             if (initialize_rlc)
@@ -421,15 +421,15 @@ namespace nil::blueprint::bbf {
             this->_set_prefix_rlc_and_index(rlp_encoding_index, rlc_accumulator);
             this->_set_length_info();
         }
-      
-        void encode_data(std::vector<zkevm_word_type> &raw, std::size_t &rlp_encoding_index, TYPE &rlc_accumulator, bool initialize_rlc=false) { 
+
+        void encode_data(std::vector<zkevm_word_type> &raw, std::size_t &rlp_encoding_index, TYPE &rlc_accumulator, bool initialize_rlc=false) {
             BOOST_ASSERT_MSG(raw.size() <= 65535, "data length more than 65535 bytes!");
             this->_encode_data(raw);
             if (initialize_rlc)
                 rlc_accumulator = this->get_total_length();
             this->_set_prefix_rlc_and_index(rlp_encoding_index, rlc_accumulator);
             this->_set_length_info();
-        }  
+        }
         protected:
 
         void _encode_non_single(std::size_t raw_data_length) {
@@ -482,7 +482,7 @@ namespace nil::blueprint::bbf {
       public:
         using typename generic_component<FieldType, stage>::TYPE;
         using node_header = node_header<FieldType, stage>;
- 
+
         node_header_array_decoder(
             context_type &context_object,
             // mpt_type _trie_t,
@@ -494,7 +494,7 @@ namespace nil::blueprint::bbf {
             this->_rlp_lookup_constraints(0, 0, 0);
         }
 
-        void _peek_and_decode_data(std::vector<zkevm_word_type> &_raw, std::size_t &rlp_encoding_index, TYPE &rlc_accumulator) {            
+        void _peek_and_decode_data(std::vector<zkevm_word_type> &_raw, std::size_t &rlp_encoding_index, TYPE &rlc_accumulator) {
             this->_peek_and_decode_data_non_single(_raw, rlp_encoding_index, rlc_accumulator);
         }
 
@@ -514,8 +514,8 @@ namespace nil::blueprint::bbf {
             TYPE _rlc_challenge
         ): node_header_encoder(context_object, inner_node_type::array, _rlc_challenge, 0xC0) {
         }
-        
-        void _encode_data(std::size_t raw_data_length) { 
+
+        void _encode_data(std::size_t raw_data_length) {
             BOOST_ASSERT_MSG(raw_data_length <= 65535, "data length more than 65535 bytes!");
             this->_encode_non_single(raw_data_length);
         }
@@ -564,7 +564,7 @@ namespace nil::blueprint::bbf {
                 this->_peek_and_decode_data_non_single(_raw, rlp_encoding_index, rlc_accumulator);
             }
         }
-    
+
         void rlp_lookup_constraints(TYPE first_element_image, TYPE first_element, TYPE first_element_flag) {
             this->ct.constrain(first_element_flag * (first_element - first_element_image), "");
             this->_rlp_lookup_constraints(first_element_image, first_element, first_element_flag);
@@ -593,7 +593,7 @@ namespace nil::blueprint::bbf {
             TYPE _rlc_challenge
         ): node_header_encoder(context_object, _node_t, _rlc_challenge, 0x80) {}
 
-        void _encode_data(std::vector<zkevm_word_type> &_raw) { 
+        void _encode_data(std::vector<zkevm_word_type> &_raw) {
             std::size_t raw_data_length = _raw.size();
             BOOST_ASSERT_MSG(raw_data_length <= 65535, "data length more than 65535 bytes!");
             if ( raw_data_length == 1 && _raw[0] <= 0x7F) {
@@ -610,7 +610,7 @@ namespace nil::blueprint::bbf {
                 this->_encode_non_single(_raw.size());
             }
         }
-    
+
         void rlp_lookup_constraints(TYPE first_element_image, TYPE first_element, TYPE first_element_flag) {
             this->ct.constrain(first_element_flag * (first_element - first_element_image), "");
             this->_rlp_lookup_constraints(first_element_image, first_element, first_element_flag);

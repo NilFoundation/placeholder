@@ -38,7 +38,9 @@
 #include <nil/blueprint/zkevm_bbf/mpt_nodes/mpt_branch.hpp>
 #include <nil/blueprint/zkevm_bbf/mpt_nodes/mpt_extension.hpp>
 #include <nil/blueprint/zkevm_bbf/mpt_nodes/mpt_subtree.hpp>
-#include <nil/blueprint/zkevm_bbf/mpt_nodes/mpt_leaf.hpp>
+#include <nil/blueprint/zkevm_bbf/mpt_nodes/mpt_leaf_proxy.hpp>
+
+#include <nil/blueprint/zkevm_bbf/subcomponents/keccak_table.hpp>
 
 namespace nil::blueprint::bbf {
 
@@ -55,17 +57,22 @@ public:
     using typename generic_component<FieldType, stage>::table_params;
     using typename generic_component<FieldType, stage>::TYPE;
 
-    using input_type = typename std::conditional<stage==GenerationStage::ASSIGNMENT, mpt_paths_vector, std::nullptr_t>::type;
+    using input_paths = typename std::conditional<stage==GenerationStage::ASSIGNMENT, mpt_paths_vector, std::nullptr_t>::type;
+    struct input_type {
+        TYPE rlc_challenge;
+
+        input_paths paths_vector;
+    };
 
     using value_type = typename FieldType::value_type;
     using integral_type = nil::crypto3::multiprecision::big_uint<257>;
 
-    static const std::size_t max_mpt_columns = 900;
+    static const std::size_t max_mpt_columns = 950;
 
     static table_params get_minimal_requirements(std::size_t max_mpt_size) {
         return {
             .witnesses = max_mpt_columns,
-            .public_inputs = 0,
+            .public_inputs = 1,
             .constants = 0,
             .rows = max_mpt_size
         };
@@ -73,7 +80,9 @@ public:
 
     static void allocate_public_inputs(
             context_type &context, input_type &input,
-            std::size_t max_mpt_size) {}
+            std::size_t max_mpt_size) {
+        context.allocate(input.rlc_challenge, 0, 0, column_type::public_input);
+    }
 
     mpt_dynamic(context_type &context_object,
         const input_type &input,
@@ -82,6 +91,7 @@ public:
         // listed by order of allocation into the table
         std::vector<TYPE> trie_id(max_mpt_size);                         // The id's of the tries (to store all tries in the same table)
         std::vector<std::array<TYPE, NODE_TYPE_COUNT>> node_selector(max_mpt_size); // node type selector columns (0/1)
+        std::vector<TYPE> rlc_challenge(max_mpt_size);
         std::vector<std::array<TYPE,32>> node_key_prefix(max_mpt_size);  // The part of the key that is the path to the node in the row
 
         // columns for proving that the key prefix has indeed length = key_prefix_length
@@ -91,28 +101,33 @@ public:
         std::vector<TYPE> high_byte_hi(max_mpt_size);      // highest byte in key_prefix, high 4-bits
         std::vector<TYPE> key_prefix_length(max_mpt_size); // Length of the prefix in half-bytes (i.e. 4-bit chunks)
 
-        //           / Excluded from k2h\              /===== Excluded from key_to_hash lookup table =====\
-        // +---------+---------------+----------------+----------------------+--------------+--------------+-------------------+
-        // | trie_id | node_selector | node_key_prefix| key_prefix_length_bit| high_byte_lo | high_byte_hi | key_prefix_length |
-        // +---------+---------------+----------------+----------------------+--------------+--------------+-------------------+
-        //      1     NODE_TYPE_COUNT       32         \                   column_skip                    /          1
+        //           /= Excluded from k2h =\                /===== Excluded from key_to_hash lookup table =====\
+        // +---------+---------------+-----+---------------+----------------------+--------------+--------------+-------------------+
+        // | trie_id | node_selector | rlc |node_key_prefix| key_prefix_length_bit| high_byte_lo | high_byte_hi | key_prefix_length |
+        // +---------+---------------+-----+---------------+----------------------+--------------+--------------+-------------------+
+        //      1     NODE_TYPE_COUNT   1        32         \                   column_skip                    /          1
 
         // All other columns are delegated to node-specific subcomponents. For them we'll create subcontexts.
         std::vector<std::size_t> subcontext_columns;
-        for(std::size_t i = 1 + NODE_TYPE_COUNT + 33 + column_skip; i < max_mpt_columns; i++) {
+        for(std::size_t i = 1 + NODE_TYPE_COUNT + 1 + 32 + column_skip + 1; i < max_mpt_columns - 4; i++) {
             subcontext_columns.push_back(i);
+        }
+        // The last four columns are for Keccak lookup table
+        std::vector<std::size_t> keccak_columns;
+        for(std::size_t i = max_mpt_columns - 4; i < max_mpt_columns; i++) {
+            keccak_columns.push_back(i);
         }
 
         // Connections between rows are achieved via lookups. For this we define a "key_to_hash" table:
         std::vector<std::size_t> k2h_lookup_columns = {0}; // trie_id column included
         for(std::size_t i = 0; i < 32; i++) {
             // skip NODE_TYPE_COUNT columns, add following 32 node_key_prefix cols into the table
-            k2h_lookup_columns.push_back(1 + NODE_TYPE_COUNT + i);
+            k2h_lookup_columns.push_back(1 + NODE_TYPE_COUNT + 1 + i);
         }
-        k2h_lookup_columns.push_back(1 + NODE_TYPE_COUNT + 32 + column_skip); // key_prefix_length column included
+        k2h_lookup_columns.push_back(1 + NODE_TYPE_COUNT + 1 + 32 + column_skip); // key_prefix_length column included
         // 32 more columns: hash for use in parent node
         for(std::size_t i = 0; i < 32; i++) {
-            k2h_lookup_columns.push_back(1 + NODE_TYPE_COUNT + 32 + column_skip + 1 + i);
+            k2h_lookup_columns.push_back(1 + NODE_TYPE_COUNT + 1 + 32 + column_skip + 1 + i);
         }
         // key_to_hash = { trie_id, node_key_prefix, key_prefix_length, parent_hash }
         lookup_table("key_to_hash", k2h_lookup_columns, 0, max_mpt_size);
@@ -123,7 +138,7 @@ public:
         std::unordered_map<mpt_node_id, mpt_node> deploy_plan;
 
         if constexpr (stage == GenerationStage::ASSIGNMENT) {
-           for(auto &p : input) { // enumerate paths
+           for(auto &p : input.paths_vector) { // enumerate paths
                std::size_t trie_id = 0; // TODO : adjust later
                zkevm_word_type path_key;
                std::size_t accumulated_length = 0;
@@ -213,6 +228,10 @@ public:
                 to_decompose >>= 1;
             }
         }
+        // a place to store all the sequences that are to be hashed via keccak
+        typename keccak_table<FieldType,stage>::private_input_type keccak_buffers;
+        // we need the hash of an empty string as a fallback for some lookups
+        static const auto zerohash = zkevm_keccak_hash({});
 
         // the main cycle (Assignments & constraints)
         std::size_t node_num = 0; // = row number, since we have 1 row per node
@@ -238,17 +257,23 @@ public:
                     node_selector[node_num][type_index] = 0;
                 }
                 node_selector[node_num][n.type] = 1; // put a 1 into the selector column that corresponds to our node type
+                rlc_challenge[node_num] = input.rlc_challenge; // all challenges are equal :)
             } // end Assignment-specific code
 
             allocate(trie_id[node_num], 0, node_num);
             for(std::size_t type_index = 0; type_index < NODE_TYPE_COUNT; type_index++) {
                 allocate(node_selector[node_num][type_index], 1 + type_index, node_num);
             }
+
+            // rlc_challenge[node_num] = (node_num == 0) ? input.rlc_challenge : rlc_challenge[node_num - 1];
+            allocate(rlc_challenge[node_num], 1 + NODE_TYPE_COUNT, node_num);
+            copy_constrain(input.rlc_challenge, rlc_challenge[node_num]);
+
             for(std::size_t i = 0; i < 32; i++) {
-                allocate(node_key_prefix[node_num][i], 1 + NODE_TYPE_COUNT + i, node_num);
+                allocate(node_key_prefix[node_num][i], 1 + NODE_TYPE_COUNT + 1 + i, node_num);
             }
             for(std::size_t i = 0; i < 6; i++) {
-                allocate(key_prefix_length_bit[node_num][i], 1 + NODE_TYPE_COUNT + 32 + i, node_num);
+                allocate(key_prefix_length_bit[node_num][i], 1 + NODE_TYPE_COUNT + 1 + 32 + i, node_num);
                 constrain(key_prefix_length_bit[node_num][i] * (key_prefix_length_bit[node_num][i] - 1));
                 // recompose key_prefix_length from its bits
                 key_prefix_length[node_num] += key_prefix_length_bit[node_num][i] * (1 << i);
@@ -303,9 +328,9 @@ public:
                 // std::cout << "Highest byte = " << std::hex << highest_byte <<
                 //             " = " << high_byte_hi[node_num] << " " << high_byte_lo[node_num] << std::dec << std::endl;
             }
-            allocate(high_byte_lo[node_num], 1 + NODE_TYPE_COUNT + 32 + 6, node_num); // TODO : lookup in 8bit cell and cell*16
-            allocate(high_byte_hi[node_num], 1 + NODE_TYPE_COUNT + 32 + 7, node_num); // TODO : lookup in 8bit cell and cell*16
-            allocate(key_prefix_length[node_num], 1 + NODE_TYPE_COUNT + 32 + column_skip, node_num);
+            allocate(high_byte_lo[node_num], 1 + NODE_TYPE_COUNT + 1 + 32 + 6, node_num); // TODO : lookup in 8bit cell and cell*16
+            allocate(high_byte_hi[node_num], 1 + NODE_TYPE_COUNT + 1 + 32 + 7, node_num); // TODO : lookup in 8bit cell and cell*16
+            allocate(key_prefix_length[node_num], 1 + NODE_TYPE_COUNT + 1 + 32 + column_skip, node_num);
 
             // assure correct decomposition of highest_byte
             constrain(highest_byte - (high_byte_lo[node_num] + 16*high_byte_hi[node_num]));
@@ -319,24 +344,28 @@ public:
             context_type node_row_context = context_object.fresh_subcontext(subcontext_columns, node_num, 1);
 
             // preparing input for the subcomponents
-            mpt_node_input_type<FieldType, stage> node_input;
-            node_input.trie_id = trie_id[node_num];
-            for(std::size_t type_index = 0; type_index < NODE_TYPE_COUNT; type_index++) {
-                // a selector-based expression for node_type. TODO : we probably don't need it at all
-                node_input.node_type += node_selector[node_num][type_index]*type_index;
-            }
-            node_input.node_key_prefix = node_key_prefix[node_num];
-            node_input.key_prefix_length = key_prefix_length[node_num];
+            node_private_input<FieldType, stage> node_data;
             if constexpr (stage == GenerationStage::ASSIGNMENT) {
                 // actual node data is only available at assignment stage
-                node_input.node_data = n;
+                node_data = n;
             }
 
+            mpt_node_input_type<FieldType, stage> node_input = {
+                trie_id[node_num], rlc_challenge[node_num], node_key_prefix[node_num], key_prefix_length[node_num],
+                node_data, &keccak_buffers
+            };
+/*
+            node_input.trie_id = trie_id[node_num];
+            node_input.rlc_challenge = rlc_challenge[node_num];
+            node_input.node_key_prefix = node_key_prefix[node_num];
+            node_input.key_prefix_length = key_prefix_length[node_num];
+            node_input.keccak_buffers = &keccak_buffers;
+*/
             switch(n.type) {
                 case branch:    mpt_branch(node_row_context, node_input); break;
                 case extension: mpt_extension(node_row_context, node_input); break;
                 case subtree:   mpt_subtree(node_row_context, node_input); break;
-                case leaf:      mpt_leaf(node_row_context, node_input); break;
+                case leaf:      mpt_leaf_proxy(node_row_context, node_input); break;
                 default: break;
             }
 
@@ -355,8 +384,14 @@ public:
                     BOOST_ASSERT(constr_list.first.size() == 1); // there should only be one row in the subcomponent
                     for (auto lookup_constraint: constr_list.second) {
                         auto exprs = lookup_constraint.second;
-                        for(auto &e : exprs) {
-                            e *= selector;
+                        if (lookup_constraint.first != "keccak_table") {
+                            for(auto &e : exprs) {
+                                e *= selector;
+                            }
+                        } else {
+                            exprs[1] *= selector;
+                            exprs[2] = exprs[2]*selector + (1 - selector)*w_hi<FieldType>(zerohash);
+                            exprs[3] = exprs[3]*selector + (1 - selector)*w_lo<FieldType>(zerohash);
                         }
                         context_object.relative_lookup(exprs, lookup_constraint.first, 0, max_mpt_size - 1);
                     }
@@ -365,6 +400,10 @@ public:
 
             node_num++;
         }
+
+        context_type keccak_ct = context_object.subcontext(keccak_columns, 0, max_mpt_size);
+        keccak_table<FieldType,stage>(keccak_ct, {input.rlc_challenge, keccak_buffers}, max_mpt_size);
+        // TODO: last parameter ^^^ should be max_keccak_blocks, but for now max_mpt_size is ok
     }
 };
 } // namespace nil::blueprint::bbf
