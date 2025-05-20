@@ -178,8 +178,7 @@ namespace nil {
                                 const std::size_t bit_in_limb = z % bits_per_limb;
                                 std::array<bool, 5> a;
                                 for (std::size_t y = 0; y < 5; y++) {
-                                    const integral_type tmp = integral_type(state.a[y][x][limb].data);
-                                    a[y] = ((tmp >> bit_in_limb) & 1) != 0;
+                                    a[y] = ((state.a[y][x][limb].to_integral() >> bit_in_limb) & 1) != 0;
                                 }
                                 state.c[x][z] = value_type(
                                     std::accumulate(a.begin(), a.end(), false, std::bit_xor<bool>())
@@ -210,10 +209,9 @@ namespace nil {
                                 for (std::size_t z = 0; z < 64; z++) {
                                     const std::size_t limb = z / bits_per_limb;
                                     const std::size_t bit_in_limb = z % bits_per_limb;
-                                    const integral_type tmp = integral_type(state.a[y][x][limb].data);
-                                    const integral_type a_bit = (tmp >> bit_in_limb) & 1;
+                                    const integral_type a_bit = (state.a[y][x][limb].to_integral() >> bit_in_limb) & 1;
                                     state.a_prime[y][x][z] = value_type(
-                                        a_bit ^ integral_type(state.c[x][z].data) ^ integral_type(state.c_prime[x][z].data)
+                                        a_bit ^ state.c[x][z].to_integral() ^ state.c_prime[x][z].to_integral()
                                     );
                                 }
                             }
@@ -241,7 +239,7 @@ namespace nil {
                         // For the XOR, we split A''[0, 0] to bits.
                         integral_type val = 0;
                         for (std::size_t limb = 0; limb < u64_limbs; limb++) {
-                            const integral_type val_limb = integral_type(state.a_prime_prime[0][0][limb].data);
+                            const integral_type val_limb = state.a_prime_prime[0][0][limb].to_integral();
                             val |= val_limb << (limb * bits_per_limb);
                         }
                         std::array<bool, 64> val_bits;
@@ -256,7 +254,7 @@ namespace nil {
                         // A''[0, 0] is additionally xor'd with round constant.
                         for (std::size_t limb = 0; limb < u64_limbs; limb++) {
                             const integral_type rc_lo = rc_value_limb(round, limb);
-                            const integral_type a_prime_prime_val = integral_type(state.a_prime_prime[0][0][limb].data);
+                            const integral_type a_prime_prime_val = state.a_prime_prime[0][0][limb].to_integral();
                             const integral_type xor_result = a_prime_prime_val ^ rc_lo;
                             state.a_prime_prime_prime_0_0_limbs[limb] = value_type(xor_result);
                         }
@@ -465,7 +463,7 @@ namespace nil {
                                 for (std::size_t x = 0; x < 5; x++) {
                                     for (std::size_t limb = 0; limb < u64_limbs; limb++) {
                                         state.preimage[y][x][limb] = value_type(
-                                            (integral_type(input.input[y * 5 + x].data) >> (16 * limb)) & 0xFFFF
+                                            (integral_type(input.input[y * 5 + x].to_integral()) >> (16 * limb)) & 0xFFFF
                                         );
                                     }
                                 }
@@ -475,7 +473,7 @@ namespace nil {
                                     for (std::size_t x = 0; x < 5; x++) {
                                         for (std::size_t limb = 0; limb < u64_limbs; limb++) {
                                             state.a[y][x][limb] = value_type(
-                                                (integral_type(input.input[y * 5 + x].data) >> (16 * limb)) & 0xFFFF
+                                                (integral_type(input.input[y * 5 + x].to_integral()) >> (16 * limb)) & 0xFFFF
                                             );
                                         }
                                     }

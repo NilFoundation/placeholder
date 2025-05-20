@@ -36,6 +36,7 @@
 
 #include <nil/blueprint/bbf/circuit_builder.hpp>
 #include <nil/blueprint/bbf/components/hashes/keccak/keccak_round_bench.hpp>
+#include <nil/blueprint/bbf/components/hashes/keccak/keccak_permute_wide.hpp>
 #include <nil/crypto3/zk/snark/systems/plonk/placeholder/params.hpp>
 #include <nil/crypto3/zk/snark/systems/plonk/placeholder/preprocessor.hpp>
 #include <nil/crypto3/zk/snark/systems/plonk/placeholder/prover.hpp>
@@ -98,7 +99,7 @@ template<typename BlueprintFieldType>
 typename BlueprintFieldType::value_type to_sparse(typename BlueprintFieldType::value_type value) {
     using value_type = typename BlueprintFieldType::value_type;
     using integral_type = typename BlueprintFieldType::integral_type;
-    integral_type value_integral = integral_type(value.data);
+    integral_type value_integral = value.to_integral();
     integral_type result_integral = 0;
     integral_type power = 1;
     for (int i = 0; i < 64; ++i) {
@@ -205,7 +206,72 @@ auto benchmark_keccak_round(const std::size_t expansion_factor, const std::size_
     return std::make_tuple(assgnment_time, proof_time);
 }
 
-void run_sweep_benchmarks(bool quick_mode = false, const std::string& output_file = "keccak_benchmarks.csv") {
+template<typename BlueprintFieldType>
+auto benchmark_keccak_permute_wide(const std::size_t instances, const std::size_t state_variant = 0) {
+    using value_type = typename BlueprintFieldType::value_type;
+    using integral_type = typename BlueprintFieldType::integral_type;
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<uint64_t> dis;
+    
+    // Generate array of inner states based on number of instances to test
+    std::vector<std::array<value_type, 25>> inner_states;
+    integral_type mask = (integral_type(1) << 64) - 1;
+    
+    for (std::size_t i = 0; i < instances; i++) {
+        std::array<value_type, 25> inner_state;
+        for (int j = 0; j < 25; ++j) {
+            auto random_value = integral_type(dis(gen)) & mask;
+            inner_state[j] = to_sparse<BlueprintFieldType>(value_type(random_value));
+        }
+        inner_states.push_back(inner_state);
+    }
+
+    // For now we only have one version of the keccak_permute_wide implementation
+    // but we keep the state_variant parameter for future extensions
+    (void)state_variant;
+
+    std::chrono::high_resolution_clock::duration total_assgnment_time = std::chrono::high_resolution_clock::duration::zero();
+    std::chrono::high_resolution_clock::duration total_proof_time = std::chrono::high_resolution_clock::duration::zero();
+
+    for (std::size_t i = 0; i < instances; i++) {
+        auto B = bbf::circuit_builder<
+            BlueprintFieldType,
+            keccak_permute_wide
+        >();
+        
+        auto b_assign = [&B](const auto& state) {
+            return B.assign(
+                typename keccak_permute_wide<BlueprintFieldType, GenerationStage::ASSIGNMENT>::input_type{state}
+            );
+        };
+        
+        auto [result, assgnment_time] = measure_execution_time(b_assign, inner_states[i]);
+        auto [at, A, desc] = result;
+
+        if (i == 0) {
+            std::cout << "constants amount = " << desc.constant_columns << std::endl;
+        }
+
+        auto proof_time = generate_proof<BlueprintFieldType>(B.get_circuit(), at, desc);
+
+        total_assgnment_time += assgnment_time;
+        total_proof_time += proof_time;
+
+        std::cout << "Instance " << (i+1) << "/" << instances << " completed" << std::endl;
+    }
+
+    // Calculate averages
+    auto avg_assignment_time = total_assgnment_time / instances;
+    auto avg_proof_time = total_proof_time / instances;
+
+    std::cout << "Average assignment time: " << format_time(avg_assignment_time) << std::endl;
+    std::cout << "Average proof time: " << format_time(avg_proof_time) << std::endl;
+
+    return std::make_tuple(avg_assignment_time, avg_proof_time);
+}
+
+void run_keccak_round_benchmarks(bool quick_mode = false, const std::string& output_file = "keccak_round_benchmarks.csv") {
     using field_type = nil::crypto3::algebra::curves::pallas::base_field_type;
 
     // Open output file
@@ -271,24 +337,106 @@ void run_sweep_benchmarks(bool quick_mode = false, const std::string& output_fil
     std::cout << "Benchmark results saved to " << output_file << std::endl;
 }
 
+void run_keccak_permute_wide_benchmarks(bool quick_mode = false, const std::string& output_file = "keccak_permute_wide_benchmarks.csv") {
+    using field_type = nil::crypto3::algebra::curves::pallas::base_field_type;
+
+    // Open output file
+    std::ofstream file_out(output_file);
+    if (!file_out.is_open()) {
+        std::cerr << "Failed to open output file: " << output_file << std::endl;
+        return;
+    }
+
+    // Write header to both console and file
+    std::cout << "instances,state_variant,assignment_time,proof_time" << std::endl;
+    file_out << "instances,state_variant,assignment_time,proof_time" << std::endl;
+
+    std::vector<size_t> instance_counts;
+    std::vector<size_t> state_variants = {0}; // Currently only one implementation
+
+    // Define the sweep ranges
+    if (quick_mode) {
+        // Quick mode for testing - just a few small values
+        instance_counts = {1, 2, 4};
+    } else {
+        // Full benchmark - powers of 2
+        for (size_t i = 1; i <= 128; i *= 2) {
+            instance_counts.push_back(i);
+        }
+    }
+
+    // Run benchmarks for each combination
+    for (size_t instances : instance_counts) {
+        for (size_t variant : state_variants) {
+            std::cout << "Running keccak_permute_wide benchmark with instances=" << instances
+                      << ", variant=" << variant << "..." << std::endl;
+
+            auto [assignment_time, proof_time] = benchmark_keccak_permute_wide<field_type>(instances, variant);
+
+            // Format benchmark result
+            std::string result =
+                std::to_string(instances) + "," +
+                std::to_string(variant) + "," +
+                std::to_string(std::chrono::duration_cast<std::chrono::microseconds>(assignment_time).count()) + "," +
+                std::to_string(std::chrono::duration_cast<std::chrono::microseconds>(proof_time).count());
+
+            // Output to both console and file
+            std::cout << result << std::endl;
+            file_out << result << std::endl;
+
+            // Flush file buffer to ensure data is written even if program crashes
+            file_out.flush();
+        }
+    }
+
+    file_out.close();
+    std::cout << "Benchmark results saved to " << output_file << std::endl;
+}
+
 BOOST_AUTO_TEST_SUITE(blueprint_plonk_test_suite)
 
-BOOST_AUTO_TEST_CASE(blueprint_plonk_hashes_keccak_round_sweep_benchmark, *boost::unit_test::disabled()) {
+// , *boost::unit_test::disabled()
+BOOST_AUTO_TEST_CASE(blueprint_plonk_hashes_keccak_benchmarks) {
     bool quick_mode = false;
-    std::string output_file = "keccak_benchmarks.csv";
+    std::string round_output_file = "keccak_round_benchmarks.csv";
+    std::string permute_wide_output_file = "keccak_permute_wide_benchmarks.csv";
+    bool run_round = false;
+    bool run_permute_wide = false;
 
     for (int i = 1; i < boost::unit_test::framework::master_test_suite().argc; ++i) {
         std::string arg = boost::unit_test::framework::master_test_suite().argv[i];
         if (arg == "--quick" || arg == "-q") {
             quick_mode = true;
-        } else if (arg == "--output" || arg == "-o") {
+        } else if (arg == "--round-output" || arg == "-ro") {
             if (i + 1 < boost::unit_test::framework::master_test_suite().argc) {
-                output_file = boost::unit_test::framework::master_test_suite().argv[++i];
+                round_output_file = boost::unit_test::framework::master_test_suite().argv[++i];
             }
+        } else if (arg == "--permute-wide-output" || arg == "-po") {
+            if (i + 1 < boost::unit_test::framework::master_test_suite().argc) {
+                permute_wide_output_file = boost::unit_test::framework::master_test_suite().argv[++i];
+            }
+        } else if (arg == "--run-round" || arg == "-rr") {
+            run_round = true;
+        } else if (arg == "--run-permute-wide" || arg == "-rp") {
+            run_permute_wide = true;
         }
     }
 
-    run_sweep_benchmarks(quick_mode, output_file);
+    // If neither is specified, run both
+    if (!run_round && !run_permute_wide) {
+        run_round = true;
+        run_permute_wide = true;
+    }
+
+    std::cout << "Running benchmarks with quick_mode=" << (quick_mode ? "true" : "false") << std::endl;
+
+    if (run_round) {
+        run_keccak_round_benchmarks(quick_mode, round_output_file);
+    }
+
+    if (run_permute_wide) {
+        run_keccak_permute_wide_benchmarks(quick_mode, permute_wide_output_file);
+    }
 }
 
 BOOST_AUTO_TEST_SUITE_END()
