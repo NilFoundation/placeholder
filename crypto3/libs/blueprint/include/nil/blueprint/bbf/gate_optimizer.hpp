@@ -249,8 +249,8 @@ namespace nil {
                         return {};
 
                     // All vertices initially uncolored
-                    std::vector<size_t> color(n, std::numeric_limits<size_t>::max());  
-                    std::unordered_set<size_t> uncolored; 
+                    std::vector<size_t> color(n, std::numeric_limits<size_t>::max());
+                    std::unordered_set<size_t> uncolored;
                     for (size_t i = 0; i < n; i++)
                         uncolored.insert(i);
 
@@ -267,7 +267,7 @@ namespace nil {
                         }
 
                         // Step 1: Pick the vertex with the largest degree from the uncolored set
-                        size_t startVertex = *std::max_element(uncolored.begin(), uncolored.end(), 
+                        size_t startVertex = *std::max_element(uncolored.begin(), uncolored.end(),
                                                           [&](size_t a, size_t b) {
                                                               return degrees[a] < degrees[b];
                                                           });
@@ -287,7 +287,7 @@ namespace nil {
 
                         // Iteratively add vertices to the color class
                         while (!H.empty()) {
-                            // Pick the vertex in H with the largest # of neighbours that are adjacent to 
+                            // Pick the vertex in H with the largest # of neighbours that are adjacent to
                             // some vertex in the color set S.
                             // Tie-break by highest degree
                             size_t candidate = 0;
@@ -297,7 +297,7 @@ namespace nil {
                             size_t bestValue = 0;
                             // tie-break by number of neighbors not in the color class,
                             // I.E. the degree of the vertex in the uncolored graph.
-                            size_t bestDegree = 0;  
+                            size_t bestDegree = 0;
 
                             for (auto v : uncolored) {
                                 size_t val = 0;
@@ -410,7 +410,7 @@ namespace nil {
                     return result;
                 }
 
-                /** This function tries to reduce the number of lookups by grouping them. If 2 lookups use non-intersecting 
+                /** This function tries to reduce the number of lookups by grouping them. If 2 lookups use non-intersecting
                  *  selectors, they can be merged into 1 like.
                  *  Imagine lookup inputs {L0 ... Lm} with selector s1, and {l0 ... lm} with selector s2, then we can merge them into
                  *  lookup inputs { s1 * L0 + s2 * l0, ...  , s1 * Lm + s2 * lm } with selector that selects all the rows.
@@ -490,7 +490,7 @@ namespace nil {
 
                     gates.lookup_constraints = std::move(new_lookup_constraints);
                 }
- 
+
                 /** This function tries to reduce the number of selectors required by rotating the constraints by +-1.
                  */
                 void optimize_selectors_by_shifting(optimized_gates<FieldType>& gates) {
