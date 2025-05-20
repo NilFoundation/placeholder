@@ -33,11 +33,12 @@
 
 #include <nil/crypto3/marshalling/algebra/types/field_element.hpp>
 
+#include <nil/crypto3/math/algorithms/make_evaluation_domain.hpp>
+#include <nil/crypto3/math/domains/evaluation_domain.hpp>
+#include <nil/crypto3/math/polynomial/lagrange_interpolation.hpp>
+#include <nil/crypto3/math/polynomial/polymorphic_polynomial_dfs.hpp>
 #include <nil/crypto3/math/polynomial/polynomial.hpp>
 #include <nil/crypto3/math/polynomial/polynomial_dfs.hpp>
-#include <nil/crypto3/math/polynomial/lagrange_interpolation.hpp>
-#include <nil/crypto3/math/domains/evaluation_domain.hpp>
-#include <nil/crypto3/math/algorithms/make_evaluation_domain.hpp>
 
 #include <nil/crypto3/container/merkle/tree.hpp>
 #include <nil/crypto3/container/merkle/proof.hpp>
@@ -92,6 +93,39 @@ namespace nil {
                             f_folded[i] = two_inversed * (
                                     (typename FieldType::value_type(1u) + acc) * f[i] +
                                     (typename FieldType::value_type(1u) - acc) * f[domain->size() / 2 + i]);
+                            acc *= omega_inversed;
+                        }
+
+                        return f_folded;
+                    }
+
+                    template<typename FieldType>
+                    math::polynomial_dfs<typename FieldType::value_type> fold_polynomial(
+                        math::polymorphic_polynomial_dfs<FieldType> &f,
+                        const typename FieldType::value_type &alpha,
+                        std::shared_ptr<math::evaluation_domain<FieldType>> domain) {
+                        // codeword = [two.inverse() * ( (one + alpha / (offset *
+                        // (omega^i)) ) * codeword[i]
+                        //  + (one - alpha / (offset * (omega^i)) ) *
+                        //  codeword[len(codeword)//2 + i] ) for i in
+                        //  range(len(codeword)//2)]
+                        math::polynomial_dfs<typename FieldType::value_type> f_folded(
+                            domain->size() / 2 - 1, domain->size() / 2,
+                            FieldType::value_type::zero());
+
+                        static const typename FieldType::value_type two_inversed =
+                            typename FieldType::value_type(2u).inversed();
+                        typename FieldType::value_type omega_inversed =
+                            domain->get_domain_element(domain->size() - 1);
+
+                        typename FieldType::value_type acc = alpha;
+
+                        for (std::size_t i = 0; i <= f_folded.degree(); i++) {
+                            f_folded[i] =
+                                two_inversed *
+                                ((typename FieldType::value_type(1u) + acc) * f[i] +
+                                 (typename FieldType::value_type(1u) - acc) *
+                                     f[domain->size() / 2 + i]);
                             acc *= omega_inversed;
                         }
 
