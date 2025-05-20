@@ -31,6 +31,7 @@
 #ifndef PARALLEL_CRYPTO3_ZK_COMMITMENTS_BASIC_FRI_HPP
 #define PARALLEL_CRYPTO3_ZK_COMMITMENTS_BASIC_FRI_HPP
 
+#include "nil/crypto3/math/polynomial/polymorphic_polynomial_dfs.hpp"
 #ifdef CRYPTO3_ZK_COMMITMENTS_BASIC_FRI_HPP
 #error "You're mixing parallel and non-parallel crypto3 versions"
 #endif
@@ -408,21 +409,19 @@ namespace nil {
                     return (x_index + domain_size / FRI::m) % domain_size;
                 }
 
-                template<typename FRI,
-                    typename std::enable_if<
-                        std::is_base_of<
-                            commitments::detail::basic_batched_fri<
-                                typename FRI::field_type,
-                                typename FRI::merkle_tree_hash_type,
-                                typename FRI::transcript_hash_type,
-                                FRI::m, typename FRI::grinding_type
-                            >,
-                            FRI>::value,
-                        bool>::type = true>
-                static typename FRI::precommitment_type
-                precommit(const math::polynomial_dfs<typename FRI::field_type::value_type> &f,
-                          std::shared_ptr<math::evaluation_domain<typename FRI::field_type>> D,
-                          const std::size_t fri_step) {
+                template<typename FRI, typename polynomial_dfs_type>
+                    requires(algebra::is_field_element<
+                                typename polynomial_dfs_type::value_type>::value) &&
+                            std::is_base_of_v<commitments::detail::basic_batched_fri<
+                                                  typename FRI::field_type,
+                                                  typename FRI::merkle_tree_hash_type,
+                                                  typename FRI::transcript_hash_type,
+                                                  FRI::m, typename FRI::grinding_type>,
+                                              FRI>
+                static typename FRI::precommitment_type precommit(
+                    const polynomial_dfs_type &f,
+                    std::shared_ptr<math::evaluation_domain<typename FRI::field_type>> D,
+                    const std::size_t fri_step) {
                     if (f.size() != D->size()) {
                         throw std::runtime_error("Polynomial size does not match the domain size in FRI precommit.");
                     }
@@ -496,21 +495,22 @@ namespace nil {
                 }
 
                 template<typename FRI, typename ContainerType,
-                        typename std::enable_if<
-                                std::is_base_of<
-                                        commitments::detail::basic_batched_fri<
-                                                typename FRI::field_type, typename FRI::merkle_tree_hash_type,
-                                                typename FRI::transcript_hash_type,
-                                                FRI::m, typename FRI::grinding_type>,
-                                        FRI>::value,
-                                bool>::type = true>
+                         typename std::enable_if<
+                             std::is_base_of<commitments::detail::basic_batched_fri<
+                                                 typename FRI::field_type,
+                                                 typename FRI::merkle_tree_hash_type,
+                                                 typename FRI::transcript_hash_type,
+                                                 FRI::m, typename FRI::grinding_type>,
+                                             FRI>::value,
+                             bool>::type = true>
                 static typename std::enable_if<
-                        (std::is_same<typename ContainerType::value_type, math::polynomial_dfs<typename FRI::field_type::value_type>>::value),
-                        typename FRI::precommitment_type>::type
-                precommit(ContainerType poly,
-                          std::shared_ptr<math::evaluation_domain<typename FRI::field_type>> D,
-                          const std::size_t fri_step
-                ) {
+                    (!algebra::is_field_element<
+                        typename ContainerType::value_type>::value),
+                    typename FRI::precommitment_type>::type
+                precommit(
+                    ContainerType poly,
+                    std::shared_ptr<math::evaluation_domain<typename FRI::field_type>> D,
+                    const std::size_t fri_step) {
                     PROFILE_SCOPE("Basic FRI precommit");
 
                     {
@@ -522,7 +522,7 @@ namespace nil {
                             0, poly.size(),
                             [&poly, &D](std::size_t i) {
                                 if (poly[i].size() != D->size()) {
-                                    poly[i].resize(D->size(), nullptr, nullptr);
+                                    poly[i].resize(D->size());
                                 }
                             },
                             ThreadPool::PoolLevel::HIGH);
@@ -786,8 +786,13 @@ namespace nil {
                         for (std::size_t step_i = 0; step_i < fri_params.step_list[i]; ++step_i, ++t) {
                             typename FRI::field_type::value_type alpha = transcript.template challenge<typename FRI::field_type>();
                             // Calculate next f
-                            if constexpr (std::is_same<math::polynomial_dfs<typename FRI::field_type::value_type>,
-                                    PolynomialType>::value) {
+                            if constexpr (std::is_same<
+                                              math::polynomial_dfs<
+                                                  typename FRI::field_type::value_type>,
+                                              PolynomialType>::value ||
+                                          std::is_same<math::polymorphic_polynomial_dfs<
+                                                           typename FRI::field_type>,
+                                                       PolynomialType>::value) {
                                 f = commitments::detail::fold_polynomial<typename FRI::field_type>(f, alpha,
                                                                                                    fri_params.D[t]);
                             } else {
@@ -796,19 +801,29 @@ namespace nil {
                         }
                         if (i != fri_params.step_list.size() - 1) {
                             const auto& D = fri_params.D[t];
-                            if constexpr (std::is_same<math::polynomial_dfs<typename FRI::field_type::value_type>,
-                                    PolynomialType>::value) {
+                            if constexpr (std::is_same<
+                                              math::polynomial_dfs<
+                                                  typename FRI::field_type::value_type>,
+                                              PolynomialType>::value ||
+                                          std::is_same<math::polymorphic_polynomial_dfs<
+                                                           typename FRI::field_type>,
+                                                       PolynomialType>::value) {
                                 if (f.size() != D->size()) {
                                     PROFILE_SCOPE(
                                         "Resize polynomial dfs before precommit");
-                                    f.resize(D->size(), nullptr, D);
+                                    f.resize(D->size());
                                 }
                             }
                             precommitment = precommit<FRI>(f, D, fri_params.step_list[i + 1]);
                         }
                     }
                     fs.push_back(f);
-                    if constexpr (std::is_same<math::polynomial_dfs<typename FRI::field_type::value_type>, PolynomialType>::value) {
+                    if constexpr (std::is_same<math::polynomial_dfs<
+                                                   typename FRI::field_type::value_type>,
+                                               PolynomialType>::value ||
+                                  std::is_same<math::polymorphic_polynomial_dfs<
+                                                   typename FRI::field_type>,
+                                               PolynomialType>::value) {
                         PROFILE_SCOPE("Get final polynomial coefficients");
                         commitments_proof.final_polynomial = math::polynomial<typename FRI::field_type::value_type>(f.coefficients());
                     } else {
@@ -832,10 +847,12 @@ namespace nil {
                         std::vector<math::polynomial<typename FRI::field_type::value_type>>
                     > g_coeffs;
 
-                    if constexpr (std::is_same<
-                        math::polynomial_dfs<typename FRI::field_type::value_type>,
-                        PolynomialType>::value
-                    ) {
+                    if constexpr (std::is_same<math::polynomial_dfs<
+                                                   typename FRI::field_type::value_type>,
+                                               PolynomialType>::value ||
+                                  std::is_same<math::polymorphic_polynomial_dfs<
+                                                   typename FRI::field_type>,
+                                               PolynomialType>::value) {
                         std::unordered_map<std::size_t,
                                            std::shared_ptr<math::evaluation_domain<typename FRI::field_type>>> d_cache;
 
@@ -857,20 +874,23 @@ namespace nil {
                             }
                         }
 
-                        parallel_for(0, required_domains.size(),
-                            [&required_domains, &d_cache](std::size_t i) {
-                            d_cache[required_domains[i]] = math::make_evaluation_domain<typename FRI::field_type>(required_domains[i]);
-                        }, ThreadPool::PoolLevel::HIGH);
+                        // parallel_for(0, required_domains.size(),
+                        //     [&required_domains, &d_cache](std::size_t i) {
+                        //     d_cache[required_domains[i]] =
+                        //     math::make_evaluation_domain<typename
+                        //     FRI::field_type>(required_domains[i]);
+                        // }, ThreadPool::PoolLevel::HIGH);
 
                         parallel_for(0, key_index_pairs.size(),
                             [&d_cache, &g_coeffs, &key_index_pairs, &g](std::size_t pair_index) {
                             auto [key, index] = key_index_pairs[pair_index];
                             const auto& poly = g.at(key)[index];
-                            g_coeffs[key][index] = poly.coefficients(d_cache[poly.size()]);
+                            g_coeffs[key][index] =
+                                poly.coefficients();  // d_cache[poly.size()]);
                         }, ThreadPool::PoolLevel::HIGH);
                     }
 
-                    return std::move(g_coeffs);
+                    return g_coeffs;
                 }
 
 
@@ -908,7 +928,10 @@ namespace nil {
                             if constexpr (std::is_same<
                                               math::polynomial_dfs<
                                                   typename FRI::field_type::value_type>,
-                                              PolynomialType>::value) {
+                                              PolynomialType>::value ||
+                                          std::is_same<math::polymorphic_polynomial_dfs<
+                                                           typename FRI::field_type>,
+                                                       PolynomialType>::value) {
                                 if (g_k[polynomial_index].size() == fri_params.D[0]->size()) {
                                     for (std::size_t j = 0; j < coset_size / FRI::m; j++) {
                                         std::size_t ind0 = std::min(s_indices[j][0], s_indices[j][1]);
@@ -998,8 +1021,14 @@ namespace nil {
 
                             round_proofs[i].y.resize(coset_size / FRI::m);
                             for (std::size_t j = 0; j < coset_size / FRI::m; j++) {
-                                if constexpr (std::is_same<math::polynomial_dfs<typename FRI::field_type::value_type>,
-                                        PolynomialType>::value) {
+                                if constexpr (std::is_same<math::polynomial_dfs<
+                                                               typename FRI::field_type::
+                                                                   value_type>,
+                                                           PolynomialType>::value ||
+                                              std::is_same<
+                                                  math::polymorphic_polynomial_dfs<
+                                                      typename FRI::field_type>,
+                                                  PolynomialType>::value) {
                                     std::size_t ind0 = std::min(s_indices[j][0], s_indices[j][1]);
                                     std::size_t ind1 = std::max(s_indices[j][0], s_indices[j][1]);
                                     round_proofs[i].y[j][0] = fs[i + 1][ind0];

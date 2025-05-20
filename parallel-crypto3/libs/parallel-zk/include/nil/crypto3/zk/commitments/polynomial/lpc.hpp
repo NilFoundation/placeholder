@@ -30,6 +30,7 @@
 #ifndef PARALLEL_CRYPTO3_ZK_LIST_POLYNOMIAL_COMMITMENT_SCHEME_HPP
 #define PARALLEL_CRYPTO3_ZK_LIST_POLYNOMIAL_COMMITMENT_SCHEME_HPP
 
+#include "nil/crypto3/math/polynomial/polymorphic_polynomial_dfs.hpp"
 #ifdef CRYPTO3_ZK_LIST_POLYNOMIAL_COMMITMENT_SCHEME_HPP
 #error "You're mixing parallel and non-parallel crypto3 versions"
 #endif
@@ -339,10 +340,18 @@ namespace nil {
                         // otherwise we do nothing. After this block polys_coefficients_ptr must be used,
                         // it will point to this->_polys if no conversion is required, or to polys_coefficients
                         // if conversion was required.
-                        std::map<std::size_t, std::vector<math::polynomial<value_type>>> polys_coefficients;
-                        std::map<std::size_t, std::vector<math::polynomial<value_type>>>* polys_coefficients_ptr;
+                        std::map<std::size_t,
+                                 std::vector<typename PolynomialType::polynomial_type>>
+                            polys_coefficients;
+                        std::map<std::size_t,
+                                 std::vector<typename PolynomialType::polynomial_type>>*
+                            polys_coefficients_ptr;
 
-                        if constexpr(std::is_same<math::polynomial_dfs<value_type>, PolynomialType>::value ) {
+                        if constexpr (std::is_same<math::polynomial_dfs<value_type>,
+                                                   PolynomialType>::value ||
+                                      std::is_same<
+                                          math::polymorphic_polynomial_dfs<field_type>,
+                                          PolynomialType>::value) {
                             PROFILE_SCOPE("Convert polys to coefficients form");
                             // Convert this->_polys to coefficients form.
                             std::vector<std::pair<std::size_t, std::size_t>> indices;
@@ -477,10 +486,14 @@ namespace nil {
                             combined_Q_normal += Q_normal;
                         }
 
-                        if constexpr (std::is_same<math::polynomial_dfs<value_type>, PolynomialType>::value) {
+                        if constexpr (std::is_same<math::polynomial_dfs<value_type>,
+                                                   PolynomialType>::value ||
+                                      std::is_same<
+                                          math::polymorphic_polynomial_dfs<field_type>,
+                                          PolynomialType>::value) {
                             combined_Q.from_coefficients(combined_Q_normal);
                             if (combined_Q.size() != _fri_params.D[0]->size()) {
-                                combined_Q.resize(_fri_params.D[0]->size(), nullptr, _fri_params.D[0]);
+                                combined_Q.resize(_fri_params.D[0]->size());
                             }
                         } else {
                             combined_Q = std::move(combined_Q_normal);

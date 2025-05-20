@@ -124,7 +124,7 @@ namespace nil {
                     }
                 }
 
-                explicit polynomial(container_type &&c) : val(std::forward<container_type>(c)) {
+                explicit polynomial(container_type&& c) : val(std::move(c)) {
                     if (val.empty()) {
                         val.push_back(FieldValueType::zero());
                     }
