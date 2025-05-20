@@ -68,11 +68,18 @@ namespace nil::crypto3::zk::snark {
 
     template<typename FieldType, typename ParamsType>
     class placeholder_prover {
+        using SmallFieldType = typename FieldType::small_subfield;
         using value_type = typename FieldType::value_type;
+        using small_field_value_type = typename SmallFieldType::value_type;
         using transcript_hash_type = typename ParamsType::transcript_hash_type;
         using transcript_type = transcript::fiat_shamir_heuristic_sequential<transcript_hash_type>;
 
         using policy_type = detail::placeholder_policy<FieldType, ParamsType>;
+
+        typedef typename math::polynomial<small_field_value_type>
+            small_field_polynomial_type;
+        typedef typename math::polynomial_dfs<small_field_value_type>
+            small_field_polynomial_dfs_type;
 
         typedef typename math::polynomial<value_type> polynomial_type;
         typedef typename math::polynomial_dfs<value_type> polynomial_dfs_type;
@@ -80,10 +87,13 @@ namespace nil::crypto3::zk::snark {
         using commitment_scheme_type = typename ParamsType::commitment_scheme_type;
         using commitment_type = typename commitment_scheme_type::commitment_type;
 
-        using public_preprocessor_type = placeholder_public_preprocessor<FieldType, ParamsType>;
-        using private_preprocessor_type = placeholder_private_preprocessor<FieldType, ParamsType>;
+        using public_preprocessor_type =
+            placeholder_public_preprocessor<SmallFieldType, ParamsType>;
+        using private_preprocessor_type =
+            placeholder_private_preprocessor<SmallFieldType, ParamsType>;
 
-        using central_evaluator_type = CentralAssignmentTableExpressionEvaluator<FieldType>;
+        using central_evaluator_type =
+            CentralAssignmentTableExpressionEvaluator<SmallFieldType>;
         using lookup_argument_type = placeholder_lookup_argument_prover<FieldType, commitment_scheme_type, ParamsType>;
 
         constexpr static const std::size_t gate_parts = 1;
@@ -91,57 +101,59 @@ namespace nil::crypto3::zk::snark {
         constexpr static const std::size_t lookup_parts = 6;
         constexpr static const std::size_t f_parts = 8;
 
-    public:
-
+      public:
         static inline placeholder_proof<FieldType, ParamsType> process(
-            const typename public_preprocessor_type::preprocessed_data_type &preprocessed_public_data,
-            typename private_preprocessor_type::preprocessed_data_type preprocessed_private_data,
-            const plonk_table_description<FieldType> &table_description,
-            const plonk_constraint_system<FieldType> &constraint_system,
+            const typename public_preprocessor_type::preprocessed_data_type&
+                preprocessed_public_data,
+            typename private_preprocessor_type::preprocessed_data_type
+                preprocessed_private_data,
+            const plonk_table_description<SmallFieldType>& table_description,
+            const plonk_constraint_system<SmallFieldType>& constraint_system,
             commitment_scheme_type& commitment_scheme,
-            bool skip_commitment_scheme_eval_proofs = false
-        ) {
+            bool skip_commitment_scheme_eval_proofs = false) {
             auto prover = placeholder_prover<FieldType, ParamsType>(
-                preprocessed_public_data, std::move(preprocessed_private_data), table_description,
-                constraint_system, commitment_scheme, skip_commitment_scheme_eval_proofs);
+                preprocessed_public_data, std::move(preprocessed_private_data),
+                table_description, constraint_system, commitment_scheme,
+                skip_commitment_scheme_eval_proofs);
             return prover.process();
         }
 
         placeholder_prover(
-            const typename public_preprocessor_type::preprocessed_data_type &preprocessed_public_data,
-            const typename private_preprocessor_type::preprocessed_data_type &preprocessed_private_data,
-            const plonk_table_description<FieldType> &table_description,
-            const plonk_constraint_system<FieldType> &constraint_system,
+            const typename public_preprocessor_type::preprocessed_data_type&
+                preprocessed_public_data,
+            const typename private_preprocessor_type::preprocessed_data_type&
+                preprocessed_private_data,
+            const plonk_table_description<SmallFieldType>& table_description,
+            const plonk_constraint_system<SmallFieldType>& constraint_system,
             commitment_scheme_type& commitment_scheme,
-            bool skip_commitment_scheme_eval_proofs = false
-        )
-                : preprocessed_public_data(preprocessed_public_data)
-                , table_description(table_description)
-                , constraint_system(constraint_system)
-                , _polynomial_table(std::make_shared<plonk_polynomial_dfs_table<FieldType>>(
-                    preprocessed_private_data.private_polynomial_table,
-                    preprocessed_public_data.public_polynomial_table
-                ))
-                , transcript(std::vector<std::uint8_t>({}))
-                , _is_lookup_enabled(constraint_system.lookup_gates().size() > 0)
-                , _commitment_scheme(commitment_scheme)
-                , _skip_commitment_scheme_eval_proofs(skip_commitment_scheme_eval_proofs)
-        {
+            bool skip_commitment_scheme_eval_proofs = false)
+            : preprocessed_public_data(preprocessed_public_data),
+              table_description(table_description),
+              constraint_system(constraint_system),
+              _polynomial_table(
+                  std::make_shared<plonk_polynomial_dfs_table<SmallFieldType>>(
+                      preprocessed_private_data.private_polynomial_table,
+                      preprocessed_public_data.public_polynomial_table)),
+              transcript(std::vector<std::uint8_t>({})),
+              _is_lookup_enabled(constraint_system.lookup_gates().size() > 0),
+              _commitment_scheme(commitment_scheme),
+              _skip_commitment_scheme_eval_proofs(skip_commitment_scheme_eval_proofs) {
             // Initialize transcript.
-            transcript(preprocessed_public_data.common_data->vk.constraint_system_with_params_hash);
+            transcript(preprocessed_public_data.common_data->vk
+                           .constraint_system_with_params_hash);
             transcript(preprocessed_public_data.common_data->vk.fixed_values_commitment);
 
             // Setup commitment scheme. LPC adds an additional point here.
-            _commitment_scheme.setup(transcript, preprocessed_public_data.common_data->commitment_scheme_data);
+            _commitment_scheme.setup(
+                transcript, preprocessed_public_data.common_data->commitment_scheme_data);
         }
 
         placeholder_proof<FieldType, ParamsType> process() {
             PROFILE_SCOPE("Placeholder prover");
 
-            polynomial_dfs_type mask_polynomial(
+            small_field_polynomial_dfs_type mask_polynomial(
                 0, preprocessed_public_data.common_data->basic_domain->m,
-                value_type(1u)
-            );
+                small_field_value_type(1u));
             mask_polynomial -= preprocessed_public_data.q_last;
             mask_polynomial -= preprocessed_public_data.q_blind;
             
@@ -313,7 +325,8 @@ namespace nil::crypto3::zk::snark {
             polynomial_type F_consolidated_normal(F_consolidated_dfs.coefficients());
 
             polynomial_type T_consolidated =
-                F_consolidated_normal / preprocessed_public_data.common_data->Z;
+                F_consolidated_normal /
+                polynomial_type(preprocessed_public_data.common_data->Z);
 
             // We can remove this check later, it's fairly fast and makes sure that prover succeeded.
             if (T_consolidated * preprocessed_public_data.common_data->Z != F_consolidated_normal) {
@@ -459,11 +472,11 @@ namespace nil::crypto3::zk::snark {
     private:
         // Structures passed from outside by reference.
         const typename public_preprocessor_type::preprocessed_data_type &preprocessed_public_data;
-        const plonk_table_description<FieldType> &table_description;
-        const plonk_constraint_system<FieldType> &constraint_system;
+        const plonk_table_description<SmallFieldType>& table_description;
+        const plonk_constraint_system<SmallFieldType>& constraint_system;
 
         // Members created during proof generation.
-        std::shared_ptr<plonk_polynomial_dfs_table<FieldType>> _polynomial_table;
+        std::shared_ptr<plonk_polynomial_dfs_table<SmallFieldType>> _polynomial_table;
 
         placeholder_proof<FieldType, ParamsType> _proof;
         std::array<polynomial_dfs_type, f_parts> _F_dfs;

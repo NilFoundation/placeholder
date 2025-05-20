@@ -66,18 +66,27 @@ namespace nil {
 
                 template<typename FieldType, typename ParamsType>
                 struct placeholder_gates_argument {
+                    using SmallFieldType = typename FieldType::small_subfield;
                     using value_type = typename FieldType::value_type;
+                    using small_field_value_type = typename SmallFieldType::value_type;
 
                     using transcript_hash_type = typename ParamsType::transcript_hash_type;
                     using transcript_type = transcript::fiat_shamir_heuristic_sequential<
                         transcript_hash_type>;
+                    using small_field_polynomial_dfs_type =
+                        math::polynomial_dfs<small_field_value_type>;
                     using polynomial_dfs_type = math::polynomial_dfs<value_type>;
-                    using variable_type = plonk_variable<value_type>;
-                    using polynomial_dfs_variable_type = plonk_variable<polynomial_dfs_type>;
-                    using expression_type = expression<polynomial_dfs_variable_type>;
-                    using central_evaluator_type = CentralAssignmentTableExpressionEvaluator<FieldType>;
+                    using variable_type = plonk_variable<small_field_value_type>;
+                    using polynomial_dfs_variable_type =
+                        plonk_variable<polynomial_dfs_type>;
+                    using small_field_polynomial_dfs_variable_type =
+                        plonk_variable<small_field_polynomial_dfs_type>;
+                    using expression_type =
+                        expression<small_field_polynomial_dfs_variable_type>;
+                    using central_evaluator_type =
+                        CentralAssignmentTableExpressionEvaluator<SmallFieldType>;
 
-                    typedef detail::placeholder_policy<FieldType, ParamsType> policy_type;
+                    using policy_type = detail::placeholder_policy<FieldType, ParamsType>;
                     using constraint_system_type = typename policy_type::constraint_system_type;
 
                     constexpr static const std::size_t argument_size = 1;
@@ -99,15 +108,20 @@ namespace nil {
                         return max_degree;
                     }
 
-                    // Registers 2 expressions that need to be computed and sumed up to
-                    // create the final polynomial.
-                    static inline std::array<expression_evaluator_registration, 2>
+                    static constexpr std::size_t extension_dimension = FieldType::arity;
+
+                    // Registers 2 arity-tuples of expressions that need to be computed
+                    // and sumed up to create the final polynomial.
+                    static inline std::array<std::array<expression_evaluator_registration,
+                                                        extension_dimension>,
+                                             2>
                     register_gate_argument_expressions(
                         const constraint_system_type& constraint_system,
                         central_evaluator_type& central_expr_evaluator,
                         const value_type& theta) {
                         PROFILE_SCOPE("Gate argument register expressions");
-                        std::array<expression_type, 2> expressions;
+                        std::array<std::array<expression_type, extension_dimension>, 2>
+                            expressions;
 
                         size_t max_degree = get_gate_argument_max_degree(constraint_system);
                         expression_max_degree_visitor<variable_type> visitor;
@@ -117,9 +131,9 @@ namespace nil {
                         // inside a term. We want the coefficients to be dfs polynomials here.
                         auto value_type_to_polynomial_dfs = [](
                             const typename variable_type::assignment_type& coeff) {
-                                return polynomial_dfs_type(0, 1, coeff);
+                                return small_field_polynomial_dfs_type(0, 1, coeff);
                             };
-                        expression_variable_type_converter<variable_type, polynomial_dfs_variable_type> converter(
+                        expression_variable_type_converter<variable_type, small_field_polynomial_dfs_variable_type> converter(
                             value_type_to_polynomial_dfs);
 
                         auto theta_acc = value_type::one();
@@ -127,35 +141,57 @@ namespace nil {
                         const auto& gates = constraint_system.gates();
                         
                         for (const auto& gate : gates) {
-                            std::array<expression_type, 2> gate_results;
+                            std::array<std::array<expression_type, extension_dimension>,
+                                       2>
+                                gate_results;
                             for (const auto& constraint : gate.constraints) {
                                 size_t constraint_degree = visitor.compute_max_degree(constraint);
                                 if (gate.selector_index != PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED)
                                     constraint_degree += 1; // selector multiplication.
-                                
-                                if (constraint_degree > max_degree / 2) {
-                                    gate_results[0] += converter.convert(constraint * theta_acc);
-                                } else {
-                                    gate_results[1] += converter.convert(constraint * theta_acc);
+
+                                bool high_degree = constraint_degree > max_degree / 2;
+
+                                auto converted = converter.convert(constraint);
+
+                                for (std::size_t i = 0; i < extension_dimension; ++i) {
+                                    gate_results[high_degree][i] += converted *
+                                    value_type_to_polynomial_dfs(
+                                        theta_acc.binomial_extension_coefficient(
+                                            i));
                                 }
 
                                 theta_acc *= theta;
                             }
 
                             if (gate.selector_index != PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED) {
-                                polynomial_dfs_variable_type selector(
+                                small_field_polynomial_dfs_variable_type selector(
                                     gate.selector_index, 0, false,
-                                    polynomial_dfs_variable_type::column_type::selector);
-                                gate_results[0] *= selector;
-                                gate_results[1] *= selector;
+                                    small_field_polynomial_dfs_variable_type::column_type::selector);
+                                for (std::size_t i = 0; i < extension_dimension; ++i) {
+                                    gate_results[0][i] *= selector;
+                                    gate_results[1][i] *= selector;
+                                }
                             }
-                            expressions[0] += gate_results[0];
-                            expressions[1] += gate_results[1];
+                            for (std::size_t i = 0; i < extension_dimension; ++i) {
+                                expressions[0][i] += std::move(gate_results[0][i]);
+                                expressions[1][i] += std::move(gate_results[1][i]);
+                            }
                         }
 
-                        return {
-                            central_expr_evaluator.register_expression(expressions[0]),
-                            central_expr_evaluator.register_expression(expressions[1])};
+                        std::array<std::array<expression_evaluator_registration,
+                                              extension_dimension>,
+                                   2>
+                            registrations;
+
+                        for (std::size_t i = 0; i < extension_dimension; ++i) {
+                            registrations[0][i] =
+                                central_expr_evaluator.register_expression(
+                                    expressions[0][i]);
+                            registrations[1][i] =
+                                central_expr_evaluator.register_expression(
+                                    expressions[1][i]);
+                        }
+                        return registrations;
                     }
 
                     static inline std::array<polynomial_dfs_type, argument_size>
@@ -173,23 +209,31 @@ namespace nil {
 
                             
                         std::array<polynomial_dfs_type, argument_size> F;
-                        F[0] = polynomial_dfs_type::zero();
                         {
                             PROFILE_SCOPE("Combine evaluation results");
                             for (const auto& registration : registrations) {
-                                F[0] += central_expr_evaluator.get_expression_value(
-                                    registration);
+                                std::array<small_field_polynomial_dfs_type*,
+                                        extension_dimension>
+                                    coefficients;
+                                for (std::size_t i = 0; i < extension_dimension; ++i) {
+                                    coefficients[i] =
+                                        &central_expr_evaluator.get_expression_value(
+                                            registration[i]);
+                                }
+                                auto combined =
+                                    polynomial_dfs_type::extension_from_coefficients(
+                                        coefficients);
+                                F[0] += std::move(combined);
                             }
                         }
                         return F;
                     }
 
-                    static inline std::array<value_type, argument_size>
-                    verify_eval(
-                        const std::vector<plonk_gate<FieldType, plonk_constraint<FieldType>>>& gates,
+                    static inline std::array<value_type, argument_size> verify_eval(
+                        const std::vector<plonk_gate<
+                            SmallFieldType, plonk_constraint<SmallFieldType>>>& gates,
                         typename policy_type::evaluation_map& evaluations,
-                        const value_type& /*challenge*/,
-                        value_type /*mask_value*/,
+                        const value_type& /*challenge*/, value_type /*mask_value*/,
                         transcript_type& transcript) {
                         value_type theta =
                             transcript.template challenge<FieldType>();
