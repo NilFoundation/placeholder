@@ -50,6 +50,8 @@
 #include <nil/crypto3/zk/snark/systems/plonk/placeholder/preprocessor.hpp>
 #include <nil/blueprint/bbf/circuit_builder.hpp>
 
+#include <nil/crypto3/math/polynomial/polymorphic_polynomial_dfs.hpp>
+
 #include "../test_plonk_component.hpp"
 
 #include <boost/algorithm/string.hpp>
@@ -135,7 +137,10 @@ bool check_proof(
     using lpc_type =
         nil::crypto3::zk::commitments::list_polynomial_commitment<FieldType,
                                                                   lpc_params_type>;
-    using lpc_scheme_type = typename nil::crypto3::zk::commitments::lpc_commitment_scheme<lpc_type>;
+    using lpc_scheme_type = typename nil::crypto3::zk::commitments::lpc_commitment_scheme<
+        lpc_type, std::conditional_t<std::is_same_v<FieldType, SmallFieldType>,
+                                     polynomial_dfs<typename FieldType::value_type>,
+                                     polymorphic_polynomial_dfs<FieldType>>>;
     using lpc_placeholder_params_type = nil::crypto3::zk::snark::placeholder_params<circuit_params, lpc_scheme_type>;
     typename lpc_type::fri_type::params_type fri_params(
         max_step, std::ceil(log2(assignment.rows_amount())), lambda, log_blowup,

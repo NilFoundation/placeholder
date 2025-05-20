@@ -76,6 +76,8 @@ namespace nil {
                 typedef typename container_type::reverse_iterator reverse_iterator;
                 typedef typename container_type::const_reverse_iterator const_reverse_iterator;
 
+                using polynomial_type = polynomial<value_type>;
+
                 // Default constructor creates a zero polynomial of degree 0 and size 1.
                 polynomial_dfs() : val(1, FieldValueType::zero()), _d(0) {
                 }
@@ -371,9 +373,14 @@ namespace nil {
                     val.clear();
                 }
 
-                void resize(size_type _sz,
-                            std::shared_ptr<evaluation_domain<typename value_type::field_type>> old_domain = nullptr,
-                            std::shared_ptr<evaluation_domain<typename value_type::field_type>> new_domain = nullptr) {
+                void resize(
+                    size_type _sz,
+                    // Default constructor creates a zero polynomial of degree 0 and
+                    // size 1.
+                    std::shared_ptr<evaluation_domain<typename value_type::field_type>>
+                        old_domain = nullptr,
+                    std::shared_ptr<evaluation_domain<typename value_type::field_type>>
+                        new_domain = nullptr) {
                     if (this->size() == _sz)
                     {
                         return;
