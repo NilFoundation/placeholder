@@ -89,28 +89,27 @@ public:
 
     // Counts the number of cross terms a_chunks[i] * b_chunks[j] involved in the i-th carryless 
     // chunk of the multiplication a * b. This is useful for range-checking later.
-    TYPE count_cross_terms(const unsigned char chunk_index) const {
+    int count_cross_terms(const unsigned char chunk_index) const {
+        // the result is the amount of pairs (i, j) such that i + j == chunk_index, for 0 <= i, j < chunk_8_amount. 
         int i = chunk_index + 1;
         return (i <= 32) ? i : 2 * chunk_8_amount - i;
     }
 
-    // Given a carryless chunk resulting from the function above, we will separate it into an
-    // 8-bit chunk and a carry, which contains whatever overflows 8 bits. This function computes
-    // the maximal value of such carry, for accurate range-checking.
-    TYPE max_carry(const unsigned char chunk_index) const {
+    // Given a carryless chunk, we will separate it into an 8-bit chunk and a carry, which
+    // contains whatever overflows 8 bits. This function computes the maximal value of such 
+    // carry, for accurate range-checking.
+    int max_carry(const unsigned char chunk_index) const {
         // r8_carryless_chunks[i] + prev_carry == r8_chunks[i] + r8_carries[i] * 256
         // To bound r8_carries[i], we need to bound r8_carryless_chunks[i] and prev_carry.
         // r8_carryless_chunks[i] == (sum of some cross terms a_chunks[i] * b_chunks[j]).
         // The largest carries happen when a_chunks[i] == b_chunks[i] == 2^8 - 1 for all 0 <= i < 32.
-        TYPE max_cross_term = 255 * 255;
-        // In this case, a_chunks[i] * b_chunks[j] == 2^16 - 2^9 + 1. Therefore,
-        // r8_carryless_chunks[i] <= n * (2^16 - 2^9 + 1), where n is the number of cross terms. 
-        // n is the amount of pairs (i, j) such that i + j == chunk_index, for 0 <= i, j < 32. 
-        TYPE number_of_cross_terms = count_cross_terms(chunk_index);
-        // 
-        TYPE prev_carry = (chunk_index > 0) ? max_carry(chunk_index - 1) : 0;
-        // Put it all together
-        TYPE max_carry = (number_of_cross_terms * max_cross_term + prev_carry) >> 256;
+        int max_cross_term = 255 * 255;
+        // r8_carryless_chunks[i] <= number_of_cross_terms * max_cross_terms
+        int number_of_cross_terms = count_cross_terms(chunk_index);
+        // Finally, we also take into account the maximal value of the previous carry
+        int prev_carry = (chunk_index > 0) ? max_carry(chunk_index - 1) : 0;
+        // Putting it all together and taking the carry (discarding the lowest 8 bits)
+        int max_carry = (number_of_cross_terms * max_cross_term + prev_carry) >> 8;
         return max_carry;
     }
 
@@ -205,24 +204,10 @@ public:
             constrain(r8_carryless_chunks[i] + prev_carry - r8_chunks[i] - r8_carries[i] * 256);
         }
 
-        // Range checks for the multiplication carries. Note that each carryless chunk is the result 
-        // of the sum of some number n of cross-terms a_chunks[i] * b_chunks[j] <= 2^16. Thus, 
-        // r8_carries[i] < n * 2^8, where 1 <= n <= 32. Equivalently:
-        // 2^3 * r8_carries[i] + (32 - n) * 2^8 < 2^16
+        // Range checks for the multiplication carries.
         for (std::size_t i = 0; i < chunk_8_amount; i++) {
-            r8_carries_check[i] = 8 * (r8_carries_copy2[i] + (32 - count_cross_terms(i)) * 256);
+            r8_carries_check[i] = r8_carries_copy2[i] + (two_16 - 1 - max_carry(i));
             allocate(r8_carries_check[i], i, 0);
-        }
-
-        // TODO: checking something, remove this later.
-        if constexpr (stage == GenerationStage::CONSTRAINTS) {
-            TYPE mc = max_carry(0);
-            // BOOST_ASSERT(max_carry(0) == 256 - 2);
-            // BOOST_ASSERT(max_carry(0) == 512 - 3);
-            // BOOST_ASSERT(max_carry(0) == 1024 - 256 - 4);
-            for (std::size_t i = 0; i < 64; i++) {
-                // BOOST_ASSERT(max_carry(0) == 2^8 - 2);
-            }
         }
     
         for (std::size_t i = 0; i < chunk_amount; i++) {
