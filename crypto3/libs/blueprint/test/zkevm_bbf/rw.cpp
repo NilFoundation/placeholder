@@ -44,6 +44,7 @@
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
 #include <nil/blueprint/zkevm_bbf/rw.hpp>
+#include <nil/blueprint/zkevm_bbf/rw_memory_stack.hpp>
 //#include <nil/blueprint/zkevm_bbf/rw_small_field.hpp>
 #include <nil/blueprint/zkevm_bbf/input_generators/hardhat_input_generator.hpp>
 
@@ -73,6 +74,15 @@ public:
             "rw", {}, rw_assignment_input, max_rw_size, 0, max_call_commits
         );
         BOOST_ASSERT(result); // Max_rw, Max_mpt
+
+        typename nil::blueprint::bbf::rw_memory_stack<field_type, GenerationStage::ASSIGNMENT>::input_type rw_ms_assignment_input;
+        rw_ms_assignment_input.rw_operations = circuit_inputs.rw_operations();
+        rw_ms_assignment_input.call_commits = circuit_inputs.call_commits();
+
+        result = test_bbf_component<field_type, nil::blueprint::bbf::rw_memory_stack>(
+            "rw_memory_stack", {}, rw_ms_assignment_input, max_rw_size, 0, max_call_commits
+        );
+        BOOST_ASSERT(result); // Max_rw, Max_mpt
     }
 };
 
@@ -96,7 +106,7 @@ BOOST_AUTO_TEST_CASE(call_keccak){
     test_zkevm_rw<field_type>({"call_keccak.json"}, 3000, 500);
 }
 BOOST_AUTO_TEST_CASE(delegatecall_counter){
-    test_zkevm_rw<field_type>({"delegatecall.json"}, 4000, 500);
+    test_zkevm_rw<field_type>({"delegatecall.json"}, 5000, 500);
 }
 BOOST_AUTO_TEST_CASE(cold_sstore){
     test_zkevm_rw<field_type>({"cold_sstore.json"}, 3000, 500);
@@ -108,7 +118,7 @@ BOOST_AUTO_TEST_CASE(try_catch2){
     test_zkevm_rw<field_type>({"try_catch2.json"}, 7000, 500);
 }
 BOOST_AUTO_TEST_CASE(try_catch_cold){
-    test_zkevm_rw<field_type>({"try_catch_cold.json"}, 6000, 500);
+    test_zkevm_rw<field_type>({"try_catch_cold.json"}, 5000, 500);
 }
 /*
 BOOST_AUTO_TEST_CASE(small_storage){
