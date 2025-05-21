@@ -73,6 +73,8 @@ namespace nil::blueprint::bbf::zkevm_small_field{
 
         static table_params get_minimal_requirements(
             std::size_t max_rw_size,
+            std::size_t instances_rw_8,
+            std::size_t instances_rw_256,
             std::size_t max_state_size
         ) {
             std::size_t witness_amount =
@@ -91,11 +93,17 @@ namespace nil::blueprint::bbf::zkevm_small_field{
         }
 
         static void allocate_public_inputs(
-            context_type &context, input_type &input, std::size_t max_rw_size, std::size_t max_state
+            context_type &context, input_type &input,
+            std::size_t max_rw_size,
+            std::size_t instances_rw_8,
+            std::size_t instances_rw_256,
+            std::size_t max_state
         ) {}
 
         rw(context_type &context_object, const input_type &input,
             std::size_t max_rw_size,
+            std::size_t instances_rw_8,
+            std::size_t instances_rw_256,
             std::size_t max_state
         ) :generic_component<FieldType,stage>(context_object) {
             // std::size_t START_OP = std::size_t(rw_operation_type::start);

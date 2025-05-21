@@ -94,6 +94,9 @@ public:
         std::size_t max_state = max_sizes.max_state;
         std::size_t max_bytecodes_amount = max_sizes.max_bytecodes_amount;
 
+        std::size_t instances_rw_8 = max_sizes.instances_rw_8;
+        std::size_t instances_rw_256 = max_sizes.instances_rw_256;
+
         typename zkevm_big_field::zkevm_keccak<BigFieldType,nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type keccak_assignment_input;
         keccak_assignment_input.rlc_challenge = 7;
         keccak_assignment_input.private_input = circuit_inputs.keccaks();
@@ -227,7 +230,7 @@ public:
             rw_assignment_input.state_trace = circuit_inputs.state_operations();
 
             result = test_bbf_component<SmallFieldType, nil::blueprint::bbf::zkevm_small_field::rw>(
-                "rw-s", {}, rw_assignment_input, max_rw, max_state
+                "rw-s", {}, rw_assignment_input, max_rw, instances_rw_8, instances_rw_256, max_state
             );
             BOOST_CHECK(result);
         }
