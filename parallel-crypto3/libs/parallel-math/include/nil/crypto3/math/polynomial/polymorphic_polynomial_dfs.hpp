@@ -38,8 +38,8 @@
 #include <variant>
 #include <vector>
 
+#include "polymorphic_polynomial.hpp"
 #include "polynomial_dfs.hpp"
-#include "polynomial.hpp"
 
 #include <nil/crypto3/bench/scoped_profiler.hpp>
 
@@ -54,7 +54,7 @@ namespace nil::crypto3::math {
         using small_val = polynomial_dfs<small_field_value_type>;
         using big_val = polynomial_dfs<value_type>;
 
-        using polynomial_type = polynomial<value_type>;
+        using polynomial_type = polymorphic_polynomial<FieldType>;
 
         mutable std::variant<small_val, big_val> val;
 
@@ -156,8 +156,8 @@ namespace nil::crypto3::math {
         }
 
         polynomial_type coefficients() const {
-            // TODO
-            return polynomial_type(ensure_big().coefficients());
+            return std::visit(
+                [](const auto& v) { return polynomial_type(v.coefficients()); }, val);
         }
     };
 
