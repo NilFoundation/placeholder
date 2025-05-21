@@ -484,20 +484,6 @@ class zkevm_sar_bbf : public generic_component<FieldType, stage> {
                 - (1 - is_sign[i] - is_transition[i]) * r_chunks_copy2[i]);  // Original chunks
         }
 
-        // PART 5: consistency with the stack
-        // Convert to 128-bit chunks for stack operations
-        auto A_128 = chunks16_to_chunks128_reversed<TYPE>(a_chunks);
-        auto B_128 = chunks16_to_chunks128_reversed<TYPE>(input_b_chunks);
-        auto Res_128 = chunks16_to_chunks128_reversed<TYPE>(res);
-
-        TYPE A0, A1, B0, B1, Res0, Res1;
-        A0 = A_128.first;
-        A1 = A_128.second;
-        B0 = B_128.first;
-        B1 = B_128.second;
-        Res0 = Res_128.first;
-        Res1 = Res_128.second;
-
         if constexpr (stage == GenerationStage::CONSTRAINTS) {
             // State transition constraints
             // The arguments for pc, gas, stack_size, memory-size and rw_counter correspond to number_of_rows - 1

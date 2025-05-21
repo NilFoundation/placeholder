@@ -282,7 +282,6 @@ namespace nil::blueprint::bbf::zkevm_big_field{
 
                 TYPE memory_selector = type_selector[1][copy_op_to_num(copy_operand_type::memory) - 1];
                 TYPE keccak_selector = type_selector[1][copy_op_to_num(copy_operand_type::keccak) - 1];
-                TYPE reverted_selector = type_selector[1][copy_op_to_num(copy_operand_type::reverted) - 1];
                 TYPE calldata_selector = type_selector[1][copy_op_to_num(copy_operand_type::calldata) - 1];
                 TYPE returndata_selector = type_selector[1][copy_op_to_num(copy_operand_type::returndata) - 1];
 

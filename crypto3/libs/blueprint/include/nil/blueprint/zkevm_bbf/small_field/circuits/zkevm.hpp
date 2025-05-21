@@ -40,7 +40,7 @@
 #include <nil/blueprint/zkevm_bbf/small_field/tables/rw_8.hpp>
 #include <nil/blueprint/zkevm_bbf/small_field/tables/rw_256.hpp>
 #include <nil/blueprint/zkevm_bbf/small_field/tables/state.hpp>
-// #include <nil/blueprint/zkevm_bbf/small_field/tables/copy_table.hpp>
+#include <nil/blueprint/zkevm_bbf/small_field/tables/copy.hpp>
 // #include <nil/blueprint/zkevm_bbf/small_field/tables/exp_table.hpp>
 #include <nil/blueprint/zkevm_bbf/small_field/opcodes/zkevm_opcodes.hpp>
 #include <nil/blueprint/zkevm_bbf/small_field/subcomponents/zkevm_state_vars.hpp>
@@ -70,7 +70,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
         using RW256Table = rw_256_table<FieldType, stage>;
         // using StateTable = state_table<FieldType, stage>;
         // using ExpTable = exp_table<FieldType, stage>;
-        // using CopyTable = copy_table<FieldType, stage>;
+        using CopyTable = copy_table<FieldType, stage>;
 
         struct input_type {
             TYPE rlc_challenge;
@@ -78,8 +78,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             // KeccakTable::private_input_type keccak_buffers;
             typename std::conditional<stage==GenerationStage::ASSIGNMENT, short_rw_operations_vector, std::nullptr_t>::type rw_operations;
             // StateTable::input_type state_operations;
-            // CopyTable::input_type copy_events;
-
+            std::conditional_t<stage == GenerationStage::ASSIGNMENT, std::vector<copy_event>, std::monostate>  copy_events;
             std::conditional_t<stage == GenerationStage::ASSIGNMENT, std::vector<zkevm_state>, std::monostate> zkevm_states;
 
             // ExpTable::input_type exponentiations;
@@ -87,7 +86,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
 
         static table_params get_minimal_requirements(
             std::size_t max_zkevm_rows,
-            std::size_t max_copy,
+            std::size_t max_copy_events,
             std::size_t max_rw,
             std::size_t max_exponentations,
             std::size_t max_bytecode,
@@ -95,24 +94,25 @@ namespace nil::blueprint::bbf::zkevm_small_field{
         ) {
             std::size_t implemented_opcodes_amount = get_implemented_opcodes_list().size();
             BOOST_LOG_TRIVIAL(info) << "Implemented opcodes amount = " << implemented_opcodes_amount;
+            std::size_t witness_amount = state::get_items_amount()
+                + implemented_opcodes_amount
+                + opcode_columns_amount
+                + CopyTable::get_witness_amount()
+                + BytecodeTable::get_witness_amount()
+                + RW8Table::get_witness_amount()
+                // + ExpTable::get_witness_amount()
+                // + StateTable::get_witness_amount()
+                + RW256Table::get_witness_amount();
 
+            BOOST_LOG_TRIVIAL(info) <<  "Zkevm circuit witness_amount = " << witness_amount;
             return {
-                .witnesses = state::get_items_amount()
-                    + implemented_opcodes_amount
-                    + opcode_columns_amount
-                    + BytecodeTable::get_witness_amount()
-                    + RW8Table::get_witness_amount()
-                    + RW256Table::get_witness_amount()
-                    // + ExpTable::get_witness_amount()
-                    // + CopyTable::get_witness_amount()
-                    // + StateTable::get_witness_amount()
-                ,
+                .witnesses = witness_amount,
                 .public_inputs = 1,
                 .constants = 0,
                 .rows = std::max(
                     std::max( max_zkevm_rows, max_state ),
                     std::max(
-                        std::max(max_copy, max_rw),
+                        std::max(max_copy_events * 2, max_rw),
                         std::max(max_exponentations, max_bytecode)
                     )
                 )
@@ -121,7 +121,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
 
         static void allocate_public_inputs(
             context_type &context, input_type &input,
-            std::size_t max_zkevm_rows, std::size_t max_copy, std::size_t max_rw,
+            std::size_t max_zkevm_rows, std::size_t max_copy_events, std::size_t max_rw,
             std::size_t max_exponentations, std::size_t max_bytecode,
             std::size_t max_state
         ) {
@@ -132,7 +132,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             context_type &context_object,
             const input_type &input,
             std::size_t max_zkevm_rows,
-            std::size_t max_copy,
+            std::size_t max_copy_events,
             std::size_t max_rw,
             std::size_t max_exponentiations,
             std::size_t max_bytecode,
@@ -164,6 +164,14 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             }
             BOOST_LOG_TRIVIAL(trace) << bs.str();
 
+            std::vector<std::size_t> copy_lookup_area;
+            std::stringstream cs;
+            bs << "Copy area: ";
+            for( std::size_t i = 0; i < CopyTable::get_witness_amount(); i++){
+                cs << current_column << " ";
+                copy_lookup_area.push_back(current_column++);
+            }
+            BOOST_LOG_TRIVIAL(trace) << cs.str();
         //     std::vector<std::size_t> exp_lookup_area;
         //     std::stringstream es;
         //     es << "Exponentiation area: ";
@@ -213,14 +221,14 @@ namespace nil::blueprint::bbf::zkevm_small_field{
         //     context_type exp_ct = context_object.subcontext( exp_lookup_area, 0, max_exponentiations);
             context_type rw_8_ct = context_object.subcontext(rw_8_lookup_area,0,max_rw);
             context_type rw_256_ct = context_object.subcontext(rw_256_lookup_area,0,max_rw);
-        //     context_type copy_ct = context_object.subcontext( copy_lookup_area,0,max_copy);
+            context_type copy_ct = context_object.subcontext( copy_lookup_area,0,max_copy_events * 2);
         //     context_type state_ct = context_object.subcontext( state_lookup_area,0,max_state);
 
             BytecodeTable bc_t = BytecodeTable(bytecode_ct, input.bytecodes, max_bytecode);
         //     ExpTable e_t = ExpTable(exp_ct, input.exponentiations, max_exponentiations);
             RW8Table rw_8_t = RW8Table(rw_8_ct, input.rw_operations, max_rw);
             RW256Table rw_256_t = RW256Table(rw_256_ct, input.rw_operations, max_rw);
-        //     CopyTable c_t = CopyTable(copy_ct, input.copy_events, max_copy, true);
+            CopyTable c_t = CopyTable(copy_ct, {input.copy_events, input.bytecodes}, max_copy_events);
         //     StateTable s_t = StateTable(state_ct, input.state_operations, max_state);
 
             auto opcode_impls = get_opcode_implementations<FieldType>();

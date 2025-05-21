@@ -122,9 +122,7 @@ public:
             nil::blueprint::bbf::vmtrace_block_loader loader(path);
             nil::blueprint::bbf::zkevm_basic_input_generator circuit_inputs((abstract_block_loader*)(&loader));
             BOOST_ASSERT(circuit_inputs.get_execution_status());
-            BOOST_LOG_TRIVIAL(trace) << circuit_inputs.print_statistics();
-
-            std::cout << circuit_inputs.print_statistics();
+            BOOST_LOG_TRIVIAL(info) << circuit_inputs.print_statistics();
         }
         std::cout << "Done" << std::endl;
         return;

@@ -116,7 +116,6 @@ public:
     }
 };
 
-
 // Circuit-related fixture
 struct l1_size_restrictions{
     std::size_t max_exponentiations;
@@ -124,6 +123,7 @@ struct l1_size_restrictions{
     std::size_t max_bytecode;
     std::size_t max_mpt;
     std::size_t max_rw;
+    std::size_t max_copy_events = 50;
     std::size_t max_copy;
     std::size_t max_zkevm_rows;
     std::size_t max_exp_rows;

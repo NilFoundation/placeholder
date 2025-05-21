@@ -149,6 +149,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             }
             // declare dynamic lookup table
             lookup_table("zkevm_bytecode",std::vector<std::size_t>({0,1,2,3,4}), 0, max_bytecode_size);
+            lookup_table("zkevm_bytecode_copy",std::vector<std::size_t>({1,2,4}), 0, max_bytecode_size);
         };
     };
 }

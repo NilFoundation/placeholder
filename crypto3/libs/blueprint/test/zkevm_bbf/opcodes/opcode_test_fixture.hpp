@@ -87,6 +87,7 @@ public:
         std::size_t max_mpt = max_sizes.max_mpt;
         std::size_t max_rw = max_sizes.max_rw;
         std::size_t max_copy = max_sizes.max_copy;
+        std::size_t max_copy_events = max_sizes.max_copy_events;
         std::size_t max_zkevm_rows = max_sizes.max_zkevm_rows;
         std::size_t max_exponentiations = max_sizes.max_exponentiations;
         std::size_t max_exp_rows = max_sizes.max_exp_rows;
@@ -254,14 +255,14 @@ public:
             zkevm_assignment_input.bytecodes = circuit_inputs.bytecodes();
             // zkevm_assignment_input.keccak_buffers = circuit_inputs.keccaks();
             zkevm_assignment_input.rw_operations = circuit_inputs.short_rw_operations();
-            // zkevm_assignment_input.copy_events = circuit_inputs.copy_events();
+            zkevm_assignment_input.copy_events = circuit_inputs.copy_events();
             zkevm_assignment_input.zkevm_states = circuit_inputs.zkevm_states();
             // zkevm_assignment_input.exponentiations = circuit_inputs.exponentiations();
             // zkevm_assignment_input.state_operations = circuit_inputs.state_operations();
 
             result = test_bbf_component<SmallFieldType, nil::blueprint::bbf::zkevm_small_field::zkevm>(
                 "zkevm-s", {}, zkevm_assignment_input,
-                max_zkevm_rows, max_copy, max_rw, max_exponentiations, max_bytecode, max_state
+                max_zkevm_rows, max_copy_events, max_rw, max_exponentiations, max_bytecode, max_state
             );
             BOOST_CHECK(result);
         }

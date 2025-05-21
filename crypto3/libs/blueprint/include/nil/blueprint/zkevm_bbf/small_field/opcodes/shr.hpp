@@ -417,21 +417,6 @@ class zkevm_shr_bbf : public generic_component<FieldType, stage> {
             res[i] = y_chunks[i];
         }
 
-
-        // PART 4: consistency with the stack
-        // Convert to 128-bit chunks for stack operations
-        auto A_128 = chunks16_to_chunks128_reversed<TYPE>(a_chunks);
-        auto B_128 = chunks16_to_chunks128_reversed<TYPE>(input_b_chunks);
-        auto Res_128 = chunks16_to_chunks128_reversed<TYPE>(res);
-
-        TYPE A0, A1, B0, B1, Res0, Res1;
-        A0 = A_128.first;
-        A1 = A_128.second;
-        B0 = B_128.first;
-        B1 = B_128.second;
-        Res0 = Res_128.first;
-        Res1 = Res_128.second;
-
         if constexpr (stage == GenerationStage::CONSTRAINTS) {
             // State transition constraints
             // The arguments for pc, gas, stack_size, memory-size and rw_counter correspond to number_of_rows - 1
@@ -469,20 +454,6 @@ class zkevm_shr_bbf : public generic_component<FieldType, stage> {
                 TYPE(1),// is_write
                 res
             ), "zkevm_rw_256");
-
-            // std::vector<TYPE> tmp;
-            // tmp = rw_table<FieldType, stage>::stack_lookup(
-            //     current_state.call_id(8), current_state.stack_size(8) - 1,
-            //     current_state.rw_counter(8), TYPE(0), B0, B1);
-            // lookup(tmp, "zkevm_rw");
-            // tmp = rw_table<FieldType, stage>::stack_lookup(
-            //     current_state.call_id(5), current_state.stack_size(5) - 2,
-            //     current_state.rw_counter(5) + 1, TYPE(0), A0, A1);
-            // lookup(tmp, "zkevm_rw");
-            // tmp = rw_table<FieldType, stage>::stack_lookup(
-            //     current_state.call_id(9), current_state.stack_size(9) - 2,
-            //     current_state.rw_counter(9) + 2, TYPE(1), Res0, Res1);
-            // lookup(tmp, "zkevm_rw");
         }
     }
 };

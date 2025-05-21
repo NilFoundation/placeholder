@@ -38,7 +38,7 @@ namespace nil {
     namespace blueprint {
         namespace bbf {
             enum class copy_operand_type {
-                padding, memory, bytecode, calldata, log, keccak, reverted, returndata
+                padding, memory, bytecode, calldata, log, keccak, returndata
             };
             std::size_t copy_op_to_num(copy_operand_type copy_op){
                 switch(copy_op){
@@ -47,14 +47,13 @@ namespace nil {
                 case copy_operand_type::bytecode:      return 2;
                 case copy_operand_type::log:           return 3;
                 case copy_operand_type::keccak:        return 4;
-                case copy_operand_type::reverted:      return 5;
-                case copy_operand_type::calldata:      return 6;
-                case copy_operand_type::returndata:    return 7;
+                case copy_operand_type::calldata:      return 5;
+                case copy_operand_type::returndata:    return 6;
                 }
                 BOOST_ASSERT(false);
                 return 0;
             }
-            static constexpr std::size_t copy_operand_types_amount = 8;
+            static constexpr std::size_t copy_operand_types_amount = 7;
 
 
             struct copied_data_item{
@@ -153,25 +152,6 @@ namespace nil {
                 cpy.destination_type = copy_operand_type::keccak;
                 cpy.destination_id = hash_value;
                 cpy.dst_counter_1 = 0;
-                cpy.dst_counter_2 = 0;
-                cpy.length = length;
-                return cpy;
-            }
-
-            copy_event revert_copy_event(
-                std::size_t call_id,
-                std::size_t block_id,
-                std::size_t rw_counter,
-                std::size_t length
-            ){
-                copy_event cpy;
-                cpy.source_type = copy_operand_type::reverted;
-                cpy.source_id = call_id;
-                cpy.src_counter_1 = 0;
-                cpy.src_counter_2 = 0;
-                cpy.destination_type = copy_operand_type::reverted;
-                cpy.destination_id = block_id;
-                cpy.dst_counter_1 = rw_counter;
                 cpy.dst_counter_2 = 0;
                 cpy.length = length;
                 return cpy;

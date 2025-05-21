@@ -64,6 +64,7 @@
 
 #include <nil/blueprint/zkevm_bbf/small_field/circuits/rw.hpp>
 #include <nil/blueprint/zkevm_bbf/small_field/circuits/bytecode.hpp>
+#include <nil/blueprint/zkevm_bbf/small_field/circuits/copy.hpp>
 #include <nil/blueprint/zkevm_bbf/small_field/circuits/zkevm.hpp>
 
 #include "./circuit_test_fixture.hpp"
@@ -134,6 +135,7 @@ public:
         std::size_t max_mpt = max_sizes.max_mpt;
         std::size_t max_rw = max_sizes.max_rw;
         std::size_t max_copy = max_sizes.max_copy;
+        std::size_t max_copy_events = max_sizes.max_copy_events;
         std::size_t max_zkevm_rows = max_sizes.max_zkevm_rows;
         std::size_t max_exponentiations = max_sizes.max_exponentiations;
         std::size_t max_exp_rows = max_sizes.max_exp_rows;
@@ -299,17 +301,34 @@ public:
             BOOST_LOG_TRIVIAL(info) << "circuit '" << zkevm_s_circuit << "'";
             typename zkevm_small_field::zkevm<BigFieldType, GenerationStage::ASSIGNMENT>::input_type zkevm_assignment_input;
             zkevm_assignment_input.rlc_challenge = 7;
-            // zkevm_assignment_input.bytecodes = circuit_inputs.bytecodes();
+            zkevm_assignment_input.bytecodes = circuit_inputs.bytecodes();
             // zkevm_assignment_input.keccak_buffers = circuit_inputs.keccaks();
             zkevm_assignment_input.rw_operations = circuit_inputs.short_rw_operations();
-            // zkevm_assignment_input.copy_events = circuit_inputs.copy_events();
+            zkevm_assignment_input.copy_events = circuit_inputs.copy_events();
             zkevm_assignment_input.zkevm_states = circuit_inputs.zkevm_states();
             // zkevm_assignment_input.exponentiations = circuit_inputs.exponentiations();
             // zkevm_assignment_input.state_operations = circuit_inputs.state_operations();
 
             result = test_bbf_component<BigFieldType, nil::blueprint::bbf::zkevm_small_field::zkevm>(
                 "zkevm-s", {}, zkevm_assignment_input,
-                max_zkevm_rows, max_copy, max_rw, max_exponentiations, max_bytecode, max_state
+                max_zkevm_rows, max_copy_events, max_rw, max_exponentiations, max_bytecode, max_state
+            );
+            BOOST_CHECK(result);
+        }
+
+        const std::string copy_s_circuit = "copy-s";
+        if (should_run_circuit(copy_s_circuit)) {
+            BOOST_LOG_TRIVIAL(info) << "circuit '" << copy_s_circuit << "'";
+            typename zkevm_small_field::copy<SmallFieldType, GenerationStage::ASSIGNMENT>::input_type copy_assignment_input;
+            copy_assignment_input.rlc_challenge = 7;
+            copy_assignment_input.bytecodes = circuit_inputs.bytecodes();
+            copy_assignment_input.keccak_buffers = circuit_inputs.keccaks();
+            copy_assignment_input.rw_operations = circuit_inputs.short_rw_operations();
+            copy_assignment_input.copy_events = circuit_inputs.copy_events();
+
+            result = test_bbf_component<SmallFieldType, nil::blueprint::bbf::zkevm_small_field::copy>(
+                "copy-s", {7}, copy_assignment_input,
+                max_copy_events, max_copy, max_rw, max_keccak_blocks, max_bytecode
             );
             BOOST_CHECK(result);
         }
@@ -330,6 +349,7 @@ BOOST_AUTO_TEST_CASE(minimal_math) {
     max_sizes.max_bytecode = 300;
     max_sizes.max_mpt = 0;
     max_sizes.max_rw = 1000;
+    max_sizes.max_copy_events = 70;
     max_sizes.max_copy = 70;
     max_sizes.max_zkevm_rows = 500;
     max_sizes.max_exponentiations = 50;
@@ -346,6 +366,7 @@ BOOST_AUTO_TEST_CASE(call_counter) {
     max_sizes.max_bytecode = 3000;
     max_sizes.max_mpt = 0;
     max_sizes.max_rw = 3000;
+    max_sizes.max_copy_events = 70;
     max_sizes.max_copy = 500;
     max_sizes.max_zkevm_rows = 1000;
     max_sizes.max_exponentiations = 50;
@@ -362,6 +383,7 @@ BOOST_AUTO_TEST_CASE(delegatecall_counter) {
     max_sizes.max_bytecode = 3000;
     max_sizes.max_mpt = 0;
     max_sizes.max_rw = 4000;
+    max_sizes.max_copy_events = 70;
     max_sizes.max_copy = 500;
     max_sizes.max_zkevm_rows = 1500;
     max_sizes.max_exponentiations = 50;
@@ -378,6 +400,7 @@ BOOST_AUTO_TEST_CASE(staticcall) {
     max_sizes.max_bytecode = 3000;
     max_sizes.max_mpt = 0;
     max_sizes.max_rw = 4000;
+    max_sizes.max_copy_events = 70;
     max_sizes.max_copy = 500;
     max_sizes.max_zkevm_rows = 1500;
     max_sizes.max_exponentiations = 50;
@@ -394,6 +417,7 @@ BOOST_AUTO_TEST_CASE(counter) {
     max_sizes.max_bytecode = 3000;
     max_sizes.max_mpt = 0;
     max_sizes.max_rw = 3000;
+    max_sizes.max_copy_events = 70;
     max_sizes.max_copy = 500;
     max_sizes.max_zkevm_rows = 1000;
     max_sizes.max_exponentiations = 50;
@@ -410,6 +434,7 @@ BOOST_AUTO_TEST_CASE(keccak) {
     max_sizes.max_bytecode = 3000;
     max_sizes.max_mpt = 0;
     max_sizes.max_rw = 5000;
+    max_sizes.max_copy_events = 70;
     max_sizes.max_copy = 1000;
     max_sizes.max_zkevm_rows = 2000;
     max_sizes.max_exponentiations = 50;
@@ -426,6 +451,7 @@ BOOST_AUTO_TEST_CASE(call_keccak) {
     max_sizes.max_bytecode = 3000;
     max_sizes.max_mpt = 0;
     max_sizes.max_rw = 5000;
+    max_sizes.max_copy_events = 70;
     max_sizes.max_copy = 500;
     max_sizes.max_zkevm_rows = 2000;
     max_sizes.max_exponentiations = 50;
@@ -443,6 +469,7 @@ BOOST_AUTO_TEST_CASE(indexed_log) {
     max_sizes.max_bytecode = 3000;
     max_sizes.max_mpt = 0;
     max_sizes.max_rw = 3000;
+    max_sizes.max_copy_events = 70;
     max_sizes.max_copy = 500;
     max_sizes.max_zkevm_rows = 1000;
     max_sizes.max_exponentiations = 50;
@@ -459,6 +486,7 @@ BOOST_AUTO_TEST_CASE(cold_sstore) {
     max_sizes.max_bytecode = 3000;
     max_sizes.max_mpt = 0;
     max_sizes.max_rw = 3000;
+    max_sizes.max_copy_events = 70;
     max_sizes.max_copy = 500;
     max_sizes.max_zkevm_rows = 1000;
     max_sizes.max_exponentiations = 50;
@@ -475,6 +503,7 @@ BOOST_AUTO_TEST_CASE(try_catch) {
     max_sizes.max_bytecode = 5000;
     max_sizes.max_mpt = 0;
     max_sizes.max_rw = 8000;
+    max_sizes.max_copy_events = 70;
     max_sizes.max_copy = 1500;
     max_sizes.max_zkevm_rows = 5000;
     max_sizes.max_exponentiations = 50;
@@ -492,6 +521,7 @@ BOOST_AUTO_TEST_CASE(try_catch2) {
     max_sizes.max_mpt = 0;
     max_sizes.max_rw = 8000;
     max_sizes.max_copy = 1500;
+    max_sizes.max_copy_events = 70;
     max_sizes.max_zkevm_rows = 6000;
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
@@ -508,6 +538,7 @@ BOOST_AUTO_TEST_CASE(try_catch_cold) {
     max_sizes.max_mpt = 0;
     max_sizes.max_rw = 8000;
     max_sizes.max_copy = 1500;
+    max_sizes.max_copy_events = 70;
     max_sizes.max_zkevm_rows = 5000;
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
@@ -524,6 +555,7 @@ BOOST_AUTO_TEST_CASE(sar) {
     max_sizes.max_mpt = 0;
     max_sizes.max_rw = 3000;
     max_sizes.max_copy = 500;
+    max_sizes.max_copy_events = 70;
     max_sizes.max_zkevm_rows = 1000;
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
@@ -540,6 +572,7 @@ BOOST_AUTO_TEST_CASE(scmp) {
     max_sizes.max_mpt = 0;
     max_sizes.max_rw = 3000;
     max_sizes.max_copy = 500;
+    max_sizes.max_copy_events = 70;
     max_sizes.max_zkevm_rows = 2000;
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
@@ -556,6 +589,7 @@ BOOST_AUTO_TEST_CASE(exp) {
     max_sizes.max_mpt = 0;
     max_sizes.max_rw = 3000;
     max_sizes.max_copy = 500;
+    max_sizes.max_copy_events = 70;
     max_sizes.max_zkevm_rows = 2000;
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 3000;
@@ -572,6 +606,7 @@ BOOST_AUTO_TEST_CASE(modular) {
     max_sizes.max_mpt = 0;
     max_sizes.max_rw = 2000;
     max_sizes.max_copy = 70;
+    max_sizes.max_copy_events = 70;
     max_sizes.max_zkevm_rows = 1000;
     max_sizes.max_exponentiations = 10;
     max_sizes.max_exp_rows = 100;
@@ -588,6 +623,7 @@ BOOST_AUTO_TEST_CASE(precompiles, *boost::unit_test::disabled()) {
     max_sizes.max_mpt = 0;
     max_sizes.max_rw = 500;
     max_sizes.max_copy = 70;
+    max_sizes.max_copy_events = 70;
     max_sizes.max_zkevm_rows = 500;
     max_sizes.max_exponentiations = 10;
     max_sizes.max_exp_rows = 100;
@@ -603,6 +639,7 @@ BOOST_AUTO_TEST_CASE(mem) {
     max_sizes.max_mpt = 0;
     max_sizes.max_rw = 3000;
     max_sizes.max_copy = 3000;
+    max_sizes.max_copy_events = 70;
     max_sizes.max_zkevm_rows = 4500;
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
@@ -618,6 +655,7 @@ BOOST_AUTO_TEST_CASE(codecopy) {
     max_sizes.max_mpt = 0;
     max_sizes.max_rw = 2000;
     max_sizes.max_copy = 500;
+    max_sizes.max_copy_events = 70;
     max_sizes.max_zkevm_rows = 500;
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
@@ -634,6 +672,7 @@ BOOST_AUTO_TEST_CASE(transient_storage) {
     max_sizes.max_mpt = 0;
     max_sizes.max_rw = 3000;
     max_sizes.max_copy = 500;
+    max_sizes.max_copy_events = 70;
     max_sizes.max_zkevm_rows = 5000;
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
@@ -649,6 +688,7 @@ BOOST_AUTO_TEST_CASE(transient_storage_revert) {
     max_sizes.max_mpt = 0;
     max_sizes.max_rw = 4000;
     max_sizes.max_copy = 500;
+    max_sizes.max_copy_events = 70;
     max_sizes.max_zkevm_rows = 4000;
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;

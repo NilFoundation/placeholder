@@ -544,7 +544,7 @@ namespace nil {
                 }
 
                 virtual void tload() override{
-                    std::size_t key = std::size_t(stack.back());
+                    zkevm_word_type key = stack.back();
                     _zkevm_states.back().load_stack(stack,1);
                     append_stack_reads(1);
                     _zkevm_states.back().load_word_field(zkevm_state_word_field::call_context_address, call_context_address);
@@ -578,6 +578,7 @@ namespace nil {
                         _state_operations.push_back(s);
                     }
                     append_stack_writes(1);
+                    BOOST_LOG_TRIVIAL(trace) << "TLOAD is done" << std::hex << key << std::dec;
                 }
 
                 virtual void tstore() override{
