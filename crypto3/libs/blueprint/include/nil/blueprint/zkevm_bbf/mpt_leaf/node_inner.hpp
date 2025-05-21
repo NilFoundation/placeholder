@@ -37,7 +37,7 @@
 // #include <nil/blueprint/zkevm_bbf/subcomponents/mpt_leaf_table.hpp>
 #include <nil/blueprint/zkevm_bbf/subcomponents/keccak_table.hpp>
 #include <nil/blueprint/zkevm_bbf/mpt_leaf.hpp>
-#include <nil/blueprint/zkevm_bbf/mpt_leaf_header.hpp>
+#include <nil/blueprint/zkevm_bbf/mpt_leaf/node_header.hpp>
 
 namespace nil::blueprint::bbf {
 
@@ -46,32 +46,27 @@ namespace nil::blueprint::bbf {
       public:
         using typename generic_component<FieldType, stage>::context_type;
         using generic_component<FieldType, stage>::allocate;
-        using generic_component<FieldType, stage>::copy_constrain;
         using generic_component<FieldType, stage>::constrain;
         using generic_component<FieldType, stage>::lookup;
-        using generic_component<FieldType, stage>::lookup_table;
 
-        struct input_type {};
-        using typename generic_component<FieldType, stage>::table_params;
         using typename generic_component<FieldType, stage>::TYPE;
-
         using node_header = node_header<FieldType, stage>;
 
         node_header* header;
-        inner_node_type node_type;
-        mpt_type trie_type;
+        // inner_node_type node_type;
+        // mpt_type trie_type;
 
         TYPE rlc_challenge;
 
         node_inner(
             context_type &context_object,
-            inner_node_type _n_type,
-            mpt_type _trie_type,
+            // inner_node_type _n_type,
+            // mpt_type _trie_type,
             TYPE _rlc_challenge
         ):
             generic_component<FieldType, stage>(context_object, false),
-            node_type(_n_type),
-            trie_type(_trie_type),
+            // node_type(_n_type),
+            // trie_type(_trie_type),
             rlc_challenge(_rlc_challenge) {
 
         }
@@ -81,46 +76,41 @@ namespace nil::blueprint::bbf {
             _initialize_body();
         }
 
-        void peek_and_set_data(std::vector<zkevm_word_type> &raw, std::size_t &rlp_encoding_index, TYPE &rlc_accumulator) {
-            this->_set_header_data(raw, rlp_encoding_index, rlc_accumulator);
-            this->_peek_and_set_data(raw, rlp_encoding_index, rlc_accumulator);
-        }
-
-        virtual void allocate_witness(std::size_t &column_index, std::size_t &row_index){
-            throw "Method not implemented!1_";
-        }
-
         void main_constraints(TYPE previous_rlc, TYPE initial_index, TYPE not_padding) {
             header->main_constraints(previous_rlc, initial_index, not_padding);
             this->_main_constraints(initial_index, not_padding);
         }
 
+        TYPE get_total_length_constraint() {
+            return header->get_total_length_constraint();
+        }
+
+        virtual std::vector<zkevm_word_type> empty() {
+            throw "Method not implemented!";
+        }
+
+        virtual void allocate_witness(std::size_t &column_index, std::size_t &row_index){
+            throw "Method not implemented!";
+        }
+
         virtual std::size_t extra_rows_count() {
-            throw "Method not implemented!2";
+            throw "Method not implemented!";
         }
 
-        virtual void _set_header_data(std::vector<zkevm_word_type> &raw, std::size_t &rlp_encoding_index, TYPE &rlc_accumulator) {
-            throw "Method not implemented!12";
-        }
-
-        virtual void _peek_and_set_data(std::vector<zkevm_word_type> &raw, std::size_t &rlp_encoding_index, TYPE &rlc_accumulator) {
-            throw "Method not implemented!12";
+        virtual void peek_and_encode_data(std::vector<zkevm_word_type> &raw, std::size_t &rlp_encoding_index, TYPE &rlc_accumulator) {
+            throw "Method not implemented!";
         }
 
         virtual void print() {
-            throw "Method not implemented!3";
+            throw "Method not implemented!";
         }
 
         virtual void rlp_lookup_constraints() {
-            throw "Method not implemented!4";
+            throw "Method not implemented!";
         }
 
         virtual TYPE last_rlc() {
-            throw "Method not implemented!5";
-        }
-
-        TYPE get_total_length_constraint() {
-            return header->get_total_length_constraint();
+            throw "Method not implemented!";
         }
 
         protected:
@@ -129,18 +119,11 @@ namespace nil::blueprint::bbf {
         }
 
         virtual void _initialize_body() {
-            throw "Method not implemented!6";
-        }
-
-        virtual void _set_data_finished() {
-            throw "Method not implemented!9";
-        }
-        virtual void _set_index_and_rlc(std::size_t &rlp_encoding_index, TYPE &rlc_accumulator) {
-            throw "Method not implemented!10";
+            throw "Method not implemented!";
         }
 
         virtual void _main_constraints(TYPE initial_index, TYPE not_padding) {
-            throw "Method not implemented!11";
+            throw "Method not implemented!";
         }
     };
 
@@ -151,14 +134,11 @@ namespace nil::blueprint::bbf {
     public:
         using typename generic_component<FieldType, stage>::context_type;
         using generic_component<FieldType, stage>::allocate;
-        using generic_component<FieldType, stage>::copy_constrain;
         using generic_component<FieldType, stage>::constrain;
         using generic_component<FieldType, stage>::lookup;
-        using generic_component<FieldType, stage>::lookup_table;
 
-        struct input_type {};
-        using typename generic_component<FieldType, stage>::table_params;
         using typename generic_component<FieldType, stage>::TYPE;
+        using node_header_string = node_header_string<FieldType, stage>;
         using node_inner = node_inner<FieldType, stage>;
 
 
@@ -173,21 +153,26 @@ namespace nil::blueprint::bbf {
 
         node_inner_string(
             context_type &context_object,
-            inner_node_type _n_type,
-            mpt_type _trie_type,
-            TYPE _rlc_challenge
+            // inner_node_type _n_type,
+            // mpt_type _trie_type,
+            TYPE _rlc_challenge,
+            std::size_t max_data_length
         ): node_inner(
             context_object,
-            _n_type,
-            _trie_type,
+            // _n_type,
+            // _trie_type,
             _rlc_challenge
         ) {
-            data.resize(33);
-            index.resize(33);
-            remainder_I.resize(33);
-            is_last_byte.resize(33);
-            data_finished.resize(33);
-            rlc.resize(33);
+            h = new node_header_string(context_object, _rlc_challenge);
+            this->header = h;
+
+            std::size_t max_rlp_len = get_max_rlp_length(max_data_length);
+            data.resize(max_rlp_len);
+            index.resize(max_rlp_len);
+            remainder_I.resize(max_rlp_len);
+            is_last_byte.resize(max_rlp_len);
+            data_finished.resize(max_rlp_len);
+            rlc.resize(max_rlp_len);
         }
 
         std::size_t extra_rows_count() {
@@ -196,8 +181,9 @@ namespace nil::blueprint::bbf {
 
         void print() {
             if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                this->header->print();
-                auto raw_data_length = static_cast<std::uint64_t>(this->header->len.data.base());
+                h->print();
+                auto raw_data_length = static_cast<std::uint64_t>(h->len.data.base());
+                std::cout << "\tdata\tindex\trlc" << std::endl;
                 for (size_t i = 0; i < raw_data_length; i++) {
                     std::cout << "\t"
                         << std::hex << this->data[i] << std::dec << "\t"
@@ -207,16 +193,12 @@ namespace nil::blueprint::bbf {
             }
         }
 
-        // void rlp_lookup_constraints() {
-        //     _get_header()->rlp_lookup_constraints(first_element_image, data[0], first_element_flag);
-        // }
-
         TYPE last_rlc() {
             return rlc[rlc.size() - 1];
         }
 
         void allocate_witness(std::size_t &column_index, std::size_t &row_index){
-            this->header->allocate_witness(column_index, row_index);
+            h->allocate_witness(column_index, row_index);
             allocate(first_element_image, column_index++, row_index);
             allocate(first_element_flag, column_index++, row_index);
             for (std::size_t k = 0; k < data.size(); k++) {
@@ -229,7 +211,27 @@ namespace nil::blueprint::bbf {
             }
         }
 
+        void rlp_lookup_constraints() {
+            h->rlp_lookup_constraints(this->first_element_image, this->data[0], this->first_element_flag);
+        }
+
+        void peek_and_decode_data(std::vector<zkevm_word_type> &raw, std::size_t &rlp_encoding_index, TYPE &rlc_accumulator) {
+            h->peek_and_decode_data(raw, rlp_encoding_index, rlc_accumulator);
+            this->_peek_and_set_data(raw, rlp_encoding_index, rlc_accumulator);
+        }
+
+        void peek_and_encode_data(std::vector<zkevm_word_type> &raw, std::size_t &rlp_encoding_index, TYPE &rlc_accumulator) {
+            h->peek_and_encode_data(raw, rlp_encoding_index, rlc_accumulator, false);
+            this->_peek_and_set_data(raw, rlp_encoding_index, rlc_accumulator);
+        }
+        
+        std::vector<zkevm_word_type> empty() {
+            return {};
+        }
+
     protected:
+        node_header_string* h;
+
         void _initialize_body() {
             for (size_t j = 0; j < data.size(); j++) {
                 data[j] = 0;
@@ -270,7 +272,7 @@ namespace nil::blueprint::bbf {
 
         void _set_data_finished() {
             if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                TYPE len = this->header->len;
+                TYPE len = h->len;
                 for (size_t j = 0; j < data.size(); j++) {
                     if ( index[j] - index[0] == len - 1) {
                         remainder_I[j] = 0;
@@ -287,7 +289,7 @@ namespace nil::blueprint::bbf {
 
         void _set_index_and_rlc(std::size_t &rlp_encoding_index, TYPE &rlc_accumulator) {
             if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                auto raw_data_length = static_cast<std::uint64_t>(this->header->len.data.base());
+                auto raw_data_length = static_cast<std::uint64_t>(h->len.data.base());
                 for (size_t j = 0; j < raw_data_length; j++) {
                     index[j] = rlp_encoding_index++;
                     rlc[j] = rlc_accumulator * this->rlc_challenge + this->data[j];
@@ -307,16 +309,16 @@ namespace nil::blueprint::bbf {
         void _main_constraints(TYPE initial_index, TYPE not_padding) {
             TYPE first_data_index = initial_index + this->header->get_prefix_length();
 
-            _is_zero_constraints(this->header->len_is_zero, this->header->len_I, this->header->len);
-            _is_zero_constraints(this->header->len_is_one, this->header->len_minus_one_I, this->header->len - 1);
+            _is_zero_constraints(h->len_is_zero, h->len_I, h->len);
+            _is_zero_constraints(h->len_is_one, h->len_minus_one_I, h->len - 1);
 
             constrain((1 - data_finished[0]) * data_finished[0]);
-            constrain((this->header->len_is_zero + this->header->len_is_one) * (1 - this->data_finished[0]));
-            constrain(this->header->len_is_zero * index[0] +
-                (1 - this->header->len_is_zero) * (index[0] - first_data_index));
-            constrain(this->header->len_is_zero * data[0]);
-            constrain(this->header->len_is_zero * (rlc[0] - this->header->prefix_rlc[2]) +
-                (1 - this->header->len_is_zero) * (rlc[0] - (this->header->prefix_rlc[2] * 53 + data[0])));
+            constrain((h->len_is_zero + h->len_is_one) * (1 - this->data_finished[0]));
+            constrain(h->len_is_zero * index[0] +
+                (1 - h->len_is_zero) * (index[0] - first_data_index));
+            constrain(h->len_is_zero * data[0]);
+            constrain(h->len_is_zero * (rlc[0] - h->prefix_rlc[2]) +
+                (1 - h->len_is_zero) * (rlc[0] - (h->prefix_rlc[2] * 53 + data[0])));
 
             for (size_t i = 1; i < data.size(); i++) {
                 constrain((1 - data_finished[i]) * data_finished[i]);
@@ -324,7 +326,7 @@ namespace nil::blueprint::bbf {
                 constrain(data_finished[i-1] * index[i] +
                     (1 - data_finished[i-1]) * (index[i] - index[i-1] - 1));
 
-                TYPE remainder = this->header->len - (index[i] - index[0] + 1);
+                TYPE remainder = h->len - (index[i] - index[0] + 1);
                 _is_zero_constraints(is_last_byte[i], remainder_I[i], remainder);
 
                 constrain(data_finished[i] - is_last_byte[i] - data_finished[i-1]);
@@ -337,136 +339,45 @@ namespace nil::blueprint::bbf {
 
 
     template<typename FieldType, GenerationStage stage>
-    class node_inner_string_encoder: public node_inner_string<FieldType, stage> {
-        using typename generic_component<FieldType, stage>::context_type;
-
-    public:
-        using typename generic_component<FieldType, stage>::table_params;
-        using typename generic_component<FieldType, stage>::TYPE;
-
-        using node_header_string_encoder = node_header_string_encoder<FieldType, stage>;
-        using node_inner_string = node_inner_string<FieldType, stage>;
-
-        node_inner_string_encoder(
-            context_type &context_object,
-            inner_node_type _n_type,
-            mpt_type _trie_type,
-            TYPE _rlc_challenge
-        ): node_inner_string(
-            context_object,
-            _n_type,
-            _trie_type,
-            _rlc_challenge
-        ) {
-
-            h = new node_header_string_encoder(
-                context_object,
-                _n_type,
-                _rlc_challenge
-            );
-            this->header = h;
-        }
-
-        void rlp_lookup_constraints() {
-            h->rlp_lookup_constraints(this->first_element_image, this->data[0], this->first_element_flag);
-        }
-
-    protected:
-        node_header_string_encoder* h;
-        void _set_header_data(std::vector<zkevm_word_type> &raw, std::size_t &rlp_encoding_index, TYPE &rlc_accumulator) {
-            h->encode_data(raw, rlp_encoding_index, rlc_accumulator);
-        }
-
-    };
-
-
-    template<typename FieldType, GenerationStage stage>
-    class node_inner_string_decoder: public node_inner_string<FieldType, stage> {
-        using typename generic_component<FieldType, stage>::context_type;
-
-    public:
-        using typename generic_component<FieldType, stage>::table_params;
-        using typename generic_component<FieldType, stage>::TYPE;
-
-        using node_header_string_decoder = node_header_string_decoder<FieldType, stage>;
-        using node_inner_string = node_inner_string<FieldType, stage>;
-
-        node_inner_string_decoder(
-            context_type &context_object,
-            inner_node_type _n_type,
-            mpt_type _trie_type,
-            TYPE _rlc_challenge
-        ): node_inner_string(
-            context_object,
-            _n_type,
-            _trie_type,
-            _rlc_challenge
-        ) {
-            h = new node_header_string_decoder(
-                context_object,
-                _n_type,
-                _rlc_challenge
-            );
-            this->header = h;
-        }
-
-        void rlp_lookup_constraints() {
-            h->rlp_lookup_constraints(this->first_element_image, this->data[0], this->first_element_flag);
-        }
-
-    protected:
-        void _set_header_data(std::vector<zkevm_word_type> &raw, std::size_t &rlp_encoding_index, TYPE &rlc_accumulator) {
-            h->peek_and_decode_data(raw, rlp_encoding_index, rlc_accumulator);
-        }
-
-        node_header_string_decoder* h;
-    };
-
-
-    template<typename FieldType, GenerationStage stage>
     class node_inner_string_container: public node_inner<FieldType, stage> {
         using typename generic_component<FieldType, stage>::context_type;
         using generic_component<FieldType, stage>::allocate;
-        using generic_component<FieldType, stage>::copy_constrain;
         using generic_component<FieldType, stage>::constrain;
         using generic_component<FieldType, stage>::lookup;
-        using generic_component<FieldType, stage>::lookup_table;
 
     public:
-        using typename generic_component<FieldType, stage>::table_params;
         using typename generic_component<FieldType, stage>::TYPE;
         using node_inner = node_inner<FieldType, stage>;
-        using node_header_string_encoder = node_header_string_encoder<FieldType, stage>;
-        using node_inner_string_decoder = node_inner_string_decoder<FieldType, stage>;
+        using node_inner_string = node_inner_string<FieldType, stage>;
+        using node_header_string = node_header_string<FieldType, stage>;
 
-        node_inner_string_decoder* inner;
+        node_inner_string* inner;
+        
         TYPE first_element_flag;
         TYPE first_element_image;
+        node_header_string* h;
 
         node_inner_string_container(
             context_type &context_object,
-            inner_node_type _n_type,
-            mpt_type _trie_type,
-            TYPE _rlc_challenge
+            // inner_node_type _n_type,
+            // mpt_type _trie_type,
+            TYPE _rlc_challenge,
+            std::size_t data_len
             // node_inner_string_decoder* _inner
         ): node_inner(
             context_object,
-            _n_type,
-            _trie_type,
+            // _n_type,
+            // _trie_type,
             _rlc_challenge
-        ) {
+            ) {
 
-            h = new node_header_string_encoder(
-                context_object,
-                _n_type,
-                _rlc_challenge
-            );
+            h = new node_header_string(context_object, _rlc_challenge);
             this->header = h;
-            inner = new node_inner_string_decoder(
+            inner = new node_inner_string(
                 context_object,
-                _n_type,
-                _trie_type,
-                _rlc_challenge
+                // _trie_type,
+                _rlc_challenge,
+                data_len
             );
         }
 
@@ -477,7 +388,7 @@ namespace nil::blueprint::bbf {
         void print() {
             std::cout << "container:\n";
             this->header->print();
-            std::cout << "first element image\tfirst element flag\n" << first_element_image << "\t\t\t" << first_element_flag << std::endl;
+            std::cout << "\tfirst element image\tfirst element flag\n\t" << first_element_image << "\t\t\t" << first_element_flag << std::endl;
             std::cout << "inner:\n";
             this->inner->print();
         }
@@ -487,40 +398,40 @@ namespace nil::blueprint::bbf {
         }
 
         void allocate_witness(std::size_t &column_index, std::size_t &row_index){
-            this->header->allocate_witness(column_index, row_index);
+            h->allocate_witness(column_index, row_index);
             allocate(first_element_image, column_index++, row_index);
             allocate(first_element_flag, column_index++, row_index);
             this->inner->allocate_witness(column_index, row_index);
         }
 
         void rlp_lookup_constraints() {
-            h->rlp_lookup_constraints(
+            this->h->rlp_lookup_constraints(
                 first_element_image,
                 this->inner->header->prefix_exists[0] * this->inner->header->prefix[0] + (1 - this->inner->header->prefix_exists[0]) * this->inner->data[0],
                 first_element_flag);
             this->inner->rlp_lookup_constraints();
         }
 
-    protected:
-        node_header_string_encoder* h;
-        void _initialize_body() {
-            this->inner->initialize();
-        }
-
-        void _peek_and_set_data(std::vector<zkevm_word_type> &raw, std::size_t &rlp_encoding_index, TYPE &rlc_accumulator) {
-            this->inner->peek_and_set_data(raw, rlp_encoding_index, rlc_accumulator);
-            if (this->inner->header->get_total_length() == 1) {
+        void peek_and_encode_data(std::vector<zkevm_word_type> &raw, std::size_t &rlp_encoding_index, TYPE &rlc_accumulator) {
+            h->peek_and_encode_data(raw, rlp_encoding_index, rlc_accumulator, false);
+            inner->peek_and_decode_data(raw, rlp_encoding_index, rlc_accumulator);
+            if (inner->header->get_total_length() == 1) {
                 first_element_flag = 1;
-                first_element_image = this->inner->header->prefix_exists[0] * this->inner->header->prefix[0]
-                                      + (1 - this->inner->header->prefix_exists[0]) * this->inner->data[0];
+                first_element_image = inner->header->prefix_exists[0] * inner->header->prefix[0]
+                                      + (1 - inner->header->prefix_exists[0]) * inner->data[0];
             } else {
                 first_element_flag = 0;
                 first_element_image = 0;
             }
         }
+        
+        std::vector<zkevm_word_type> empty() {
+            return {0x80};
+        }
 
-        void _set_header_data(std::vector<zkevm_word_type> &raw, std::size_t &rlp_encoding_index, TYPE &rlc_accumulator) {
-            h->encode_data(raw, rlp_encoding_index, rlc_accumulator);
+    protected:
+        void _initialize_body() {
+            this->inner->initialize();
         }
 
         void _is_zero_constraints(TYPE is_zero, TYPE inverse, TYPE X) {
@@ -540,43 +451,29 @@ namespace nil::blueprint::bbf {
       public:
         using typename generic_component<FieldType, stage>::context_type;
         using generic_component<FieldType, stage>::allocate;
-        using generic_component<FieldType, stage>::copy_constrain;
         using generic_component<FieldType, stage>::constrain;
         using generic_component<FieldType, stage>::lookup;
-        using generic_component<FieldType, stage>::lookup_table;
 
-        struct input_type {};
-        using typename generic_component<FieldType, stage>::table_params;
         using typename generic_component<FieldType, stage>::TYPE;
-
-        using node_header_array_decoder = node_header_array_decoder<FieldType, stage>;
+        using node_header_array = node_header_array<FieldType, stage>;
         using node_inner = node_inner<FieldType, stage>;
+
+        std::vector<node_inner*> inners;
 
         node_inner_array(
             context_type &context_object,
-            mpt_type _trie_type,
+            // mpt_type _trie_type,
             TYPE _rlc_challenge
         ):
             node_inner(
                 context_object,
-                inner_node_type::array,
-                _trie_type,
+                // inner_node_type::array,
+                // _trie_type,
                 _rlc_challenge
-            ){
-
-            // if (_trie_type == mpt_type::account_trie) {
-            //     // TODO
-            //     inners.push_back(node_inner(context_object, inner_node_type::nonce, _trie_type, this->rlc_challenge));
-            //     inners.push_back(node_inner(context_object, inner_node_type::balance, _trie_type, this->rlc_challenge));
-            //     inners.push_back(node_inner(context_object, inner_node_type::storage_root, _trie_type, this->rlc_challenge));
-            //     inners.push_back(node_inner(context_object, inner_node_type::code_hash, _trie_type, this->rlc_challenge));
-            // }
+            ) {
+            h = new node_header_array(context_object, _rlc_challenge); 
+            this->header = h;
         }
-
-        // void add_inner(context_type &__c, inner_node_type __n) {
-        //     node_inner_string* n = new node_inner_string(__c, __n, this->trie_type, this->rlc_challenge);
-        //     inners.push_back(n);
-        // }
 
         std::size_t extra_rows_count() {
             std::size_t rows = 0;
@@ -589,34 +486,27 @@ namespace nil::blueprint::bbf {
             return inners[inners.size()-1]->last_rlc();
         }
 
-        // std::size_t get_total_length() {
-        //     return _get_header()->get_total_length();
-        // }
-
-        std::vector<node_inner*> inners;
-
         void allocate_witness(std::size_t &column_index, std::size_t &row_index) {
-            this->header->allocate_witness(column_index, row_index);
+            h->allocate_witness(column_index, row_index);
             for (size_t i = 0; i < inners.size(); i++) {
                 inners[i]->allocate_witness(column_index, row_index);
             }
         }
+        
+        std::vector<zkevm_word_type> empty() {
+            return {0xC0};
+        }
+
     protected:
+        node_header_array* h;
+
         void _initialize_body() {
             for (auto &i : inners) {
                 i->initialize();
             }
         }
 
-        // std::size_t get_data_length() {
-        //     std::size_t internals_length = 0;
-        //     for (size_t i = 0; i < this->inners.size(); i++)
-        //         internals_length += inners[i]->get_total_length();
-        //     return internals_length;
-        // }
-
         void _main_constraints(TYPE initial_index, TYPE not_padding) {
-            // TODO is there any better way?
             TYPE total_len;
             for (auto &i : inners)
                 total_len += i->get_total_length_constraint();
@@ -635,8 +525,11 @@ namespace nil::blueprint::bbf {
             }
         }
 
-        // node_header_array_decoder* _get_header() {
-        //     return dynamic_cast<node_header_array_decoder*>(this->header);
-        // }
+        void rlp_lookup_constraints() {
+            h->rlp_lookup_constraints();
+            for (size_t i = 0; i < this->inners.size(); i++){
+                this->inners[i]->rlp_lookup_constraints();
+            }
+        }
     };
 }  // namespace nil::blueprint::bbf

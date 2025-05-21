@@ -47,36 +47,37 @@ namespace nil::blueprint::bbf {
         balance,
         storage_root,
         code_hash,
-        storage_value,
-        key,
-        array
+        storage_value
     };
 
+    // interface classes for RLP:
     template<typename T>
-    class rlp_parser {};
-
-    template<typename T>
-    class rlp_encoder: rlp_parser<T> {
+    class string_rlp_encoder{
         public:
-        virtual void encode_data(std::size_t raw_data_length, std::size_t &rlp_encoding_index, T &rlc_accumulator, bool initialize_rlc=false) {
-            throw "Method not implemented!";
-        }
-        virtual void encode_data(std::vector<zkevm_word_type> &raw, std::size_t &rlp_encoding_index, T &rlc_accumulator, bool initialize_rlc=false) {
+        virtual void peek_and_encode_data(std::vector<zkevm_word_type> &raw, std::size_t &rlp_encoding_index, T &rlc_accumulator, bool initialize_rlc=false) {
             throw "Method not implemented!";
         }
     };
 
     template<typename T>
-    class rlp_decoder: rlp_parser<T> {
+    class array_rlp_encoder{
+        public:
+        virtual void peek_and_encode_data(std::size_t raw_data_length, std::size_t &rlp_encoding_index, T &rlc_accumulator, bool initialize_rlc=false) {
+            throw "Method not implemented!";
+        }
+    };
+
+    template<typename T>
+    class rlp_decoder {
         public:
         virtual void peek_and_decode_data(std::vector<zkevm_word_type> &raw, std::size_t &rlp_encoding_index, T &rlc_accumulator) {
             throw "Method not implemented!";
         }
     };
 
+// ----------------------------------------------------------------------------
 
-
-    std::size_t get_rlp_size(std::vector<zkevm_word_type> raw) {
+    std::size_t get_rlp_length(std::vector<zkevm_word_type> raw) {
         std::size_t data_len = raw.size();
         if (data_len == 0)
             return 1;
@@ -96,24 +97,24 @@ namespace nil::blueprint::bbf {
     }
 
 
+    std::size_t get_max_rlp_length(std::size_t data_len) {
+        std::vector<zkevm_word_type> raw;
+        for (size_t i = 0; i < data_len; i++) raw.push_back(0xFF);
+        return get_rlp_length(raw);
+    }
+
     template<typename FieldType, GenerationStage stage>
-    class node_header: public generic_component<FieldType, stage> {
+    class node_header: public generic_component<FieldType, stage>, rlp_decoder<typename generic_component<FieldType, stage>::TYPE> {
       public:
         using typename generic_component<FieldType, stage>::context_type;
         using RLPTable = typename bbf::rlp_table<FieldType, stage>;
-        using KeccakTable = typename bbf::keccak_table<FieldType, stage>;
-        // using MPTLeafTable = typename bbf::mpt_leaf_table<FieldType, stage>;
-        // using mpt_leaf_table_input_type = typename bbf::mpt_leaf_table<FieldType, stage>::input_type;
         using generic_component<FieldType, stage>::allocate;
-        using generic_component<FieldType, stage>::copy_constrain;
         using generic_component<FieldType, stage>::constrain;
         using generic_component<FieldType, stage>::lookup;
-        using generic_component<FieldType, stage>::lookup_table;
 
-        using typename generic_component<FieldType, stage>::table_params;
         using typename generic_component<FieldType, stage>::TYPE;
         // mpt_type trie_type;
-        inner_node_type node_type;
+        // inner_node_type node_type;
         std::array<TYPE, 3> prefix;
         std::array<TYPE, 3> prefix_rlc;
         std::array<TYPE, 3> prefix_exists;
@@ -134,11 +135,11 @@ namespace nil::blueprint::bbf {
         node_header(
             context_type &context_object,
             // mpt_type _trie_t,
-            inner_node_type _node_t,
+            // inner_node_type _node_t,
             TYPE _rlc_challenge,
             std::uint8_t _rlp_constant
         ): generic_component<FieldType, stage>(context_object, false),
-        node_type(_node_t),
+        // node_type(_node_t),
         rlp_constant(_rlp_constant),
         ct(context_object) {
             rlc_challenge = _rlc_challenge;
@@ -211,18 +212,17 @@ namespace nil::blueprint::bbf {
                       << std::hex << prefix_index[2] << std::dec << "\t"
                       << std::hex << prefix_rlc[2] << std::dec << std::endl;
 
-            std::cout << "prefix exists: " <<
+            std::cout << "\tprefix exists: " <<
                     std::hex << prefix_exists[0] << std::dec << " " <<
                     std::hex << prefix_exists[1] << std::dec << " " <<
                     std::hex << prefix_exists[2] << std::dec << std::endl;
-            std::cout << "second prefix flag:\t second prefix image\n"
-                       << std::hex << prefix_1_flag << std::dec << "\t"
+            std::cout << "\tsecond prefix flag:\tsecond prefix image\n\t"
+                       << std::hex << prefix_1_flag << std::dec << "\t\t\t"
                        << std::hex << prefix_1_image << std::dec << std::endl;
-            std::cout << "len\tlen_I\tlen_is_one\tlen_is_zero\tlen_image: \n"
+            std::cout << "\tlen\tlen_is_one\tlen_is_zero\tlen_image:\n\t"
                     << std::hex << len << std::dec << "\t"
-                    << std::hex << len_I<< std::dec <<  "\t"
                     << std::hex << len_is_one<< std::dec << "\t\t"
-                    << std::hex << len_is_zero << std::dec << "\t\t\t"
+                    << std::hex << len_is_zero << std::dec << "\t\t"
                     << std::hex << len_image<< std::dec <<std::dec <<std::endl;
         }
 
@@ -237,7 +237,59 @@ namespace nil::blueprint::bbf {
 
         virtual ~node_header(){}
 
-    protected:
+
+        void peek_and_decode_data(std::vector<zkevm_word_type> &_raw, std::size_t &rlp_encoding_index, TYPE &rlc_accumulator) {
+            this->_peek_and_decode_data(_raw, rlp_encoding_index, rlc_accumulator);
+            this->_set_prefix_rlc_and_index(rlp_encoding_index, rlc_accumulator);
+            this->_set_length_info();
+            // return std::vector<std::uint8_t>(_raw.begin() + prefix_len, _raw.end());
+        }
+
+        protected:
+        virtual void _peek_and_decode_data(std::vector<zkevm_word_type> &_raw, std::size_t &rlp_encoding_index, TYPE &rlc_accumulator) {
+            throw "Method not implemented!";
+        }
+
+        void _peek_and_decode_data_non_single(std::vector<zkevm_word_type> &_raw, std::size_t &rlp_encoding_index, TYPE &rlc_accumulator) {
+            BOOST_ASSERT_MSG(_raw.size() <= 65535, "data length more than 65535 bytes!");
+            BOOST_ASSERT_MSG(_raw.size() >= 1, "data length zero!");
+
+            if (_raw[0] >= this->rlp_constant && _raw[0] <= this->rlp_constant + 55) {
+                // BOOST_ASSERT_MSG(_raw.size() >= _raw[0] - rlp_constant + 1, "Error in RLP decoding!");
+                this->prefix[0] = _raw[0];
+                this->prefix[1] = 0;
+                this->prefix[2] = 0;
+                this->prefix_exists[0] = 1;
+                this->prefix_exists[1] = 0;
+                this->prefix_exists[2] = 0;
+                this->len = this->prefix[0] - this->rlp_constant;
+                _raw.erase(_raw.begin());
+            } else if (_raw[0] >= this->rlp_constant + 56 && _raw[0] <= this->rlp_constant + 56 + 7) {
+                zkevm_word_type len_len = _raw[0] - this->rlp_constant - 55;
+                this->prefix[0] = _raw[0];
+                this->prefix_exists[0] = 1;
+                _raw.erase(_raw.begin());
+                if (len_len == 1) {
+                    this->prefix[1] = _raw[1];
+                    this->prefix[2] = 0;
+                    this->prefix_exists[1] = 1;
+                    this->prefix_exists[2] = 0;
+                    this->len = _raw[1];
+                    _raw.erase(_raw.begin());
+                } else if (len_len == 2) {
+                    this->prefix[1] = _raw[1];
+                    this->prefix[2] = _raw[2];
+                    this->prefix_exists[1] = 1;
+                    this->prefix_exists[2] = 1;
+                    this->len = (_raw[1] << 8) + _raw[2];
+                    _raw.erase(_raw.begin());
+                } else {
+                    throw "Error in RLP decoding4!";
+                }
+            } else {
+                throw "Error in RLP decoding5!";
+            }
+        }
 
         context_type &ct; // :(
 
@@ -295,7 +347,7 @@ namespace nil::blueprint::bbf {
             rlc_accumulator = prefix_rlc[2];
         }
 
-        void _rlp_lookup_constraints(TYPE first_element_image, TYPE first_element, TYPE first_element_flag) {
+        void _rlp_lookup_constraints(TYPE first_element_image, TYPE first_element, TYPE first_element_flag, TYPE node_type) {
             std::vector<TYPE> node_rlp_lookup = {
                 prefix[0],
                 prefix_1_image,
@@ -303,134 +355,15 @@ namespace nil::blueprint::bbf {
                 prefix_1_flag,
                 first_element_flag,
                 first_element_image,
-                node_type != inner_node_type::array,
+                node_type, // 0 for array and 1 for string
                 len_image
             };
             lookup(node_rlp_lookup, "rlp_table");
             constrain(prefix_1_flag * (prefix_1_image - prefix[1]));
             constrain((1 - prefix_exists[2]) * (len - len_image));
         }
-    };
-
-    template<typename FieldType, GenerationStage stage>
-    class node_header_decoder: public node_header<FieldType, stage>, rlp_decoder<typename generic_component<FieldType, stage>::TYPE> {
-        public:
-        using typename generic_component<FieldType, stage>::context_type;
-        using typename generic_component<FieldType, stage>::TYPE;
-        using node_header = node_header<FieldType, stage>;
 
 
-        node_header_decoder(
-            context_type &context_object,
-            // mpt_type _trie_t,
-            inner_node_type _node_t,
-            TYPE _rlc_challenge,
-            std::uint8_t _rlp_constant
-        ): node_header(context_object, _node_t, _rlc_challenge, _rlp_constant) {}
-
-        void peek_and_decode_data(std::vector<zkevm_word_type> &_raw, std::size_t &rlp_encoding_index, TYPE &rlc_accumulator) {
-            this->_peek_and_decode_data(_raw, rlp_encoding_index, rlc_accumulator);
-            this->_set_prefix_rlc_and_index(rlp_encoding_index, rlc_accumulator);
-            this->_set_length_info();
-            // return std::vector<std::uint8_t>(_raw.begin() + prefix_len, _raw.end());
-        }
-
-        protected:
-        virtual void _peek_and_decode_data(std::vector<zkevm_word_type> &_raw, std::size_t &rlp_encoding_index, TYPE &rlc_accumulator) {
-            throw "Method not implemented!";
-        }
-
-        void _peek_and_decode_data_non_single(std::vector<zkevm_word_type> &_raw, std::size_t &rlp_encoding_index, TYPE &rlc_accumulator) {
-            BOOST_ASSERT_MSG(_raw.size() <= 65535, "data length more than 65535 bytes!");
-            BOOST_ASSERT_MSG(_raw.size() >= 1, "data length zero!");
-
-            if (_raw[0] >= this->rlp_constant && _raw[0] <= this->rlp_constant + 55) {
-                // BOOST_ASSERT_MSG(_raw.size() >= _raw[0] - rlp_constant + 1, "Error in RLP decoding!");
-                this->prefix[0] = _raw[0];
-                this->prefix[1] = 0;
-                this->prefix[2] = 0;
-                this->prefix_exists[0] = 1;
-                this->prefix_exists[1] = 0;
-                this->prefix_exists[2] = 0;
-                this->len = this->prefix[0] - this->rlp_constant;
-                _raw.erase(_raw.begin());
-            } else if (_raw[0] >= this->rlp_constant + 56 && _raw[0] <= this->rlp_constant + 56 + 7) {
-                zkevm_word_type len_len = _raw[0] - this->rlp_constant - 55;
-                this->prefix[0] = _raw[0];
-                this->prefix_exists[0] = 1;
-                _raw.erase(_raw.begin());
-                if (len_len == 1) {
-                    this->prefix[1] = _raw[1];
-                    this->prefix[2] = 0;
-                    this->prefix_exists[1] = 1;
-                    this->prefix_exists[2] = 0;
-                    this->len = _raw[1];
-                    _raw.erase(_raw.begin());
-                } else if (len_len == 2) {
-                    this->prefix[1] = _raw[1];
-                    this->prefix[2] = _raw[2];
-                    this->prefix_exists[1] = 1;
-                    this->prefix_exists[2] = 1;
-                    this->len = (_raw[1] << 8) + _raw[2];
-                    _raw.erase(_raw.begin());
-                } else {
-                    throw "Error in RLP decoding4!";
-                }
-            } else {
-                throw "Error in RLP decoding5!";
-            }
-        }
-
-        void _set_prefix_rlc_and_index(std::size_t &rlp_encoding_index, TYPE &rlc_accumulator) {
-            for (size_t i = 0; i < 3; i++) {
-                if (this->prefix_exists[i] == 1) {
-                    this->prefix_rlc[i] = this->rlc_challenge * rlc_accumulator + this->prefix[i];
-                    rlc_accumulator = this->prefix_rlc[i];
-                    this->prefix_index[i] = rlp_encoding_index++;
-                } else {
-                    this->prefix_rlc[i] = rlc_accumulator;
-                    this->prefix_index[i] = 0;
-                }
-            }
-            rlc_accumulator = this->prefix_rlc[2];
-        }
-    };
-
-    template<typename FieldType, GenerationStage stage>
-    class node_header_encoder: public node_header<FieldType, stage>, rlp_encoder<typename generic_component<FieldType, stage>::TYPE> {
-        public:
-        using typename generic_component<FieldType, stage>::context_type;
-
-        using typename generic_component<FieldType, stage>::TYPE;
-        using node_header = node_header<FieldType, stage>;
-
-
-        node_header_encoder(
-            context_type &context_object,
-            // mpt_type _trie_t,
-            inner_node_type _node_t,
-            TYPE _rlc_challenge,
-            std::uint8_t _rlp_constant
-        ): node_header(context_object, _node_t, _rlc_challenge, _rlp_constant) {}
-
-        void encode_data(std::size_t raw_data_length, std::size_t &rlp_encoding_index, TYPE &rlc_accumulator, bool initialize_rlc=false) {
-            BOOST_ASSERT_MSG(raw_data_length <= 65535, "data length more than 65535 bytes!");
-            this->_encode_data(raw_data_length);
-            if (initialize_rlc)
-                rlc_accumulator = this->get_total_length();
-            this->_set_prefix_rlc_and_index(rlp_encoding_index, rlc_accumulator);
-            this->_set_length_info();
-        }
-
-        void encode_data(std::vector<zkevm_word_type> &raw, std::size_t &rlp_encoding_index, TYPE &rlc_accumulator, bool initialize_rlc=false) {
-            BOOST_ASSERT_MSG(raw.size() <= 65535, "data length more than 65535 bytes!");
-            this->_encode_data(raw);
-            if (initialize_rlc)
-                rlc_accumulator = this->get_total_length();
-            this->_set_prefix_rlc_and_index(rlp_encoding_index, rlc_accumulator);
-            this->_set_length_info();
-        }
-        protected:
 
         void _encode_non_single(std::size_t raw_data_length) {
             if (raw_data_length < 56) {
@@ -466,86 +399,82 @@ namespace nil::blueprint::bbf {
             this->len = raw_data_length;
         }
 
-        void virtual _encode_data(std::size_t raw_data_length) {
-            throw "Method not implemented!";
-        }
-
-        void virtual _encode_data(std::vector<zkevm_word_type> &_raw) {
-            throw "Method not implemented!";
+        void _after_peek_and_encode_data(std::size_t &rlp_encoding_index, TYPE &rlc_accumulator, bool initialize_rlc=false) {
+            if (initialize_rlc)
+                rlc_accumulator = this->get_total_length();
+            this->_set_prefix_rlc_and_index(rlp_encoding_index, rlc_accumulator);
+            this->_set_length_info();
         }
     };
 
-    template<typename FieldType, GenerationStage stage>
-    class node_header_array_decoder: public node_header_decoder<FieldType, stage> {
-        using typename generic_component<FieldType, stage>::context_type;
 
+    template<typename FieldType, GenerationStage stage>
+    class node_header_array: public node_header<FieldType, stage>, 
+                            public array_rlp_encoder<typename generic_component<FieldType, stage>::TYPE> {
+        using typename generic_component<FieldType, stage>::context_type;
       public:
         using typename generic_component<FieldType, stage>::TYPE;
         using node_header = node_header<FieldType, stage>;
 
-        node_header_array_decoder(
+        node_header_array(
             context_type &context_object,
             // mpt_type _trie_t,
             TYPE _rlc_challenge
-        ): node_header(context_object, inner_node_type::array, _rlc_challenge, 0xC0) {
-        }
+        ): node_header(context_object, _rlc_challenge, 0xC0){}
 
         void rlp_lookup_constraints() {
-            this->_rlp_lookup_constraints(0, 0, 0);
+            this->_rlp_lookup_constraints(0, 0, 0, 0);
+        }
+
+        void peek_and_encode_data(std::size_t raw_data_length, std::size_t &rlp_encoding_index, TYPE &rlc_accumulator, bool initialize_rlc=false) {
+            _peek_and_encode_data(raw_data_length);
+            this->_after_peek_and_encode_data(rlp_encoding_index, rlc_accumulator, initialize_rlc);
+        }
+
+        ~node_header_array(){}
+
+        protected:
+
+        void _peek_and_encode_data(std::size_t raw_data_length) {
+            BOOST_ASSERT_MSG(raw_data_length <= 65535, "data length more than 65535 bytes!");
+            this->_encode_non_single(raw_data_length);
         }
 
         void _peek_and_decode_data(std::vector<zkevm_word_type> &_raw, std::size_t &rlp_encoding_index, TYPE &rlc_accumulator) {
             this->_peek_and_decode_data_non_single(_raw, rlp_encoding_index, rlc_accumulator);
         }
-
-        ~node_header_array_decoder(){}
     };
 
-    template<typename FieldType, GenerationStage stage>
-    class node_header_array_encoder: public node_header_encoder<FieldType, stage> {
-        using typename generic_component<FieldType, stage>::context_type;
-      public:
-        using typename generic_component<FieldType, stage>::TYPE;
-        using node_header_encoder = node_header_encoder<FieldType, stage>;
-
-        node_header_array_encoder(
-            context_type &context_object,
-            // mpt_type _trie_t,
-            TYPE _rlc_challenge
-        ): node_header_encoder(context_object, inner_node_type::array, _rlc_challenge, 0xC0) {
-        }
-
-        void _encode_data(std::size_t raw_data_length) {
-            BOOST_ASSERT_MSG(raw_data_length <= 65535, "data length more than 65535 bytes!");
-            this->_encode_non_single(raw_data_length);
-        }
-
-        void rlp_lookup_constraints() {
-            this->_rlp_lookup_constraints(0, 0, 0);
-        }
-
-        ~node_header_array_encoder(){}
-    };
 
     template<typename FieldType, GenerationStage stage>
-    class node_header_string_decoder: public node_header_decoder<FieldType, stage> {
+    class node_header_string: public node_header<FieldType, stage>, 
+                              public string_rlp_encoder<typename generic_component<FieldType, stage>::TYPE> {
         using typename generic_component<FieldType, stage>::context_type;
 
         public:
-
-        using typename generic_component<FieldType, stage>::table_params;
         using typename generic_component<FieldType, stage>::TYPE;
-        using node_header = node_header<FieldType, stage>;
-        using node_header_decoder =node_header_decoder<FieldType, stage>;
+        using node_header =node_header<FieldType, stage>;
 
-
-        node_header_string_decoder(
+        node_header_string(
             context_type &context_object,
             // mpt_type _trie_t,
-            inner_node_type _node_t,
+            // inner_node_type _node_t,
             TYPE _rlc_challenge
-        ): node_header_decoder(context_object, _node_t, _rlc_challenge, 0x80) {}
+        ): node_header(context_object, _rlc_challenge, 0x80) {}
 
+        void rlp_lookup_constraints(TYPE first_element_image, TYPE first_element, TYPE first_element_flag) {
+            this->ct.constrain(first_element_flag * (first_element - first_element_image), "");
+            this->_rlp_lookup_constraints(first_element_image, first_element, first_element_flag, 1);
+        }
+
+        void peek_and_encode_data(std::vector<zkevm_word_type> &raw, std::size_t &rlp_encoding_index, TYPE &rlc_accumulator, bool initialize_rlc=false) {
+            _peek_and_encode_data(raw);
+            this->_after_peek_and_encode_data(rlp_encoding_index, rlc_accumulator, initialize_rlc);
+        }
+
+        ~node_header_string(){}
+
+        protected:
         void _peek_and_decode_data(std::vector<zkevm_word_type> &_raw, std::size_t &rlp_encoding_index, TYPE &rlc_accumulator) {
             BOOST_ASSERT_MSG(_raw.size() <= 65535, "data length more than 65535 bytes!");
             if ( _raw.size() == 1 && _raw[0] <= 0x7F) {
@@ -565,35 +494,7 @@ namespace nil::blueprint::bbf {
             }
         }
 
-        void rlp_lookup_constraints(TYPE first_element_image, TYPE first_element, TYPE first_element_flag) {
-            this->ct.constrain(first_element_flag * (first_element - first_element_image), "");
-            this->_rlp_lookup_constraints(first_element_image, first_element, first_element_flag);
-        }
-
-        ~node_header_string_decoder(){}
-
-    };
-
-    template<typename FieldType, GenerationStage stage>
-    class node_header_string_encoder: public node_header_encoder<FieldType, stage> {
-        using typename generic_component<FieldType, stage>::context_type;
-
-        public:
-
-        using typename generic_component<FieldType, stage>::table_params;
-        using typename generic_component<FieldType, stage>::TYPE;
-
-        using node_header_encoder = node_header_encoder<FieldType, stage>;
-
-
-        node_header_string_encoder(
-            context_type &context_object,
-            // mpt_type _trie_t,
-            inner_node_type _node_t,
-            TYPE _rlc_challenge
-        ): node_header_encoder(context_object, _node_t, _rlc_challenge, 0x80) {}
-
-        void _encode_data(std::vector<zkevm_word_type> &_raw) {
+        void _peek_and_encode_data(std::vector<zkevm_word_type> &_raw) {
             std::size_t raw_data_length = _raw.size();
             BOOST_ASSERT_MSG(raw_data_length <= 65535, "data length more than 65535 bytes!");
             if ( raw_data_length == 1 && _raw[0] <= 0x7F) {
@@ -610,12 +511,6 @@ namespace nil::blueprint::bbf {
                 this->_encode_non_single(_raw.size());
             }
         }
-
-        void rlp_lookup_constraints(TYPE first_element_image, TYPE first_element, TYPE first_element_flag) {
-            this->ct.constrain(first_element_flag * (first_element - first_element_image), "");
-            this->_rlp_lookup_constraints(first_element_image, first_element, first_element_flag);
-        }
-
-        ~node_header_string_encoder(){}
     };
+
 }  // namespace nil::blueprint::bbf
