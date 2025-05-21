@@ -398,8 +398,7 @@ namespace nil {
                                         if (iter == this->_points_map[i][j].end())
                                             continue;
 
-                                        math::polynomial<value_type> g_normal =
-                                            (*polys_coefficients_ptr)[i][j];
+                                        auto g_normal = (*polys_coefficients_ptr)[i][j];
                                         g_normal *= theta_acc;
                                         Q_normal_parts
                                             [point_index]
@@ -469,8 +468,7 @@ namespace nil {
 
                                     for (std::size_t j = 0;
                                          j < this->_z.get_batch_size(i); j++) {
-                                        math::polynomial<value_type> g_normal =
-                                            (*polys_coefficients_ptr)[i][j];
+                                        auto g_normal = (*polys_coefficients_ptr)[i][j];
                                         g_normal *= theta_acc;
                                         Q_normal += g_normal;
                                         Q_normal -= _fixed_polys_values[i][j] * theta_acc;
