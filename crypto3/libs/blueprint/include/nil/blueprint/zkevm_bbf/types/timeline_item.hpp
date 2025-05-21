@@ -39,8 +39,7 @@ namespace nil {
                 std::size_t       internal_counter;
 
                 bool operator< (const timeline_item &other) const {
-                    rw_id > other.rw_id;
-                    return false;
+                    return rw_id < other.rw_id;;
                 }
             };
         } // namespace bbf

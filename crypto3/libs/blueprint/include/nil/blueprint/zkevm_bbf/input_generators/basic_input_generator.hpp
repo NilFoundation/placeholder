@@ -988,7 +988,7 @@ namespace nil {
                     if( length > 0 ) _copy_events.push_back(cpy);
                 }
 
-                virtual void codecopy() {
+                virtual void codecopy() override{
                     std::size_t dst = std::size_t(stack[stack.size() - 1]);
                     std::size_t src = std::size_t(stack[stack.size() - 2]);
                     std::size_t length = std::size_t(stack[stack.size() - 3]);
@@ -1014,7 +1014,7 @@ namespace nil {
                     if( length > 0 ) _copy_events.push_back(cpy);
                 }
 
-                virtual void dupx( std::size_t d) {
+                virtual void dupx( std::size_t d) override {
                     _zkevm_states.back().load_stack(stack,d);
                     _short_rw_operations.push_back(stack_rw_operation(
                         call_id,
@@ -1033,7 +1033,7 @@ namespace nil {
                     ));
                 }
 
-                virtual void swapx( std::size_t s) {
+                virtual void swapx( std::size_t s) override{
                     _zkevm_states.back().load_stack(stack, s + 1);
                     _short_rw_operations.push_back(stack_rw_operation(
                         call_id,
