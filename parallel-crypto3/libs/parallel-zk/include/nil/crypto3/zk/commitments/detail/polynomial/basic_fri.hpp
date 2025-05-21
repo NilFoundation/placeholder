@@ -845,17 +845,14 @@ namespace nil {
 
                 /** @brief Convert a set of polynomials from DFS form into coefficients form, parallel version */
                 template<typename FRI, typename PolynomialType>
-                static std::map<
-                    std::size_t,
-                    std::vector<math::polynomial<typename FRI::field_type::value_type>>
-                >  convert_polynomials_to_coefficients(
+                static std::map<std::size_t,
+                                std::vector<typename PolynomialType::polynomial_type>>
+                convert_polynomials_to_coefficients(
                     const typename FRI::params_type &fri_params,
-                    const std::map<std::size_t, std::vector<PolynomialType>> &g)
-                {
-                    std::map<
-                        std::size_t,
-                        std::vector<math::polynomial<typename FRI::field_type::value_type>>
-                    > g_coeffs;
+                    const std::map<std::size_t, std::vector<PolynomialType>> &g) {
+                    std::map<std::size_t,
+                             std::vector<typename PolynomialType::polynomial_type>>
+                        g_coeffs;
 
                     if constexpr (std::is_same<math::polynomial_dfs<
                                                    typename FRI::field_type::value_type>,
@@ -903,19 +900,17 @@ namespace nil {
                     return g_coeffs;
                 }
 
-
                 template<typename FRI, typename PolynomialType>
                 static std::map<std::size_t, typename FRI::initial_proof_type>
                 build_initial_proof(
-                    const std::map<std::size_t, typename FRI::precommitment_type> &precommitments,
+                    const std::map<std::size_t, typename FRI::precommitment_type>
+                        &precommitments,
                     const typename FRI::params_type &fri_params,
                     const std::map<std::size_t, std::vector<PolynomialType>> &g,
-                    const std::map<
-                        std::size_t,
-                        std::vector<math::polynomial<typename FRI::field_type::value_type>>
-                    > &g_coeffs,
-                    std::uint64_t x_index)
-                {
+                    const std::map<std::size_t,
+                                   std::vector<typename PolynomialType::polynomial_type>>
+                        &g_coeffs,
+                    std::uint64_t x_index) {
                     std::vector<std::array<typename FRI::field_type::value_type, FRI::m>> s;
                     std::vector<std::array<std::size_t, FRI::m>> s_indices;
                     std::tie(s, s_indices) = calculate_s<FRI>(x_index, fri_params.step_list[0], fri_params.D[0]);
@@ -1118,8 +1113,8 @@ namespace nil {
                     // and compute their values in those 2 * FRI::lambda points each, which is normally 2 * 20.
                     // In case lambda becomes much larger than log(2, average polynomial size), then this will not be optimal.
                     // For lambda = 20 and 2^20 rows in assignment table, it's faster and uses less RAM.
-                    std::map<std::size_t, std::vector<math::polynomial<
-                                              typename FRI::field_type::value_type>>>
+                    std::map<std::size_t,
+                             std::vector<typename PolynomialType::polynomial_type>>
                         g_coeffs;
                     {
                         PROFILE_SCOPE("Convert g polynomials to coefficients");
