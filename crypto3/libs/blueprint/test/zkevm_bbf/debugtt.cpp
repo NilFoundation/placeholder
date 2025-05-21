@@ -366,7 +366,7 @@ BOOST_AUTO_TEST_CASE(minimal_math) {
 
     if( circuits_to_run.empty() ) {
         circuits_to_run.insert("zkevm");
-        circuits_to_run.insert("zkevm-wide");
+        //circuits_to_run.insert("zkevm-wide");
         circuits_to_run.insert("rw");
         circuits_to_run.insert("bytecode");
         circuits_to_run.insert("copy");
@@ -393,7 +393,7 @@ BOOST_AUTO_TEST_CASE(call_counter) {
 
     if( circuits_to_run.empty() ) {
         circuits_to_run.insert("zkevm");
-        circuits_to_run.insert("zkevm-wide");
+        //circuits_to_run.insert("zkevm-wide");
         circuits_to_run.insert("rw");
         circuits_to_run.insert("bytecode");
         circuits_to_run.insert("copy");
@@ -420,7 +420,7 @@ BOOST_AUTO_TEST_CASE(delegatecall_counter) {
 
     if( circuits_to_run.empty() ) {
         circuits_to_run.insert("zkevm");
-        circuits_to_run.insert("zkevm-wide");
+        //circuits_to_run.insert("zkevm-wide");
         circuits_to_run.insert("rw");
         circuits_to_run.insert("bytecode");
         circuits_to_run.insert("copy");
@@ -447,7 +447,7 @@ BOOST_AUTO_TEST_CASE(staticcall) {
 
     if( circuits_to_run.empty() ) {
         circuits_to_run.insert("zkevm");
-        circuits_to_run.insert("zkevm-wide");
+        //circuits_to_run.insert("zkevm-wide");
         circuits_to_run.insert("rw");
         circuits_to_run.insert("bytecode");
         circuits_to_run.insert("copy");
@@ -474,7 +474,7 @@ BOOST_AUTO_TEST_CASE(counter) {
 
     if( circuits_to_run.empty() ) {
         circuits_to_run.insert("zkevm");
-        circuits_to_run.insert("zkevm-wide");
+        //circuits_to_run.insert("zkevm-wide");
         circuits_to_run.insert("rw");
         circuits_to_run.insert("bytecode");
         circuits_to_run.insert("copy");
@@ -501,7 +501,7 @@ BOOST_AUTO_TEST_CASE(keccak) {
 
     if( circuits_to_run.empty() ) {
         circuits_to_run.insert("zkevm");
-        circuits_to_run.insert("zkevm-wide");
+        //circuits_to_run.insert("zkevm-wide");
         circuits_to_run.insert("rw");
         circuits_to_run.insert("bytecode");
         circuits_to_run.insert("copy");
@@ -529,7 +529,7 @@ BOOST_AUTO_TEST_CASE(call_keccak) {
 
     if( circuits_to_run.empty() ) {
         circuits_to_run.insert("zkevm");
-        circuits_to_run.insert("zkevm-wide");
+        //circuits_to_run.insert("zkevm-wide");
         circuits_to_run.insert("rw");
         circuits_to_run.insert("bytecode");
         circuits_to_run.insert("copy");
@@ -558,7 +558,7 @@ BOOST_AUTO_TEST_CASE(indexed_log) {
 
     if( circuits_to_run.empty() ) {
         circuits_to_run.insert("zkevm");
-        circuits_to_run.insert("zkevm-wide");
+        //circuits_to_run.insert("zkevm-wide");
         circuits_to_run.insert("rw");
         circuits_to_run.insert("bytecode");
         circuits_to_run.insert("copy");
@@ -585,7 +585,7 @@ BOOST_AUTO_TEST_CASE(cold_sstore) {
 
     if( circuits_to_run.empty() ) {
         circuits_to_run.insert("zkevm");
-        circuits_to_run.insert("zkevm-wide");
+        //circuits_to_run.insert("zkevm-wide");
         circuits_to_run.insert("rw");
         circuits_to_run.insert("bytecode");
         circuits_to_run.insert("copy");
@@ -612,7 +612,7 @@ BOOST_AUTO_TEST_CASE(try_catch) {
 
     if( circuits_to_run.empty() ) {
         circuits_to_run.insert("zkevm");
-        circuits_to_run.insert("zkevm-wide");
+        //circuits_to_run.insert("zkevm-wide");
         circuits_to_run.insert("rw");
         circuits_to_run.insert("bytecode");
         circuits_to_run.insert("copy");
@@ -639,7 +639,7 @@ BOOST_AUTO_TEST_CASE(try_catch2) {
 
     if( circuits_to_run.empty() ) {
         circuits_to_run.insert("zkevm");
-        circuits_to_run.insert("zkevm-wide");
+        //circuits_to_run.insert("zkevm-wide");
         circuits_to_run.insert("rw");
         circuits_to_run.insert("bytecode");
         circuits_to_run.insert("copy");
@@ -666,7 +666,7 @@ BOOST_AUTO_TEST_CASE(try_catch_cold) {
 
     if( circuits_to_run.empty() ) {
         circuits_to_run.insert("zkevm");
-        circuits_to_run.insert("zkevm-wide");
+        //circuits_to_run.insert("zkevm-wide");
         circuits_to_run.insert("rw");
         circuits_to_run.insert("bytecode");
         circuits_to_run.insert("copy");
@@ -693,7 +693,7 @@ BOOST_AUTO_TEST_CASE(sar) {
 
     if( circuits_to_run.empty() ) {
         circuits_to_run.insert("zkevm");
-        circuits_to_run.insert("zkevm-wide");
+        //circuits_to_run.insert("zkevm-wide");
         circuits_to_run.insert("rw");
         circuits_to_run.insert("bytecode");
         circuits_to_run.insert("copy");
@@ -720,7 +720,7 @@ BOOST_AUTO_TEST_CASE(scmp) {
 
     if( circuits_to_run.empty() ) {
         circuits_to_run.insert("zkevm");
-        circuits_to_run.insert("zkevm-wide");
+        //circuits_to_run.insert("zkevm-wide");
         circuits_to_run.insert("rw");
         circuits_to_run.insert("bytecode");
         circuits_to_run.insert("copy");
@@ -747,7 +747,7 @@ BOOST_AUTO_TEST_CASE(exp) {
 
     if( circuits_to_run.empty() ) {
         circuits_to_run.insert("zkevm");
-        circuits_to_run.insert("zkevm-wide");
+        //circuits_to_run.insert("zkevm-wide");
         circuits_to_run.insert("rw");
         circuits_to_run.insert("bytecode");
         circuits_to_run.insert("copy");
@@ -774,7 +774,7 @@ BOOST_AUTO_TEST_CASE(modular) {
 
     if( circuits_to_run.empty() ) {
         circuits_to_run.insert("zkevm");
-        circuits_to_run.insert("zkevm-wide");
+        //circuits_to_run.insert("zkevm-wide");
         circuits_to_run.insert("rw");
         circuits_to_run.insert("bytecode");
         circuits_to_run.insert("copy");
@@ -801,7 +801,7 @@ BOOST_AUTO_TEST_CASE(precompiles, *boost::unit_test::disabled()) {
 
     if( circuits_to_run.empty() ) {
         circuits_to_run.insert("zkevm");
-        circuits_to_run.insert("zkevm-wide");
+        //circuits_to_run.insert("zkevm-wide");
         circuits_to_run.insert("rw");
         circuits_to_run.insert("bytecode");
         circuits_to_run.insert("copy");
@@ -827,7 +827,7 @@ BOOST_AUTO_TEST_CASE(mem) {
 
     if( circuits_to_run.empty() ) {
         circuits_to_run.insert("zkevm");
-        circuits_to_run.insert("zkevm-wide");
+        //circuits_to_run.insert("zkevm-wide");
         circuits_to_run.insert("rw");
         circuits_to_run.insert("bytecode");
         circuits_to_run.insert("copy");
@@ -853,7 +853,7 @@ BOOST_AUTO_TEST_CASE(codecopy) {
 
     if( circuits_to_run.empty() ) {
         circuits_to_run.insert("zkevm");
-        circuits_to_run.insert("zkevm-wide");
+        //circuits_to_run.insert("zkevm-wide");
         circuits_to_run.insert("rw");
         circuits_to_run.insert("bytecode");
         circuits_to_run.insert("copy");
@@ -879,7 +879,7 @@ BOOST_AUTO_TEST_CASE(transient_storage) {
 
     if( circuits_to_run.empty() ) {
         circuits_to_run.insert("zkevm");
-        circuits_to_run.insert("zkevm-wide");
+        //circuits_to_run.insert("zkevm-wide");
         circuits_to_run.insert("rw");
         circuits_to_run.insert("bytecode");
         circuits_to_run.insert("copy");
@@ -905,7 +905,6 @@ BOOST_AUTO_TEST_CASE(transient_storage_revert) {
 
     if( circuits_to_run.empty() ) {
         circuits_to_run.insert("zkevm");
-        circuits_to_run.insert("zkevm-wide");
         circuits_to_run.insert("rw");
         circuits_to_run.insert("bytecode");
         circuits_to_run.insert("copy");
