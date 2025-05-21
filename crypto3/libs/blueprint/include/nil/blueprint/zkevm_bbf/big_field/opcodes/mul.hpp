@@ -74,10 +74,8 @@ namespace nil::blueprint::bbf::zkevm_big_field{
             const std::vector<TYPE> &r_64_chunks
         ) {
             return
-                (a_64_chunks[3] * b_64_chunks[1] + a_64_chunks[2] * b_64_chunks[2] +
-                a_64_chunks[1] * b_64_chunks[3] - r_64_chunks[1]) +
-                two_64 * (a_64_chunks[3] * b_64_chunks[0] + a_64_chunks[1] * b_64_chunks[2] +
-                    a_64_chunks[2] * b_64_chunks[1] + a_64_chunks[0] * b_64_chunks[3] - r_64_chunks[0]);
+                (a_64_chunks[3] * b_64_chunks[1] + a_64_chunks[2] * b_64_chunks[2] + a_64_chunks[1] * b_64_chunks[3] - r_64_chunks[1]) +
+                two_64 * (a_64_chunks[3] * b_64_chunks[0] + a_64_chunks[1] * b_64_chunks[2] + a_64_chunks[2] * b_64_chunks[1] + a_64_chunks[0] * b_64_chunks[3] - r_64_chunks[0]);
         }
 
         zkevm_mul_bbf(context_type &context_object, const opcode_input_type<FieldType, stage> &current_state):
@@ -104,6 +102,9 @@ namespace nil::blueprint::bbf::zkevm_big_field{
                     B[i] = b[i];
                     R[i] = r[i];
                 }
+                BOOST_LOG_TRIVIAL(trace) << "\tA = " << std::hex << current_state.stack_top();
+                BOOST_LOG_TRIVIAL(trace) << "\tB = " << std::hex << current_state.stack_top(1);
+                BOOST_LOG_TRIVIAL(trace) << "\tR = " << std::hex << wrapping_mul(current_state.stack_top(), current_state.stack_top(1));
             }
             for( std::size_t i = 0; i < 16; i++){
                 allocate(A[i], i, 0);
@@ -131,10 +132,12 @@ namespace nil::blueprint::bbf::zkevm_big_field{
                 TYPE lo_carries = lo_carryless_construct(A_64, B_64, R_64);
                 TYPE hi_carries = hi_carryless_construct(A_64, B_64, R_64);
 
-                zkevm_word_type c_first_i = typename FieldType::integral_type(lo_carries.to_integral()) >> 128;
+                zkevm_word_type c_first_i = ((lo_carries.to_integral()) >> 128);
                 auto c_first = w_to_16(c_first_i);
-                zkevm_word_type c_second_i = (typename FieldType::integral_type(hi_carries.to_integral()) + c_first_i) >> 128;
+
+                zkevm_word_type c_second_i = (((hi_carries + c_first_i).to_integral()) >> 128);
                 auto c_second = w_to_16(c_second_i);
+
                 C3[3] = c_first[15]; C3[2] = c_first[14]; C3[1] = c_first[13]; C3[0] = c_first[12];
                 C2 = c_first[11];
                 C1[3] = c_second[15]; C1[2] = c_second[14]; C1[1] = c_second[13]; C1[0] = c_second[12];

@@ -51,9 +51,9 @@
 // #include <nil/blueprint/zkevm_bbf/small_field/opcodes/calldataload.hpp>
 // #include <nil/blueprint/zkevm_bbf/small_field/opcodes/callvalue.hpp>
 // #include <nil/blueprint/zkevm_bbf/small_field/opcodes/iszero.hpp>
-// #include <nil/blueprint/zkevm_bbf/small_field/opcodes/mul.hpp>
+#include <nil/blueprint/zkevm_bbf/small_field/opcodes/mul.hpp>
 // #include <nil/blueprint/zkevm_bbf/small_field/opcodes/not.hpp>
- #include <nil/blueprint/zkevm_bbf/small_field/opcodes/padding.hpp>
+#include <nil/blueprint/zkevm_bbf/small_field/opcodes/padding.hpp>
 // #include <nil/blueprint/zkevm_bbf/small_field/opcodes/jump.hpp>
 // #include <nil/blueprint/zkevm_bbf/small_field/opcodes/jumpi.hpp>
 // #include <nil/blueprint/zkevm_bbf/small_field/opcodes/dupx.hpp>
@@ -105,7 +105,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
 
         opcodes[zkevm_opcode::STOP] = std::make_shared<zkevm_stop_operation<BlueprintFieldType>>();
         // opcodes[zkevm_opcode::ADD] = std::make_shared<zkevm_add_sub_operation<BlueprintFieldType>>(true);
-        // opcodes[zkevm_opcode::MUL] = std::make_shared<zkevm_mul_operation<BlueprintFieldType>>();
+        opcodes[zkevm_opcode::MUL] = std::make_shared<zkevm_mul_operation<BlueprintFieldType>>();
         // opcodes[zkevm_opcode::SUB] = std::make_shared<zkevm_add_sub_operation<BlueprintFieldType>>(false);
         // opcodes[zkevm_opcode::DIV] = std::make_shared<zkevm_div_mod_operation<BlueprintFieldType>>(true);
         // opcodes[zkevm_opcode::SDIV] = std::make_shared<zkevm_sdiv_smod_operation<BlueprintFieldType>>(true);
