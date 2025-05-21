@@ -161,9 +161,9 @@ public:
                 hash_input.emplace(hash_input.begin(), rlp_node_prefix0);
             }
 
-            for(std::size_t i = 0; i < hash_input.size(); i++) {
-                std::cout << "hash_input[" << i << "] = " << std::hex << unsigned(hash_input[i]) << std::dec << std::endl;
-            }
+            // for(std::size_t i = 0; i < hash_input.size(); i++) {
+            //     std::cout << "hash_input[" << i << "] = " << std::hex << unsigned(hash_input[i]) << std::dec << std::endl;
+            // }
 
             std::cout << "node_key_bytes = " << std::hex << node_key_bytes << std::dec << std::endl;
             std::cout << "total_value_length = " << total_value_length << std::endl;
@@ -180,6 +180,10 @@ public:
             for(std::size_t i = 0; i < 32; i++) {
                 key_part[i] = key_value[i];
                 ext_value[i] = node_value[i];
+            }
+
+            for(std::size_t i = 0; i < key_part.size(); i++) {
+                std::cout << "key_part[" << i << "] = " << std::hex << key_part[i] << std::dec << std::endl;
             }
 
             std::cout << "[" << std::endl;
@@ -200,25 +204,23 @@ public:
         // col 32: length of key part before RLP prefix (in bytes)
         allocate(key_length_bytes);
         lookup(key_length_bytes, "chunk_16_bits/8bits");
+        // col 33: length of value before RLP prefix (in bytes)
         allocate(value_length_bytes);
-        // col 33: length of ext node before RLP prefix (in bytes): 
+        // col 34: length of ext node before RLP prefix (in bytes): 
         // rlp_key_prefix || key_part || rlp_value_prefix || value
         allocate(node_length);
         lookup(node_length, "chunk_16_bits/8bits");
-        // col 34: RLP prefix of ext node key part (in bytes)
         // allocate(rlp_key_prefix);
-        // col 35: RLP prefix of ext node value (in bytes)
         // allocate(rlp_value_prefix);
-        // col 36-37: RLP prefix of ext node (in bytes)
         // for(std::size_t i = 0; i < 2; i++) {
         //     // allocate(rlp_child[i]);
         //     allocate(rlp_node[i]);
         // }
-        // col 38-69: key part of ext node (in bytes)
+        // col 35-66: key part of ext node (in bytes)
         for(std::size_t i = 0; i < 32; i++) {
             allocate(key_part[i]);
         }
-        // col 70-101: value of ext node (in bytes)
+        // col 67-98: value of ext node (in bytes)
         for(std::size_t i = 0; i < 32; i++) {
             allocate(ext_value[i]);
         }
@@ -231,10 +233,13 @@ public:
             key_length_inverse = (key_length_bytes == 1) ? 0 : key_length_bytes.inversed();
             node_length_inverse = (node_length < 55) ? 0 : node_length.inversed();
         }
+        // col 99: 
         allocate(key_length_inverse);
         TYPE key_length_is_one_byte = 1 - key_length_bytes * key_length_inverse;
         constrain(key_length_bytes * key_length_is_one_byte * (1 - key_length_bytes * key_length_is_one_byte));
+        rlp_key_prefix = (1 - key_length_is_one_byte) * (128 + key_length_bytes);
 
+        // col 100: 
         allocate(node_length_inverse);
         TYPE node_length_less_than_55 = 1 - node_length * node_length_inverse;
         constrain(node_length * node_length_less_than_55 * (node_length - node_length * node_length_less_than_55));
@@ -242,12 +247,13 @@ public:
         rlp_node[0] = 192 + node_length_less_than_55 * node_length + (1 - node_length_less_than_55) * 56; 
         rlp_node[1] = (1 - node_length_less_than_55) * node_length; 
 
-        rlp_key_prefix = (1 - key_length_is_one_byte) * (128 + key_length_bytes);
-
-        constrain(rlp_key_prefix * (128 + key_length_bytes - rlp_key_prefix) );
-        constrain(128 + value_length_bytes - rlp_value_prefix); // if rlp_child[1] is constant, we don't need to allocate and constrain it
-        constrain(rlp_node[1] * (node_length - rlp_node[1]) );
+        // constrain(rlp_key_prefix * (128 + key_length_bytes - rlp_key_prefix) );
+        constrain(rlp_key_prefix - ( (1 - key_length_is_one_byte) * (128 + key_length_bytes) ));
+        // constrain(128 + value_length_bytes - rlp_value_prefix); // if rlp_child[1] is constant, we don't need to allocate and constrain it
+        constrain(rlp_node[1] - ( (1 - node_length_less_than_55) * node_length ));
+        constrain(rlp_node[0] - ( 192 + node_length_less_than_55 * node_length + (1 - node_length_less_than_55) * 56 ));
         constrain((192 + node_length - rlp_node[0]) * (247 + node_num_of_bytes - rlp_node[0]) );
+        constrain(node_length - (1 - key_length_is_one_byte) - key_length_bytes - (value_length_bytes + 1));
     }
 };
 } // namespace nil::blueprint::bbf
