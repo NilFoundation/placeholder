@@ -59,9 +59,9 @@ in stdenv.mkDerivation rec {
   doCheck = true;
 
   test_lines = buildTestRunLines {
-    binary = "./parallel-crypto3/libs/parallel-blueprint/test/blueprint_multi_thread_zkevm_bbf_hardhat_test";
+    binary = "./parallel-crypto3/libs/parallel-blueprint/test/blueprint_multi_thread_zkevm_bbf_debugtt_test";
 
-    test_suite = "zkevm_bbf_hardhat";
+    test_suite = "zkevm_bbf_debugtt";
 
     test_runs = {
 
@@ -75,8 +75,8 @@ in stdenv.mkDerivation rec {
         "zkevm"
       ];
 
-      minimal_math = [ "zkevm" "exp" "copy" "keccak" "bytecode" "rw" "call_comit" ];
-      try_catch = [ "zkevm" "exp" "copy" "keccak" "bytecode" "rw" "call_comit" ];
+      minimal_math = [ "zkevm" "exp" "copy" "keccak" "bytecode" "rw"  ];
+      try_catch = [ "zkevm" "exp" "copy" "keccak" "bytecode" "rw" ];
 
       # Need traces in new format
       # calldatacopy = [ "copy" "rw" "bytecode" "zkevm" "exp" "keccak"];

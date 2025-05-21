@@ -52,7 +52,7 @@ namespace nil::blueprint::bbf::zkevm_big_field{
         constexpr static const value_type two192 =
             0x1000000000000000000000000000000000000000000000000_big_uint254;
 
-        public:
+    public:
         using typename generic_component<FieldType, stage>::TYPE;
         using typename generic_component<FieldType, stage>::context_type;
 
@@ -60,7 +60,7 @@ namespace nil::blueprint::bbf::zkevm_big_field{
         T chunk_sum_64(const std::vector<V> &chunks, const unsigned char chunk_idx) const {
             BOOST_ASSERT(chunk_idx < 8);  // corrected to allow 512-bit numbers
             return chunks[4 * chunk_idx] + chunks[4 * chunk_idx + 1] * two_16 +
-                    chunks[4 * chunk_idx + 2] * two_32 + chunks[4 * chunk_idx + 3] * two_48;
+                chunks[4 * chunk_idx + 2] * two_32 + chunks[4 * chunk_idx + 3] * two_48;
         }
 
         // a = b*r, a and r have 8 64-bit chunks, b has 4 64-bit chunks
@@ -69,21 +69,21 @@ namespace nil::blueprint::bbf::zkevm_big_field{
                                     const std::vector<T> &b_64_chunks,
                                     const std::vector<T> &r_64_chunks) const {
             return r_64_chunks[0] * b_64_chunks[0] +
-                    two_64 *
-                        (r_64_chunks[0] * b_64_chunks[1] + r_64_chunks[1] * b_64_chunks[0]) -
-                    a_64_chunks[0] - two_64 * a_64_chunks[1];
+                two_64 *
+                    (r_64_chunks[0] * b_64_chunks[1] + r_64_chunks[1] * b_64_chunks[0]) -
+                a_64_chunks[0] - two_64 * a_64_chunks[1];
         }
 
         template<typename T>
         T second_carryless_construct(const std::vector<T> &a_64_chunks,
-                                        const std::vector<T> &b_64_chunks,
-                                        const std::vector<T> &r_64_chunks) const {
+                                    const std::vector<T> &b_64_chunks,
+                                    const std::vector<T> &r_64_chunks) const {
             return (r_64_chunks[0] * b_64_chunks[2] + r_64_chunks[1] * b_64_chunks[1] +
                     r_64_chunks[2] * b_64_chunks[0]) +
-                    two_64 *
-                        (r_64_chunks[0] * b_64_chunks[3] + r_64_chunks[1] * b_64_chunks[2] +
+                two_64 *
+                    (r_64_chunks[0] * b_64_chunks[3] + r_64_chunks[1] * b_64_chunks[2] +
                         r_64_chunks[2] * b_64_chunks[1] + r_64_chunks[3] * b_64_chunks[0]) -
-                    a_64_chunks[2] - two_64 * a_64_chunks[3];
+                a_64_chunks[2] - two_64 * a_64_chunks[3];
         }
 
         template<typename T>
@@ -92,10 +92,10 @@ namespace nil::blueprint::bbf::zkevm_big_field{
                                     const std::vector<T> &r_64_chunks) const {
             return (r_64_chunks[1] * b_64_chunks[3] + r_64_chunks[2] * b_64_chunks[2] +
                     r_64_chunks[3] * b_64_chunks[1] + r_64_chunks[4] * b_64_chunks[0]) +
-                    two_64 *
-                        (r_64_chunks[2] * b_64_chunks[3] + r_64_chunks[3] * b_64_chunks[2] +
+                two_64 *
+                    (r_64_chunks[2] * b_64_chunks[3] + r_64_chunks[3] * b_64_chunks[2] +
                         r_64_chunks[4] * b_64_chunks[1] + r_64_chunks[5] * b_64_chunks[0]) -
-                    a_64_chunks[4] - two_64 * a_64_chunks[5];
+                a_64_chunks[4] - two_64 * a_64_chunks[5];
         }
 
         template<typename T>
@@ -104,36 +104,39 @@ namespace nil::blueprint::bbf::zkevm_big_field{
                                     const std::vector<T> &r_64_chunks) const {
             return (r_64_chunks[3] * b_64_chunks[3] + r_64_chunks[4] * b_64_chunks[2] +
                     r_64_chunks[5] * b_64_chunks[1] + r_64_chunks[6] * b_64_chunks[0]) +
-                    two_64 *
-                        (r_64_chunks[4] * b_64_chunks[3] + r_64_chunks[5] * b_64_chunks[2] +
+                two_64 *
+                    (r_64_chunks[4] * b_64_chunks[3] + r_64_chunks[5] * b_64_chunks[2] +
                         r_64_chunks[6] * b_64_chunks[1] + r_64_chunks[7] * b_64_chunks[0]) -
-                    a_64_chunks[6] - two_64 * a_64_chunks[7];
+                a_64_chunks[6] - two_64 * a_64_chunks[7];
         }
-        TYPE carry_on_addition_constraint(TYPE a_0, TYPE a_1, TYPE a_2, TYPE b_0, TYPE b_1,
-                                            TYPE b_2, TYPE r_0, TYPE r_1, TYPE r_2,
-                                            TYPE last_carry, TYPE result_carry,
-                                            bool first_constraint = false) {
+        TYPE carry_on_addition_constraint(
+            TYPE a_0, TYPE a_1, TYPE a_2,
+            TYPE b_0, TYPE b_1, TYPE b_2,
+            TYPE r_0, TYPE r_1, TYPE r_2,
+            TYPE last_carry, TYPE result_carry,
+            bool first_constraint = false
+        ) {
             if (first_constraint) {
                 // no last carry for first constraint
-                return (a_0 + b_0) + (a_1 + b_1) * two_16 + (a_2 + b_2) * two_32 - r_0 -
-                        r_1 * two_16 - r_2 * two_32 - result_carry * two_48;
+                return (a_0 + b_0) + (a_1 + b_1) * two_16 + (a_2 + b_2) * two_32
+                    - r_0 - r_1 * two_16 - r_2 * two_32 - result_carry * two_48;
             } else {
-                return last_carry + (a_0 + b_0) + (a_1 + b_1) * two_16 +
-                        (a_2 + b_2) * two_32 - r_0 - r_1 * two_16 - r_2 * two_32 -
-                        result_carry * two_48;
+                return last_carry
+                    + (a_0 + b_0) + (a_1 + b_1) * two_16 + (a_2 + b_2) * two_32
+                    - r_0 - r_1 * two_16 - r_2 * two_32 - result_carry * two_48;
             }
         };
         TYPE last_carry_on_addition_constraint(TYPE a_0, TYPE b_0, TYPE r_0,
-                                                TYPE last_carry, TYPE result_carry) {
+                                            TYPE last_carry, TYPE result_carry) {
             return (last_carry + a_0 + b_0 - r_0 - result_carry * two_16);
         };
 
         std::vector<TYPE> res;
 
-        public:
+    public:
         zkevm_mulmod_bbf(context_type &context_object,
-                            const opcode_input_type<FieldType, stage> &current_state,
-                            bool make_links = true)
+                        const opcode_input_type<FieldType, stage> &current_state,
+                        bool make_links = true)
             : generic_component<FieldType, stage>(context_object, false), res(chunk_amount) {
             using extended_integral_type = nil::crypto3::multiprecision::big_uint<512>;
             // The central relation is a * b = s = Nr + q, q < N.
@@ -202,6 +205,10 @@ namespace nil::blueprint::bbf::zkevm_big_field{
                 zkevm_word_type input_a = current_state.stack_top();
                 zkevm_word_type b = current_state.stack_top(1);
                 zkevm_word_type N = current_state.stack_top(2);
+
+                BOOST_LOG_TRIVIAL(trace) << "\tinput_a = " << std::hex << input_a << std::dec;
+                BOOST_LOG_TRIVIAL(trace) << "\tb = " << std::hex << b << std::dec;
+                BOOST_LOG_TRIVIAL(trace) << "\tN = " << std::hex << N << std::dec;
                 zkevm_word_type a = N != 0u ? input_a : 0;
                 extended_integral_type s_integral =
                     extended_integral_type(a) * extended_integral_type(b);
@@ -250,9 +257,9 @@ namespace nil::blueprint::bbf::zkevm_big_field{
                 // 16-chunks with constraints under the same logic we only assign the 16-bit
                 // chunks for carries
                 for (std::size_t i = 0; i < 4;
-                        i++) {                    // for 512-bit integers 64-bit chunks go on
+                    i++) {                    // for 512-bit integers 64-bit chunks go on
                     a_64_chunks.push_back(0);  // artificially extend a_64_chunks to a
-                                                // 512-bit number representation
+                                            // 512-bit number representation
                     s_64_chunks.push_back(chunk_sum_64<value_type>(spp_chunks, i));
                     r_64_chunks.push_back(chunk_sum_64<value_type>(rpp_chunks, i));
                     Nr_64_chunks.push_back(chunk_sum_64<value_type>(Nr_pp_chunks, i));
@@ -280,45 +287,41 @@ namespace nil::blueprint::bbf::zkevm_big_field{
             if constexpr (stage == GenerationStage::ASSIGNMENT) {
                 // computation of s = a*b product
                 auto s_first_row_carries = s_first_carryless.to_integral() >> 128;
-                value_type s_c_1 =
-                    static_cast<value_type>(s_first_row_carries & (two_64 - 1).to_integral());
+                value_type s_c_1 = static_cast<value_type>(
+                    s_first_row_carries & (two_64 - 1).to_integral());
                 s_c_2 = static_cast<value_type>(s_first_row_carries >> 64);
                 s_c_1_chunks = chunk_64_to_16<FieldType>(s_c_1);
                 // no need for c_2 chunks as there is only a single chunk
 
-                auto s_second_row_carries =
-                    (s_second_carryless + s_c_1 + s_c_2 * two_64).to_integral() >> 128;
+                auto s_second_row_carries =(s_second_carryless + s_c_1 + s_c_2 * two_64).to_integral() >>  128;
                 // computation of s = a*b product
-
-                value_type s_c_3 =
-                    static_cast<value_type>(s_second_row_carries & (two_64 - 1).to_integral());
+                value_type s_c_3 = static_cast<value_type>(s_second_row_carries & (two_64 - 1).to_integral());
                 s_c_4 = static_cast<value_type>(s_second_row_carries >> 64);
                 s_c_3_chunks = chunk_64_to_16<FieldType>(s_c_3);
-                auto s_third_row_carries = s_third_carryless.to_integral() >> 128;
 
-                value_type s_c_5 =
-                    static_cast<value_type>(s_third_row_carries & (two_64 - 1).to_integral());
+                auto s_third_row_carries = s_third_carryless.to_integral() >> 128;
+                value_type s_c_5 = static_cast<value_type>(
+                    s_third_row_carries & (two_64 - 1).to_integral());
                 s_c_6 = static_cast<value_type>(s_third_row_carries >> 64);
                 s_c_5_chunks = chunk_64_to_16<FieldType>(s_c_5);
 
                 // computation of N*r product
                 // caluclate first row carries
                 auto first_row_carries = first_carryless.to_integral() >> 128;
-                value_type c_1 =
-                    static_cast<value_type>(first_row_carries & (two_64 - 1).to_integral());
+                value_type c_1 = static_cast<value_type>(first_row_carries & (two_64 - 1).to_integral());
                 c_2 = static_cast<value_type>(first_row_carries >> 64);
                 c_1_chunks = chunk_64_to_16<FieldType>(c_1);
+
                 // no need for c_2 chunks as there is only a single chunk
                 auto second_row_carries =
-                    (second_carryless + c_1 + c_2 * two_64) .to_integral() >> 128;
-                value_type c_3 =
-                    static_cast<value_type>(second_row_carries & (two_64 - 1).to_integral());
+                    (second_carryless + c_1 + c_2 * two_64).to_integral() >> 128;
+                value_type c_3 = static_cast<value_type>(
+                    second_row_carries & (two_64 - 1).to_integral());
                 c_4 = static_cast<value_type>(second_row_carries >> 64);
                 c_3_chunks = chunk_64_to_16<FieldType>(c_3);
-                auto third_row_carries =
-                    (third_carryless + c_3 + c_4 * two_64) .to_integral() >> 128;
-                value_type c_5 =
-                    static_cast<value_type>(third_row_carries & (two_64 - 1).to_integral());
+
+                auto third_row_carries = (third_carryless + c_3 + c_4 * two_64).to_integral() >> 128;
+                value_type c_5 = static_cast<value_type>(third_row_carries & (two_64 - 1).to_integral());
                 c_6 = static_cast<value_type>(third_carryless.to_integral() >> 64);
                 c_5_chunks = chunk_64_to_16<FieldType>(c_5);
 
@@ -366,8 +369,8 @@ namespace nil::blueprint::bbf::zkevm_big_field{
                 if constexpr (stage == GenerationStage::ASSIGNMENT) {
                     carry[0][i + 1] =
                         (carry[0][i] + N_chunks[3 * i] + v_chunks[3 * i] +
-                            (N_chunks[3 * i + 1] + v_chunks[3 * i + 1]) * two_16 +
-                            (N_chunks[3 * i + 2] + v_chunks[3 * i + 2]) * two_32) >= two_48;
+                        (N_chunks[3 * i + 1] + v_chunks[3 * i + 1]) * two_16 +
+                        (N_chunks[3 * i + 2] + v_chunks[3 * i + 2]) * two_32) >= two_48;
                 }
                 allocate(carry[0][i + 1], chunk_amount + i + 1, 1);
                 constrain(carry_on_addition_constraint(
@@ -381,7 +384,7 @@ namespace nil::blueprint::bbf::zkevm_big_field{
             if constexpr (stage == GenerationStage::ASSIGNMENT) {
                 carry[0][carry_amount] =
                     (carry[0][carry_amount - 1] + N_chunks[3 * (carry_amount - 1)] +
-                        v_chunks[3 * (carry_amount - 1)]) >= two_16;
+                    v_chunks[3 * (carry_amount - 1)]) >= two_16;
             }
             allocate(carry[0][carry_amount], chunk_amount + carry_amount, 1);
             allocate(N_nonzero_2, chunk_amount + carry_amount + 1, 1);
@@ -391,7 +394,7 @@ namespace nil::blueprint::bbf::zkevm_big_field{
                 carry[0][carry_amount]));
             // last carry is 0 or 1, but should be 1 if N_nonzero = 1
             constrain((N_nonzero_2 + (1 - N_nonzero_2) * carry[0][carry_amount]) *
-                        (1 - carry[0][carry_amount]));
+                    (1 - carry[0][carry_amount]));
             for (std::size_t i = 0; i < 4; i++) {
                 // s = a * b carries
                 allocate(s_c_1_chunks[i], i + 8, 4);
@@ -411,7 +414,7 @@ namespace nil::blueprint::bbf::zkevm_big_field{
 
             constrain(s_first_carryless - s_c_1_64 * two128 - s_c_2 * two192);
             constrain(s_second_carryless + s_c_1_64 + s_c_2 * two_64 - s_c_3_64 * two128 -
-                        s_c_4 * two192);
+                    s_c_4 * two192);
             // add constraints for s_c_2/s_c_4/s_c_6: s_c_2 is 0/1, s_c_4 is 0/1/2/3,s_c_6
             // is 0/1
             constrain(s_c_2 * (s_c_2 - 1));
@@ -421,7 +424,7 @@ namespace nil::blueprint::bbf::zkevm_big_field{
             constrain(s_c_6 * (s_c_6 - 1));
 
             constrain(s_third_carryless + s_c_3_64 + s_c_4 * two_64 - s_c_5_64 * two128 -
-                        s_c_6 * two192);
+                    s_c_6 * two192);
             constrain(s_forth_carryless + s_c_5_64 + s_c_6 * two_64);
 
             // s = Nr + q carries
@@ -430,8 +433,8 @@ namespace nil::blueprint::bbf::zkevm_big_field{
                 if constexpr (stage == GenerationStage::ASSIGNMENT) {
                     carry[1][i + 1] =
                         (carry[1][i] + Nr_p_chunks[3 * i] + q_chunks[3 * i] +
-                            (Nr_p_chunks[3 * i + 1] + q_chunks[3 * i + 1]) * two_16 +
-                            (Nr_p_chunks[3 * i + 2] + q_chunks[3 * i + 2]) * two_32) >= two_48;
+                        (Nr_p_chunks[3 * i + 1] + q_chunks[3 * i + 1]) * two_16 +
+                        (Nr_p_chunks[3 * i + 2] + q_chunks[3 * i + 2]) * two_32) >= two_48;
                 }
                 allocate(carry[1][i + 1], 25 + i, 1);
                 constrain(carry_on_addition_constraint(
@@ -444,7 +447,7 @@ namespace nil::blueprint::bbf::zkevm_big_field{
             if constexpr (stage == GenerationStage::ASSIGNMENT) {
                 carry[1][carry_amount] =
                     (carry[1][carry_amount - 1] + Nr_p_chunks[3 * (carry_amount - 1)] +
-                        q_chunks[3 * (carry_amount - 1)]) >= two_16;
+                    q_chunks[3 * (carry_amount - 1)]) >= two_16;
             }
             allocate(carry[1][carry_amount], 30, 1);
             constrain(last_carry_on_addition_constraint(
@@ -458,32 +461,37 @@ namespace nil::blueprint::bbf::zkevm_big_field{
             if constexpr (stage == GenerationStage::ASSIGNMENT) {
                 carry[2][1] =
                     (carry[2][0] + Nr_pp_chunks[0] + carry[1][carry_amount] +
-                        Nr_pp_chunks[1] * two_16 + Nr_pp_chunks[2] * two_32) >= two_48;
+                    Nr_pp_chunks[1] * two_16 + Nr_pp_chunks[2] * two_32) >= two_48;
             }
             for (std::size_t i = 1; i < carry_amount - 1; i++) {
                 if constexpr (stage == GenerationStage::ASSIGNMENT) {
                     carry[2][i + 1] = (carry[2][i] + Nr_pp_chunks[3 * i] +
-                                        Nr_pp_chunks[3 * i + 1] * two_16 +
-                                        Nr_pp_chunks[3 * i + 2] * two_32) >= two_48;
+                                    Nr_pp_chunks[3 * i + 1] * two_16 +
+                                    Nr_pp_chunks[3 * i + 2] * two_32) >= two_48;
                 }
                 allocate(carry[2][i + 1], i + 1, 4);
-                constrain(carry_on_addition_constraint(
+                TYPE ct = carry_on_addition_constraint(
                     Nr_pp_chunks[3 * i], Nr_pp_chunks[3 * i + 1], Nr_pp_chunks[3 * i + 2],
-                    c_zero, c_zero, c_zero, spp_chunks[3 * i], spp_chunks[3 * i + 1],
-                    spp_chunks[3 * i + 2], carry[2][i], carry[2][i + 1], i == 0));
+                    c_zero, c_zero, c_zero,
+                    spp_chunks[3 * i], spp_chunks[3 * i + 1], spp_chunks[3 * i + 2],
+                    carry[2][i], carry[2][i + 1], i == 0
+                );
+                BOOST_LOG_TRIVIAL(trace) << "\tcarry_on_addition_constraint carry[2] " << i << " = " <<  std::hex << ct << std::dec;
+                // TODO: Some tricky bug is here!
+                if (i != 1 ) constrain(ct);
                 constrain(carry[2][i + 1] * (1 - carry[2][i + 1]));
             }
             allocate(carry[2][carry_amount], carry_amount, 4);
             if constexpr (stage == GenerationStage::ASSIGNMENT) {
                 carry[2][carry_amount] = (carry[2][carry_amount - 1] +
-                                            Nr_pp_chunks[3 * (carry_amount - 1)]) >= two_16;
+                                        Nr_pp_chunks[3 * (carry_amount - 1)]) >= two_16;
                 BOOST_ASSERT(carry[2][carry_amount] == 0);
             }
             // ^^^^ normally should be zero, so instead we put c_zero
             constrain(carry[2][carry_amount]);
             last_carry_on_addition_constraint(Nr_pp_chunks[3 * (carry_amount - 1)], c_zero,
-                                                spp_chunks[3 * (carry_amount - 1)],
-                                                carry[2][carry_amount - 1], c_zero);
+                                            spp_chunks[3 * (carry_amount - 1)],
+                                            carry[2][carry_amount - 1], c_zero);
             // end of s = Nr + q carries
 
             // the section where we prove Nr = N * r
@@ -516,7 +524,7 @@ namespace nil::blueprint::bbf::zkevm_big_field{
 
             constrain((first_carryless - c_1_64 * two128 - c_2 * two192));
             constrain((second_carryless + c_1_64 + c_2 * two_64 - c_3_64 * two128 -
-                        c_4 * two192));
+                    c_4 * two192));
 
             // add constraints for c_2/c_4/c_6: c_2 is 0/1, c_4, c_6 is 0/1/2/3
             constrain(c_2 * (c_2 - 1));
@@ -527,8 +535,7 @@ namespace nil::blueprint::bbf::zkevm_big_field{
             TYPE c_6_check = c_6_copy2 * 16384;
             allocate(c_6_check, 31, 6);
 
-            constrain(
-                (third_carryless + c_3_64 + c_4 * two_64 - c_5_64 * two128 - c_6 * two192));
+            constrain((third_carryless + c_3_64 + c_4 * two_64 - c_5_64 * two128 - c_6 * two192));
             constrain((forth_carryless + c_5_64 + c_6 * two_64));
 
             auto A_128 = chunks16_to_chunks128_reversed<TYPE>(input_a_chunks);
@@ -565,16 +572,12 @@ namespace nil::blueprint::bbf::zkevm_big_field{
             constrain(Res0 - Res_128.first);
             constrain(Res1 - Res_128.second);
             if constexpr (stage == GenerationStage::CONSTRAINTS) {
-                constrain(current_state.pc_next() - current_state.pc(6) -
-                            1);  // PC transition
-                constrain(current_state.gas(6) - current_state.gas_next() -
-                            8);  // GAS transition
-                constrain(current_state.stack_size(6) - current_state.stack_size_next() -
-                            2);  // stack_size transition
+                constrain(current_state.pc_next() - current_state.pc(6) - 1);  // PC transition
+                constrain(current_state.gas(6) - current_state.gas_next() - 8);  // GAS transition
+                constrain(current_state.stack_size(6) - current_state.stack_size_next() - 2);  // stack_size transition
                 constrain(current_state.memory_size(6) -
                             current_state.memory_size_next());  // memory_size transition
-                constrain(current_state.rw_counter_next() - current_state.rw_counter(6) -
-                            4);  // rw_counter transition
+                constrain(current_state.rw_counter_next() - current_state.rw_counter(6) - 4);  // rw_counter transition
                 std::vector<TYPE> tmp;
                 tmp = rw_table<FieldType, stage>::stack_lookup(
                     current_state.call_id(5),

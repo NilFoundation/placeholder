@@ -26,7 +26,7 @@ namespace nil::blueprint::bbf::zkevm_big_field{
             TYPE diff;
             TYPE diff31;
             if constexpr( stage == GenerationStage::ASSIGNMENT ){
-                memory_words = integral_type(current_state.memory_size() + 21) / 32;
+                memory_words = integral_type(current_state.memory_size() + 31) / 32;
                 diff = memory_words * 32 - current_state.memory_size();
                 diff31 = 31 - diff;
             }
