@@ -50,9 +50,16 @@ namespace nil::blueprint::bbf::zkevm_small_field{
         std::vector<TYPE> state_table_selector;
         std::vector<TYPE> internal_counter;
 
-        static std::size_t get_witness_amount(){ return 5; }
+        static std::size_t get_witness_amount(
+            std::size_t instances_timeline
+        ){ return 5 * instances_timeline; }
 
-        timeline_table(context_type &context_object, const input_type &input, std::size_t max_timeline)
+        timeline_table(
+            context_type &context_object,
+            const input_type &input,
+            std::size_t max_timeline,
+            std::size_t instances_timeline
+        )
             :generic_component<FieldType,stage>(context_object),
             rw_id(max_timeline),
             rw_8_table_selector(max_timeline),

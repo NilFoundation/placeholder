@@ -86,11 +86,12 @@ namespace nil::blueprint::bbf::zkevm_small_field{
         }
 
         static void allocate_public_inputs(
-            context_type &context, input_type &input, std::size_t max_rw_size
+            context_type &context, input_type &input, std::size_t max_rw_size, std::size_t instances_rw_8
         ) {}
 
         rw_8(context_type &context_object, const input_type &input,
-            std::size_t max_rw_size
+            std::size_t max_rw_size,
+            std::size_t instances_rw_8
         ) :generic_component<FieldType,stage>(context_object) {
             std::size_t current_column = 0;
 

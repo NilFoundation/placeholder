@@ -73,7 +73,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
 
         static table_params get_minimal_requirements(
             std::size_t max_rw_size,
-            std::size_t max_state_size
+            std::size_t instances_rw_256
         ) {
             std::size_t witness_amount = rw_256<FieldType, stage>::get_witness_amount();
             BOOST_LOG_TRIVIAL(info) << "RW circuit witness amount = " << witness_amount;
@@ -81,16 +81,16 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                 .witnesses = witness_amount,
                 .public_inputs = 0,
                 .constants = 0,
-                .rows = max_rw_size + max_state_size
+                .rows = max_rw_size
             };
         }
 
         static void allocate_public_inputs(
-            context_type &context, input_type &input, std::size_t max_rw_size, std::size_t max_state
+            context_type &context, input_type &input, std::size_t max_rw_size, std::size_t instances_rw_256
         ) {}
 
         rw_256(context_type &context_object, const input_type &input,
-            std::size_t max_rw_size
+            std::size_t max_rw_size, std::size_t instances_rw_256
         ) :generic_component<FieldType,stage>(context_object) {
             std::size_t current_column = 0;
 

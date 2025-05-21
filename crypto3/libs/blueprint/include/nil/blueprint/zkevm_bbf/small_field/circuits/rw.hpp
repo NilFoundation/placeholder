@@ -81,7 +81,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                 rw_8_type::get_witness_amount()
                 + rw_256_type::get_witness_amount()
                 + state_timeline_table_type::get_witness_amount()
-                + timeline_table_type::get_witness_amount()
+                + timeline_table_type::get_witness_amount(instances_rw_8 + instances_rw_256 + 1)
                 + 6;
             BOOST_LOG_TRIVIAL(info) << "RW circuit witness amount = " << witness_amount;
             return {
@@ -120,22 +120,23 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             std::vector<std::size_t> rw_8_area;
             for( std::size_t i = 0; i < rw_8_type::get_witness_amount(); i++ ) rw_8_area.push_back(current_column++);
             context_type rw_8_ct = context_object.subcontext(rw_8_area,0,max_rw_size);
-            rw_8_type t8(rw_8_ct, input.rw_trace, max_rw_size);
+            rw_8_type t8(rw_8_ct, input.rw_trace, max_rw_size, instances_rw_8);
 
             std::vector<std::size_t> rw_256_area;
             for( std::size_t i = 0; i < rw_256_type::get_witness_amount(); i++ ) rw_256_area.push_back(current_column++);
             context_type rw_256_ct = context_object.subcontext(rw_256_area,0,max_rw_size);
-            rw_256_type t256(rw_256_ct, input.rw_trace, max_rw_size);
-
-            std::vector<std::size_t> timeline_table_area;
-            for( std::size_t i = 0; i < timeline_table_type::get_witness_amount(); i++ ) timeline_table_area.push_back(current_column++);
-            context_type timeline_table_ct = context_object.subcontext(timeline_table_area,0,max_rw_size + max_state);
-            timeline_table_type tt(timeline_table_ct, input.timeline, max_rw_size + max_state);
+            rw_256_type t256(rw_256_ct, input.rw_trace, max_rw_size, instances_rw_256);
 
             std::vector<std::size_t> state_timeline_table_area;
             for( std::size_t i = 0; i < state_timeline_table_type::get_witness_amount(); i++ ) state_timeline_table_area.push_back(current_column++);
             context_type state_table_ct = context_object.subcontext(state_timeline_table_area,0,max_state);
             state_timeline_table_type st(state_table_ct, input.state_trace, max_state);
+
+            std::size_t instances_timeline = instances_rw_8 + instances_rw_256 + 1;
+            std::vector<std::size_t> timeline_table_area;
+            for( std::size_t i = 0; i < timeline_table_type::get_witness_amount(instances_timeline); i++ ) timeline_table_area.push_back(current_column++);
+            context_type timeline_table_ct = context_object.subcontext(timeline_table_area,0,max_rw_size + max_state);
+            timeline_table_type tt(timeline_table_ct, input.timeline, max_rw_size, instances_timeline);
 
             if constexpr (stage == GenerationStage::CONSTRAINTS) {
                 // All stack and call_context rw operations are presented in timeline.

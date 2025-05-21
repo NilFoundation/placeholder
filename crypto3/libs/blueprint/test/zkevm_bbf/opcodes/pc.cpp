@@ -70,6 +70,16 @@ BOOST_AUTO_TEST_CASE(pc) {
     max_sizes.max_exp_rows = 500;
     max_sizes.max_exponentiations = 50;
 
+    if( circuits_to_run.empty() ) {
+        circuits_to_run.insert("zkevm");
+        circuits_to_run.insert("zkevm-wide");
+        circuits_to_run.insert("rw");
+        circuits_to_run.insert("bytecode");
+        circuits_to_run.insert("copy");
+        circuits_to_run.insert("bytecode-s");
+        circuits_to_run.insert("rw-s");
+        circuits_to_run.insert("copy-s");
+    }
     complex_opcode_test<big_field_type, small_field_type>(opcode_tester, max_sizes);
 }
 BOOST_AUTO_TEST_SUITE_END()
