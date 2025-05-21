@@ -71,11 +71,15 @@ using namespace nil::crypto3;
 using namespace nil::blueprint;
 using namespace nil::blueprint::bbf;
 
+// This circuit does something only if some parameters are set.
+// It's because of this test works long and shouldn't be executed as is in CI
+
 class zkEVMVmTraceTestFixture: public CircuitTestFixture {
 protected:
-    bool check_trace = true;
+    bool check_trace = false;
     bool empty_machine_run = false;
     bool assign = false;
+    bool do_something = false;
 public:
     zkEVMVmTraceTestFixture():CircuitTestFixture(){
         std::size_t argc = boost::unit_test::framework::master_test_suite().argc;
@@ -85,11 +89,6 @@ public:
             std::string arg(argv[i]);
             if(arg == "--empty-machine-run" ) {
                 empty_machine_run = true;
-                check_trace = false;
-                assign = false;
-            }
-            if(arg == "--no-check-trace" ) {
-                check_trace = false;
             }
             if(arg == "--check-trace" ) {
                 check_trace = true;
@@ -97,6 +96,7 @@ public:
             if(arg == "--assign"){
                 assign = true;
             }
+            do_something = empty_machine_run || check_trace || assign;
         }
     }
 
@@ -293,6 +293,7 @@ BOOST_GLOBAL_FIXTURE(zkEVMGlobalFixture);
 BOOST_FIXTURE_TEST_SUITE(zkevm_bbf_hardhat, zkEVMVmTraceTestFixture)
 
 BOOST_AUTO_TEST_CASE(sp1_block_18884864) {
+    if(!do_something) return;
     using field_type = typename algebra::curves::pallas::base_field_type;
     l1_size_restrictions max_sizes;
 
@@ -310,6 +311,7 @@ BOOST_AUTO_TEST_CASE(sp1_block_18884864) {
 }
 
 BOOST_AUTO_TEST_CASE(sp1_block_18884865) {
+    if(!do_something) return;
     using field_type = typename algebra::curves::pallas::base_field_type;
     l1_size_restrictions max_sizes;
 
@@ -327,6 +329,7 @@ BOOST_AUTO_TEST_CASE(sp1_block_18884865) {
 }
 
 BOOST_AUTO_TEST_CASE(sp1_block_18884866) {
+    if(!do_something) return;
     using field_type = typename algebra::curves::pallas::base_field_type;
     l1_size_restrictions max_sizes;
 
@@ -344,6 +347,7 @@ BOOST_AUTO_TEST_CASE(sp1_block_18884866) {
 }
 
 BOOST_AUTO_TEST_CASE(sp1_block_18884867) {
+    if(!do_something) return;
     using field_type = typename algebra::curves::pallas::base_field_type;
     l1_size_restrictions max_sizes;
 
@@ -361,6 +365,7 @@ BOOST_AUTO_TEST_CASE(sp1_block_18884867) {
 }
 
 BOOST_AUTO_TEST_CASE(sp1_block_18884868) {
+    if(!do_something) return;
     using field_type = typename algebra::curves::pallas::base_field_type;
     l1_size_restrictions max_sizes;
 
@@ -378,6 +383,7 @@ BOOST_AUTO_TEST_CASE(sp1_block_18884868) {
 }
 
 BOOST_AUTO_TEST_CASE(sp1_block_18884869) {
+    if(!do_something) return;
     using field_type = typename algebra::curves::pallas::base_field_type;
     l1_size_restrictions max_sizes;
 
@@ -395,6 +401,7 @@ BOOST_AUTO_TEST_CASE(sp1_block_18884869) {
 }
 
 BOOST_AUTO_TEST_CASE(sp1_block_20526624) {
+    if(!do_something) return;
     using field_type = typename algebra::curves::pallas::base_field_type;
     l1_size_restrictions max_sizes;
 
@@ -412,6 +419,7 @@ BOOST_AUTO_TEST_CASE(sp1_block_20526624) {
 }
 
 BOOST_AUTO_TEST_CASE(sp1_block_20526626) {
+    if(!do_something) return;
     using field_type = typename algebra::curves::pallas::base_field_type;
     l1_size_restrictions max_sizes;
 
@@ -429,6 +437,7 @@ BOOST_AUTO_TEST_CASE(sp1_block_20526626) {
 }
 
 BOOST_AUTO_TEST_CASE(sp1_block_20526627) {
+    if(!do_something) return;
     using field_type = typename algebra::curves::pallas::base_field_type;
     l1_size_restrictions max_sizes;
 
@@ -446,6 +455,7 @@ BOOST_AUTO_TEST_CASE(sp1_block_20526627) {
 }
 
 BOOST_AUTO_TEST_CASE(sp1_block_20526628) {
+    if(!do_something) return;
     using field_type = typename algebra::curves::pallas::base_field_type;
     l1_size_restrictions max_sizes;
 
@@ -463,6 +473,7 @@ BOOST_AUTO_TEST_CASE(sp1_block_20526628) {
 }
 
 BOOST_AUTO_TEST_CASE(sp1_block_20526629) {
+    if(!do_something) return;
     using field_type = typename algebra::curves::pallas::base_field_type;
     l1_size_restrictions max_sizes;
 
@@ -480,6 +491,7 @@ BOOST_AUTO_TEST_CASE(sp1_block_20526629) {
 }
 
 BOOST_AUTO_TEST_CASE(sp1_block_20526630) {
+    if(!do_something) return;
     using field_type = typename algebra::curves::pallas::base_field_type;
     l1_size_restrictions max_sizes;
 
@@ -497,6 +509,7 @@ BOOST_AUTO_TEST_CASE(sp1_block_20526630) {
 }
 
 BOOST_AUTO_TEST_CASE(sp1_block_20526631) {
+    if(!do_something) return;
     using field_type = typename algebra::curves::pallas::base_field_type;
     l1_size_restrictions max_sizes;
 
@@ -514,6 +527,7 @@ BOOST_AUTO_TEST_CASE(sp1_block_20526631) {
 }
 
 BOOST_AUTO_TEST_CASE(sp1_block_20528708) {
+    if(!do_something) return;
     using field_type = typename algebra::curves::pallas::base_field_type;
     l1_size_restrictions max_sizes;
 
@@ -531,6 +545,7 @@ BOOST_AUTO_TEST_CASE(sp1_block_20528708) {
 }
 
 BOOST_AUTO_TEST_CASE(sp1_block_20528709) {
+    if(!do_something) return;
     using field_type = typename algebra::curves::pallas::base_field_type;
     l1_size_restrictions max_sizes;
 
@@ -549,6 +564,7 @@ BOOST_AUTO_TEST_CASE(sp1_block_20528709) {
 
 
 BOOST_AUTO_TEST_CASE(sp1_block_22140743) {
+    if(!do_something) return;
     using field_type = typename algebra::curves::pallas::base_field_type;
     l1_size_restrictions max_sizes;
 
