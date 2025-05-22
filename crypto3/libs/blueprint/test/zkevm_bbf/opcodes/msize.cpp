@@ -27,30 +27,14 @@
 #include <boost/assert.hpp>
 #include <boost/test/unit_test.hpp>
 
-#include <nil/crypto3/algebra/curves/pallas.hpp>
-#include <nil/crypto3/algebra/fields/arithmetic_params/pallas.hpp>
-#include <nil/crypto3/algebra/curves/vesta.hpp>
-#include <nil/crypto3/algebra/fields/arithmetic_params/vesta.hpp>
+#include <nil/crypto3/algebra/curves/alt_bn128.hpp>
+#include <nil/crypto3/algebra/fields/arithmetic_params/alt_bn128.hpp>
+#include <nil/crypto3/algebra/fields/babybear.hpp>
 #include <nil/crypto3/algebra/random_element.hpp>
 
 #include <nil/crypto3/hash/algorithm/hash.hpp>
 #include <nil/crypto3/hash/sha2.hpp>
 #include <nil/crypto3/hash/keccak.hpp>
-
-#include <nil/blueprint/zkevm_bbf/types/hashed_buffers.hpp>
-#include <nil/blueprint/zkevm_bbf/types/rw_operation.hpp>
-#include <nil/blueprint/zkevm_bbf/types/copy_event.hpp>
-#include <nil/blueprint/zkevm_bbf/types/zkevm_state.hpp>
-#include <nil/blueprint/zkevm_bbf/input_generators/opcode_tester.hpp>
-#include <nil/blueprint/zkevm_bbf/input_generators/opcode_tester_input_generator.hpp>
-
-#include <nil/blueprint/blueprint/plonk/circuit.hpp>
-#include <nil/blueprint/blueprint/plonk/assignment.hpp>
-#include <nil/blueprint/zkevm_bbf/zkevm.hpp>
-#include <nil/blueprint/zkevm_bbf/rw.hpp>
-#include <nil/blueprint/zkevm_bbf/copy.hpp>
-#include <nil/blueprint/zkevm_bbf/bytecode.hpp>
-#include <nil/blueprint/zkevm_bbf/keccak.hpp>
 
 #include "./opcode_test_fixture.hpp"
 
@@ -59,14 +43,17 @@ using namespace nil::blueprint::bbf;
 
 // Remember that in production sizes should be preset.
 // Here they are different for different tests just for fast and easy testing
+BOOST_GLOBAL_FIXTURE(zkEVMGlobalFixture);
 BOOST_FIXTURE_TEST_SUITE(zkevm_opcode_test_suite, zkEVMOpcodeTestFixture)
+    using big_field_type = typename nil::crypto3::algebra::curves::alt_bn128_254::scalar_field_type;
+    using small_field_type = typename algebra::fields::babybear;
+
 BOOST_AUTO_TEST_CASE(msize) {
-    using field_type = typename algebra::curves::pallas::base_field_type;
     zkevm_opcode_tester opcode_tester;
 
     l1_size_restrictions max_sizes;
 
-    opcode_tester.push_opcode(zkevm_opcode::MSIZE); 
+    opcode_tester.push_opcode(zkevm_opcode::MSIZE);
     opcode_tester.push_opcode(zkevm_opcode::PUSH5, hex_string_to_bytes("0x68656c6c6f"));
     opcode_tester.push_opcode(zkevm_opcode::PUSH1, hex_string_to_bytes("0x10"));
     opcode_tester.push_opcode(zkevm_opcode::MSTORE);
@@ -93,6 +80,16 @@ BOOST_AUTO_TEST_CASE(msize) {
     max_sizes.max_exp_rows = 500;
     max_sizes.max_exponentiations = 50;
 
-    complex_opcode_test<field_type>(opcode_tester, max_sizes);
+    if( circuits_to_run.empty() ) {
+        circuits_to_run.insert("zkevm");
+        circuits_to_run.insert("zkevm-wide");
+        circuits_to_run.insert("rw");
+        circuits_to_run.insert("bytecode");
+        circuits_to_run.insert("copy");
+        circuits_to_run.insert("bytecode-s");
+        circuits_to_run.insert("rw-s");
+        circuits_to_run.insert("copy-s");
+    }
+    complex_opcode_test<big_field_type, small_field_type>(opcode_tester, max_sizes);
 }
 BOOST_AUTO_TEST_SUITE_END()

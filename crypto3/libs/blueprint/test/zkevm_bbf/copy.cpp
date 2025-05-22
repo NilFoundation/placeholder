@@ -40,8 +40,8 @@
 
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
-#include <nil/blueprint/zkevm_bbf/copy.hpp>
-#include <nil/blueprint/zkevm_bbf/input_generators/hardhat_input_generator.hpp>
+#include <nil/blueprint/zkevm_bbf/big_field/circuits/copy.hpp>
+#include <nil/blueprint/zkevm_bbf/input_generators/debugtt_input_generator.hpp>
 
 #include "./circuit_test_fixture.hpp"
 
@@ -57,8 +57,8 @@ public:
         const l1_size_restrictions  &max_sizes,
         bool  expected_result = true
     ){
-        auto trace = load_hardhat_input(path);
-        nil::blueprint::bbf::zkevm_hardhat_input_generator circuit_inputs(trace);
+        auto trace = load_debugtt_input(path);
+        nil::blueprint::bbf::zkevm_debugtt_input_generator circuit_inputs(trace);
 
         using integral_type = typename field_type::integral_type;
         using value_type = typename field_type::value_type;
@@ -180,7 +180,7 @@ BOOST_AUTO_TEST_CASE(keccak){
 
 /*BOOST_AUTO_TEST_CASE(call_keccak) {
     using field_type = typename algebra::curves::pallas::base_field_type;
-    auto pt = load_hardhat_input("call_keccak.json");
+    auto pt = load_debugtt_input("call_keccak.json");
     l1_size_restrictions max_sizes;
 
     max_sizes.max_keccak_blocks = 10;
@@ -199,7 +199,7 @@ BOOST_AUTO_TEST_CASE(keccak){
 /*
 BOOST_AUTO_TEST_CASE(mstore8_contract){
     using field_type = typename algebra::curves::pallas::base_field_type;
-    auto [bytecodes, pts] = load_hardhat_input("mstore8/");
+    auto [bytecodes, pts] = load_debugtt_input("mstore8/");
     l1_size_restrictions max_sizes;
 
     max_sizes.max_keccak_blocks = 50;
@@ -214,7 +214,7 @@ BOOST_AUTO_TEST_CASE(mstore8_contract){
 
 BOOST_AUTO_TEST_CASE(meminit_contract){
     using field_type = typename algebra::curves::pallas::base_field_type;
-    auto [bytecodes, pts] = load_hardhat_input("mem_init/");
+    auto [bytecodes, pts] = load_debugtt_input("mem_init/");
     l1_size_restrictions max_sizes;
 
     max_sizes.max_keccak_blocks = 50;

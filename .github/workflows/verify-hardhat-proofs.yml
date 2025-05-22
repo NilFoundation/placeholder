@@ -1,4 +1,4 @@
-name: Verify hardhat proofs
+name: Verify debugtt proofs
 
 on:
   workflow_call:

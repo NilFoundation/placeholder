@@ -214,6 +214,36 @@ namespace nil {
                     }
 
                     std::set<std::string> lookup_table_names;
+
+                    {
+                        auto selector_id = crypto3::zk::snark::PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED;
+
+                        // global polynomial constraints
+                        std::vector<constraint_type> constraints;
+                        std::vector<std::string> names;
+                        for(const auto &[c, n] : gates.global_constraints) {
+                            constraints.push_back(c);
+                            names.push_back(n);
+                        }
+
+                        if (!constraints.empty()) {
+                            bp.add_gate(selector_id, constraints);
+                            constraint_names.insert({selector_id, std::move(names)});
+                        }
+
+                        // global lookup constraints if there are any
+                        if (!gates.global_lookup_constraints.empty()) {
+                            std::vector<lookup_constraint_type> lookup_gate;
+                            for (const auto& single_lookup_constraint : gates.global_lookup_constraints) {
+                                std::string table_name = single_lookup_constraint.first;
+                                size_t table_index = create_table(table_name, lookup_table_names, gates);
+                                lookup_gate.push_back({table_index, single_lookup_constraint.second});
+                            }
+
+                            bp.add_lookup_gate(selector_id, lookup_gate);
+                        }
+                    }
+
                     for (const auto& [selector_id, lookup_list] : gates.lookup_constraints) {
                         std::vector<lookup_constraint_type> lookup_gate;
                         for (const auto& single_lookup_constraint : lookup_list) {
@@ -253,13 +283,15 @@ namespace nil {
                         //crypto3::zk::snark::plonk_lookup_table<FieldType> table_specs;
                         plonk_lookup_table table_specs;
                         table_specs.tag_index = selector_index;
-                        table_specs.columns_number = area.first.size();
-                        std::vector<var> dynamic_lookup_cols;
-                        for(const auto& c : area.first) {
-                            // TODO: does this make sense?!
-                            dynamic_lookup_cols.push_back(var(c, 0, false, var::column_type::witness));
+
+                        table_specs.columns_number = area.first[0].size();
+                        for(const auto &cols : area.first) {
+                            table_specs.lookup_options.emplace_back();
+                            auto &option = table_specs.lookup_options.back();
+                            for (auto c : cols)
+                                option.push_back(var(c, 0, false, var::column_type::witness));
                         }
-                        table_specs.lookup_options = {dynamic_lookup_cols};
+
                         bp.define_dynamic_table(name,table_specs);
                     }
 
