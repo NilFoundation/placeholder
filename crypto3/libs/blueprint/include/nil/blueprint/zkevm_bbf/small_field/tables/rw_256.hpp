@@ -291,27 +291,6 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             TYPE stack_pointer,
             TYPE rw_counter,
             TYPE is_write,
-            std::vector<TYPE> value
-        ){
-            BOOST_ASSERT(value.size() == 16);
-            std::vector<TYPE> result = {
-                TYPE(std::size_t(rw_operation_type::stack)),
-                call_id,
-                stack_pointer,
-                rw_counter,
-                is_write
-            };
-            for( std::size_t i = 0; i < 16; i++ ){
-                result.push_back(value[i]);
-            }
-            return result;
-        }
-
-        static std::vector<TYPE> stack_16_bit_lookup(
-            TYPE call_id,
-            TYPE stack_pointer,
-            TYPE rw_counter,
-            TYPE is_write,
             std::array<TYPE,16> value
         ){
             std::vector<TYPE> result = {
@@ -324,27 +303,6 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             for( std::size_t i = 0; i < 16; i++ ){
                 result.push_back(value[i]);
             }
-            return result;
-        }
-
-        static std::vector<TYPE> stack_one_chunk_lookup(
-            TYPE call_id,
-            TYPE stack_pointer,
-            TYPE rw_counter,
-            TYPE is_write,
-            TYPE value
-        ){
-            std::vector<TYPE> result = {
-                TYPE(std::size_t(rw_operation_type::stack)),
-                call_id,
-                stack_pointer,
-                rw_counter,
-                is_write
-            };
-            for( std::size_t i = 0; i < 15; i++ ){
-                result.push_back(TYPE(0));
-            }
-            result.push_back(value);
             return result;
         }
 
