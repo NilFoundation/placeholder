@@ -159,7 +159,7 @@ namespace nil::blueprint::bbf {
             prefix[0] = rlp_constant;
         }
 
-        void main_constraints(TYPE previous_rlc, TYPE initial_index, TYPE not_padding) {
+        void main_constraints(TYPE previous_rlc, TYPE initial_index) {
             constrain(prefix[0] * (1 - prefix_exists[0]));
             constrain(prefix[1] * (1 - prefix_exists[1]));
             constrain(prefix[2] * (1 - prefix_exists[2]));

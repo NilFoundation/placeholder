@@ -137,7 +137,7 @@ public:
     void test_zkevm_mpt_leaf(
         std::string data_source,
         std::size_t max_mpt_leaf_size,
-        std::size_t keccak_max_block,
+        // std::size_t keccak_max_block,
         bool expected_result = true
     ) {
         using input_type = typename mpt_leaf_node<field_type, GenerationStage::ASSIGNMENT>::input_type;
@@ -148,7 +148,7 @@ public:
 
         for(const auto &v : queries_data) {
             boost::property_tree::ptree query = v.second;
-            std::size_t index = std::stoi(query.get_child("index").data());
+            std::size_t offset = std::stoi(query.get_child("offset").data());
             boost::property_tree::ptree node = query.get_child("node");
             _leaf_node l = {mpt_type::storage_trie, {}};
             int i = 0;
@@ -166,7 +166,7 @@ public:
                 }
                 l.data[i++] = value;
             }
-            mpt_query single_query = {index, inner_node_type::storage_value, l};
+            mpt_query single_query = {offset, inner_node_type::storage_value, l};
             input.queries.push_back(single_query);
         }
         bool result = test_bbf_component<field_type, mpt_leaf_node>(
@@ -188,6 +188,6 @@ BOOST_AUTO_TEST_CASE(one_mpt_path) {
     test_zkevm_mpt<field_type>("mpt_path_3.json", 500);
 }
 BOOST_AUTO_TEST_CASE(mpt_leafs) {
-  test_zkevm_mpt_leaf<field_type>("mpt_leaf_0.json", 100, 10);
+  test_zkevm_mpt_leaf<field_type>("mpt_leaf_0.json", 500);
 }
 BOOST_AUTO_TEST_SUITE_END()

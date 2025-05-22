@@ -51,7 +51,7 @@ namespace nil::blueprint::bbf {
     };
 
     struct mpt_query {
-        std::size_t index;
+        std::size_t offset;
         inner_node_type type;
         _leaf_node node;
     };
@@ -102,7 +102,7 @@ namespace nil::blueprint::bbf {
             : generic_component<FieldType, stage>(context_object) {
 
             std::vector<std::size_t> keccak_lookup_area;
-            std::size_t keccak_max_blocks = 10;
+            // std::size_t keccak_max_blocks = 10;
             std::vector<std::size_t> rlp_lookup_area;
             // std::vector<TYPE> node_type(max_mpt_query_size);
             std::vector<std::size_t> leaf_table_lookup_area;
@@ -116,7 +116,7 @@ namespace nil::blueprint::bbf {
             std::size_t row_index = 0;
 
             for (size_t i = 0; i < max_mpt_query_size; i++) {
-                leaf_node n = leaf_node<FieldType, stage>(context_object, mpt_type::storage_trie, i < input.queries.size(), input.rlc_challenge, row_index);
+                leaf_node n = leaf_node<FieldType, stage>(context_object, mpt_type::storage_trie, input.rlc_challenge, row_index);
                 nodes.push_back(n);
                 row_index += n.rows_count();
                 // nodes[i].set_challenge(input.rlc_challenge);
@@ -131,13 +131,14 @@ namespace nil::blueprint::bbf {
                     nodes[i].initialize();
                     if (i < input.queries.size()) {
                         _leaf_node mn = input.queries[i].node;
-                        std::size_t index = input.queries[i].index;
+                        std::size_t offset = input.queries[i].offset;
                         std::vector<zkevm_word_type> key = mn.data[0];
                         std::vector<zkevm_word_type> value = mn.data[1];
                         // nodes[i].set_challenge(input.rlc_challenge);
+                        nodes[i].set_query_data(offset);
                         nodes[i].peek_and_encode_data(key, value);
                     } else {
-                        nodes[i].peek_and_encode_data({}, {});
+                        nodes[i].set_empty_data();
                     }
                     // std::cout << "calculate hash\n";
                     std::vector<std::uint8_t> buf = nodes[i].hash_input;
@@ -150,12 +151,9 @@ namespace nil::blueprint::bbf {
                     // std::cout << "\n";
                     
                     keccak_buffers.new_buffer(buf);
-                    nodes[i].print();
-
-                    // leaf_table_inputs[i].hash_lo = w_lo<FieldType>(hash);
-                    // leaf_table_inputs[i].hash_hi = w_hi<FieldType>(hash);
-                    // leaf_table_inputs[i].value = n.content.data[1][index];
-                    // leaf_table_inputs[i].index = index;
+                    // nodes[i].print();
+                    std::cout << "table entry " << i << ":\n";
+                    nodes[i].print_table_entry();
                 }
             }
 
@@ -163,8 +161,8 @@ namespace nil::blueprint::bbf {
             for( std::size_t i = 0; i < KeccakTable::get_witness_amount(); i++){
                 keccak_lookup_area.push_back(i);
             }
-            context_type keccak_ct = context_object.subcontext( keccak_lookup_area, max_mpt_query_size + 2178, keccak_max_blocks);
-            KeccakTable k_t = KeccakTable(keccak_ct, {input.rlc_challenge, keccak_buffers}, keccak_max_blocks);
+            context_type keccak_ct = context_object.subcontext( keccak_lookup_area, max_mpt_query_size + 2178, max_mpt_query_size);
+            KeccakTable k_t = KeccakTable(keccak_ct, {input.rlc_challenge, keccak_buffers}, max_mpt_query_size);
 
             for (std::size_t i = 0; i < RLPTable::get_witness_amount(); i++) {
                 rlp_lookup_area.push_back(i);
@@ -176,10 +174,16 @@ namespace nil::blueprint::bbf {
                 nodes[i].allocate_witness();
             }
 
-            if constexpr (stage == GenerationStage::CONSTRAINTS) {
-                for (size_t i = 0; i < max_mpt_query_size; i++) {
-                    nodes[i].constraints();
-                }
+            lookup_table("mpt_leaf_table",std::vector<std::size_t>({
+                    0, // hash_low
+                    1, // hash_high
+                    2, // query_offset
+                    3, // query_value
+                    4  // query_selector
+                }), 0, max_mpt_query_size);
+
+            for (size_t i = 0; i < max_mpt_query_size; i++) {
+                nodes[i].constraints();
             }
         }
     };

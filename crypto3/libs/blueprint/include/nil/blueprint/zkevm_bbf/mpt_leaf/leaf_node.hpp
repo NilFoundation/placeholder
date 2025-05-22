@@ -63,10 +63,15 @@ namespace nil::blueprint::bbf {
         using storage_trie_value = node_inner_string_container<FieldType, stage>;
 
         node_inner* key;
-        node_inner* value;
+        storage_trie_value* value;
         TYPE hash_low;
         TYPE hash_high;
-        TYPE node_exists;
+        // TYPE query_found;
+        TYPE query_offset;
+        TYPE query_value;
+        TYPE query_selector;
+        TYPE queried_node_data_len;
+        // TYPE node_exists;
         std::size_t rlp_encoding_index = 0;
         TYPE rlc_accumulator = 0;
         TYPE rlc_challenge;
@@ -76,11 +81,11 @@ namespace nil::blueprint::bbf {
         leaf_node(
             context_type &context_object,
             mpt_type _trie_t,
-            TYPE _node_exists,
+            // TYPE _node_exists,
             TYPE _rlc_challenge,
             std::size_t _row_index
         ): node_inner_array(context_object, _rlc_challenge),
-        node_exists(_node_exists),
+        // node_exists(_node_exists),
         rlc_challenge(_rlc_challenge),
         row_index(_row_index) {
             key = new node_inner_string(context_object, _rlc_challenge, 32);
@@ -93,22 +98,20 @@ namespace nil::blueprint::bbf {
             this->inners.push_back(value);
         }
 
+        void set_query_data(std::size_t _query_offset, std::size_t _query_selector=1) {
+            query_offset = _query_offset;
+            query_selector = _query_selector;
+        }
+
         void peek_and_encode_data(std::vector<zkevm_word_type> key_raw, std::vector<zkevm_word_type> value_raw) {
+            _peek_and_encode_data(key_raw, value_raw);
+        }
 
-            if (node_exists == 0) {
-                key_raw = key->empty();
-                value_raw = value->empty();
-            }
-
-            std::vector<zkevm_word_type> key_copy(key_raw.begin(), key_raw.end());
-            std::vector<zkevm_word_type> value_copy(value_raw.begin(), value_raw.end());
-            this->h->peek_and_encode_data(get_rlp_length(key_raw) + get_rlp_length(value_raw), rlp_encoding_index, rlc_accumulator, true);
-            key->peek_and_encode_data(key_raw, rlp_encoding_index, rlc_accumulator);
-            BOOST_ASSERT_MSG(key_raw.size() == 0, "Error in RLP encoding of key!");
-            value->peek_and_encode_data(value_raw, rlp_encoding_index, rlc_accumulator);
-            BOOST_ASSERT_MSG(value_raw.size() == 0, "Error in RLP encoding of value!"); 
-            _set_hash_input(key_copy, value_copy);
-            _calculate_and_store_hash();
+        void set_empty_data() {
+            std::vector<zkevm_word_type> key_raw = key->empty();
+            std::vector<zkevm_word_type> value_raw = value->empty();
+            query_selector = 1;
+            _peek_and_encode_data(key_raw, value_raw);
 
         }
 
@@ -142,13 +145,13 @@ namespace nil::blueprint::bbf {
             hash_high = w_hi<FieldType>(hash);
         }
 
-        void print() {
-            
+        void print() {   
             std::cout << "rlp prefix:\n" << std::endl;
             std::cout << "hash: "
                     << std::hex << hash_high << std::dec << "\t"
                     << std::hex << hash_low << std::dec << "\n";
             this->header->print();
+            std::cout << "\tquery value:\tquery offset:\n\t" << query_value << "\t\t" << "\t\t" << query_offset << std::endl;
 
             std::cout << "key:\n";
             key->print();
@@ -158,11 +161,24 @@ namespace nil::blueprint::bbf {
             std::cout << "rlc: " << this->last_rlc() << std::endl;
         }
 
+        void print_table_entry() {
+            std::cout << "hash:\t\t" << std::hex << hash_high << hash_low << std::dec << "\n";
+            std::cout << "query offset:\t" << query_offset << std::endl;
+            std::cout << "query value:\t" << query_value<< std::endl;
+            std::cout << "query selector:\t" <<query_selector<< std::endl;
+            std::cout << "------------------------------------------\n";
+        }
+
         void allocate_witness(){
             std::size_t column_index = 0;
-            allocate(rlc_challenge, column_index ++, row_index);
             allocate(hash_low, column_index ++, row_index);
             allocate(hash_high, column_index ++, row_index);
+            // allocate(query_found, column_index ++, row_index);
+            allocate(query_offset, column_index ++, row_index);
+            allocate(query_value, column_index ++, row_index);
+            allocate(query_selector, column_index ++, row_index);
+            allocate(queried_node_data_len, column_index ++, row_index);
+            allocate(rlc_challenge, column_index ++, row_index);
             node_inner_array::allocate_witness(column_index, row_index);
             // std::cout << "witnessesss " << column_index << std::endl;
         }
@@ -181,11 +197,28 @@ namespace nil::blueprint::bbf {
             this->rlp_lookup_constraints();
             this->keccak_lookup_constraint();
             TYPE initial_rlc = this->header->get_total_length_constraint();
-            this->main_constraints(initial_rlc, 0, node_exists);
+            this->main_constraints(initial_rlc, 0);
+            value->query_constraints(query_offset, query_value, query_selector);
         }
 
         std::size_t rows_count() {
             return 1 + this->extra_rows_count();
+        }
+
+        protected:
+        void _peek_and_encode_data(std::vector<zkevm_word_type> key_raw, std::vector<zkevm_word_type> value_raw) {
+            std::vector<zkevm_word_type> key_copy(key_raw.begin(), key_raw.end());
+            std::vector<zkevm_word_type> value_copy(value_raw.begin(), value_raw.end());
+            this->h->peek_and_encode_data(get_rlp_length(key_raw) + get_rlp_length(value_raw), rlp_encoding_index, rlc_accumulator, true);
+            key->peek_and_encode_data(key_raw, rlp_encoding_index, rlc_accumulator);
+            BOOST_ASSERT_MSG(key_raw.size() == 0, "Error in RLP encoding of key!");
+            value->peek_and_encode_data(value_raw, rlp_encoding_index, rlc_accumulator);
+            query_value = value->set_query_data(
+                static_cast<std::uint8_t>(query_offset.data.base()),
+                static_cast<std::uint8_t>(query_selector.data.base()));
+            BOOST_ASSERT_MSG(value_raw.size() == 0, "Error in RLP encoding of value!"); 
+            _set_hash_input(key_copy, value_copy);
+            _calculate_and_store_hash();
         }
     };
 }
