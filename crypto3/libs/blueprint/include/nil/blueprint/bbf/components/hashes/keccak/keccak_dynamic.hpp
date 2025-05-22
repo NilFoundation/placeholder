@@ -1063,7 +1063,7 @@ namespace nil {
                                    "keccak_pack_table/extended_swap");  // UN6
                         }
                     }
-                    lookup_table("keccak_dynamic", {15, 1, 2, 3, 9}, 0,
+                    lookup_table("keccak_dynamic", {{15, 1, 2, 3, 9}}, 0,
                                  6247 * max_blocks);
                 }
             };

@@ -5,7 +5,7 @@
 #include <boost/log/trivial.hpp>
 #include <boost/filesystem.hpp>
 #include <nil/crypto3/zk/snark/arithmetization/plonk/assignment.hpp>
-#include <nil/blueprint/zkevm_bbf/rw.hpp>
+#include <nil/blueprint/zkevm_bbf/big_field/circuits/rw.hpp>
 #include <nil/proof-generator/assigner/options.hpp>
 #include <nil/proof-generator/assigner/trace_parser.hpp>
 
@@ -19,7 +19,7 @@ namespace nil {
                                                             const AssignerOptions& options) {
             BOOST_LOG_TRIVIAL(debug) << "fill rw table from " << trace_base_path << "\n";
 
-            using ComponentType = nil::blueprint::bbf::rw<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT>;
+            using ComponentType = nil::blueprint::bbf::zkevm_big_field::rw<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT>;
 
             typename nil::blueprint::bbf::context<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT> context_object(assignment_table, options.circuits_limits.max_total_rows);
 
@@ -35,12 +35,11 @@ namespace nil {
                 return std::format("rw operations size {} exceeds circuit limit {}", input->value.size(), options.circuits_limits.max_rw_rows);
             }
 
-            // TODO: call commits
+            // TODO: state operations, timeline
             ComponentType instance(
-                    context_object, {input->value, {}},
-                    options.circuits_limits.max_rw_rows,
-                    options.circuits_limits.max_mpt_rows,
-                    options.circuits_limits.max_call_commits
+                context_object, {input->value, {}, {}},
+                options.circuits_limits.max_rw_rows,
+                options.circuits_limits.max_state_rows
             );
 
             return {};
