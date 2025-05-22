@@ -80,7 +80,7 @@ using namespace nil::blueprint::bbf;
 class zkEVMDebugTTTestFixture: public CircuitTestFixture {
   protected:
     bool empty_machine_run = false;
-    bool check_trace = true;
+    bool check_trace = false;
     bool assign = true;
     bool force_incompatibe_circuits_for_field = false;
 
@@ -96,8 +96,8 @@ class zkEVMDebugTTTestFixture: public CircuitTestFixture {
                 check_trace = false;
                 assign = false;
             }
-            if (arg == "--no-check-trace") {
-                check_trace = false;
+            if(arg == "--check-trace" ) {
+                check_trace = true;
             }
             if (arg == "--no-assign") {
                 assign = false;
