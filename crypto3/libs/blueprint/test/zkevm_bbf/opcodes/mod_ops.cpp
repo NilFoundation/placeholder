@@ -114,6 +114,10 @@ BOOST_AUTO_TEST_CASE(mod_ops) {
     opcode_tester.push_opcode(zkevm_opcode::PUSH5, hex_string_to_bytes("0x1234567890"));
     opcode_tester.push_opcode(zkevm_opcode::PUSH5, hex_string_to_bytes("0x6789012345"));
     opcode_tester.push_opcode(zkevm_opcode::MULMOD);
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, hex_string_to_bytes("0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016"));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, hex_string_to_bytes("0xfffffffffffffffffffffffffffffffffffffff"));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, hex_string_to_bytes("0x200000000000000000000000000000123456788e"));
+    opcode_tester.push_opcode(zkevm_opcode::MULMOD);
     opcode_tester.push_opcode(zkevm_opcode::STOP);
 
     max_sizes.max_exp_rows = 500;
