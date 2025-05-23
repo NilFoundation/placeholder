@@ -98,6 +98,10 @@ public:
         TYPE key_length_inverse; // the inverse of key_length, if exists
         TYPE node_length_inverse; // the inverse of node_length, if exists
 
+        TYPE rlc_value_node_prefix;
+        std::array<TYPE, 16> rlc_key;
+        std::array<TYPE, 16> rlc_value;
+
         if constexpr (stage == GenerationStage::ASSIGNMENT) {
             mpt_node n = input.node_data;
 
@@ -182,8 +186,8 @@ public:
                 ext_value[i] = node_value[i];
             }
 
-            for(std::size_t i = 0; i < key_part.size(); i++) {
-                std::cout << "key_part[" << i << "] = " << std::hex << key_part[i] << std::dec << std::endl;
+            for(std::size_t i = 0; i < hash_input.size(); i++) {
+                std::cout << "hash_input[" << i << "] = " << std::hex << unsigned(hash_input[i]) << std::dec << std::endl;
             }
 
             std::cout << "[" << std::endl;
@@ -254,6 +258,74 @@ public:
         constrain(rlp_node[0] - ( 192 + node_length_less_than_55 * node_length + (1 - node_length_less_than_55) * 56 ));
         constrain((192 + node_length - rlp_node[0]) * (247 + node_num_of_bytes - rlp_node[0]) );
         constrain(node_length - (1 - key_length_is_one_byte) - key_length_bytes - (value_length_bytes + 1));
+
+        // // RLC value computation
+        // TYPE RLC = input.rlc_challenge;
+        // std::cout << "RLC challenge = " << RLC << std::endl;
+
+        // // total length of hashed sequence = node_length + (1 or 2, depending on node_length_less_than_55)
+        // rlc_value_node_prefix = node_length + 2 - node_length_less_than_55;
+
+        // // RLP node prefix
+        // // the first byte of RLP node prefix is always present
+        // rlc_value_node_prefix *= RLC;
+        // rlc_value_node_prefix += rlp_node[0];
+
+        // // the second byte is optional
+        // rlc_value_node_prefix *= node_length_less_than_55 + (1 - node_length_less_than_55)*RLC;
+        // rlc_value_node_prefix += (1 - node_length_less_than_55) * rlp_node[1];
+        // std::cout << "rlc_value_node_prefix = " << std::hex << rlc_value_node_prefix << std::dec << std::endl;
+        // std::cout << "rlp_node[0] = " << std::hex << rlp_node[0] << std::dec << std::endl;
+        // std::cout << "key_length_bytes = " << key_length_bytes << std::endl;
+        // allocate(rlc_value_node_prefix);
+
+        // TYPE rlc_key_prefix, rlc_value_prefix; // non-allocated expressions for RLC of the RLP child prefix
+
+        // rlc_key_prefix = rlc_value_node_prefix;
+        // rlc_key_prefix *= RLC;
+        // rlc_key_prefix += rlp_key_prefix;
+        // // we store only _one_ RLC for each _pair_ of bytes in a child hash
+        // // loop through pairs of bytes
+        // for(std::size_t b = 0; b < 16; b++) {
+        //     rlc_key[b] = (b == 0) ? rlc_key_prefix : rlc_key[b-1];
+
+        //     rlc_key[b] *= RLC;
+        //     rlc_key[b] += key_part[2*b]; // first byte in pair
+
+        //     rlc_key[b] *= RLC;
+        //     rlc_key[b] += key_part[2*b + 1]; // second byte in pair
+
+        //     allocate(rlc_key[b]);
+        //     std::cout << "rlc_key[" << b << "] = " << std::hex << rlc_key[b] << std::dec << std::endl;
+        // }
+
+        // rlc_value_prefix = rlc_key[15];
+        // rlc_value_prefix *= RLC;
+        // rlc_value_prefix += rlp_value_prefix;
+        // // we store only _one_ RLC for each _pair_ of bytes in a child hash
+        // // loop through pairs of bytes
+        // for(std::size_t b = 0; b < 16; b++) {
+        //     rlc_value[b] = (b == 0) ? rlc_value_prefix : rlc_value[b-1];
+
+        //     rlc_value[b] *= RLC;
+        //     rlc_value[b] += ext_value[2*b]; // first byte in pair
+
+        //     rlc_value[b] *= RLC;
+        //     rlc_value[b] += ext_value[2*b + 1]; // second byte in pair
+
+        //     allocate(rlc_value[b]);
+        //     std::cout << "rlc_value[" << b << "] = " << std::hex << rlc_value[b] << std::dec << std::endl;
+        // }
+
+        // TYPE rlc_result = rlc_value[15] ;
+
+        // // TYPE rlc_result = rlc_value[15] * RLC + 128; // The last symdol in the buffer is a zero
+        // std::cout << "rlc_result = " << rlc_result << std::endl;
+
+        // zkevm_word_type power_of_2 = zkevm_word_type(1) << (31 * 8);
+        // auto [w_hi, w_lo] = chunks8_to_chunks128<TYPE>(parent_hash);
+        // std::cout << "rlc_result = " << rlc_result << std::endl;
+        // lookup({TYPE(1), rlc_result, w_hi, w_lo}, "keccak_table");
     }
 };
 } // namespace nil::blueprint::bbf
