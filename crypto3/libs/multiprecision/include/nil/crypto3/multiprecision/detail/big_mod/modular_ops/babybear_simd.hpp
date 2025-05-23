@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------//
-// Copyright (c) 2024-2025 Andrey Nefedov <ioxid@nil.foundation>
+// Copyright (c) 2025 Andrey Nefedov <ioxid@nil.foundation>
 //
 // Distributed under the Boost Software License, Version 1.0
 // See accompanying file LICENSE_1_0.txt or copy at
@@ -12,7 +12,6 @@
 #include <bit>
 #include <climits>
 #include <cstdint>
-#include <type_traits>
 
 #include <nil/crypto3/multiprecision/detail/big_mod/modular_ops/babybear.hpp>
 
@@ -74,6 +73,12 @@ namespace nil::crypto3::multiprecision::detail::babybear {
         auto u = _mm256_add_epi32(t, PACKED_P);
         return _mm256_min_epu32(t, u);
     }
+
+    inline __m256i babybear_add8_avx2(__m256i lhs, __m256i rhs) {
+        auto t = _mm256_add_epi32(lhs, rhs);
+        auto u = _mm256_sub_epi32(t, PACKED_P);
+        return _mm256_min_epu32(t, u);
+    }
 #endif
 
     inline constexpr const auto& babybear_ops() {
@@ -95,10 +100,32 @@ namespace nil::crypto3::multiprecision::detail::babybear {
         return result;
     }
 
+    constexpr inline u32x8 babybear_add8_impl(u32x8 a, u32x8 b) {
+#if defined(NIL_CO3_MP_HAS_INTRINSICS) && defined(__AVX2__)
+        if (!std::is_constant_evaluated()) {
+            return std::bit_cast<u32x8>(
+                babybear_add8_avx2(std::bit_cast<__m256i>(a), std::bit_cast<__m256i>(b)));
+        }
+#endif
+        u32x8 result;
+        for (u32 i = 0; i < 8; ++i) {
+            result[i] = a[i];
+            babybear_ops().add(result[i], b[i]);
+        }
+        return result;
+    }
+
     template<typename T>
     constexpr inline std::array<T, 8> babybear_mul8(std::array<T, 8> a, std::array<T, 8> b) {
         static_assert(sizeof(T) == 4);
         return std::bit_cast<std::array<T, 8>>(babybear_mul8_impl(
+            std::bit_cast<u32x8>(a), std::bit_cast<u32x8>(b)));
+    }
+
+    template<typename T>
+    constexpr inline std::array<T, 8> babybear_add8(std::array<T, 8> a, std::array<T, 8> b) {
+        static_assert(sizeof(T) == 4);
+        return std::bit_cast<std::array<T, 8>>(babybear_add8_impl(
             std::bit_cast<u32x8>(a), std::bit_cast<u32x8>(b)));
     }
 

@@ -37,7 +37,7 @@
 #include <nil/crypto3/algebra/fields/detail/element/operations.hpp>
 #include <nil/crypto3/algebra/fields/detail/exponentiation.hpp>
 
-#include <nil/crypto3/multiprecision/detail/big_mod/modular_ops/babybear_vec_mul.hpp>
+#include <nil/crypto3/multiprecision/detail/big_mod/modular_ops/babybear_simd.hpp>
 
 namespace nil::crypto3::marshalling::types::detail {
     template<typename FieldValueType>
