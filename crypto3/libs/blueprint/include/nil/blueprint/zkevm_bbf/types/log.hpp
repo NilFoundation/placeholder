@@ -33,27 +33,27 @@ namespace nil {
     namespace blueprint {
         namespace bbf {
             struct zkevm_log {
-                zkevm_word_type id;
-                zkevm_word_type index;
+                std::size_t  id;
+                std::size_t  index;
                 zkevm_word_type address;
                 std::vector<zkevm_word_type> topics;
             };
             struct zkevm_filter_indices {
-                zkevm_word_type block_id;
-                zkevm_word_type tx_id;
-                zkevm_word_type index;
+                std::size_t block_id;
+                std::size_t tx_id;
+                std::size_t index;
                 zkevm_word_type value;
-                zkevm_word_type type;
-                zkevm_word_type indice;
-                zkevm_word_type is_last;
-                zkevm_word_type is_block;
-                zkevm_word_type is_final;
+                std::size_t type;
+                std::size_t indice;
+                std::size_t is_last;
+                std::size_t is_block;
+                std::size_t is_final;
                 zkevm_word_type hash;
                 std::vector<std::uint8_t> buffer;
                 std::vector<zkevm_word_type> filter;
             };
 
-            enum class indice_type: std::uint8_t {
+            enum class indice_type: std::size_t {
                 address = 0,              
                 topic_1 = 1,              
                 topic_2 = 2,

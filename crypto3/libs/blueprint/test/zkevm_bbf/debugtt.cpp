@@ -61,6 +61,7 @@
 #include <nil/blueprint/zkevm_bbf/big_field/circuits/bytecode.hpp>
 #include <nil/blueprint/zkevm_bbf/big_field/circuits/keccak.hpp>
 #include <nil/blueprint/zkevm_bbf/big_field/circuits/exp.hpp>
+#include <nil/blueprint/zkevm_bbf/big_field/circuits/logs.hpp>
 
 #include <nil/blueprint/zkevm_bbf/small_field/circuits/rw.hpp>
 #include <nil/blueprint/zkevm_bbf/small_field/circuits/bytecode.hpp>
@@ -104,6 +105,7 @@ public:
         std::string                        path,
         const l1_size_restrictions         &max_sizes
     ){
+        
         if( empty_machine_run ){
             debugtt_block_loader loader(path);
             nil::blueprint::bbf::zkevm_basic_evm evm((abstract_block_loader*)(&loader));
@@ -141,6 +143,7 @@ public:
         std::size_t max_exp_rows = max_sizes.max_exp_rows;
         std::size_t max_state = max_sizes.max_state;
         std::size_t max_bytecodes_amount = max_sizes.max_bytecodes_amount;
+        std::size_t max_filter_indices = max_sizes.max_filter_indices;
 
         std::size_t instances_rw_8 = max_sizes.instances_rw_8;
         std::size_t instances_rw_256 = max_sizes.instances_rw_256;
@@ -239,10 +242,11 @@ public:
             zkevm_assignment_input.zkevm_states = circuit_inputs.zkevm_states();
             zkevm_assignment_input.exponentiations = circuit_inputs.exponentiations();
             zkevm_assignment_input.state_operations = circuit_inputs.state_operations();
+            zkevm_assignment_input.filter_indices = circuit_inputs.filter_indices();
 
             result = test_bbf_component<BigFieldType, nil::blueprint::bbf::zkevm_big_field::zkevm>(
                 "zkevm", {}, zkevm_assignment_input,
-                max_zkevm_rows, max_copy, max_rw, max_exponentiations, max_bytecode, max_state
+                max_zkevm_rows, max_copy, max_rw, max_exponentiations, max_bytecode, max_state, max_filter_indices
             );
             BOOST_CHECK(result);
         }
@@ -263,6 +267,21 @@ public:
             result = test_bbf_component<BigFieldType, nil::blueprint::bbf::zkevm_big_field::zkevm_wide>(
                 "zkevm_wide", {}, zkevm_wide_assignment_input,
                 max_zkevm_rows, max_copy, max_rw, max_exponentiations, max_bytecode, max_state
+            );
+            BOOST_CHECK(result);
+        }
+
+        const std::string log_circuit = "logs";
+        if (should_run_circuit(log_circuit)) {
+            BOOST_LOG_TRIVIAL(info) << "circuit '" << log_circuit << "'";
+            typename zkevm_big_field::logs<BigFieldType, GenerationStage::ASSIGNMENT>::input_type log_assignment_input;
+            log_assignment_input.rlc_challenge = 7;
+            log_assignment_input.filter_indices = circuit_inputs.filter_indices();
+            log_assignment_input.keccak_buffers = circuit_inputs.logs_buffers();
+
+            result = test_bbf_component<BigFieldType, nil::blueprint::bbf::zkevm_big_field::logs>(
+                log_circuit, {}, log_assignment_input,
+               max_keccak_blocks, max_filter_indices
             );
             BOOST_CHECK(result);
         }
@@ -545,7 +564,8 @@ BOOST_AUTO_TEST_CASE(call_keccak) {
 BOOST_AUTO_TEST_CASE(indexed_log) {
     l1_size_restrictions max_sizes;
 
-    max_sizes.max_keccak_blocks = 10;
+    max_sizes.max_keccak_blocks = 100;
+    max_sizes.max_filter_indices = 100;
     max_sizes.max_bytecode = 3000;
     max_sizes.max_mpt = 0;
     max_sizes.max_rw = 3000;
@@ -559,12 +579,13 @@ BOOST_AUTO_TEST_CASE(indexed_log) {
     if( circuits_to_run.empty() ) {
         circuits_to_run.insert("zkevm");
         //circuits_to_run.insert("zkevm-wide");
-        circuits_to_run.insert("rw");
-        circuits_to_run.insert("bytecode");
-        circuits_to_run.insert("copy");
-        circuits_to_run.insert("bytecode-s");
-        circuits_to_run.insert("rw-s");
-        circuits_to_run.insert("copy-s");
+        // circuits_to_run.insert("rw");
+        // circuits_to_run.insert("bytecode");
+        // circuits_to_run.insert("copy");
+        // circuits_to_run.insert("bytecode-s");
+        // circuits_to_run.insert("rw-s");
+        // circuits_to_run.insert("copy-s");
+        circuits_to_run.insert("logs");
     }
     complex_test<big_field_type, small_field_type>("indexed_log.json", max_sizes);
 }

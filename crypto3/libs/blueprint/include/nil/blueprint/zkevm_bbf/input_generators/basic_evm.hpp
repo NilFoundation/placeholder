@@ -121,6 +121,10 @@ namespace nil {
                 std::vector<zkevm_word_type> stack;
                 std::vector<std::uint8_t> memory;
                 std::vector<std::uint8_t> bytecode;
+                std::vector<zkevm_word_type> tx_filter;
+                std::vector<zkevm_word_type> block_filter;
+                std::size_t log_index;
+                const std::size_t filter_chunks_amount = 128;
 
                 bool execution_status = true;
                 std::string error_message;
@@ -130,6 +134,11 @@ namespace nil {
                     pc = 0;
                     gas = 0;
                     tx.hash = 0;
+                    block_filter = {};
+                    for (std::size_t j = 0; j < filter_chunks_amount; j++) {
+                        block_filter.push_back(zkevm_word_type(0));
+                    }
+
                     current_opcode = opcode_to_number(zkevm_opcode::start_block);
 
                     _call_stack.push_back(zkevm_call_context());
@@ -263,6 +272,10 @@ namespace nil {
                     memory = {};
                     stack = {};
                     returndata = {};
+                    for (std::size_t j = 0; j < filter_chunks_amount; j++) {
+                        tx_filter.push_back(zkevm_word_type(0));
+                    }
+                    
 
                     is_end_call = false;
                 }

@@ -78,7 +78,9 @@ namespace nil {
                 std::vector<TYPE> block_id;            // block index
                 std::vector<TYPE> tx_id;               // transaction index
                 std::vector<TYPE> log_index;           // log index
-                std::vector<std::vector<TYPE>> value;  // address or topic x
+                std::vector<std::vector<TYPE>> value;  // address or topic
+                std::vector<TYPE> value_hi;            // address or topic x
+                std::vector<TYPE> value_lo;            // address or topic x
                 std::vector<TYPE> type;                // 0: address, or x: topic x
                 std::vector<TYPE> indice_0;            // Each value has 3 indices
                 std::vector<TYPE> indice_1;            // Indice column is 0
@@ -90,37 +92,46 @@ namespace nil {
                 // 1 if final row of a tx. Only the filter is used in that row
                 std::vector<TYPE> is_final;
                 std::vector<std::vector<TYPE>> hash;  // hash of value
+                std::vector<TYPE> hash_hi;            // hash of value
+                std::vector<TYPE> hash_lo;            // hash of value
                 std::vector<std::vector<TYPE>> current_filter;
 
-                static std::size_t get_witness_amount() { return 171; }
+                static std::size_t get_witness_amount() { return 175; }
+                
 
-                static std::vector<TYPE> log_tx_lookup(
-                    TYPE block_id, TYPE tx_id, TYPE index,
-                    std::vector<std::vector<TYPE>> value, TYPE type) {
+                // LOG OPCODE verifies the right topics are included
+                static std::vector<TYPE> log_opcode_lookup(TYPE block_id, TYPE tx_id,
+                                                           TYPE index, TYPE value_hi,
+                                                           TYPE value_lo, TYPE type,
+                                                           TYPE is_last) {
                     std::vector<TYPE> result = {};
                     result.push_back(1);  // selector
                     result.push_back(block_id);
                     result.push_back(tx_id);
                     result.push_back(index);
-                    for (std::size_t i = 0; i < 16; i++) {
-                        result.push_back(value[i]);
-                    }
+                    result.push_back(value_hi);
+                    result.push_back(value_lo);
+                    // for (std::size_t i = 0; i < 16; i++) {
+                    //     result.push_back(value[i]);
+                    // }
                     result.push_back(type);
                     result.push_back(TYPE(0));  // indice_0
                     result.push_back(TYPE(0));  // indice_1
                     result.push_back(TYPE(1));  // indice_2
-                    result.push_back(TYPE(1));  // is_last
+                    result.push_back(is_last);  // is_last
                     result.push_back(TYPE(0));  // is_block
                     result.push_back(TYPE(0));  // is_final
 
                     return result;
                 }
 
-                static std::vector<TYPE> log_block_lookup(TYPE block_id, TYPE tx_id) {
+                // END TX OPCODE verifies tx filter is included and the number of logs
+                static std::vector<TYPE> log_tx_lookup(TYPE block_id, TYPE tx_id,
+                                                       TYPE log_index) {
                     std::vector<TYPE> result = {
-                        TYPE(0),  // selector
                         block_id,
-                        tx_id,    // transaction_id
+                        tx_id,  // transaction_id
+                        log_index,
                         TYPE(1),  // is_block
                         TYPE(1)   // is_final
                     };
@@ -134,6 +145,8 @@ namespace nil {
                       block_id(max_filter_indices),
                       tx_id(max_filter_indices),
                       log_index(max_filter_indices),
+                      value_hi(max_filter_indices),
+                      value_lo(max_filter_indices),
                       value(max_filter_indices, std::vector<TYPE>(16)),
                       type(max_filter_indices),
                       indice_0(max_filter_indices),
@@ -143,6 +156,8 @@ namespace nil {
                       is_block(max_filter_indices),
                       is_block_const(max_filter_indices),
                       is_final(max_filter_indices),
+                      hash_hi(max_filter_indices),
+                      hash_lo(max_filter_indices),
                       hash(max_filter_indices, std::vector<TYPE>(16)),
                       current_filter(max_filter_indices,
                                      std::vector<TYPE>(filter_chunks_amount)) {
@@ -163,15 +178,21 @@ namespace nil {
                             block_id[i] = filter_indices[i].block_id;
                             tx_id[i] = filter_indices[i].tx_id;
                             log_index[i] = filter_indices[i].index;
+                            value_hi[i] = w_hi<FieldType>(filter_indices[i].value);
+                            value_lo[i] = w_lo<FieldType>(filter_indices[i].value);
                             value[i] = zkevm_word_to_field_element<FieldType>(
                                 filter_indices[i].value);
                             type[i] = filter_indices[i].type;
-                            indice_0[i] = filter_indices[i].indice == 0;
-                            indice_1[i] = filter_indices[i].indice == 1;
-                            indice_2[i] = filter_indices[i].indice == 2;
+                            if (!filter_indices[i].is_final) {
+                                indice_0[i] = filter_indices[i].indice == 0;
+                                indice_1[i] = filter_indices[i].indice == 1;
+                                indice_2[i] = filter_indices[i].indice == 2;
+                            }
                             is_last[i] = filter_indices[i].is_last;
                             is_block[i] = filter_indices[i].is_block;
                             is_final[i] = filter_indices[i].is_final;
+                            hash_hi[i] = w_hi<FieldType>(filter_indices[i].hash);
+                            hash_lo[i] = w_lo<FieldType>(filter_indices[i].hash);
                             hash[i] = zkevm_word_to_field_element<FieldType>(
                                 filter_indices[i].hash);
                             for (std::size_t j = 0; j < filter_chunks_amount; j++) {
@@ -190,30 +211,36 @@ namespace nil {
                         allocate(block_id[i], 1, i);
                         allocate(tx_id[i], 2, i);
                         allocate(log_index[i], 3, i);
+                        allocate(value_hi[i], 4, i);
+                        allocate(value_lo[i], 5, i);
+                        allocate(type[i], 6, i);
+                        allocate(indice_0[i], 7, i);
+                        allocate(indice_1[i], 8, i);
+                        allocate(indice_2[i], 9, i);
+                        allocate(is_last[i], 10, i);
+                        allocate(is_block[i], 11, i);
+                        allocate(is_final[i], 12, i);
+                        allocate(hash_hi[i], 13, i);
+                        allocate(hash_lo[i], 14, i);
                         for (std::size_t j = 0; j < 16; j++) {
-                            allocate(value[i][j], 4 + j, i);
+                            allocate(value[i][j], 15 + j, i);
                         }
-                        allocate(type[i], 20, i);
-                        allocate(indice_0[i], 21, i);
-                        allocate(indice_1[i], 22, i);
-                        allocate(indice_2[i], 23, i);
-                        allocate(is_last[i], 24, i);
-                        allocate(is_block[i], 25, i);
-                        allocate(is_final[i], 26, i);
                         for (std::size_t j = 0; j < 16; j++) {
-                            allocate(hash[i][j], 27 + j, i);
+                            allocate(hash[i][j], 31 + j, i);
                         }
                         for (std::size_t j = 0; j < filter_chunks_amount; j++) {
-                            allocate(current_filter[i][j], 43 + j, i);
+                            allocate(current_filter[i][j], 47 + j, i);
                         }
                     }
-                    std::vector<std::size_t> tx_indices(27);
+                    std::vector<std::size_t> tx_indices(13);
                     std::iota(tx_indices.begin(), tx_indices.end(), 0);
-                    lookup_table("zkevm_tx_logs", tx_indices, 0, max_filter_indices);
-                    lookup_table("zkevm_block_logs",
-                                 std::vector<std::size_t>({0, 1, 2, 25, 26}), 0,
+                    lookup_table("zkevm_log_opcode", tx_indices, 0, max_filter_indices);
+
+                    lookup_table("zkevm_log_tx",
+                                 std::vector<std::size_t>({1, 2, 3, 11, 12}), 0,
                                  max_filter_indices);
-                    std::vector<std::size_t> indices(171);
+
+                    std::vector<std::size_t> indices(175);
                     std::iota(indices.begin(), indices.end(), 0);
                     lookup_table("zkevm_logs_filters", indices, 0, max_filter_indices);
                 }

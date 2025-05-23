@@ -550,9 +550,9 @@ namespace nil {
                     }
                 
                     std::vector<uint8_t> empty_buffer(0);
-                    _filter_indices.push_back({block_id, tx_id, log_index, 0, 0, 0,
+                    _filter_indices.push_back({block_id, tx_id, log_index, 0, 0, 4,
                                                 0, 0, 1, 0, empty_buffer, tx_filter_next});
-                    _filter_indices.push_back({block_id, tx_id, log_index, 0 , 0, 0,
+                    _filter_indices.push_back({block_id, tx_id, log_index, 0 , 0, 4,
                                                 0, 1, 1, 0, empty_buffer, block_filter_next});
                 }
 
@@ -973,6 +973,7 @@ namespace nil {
                                          zkevm_word_type t, zkevm_word_type last, const std::vector<uint8_t>&buffer) {
                         auto hash = zkevm_keccak_hash(buffer);
                         auto hash_bytes = w_to_16(hash);
+                        _keccak.new_buffer(buffer);
                             
                         for (int i = 0; i < 3; ++i) {
                             _logs_buffers.new_buffer(buffer);
