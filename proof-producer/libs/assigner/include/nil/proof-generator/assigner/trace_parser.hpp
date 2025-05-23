@@ -15,9 +15,11 @@
 #include <boost/filesystem.hpp>
 
 #include <nil/blueprint/zkevm_bbf/types/zkevm_word.hpp>
-#include <nil/blueprint/zkevm_bbf/types/rw_operation.hpp>
+#include <nil/blueprint/zkevm_bbf/types/rw_operation_type.hpp>
+#include <nil/blueprint/zkevm_bbf/types/short_rw_operation.hpp>
 #include <nil/blueprint/zkevm_bbf/types/zkevm_state.hpp>
 #include <nil/blueprint/zkevm_bbf/types/copy_event.hpp>
+#include <nil/blueprint/zkevm_bbf/types/log.hpp>
 #include <nil/blueprint/assert.hpp>
 
 #include <nil/proof-generator/assigner/trace.pb.h>
@@ -60,7 +62,8 @@ namespace nil {
         const char MPT_EXTENSION[] = ".mpt";
         const char EXP_EXTENSION[] = ".exp";
         const char KECCAK_EXTENSION[] = ".keccak";
-
+        const char FILTER_EXTENSION[] = ".filter";
+        
         using TraceIndex = uint64_t; // value expected to be the same for all traces from the same set
         using TraceIndexOpt = std::optional<TraceIndex>;
 
@@ -189,6 +192,11 @@ namespace nil {
             return extend_base_path(trace_base_path, KECCAK_EXTENSION);
         }
 
+        boost::filesystem::path get_filter_trace_path(const boost::filesystem::path& trace_base_path) {
+            return extend_base_path(trace_base_path, FILTER_EXTENSION);
+        }
+
+
         std::vector<std::uint8_t> string_to_bytes(const std::string& str) {
             std::vector<std::uint8_t> res(str.size());
             for (std::size_t i = 0; i < str.size(); i++) {
@@ -208,8 +216,9 @@ namespace nil {
         using DeserializeResultOpt = std::optional<DeserializeResult<T>>;
 
         using BytecodeTraces = std::unordered_map<std::string, std::string>; // contract address -> bytecode
-        using RWTraces = blueprint::bbf::rw_operations_vector;
+        using RWTraces = blueprint::bbf::short_rw_operations_vector;
         using ZKEVMTraces = std::vector<blueprint::bbf::zkevm_state>;
+        using FilterTraces = std::vector<blueprint::bbf::zkevm_filter_indices>;
         using CopyEvents = std::vector<blueprint::bbf::copy_event>;
         using ExpTraces = std::vector<exp_input>;
 
@@ -247,56 +256,56 @@ namespace nil {
         ) {
             const auto pb_traces = read_pb_traces_from_file<executionproofs::RWTraces>(rw_traces_path, base_index, opts);
 
-            blueprint::bbf::rw_operations_vector rw_traces;
+            blueprint::bbf::short_rw_operations_vector rw_traces;
             rw_traces.reserve(pb_traces.stack_ops_size() + pb_traces.memory_ops_size() + pb_traces.storage_ops_size() + 1); // +1 slot for start op
 
             // Convert stack operations
-            for (const auto& pb_sop : pb_traces.stack_ops()) {
-                rw_traces.push_back(blueprint::bbf::stack_rw_operation(
-                    static_cast<uint64_t>(pb_sop.txn_id()),
-                    static_cast<int32_t>(pb_sop.index()),
-                    static_cast<uint64_t>(pb_sop.rw_idx()),
-                    !pb_sop.is_read(),
-                    proto_uint256_to_zkevm_word(pb_sop.value()))
-                );
-            }
+            // for (const auto& pb_sop : pb_traces.stack_ops()) {
+            //     rw_traces.push_back(blueprint::bbf::stack_rw_operation(
+            //         static_cast<uint64_t>(pb_sop.txn_id()),
+            //         static_cast<int32_t>(pb_sop.index()),
+            //         static_cast<uint64_t>(pb_sop.rw_idx()),
+            //         !pb_sop.is_read(),
+            //         proto_uint256_to_zkevm_word(pb_sop.value()))
+            //     );
+            // }
 
-            // Convert memory operations
-            for (const auto& pb_mop : pb_traces.memory_ops()) {
-                auto value = string_to_bytes(pb_mop.value());
-                auto const op = blueprint::bbf::memory_rw_operation(
-                    static_cast<uint64_t>(pb_mop.txn_id()),
-                    blueprint::zkevm_word_type(static_cast<int>(pb_mop.index())),
-                    static_cast<uint64_t>(pb_mop.rw_idx()),
-                    !pb_mop.is_read(),
-                    blueprint::zkevm_word_from_bytes(value)
-                );
-                rw_traces.push_back(std::move(op));
-            }
+            // // Convert memory operations
+            // for (const auto& pb_mop : pb_traces.memory_ops()) {
+            //     auto value = string_to_bytes(pb_mop.value());
+            //     auto const op = blueprint::bbf::memory_rw_operation(
+            //         static_cast<uint64_t>(pb_mop.txn_id()),
+            //         blueprint::zkevm_word_type(pb_mop.index()),
+            //         static_cast<uint64_t>(pb_mop.rw_idx()),
+            //         !pb_mop.is_read(),
+            //         blueprint::zkevm_word_from_bytes(value)
+            //     );
+            //     rw_traces.push_back(std::move(op));
+            // }
 
-            // Convert storage operations
-            for (const auto& pb_sop : pb_traces.storage_ops()) {
-                // TODO: add missing parameters to traces
-                throw std::logic_error("storage operations are not supported yet");
-                /* auto op = blueprint::bbf::storage_rw_operation(
-                    static_cast<uint64_t>(pb_sop.txn_id()),
-                    blueprint::zkevm_word_from_string(static_cast<std::string>(pb_sop.key())),
-                    static_cast<uint64_t>(pb_sop.rw_idx()),
-                    !pb_sop.is_read(),
-                    proto_uint256_to_zkevm_word(pb_sop.value()),
-                    proto_uint256_to_zkevm_word(pb_sop.prev_value()),
-                    blueprint::zkevm_word_from_string(pb_sop.address().address_bytes())
-                );
-                //TODO root and initial_root?
-                rw_traces.push_back(std::move(op)); */
-            }
+            // // Convert storage operations
+            // for (const auto& pb_sop : pb_traces.storage_ops()) {
+            //     // TODO: add missing parameters to traces
+            //     throw std::logic_error("storage operations are not supported yet");
+            //     /* auto op = blueprint::bbf::storage_rw_operation(
+            //         static_cast<uint64_t>(pb_sop.txn_id()),
+            //         blueprint::zkevm_word_from_string(static_cast<std::string>(pb_sop.key())),
+            //         static_cast<uint64_t>(pb_sop.rw_idx()),
+            //         !pb_sop.is_read(),
+            //         proto_uint256_to_zkevm_word(pb_sop.value()),
+            //         proto_uint256_to_zkevm_word(pb_sop.prev_value()),
+            //         blueprint::zkevm_word_from_string(pb_sop.address().address_bytes())
+            //     );
+            //     //TODO root and initial_root?
+            //     rw_traces.push_back(std::move(op)); */
+            // }
 
-            std::sort(rw_traces.begin(), rw_traces.end(), std::less());
+            // std::sort(rw_traces.begin(), rw_traces.end(), std::less());
 
-            BOOST_LOG_TRIVIAL(debug) << "number RW operations " << rw_traces.size() << ":\n"
-                                     << "stack   " << pb_traces.stack_ops_size() << "\n"
-                                     << "memory  " << pb_traces.memory_ops_size() << "\n"
-                                     << "storage " << pb_traces.storage_ops_size() << "\n";
+            // BOOST_LOG_TRIVIAL(debug) << "number RW operations " << rw_traces.size() << ":\n"
+            //                          << "stack   " << pb_traces.stack_ops_size() << "\n"
+            //                          << "memory  " << pb_traces.memory_ops_size() << "\n"
+            //                          << "storage " << pb_traces.storage_ops_size() << "\n";
 
             return DeserializeResult<RWTraces>{
                 std::move(rw_traces),
@@ -314,37 +323,37 @@ namespace nil {
             std::vector<blueprint::bbf::zkevm_state> zkevm_states;
             zkevm_states.reserve(pb_traces.zkevm_states_size());
             for (const auto& pb_state : pb_traces.zkevm_states()) {
-                std::vector<blueprint::zkevm_word_type> stack;
-                stack.reserve(pb_state.stack_slice_size());
-                for (const auto& pb_stack_val : pb_state.stack_slice()) {
-                    stack.push_back(proto_uint256_to_zkevm_word(pb_stack_val));
-                }
-                std::map<std::size_t, std::uint8_t> memory;
-                for (const auto& pb_memory_val : pb_state.memory_slice()) {
-                    memory.emplace(pb_memory_val.first, pb_memory_val.second);
-                }
-                std::map<blueprint::zkevm_word_type, blueprint::zkevm_word_type> storage;
-                for (const auto& pb_storage_entry : pb_state.storage_slice()) {
-                    storage.emplace(proto_uint256_to_zkevm_word(pb_storage_entry.key()), proto_uint256_to_zkevm_word(pb_storage_entry.value()));
-                }
+                // std::vector<blueprint::zkevm_word_type> stack;
+                // stack.reserve(pb_state.stack_slice_size());
+                // for (const auto& pb_stack_val : pb_state.stack_slice()) {
+                //     stack.push_back(proto_uint256_to_zkevm_word(pb_stack_val));
+                // }
+                // std::map<std::size_t, std::uint8_t> memory;
+                // for (const auto& pb_memory_val : pb_state.memory_slice()) {
+                //     memory.emplace(pb_memory_val.first, pb_memory_val.second);
+                // }
+                // std::map<blueprint::zkevm_word_type, blueprint::zkevm_word_type> storage;
+                // for (const auto& pb_storage_entry : pb_state.storage_slice()) {
+                //     storage.emplace(proto_uint256_to_zkevm_word(pb_storage_entry.key()), proto_uint256_to_zkevm_word(pb_storage_entry.value()));
+                // }
 
-                blueprint::bbf::basic_zkevm_state_part basic_state = {
-                    .call_id = static_cast<uint64_t>(pb_state.call_id()),
-                    .bytecode_hash = blueprint::zkevm_word_from_string(static_cast<std::string>(pb_state.bytecode_hash())),
-                    .opcode = static_cast<uint64_t>(pb_state.opcode()),
-                    .pc = static_cast<uint64_t>(pb_state.pc()),
-                    .stack_size = static_cast<uint64_t>(pb_state.stack_size()),
-                    .memory_size = static_cast<uint64_t>(pb_state.memory_size()),
-                    .rw_counter = static_cast<uint64_t>(pb_state.rw_idx()),
-                    .gas = static_cast<uint64_t>(pb_state.gas()),
-                    .stack_slice = stack,
-                };
+                // blueprint::bbf::basic_zkevm_state_part basic_state = {
+                //     .call_id = static_cast<uint64_t>(pb_state.call_id()),
+                //     .bytecode_hash = blueprint::zkevm_word_from_string(static_cast<std::string>(pb_state.bytecode_hash())),
+                //     .opcode = static_cast<uint64_t>(pb_state.opcode()),
+                //     .pc = static_cast<uint64_t>(pb_state.pc()),
+                //     .stack_size = static_cast<uint64_t>(pb_state.stack_size()),
+                //     .memory_size = static_cast<uint64_t>(pb_state.memory_size()),
+                //     .rw_counter = static_cast<uint64_t>(pb_state.rw_idx()),
+                //     .gas = static_cast<uint64_t>(pb_state.gas()),
+                //     .stack_slice = stack,
+                // };
 
-                if (blueprint::bbf::opcode_to_string(blueprint::bbf::opcode_from_number(basic_state.opcode)).starts_with("PUSH")) {
-                    zkevm_states.emplace_back(basic_state, proto_uint256_to_zkevm_word(pb_state.additional_input()));
-                } else {
-                    zkevm_states.emplace_back(basic_state, memory);
-                }
+                // if (blueprint::bbf::opcode_to_string(blueprint::bbf::opcode_from_number(basic_state.opcode)).starts_with("PUSH")) {
+                //     zkevm_states.emplace_back(basic_state, proto_uint256_to_zkevm_word(pb_state.additional_input()));
+                // } else {
+                //     zkevm_states.emplace_back(basic_state, memory);
+                // }
 
                 // do we need it?
                 // zkevm_states.back().tx_finish = static_cast<bool>(pb_state.tx_finish());
@@ -357,6 +366,7 @@ namespace nil {
             };
         }
 
+        
         [[nodiscard]] DeserializeResultOpt<CopyEvents> deserialize_copy_events_from_file(
             const boost::filesystem::path& copy_traces_file,
             const AssignerOptions& opts,
@@ -389,8 +399,6 @@ namespace nil {
                 using enum bbf::copy_operand_type;
                 if (src_type == memory && dst_type == keccak) {
                     event = bbf::keccak_copy_event(size_t{src_id}, src_address, rw_counter, dst_id, bytes.size());
-                } else if (src_type == reverted && dst_type == reverted) {
-                    event = bbf::revert_copy_event(size_t{src_id}, size_t{dst_id}, rw_counter, length);
                 } else if (src_type == memory && dst_type == returndata) {
                     event = bbf::return_copy_event(size_t{src_id}, src_address, rw_counter, length);
                 } else if (src_type == returndata && dst_type == memory) {
@@ -448,7 +456,7 @@ namespace nil {
             for (const auto& pb_hashed_buffer: pb_traces.hashed_buffers()) {
                 result.push_back(keccak_input{
                     .buffer = string_to_bytes(pb_hashed_buffer.buffer()),
-                    .hash =proto_uint256_to_zkevm_word(pb_hashed_buffer.keccak_hash())
+                    .hash = proto_uint256_to_zkevm_word(pb_hashed_buffer.keccak_hash())
                 });
             }
 
@@ -457,6 +465,45 @@ namespace nil {
                 .index = pb_traces.trace_idx()
             };
         }
+
+        [[nodiscard]] DeserializeResultOpt<FilterTraces> deserialize_filter_traces_from_file(
+            const boost::filesystem::path& filter_traces_path,
+            const AssignerOptions& opts,
+            TraceIndexOpt base_index = {}
+        ) {
+            const auto pb_traces = read_pb_traces_from_file<executionproofs::FilterTraces>(filter_traces_path, base_index, opts);
+
+            std::vector<blueprint::bbf::zkevm_filter_indices> filter_indices;
+            filter_indices.reserve(pb_traces.zkevm_filter_indices_size());
+
+            for (const auto& pb_filter_indice: pb_traces.zkevm_filter_indices()) {
+                std::vector<blueprint::zkevm_word_type> filter;
+                for (const auto& pb_filter_chunk: pb_filter_indice.filter()) {
+                    filter.push_back(proto_uint256_to_zkevm_word(pb_filter_chunk));
+                }
+                filter_indices.push_back(blueprint::bbf::zkevm_filter_indices{
+                    .block_id = proto_uint256_to_zkevm_word(pb_filter_indice.block_id()),
+                    .tx_id = proto_uint256_to_zkevm_word(pb_filter_indice.tx_id()),
+                    .index = proto_uint256_to_zkevm_word(pb_filter_indice.index()),
+                    .value = proto_uint256_to_zkevm_word(pb_filter_indice.value()),
+                    .type = proto_uint256_to_zkevm_word(pb_filter_indice.type()),
+                    .indice = proto_uint256_to_zkevm_word(pb_filter_indice.indice()),
+                    .is_last = proto_uint256_to_zkevm_word(pb_filter_indice.is_last()),
+                    .is_block = proto_uint256_to_zkevm_word(pb_filter_indice.is_block()),
+                    .is_final = proto_uint256_to_zkevm_word(pb_filter_indice.is_final()),
+                    .hash = proto_uint256_to_zkevm_word(pb_filter_indice.hash()),
+                    .buffer = string_to_bytes(pb_filter_indice.buffer()),
+                    .filter = filter
+                });
+            }
+
+            return DeserializeResult<FilterTraces>{
+                .value = std::move(filter_indices),
+                .index = pb_traces.trace_idx()
+            };
+        }
+
+
     } // namespace proof_producer
 } // namespace nil
 #endif  // PROOF_GENERATOR_LIBS_ASSIGNER_TRACE_PARSER_HPP_
