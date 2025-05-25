@@ -47,6 +47,8 @@ namespace nil {
                 container_type val;
 
             public:
+                using polynomial_type = polynomial;
+
                 typedef typename container_type::value_type value_type;
                 typedef typename container_type::allocator_type allocator_type;
                 typedef typename container_type::reference reference;
