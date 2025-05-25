@@ -26,6 +26,9 @@
 #define CRYPTO3_ALGEBRA_FIELDS_GOLDILOCKS_HPP
 
 #include <nil/crypto3/algebra/fields/detail/element/fp.hpp>
+#include <nil/crypto3/algebra/fields/detail/element/fpn.hpp>
+
+#include <nil/crypto3/algebra/fields/fpn.hpp>
 
 #include <nil/crypto3/algebra/fields/params.hpp>
 #include <nil/crypto3/algebra/fields/field.hpp>
@@ -59,11 +62,21 @@ namespace nil {
                     typedef typename detail::element_fp<params<goldilocks>> value_type;
                 };
 
-                constexpr typename std::size_t const goldilocks::modulus_bits;
-                constexpr typename std::size_t const goldilocks::number_bits;
-                constexpr typename std::size_t const goldilocks::value_bits;
+                namespace detail {
+                    template<typename FieldType>
+                    struct goldilocks_fp2_binomial_extension_params {
+                        constexpr static std::size_t dimension = 2;
+                        using field_type = FieldType;
+                        using base_field_type = goldilocks;
+                        constexpr static base_field_type::value_type non_residue = 7;
+                        constexpr static base_field_type::value_type dim_unity_root = 18446744069414584320ull;
+                    };
+                }  // namespace detail
 
-                constexpr typename goldilocks::integral_type const goldilocks::group_order_minus_one_half;
+                struct goldilocks_fp2
+                    : public fpn<detail::goldilocks_fp2_binomial_extension_params<goldilocks_fp2>> {
+                    using small_subfield = goldilocks;
+                };
 
             }    // namespace fields
         }        // namespace algebra
