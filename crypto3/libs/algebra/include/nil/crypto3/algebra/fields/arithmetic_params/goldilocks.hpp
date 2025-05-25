@@ -43,27 +43,26 @@ namespace nil {
                     typedef typename policy_type::modular_type modular_type;
                     typedef typename policy_type::integral_type integral_type;
 
-                    constexpr static const std::size_t two_adicity = 0x20;
+                    constexpr static const std::size_t two_adicity = 32;
                     constexpr static const integral_type arithmetic_generator = 0x01;
                     constexpr static const integral_type geometric_generator = 0x02;
                     constexpr static const integral_type multiplicative_generator = 0x07;
                     constexpr static const integral_type root_of_unity =
-                        0x185629DCDA58878C_big_uint64;
+                        0x185629DCDA58878Cull;
                 };
 
-                constexpr std::size_t const arithmetic_params<goldilocks>::two_adicity;
+                template<>
+                struct arithmetic_params<goldilocks_fp2> : public params<goldilocks> {
+                    // It's actually 29 but that requires going into the extension field and we don't
+                    // want that
+                    constexpr static std::size_t two_adicity = 32;
+                    constexpr static goldilocks_fp2::value_type multiplicative_generator{
+                        {goldilocks::value_type(18081566051660590251ull), goldilocks::value_type(16121475356294670766ull)}};
+                    constexpr static integral_type root_of_unity = 0x185629DCDA58878Cull;
 
-                constexpr typename arithmetic_params<goldilocks>::integral_type const
-                    arithmetic_params<goldilocks>::root_of_unity;
-
-                constexpr typename arithmetic_params<goldilocks>::integral_type const
-                    arithmetic_params<goldilocks>::arithmetic_generator;
-
-                constexpr typename arithmetic_params<goldilocks>::integral_type const
-                    arithmetic_params<goldilocks>::geometric_generator;
-
-                constexpr typename arithmetic_params<goldilocks>::integral_type const
-                    arithmetic_params<goldilocks>::multiplicative_generator;
+                    constexpr static integral_type arithmetic_generator = 0u;
+                    constexpr static integral_type geometric_generator = 0u;
+                };
             }    // namespace fields
         }        // namespace algebra
     }            // namespace crypto3

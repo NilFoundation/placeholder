@@ -39,9 +39,11 @@
 #include <nil/crypto3/algebra/curves/vesta.hpp>
 #include <nil/crypto3/algebra/fields/arithmetic_params/alt_bn128.hpp>
 #include <nil/crypto3/algebra/fields/arithmetic_params/babybear.hpp>
+#include <nil/crypto3/algebra/fields/arithmetic_params/goldilocks.hpp>
 #include <nil/crypto3/algebra/fields/arithmetic_params/pallas.hpp>
 #include <nil/crypto3/algebra/fields/arithmetic_params/vesta.hpp>
 #include <nil/crypto3/algebra/fields/babybear.hpp>
+#include <nil/crypto3/algebra/fields/goldilocks.hpp>
 #include <nil/crypto3/algebra/random_element.hpp>
 
 #include <nil/crypto3/hash/algorithm/hash.hpp>
@@ -286,6 +288,28 @@ BOOST_DATA_TEST_CASE(minimal_math_pallas_fixed_size, boost::unit_test::data::xra
 
 BOOST_DATA_TEST_CASE(minimal_math_bn254_fixed_size, boost::unit_test::data::xrange(30)) {
     using FieldType = typename algebra::curves::alt_bn128_254::scalar_field_type;
+    auto pt = load_hardhat_input("minimal_math.json");
+    l1_size_restrictions max_sizes;
+
+    std::size_t size = (1 << sample) - 2;
+
+    complex_test<FieldType>(pt, gen_max_sizes(size));
+}
+
+BOOST_DATA_TEST_CASE(minimal_math_goldilocks_fixed_size,
+                     boost::unit_test::data::xrange(30)) {
+    using FieldType = typename algebra::fields::goldilocks;
+    auto pt = load_hardhat_input("minimal_math.json");
+    l1_size_restrictions max_sizes;
+
+    std::size_t size = (1 << sample) - 2;
+
+    complex_test<FieldType>(pt, gen_max_sizes(size));
+}
+
+BOOST_DATA_TEST_CASE(minimal_math_goldilocks_fp2_fixed_size,
+                     boost::unit_test::data::xrange(30)) {
+    using FieldType = typename algebra::fields::goldilocks_fp2;
     auto pt = load_hardhat_input("minimal_math.json");
     l1_size_restrictions max_sizes;
 

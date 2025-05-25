@@ -108,7 +108,7 @@ void run_perf_test(std::string const& field_name) {
 
 using field_types = std::tuple<
     nil::crypto3::algebra::fields::alt_bn128_scalar_field<254u>,
-    nil::crypto3::algebra::fields::goldilocks, nil::crypto3::algebra::fields::mersenne31,
+    nil::crypto3::algebra::fields::goldilocks, nil::crypto3::algebra::fields::goldilocks_fp2, nil::crypto3::algebra::fields::mersenne31,
     nil::crypto3::algebra::fields::koalabear, nil::crypto3::algebra::fields::babybear,
     nil::crypto3::algebra::fields::babybear_fp4,
     nil::crypto3::algebra::fields::babybear_fp5,
