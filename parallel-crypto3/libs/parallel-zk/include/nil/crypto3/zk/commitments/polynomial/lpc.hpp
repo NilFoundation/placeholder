@@ -146,7 +146,7 @@ namespace nil {
                     void fill_challenge_queue_for_setup(transcript_type& transcript, std::queue<value_type>& queue) {
                         // The value of _etha.
                         queue.push(transcript.template challenge<field_type>());
-                    } 
+                    }
 
                     commitment_type commit(std::size_t index) {
                         this->state_commited(index);
@@ -214,7 +214,7 @@ namespace nil {
                      * \returns A pair containing the FRI proof and the vector of size 'lambda' containing the challenges used.
                      */
                     void proof_eval_FRI_proof(
-                            polynomial_type& sum_poly, 
+                            polynomial_type& sum_poly,
                             fri_proof_type& fri_proof_out,
                             std::vector<value_type>& challenges_out,
                             typename params_type::grinding_type::output_type& proof_of_work_out,
@@ -376,11 +376,11 @@ namespace nil {
                                     std::size_t point_batch_index) {
                                     typename field_type::value_type theta_acc = theta.pow(
                                         theta_powers_for_each_batch[point_batch_index]);
-                                    std::size_t point_index =
+                                    const std::size_t point_index =
                                         point_batch_pairs[point_batch_index].first;
                                     auto const& point = points[point_index];
 
-                                    std::size_t i =
+                                    const std::size_t i =
                                         this->_z.get_batches()
                                             [point_batch_pairs[point_batch_index].second];
                                     for (std::size_t j = 0;
@@ -389,18 +389,12 @@ namespace nil {
                                         if (iter == this->_points_map[i][j].end())
                                             continue;
 
-                                        math::polynomial<value_type> g_normal =
+                                        const math::polynomial<value_type>& g_normal =
                                             (*polys_coefficients_ptr)[i][j];
-                                        g_normal *= theta_acc;
                                         Q_normal_parts
                                             [point_index]
                                             [point_batch_pairs[point_batch_index]
-                                                 .second] += g_normal;
-                                        Q_normal_parts
-                                            [point_index]
-                                            [point_batch_pairs[point_batch_index]
-                                                 .second] -=
-                                            this->_z.get(i, j, iter->second) * theta_acc;
+                                                 .second] += theta_acc * (g_normal - this->_z.get(i, j, iter->second));
                                         theta_acc *= theta;
                                     }
                                 },
@@ -442,11 +436,13 @@ namespace nil {
 
                         {
                             PROFILE_SCOPE("Compute Q normals 2 (with point = etha)");
+
+                            const math::polynomial<value_type> V = {-_etha, 1u};
                             parallel_for(
                                 0, this->_z.get_batches().size(),
                                 [this, &theta, &theta_powers, &Q_normals,
-                                 polys_coefficients_ptr](std::size_t batch_idx) {
-                                    std::size_t i = this->_z.get_batches()[batch_idx];
+                                 polys_coefficients_ptr, &V](std::size_t batch_idx) {
+                                    const std::size_t i = this->_z.get_batches()[batch_idx];
                                     typename field_type::value_type theta_acc =
                                         theta.pow(theta_powers[i]);
 
@@ -455,16 +451,12 @@ namespace nil {
                                         return;
                                     math::polynomial<value_type>& Q_normal =
                                         Q_normals[batch_idx];
-                                    auto point = _etha;
-                                    math::polynomial<value_type> V = {-point, 1u};
 
                                     for (std::size_t j = 0;
                                          j < this->_z.get_batch_size(i); j++) {
-                                        math::polynomial<value_type> g_normal =
+                                        const math::polynomial<value_type>& g_normal =
                                             (*polys_coefficients_ptr)[i][j];
-                                        g_normal *= theta_acc;
-                                        Q_normal += g_normal;
-                                        Q_normal -= _fixed_polys_values[i][j] * theta_acc;
+                                        Q_normal += theta_acc * (g_normal - _fixed_polys_values[i][j]);
                                         theta_acc *= theta;
                                     }
 
