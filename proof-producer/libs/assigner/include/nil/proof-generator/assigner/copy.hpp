@@ -7,7 +7,7 @@
 #include <boost/filesystem.hpp>
 
 #include <nil/crypto3/zk/snark/arithmetization/plonk/assignment.hpp>
-#include <nil/blueprint/zkevm_bbf/copy.hpp>
+#include <nil/blueprint/zkevm_bbf/big_field/circuits/copy.hpp>
 #include <nil/proof-generator/assigner/options.hpp>
 #include <nil/proof-generator/assigner/trace_parser.hpp>
 
@@ -21,7 +21,7 @@ namespace nil {
                                                              const AssignerOptions& options) {
             BOOST_LOG_TRIVIAL(debug) << "fill copy table from " << trace_base_path << "\n";
 
-            using ComponentType = nil::blueprint::bbf::copy<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT>;
+            using ComponentType = nil::blueprint::bbf::zkevm_big_field::copy<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT>;
 
             typename nil::blueprint::bbf::context<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT> context_object(assignment_table, options.circuits_limits.max_total_rows);
 
@@ -87,8 +87,7 @@ namespace nil {
                 options.circuits_limits.max_copy_rows,
                 options.circuits_limits.max_rw_rows,
                 options.circuits_limits.max_keccak_blocks,
-                options.circuits_limits.max_bytecode_rows,
-                options.circuits_limits.max_call_commits
+                options.circuits_limits.max_bytecode_rows
             );
 
             return {};

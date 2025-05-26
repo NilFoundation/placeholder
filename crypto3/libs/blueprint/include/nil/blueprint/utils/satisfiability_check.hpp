@@ -111,7 +111,7 @@ namespace nil {
                     selector_rows.size() / options_.thread_pool_size / options_.split_per_thread // not every batch takes the same time to process, so making it smaller
                 );
 
-                if (verbose) std::cout << "Satisfiability check. Check" << std::endl;
+                if (verbose) BOOST_LOG_TRIVIAL(info) << "Satisfiability check. Check" << std::endl;
 
                 auto gate_check_fn = [
                     &gates,
@@ -120,7 +120,15 @@ namespace nil {
                     this,
                     verbose
                 ] (std::size_t gate_idx, std::size_t start, std::size_t end) -> bool {
-                    Column selector = assignments.selector(gates[gate_idx].selector_index);
+                    Column selector;
+                    if (auto index = gates[gate_idx].selector_index;
+                            index <= crypto3::zk::snark::PLONK_MAX_SELECTOR_ID) {
+                        selector = assignments.selector(index);
+                    } else if (index == crypto3::zk::snark::PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED) {
+                        selector.resize(assignments.rows_amount(), 1);
+                    } else {
+                      assert(false);
+                    }
                     end = std::min(end, selector.size());
                     for (auto row = start; row < end; row++) {
                         if (selector[row].is_zero()) continue;
@@ -130,16 +138,16 @@ namespace nil {
                                 gates[gate_idx].constraints[j].evaluate(row, assignments);
 
                             if (!constraint_result.is_zero()) {
-                                std::cout << "Constraint " << j << " from gate " << gate_idx << " on row " << row
+                                BOOST_LOG_TRIVIAL(error) << "Constraint " << j << " from gate " << gate_idx << " on row " << row
                                     << " is not satisfied." << std::endl;
-                                std::cout << "Constraint result: " << constraint_result << std::endl;
+                                BOOST_LOG_TRIVIAL(error) << "Constraint result: " << std::hex << constraint_result << std::dec << std::endl;
 
                                 std::string constraint_name;
                                 if (options_.constraint_names) {
                                     constraint_name = options_.constraint_names->at(gates[gate_idx].selector_index).at(j);
                                 }
-                                std::cout << "Offending constraint name: " << constraint_name << std::endl;
-                                std::cout << "Offending contraint: " << gates[gate_idx].constraints[j] << std::endl;
+                                BOOST_LOG_TRIVIAL(error) << "Offending constraint name: " << constraint_name << std::endl;
+                                BOOST_LOG_TRIVIAL(error) << "Offending contraint: " << gates[gate_idx].constraints[j] << std::endl;
 
                                 return false;
                             }
@@ -151,7 +159,15 @@ namespace nil {
                 };
 
                 for (const auto& i : used_gates) {
-                    Column selector = assignments.selector(gates[i].selector_index);
+                    Column selector;
+                    if (auto index = gates[i].selector_index;
+                            index <= crypto3::zk::snark::PLONK_MAX_SELECTOR_ID) {
+                        selector = assignments.selector(gates[i].selector_index);
+                    } else if (index == crypto3::zk::snark::PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED) {
+                        selector.resize(assignments.rows_amount(), 1);
+                    } else {
+                      assert(false);
+                    }
 
                     // To use the attrs we have to create threads manually
                     boost::asio::thread_pool gate_pool(0);
@@ -163,7 +179,7 @@ namespace nil {
                     }
 
                     if (verbose) {
-                        std::cout << "\tCheck gate " << i << std::endl;
+                        BOOST_LOG_TRIVIAL(error) << "\tCheck gate " << i << std::endl;
                         progress_printer_.Reset(selector);
                     }
 
@@ -183,12 +199,12 @@ namespace nil {
                     }
 
                     if (verbose) {
-                        std::cout << "\tGate " << i << " checked" << std::endl;
+                        BOOST_LOG_TRIVIAL(error) << "\tGate " << i << " checked" << std::endl;
                     }
                 }
 
                 if (verbose) {
-                    std::cout << "Gates checked. Check lookups" << std::endl;
+                    BOOST_LOG_TRIVIAL(error) << "Gates checked. Check lookups" << std::endl;
                 }
 
                 auto lookup_check_fn = [
@@ -198,7 +214,15 @@ namespace nil {
                     verbose,
                     this
                 ](size_t gate_idx, size_t start, size_t end) -> bool {
-                    Column selector = assignments.selector(lookup_gates[gate_idx].tag_index);
+                    Column selector;
+                    auto index = lookup_gates[gate_idx].tag_index;
+                    if ( index <= crypto3::zk::snark::PLONK_MAX_SELECTOR_ID) {
+                        selector = assignments.selector(index);
+                    } else if (index == crypto3::zk::snark::PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED) {
+                        selector.resize(assignments.rows_amount(), 1);
+                    } else {
+                        assert(false);
+                    }
                     end = std::min(end, selector.size());
 
                     for (size_t row = start; row < end; ++row) {
@@ -219,20 +243,31 @@ namespace nil {
                                 if(bp.get_reserved_dynamic_tables().find(table_name) != bp.get_reserved_dynamic_tables().end() ) {
                                     auto dynamic_table = fetch_dynamic_table(bp, assignments, table_name, lookup_gates[gate_idx].constraints[j].table_id);
                                     if (dynamic_table.find(input_values) == dynamic_table.end()) {
+                                        BOOST_LOG_TRIVIAL(error) << "Input values";
+                                        std::stringstream ss;
                                         for (std::size_t k = 0; k < input_values.size(); k++) {
-                                            std::cout << input_values[k] << " ";
+                                            ss << std::hex << input_values[k] << std::dec << " ";
                                         }
-                                        std::cout << std::endl;
-                                        std::cout << "Constraint " << j << " from lookup gate " << gate_idx << " from table "
+                                        BOOST_LOG_TRIVIAL(error) << ss.str();
+                                        BOOST_LOG_TRIVIAL(error) << std::endl;
+                                        BOOST_LOG_TRIVIAL(error) << "Constraint " << j << " from lookup gate " << gate_idx << " from table "
                                             << table_name << " on row " << row << " is not satisfied."
                                             << std::endl;
-                                        // std::cout << "Offending Lookup Gate: " << std::endl;
-                                        // for (const auto &constraint : lookup_gates[gate_idx].constraints) {
-                                        //     std::cout << "Table id: " << constraint.table_id << std::endl;
-                                        //     for (auto &lookup_input : constraint.lookup_input) {
-                                        //         std::cout << lookup_input << std::endl;
-                                        //     }
-                                        // }
+                                        BOOST_LOG_TRIVIAL(error) << "Offending Lookup Constraint: " << std::endl;
+                                        const auto &constraint = lookup_gates[gate_idx].constraints[j];
+                                        BOOST_LOG_TRIVIAL(error) << "Table id: " << constraint.table_id << std::endl;
+                                        for (auto &lookup_input : constraint.lookup_input) {
+                                            BOOST_LOG_TRIVIAL(debug) << lookup_input;
+                                        }
+                                        // Please not comment it next time, it is really useful for circuits debugging
+                                        BOOST_LOG_TRIVIAL(trace) << "Possible values: ";
+                                        for( const auto &row: dynamic_table ) {
+                                            std::stringstream ss;
+                                            for( const auto &value : row ) {
+                                                ss << std::hex << value << std::dec << " ";
+                                            }
+                                            BOOST_LOG_TRIVIAL(trace) << ss.str();
+                                        }
 
                                         return false;
                                     }
@@ -264,27 +299,27 @@ namespace nil {
                                     }
                                 }
                                 if (!found) {
-                                    std::cout << "Input values:";
+                                    BOOST_LOG_TRIVIAL(error) << "Input values:";
+                                    std::stringstream ss;
                                     for (std::size_t k = 0; k < input_values.size(); k++) {
-                                        std::cout << input_values[k] << " ";
+                                        ss << std::hex << input_values[k] << std::dec <<  " ";
                                     }
-                                    std::cout << std::endl;
-                                    std::cout << "Constraint " << j << " from lookup gate " << gate_idx << " from table "
+                                    BOOST_LOG_TRIVIAL(error) << ss.str();
+                                    BOOST_LOG_TRIVIAL(error) << std::endl;
+                                    BOOST_LOG_TRIVIAL(error) << "Constraint " << j << " from lookup gate " << gate_idx << " from table "
                                         << table_name << " on row " << row << " is not satisfied."
                                         << std::endl;
-                                    // std::cout << "Offending Lookup Gate: " << std::endl;
-                                    // for (const auto &constraint : lookup_gates[gate_idx].constraints) {
-                                    //     std::cout << "Table id: " << constraint.table_id << std::endl;
-                                    //     for (auto &lookup_input : constraint.lookup_input) {
-                                    //         std::cout << lookup_input << std::endl;
-                                    //     }
-                                    // }
-
+                                    BOOST_LOG_TRIVIAL(error) << "Offending Lookup Constraint: " << std::endl;
+                                    const auto &constraint = lookup_gates[gate_idx].constraints[j];
+                                    BOOST_LOG_TRIVIAL(error) << "Table id: " << constraint.table_id << std::endl;
+                                    for (auto &lookup_input : constraint.lookup_input) {
+                                        BOOST_LOG_TRIVIAL(error) << lookup_input << std::endl;
+                                    }
                                     return false;
                                 }
                             } catch (std::out_of_range &e) {
-                                std::cout << "Lookup table " << table_name << " not found." << std::endl;
-                                std::cout << "Table_id = " << lookup_gates[gate_idx].constraints[j].table_id << " table_name "
+                                BOOST_LOG_TRIVIAL(error) << "Lookup table " << table_name << " not found." << std::endl;
+                                BOOST_LOG_TRIVIAL(error) << "Table_id = " << lookup_gates[gate_idx].constraints[j].table_id << " table_name "
                                             << table_name << std::endl;
 
                                 return false;
@@ -297,7 +332,15 @@ namespace nil {
                 };
 
                 for (const auto& i : used_lookup_gates) {
-                    Column selector = assignments.selector(lookup_gates[i].tag_index);
+                    Column selector;
+                    auto index = lookup_gates[i].tag_index;
+                    if ( index <= crypto3::zk::snark::PLONK_MAX_SELECTOR_ID) {
+                        selector = assignments.selector(index);
+                    } else if (index == crypto3::zk::snark::PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED) {
+                        selector.resize(assignments.rows_amount(), 1);
+                    } else {
+                        assert(false);
+                    }
 
                     // To use the attrs we have to create threads manually
                     boost::asio::thread_pool lookup_pool(0);
@@ -309,7 +352,7 @@ namespace nil {
                     }
 
                     if (verbose) {
-                        std::cout << "\tLookup gate " << i << std::endl;
+                        BOOST_LOG_TRIVIAL(error) << "\tLookup gate " << i << std::endl;
                         progress_printer_.Reset(selector);
                     }
 
@@ -329,20 +372,24 @@ namespace nil {
                     }
 
                     if (verbose) {
-                        std::cout << "\tLookup gate " << i << " checked" << std::endl;
+                        BOOST_LOG_TRIVIAL(error) << "\tLookup gate " << i << " checked" << std::endl;
                     }
                 }
 
                 for (const auto& i : used_copy_constraints) {
                     if (var_value(assignments, copy_constraints[i].first) !=
                         var_value(assignments, copy_constraints[i].second)) {
-                        std::cout << "Copy constraint number " << i << " is not satisfied."
+                        BOOST_LOG_TRIVIAL(error) << "Copy constraint number " << i << " is not satisfied."
                                     << " First variable: " << copy_constraints[i].first
                                     << " second variable: " << copy_constraints[i].second << std::endl;
-                        std::cout << var_value(assignments, copy_constraints[i].first) << " != "
+                        BOOST_LOG_TRIVIAL(error) << var_value(assignments, copy_constraints[i].first) << " != "
                                     << var_value(assignments, copy_constraints[i].second) << std::endl;
                         return false;
                     }
+                }
+
+                if (verbose) {
+                    BOOST_LOG_TRIVIAL(info) << " ";
                 }
 
                 return true;
@@ -423,7 +470,7 @@ namespace nil {
                         }
 
                         if (progress_.load() == kMaxProgress) {
-                            std::cout << '\n';
+                            BOOST_LOG_TRIVIAL(error) << '\n';
                         }
                     }
                 }

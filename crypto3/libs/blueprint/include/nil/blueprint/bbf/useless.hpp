@@ -50,6 +50,7 @@ namespace nil {
                 using generic_component<FieldType, stage>::constrain;
                 using generic_component<FieldType, stage>::lookup;
                 using generic_component<FieldType, stage>::lookup_table;
+                using generic_component<FieldType, stage>::multi_lookup_table;
 
                 public:
                     using typename generic_component<FieldType,stage>::TYPE;
@@ -59,19 +60,29 @@ namespace nil {
                         generic_component<FieldType,stage>(context_object) {
 
                         TYPE X[3];
+                        TYPE Y[3];
 
                         if constexpr (stage == GenerationStage::ASSIGNMENT) {
                             X[0] = 3; X[1] = 14; X[2] = 15;
+                            Y[0] = 14; Y[1] = 17;  Y[2] = 3;
                         }
 
                         allocate(X[0],0,0);
                         allocate(X[1],0,1);
                         allocate(X[2],0,2);
 
+                        allocate(Y[0],1,0);
+                        allocate(Y[1],1,1);
+                        allocate(Y[2],1,2);
+
                         std::vector<std::size_t> lookup_cols = {0};
+                        std::vector<std::vector<std::size_t>> multi_lookup_cols = {{0},{1}};
                         lookup_table("dummy_dynamic",lookup_cols,0,3);
                         lookup_table("dummy_dynamic2",lookup_cols,1,1);
+                        multi_lookup_table("multi_dummy_dynamic",multi_lookup_cols, 1, 2);
                         lookup(X[0],"dummy_dynamic");
+                        lookup(X[0],"multi_dummy_dynamic");
+                        lookup(Y[0],"multi_dummy_dynamic");
                     };
             };
 
