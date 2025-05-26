@@ -50,8 +50,6 @@
 #include <nil/crypto3/zk/snark/systems/plonk/placeholder/preprocessor.hpp>
 #include <nil/blueprint/bbf/circuit_builder.hpp>
 
-#include <nil/crypto3/math/polynomial/polymorphic_polynomial_dfs.hpp>
-
 #include "../test_plonk_component.hpp"
 #include <boost/algorithm/string.hpp>
 
@@ -150,7 +148,7 @@ std::vector<std::uint8_t> hex_string_to_bytes(std::string const &hex_string) {
     return bytes;
 }
 
-template<typename FieldType>
+template <typename FieldType>
 bool check_proof(
     const nil::blueprint::circuit<
         zk::snark::plonk_constraint_system<typename FieldType::small_subfield>> &bp,
@@ -280,19 +278,18 @@ class CircuitTestFixture {
              typename... ComponentStaticInfoArgs>
     bool test_bbf_component(
         std::string circuit_name,
-        std::vector<typename FieldType::small_subfield::value_type> public_input,
-        typename BBFType<typename FieldType::small_subfield,
-                         GenerationStage::ASSIGNMENT>::input_type assignment_input,
-        ComponentStaticInfoArgs... component_static_info_args) {
-        using SmallFieldType = typename FieldType::small_subfield;
-        circuit_builder<SmallFieldType, BBFType, ComponentStaticInfoArgs...> builder(
-            component_static_info_args...);
+        std::vector<typename field_type::value_type> public_input,
+        typename BBFType<field_type, GenerationStage::ASSIGNMENT>::input_type assignment_input,
+        ComponentStaticInfoArgs... component_static_info_args
+    ) {
+        // Max_copy, Max_rw, Max_keccak, Max_bytecode
+        circuit_builder<field_type, BBFType, ComponentStaticInfoArgs...> builder(component_static_info_args...);
 
         auto &bp = builder.get_circuit();
         std::size_t max_gates_degree  = bp.max_gates_degree();
         std::size_t max_lookup_degree  = bp.max_lookup_gates_degree();
-        BOOST_LOG_TRIVIAL(info) << "Max gates degree " << max_gates_degree << std::endl;
-        BOOST_LOG_TRIVIAL(info) << "Max lookup degree " << max_lookup_degree << std::endl;
+        std::cout << "Max gates degree " << max_gates_degree << std::endl;
+        std::cout << "Max lookup degree " << max_lookup_degree << std::endl;
 
         auto [assignment, component, desc] = builder.assign(assignment_input);
         if (print_to_file) {
