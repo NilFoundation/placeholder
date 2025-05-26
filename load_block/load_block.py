@@ -4,6 +4,8 @@ from web3 import Web3
 import time
 import sys
 
+# ALCHEMY_API_KEY = "I38oXHAOj0OUcvNfObEX8cS0I3PAHj0R"
+# ALCHEMY_RPC_URL = f"https://eth-mainnet.g.alchemy.com/v2/{ALCHEMY_API_KEY}"
 RPC_URL = "https://0xrpc.io/eth"
 #BLOCK_NUMBER = "0x1393622"  # 20526626 in hex
 #BLOCK_NUMBER = "0x1393624"  # 20526628 in hex

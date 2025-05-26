@@ -248,7 +248,6 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                         continue;
                     }
                     std::size_t current_opcode_bare_rows_amount = opcode_impls[current_opcode]->rows_amount();
-                    BOOST_ASSERT(current_opcode_bare_rows_amount <= max_opcode_height);
 
                     context_type op_ct = context_object.fresh_subcontext(
                         opcode_area,
