@@ -71,7 +71,7 @@ public:
     // Because of this, the 16-8 approach ends up taking as much space as the 8-8 approach. We favor 
     // the 8-8 approach for conceptual simplicity.
 
-    // Computes the terms of r*b with coefficient 2^(8 * chunk_index)
+    // Computes the terms of a*b with coefficient 2^(8 * chunk_index)
     TYPE carryless_mul(const std::vector<TYPE> &a_8_chunks,
                                 const std::vector<TYPE> &b_8_chunks,
                                 const unsigned char chunk_index) const {
@@ -129,9 +129,9 @@ public:
         std::vector<TYPE> a8_chunks(chunk_8_amount);
         std::vector<TYPE> b8_chunks(chunk_8_amount);
         std::vector<TYPE> r8_chunks(chunk_8_amount);                   // Result of a*b in 8-bit chunks
-        std::vector<TYPE> r8_carryless_chunks(chunk_8_amount);         // a8_chunks[i] * b8_chunks[i] = r8_carryless_chunks[i]
+        std::vector<TYPE> r8_carryless_chunks(chunk_8_amount);         // r8_carryless_chunks[i] = carryless_mul(a8_chunks, b8_chunks, i)
         std::vector<TYPE> r8_carries(chunk_8_amount);                  // Carries containing whatever overflows 8 bits: 
-                                                                       // a8_chunks[i] * b8_chunks[i] = r8_chunks[i] + r8_carries[i]
+                                                                       // r8_carryless_chunks[i] = r8_chunks[i] + r8_carries[i]
         std::vector<TYPE> r8_carries_copy1(chunk_8_amount);
         std::vector<TYPE> r8_carries_copy2(chunk_8_amount);
 
