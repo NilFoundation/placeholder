@@ -72,13 +72,15 @@ class zkevm_addmod_bbf : public generic_component<FieldType, stage> {
     }
 
     // Computes the terms of mul + r - (a + b) with coefficient 2^(16 * chunk_index)
+    // Because mul has chunk_amount + 1 chunks, we need to handle this case as well
     TYPE carryless_construct(const std::vector<TYPE> &mul_chunks,
                                 const std::vector<TYPE> &r_chunks,
                                 const std::vector<TYPE> &a_chunks,
                                 const std::vector<TYPE> &b_chunks,
                                 const unsigned char chunk_index) const {
-        // TYPE res = mul_chunks[chunk_index] + r_chunks[chunk_index] - a_chunks[chunk_index] - b_chunks[chunk_index];
-        TYPE res = 0;
+        TYPE left_hand_side = mul_chunks[chunk_index] + ( (chunk_index < chunk_amount) ? r_chunks[chunk_index] : 0 );
+        TYPE right_hand_side = (chunk_index < chunk_amount) ? (a_chunks[chunk_index] + b_chunks[chunk_index]) : 0;
+        TYPE res = right_hand_side - left_hand_side;
         return res;
     }
 
@@ -100,8 +102,8 @@ class zkevm_addmod_bbf : public generic_component<FieldType, stage> {
         std::vector<TYPE> s_carries(chunk_amount);        
         TYPE s_extra_chunk;                                            // Note that s might be 257 bits long, hence the extra chunk                                   
         std::vector<TYPE> r_chunks(chunk_amount);                      // Result of (s mod N) mod 2^256
-        std::vector<TYPE> mul_chunks(chunk_amount + 1);                    // Result of q * N 
-        std::vector<TYPE> mul_chunks_copy(chunk_amount + 1);                    // Copy of the above
+        std::vector<TYPE> mul_chunks(chunk_amount + 1);                // Result of q * N 
+        std::vector<TYPE> mul_chunks_copy(chunk_amount + 1);           // Copy of the above
         
         // 8-bit chunks
         std::vector<TYPE> N8_chunks(chunk_8_amount);                   
@@ -110,13 +112,13 @@ class zkevm_addmod_bbf : public generic_component<FieldType, stage> {
         std::vector<TYPE> q8_chunks(chunk_8_amount);                   // Quotient of integer division s / N
         std::vector<TYPE> mul8_chunks(chunk_8_amount + 1);             // Result of q * N (note that it has one extra chunk, because it can go up to 257 bits)
         std::vector<TYPE> mul8_chunks_check(chunk_8_amount);           // Range checks for the above
-        std::vector<TYPE> mul8_carryless_chunks(chunk_8_amount + 1);       // mul8_carryless_chunks[i] = carryless_mul(q8_chunks, N8_chunks, i)       
-        std::vector<TYPE> mul8_carries(chunk_8_amount + 1);                // Carries containing whatever overflows 8 bits:     
+        std::vector<TYPE> mul8_carryless_chunks(chunk_8_amount + 1);   // mul8_carryless_chunks[i] = carryless_mul(q8_chunks, N8_chunks, i)       
+        std::vector<TYPE> mul8_carries(chunk_8_amount + 1);            // Carries containing whatever overflows 8 bits:     
                                                                        // mul8_carryless_chunks[i] = mul8_chunks[i] + mul8_carries[i]
 
-        std::vector<TYPE> construct_carryless_chunks(chunk_amount);
-        std::vector<TYPE> construct_chunks(chunk_amount);
-        std::vector<TYPE> construct_carries(chunk_amount);
+        std::vector<TYPE> construct_carryless_chunks(chunk_amount + 1);
+        std::vector<TYPE> construct_chunks(chunk_amount + 1);
+        std::vector<TYPE> construct_carries(chunk_amount + 1);
 
         std::vector<TYPE> add_carries(chunk_amount);
 
@@ -272,31 +274,44 @@ class zkevm_addmod_bbf : public generic_component<FieldType, stage> {
         }
 
         // mul + r == a + b
-        // TODO: missing chunk 32 of mul
-        // TODO: I may need to use s explicitly, instead of a + b. 
-        for (std::size_t i = 0; i < chunk_amount; i++) {
+        for (std::size_t i = 0; i < chunk_amount + 1; i++) {
             construct_carryless_chunks[i] = carryless_construct(mul_chunks_copy, r_chunks, a_chunks, b_chunks, i);
             TYPE prev_carry = (i > 0) ? construct_carries[i - 1] : 0;
             if constexpr (stage == GenerationStage::ASSIGNMENT) {
                 auto mask16 = (1 << 16) - 1;
                 construct_chunks[i] = (construct_carryless_chunks[i] + prev_carry).to_integral() & mask16;
+                std::cout << "construct_chunks[" << i << "] = " << construct_chunks[i] << std::endl;
                 construct_carries[i] = (construct_carryless_chunks[i] + prev_carry).to_integral() >> 16;
+                // TODO: chunks of the construct should be zero, but are not (not only the extra chunk)
+                // if ((trivial_modulus != 0) && (i < chunk_amount)) {
+                //     BOOST_ASSERT(construct_carryless_chunks[i] + prev_carry == construct_carries[i] * two_16);
+                // }
+                // BOOST_ASSERT(construct_chunks[i] == 0);
             }
-            // TODO: allocate
-            allocate(construct_chunks[i], i, 9);
-            allocate(construct_carries[i], i, 11);
+            if (i < chunk_amount) {
+                // allocate(construct_chunks[i], i, 9);
+                allocate(construct_carries[i], i, 11);
+                constrain(construct_carries[i] * (1 - construct_carries[i]));
+            }
+            else {
+                allocate(construct_chunks[i], 17, 10);
+                allocate(construct_carries[i], 18, 10);
+                constrain(construct_carries[i]);
+            }
 
-            // // No need to satisfy these constraints if N <= 1, as we will enforce this case separately
-            constrain((construct_carryless_chunks[i] + prev_carry - construct_chunks[i] - construct_carries[i] * 256) * trivial_modulus);
+            // No need to satisfy these constraints if N <= 1, as we will enforce this case separately
+            // TODO: do I need to multiply by trivial_modulus here, or does it work anyway?
+            // TODO: this fails now
+            // constrain((construct_carryless_chunks[i] + prev_carry - construct_carries[i] * two_16) * trivial_modulus);
         }
 
         // // Carry propagation constraints for the N + v = r + 2^256 equality
-        // for (std::size_t i = 0; i < chunk_amount; i++) {
-        //     TYPE prev_carry = (i > 0) ? add_carries[i-1] : 0;
-        //     if constexpr (stage == GenerationStage::ASSIGNMENT) {
+        for (std::size_t i = 0; i < chunk_amount; i++) {
+            TYPE prev_carry = (i > 0) ? add_carries[i-1] : 0;
+            if constexpr (stage == GenerationStage::ASSIGNMENT) {
 
-        //     }
-        // }
+            }
+        }
 
 
 
