@@ -350,25 +350,25 @@ namespace nil::crypto3::zk::snark {
 
             PROFILE_SCOPE("Squashing DAG expression");
 
-            visitor.print_stats(result, "DAG before squashing");
+            // visitor.print_stats(result, "DAG before squashing");
 
             merge_children(/*only_those_that_occur_once=*/ false);
 
-            visitor.print_stats(result, "DAG After merge children");
+            // visitor.print_stats(result, "DAG After merge children");
 
             remove_unreachable_nodes();
 
-            visitor.print_stats(result, "DAG After remove unreachable nodes");
+            // visitor.print_stats(result, "DAG After remove unreachable nodes");
 
             remove_duplicates();
 
-            visitor.print_stats(result, "DAG After removing duplicates");
+            // visitor.print_stats(result, "DAG After removing duplicates");
 
             // Now remove children that are the only child of their parent, and parent operation matches.
             merge_children(/*only_those_that_occur_once=*/ true);
             remove_unreachable_nodes();
 
-            visitor.print_stats(result, "DAG after squashing");
+            // visitor.print_stats(result, "DAG after squashing");
         }
 
         // Runs over the dag, looking at the addition and multiplication nodes. If it detects a pair of children than appear
