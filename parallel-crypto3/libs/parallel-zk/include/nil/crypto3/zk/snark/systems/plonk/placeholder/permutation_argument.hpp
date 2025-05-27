@@ -61,32 +61,34 @@ namespace nil {
             namespace snark {
                 template<typename FieldType, typename ParamsType>
                 class placeholder_permutation_argument {
+                    using value_type = typename FieldType::value_type;
                     using SmallFieldType = typename FieldType::small_subfield;
                     using transcript_hash_type = typename ParamsType::transcript_hash_type;
                     using transcript_type = transcript::fiat_shamir_heuristic_sequential<transcript_hash_type>;
 
                     using commitment_scheme_type = typename ParamsType::commitment_scheme_type;
                     using commitment_type = typename commitment_scheme_type::commitment_type;
+                    using polynomial_dfs_type = math::polynomial_dfs<value_type>;
 
                     static constexpr std::size_t argument_size = 3;
                 public:
                     // TODO: Check, do we really need permutation_polynomial_dfs.
                     struct prover_result_type {
-                        std::array<math::polynomial_dfs<typename FieldType::value_type>, argument_size> F_dfs;
+                        std::array<polynomial_dfs_type, argument_size> F_dfs;
 
-                        math::polynomial_dfs<typename FieldType::value_type> permutation_polynomial_dfs;
+                        polynomial_dfs_type permutation_polynomial_dfs;
                     };
 
                     static inline prover_result_type prove_eval(
-                        const plonk_constraint_system<SmallFieldType> &constraint_system,
-                        const typename placeholder_public_preprocessor<
-                            SmallFieldType, ParamsType>::preprocessed_data_type
-                            preprocessed_data,
-                        const plonk_table_description<SmallFieldType> &table_description,
-                        const plonk_polynomial_dfs_table<SmallFieldType>
-                            &column_polynomials,
-                        typename ParamsType::commitment_scheme_type &commitment_scheme,
-                        transcript_type &transcript) {
+                            const plonk_constraint_system<SmallFieldType> &constraint_system,
+                            const typename placeholder_public_preprocessor<
+                                SmallFieldType, ParamsType>::preprocessed_data_type
+                                preprocessed_data,
+                            const plonk_table_description<SmallFieldType> &table_description,
+                            const plonk_polynomial_dfs_table<SmallFieldType>
+                                &column_polynomials,
+                            typename ParamsType::commitment_scheme_type &commitment_scheme,
+                            transcript_type &transcript) {
                         PROFILE_SCOPE("Permutation argument prove eval");
 
                         const std::vector<
@@ -105,24 +107,18 @@ namespace nil {
                         }
 
                         // 1. $\beta_1, \gamma_1 = \challenge$
-                        typename FieldType::value_type beta = transcript.template challenge<FieldType>();
-                        typename FieldType::value_type gamma = transcript.template challenge<FieldType>();
+                        value_type beta = transcript.template challenge<FieldType>();
+                        value_type gamma = transcript.template challenge<FieldType>();
 
                         // 2. Calculate id_binding, sigma_binding for j from 1 to N_rows
                         // 3. Calculate $V_P$
-                        math::polynomial_dfs<typename FieldType::value_type> V_P(basic_domain->size() - 1,
+                        polynomial_dfs_type V_P(basic_domain->size() - 1,
                                                                                  basic_domain->size());
 
-                        std::vector<math::polynomial_dfs<typename FieldType::value_type>>
-                            g_v;
-                        for (const auto &p : S_id) {
-                            g_v.emplace_back(p);
-                        }
-                        std::vector<math::polynomial_dfs<typename FieldType::value_type>>
-                            h_v;
-                        for (const auto &p : S_sigma) {
-                            h_v.emplace_back(p);
-                        }
+                        std::vector<polynomial_dfs_type> g_v(S_id.begin(), S_id.end());
+                       std::vector<polynomial_dfs_type>
+                            h_v(S_sigma.begin(), S_sigma.end());
+
                         BOOST_ASSERT(global_indices.size() == S_id.size());
                         BOOST_ASSERT(global_indices.size() == S_sigma.size());
 
@@ -144,11 +140,11 @@ namespace nil {
 
                         V_P[0] = FieldType::value_type::one();
 
-                        auto V_P_parts = std::make_unique<std::vector<typename FieldType::value_type>>(
+                        auto V_P_parts = std::make_unique<std::vector<value_type>>(
                             basic_domain->size(), FieldType::value_type::zero());
                         parallel_for(1, basic_domain->size(), [&g_v, &h_v, &S_id, &V_P_parts](std::size_t j) {
-                            typename FieldType::value_type nom = FieldType::value_type::one();
-                            typename FieldType::value_type denom = FieldType::value_type::one();
+                            value_type nom = FieldType::value_type::one();
+                            value_type denom = FieldType::value_type::one();
 
                             for (std::size_t i = 0; i < S_id.size(); i++) {
                                 nom *= g_v[i][j - 1];
@@ -166,10 +162,10 @@ namespace nil {
                         commitment_scheme.append_to_batch(PERMUTATION_BATCH, V_P);
 
                         // 5. Calculate g_perm, h_perm
-                        std::vector<math::polynomial_dfs<typename FieldType::value_type>> gs;
-                        std::vector<math::polynomial_dfs<typename FieldType::value_type>> hs;
-                        std::vector<math::polynomial_dfs<typename FieldType::value_type>> g_factors;
-                        std::vector<math::polynomial_dfs<typename FieldType::value_type>> h_factors;
+                        std::vector<polynomial_dfs_type> gs;
+                        std::vector<polynomial_dfs_type> hs;
+                        std::vector<polynomial_dfs_type> g_factors;
+                        std::vector<polynomial_dfs_type> h_factors;
                         for(std::size_t i = 0; i < g_v.size(); i++){
                             g_factors.push_back(g_v[i]);
                             h_factors.push_back(h_v[i]);
@@ -189,10 +185,10 @@ namespace nil {
                         BOOST_ASSERT(gs.size() == preprocessed_data.common_data->permutation_parts);
                         BOOST_ASSERT(gs.size() == hs.size());
 
-                        math::polynomial_dfs<typename FieldType::value_type> one_polynomial(
+                        polynomial_dfs_type one_polynomial(
                             0, V_P.size(), FieldType::value_type::one());
-                        std::array<math::polynomial_dfs<typename FieldType::value_type>, argument_size> F_dfs;
-                        math::polynomial_dfs<typename FieldType::value_type> V_P_shifted =
+                        std::array<polynomial_dfs_type, argument_size> F_dfs;
+                        polynomial_dfs_type V_P_shifted =
                             math::polynomial_shift(V_P, 1, basic_domain->m);
 
                         /* F_dfs[0] = preprocessed_data.common_data.lagrange_0 * (one_polynomial - V_P); */
@@ -200,7 +196,7 @@ namespace nil {
                         F_dfs[0] = one_polynomial;
                         F_dfs[0] -= V_P;
                         F_dfs[0] *= preprocessed_data.common_data->lagrange_0;
-                        std::vector<typename FieldType::value_type> permutation_alphas;
+                        std::vector<value_type> permutation_alphas;
                         for( std::size_t i = 0; i < preprocessed_data.common_data->permutation_parts - 1; i++ ){
                             permutation_alphas.push_back(transcript.template challenge<FieldType>());
                         }
@@ -209,7 +205,7 @@ namespace nil {
                         if ( preprocessed_data.common_data->permutation_parts == 1 ){
                             auto &g = gs[0];
                             auto &h = hs[0];
-                            math::polynomial_dfs<typename FieldType::value_type> t1 = V_P;
+                            polynomial_dfs_type t1 = V_P;
                             t1 *= g;
                             V_P_shifted *= h;
                             V_P_shifted -= t1;
@@ -221,11 +217,11 @@ namespace nil {
                         } else {
                             PROFILE_SCOPE("PERMUTATION ARGUMENT else block");
                             const auto& assignment_desc = preprocessed_data.common_data->desc;
-                            math::polynomial_dfs<typename FieldType::value_type> previous_poly = V_P;
-                            math::polynomial_dfs<typename FieldType::value_type> current_poly = V_P;
+                            polynomial_dfs_type previous_poly = V_P;
+                            polynomial_dfs_type current_poly = V_P;
                             // We need to store all the values of current_poly. Suddenly this increases the RAM usage, but 
                             // there's no other way to parallelize this loop.
-                            std::vector<math::polynomial_dfs<typename FieldType::value_type>> all_polys(1, V_P);
+                            std::vector<polynomial_dfs_type> all_polys(1, V_P);
 
                             for( std::size_t i = 0; i < preprocessed_data.common_data->permutation_parts-1; i++ ){
                                 const auto& g = gs[i];
@@ -243,7 +239,7 @@ namespace nil {
                                 all_polys.push_back(current_poly);
                                 previous_poly = current_poly;
                             }
-                            std::vector<math::polynomial_dfs<typename FieldType::value_type>> F_dfs_1_parts(
+                            std::vector<polynomial_dfs_type> F_dfs_1_parts(
                                 preprocessed_data.common_data->permutation_parts);
                             parallel_for(0, preprocessed_data.common_data->permutation_parts - 1,
                                 [&gs, &hs, &permutation_alphas, &all_polys, &F_dfs_1_parts](std::size_t i) {
@@ -259,7 +255,7 @@ namespace nil {
                             F_dfs_1_parts.back() = previous_poly * g - V_P_shifted * h;
                             F_dfs[1] += polynomial_sum<FieldType>(std::move(F_dfs_1_parts));
                             F_dfs[1] *=
-                                math::polynomial_dfs<typename FieldType::value_type>(
+                                polynomial_dfs_type(
                                     preprocessed_data.q_last +
                                     preprocessed_data.q_blind) -
                                 one_polynomial;
@@ -281,7 +277,7 @@ namespace nil {
                                                                        ParamsType>::
                             preprocessed_data_type::common_data_type &common_data,
                         transcript_type &transcript,
-                        std::queue<typename FieldType::value_type> &queue) {
+                        std::queue<value_type> &queue) {
                         // Beta and Gamma
                         queue.push(transcript.template challenge<FieldType>());
                         queue.push(transcript.template challenge<FieldType>());
@@ -291,49 +287,49 @@ namespace nil {
                         }
                     }
 
-                    static inline std::array<typename FieldType::value_type,
+                    static inline std::array<value_type,
                                              argument_size>
                     verify_eval(
                         const typename placeholder_public_preprocessor<SmallFieldType,
                                                                        ParamsType>::
                             preprocessed_data_type::common_data_type &common_data,
-                        const std::vector<typename FieldType::value_type> &S_id,
-                        const std::vector<typename FieldType::value_type> &S_sigma,
-                        const std::vector<typename FieldType::value_type>
+                        const std::vector<value_type> &S_id,
+                        const std::vector<value_type> &S_sigma,
+                        const std::vector<value_type>
                             &special_selector_values,
                         // y
-                        const typename FieldType::value_type &challenge,
+                        const value_type &challenge,
                         // f(y):
-                        const std::vector<typename FieldType::value_type>
+                        const std::vector<value_type>
                             &column_polynomials_values,
                         // V_P(y):
-                        const typename FieldType::value_type &perm_polynomial_value,
+                        const value_type &perm_polynomial_value,
                         // V_P(omega * y):
-                        const typename FieldType::value_type
+                        const value_type
                             &perm_polynomial_shifted_value,
-                        const std::vector<typename FieldType::value_type>
+                        const std::vector<value_type>
                             &perm_partitions,
                         transcript_type &transcript) {
                         // 1. Get beta, gamma
-                        typename FieldType::value_type beta = transcript.template challenge<FieldType>();
-                        typename FieldType::value_type gamma = transcript.template challenge<FieldType>();
+                        value_type beta = transcript.template challenge<FieldType>();
+                        value_type gamma = transcript.template challenge<FieldType>();
                         // 2. Add commitment to V_P to transcript
 
                         // 3. Calculate h_perm, g_perm at challenge point
-                        typename FieldType::value_type one = FieldType::value_type::one();
-                        typename FieldType::value_type g = one;
-                        typename FieldType::value_type h = one;
+                        value_type one = FieldType::value_type::one();
+                        value_type g = one;
+                        value_type h = one;
 
                         BOOST_ASSERT(column_polynomials_values.size() == S_id.size());
                         BOOST_ASSERT(column_polynomials_values.size() == S_sigma.size());
 
-                        std::vector<typename FieldType::value_type> gs;
-                        std::vector<typename FieldType::value_type> hs;
+                        std::vector<value_type> gs;
+                        std::vector<value_type> hs;
                         std::size_t current_size = 0;
                         for (std::size_t i = 0; i < column_polynomials_values.size(); i++) {
-                            typename FieldType::value_type pp = column_polynomials_values[i] + gamma;
-                            typename FieldType::value_type t_id = S_id[i];
-                            typename FieldType::value_type t_sigma = S_sigma[i];
+                            value_type pp = column_polynomials_values[i] + gamma;
+                            value_type t_id = S_id[i];
+                            value_type t_sigma = S_sigma[i];
 
                             //  g_poly = g_poly * (S_id[i] * beta + pp);
                             t_id *= beta;
@@ -359,12 +355,12 @@ namespace nil {
                             hs.push_back(h);
                         }
 
-                        std::array<typename FieldType::value_type, argument_size> F;
+                        std::array<value_type, argument_size> F;
 
                         F[0] = common_data.lagrange_0.evaluate(challenge) *
                                (one - perm_polynomial_value);
 
-                        std::vector<typename FieldType::value_type> permutation_alphas;
+                        std::vector<value_type> permutation_alphas;
                         for( std::size_t i = 0; i < common_data.permutation_parts - 1; i++ ){
                             permutation_alphas.push_back(transcript.template challenge<FieldType>());
                         }
@@ -382,8 +378,8 @@ namespace nil {
                             h *= one - special_selector_values[1] - special_selector_values[2];
                             F[1] = h;
                         } else {
-                            typename FieldType::value_type current_value;
-                            typename FieldType::value_type previous_value = perm_polynomial_value;
+                            value_type current_value;
+                            value_type previous_value = perm_polynomial_value;
                             for(std::size_t i = 0; i < permutation_alphas.size(); i++){
                                 auto &h = hs[i];
                                 auto &g = gs[i];
@@ -405,11 +401,11 @@ namespace nil {
                         return F;
                     }
 
-                    static math::polynomial_dfs<typename FieldType::value_type> reduce_dfs_polynomial_domain(
-                        const math::polynomial_dfs<typename FieldType::value_type> &polynomial,
+                    static polynomial_dfs_type reduce_dfs_polynomial_domain(
+                        const polynomial_dfs_type &polynomial,
                         const std::size_t &new_domain_size
                     ) {
-                        math::polynomial_dfs<typename FieldType::value_type> reduced(
+                        polynomial_dfs_type reduced(
                             new_domain_size - 1, new_domain_size, FieldType::value_type::zero());
 
                         BOOST_ASSERT(new_domain_size <= polynomial.size());

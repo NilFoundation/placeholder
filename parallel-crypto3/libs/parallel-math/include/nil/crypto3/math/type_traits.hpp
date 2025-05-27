@@ -42,22 +42,52 @@
 #include <nil/crypto3/math/detail/field_utils.hpp>
 #include <nil/crypto3/math/polynomial/polynomial.hpp>
 #include <nil/crypto3/math/polynomial/polynomial_dfs.hpp>
+#include <nil/crypto3/math/polynomial/polymorphic_polynomial.hpp>
+#include <nil/crypto3/math/polynomial/polymorphic_polynomial_dfs.hpp>
 
 namespace nil {
     namespace crypto3 {
         namespace math {
             // Type trait to check if a given structure is math::polynomial.
             template<typename T>
-            struct is_polynomial : std::integral_constant<bool, false> {};
+            struct is_polynomial
+                : std::integral_constant<bool, false> {};
 
             template<typename FieldValueType>
-            struct is_polynomial<nil::crypto3::math::polynomial<FieldValueType>> : std::integral_constant<bool, true> { };
+            struct is_polynomial<nil::crypto3::math::polynomial<FieldValueType>>
+                : std::integral_constant<bool, true> { };
 
             template<typename T>
-            struct is_polynomial_dfs : std::integral_constant<bool, false> {};
+            struct is_polynomial_dfs
+                : std::integral_constant<bool, false> {};
 
             template<typename FieldValueType>
-            struct is_polynomial_dfs<nil::crypto3::math::polynomial_dfs<FieldValueType>> : std::integral_constant<bool, true> { };
+            struct is_polynomial_dfs<nil::crypto3::math::polynomial_dfs<FieldValueType>>
+                : std::integral_constant<bool, true> { };
+
+            template<typename T>
+            struct is_polymorphic_polynomial : std::integral_constant<bool, false> {};
+
+            template<typename FieldValueType>
+            struct is_polymorphic_polynomial<nil::crypto3::math::polymorphic_polynomial<FieldValueType>> 
+                : std::integral_constant<bool, true> { };
+
+            template<typename T>
+            struct is_polymorphic_polynomial_dfs : std::integral_constant<bool, false> {};
+
+            template<typename FieldValueType>
+            struct is_polymorphic_polynomial_dfs<nil::crypto3::math::polymorphic_polynomial_dfs<FieldValueType>> 
+                : std::integral_constant<bool, true> { };
+
+            // Type trait for checking if the given class is polynomial<T> or polymorphic_polynomial<T>.
+            template<typename T>
+            struct is_any_polynomial : std::integral_constant<bool,
+                is_polynomial<T>::value || is_polymorphic_polynomial<T>::value> { };
+
+            // Type trait for checking if the given class is polynomial_dfs or polymorphic_polynomial_dfs.
+            template<typename T>
+            struct is_any_polynomial_dfs : std::integral_constant<bool,
+                is_polynomial_dfs<T>::value || is_polymorphic_polynomial_dfs<T>::value> { };
 
         }    // namespace math
     }        // namespace crypto3
