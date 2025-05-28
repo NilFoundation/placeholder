@@ -31,6 +31,7 @@ set(COMMON_TEST_FILES
     "bbf/pubkey/ecdsa/ecdsa_recovery"
     "bbf/rlp_field"
     "bbf/rlp_array"
+    "zkevm_bbf/block_header"
     )
 
 set(NON_NATIVE_TESTS_FILES

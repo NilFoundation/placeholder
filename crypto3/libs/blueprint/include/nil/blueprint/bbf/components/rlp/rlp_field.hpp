@@ -21,8 +21,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //---------------------------------------------------------------------------//
-// @file Declaration of interfaces for PLONK BBF is_zero component class
-//---------------------------------------------------------------------------//
 
 #pragma once
 
@@ -44,59 +42,55 @@ namespace nil::blueprint::bbf {
             using integral_type = typename FieldType::integral_type;
             using value_type = typename FieldType::value_type;
 
-            struct input_type {
-                std::conditional_t<
-                    stage == GenerationStage::ASSIGNMENT,
-                    std::vector<std::uint8_t>,
-                    std::monostate
-                > input;
-
-                TYPE rlc_challenge;
-            };
+            using input_type = std::conditional_t<
+                stage == GenerationStage::ASSIGNMENT,
+                std::vector<std::uint8_t>,
+                std::monostate
+            >;
 
 
             static table_params get_minimal_requirements(std::size_t max_bytes, bool is_variable_len) {
-            constexpr std::size_t witness = 9;
+            constexpr std::size_t witness = 8;
             constexpr std::size_t public_inputs = 1;
-            constexpr std::size_t constants = 1;
+            constexpr std::size_t constants = 0;
             std::size_t rows = max_bytes;
             return {witness, public_inputs, constants, rows};
         }
 
         static void allocate_public_inputs(
                 context_type &context_object, input_type &input, std::size_t max_blocks, bool is_variable_len) {
-            context_object.allocate(input.rlc_challenge, 0, 0,
-                                    column_type::public_input);
         }
 
         TYPE field_length;
         TYPE length_length;
         TYPE has_prefix;
+        std::vector<TYPE> bytes;
+        std::vector<TYPE> is_last;
 
         rlp_field(context_type &context_object, input_type rlp_input, std::size_t max_bytes, bool is_variable_len, bool make_links = true) :
             generic_component<FieldType,stage>(context_object) {
 
-            std::vector<TYPE> bytes = std::vector<TYPE>(max_bytes);
+            bytes = std::vector<TYPE>(max_bytes);
+            is_last = std::vector<TYPE>(max_bytes);
             std::vector<TYPE> is_prefix = std::vector<TYPE>(max_bytes);
             std::vector<TYPE> is_big = std::vector<TYPE>(max_bytes);
             std::vector<TYPE> is_len = std::vector<TYPE>(max_bytes);
             std::vector<TYPE> field_len = std::vector<TYPE>(max_bytes);
             std::vector<TYPE> len_len = std::vector<TYPE>(max_bytes);
             std::vector<TYPE> len_val = std::vector<TYPE>(max_bytes);
-            std::vector<TYPE> is_last = std::vector<TYPE>(max_bytes);
-            std::vector<TYPE> rlc = std::vector<TYPE>(max_bytes);
+            
 
             value_type fixed_length = (value_type) max_bytes;
 
             if constexpr (stage == GenerationStage::ASSIGNMENT) {  
-                BOOST_ASSERT(rlp_input.input.size() <= max_bytes);
+                BOOST_ASSERT(rlp_input.size() <= max_bytes);
                 integral_type real_field_len = 0;
                 integral_type real_len_len = 0;
                 std::size_t cur = 1;
                 std::size_t has_prefix = 1;
-                bytes[0] = rlp_input.input[0];
+                bytes[0] = rlp_input[0];
                 if(bytes[0] < 0x80) {
-                    field_len[0] = TYPE(rlp_input.input.size());
+                    field_len[0] = TYPE(rlp_input.size());
                     has_prefix = 0;
                 }
                 if(bytes[0] >= 0x80 && bytes[0] <= 0xbf) {
@@ -112,7 +106,7 @@ namespace nil::blueprint::bbf {
 
                     auto rll = static_cast<std::size_t>(real_len_len);
                     for(std::size_t i = rll; i>=1; i--){
-                        bytes[i] = rlp_input.input[i];
+                        bytes[i] = rlp_input[i];
                         is_len[i] = 1;
                         if(i == rll){
                             len_val[i] = bytes[i];
@@ -132,8 +126,8 @@ namespace nil::blueprint::bbf {
                 real_field_len = integral_type(field_len[0].data);
                 cur += static_cast<std::size_t>(real_len_len);
                 
-                while(cur < rlp_input.input.size()){
-                    bytes[cur] = rlp_input.input[cur];
+                while(cur < rlp_input.size()){
+                    bytes[cur] = rlp_input[cur];
                     field_len[cur] = TYPE(real_field_len - (cur - real_len_len - has_prefix));
                     cur++;
                 }
@@ -143,21 +137,21 @@ namespace nil::blueprint::bbf {
 
                 while(cur < max_bytes){
                     field_len[cur] = field_len[cur - 1] - 1;
+                    is_last[cur] = 2;
                     cur++;
                 }
 
-                std::cout << "bytes\tis_prefix\tis_big\tis_len\tfield_len\tlen_len\tlen_val\tis_last\n";
-                for(std::size_t row_index = 0; row_index< max_bytes; row_index++){
-                        std::cout << std::hex << std::setfill('0') << std::setw(2) << bytes[row_index] << std::dec << " " << 
-                        is_prefix[row_index] << " " << 
-                        is_big[row_index] << " " << 
-                        is_len[row_index] << " " << 
-                        field_len[row_index] << " " << 
-                        len_len[row_index] << " " << 
-                        len_val[row_index] << " " << 
-                        is_last[row_index] << " " << 
-                        rlc[row_index] << " " << std::endl;
-                }
+                // std::cout << "bytes\tis_prefix\tis_big\tis_len\tfield_len\tlen_len\tlen_val\tis_last\n";
+                // for(std::size_t row_index = 0; row_index< max_bytes; row_index++){
+                //         std::cout << std::hex << std::setfill('0') << std::setw(2) << bytes[row_index] << std::dec << " " << 
+                //         is_prefix[row_index] << " " << 
+                //         is_big[row_index] << " " << 
+                //         is_len[row_index] << " " << 
+                //         field_len[row_index] << " " << 
+                //         len_len[row_index] << " " << 
+                //         len_val[row_index] << " " << 
+                //         is_last[row_index] << " " << std::endl;
+                // }
             }
 
             for(std::size_t i = 0; i < max_bytes; i++){
@@ -169,7 +163,6 @@ namespace nil::blueprint::bbf {
                 allocate(len_len[i], 5, i);
                 allocate(len_val[i], 6, i);
                 allocate(is_last[i], 7, i);
-                allocate(rlc[i], 8, i);
             }
 
             if(!is_variable_len){
@@ -177,25 +170,27 @@ namespace nil::blueprint::bbf {
             }
             constrain((1-is_prefix[0])*(field_len[0] - 1), "single byte up to 0x79 has no prefix");
             for(std::size_t i = 0; i < max_bytes; i++){
-                // lookup(bytes[i], "byte_range_table/full");
+                lookup(bytes[i], "byte_range_table/full");
                 constrain(is_prefix[i]*(1-is_prefix[i]), "is_prefix is binary");
                 constrain(is_big[i]*(1-is_big[i]), "is_big is binary");
                 constrain(is_len[i]*(1-is_len[i]), "is_len is binary");
-                constrain(is_last[i]*(1-is_last[i]), "is_last is binary");
+                constrain(is_last[i]*(1-is_last[i])*(2-is_last[i]), "is_last is ternary");
                 constrain(is_big[i]*(1-is_prefix[i]), "is_big only first row");
                 constrain((1-is_big[i])*is_prefix[i]*(bytes[i] - field_len[i] - 0x80), "is_big false condition");
                 constrain(is_big[i]*(bytes[i] - len_len[i] - 0xb7), "is_big true condition");
                 constrain(is_big[i]*(len_val[i] - field_len[i]), "len_val is equal to field_len if is_big");
                 constrain(is_prefix[i]*is_last[i]*field_len[i], "empty string has len zero");
-                constrain((1-is_prefix[i])*is_last[i]*(field_len[i] - 1), "field_len is 1 if is_last except is_prefix");
+                constrain((2-is_last[i])*is_last[i]*(field_len[i] - 1 + is_prefix[i]), "field_len is 1 if is_last except is_prefix");
                 constrain((1-is_len[i])*(1-is_prefix[i])*len_len[i]);
                 if(i < max_bytes - 1){
-                    constrain(is_prefix[i]*(field_len[i] - field_len[i+1]), "field_len stays same for the prefix byte");
+                    constrain(is_prefix[i]*(field_len[i] - field_len[i+1])*(is_last[i+1] - 2), "field_len stays same for the prefix byte");
                     constrain(is_big[i]*(len_len[i] - len_len[i+1]), "len_len stays same for prefix byte if is_big");
                     constrain(is_len[i]*(field_len[i] - field_len[i+1]), "field_len stays same for length bytes");
                     constrain((1-is_prefix[i])*(1-is_len[i])*(field_len[i] - field_len[i+1] - 1), "field_len decrements by 1");
                     constrain(is_len[i]*(len_len[i] - len_len[i+1] - 1), "len_len decrements by 1");
+                    constrain(is_last[i]*(2-is_last[i])*(2-is_last[i+1]), "is_last = 2 after is_last = 1");
                 }
+                
             }
 
             field_length = field_len[0];
