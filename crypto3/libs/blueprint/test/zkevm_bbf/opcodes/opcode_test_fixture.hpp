@@ -50,6 +50,7 @@
 #include <nil/blueprint/zkevm_bbf/big_field/circuits/copy.hpp>
 #include <nil/blueprint/zkevm_bbf/big_field/circuits/exp.hpp>
 #include <nil/blueprint/zkevm_bbf/big_field/circuits/keccak.hpp>
+#include <nil/blueprint/zkevm_bbf/big_field/circuits/logs.hpp>
 #include <nil/blueprint/zkevm_bbf/big_field/circuits/rw.hpp>
 #include <nil/blueprint/zkevm_bbf/big_field/circuits/state.hpp>
 #include <nil/blueprint/zkevm_bbf/big_field/circuits/zkevm.hpp>
@@ -59,6 +60,8 @@
 #include <nil/blueprint/zkevm_bbf/small_field/circuits/bytecode.hpp>
 #include <nil/blueprint/zkevm_bbf/small_field/circuits/zkevm.hpp>
 #include <nil/blueprint/zkevm_bbf/small_field/circuits/copy.hpp>
+#include <nil/blueprint/zkevm_bbf/small_field/circuits/logs.hpp>
+
 
 #include "../circuit_test_fixture.hpp"
 
@@ -95,6 +98,8 @@ public:
         std::size_t max_exp_rows = max_sizes.max_exp_rows;
         std::size_t max_state = max_sizes.max_state;
         std::size_t max_bytecodes_amount = max_sizes.max_bytecodes_amount;
+        std::size_t max_call_commits = max_sizes.max_call_commits;
+        std::size_t max_filter_indices = max_sizes.max_filter_indices;
 
         std::size_t instances_rw_8 = max_sizes.instances_rw_8;
         std::size_t instances_rw_256 = max_sizes.instances_rw_256;
@@ -142,9 +147,10 @@ public:
             rw_assignment_input.rw_trace = circuit_inputs.short_rw_operations();
             rw_assignment_input.timeline = circuit_inputs.timeline();
             rw_assignment_input.state_trace = circuit_inputs.state_operations();
+            rw_assignment_input.filter_indices = circuit_inputs.filter_indices();
 
             result = test_bbf_component<BigFieldType, zkevm_big_field::rw>(
-                "rw", {}, rw_assignment_input, max_rw, max_state
+                "rw", {}, rw_assignment_input, max_rw, max_state, max_filter_indices
             );
             BOOST_CHECK(result);
         }
@@ -193,10 +199,11 @@ public:
             zkevm_assignment_input.zkevm_states = circuit_inputs.zkevm_states();
             zkevm_assignment_input.exponentiations = circuit_inputs.exponentiations();
             zkevm_assignment_input.state_operations = circuit_inputs.state_operations();
+            zkevm_assignment_input.filter_indices = circuit_inputs.filter_indices();
 
             result = test_bbf_component<BigFieldType, zkevm_big_field::zkevm>(
                 "zkevm", {}, zkevm_assignment_input,
-                max_zkevm_rows, max_copy, max_rw, max_exponentiations, max_bytecode, max_state
+                max_zkevm_rows, max_copy, max_rw, max_exponentiations, max_bytecode, max_state, max_filter_indices
             );
             BOOST_CHECK(result);
         }
@@ -213,10 +220,27 @@ public:
             zkevm_wide_assignment_input.zkevm_states = circuit_inputs.zkevm_states();
             zkevm_wide_assignment_input.exponentiations = circuit_inputs.exponentiations();
             zkevm_wide_assignment_input.state_operations = circuit_inputs.state_operations();
+            zkevm_wide_assignment_input.filter_indices = circuit_inputs.filter_indices();
 
             result = test_bbf_component<BigFieldType, zkevm_big_field::zkevm_wide>(
                 "zkevm_wide", {}, zkevm_wide_assignment_input,
-                max_zkevm_rows, max_copy, max_rw, max_exponentiations, max_bytecode, max_state
+                max_zkevm_rows, max_copy, max_rw, max_exponentiations, max_bytecode, max_state, max_filter_indices
+            );
+            BOOST_CHECK(result);
+        }
+
+        const std::string log_circuit = "logs";
+        if (should_run_circuit(log_circuit)) {
+            BOOST_LOG_TRIVIAL(info) << "circuit '" << log_circuit << "'";
+            typename zkevm_big_field::logs<BigFieldType, GenerationStage::ASSIGNMENT>::input_type log_assignment_input;
+            log_assignment_input.rlc_challenge = 7;
+            log_assignment_input.filter_indices = circuit_inputs.filter_indices();
+            log_assignment_input.keccak_buffers = circuit_inputs.logs_buffers();
+            log_assignment_input.rw_trace = circuit_inputs.short_rw_operations();
+
+            result = test_bbf_component<BigFieldType, nil::blueprint::bbf::zkevm_big_field::logs>(
+                log_circuit, {}, log_assignment_input,
+               max_keccak_blocks, max_filter_indices, max_rw
             );
             BOOST_CHECK(result);
         }
@@ -231,9 +255,10 @@ public:
             rw_assignment_input.rw_trace = circuit_inputs.short_rw_operations();
             rw_assignment_input.timeline = circuit_inputs.timeline();
             rw_assignment_input.state_trace = circuit_inputs.state_operations();
+            rw_assignment_input.filter_indices = circuit_inputs.filter_indices();
 
             result = test_bbf_component<SmallFieldType, nil::blueprint::bbf::zkevm_small_field::rw>(
-                "rw-s", {}, rw_assignment_input, max_rw, instances_rw_8, instances_rw_256, max_state
+                "rw-s", {}, rw_assignment_input, max_rw, instances_rw_8, instances_rw_256, max_state, max_filter_indices
             );
             BOOST_CHECK(result);
         }
@@ -276,6 +301,21 @@ public:
                 max_exponentiations,
                 max_bytecode,
                 max_state
+            );
+            BOOST_CHECK(result);
+        }
+        const std::string logs_s_circuit = "logs-s";
+        if (should_run_circuit(logs_s_circuit)) {
+            BOOST_LOG_TRIVIAL(info) << "circuit '" << logs_s_circuit << "'";
+            typename zkevm_small_field::logs<SmallFieldType, GenerationStage::ASSIGNMENT>::input_type log_assignment_input;
+            log_assignment_input.rlc_challenge = 7;
+            log_assignment_input.filter_indices = circuit_inputs.filter_indices();
+            log_assignment_input.keccak_buffers = circuit_inputs.logs_buffers();
+            log_assignment_input.rw_trace = circuit_inputs.short_rw_operations();
+
+            result = test_bbf_component<SmallFieldType, nil::blueprint::bbf::zkevm_small_field::logs>(
+                log_circuit, {7}, log_assignment_input,
+               max_keccak_blocks, max_filter_indices, max_rw, instances_rw_8
             );
             BOOST_CHECK(result);
         }

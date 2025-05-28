@@ -650,3 +650,4 @@ callgrind.*
 
 crypto3/libs/blueprint/test/zkevm_bbf/data/vmtrace
 load_block/.venv
+load_block/*.ipynb

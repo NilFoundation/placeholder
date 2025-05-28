@@ -135,6 +135,7 @@ BOOST_AUTO_TEST_CASE(mod_ops) {
     max_sizes.max_rw = 500;
     max_sizes.max_copy = 500;
     max_sizes.max_zkevm_rows = 300;
+    max_sizes.max_filter_indices = 500;
 
     if( circuits_to_run.empty() ) {
         circuits_to_run.insert("zkevm");
@@ -142,10 +143,12 @@ BOOST_AUTO_TEST_CASE(mod_ops) {
         circuits_to_run.insert("rw");
         circuits_to_run.insert("bytecode");
         circuits_to_run.insert("copy");
+        circuits_to_run.insert("logs");
         circuits_to_run.insert("bytecode-s");
         circuits_to_run.insert("rw-s");
         circuits_to_run.insert("copy-s");
         circuits_to_run.insert("zkevm-s");
+        circuits_to_run.insert("logs-s");
     }
     complex_opcode_test<big_field_type, small_field_type>(opcode_tester, max_sizes);
 }

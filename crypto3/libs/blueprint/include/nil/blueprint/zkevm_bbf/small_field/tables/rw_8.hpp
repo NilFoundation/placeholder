@@ -102,6 +102,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                         && rwop.op != rw_operation_type::memory
                         && rwop.op != rw_operation_type::calldata
                         && rwop.op != rw_operation_type::returndata
+                        && rwop.op != rw_operation_type::log_index
                     ) {
                         continue;
                     }
@@ -237,6 +238,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                 }
             }
             multi_lookup_table("zkevm_rw_8", rw_8_lookup_areas, 0, max_rw_size);
+            lookup_table("zkevm_rw_8_log",std::vector<std::size_t>({0,3}),0,max_rw_size);
         }
 
         static std::vector<TYPE> memory_lookup(

@@ -72,7 +72,8 @@ namespace nil::blueprint::bbf::zkevm_big_field{
                         timeline[i].op == rw_operation_type::calldata ||
                         timeline[i].op == rw_operation_type::call_context ||
                         timeline[i].op == rw_operation_type::returndata ||
-                        timeline[i].op == rw_operation_type::blobhash
+                        timeline[i].op == rw_operation_type::blobhash ||
+                        timeline[i].op == rw_operation_type::log_index 
                     )? 1: 0;
                     state_table_selector[i] = (
                         timeline[i].op == rw_operation_type::state_call_context ||

@@ -48,9 +48,10 @@ namespace nil {
                 access_list = 8,
                 state = 9,               // Grouped by block, includes STORAGE and ACCOUNT operations
                 transient_storage = 10,  // Grouped by transaction
-                padding = 11
+                log_index = 11,
+                padding = 12
             };
-            static constexpr std::size_t short_rw_operation_types_amount = 8;
+            static constexpr std::size_t short_rw_operation_types_amount = 9;
             static constexpr std::size_t state_operation_types_amount = 6;
 
             std::string rw_operation_type_to_string(rw_operation_type op){
@@ -77,6 +78,8 @@ namespace nil {
                     return "STATE";
                 case rw_operation_type::transient_storage:
                     return "TRANSIENT_STORAGE";
+                case rw_operation_type::log_index:
+                    return "LOG_INDEX";
                 default:
                     BOOST_ASSERT(false);
                 return "UNKNOWN";
@@ -105,7 +108,9 @@ namespace nil {
 
                 lastcall_id = 13,
                 lastcall_returndata_offset = 14,
-                lastcall_returndata_length = 15
+                lastcall_returndata_length = 15,
+
+                log_index = 16
             };
             static constexpr std::size_t call_context_readonly_field_amount = 13;
             static constexpr std::size_t call_context_fields_amount = 12;

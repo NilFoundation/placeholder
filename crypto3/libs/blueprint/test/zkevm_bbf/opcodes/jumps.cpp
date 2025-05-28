@@ -70,6 +70,7 @@ BOOST_AUTO_TEST_CASE(jump) {
     max_sizes.max_zkevm_rows = 300;
     max_sizes.max_exponentiations = 10;
     max_sizes.max_exp_rows = 100;
+    max_sizes.max_filter_indices = 500;
 
     if( circuits_to_run.empty() ) {
         circuits_to_run.insert("zkevm");
@@ -77,6 +78,7 @@ BOOST_AUTO_TEST_CASE(jump) {
         circuits_to_run.insert("rw");
         circuits_to_run.insert("bytecode");
         circuits_to_run.insert("copy");
+        circuits_to_run.insert("logs");
         circuits_to_run.insert("bytecode-s");
         circuits_to_run.insert("rw-s");
         circuits_to_run.insert("copy-s");
@@ -122,6 +124,7 @@ BOOST_AUTO_TEST_CASE(jumpi) {
     max_sizes.max_zkevm_rows = 300;
     max_sizes.max_exponentiations = 10;
     max_sizes.max_exp_rows = 100;
+    max_sizes.max_filter_indices = 500;
 
     if( circuits_to_run.empty() ) {
         circuits_to_run.insert("zkevm");
@@ -129,6 +132,7 @@ BOOST_AUTO_TEST_CASE(jumpi) {
         circuits_to_run.insert("rw");
         circuits_to_run.insert("bytecode");
         circuits_to_run.insert("copy");
+        circuits_to_run.insert("logs");
         circuits_to_run.insert("bytecode-s");
         circuits_to_run.insert("rw-s");
         circuits_to_run.insert("copy-s");

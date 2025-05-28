@@ -93,6 +93,20 @@ BOOST_AUTO_TEST_CASE(pushx_strings) {
     max_sizes.max_zkevm_rows = 100;
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 100;
+    max_sizes.max_filter_indices = 500;
+
+    if( circuits_to_run.empty() ) {
+        circuits_to_run.insert("zkevm");
+        circuits_to_run.insert("zkevm-wide");
+        circuits_to_run.insert("rw");
+        circuits_to_run.insert("bytecode");
+        circuits_to_run.insert("copy");
+        circuits_to_run.insert("logs");
+        circuits_to_run.insert("bytecode-s");
+        circuits_to_run.insert("rw-s");
+        circuits_to_run.insert("copy-s");
+        circuits_to_run.insert("logs-s");
+    }
 
     complex_opcode_test<big_field_type, small_field_type>(opcode_tester, max_sizes);
 }
@@ -165,6 +179,7 @@ BOOST_AUTO_TEST_CASE(pushx) {
     max_sizes.max_zkevm_rows = 100;
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 100;
+    max_sizes.max_filter_indices = 500;
 
     if( circuits_to_run.empty() ) {
         circuits_to_run.insert("zkevm");
@@ -172,10 +187,12 @@ BOOST_AUTO_TEST_CASE(pushx) {
         circuits_to_run.insert("rw");
         circuits_to_run.insert("bytecode");
         circuits_to_run.insert("copy");
+        circuits_to_run.insert("logs");
         circuits_to_run.insert("bytecode-s");
         circuits_to_run.insert("rw-s");
         circuits_to_run.insert("zkevm-s");
         circuits_to_run.insert("copy-s");
+        circuits_to_run.insert("logs-s");
     }
     complex_opcode_test<big_field_type, small_field_type>(opcode_tester, max_sizes);
 }

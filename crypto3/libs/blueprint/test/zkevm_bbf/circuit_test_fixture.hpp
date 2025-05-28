@@ -176,6 +176,8 @@ struct l1_size_restrictions{
     std::size_t max_state = 500;
     std::size_t max_bytecodes_amount = 50;
     std::size_t max_mpt;
+    std::size_t max_call_commits = 500;
+    std::size_t max_filter_indices;
 };
 
 std::vector<std::uint8_t> hex_string_to_bytes(std::string const &hex_string) {
@@ -187,7 +189,7 @@ std::vector<std::uint8_t> hex_string_to_bytes(std::string const &hex_string) {
     return bytes;
 }
 
-template <typename FieldType>
+template<typename FieldType>
 bool check_proof(
     const nil::blueprint::circuit<
         zk::snark::plonk_constraint_system<typename FieldType::small_subfield>> &bp,
@@ -317,12 +319,13 @@ class CircuitTestFixture {
              typename... ComponentStaticInfoArgs>
     bool test_bbf_component(
         std::string circuit_name,
-        std::vector<typename field_type::value_type> public_input,
-        typename BBFType<field_type, GenerationStage::ASSIGNMENT>::input_type assignment_input,
-        ComponentStaticInfoArgs... component_static_info_args
-    ) {
-        // Max_copy, Max_rw, Max_keccak, Max_bytecode
-        circuit_builder<field_type, BBFType, ComponentStaticInfoArgs...> builder(component_static_info_args...);
+        std::vector<typename FieldType::small_subfield::value_type> public_input,
+        typename BBFType<typename FieldType::small_subfield,
+                         GenerationStage::ASSIGNMENT>::input_type assignment_input,
+        ComponentStaticInfoArgs... component_static_info_args) {
+        using SmallFieldType = typename FieldType::small_subfield;
+        circuit_builder<SmallFieldType, BBFType, ComponentStaticInfoArgs...> builder(
+            component_static_info_args...);
 
         auto &bp = builder.get_circuit();
         BOOST_LOG_TRIVIAL(info) << constrain_system_stat<SmallFieldType>(bp);
