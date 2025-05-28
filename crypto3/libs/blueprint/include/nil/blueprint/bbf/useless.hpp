@@ -76,8 +76,10 @@ namespace nil {
                         allocate(Y[2],1,2);
 
                         std::vector<std::size_t> lookup_cols = {0};
-                        lookup_table("dummy_dynamic",{lookup_cols},0,3);
-                        lookup_table("dummy_dynamic2",{lookup_cols},1,1);
+                        std::vector<std::vector<std::size_t>> multi_lookup_cols = {{0},{1}};
+                        lookup_table("dummy_dynamic",lookup_cols,0,3);
+                        lookup_table("dummy_dynamic2",lookup_cols,1,1);
+                        multi_lookup_table("multi_dummy_dynamic",multi_lookup_cols, 1, 2);
                         lookup(X[0],"dummy_dynamic");
                         lookup(X[0],"multi_dummy_dynamic");
                         lookup(Y[0],"multi_dummy_dynamic");
