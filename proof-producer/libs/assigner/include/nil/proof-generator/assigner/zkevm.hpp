@@ -73,6 +73,13 @@ namespace nil {
             }
             input.copy_events = std::move(copy_events->value);
 
+            const auto filter_trace_path = get_filter_trace_path(trace_base_path);
+            const auto filter_indices = deserialize_filter_traces_from_file(filter_trace_path, options, contract_bytecodes->index);
+            if (!filter_indices) {
+                return "can't read filter indices from file: " + filter_trace_path.string();
+            }
+            input.filter_indices = std::move(filter_indices->value);
+
             const auto exp_trace_path = get_exp_trace_path(trace_base_path);
             const auto exp_operations = deserialize_exp_traces_from_file(exp_trace_path, options, contract_bytecodes->index);
             if (!exp_operations) {
@@ -91,6 +98,9 @@ namespace nil {
             if (input.rw_operations.size() > options.circuits_limits.max_rw_rows) {
                 return std::format("rw operations size {} exceeds circuit limit {}", input.rw_operations.size(), options.circuits_limits.max_rw_rows);
             }
+            if (input.filter_indices.size() > options.circuits_limits.max_filter_indices) {
+                return std::format("filter indices size {} exceeds circuit limit {}", input.filter_indices.size(), options.circuits_limits.max_filter_indices);
+            }
             size_t total_copy_bytes = 0;
             for (const auto &copy_event : input.copy_events) {
                 total_copy_bytes += copy_event.get_bytes().size();
@@ -108,7 +118,8 @@ namespace nil {
                 options.circuits_limits.max_rw_rows,
                 options.circuits_limits.max_exp_ops,
                 options.circuits_limits.max_bytecode_rows,
-                options.circuits_limits.max_state_rows
+                options.circuits_limits.max_state_rows,
+                options.circuits_limits.max_filter_indices
             );
 
             return {};
@@ -117,3 +128,4 @@ namespace nil {
 } // nil
 
 #endif  // PROOF_GENERATOR_LIBS_ASSIGNER_ZKEVM_HPP_
+
