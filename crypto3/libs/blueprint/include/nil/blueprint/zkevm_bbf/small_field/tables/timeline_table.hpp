@@ -92,7 +92,8 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                     rw_8_table_selector[i] = (
                         timeline[i].op == rw_operation_type::memory ||
                         timeline[i].op == rw_operation_type::calldata ||
-                        timeline[i].op == rw_operation_type::returndata
+                        timeline[i].op == rw_operation_type::returndata ||
+                        timeline[i].op == rw_operation_type::log_index
                     )? 1: 0;
                     state_table_selector[i] = (
                         timeline[i].op == rw_operation_type::state_call_context ||
@@ -103,7 +104,8 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                     internal_counter[i] = (
                         timeline[i].op == rw_operation_type::memory ||
                         timeline[i].op == rw_operation_type::calldata ||
-                        timeline[i].op == rw_operation_type::returndata
+                        timeline[i].op == rw_operation_type::returndata ||
+                        timeline[i].op == rw_operation_type::log_index
                     )? timeline[i].internal_counter - rw_8_start_internal_counter + 1: timeline[i].internal_counter;
                 }
             }

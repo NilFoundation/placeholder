@@ -83,6 +83,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                     zkevm_word_type hash_value = input.private_input.input[i].second;
                     RLC[i] = calculateRLC<FieldType>(msg, theta);
                     auto hash_chunks = w_to_16(hash_value);
+                    
                     for(std::size_t j = 0; j < hash_chunks.size(); j++) {
                         hash[i][j] = hash_chunks[j];
                     }

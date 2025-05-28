@@ -34,6 +34,7 @@
 #include <nil/blueprint/zkevm_bbf/big_field/subcomponents/rw_table.hpp>
 #include <nil/blueprint/zkevm_bbf/big_field/subcomponents/state_table.hpp>
 #include <nil/blueprint/zkevm_bbf/big_field/subcomponents/timeline_table.hpp>
+#include <nil/blueprint/zkevm_bbf/big_field/subcomponents/log_table.hpp>
 
 namespace nil::blueprint::bbf::zkevm_big_field{
     template<typename FieldType, GenerationStage stage>
@@ -52,11 +53,13 @@ namespace nil::blueprint::bbf::zkevm_big_field{
         using rw_table_type = rw_table<FieldType, stage>;
         using state_table_type = state_table<FieldType, stage>;
         using timeline_table_type = timeline_table<FieldType, stage>;
+        using log_table_type = log_table<FieldType, stage>;
 
         struct input_type{
             typename rw_table_type::input_type rw_trace;
             typename timeline_table_type::input_type timeline;
             typename state_table_type::input_type state_trace;
+            typename log_table_type::input_type filter_indices;
         };
 
         using value = typename FieldType::value_type;
@@ -75,11 +78,13 @@ namespace nil::blueprint::bbf::zkevm_big_field{
 
         static table_params get_minimal_requirements(
             std::size_t max_rw_size,
-            std::size_t max_state_size
+            std::size_t max_state_size,
+            std::size_t max_filter_indices
         ) {
             std::size_t witness_amount = rw_table_type::get_witness_amount()
                 + state_table_type::get_witness_amount()
                 + timeline_table_type::get_witness_amount()
+                + log_table_type::get_witness_amount()
                 + chunks_amount                                 // Additional chunks
                 + diff_index_selectors_amount                   // Diff selector
                 + op_selectors_amount                           // Selectors for op
@@ -89,17 +94,18 @@ namespace nil::blueprint::bbf::zkevm_big_field{
                 .witnesses = witness_amount,
                 .public_inputs = 0,
                 .constants = 0,
-                .rows = max_rw_size + max_state_size
+                .rows = max_rw_size + max_state_size + max_filter_indices
             };
         }
 
         static void allocate_public_inputs(
-            context_type &context, input_type &input, std::size_t max_rw_size, std::size_t max_state
+            context_type &context, input_type &input, std::size_t max_rw_size, std::size_t max_state, std::size_t max_filter_indices
         ) {}
 
         rw(context_type &context_object, const input_type &input,
             std::size_t max_rw_size,
-            std::size_t max_state
+            std::size_t max_state,
+            std::size_t max_filter_indices
         ) :generic_component<FieldType,stage>(context_object) {
             std::size_t START_OP = std::size_t(rw_operation_type::start);
             std::size_t STACK_OP = std::size_t(rw_operation_type::stack);
@@ -109,6 +115,7 @@ namespace nil::blueprint::bbf::zkevm_big_field{
             std::size_t RETURNDATA_OP = std::size_t(rw_operation_type::returndata);
             std::size_t BLOBHASH_OP = std::size_t(rw_operation_type::blobhash);
             std::size_t PADDING_OP = std::size_t(rw_operation_type::padding);
+            std::size_t LOG_INDEX_OP = std::size_t(rw_operation_type::log_index);
 
             std::size_t current_column = 0;
 
@@ -126,6 +133,11 @@ namespace nil::blueprint::bbf::zkevm_big_field{
             for( std::size_t i = 0; i < state_table_type::get_witness_amount(); i++ ) state_table_area.push_back(current_column++);
             context_type state_table_ct = context_object.subcontext(state_table_area,0,max_state);
             state_table_type st(state_table_ct, input.state_trace, max_state);
+
+            std::vector<std::size_t> log_table_area;
+            for( std::size_t i = 0; i < log_table_type::get_witness_amount(); i++ ) log_table_area.push_back(current_column++);
+            context_type log_table_ct = context_object.subcontext(log_table_area,0,max_filter_indices);
+            log_table_type lt(log_table_ct, input.filter_indices, max_filter_indices);
 
             const std::vector<TYPE> &op = t.op;
             const std::vector<TYPE> &id = t.id;
@@ -168,6 +180,7 @@ namespace nil::blueprint::bbf::zkevm_big_field{
             op_selector_indices[rw_operation_type::returndata] = index++;
             op_selector_indices[rw_operation_type::blobhash] = index++;
             op_selector_indices[rw_operation_type::padding] = index++;
+            op_selector_indices[rw_operation_type::log_index] = index++;
 
             if constexpr (stage == GenerationStage::ASSIGNMENT) {
                 for(std::size_t i = 0; i < input.timeline.size(); i++){
@@ -228,7 +241,7 @@ namespace nil::blueprint::bbf::zkevm_big_field{
 
                     diff[i] = sorted[diff_ind] - sorted_prev[diff_ind];
                     inv_diff[i] = diff[i] == 0? 0: diff[i].inversed();
-                    is_diff_non_zero[i] = diff[i] * inv_diff[i];
+                    is_diff_non_zero[i] = diff[i] * inv_diff[i];         
                 }
 
                 is_first[rw_trace.size()] = 1;
@@ -242,7 +255,7 @@ namespace nil::blueprint::bbf::zkevm_big_field{
             }
 
             for( std::size_t i = 0; i < max_rw_size; i++){
-                std::size_t cur_column = rw_table_type::get_witness_amount() + state_table_type::get_witness_amount() + timeline_table_type::get_witness_amount();
+                std::size_t cur_column = rw_table_type::get_witness_amount() + state_table_type::get_witness_amount() + timeline_table_type::get_witness_amount() + log_table_type::get_witness_amount();
                 for( std::size_t j = 0; j < op_selectors_amount; j++){
                     allocate(op_selectors[i][j], ++cur_column, i);
                 };
@@ -355,8 +368,9 @@ namespace nil::blueprint::bbf::zkevm_big_field{
                 TYPE returndata_selector = op_selectors[1][op_selector_indices[rw_operation_type::returndata]];
                 TYPE blobhash_selector = op_selectors[1][op_selector_indices[rw_operation_type::blobhash]];
                 TYPE padding_selector = op_selectors[1][op_selector_indices[rw_operation_type::padding]];
+                TYPE log_index_selector = op_selectors[1][op_selector_indices[rw_operation_type::log_index]];
 
-                every_row_constraints.push_back(is_filled[1] - (calldata_selector + returndata_selector + memory_selector + stack_selector + call_context_selector + blobhash_selector));
+                every_row_constraints.push_back(is_filled[1] - (calldata_selector + returndata_selector + memory_selector + stack_selector + call_context_selector + blobhash_selector + log_index_selector));
                 every_row_constraints.push_back((calldata_selector + returndata_selector) *  is_write[1] * (1 - is_first[1]) );
                 every_row_constraints.push_back(is_write[1] *(blobhash_selector + padding_selector));
                 non_first_row_constraints.push_back((1 - padding_selector) * (1 - is_diff_non_zero[1]));
@@ -405,6 +419,11 @@ namespace nil::blueprint::bbf::zkevm_big_field{
                     context_object.relativize(st.is_original[1], -1),
                     context_object.relativize(st.is_original[1] * st.internal_counter[1], -1)
                 }, "zkevm_timeline", 0, max_state-1);
+
+                context_object.relative_lookup({
+                    context_object.relativize(rw_id[1] * log_index_selector, -1)
+                }, "zkevm_log_rw", 0, max_rw_size-1);
+
 
                 for( auto& constraint: every_row_constraints){
                     context_object.relative_constrain(context_object.relativize(constraint, -1), 0, max_rw_size-1);

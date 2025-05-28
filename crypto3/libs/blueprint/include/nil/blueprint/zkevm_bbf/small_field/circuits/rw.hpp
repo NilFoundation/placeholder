@@ -31,6 +31,7 @@
 #include <nil/blueprint/component.hpp>
 
 #include <nil/blueprint/bbf/generic.hpp>
+#include <nil/blueprint/zkevm_bbf/small_field/tables/log.hpp>
 #include <nil/blueprint/zkevm_bbf/small_field/tables/state_timeline_table.hpp>
 #include <nil/blueprint/zkevm_bbf/small_field/tables/timeline_table.hpp>
 
@@ -57,11 +58,13 @@ namespace nil::blueprint::bbf::zkevm_small_field{
         using rw_256_type = rw_256<FieldType, stage>;
         using state_timeline_table_type = state_timeline_table<FieldType, stage>;
         using timeline_table_type = timeline_table<FieldType, stage>;
+        using log_table_type = log_table<FieldType, stage>;
 
         struct input_type{
             rw_tables_input_type                             rw_trace;
             typename timeline_table_type::input_type         timeline;
             typename state_timeline_table_type::input_type   state_trace;
+            typename log_table_type::input_type filter_indices;
         };
 
         // using value = typename FieldType::value_type;
@@ -75,20 +78,22 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             std::size_t max_rw_size,
             std::size_t instances_rw_8,
             std::size_t instances_rw_256,
-            std::size_t max_state_size
+            std::size_t max_state_size,
+            std::size_t max_filter_indices
         ) {
             std::size_t witness_amount =
                 rw_8_type::get_witness_amount()
                 + rw_256_type::get_witness_amount()
                 + state_timeline_table_type::get_witness_amount()
                 + timeline_table_type::get_witness_amount(instances_rw_8 + instances_rw_256 + 1)
+                + log_table_type::get_witness_amount()
                 + 6;
             BOOST_LOG_TRIVIAL(info) << "RW circuit witness amount = " << witness_amount;
             return {
                 .witnesses = witness_amount,
                 .public_inputs = 0,
-                .constants = 0,
-                .rows = max_rw_size + max_state_size
+                .constants = 1,
+                .rows = max_rw_size + max_state_size + max_filter_indices
             };
         }
 
@@ -97,14 +102,16 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             std::size_t max_rw_size,
             std::size_t instances_rw_8,
             std::size_t instances_rw_256,
-            std::size_t max_state
+            std::size_t max_state,
+            std::size_t max_filter_indices
         ) {}
 
         rw(context_type &context_object, const input_type &input,
             std::size_t max_rw_size,
             std::size_t instances_rw_8,
             std::size_t instances_rw_256,
-            std::size_t max_state
+            std::size_t max_state,
+            std::size_t max_filter_indices
         ) :generic_component<FieldType,stage>(context_object) {
             // std::size_t START_OP = std::size_t(rw_operation_type::start);
             // std::size_t STACK_OP = std::size_t(rw_operation_type::stack);
@@ -137,6 +144,11 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             for( std::size_t i = 0; i < timeline_table_type::get_witness_amount(instances_timeline); i++ ) timeline_table_area.push_back(current_column++);
             context_type timeline_table_ct = context_object.subcontext(timeline_table_area,0,max_rw_size + max_state);
             timeline_table_type tt(timeline_table_ct, input.timeline, max_rw_size, instances_timeline);
+
+             std::vector<std::size_t> log_table_area;
+            for( std::size_t i = 0; i < log_table_type::get_witness_amount(); i++ ) log_table_area.push_back(current_column++);
+            context_type log_table_ct = context_object.subcontext(log_table_area,0,max_filter_indices);
+            log_table_type lt(log_table_ct, input.filter_indices, max_filter_indices);
 
             if constexpr (stage == GenerationStage::CONSTRAINTS) {
                 // All stack and call_context rw operations are presented in timeline.
