@@ -87,6 +87,7 @@ class zkevm_addmod_bbf : public generic_component<FieldType, stage> {
     std::vector<TYPE> res;
 
     // TODO: strategy -- separate the cases N = 0, N = 1 so that q < 2^256.
+    // TODO: multiple lookups
     public:
     zkevm_addmod_bbf(context_type &context_object,
                         const opcode_input_type<FieldType, stage> &current_state,
@@ -97,13 +98,22 @@ class zkevm_addmod_bbf : public generic_component<FieldType, stage> {
         std::vector<TYPE> a_chunks(chunk_amount);                      // First factor 
         std::vector<TYPE> b_chunks(chunk_amount);                      // Second factor 
         std::vector<TYPE> N_chunks(chunk_amount);                      // Modulus 
+        std::vector<TYPE> N_chunks_copy(chunk_amount);                 // Copy of the above 
         std::vector<TYPE> s_chunks(chunk_amount);                      // Sum a + b (over the integers)
         std::vector<TYPE> s_carryless_chunks(chunk_amount);        
         std::vector<TYPE> s_carries(chunk_amount);        
         TYPE s_extra_chunk;                                            // Note that s might be 257 bits long, hence the extra chunk                                   
-        std::vector<TYPE> r_chunks(chunk_amount);                      // Result of (s mod N) mod 2^256
+        std::vector<TYPE> r_chunks(chunk_amount);                      // Result of (s mod N) mod 2^256 (if N >= 2)
+        std::vector<TYPE> v_chunks(chunk_amount);
+        std::vector<TYPE> y_chunks(chunk_amount);                      // Final result
+
         std::vector<TYPE> mul_chunks(chunk_amount + 1);                // Result of q * N 
         std::vector<TYPE> mul_chunks_copy(chunk_amount + 1);           // Copy of the above
+        std::vector<TYPE> construct_carryless_chunks(chunk_amount + 1);
+        std::vector<TYPE> construct_chunks(chunk_amount + 1);
+        std::vector<TYPE> construct_carries(chunk_amount + 1);
+        std::vector<TYPE> add_carries(chunk_amount);
+
         
         // 8-bit chunks
         std::vector<TYPE> N8_chunks(chunk_8_amount);                   
@@ -116,11 +126,7 @@ class zkevm_addmod_bbf : public generic_component<FieldType, stage> {
         std::vector<TYPE> mul8_carries(chunk_8_amount + 1);            // Carries containing whatever overflows 8 bits:     
                                                                        // mul8_carryless_chunks[i] = mul8_chunks[i] + mul8_carries[i]
 
-        std::vector<TYPE> construct_carryless_chunks(chunk_amount + 1);
-        std::vector<TYPE> construct_chunks(chunk_amount + 1);
-        std::vector<TYPE> construct_carries(chunk_amount + 1);
 
-        std::vector<TYPE> add_carries(chunk_amount);
 
         // Range checks associated with the values above
         // TODO: add these
@@ -129,11 +135,15 @@ class zkevm_addmod_bbf : public generic_component<FieldType, stage> {
         if constexpr (stage == GenerationStage:: ASSIGNMENT) {
             // Extract input values from stack
             zkevm_word_type a = current_state.stack_top();
+            // std::cout << "a = " << a << std::endl;
             zkevm_word_type b = current_state.stack_top(1);
+            // std::cout << "b = " << b << std::endl;
             zkevm_word_type N = current_state.stack_top(2);
-
+            std::cout << "N = " << N << std::endl;
+            
             // addition and modulo operation
             auto s = nil::crypto3::multiprecision::big_uint<257>(a) + b;
+            // std::cout << "s = " << s << std::endl;
             // If N == 0:
             //      q == 0
             //      r == 0
@@ -141,16 +151,19 @@ class zkevm_addmod_bbf : public generic_component<FieldType, stage> {
             //      q == s / N      (in this case, q < 2^256)
             //      r == (s - q*N) mod 2^256
             zkevm_word_type q = (N >= 2) ? (s / N).truncate<256>() : 0;                                
+            // std::cout << "q = " << q << std::endl;
             zkevm_word_type r = (N >= 2) ? (s % N).truncate<256>() : 0;   // the truncate method is necessary to convert to the 256-bit int type, although q, r do not overflow 256 bits for any N >= 2.
-
+            // std::cout << "r = " << r << std::endl;
+            
             
             BOOST_ASSERT(((N >= 2) ? 
-                s - nil::crypto3::multiprecision::big_uint<257>(q)*nil::crypto3::multiprecision::big_uint<257>(N) 
-                : 0) 
+            s - nil::crypto3::multiprecision::big_uint<257>(q)*nil::crypto3::multiprecision::big_uint<257>(N) 
+            : 0) 
             == nil::crypto3::multiprecision::big_uint<257>(r));
-
+            
             // At this point, a + b = q * N + r, so r is our result
             zkevm_word_type v = wrapping_sub(r, N);   
+            std::cout << "v = " << v << std::endl;
             // To prove that r < N, we'll show that N + v = r + 2^256 (i.e. there is always a carry)
 
             // 16-bit chunks
@@ -158,11 +171,13 @@ class zkevm_addmod_bbf : public generic_component<FieldType, stage> {
             b_chunks = zkevm_word_to_field_element<FieldType>(b);
             r_chunks = zkevm_word_to_field_element<FieldType>(r);
             N_chunks = zkevm_word_to_field_element<FieldType>(N);
+            N_chunks_copy = zkevm_word_to_field_element<FieldType>(N);
             s_chunks = zkevm_word_to_field_element<FieldType>(s.truncate<256>());
             s_extra_chunk = s >> 256;
+            v_chunks = zkevm_word_to_field_element<FieldType>(v);
 
             // // 8-bit chunks
-            N8_chunks = zkevm_word_to_field_element_flexible<FieldType>(N, chunk_8_amount, 8);
+            N8_chunks = zkevm_word_to_field_element_flexible<FieldType>(N, chunk_8_amount, 8); // TODO: consistency with N_chunks
             q8_chunks = zkevm_word_to_field_element_flexible<FieldType>(q, chunk_8_amount, 8);
         }
 
@@ -171,8 +186,10 @@ class zkevm_addmod_bbf : public generic_component<FieldType, stage> {
         for (std::size_t i = 0; i < chunk_amount; i++) {
             allocate(a_chunks[i], 2 * chunk_amount + i, 9);
             allocate(b_chunks[i], 2 * chunk_amount + i, 10);
-            allocate(r_chunks[i], 2 * chunk_amount + i, 11);
-            allocate(N_chunks[i], 2 * chunk_amount + i, 12);
+            allocate(r_chunks[i], chunk_amount + i, 11);
+            allocate(N_chunks[i], 2 * chunk_amount + i, 7);
+            allocate(N_chunks_copy[i], 2 * chunk_amount + i, 12);
+            allocate(v_chunks[i], i, 13);
         }
 
         // 8-bit chunks allocation
@@ -183,45 +200,66 @@ class zkevm_addmod_bbf : public generic_component<FieldType, stage> {
         }
 
         // PART 2: figure out in which case we are
-        TYPE N_partial_sum;         // sum of all chunks of N, except for the first one
+        TYPE N_partial_sum = 0;         // sum of all chunks of N, except for the first one
         for (std::size_t i = 1; i < chunk_amount; i++) {
             N_partial_sum += N_chunks[i];
         }
+        // std::cout << "N_partial_sum = " << N_partial_sum << std::endl;
         // TODO: allocate
-
+        allocate(N_partial_sum, 33, 8);
+        
         TYPE N_partial_sum_inverse;
         if constexpr (stage == GenerationStage::ASSIGNMENT) {
             N_partial_sum_inverse = N_partial_sum.is_zero() ? 0 : N_partial_sum.inversed();
         }
         // TODO: allocate
-        // N_partial_sum_is_nonzero == 0  <=>  N_partial_sum != 0
-        // N_partial_sum_is_nonzero == 1  <=>  N_partial_sum == 0
+        allocate(N_partial_sum, 34, 8);
+        allocate(N_partial_sum_inverse, 35, 8);
+        
+        // N_partial_sum_is_nonzero == 0  ==>  N_partial_sum != 0
+        // N_partial_sum_is_nonzero == 1  <==  N_partial_sum == 0
         TYPE N_partial_sum_is_nonzero = 1 - N_partial_sum * N_partial_sum_inverse;
+        // std::cout << "N_partial_sum_is_nonzero = " << N_partial_sum_is_nonzero << std::endl;
         // TODO: allocate
-
-
+        allocate(N_partial_sum_is_nonzero, 17, 8);
+        
         TYPE N_chunk0_is_0_or_1 = N_chunks[0] * (N_chunks[0] - 1);
         TYPE N_chunk0_is_0_or_1_inverse;
         if constexpr (stage == GenerationStage::ASSIGNMENT) {
             N_chunk0_is_0_or_1_inverse = N_chunk0_is_0_or_1.is_zero() ? 0 : N_chunk0_is_0_or_1.inversed();
         }
+        // std::cout << "N_chunk0_is_0_or_1 = " << N_chunk0_is_0_or_1 << std::endl;
         // TODO: allocate
-        // N_is_greater_than_1 == 0  <=>  N_chunk[0] > 1
-        // N_is_greater_than_1 == 1  <=>  N_chunk[0] <= 1
+        allocate(N_chunk0_is_0_or_1, 36, 8);
+        allocate(N_chunk0_is_0_or_1_inverse, 37, 8);
+        // N_chunk0_is_greater_than_1 == 0  ==>  N_chunk[0] > 1
+        // N_chunk0_is_greater_than_1 == 1  <==  N_chunk[0] <= 1
         TYPE N_chunk0_is_greater_than_1 = 1 - N_chunk0_is_0_or_1 * N_chunk0_is_0_or_1_inverse;
+        // std::cout << "N_chunk0_is_greater_than_1 = " << N_chunk0_is_greater_than_1 << std::endl;
         // TODO: allocate
-
-        // nontrivial_modulus == 0  <=>  N > 1
+        allocate(N_chunk0_is_greater_than_1, 19, 8);
+        
+        // nontrivial_modulus == 0  ==>  N > 1
         TYPE nontrivial_modulus = N_chunk0_is_greater_than_1 * N_partial_sum_is_nonzero;
         // TODO: allocate
         TYPE nontrivial_modulus_inverse;
         if constexpr (stage == GenerationStage::ASSIGNMENT) {
-            nontrivial_modulus_inverse = nontrivial_modulus_inverse.is_zero() ? 0 : nontrivial_modulus_inverse.inversed();
+            nontrivial_modulus_inverse = nontrivial_modulus.is_zero() ? 0 : nontrivial_modulus.inversed();
         }
-        // trivial_modulus == 0 <=> N <= 1
-        // trivial_modulus == 1 <=> N > 1
+        allocate(nontrivial_modulus, 38, 8);
+        allocate(nontrivial_modulus_inverse, 39, 8);
+        // std::cout << "nontrivial_modulus = " << nontrivial_modulus << std::endl;
+        // std::cout << "nontrivial_modulus_inverse = " << nontrivial_modulus_inverse << std::endl;
+        // trivial_modulus == 0 ==> N <= 1
+        // trivial_modulus == 1 <== N > 1
         TYPE trivial_modulus = 1 - nontrivial_modulus * nontrivial_modulus_inverse;
+        std::cout << "trivial_modulus = " << trivial_modulus << std::endl;
         // TODO: allocate everything
+        allocate(trivial_modulus, 20, 8);
+        TYPE trivial_modulus_copy1 = trivial_modulus;
+        allocate(trivial_modulus_copy1, 17, 10);
+        TYPE trivial_modulus_copy2 = trivial_modulus_copy1;
+        allocate(trivial_modulus_copy2, 15, 12);
 
         
         // PART 3: enforcing a + b = q * N + r
@@ -283,37 +321,123 @@ class zkevm_addmod_bbf : public generic_component<FieldType, stage> {
                 std::cout << "construct_chunks[" << i << "] = " << construct_chunks[i] << std::endl;
                 construct_carries[i] = (construct_carryless_chunks[i] + prev_carry).to_integral() >> 16;
                 // TODO: chunks of the construct should be zero, but are not (not only the extra chunk)
-                // if ((trivial_modulus != 0) && (i < chunk_amount)) {
-                //     BOOST_ASSERT(construct_carryless_chunks[i] + prev_carry == construct_carries[i] * two_16);
-                // }
-                // BOOST_ASSERT(construct_chunks[i] == 0);
+                if ((trivial_modulus != 0)) {
+                    BOOST_ASSERT(construct_carryless_chunks[i] + prev_carry == construct_carries[i] * two_16);
+                    BOOST_ASSERT(construct_chunks[i] == 0);
+                }
             }
             if (i < chunk_amount) {
                 // allocate(construct_chunks[i], i, 9);
                 allocate(construct_carries[i], i, 11);
+                // Carries are bits
                 constrain(construct_carries[i] * (1 - construct_carries[i]));
             }
             else {
-                allocate(construct_chunks[i], 17, 10);
+                // allocate(construct_chunks[i], 17, 10);
                 allocate(construct_carries[i], 18, 10);
+                // The last carry is zero
                 constrain(construct_carries[i]);
             }
 
             // No need to satisfy these constraints if N <= 1, as we will enforce this case separately
-            // TODO: do I need to multiply by trivial_modulus here, or does it work anyway?
-            // TODO: this fails now
-            // constrain((construct_carryless_chunks[i] + prev_carry - construct_carries[i] * two_16) * trivial_modulus);
+            constrain((construct_carryless_chunks[i] + prev_carry - construct_carries[i] * two_16) * trivial_modulus_copy1);
         }
 
-        // // Carry propagation constraints for the N + v = r + 2^256 equality
-        for (std::size_t i = 0; i < chunk_amount; i++) {
+        // Carry propagation constraints for the N + v = r + 2^256 equality
+        // No need to compute and allocate the last carry, as we will force it to be 1
+        for (std::size_t i = 0; i < chunk_amount - 1; i++) {
             TYPE prev_carry = (i > 0) ? add_carries[i-1] : 0;
             if constexpr (stage == GenerationStage::ASSIGNMENT) {
-
+                TYPE prev_carry = (i > 0) ? add_carries[i - 1] : 0;
+                add_carries[i] = (N_chunks_copy[i] + v_chunks[i] + prev_carry).to_integral() >> 16;
             }
+            allocate(add_carries[i], i, 12);
+            constrain(add_carries[i] * (1 - add_carries[i]));
+        }
+        for (std::size_t i = 0; i < chunk_amount; i++) {
+            TYPE prev_carry = (i > 0) ? add_carries[i - 1] : 0;
+            TYPE current_carry = (i < chunk_amount - 1) ? add_carries[i] : 1; // Force the last carry to be 1
+            if constexpr (stage == GenerationStage::ASSIGNMENT) {
+                if (trivial_modulus != 0) {
+                    BOOST_ASSERT(N_chunks_copy[i] + v_chunks[i] + prev_carry == r_chunks[i] + current_carry * two_16);
+                }
+            }
+            constrain((N_chunks_copy[i] + v_chunks[i] + prev_carry - r_chunks[i] - current_carry * two_16) * trivial_modulus_copy2);
         }
 
 
+        // PART 4: selecting the result
+        for (std::size_t i = 0; i < chunk_amount; i++) {
+            y_chunks[i] = r_chunks[i] * trivial_modulus_copy2;
+            allocate(y_chunks[i], chunk_amount + i, 13);
+            res[i] = y_chunks[i];
+        }
+
+        // PART 5: consistency with the stack
+        auto A_128 = chunks16_to_chunks128_reversed<TYPE>(a_chunks);
+        auto B_128 = chunks16_to_chunks128_reversed<TYPE>(b_chunks);
+        auto N_128 = chunks16_to_chunks128_reversed<TYPE>(N_chunks);
+        auto R_128 = chunks16_to_chunks128_reversed<TYPE>(res);
+
+        if constexpr( stage == GenerationStage::CONSTRAINTS ){
+            // State transition constraints
+            // The arguments for pc, gas, stack_size, memory-size and rw_counter correspond to number_of_rows - 1
+            constrain(current_state.pc_next() - current_state.pc(13) - 1);                   // PC transition
+            constrain(current_state.gas(13) - current_state.gas_next() - 8);                 // GAS transition
+            constrain(current_state.stack_size(13) - current_state.stack_size_next() - 2);   // stack_size transition
+            constrain(current_state.memory_size(13) - current_state.memory_size_next());     // memory_size transition
+            constrain(current_state.rw_counter_next() - current_state.rw_counter(13) - 4);   // rw_counter transition
+
+            // Stack lookup constraints
+            // The arguments for call_id, stack_size and rw_counter corresponds to the indices of the rows that contains the data read from the rw_table
+            std::vector<TYPE> tmp;
+            tmp = rw_table<FieldType, stage>::stack_lookup(
+                current_state.call_id(9),
+                current_state.stack_size(9) - 1,
+                current_state.rw_counter(9),
+                TYPE(0),// is_write
+                A_128.first,
+                A_128.second
+            );
+            lookup(tmp, "zkevm_rw");
+            tmp = rw_table<FieldType, stage>::stack_lookup(
+                current_state.call_id(10),
+                current_state.stack_size(10) - 2,
+                current_state.rw_counter(10) + 1,
+                TYPE(0),// is_write
+                B_128.first,
+                B_128.second
+            );
+            lookup(tmp, "zkevm_rw");
+            tmp = rw_table<FieldType, stage>::stack_lookup(
+                current_state.call_id(7),
+                current_state.stack_size(7) - 3,
+                current_state.rw_counter(7) + 2,
+                TYPE(0),// is_write
+                N_128.first,
+                N_128.second
+            );
+            lookup(tmp, "zkevm_rw");
+            tmp = rw_table<FieldType, stage>::stack_lookup(
+                current_state.call_id(12),
+                current_state.stack_size(12) - 3,
+                current_state.rw_counter(12) + 2,
+                TYPE(0),// is_write
+                N_128.first,
+                N_128.second
+            );
+            lookup(tmp, "zkevm_rw");
+            tmp = rw_table<FieldType, stage>::stack_lookup(
+                current_state.call_id(13),
+                current_state.stack_size(13) - 3,
+                current_state.rw_counter(13) + 3,
+                TYPE(1),// is_write
+                R_128.first,
+                R_128.second
+            );
+            lookup(tmp, "zkevm_rw");
+        }
+    }
 
 
         // std::vector<TYPE> c_1_chunks(4);
@@ -634,7 +758,6 @@ class zkevm_addmod_bbf : public generic_component<FieldType, stage> {
         //     );
         //     lookup(tmp, "zkevm_rw");
         // }
-    }
 };
 
 template<typename FieldType>
@@ -658,6 +781,6 @@ class zkevm_addmod_operation : public opcode_abstract<FieldType> {
         zkevm_addmod_bbf<FieldType, GenerationStage::CONSTRAINTS> bbf_obj(
             context, current_state);
     }
-    virtual std::size_t rows_amount() override { return 13; }
+    virtual std::size_t rows_amount() override { return 14; }
 };
 }  // namespace nil::blueprint:bbf
