@@ -28,7 +28,6 @@
 namespace nil::blueprint::bbf::zkevm_small_field{
     // This is a table where all read/write operations are ordered by rw_id.
     // Main purpose is to prove that rw and state table contain only operations that are presented in timeline.
-
     template<typename FieldType, GenerationStage stage>
     class timeline_table : public generic_component<FieldType, stage> {
         using typename generic_component<FieldType, stage>::context_type;
@@ -51,15 +50,12 @@ namespace nil::blueprint::bbf::zkevm_small_field{
         std::vector<TYPE> state_table_selector;
         std::vector<TYPE> internal_counter;
 
-        static std::size_t get_witness_amount(
-            std::size_t instances_timeline
-        ){ return 5 * instances_timeline; }
+        static std::size_t get_witness_amount(){ return 5; }
 
         timeline_table(
             context_type &context_object,
             const input_type &input,
-            std::size_t max_timeline,
-            std::size_t instances_timeline
+            std::size_t max_timeline
         )
             :generic_component<FieldType,stage>(context_object),
             rw_id(max_timeline),
@@ -143,16 +139,17 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                     context_object.relative_constrain(context_object.relativize(constraint, -1), 1, max_timeline - 1);
                 }
             }
-            std::vector<std::vector<std::size_t>> timeline_lookup_columns;
-            std::size_t current_id = 0;
-            for( std::size_t i = 0; i < instances_timeline; i++ ){
-                std::vector<std::size_t> current_lookup;
-                for( std::size_t j = 0; j < 5; j++ ){
-                    current_lookup.push_back(current_id++);
-                }
-                timeline_lookup_columns.push_back(current_lookup);
-            }
-            multi_lookup_table("zkevm_timeline",timeline_lookup_columns,0,max_timeline);
+            // This component doesn't define dynamic lookup tables, because we are sure that it will be used only as an instance for multitable
+            // std::vector<std::vector<std::size_t>> timeline_lookup_columns;
+            // std::size_t current_id = 0;
+            // for( std::size_t i = 0; i < instances_timeline; i++ ){
+            //     std::vector<std::size_t> current_lookup;
+            //     for( std::size_t j = 0; j < 5; j++ ){
+            //         current_lookup.push_back(current_id++);
+            //     }
+            //     timeline_lookup_columns.push_back(current_lookup);
+            // }
+            // multi_lookup_table("zkevm_timeline",timeline_lookup_columns,0,max_timeline);
         }
     };
 }
