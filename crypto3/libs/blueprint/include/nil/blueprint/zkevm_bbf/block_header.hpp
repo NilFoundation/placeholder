@@ -103,17 +103,7 @@ namespace nil::blueprint::bbf{
         using value_type = typename FieldType::value_type;
         using field_integral_type = typename FieldType::integral_type;
         using zkevm_word_type = nil::blueprint::zkevm_word_type;
-
-        using private_input_type = std::conditional_t<
-                stage == GenerationStage::ASSIGNMENT,
-                std::tuple<std::vector<std::uint8_t>, 
-                zkevm_word_type>, std::monostate
-        >;
-
-        struct input_type {
-            TYPE rlc_challenge;
-            private_input_type private_input;
-        };
+        using input_type = typename RLPArray::input_type;
 
 
         const std::vector<std::vector<std::size_t>> HEADER_FIELDS_MAX_BYTES = {
@@ -142,7 +132,7 @@ namespace nil::blueprint::bbf{
             return {
                 .witnesses = 36 + RLPArray::get_witness_amount() + KeccakTable::get_witness_amount(),
                 .public_inputs = 1,
-                .constants = 2,
+                .constants = 1,
                 .rows = max_bytes[fork_type] + 10
             };
         }
@@ -150,6 +140,8 @@ namespace nil::blueprint::bbf{
         static void allocate_public_inputs(context_type &context_object, input_type &input, std::size_t fork_type) {
             context_object.allocate(input.rlc_challenge, 0, 0, column_type::public_input);
         }
+
+        std::vector<TYPE> result;
 
         block_header(context_type &context_object, const input_type& input, std::size_t fork_type, bool make_links = true) 
             : generic_component<FieldType, stage>(context_object){
@@ -175,16 +167,14 @@ namespace nil::blueprint::bbf{
                 keccak_lookup_area.push_back(48+i);
             }
 
-            using rlp_input_type = typename RLPArray::input_type;
             typename KeccakTable::private_input_type keccak_buffers;
 
             if constexpr (stage == GenerationStage::ASSIGNMENT){
 
                 context_type rlp_ct = context_object.subcontext(rlp_area, 0, max_rows - 1);
-                auto encoded_rlp = std::get<0>(input.private_input);
-                rlp_input_type rlp_input = { encoded_rlp , input.rlc_challenge };
+                auto encoded_rlp = input.input;
                 RLPArray rlp_array_block(rlp_ct, 
-                    rlp_input, 
+                    input, 
                     HEADER_FIELDS_MAX_BYTES[fork_type], 
                     HEADER_FIELDS_IS_VARIABLE_LENGTH[fork_type], 
                     make_links
@@ -268,16 +258,15 @@ namespace nil::blueprint::bbf{
                 }
 
                 keccak_buffers.new_buffer(encoded_rlp);
-                zkevm_word_type block_hash = std::get<1>(input.private_input);
+                zkevm_word_type block_hash = zkevm_keccak_hash(encoded_rlp);
                 auto block_hash_to8 = w_to_8(block_hash);
 
                 // last row is for block_hash (selector 21)
                 rlc = calculateRLC<FieldType>(encoded_rlp, input.rlc_challenge);
-                std::cout << "calculated RLC: " << rlc << std::endl;
                 is_constructed[max_rows - 1] = 1;
                 tag[max_rows - 1] = TYPE(29);
                 for(std::size_t i = 0; i < 32; i++) {
-                    value[max_rows - 1][i] = block_hash_to8[i];
+                    value[max_rows - 1][i] = block_hash_to8[31-i];
                 }
 
                 std::cout << std::left << std::setfill(' ') << std::setw(20) << field_name_from_index(21);
@@ -288,6 +277,7 @@ namespace nil::blueprint::bbf{
                 }
                 std::cout << std::dec << std::endl;
                 std::cout << "block number: " << bn << std::endl;
+
             }
 
             allocate(rlc, 11, max_rows - 1);
@@ -303,29 +293,32 @@ namespace nil::blueprint::bbf{
 
             context_type keccak_ct = context_object.subcontext(keccak_lookup_area, 0, keccak_max_blocks);
             KeccakTable kt(keccak_ct, {input.rlc_challenge, keccak_buffers}, keccak_max_blocks);
-            if constexpr (stage == GenerationStage::ASSIGNMENT){
-                std::cout << "keccak RLC: " << kt.RLC[0] << std::endl;
-            }
 
             if constexpr (stage == GenerationStage::CONSTRAINTS) {
 
-                context_type ct = context_object.subcontext(rlp_area, 0, max_bytes + 10);
+                context_type ct = context_object.subcontext(rlp_area, 0, max_rows - 1);
                 rlp_array<FieldType, stage> rlp_array_block(ct, 
-                    { input.private_input, input.rlc_challenge }, 
+                    input, 
                     HEADER_FIELDS_MAX_BYTES[fork_type], 
                     HEADER_FIELDS_IS_VARIABLE_LENGTH[fork_type], 
                     make_links
                 );
 
                 copy_constrain(rlc, rlp_array_block.rlc);
+                for(std::size_t row = 0; row < max_rows - 1; row++) {
+                    constrain((1-rlp_array_block.all_is_prefix[row])*(1-rlp_array_block.all_is_len[row])*(value[row][0] - rlp_array_block.all_bytes[row]), "value[row][0] = byte[row]");
+                    constrain((rlp_array_block.all_is_prefix[row] + rlp_array_block.all_is_len[row])*(value[row][0]), "value[row][0] = 0");
+                    constrain(rlp_array_block.all_is_last[row]*(2-rlp_array_block.all_is_last[row])*(is_constructed[row] - 1), "is_constructed = 1 when is_last = 1");
+                    constrain((1-rlp_array_block.all_is_last[row])*is_constructed[row], "is_constructed = 0 otherwise");
+                }
             }
-            auto block_hash = chunks8_to_chunks128<TYPE>(value[max_rows - 1]);
+            auto block_hash = chunks8_to_chunks128_reversed<TYPE>(value[max_rows - 1]);
             lookup({is_constructed[max_rows-1], rlc, block_hash.first, block_hash.second}, "keccak_table");
-
 
             for(std::size_t row = 0; row < 9; row++) constrain(tag[row], "tag is 0 for header rows");
 
-            constrain(tag[10] - 1);
+            constrain(tag[9] - 1);
+            // add other tag constraints
             constrain(tag[max_rows-1] - 29, "block hash tag is 29");
 
             for(std::size_t row = 0; row < max_rows; row++) {
@@ -341,8 +334,6 @@ namespace nil::blueprint::bbf{
                         constrain(is_constructed[row-1]*value[row][i], "values are 0 when after field is constructed");
                         constrain((1-is_constructed[row-1])*(value[row][i] - value[row-1][i-1]), "values right shift");
                     }
-                    // constrain(tag[row-1]*is_constructed[row-1]*(tag[row] - tag[row-1] - 1), "field tags increment by one");
-                    // constrain(tag[row-1]*(1-is_constructed[row-1])*(tag[row] - tag[row-1]), "if not constructed, field tag stays same");
                 }
 
                 if(row > 0) copy_constrain(block_number[row], block_number[row-1]);
@@ -351,6 +342,10 @@ namespace nil::blueprint::bbf{
             std::vector<std::size_t> lookup_area = {12, 14, 15};
             for(std::size_t i = 0; i < 32; i++) lookup_area.push_back(16 + i);
             lookup_table("block_header", lookup_area, 0, max_rows);
+
+            for (std::size_t i = 0; i < 32; i++){
+                result.push_back(value[max_rows - 1][31-i]);
+            }
         }
     };
 }
