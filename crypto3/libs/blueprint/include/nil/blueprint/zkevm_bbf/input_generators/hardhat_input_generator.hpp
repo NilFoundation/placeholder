@@ -305,7 +305,7 @@ namespace nil {
                     for( auto it = ptrace.begin(); it!=ptrace.end(); it++){
                         std::string opcode = it->second.get_child("op").data();
                         current_opcode = opcode_number_from_str(opcode);
-                        for( std::size_t i = 0; i < depth; i++) std::cout << "\t";
+                        for( std::size_t i = 1; i < depth; i++) std::cout << "\t";
 
                         if(std::distance(it, ptrace.end()) != 1){
                             stack_next = zkevm_word_vector_from_ptree(std::next(it)->second.get_child("stack"));
@@ -632,7 +632,6 @@ namespace nil {
                             call_id, offset + i, rw_counter++, byte
                         ));
                     }
-                    std::cout << std::endl;
                     _rw_operations.push_back(stack_rw_operation(call_id,  stack_next.size()-1, rw_counter++, true, stack_next[stack_next.size()-1]));
                 }
                 void calldatasize(){
@@ -1176,7 +1175,7 @@ namespace nil {
 
                     _zkevm_states.push_back(call_header_zkevm_state(get_basic_zkevm_state_part(), get_call_header_state_part()));
                     _call_stack.push_back({
-                        _zkevm_states.back(), call_id, 0, 0, 0, calldata,
+                        _zkevm_states.back(), call_id, 0, 0, 0, calldata, {},
                         {}, {}, {}, _call_stack.back().was_accessed, _call_stack.back().was_written
                     });
 

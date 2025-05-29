@@ -27,37 +27,26 @@
 #include <boost/assert.hpp>
 #include <boost/test/unit_test.hpp>
 
-#include <nil/crypto3/algebra/curves/pallas.hpp>
-#include <nil/crypto3/algebra/fields/arithmetic_params/pallas.hpp>
-#include <nil/crypto3/algebra/curves/vesta.hpp>
-#include <nil/crypto3/algebra/fields/arithmetic_params/vesta.hpp>
+#include <nil/crypto3/algebra/curves/alt_bn128.hpp>
+#include <nil/crypto3/algebra/fields/arithmetic_params/alt_bn128.hpp>
+#include <nil/crypto3/algebra/fields/babybear.hpp>
 #include <nil/crypto3/algebra/random_element.hpp>
 
 #include <nil/crypto3/hash/algorithm/hash.hpp>
 #include <nil/crypto3/hash/sha2.hpp>
 #include <nil/crypto3/hash/keccak.hpp>
 
-#include <nil/blueprint/zkevm_bbf/types/hashed_buffers.hpp>
-#include <nil/blueprint/zkevm_bbf/types/rw_operation.hpp>
-#include <nil/blueprint/zkevm_bbf/types/copy_event.hpp>
-#include <nil/blueprint/zkevm_bbf/types/zkevm_state.hpp>
-
-#include <nil/blueprint/blueprint/plonk/circuit.hpp>
-#include <nil/blueprint/blueprint/plonk/assignment.hpp>
-#include <nil/blueprint/zkevm_bbf/zkevm.hpp>
-#include <nil/blueprint/zkevm_bbf/rw.hpp>
-#include <nil/blueprint/zkevm_bbf/copy.hpp>
-#include <nil/blueprint/zkevm_bbf/bytecode.hpp>
-#include <nil/blueprint/zkevm_bbf/keccak.hpp>
-
 #include "./opcode_test_fixture.hpp"
 
 using namespace nil::crypto3;
 using namespace nil::blueprint::bbf;
 
+BOOST_GLOBAL_FIXTURE(zkEVMGlobalFixture);
 BOOST_FIXTURE_TEST_SUITE(zkevm_opcode_bbf_test_suite, zkEVMOpcodeTestFixture)
+    using big_field_type = typename nil::crypto3::algebra::curves::alt_bn128_254::scalar_field_type;
+    using small_field_type = typename algebra::fields::babybear;
+
 BOOST_AUTO_TEST_CASE(pushx_strings) {
-    using field_type = typename algebra::curves::pallas::base_field_type;
     zkevm_opcode_tester opcode_tester;
 
     opcode_tester.push_opcode(zkevm_opcode::PUSH0);
@@ -93,11 +82,10 @@ BOOST_AUTO_TEST_CASE(pushx_strings) {
     opcode_tester.push_opcode(zkevm_opcode::PUSH30, hex_string_to_bytes("0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2"));
     opcode_tester.push_opcode(zkevm_opcode::PUSH31, hex_string_to_bytes("0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e0"));
     opcode_tester.push_opcode(zkevm_opcode::PUSH32, hex_string_to_bytes("0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016"));
-    opcode_tester.push_opcode(zkevm_opcode::STOP);
 
     l1_size_restrictions max_sizes;
 
-    max_sizes.max_keccak_blocks = 10;
+    max_sizes.max_keccak_blocks = 20;
     max_sizes.max_bytecode = 3000;
     max_sizes.max_mpt = 0;
     max_sizes.max_rw = 500;
@@ -106,11 +94,10 @@ BOOST_AUTO_TEST_CASE(pushx_strings) {
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 100;
 
-    complex_opcode_test<field_type>(opcode_tester, max_sizes);
+    complex_opcode_test<big_field_type, small_field_type>(opcode_tester, max_sizes);
 }
 
 BOOST_AUTO_TEST_CASE(pushx) {
-    using field_type = typename algebra::curves::pallas::base_field_type;
     zkevm_opcode_tester opcode_tester;
 
     opcode_tester.push_opcode(zkevm_opcode::PUSH0);
@@ -167,11 +154,10 @@ BOOST_AUTO_TEST_CASE(pushx) {
     opcode_tester.push_opcode(
         zkevm_opcode::PUSH32,
         0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016_big_uint256);
-    opcode_tester.push_opcode(zkevm_opcode::STOP);
 
     l1_size_restrictions max_sizes;
 
-    max_sizes.max_keccak_blocks = 10;
+    max_sizes.max_keccak_blocks = 20;
     max_sizes.max_bytecode = 3000;
     max_sizes.max_mpt = 0;
     max_sizes.max_rw = 500;
@@ -180,6 +166,16 @@ BOOST_AUTO_TEST_CASE(pushx) {
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 100;
 
-    complex_opcode_test<field_type>(opcode_tester, max_sizes);
+    if( circuits_to_run.empty() ) {
+        circuits_to_run.insert("zkevm");
+        circuits_to_run.insert("zkevm-wide");
+        circuits_to_run.insert("rw");
+        circuits_to_run.insert("bytecode");
+        circuits_to_run.insert("copy");
+        circuits_to_run.insert("bytecode-s");
+        circuits_to_run.insert("rw-s");
+        circuits_to_run.insert("copy-s");
+    }
+    complex_opcode_test<big_field_type, small_field_type>(opcode_tester, max_sizes);
 }
 BOOST_AUTO_TEST_SUITE_END()

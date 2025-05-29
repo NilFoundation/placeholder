@@ -25,7 +25,7 @@
 
 #pragma once
 
-#include <nil/blueprint/zkevm_bbf/opcodes/zkevm_opcodes.hpp>
+#include <nil/blueprint/zkevm_bbf/types/opcode_enum.hpp>
 #include <nil/blueprint/utils/satisfiability_check.hpp>
 
 namespace nil {
@@ -38,7 +38,7 @@ namespace nil {
             public:
                 zkevm_opcode_tester(){}
                 void push_opcode(const zkevm_opcode opcode, const std::vector<std::uint8_t> &additional_input = {}){
-                    //std::cout << "PC opcode map[" << bytecode.size() << "] = " << opcodes.size() << " opcode = " << opcode_to_string(opcode) << std::endl;
+                    BOOST_LOG_TRIVIAL(trace) << "PC opcode map[" << bytecode.size() << "] = " << opcodes.size() << " opcode = " << opcode_to_string(opcode) << std::endl;
                     std::uint8_t opcode_number = opcode_to_number(opcode);
                     bool is_push = (opcode_number >= 0x60) && (opcode_number <= 0x7f);
 
@@ -54,7 +54,7 @@ namespace nil {
                         BOOST_ASSERT(additional_input.size() <= x);
                     } else {
                         if( additional_input.size() != 0)
-                            std::cout << "WRONG opcode input " << opcode
+                            BOOST_LOG_TRIVIAL(trace) << "WRONG opcode input " << opcode
                                 << " " << std::hex << std::size_t(opcode_number) << std::dec
                                 << " additional input size = " << additional_input.size()
                                 << std::endl;
@@ -63,7 +63,7 @@ namespace nil {
                 }
 
                 void push_opcode(const zkevm_opcode opcode, zkevm_word_type additional_input){
-                    std::cout << "PC opcode map[" << bytecode.size() << "] = " << opcodes.size() << " opcode = " << opcode_to_string(opcode) << std::endl;
+                    BOOST_LOG_TRIVIAL(trace) << "PC opcode map[" << bytecode.size() << "] = " << opcodes.size() << " opcode = " << opcode_to_string(opcode) << std::endl;
                     std::uint8_t opcode_number = opcode_to_number(opcode);
                     std::uint8_t x = 0;
                     bool is_push = (opcode_number >= 0x60) && (opcode_number <= 0x7f);

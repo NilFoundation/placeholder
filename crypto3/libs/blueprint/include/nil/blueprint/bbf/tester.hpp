@@ -70,7 +70,7 @@ namespace nil {
                     TYPE res;
 
                     static table_params get_minimal_requirements() {
-                        return {13,0,1,8191}; // W, PI, C, rows (so many rows, because carry_on_addition has a built-in range check
+                        return {14,0,1,8191}; // W, PI, C, rows (so many rows, because carry_on_addition has a built-in range check
                     }
 
                     static void allocate_public_inputs(context_type &ctx,
@@ -109,7 +109,7 @@ namespace nil {
                         // context_type ct3 = context_object.subcontext(ct3_area,0,4);
                         // auto c3 = Carry_On_Addition(ct3, CX, CY, make_links);
 
-                        std::vector<std::size_t> ct4_area = {12};
+                        std::vector<std::size_t> ct4_area = {12,13};
                         context_type ct4 = context_object.subcontext(ct4_area,1,4);
                         auto c4 = Useless(ct4);
                     }

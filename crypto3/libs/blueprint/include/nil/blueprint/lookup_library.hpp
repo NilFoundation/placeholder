@@ -591,6 +591,7 @@ namespace nil {
                 BOOST_ASSERT(!reserved_all);
                 std::string table_name = name.substr(0, name.find("/"));
                 // Necessary for dynamic and for fixed tables
+                if(tables.find(table_name) == tables.end()) std::cout << "Table " << table_name << " is not registered" << std::endl;
                 BOOST_ASSERT(tables.find(table_name) != tables.end());
                 std::string subtable_name = name.substr(name.find("/")+1, name.size());
                 BOOST_ASSERT(tables[table_name]->subtables.find(subtable_name) != tables[table_name]->subtables.end());

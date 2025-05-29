@@ -31,13 +31,14 @@
 
 #include <nil/blueprint/zkevm_bbf/types/zkevm_word.hpp>
 #include <nil/blueprint/zkevm_bbf/types/state_item_address.hpp>
-#include <nil/blueprint/zkevm_bbf/types/rw_operation.hpp>
+#include <nil/blueprint/zkevm_bbf/types/short_rw_operation.hpp>
+#include <nil/blueprint/zkevm_bbf/types/state_operation.hpp>
 
 namespace nil {
     namespace blueprint {
         namespace bbf {
             enum class copy_operand_type {
-                padding, memory, bytecode, calldata, log, keccak, reverted, returndata
+                padding, memory, bytecode, calldata, log, keccak, returndata
             };
             std::size_t copy_op_to_num(copy_operand_type copy_op){
                 switch(copy_op){
@@ -46,14 +47,13 @@ namespace nil {
                 case copy_operand_type::bytecode:      return 2;
                 case copy_operand_type::log:           return 3;
                 case copy_operand_type::keccak:        return 4;
-                case copy_operand_type::reverted:      return 5;
-                case copy_operand_type::calldata:      return 6;
-                case copy_operand_type::returndata:    return 7;
+                case copy_operand_type::calldata:      return 5;
+                case copy_operand_type::returndata:    return 6;
                 }
                 BOOST_ASSERT(false);
                 return 0;
             }
-            static constexpr std::size_t copy_operand_types_amount = 8;
+            static constexpr std::size_t copy_operand_types_amount = 7;
 
 
             struct copied_data_item{
@@ -79,9 +79,9 @@ namespace nil {
                 std::size_t         length;
 
                 std::size_t get_op(std::size_t i) const {
-                    if( bytes.size() != 0 ) return rw_op_to_num(rw_operation_type::memory);
+                    if( bytes.size() != 0 ) return std::size_t(rw_operation_type::memory);
                     BOOST_ASSERT(i < values.size());
-                    return rw_op_to_num(values[i].op);
+                    return std::size_t(values[i].op);
                 }
 
                 zkevm_word_type get_address(std::size_t i) const {
@@ -152,25 +152,6 @@ namespace nil {
                 cpy.destination_type = copy_operand_type::keccak;
                 cpy.destination_id = hash_value;
                 cpy.dst_counter_1 = 0;
-                cpy.dst_counter_2 = 0;
-                cpy.length = length;
-                return cpy;
-            }
-
-            copy_event revert_copy_event(
-                std::size_t call_id,
-                std::size_t block_id,
-                std::size_t rw_counter,
-                std::size_t length
-            ){
-                copy_event cpy;
-                cpy.source_type = copy_operand_type::reverted;
-                cpy.source_id = call_id;
-                cpy.src_counter_1 = 0;
-                cpy.src_counter_2 = 0;
-                cpy.destination_type = copy_operand_type::reverted;
-                cpy.destination_id = block_id;
-                cpy.dst_counter_1 = rw_counter;
                 cpy.dst_counter_2 = 0;
                 cpy.length = length;
                 return cpy;
@@ -283,8 +264,24 @@ namespace nil {
                 return cpy;
             }
 
-            copy_event codecopy_copy_event(){
+            copy_event codecopy_copy_event(
+                zkevm_word_type bytecode_hash,
+                std::size_t src_offset,
+                std::size_t call_id,
+                std::size_t dst_offset,
+                std::size_t rw_counter,
+                std::size_t length
+            ){
                 copy_event cpy;
+                cpy.source_type = copy_operand_type::bytecode;
+                cpy.source_id = bytecode_hash;
+                cpy.src_counter_1 = src_offset; // Before copy reading
+                cpy.src_counter_2 = 0;
+                cpy.destination_type = copy_operand_type::memory;
+                cpy.destination_id = call_id;
+                cpy.dst_counter_1 = dst_offset; // Before copy writing
+                cpy.dst_counter_2 = rw_counter;
+                cpy.length = length;
                 return cpy;
             }
         } // namespace bbf

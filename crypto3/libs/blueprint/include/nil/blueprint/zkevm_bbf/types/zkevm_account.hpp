@@ -54,6 +54,8 @@ namespace nil {
                     BOOST_ASSERT(field_type == 0);  // Other field types not implemented yet
                     storage[storage_key] = value;
                 }
+
+                virtual ~zkevm_account() {}
             };
             std::ostream &operator<<(std::ostream &os, const zkevm_account &obj){
                 os << "\tAddress = 0x" << obj.address << std::dec << std::endl;

@@ -9,7 +9,7 @@
 #include <nil/crypto3/zk/snark/arithmetization/plonk/assignment.hpp>
 #include <nil/proof-generator/types/type_system.hpp>
 #include <nil/proof-generator/preset/limits.hpp>
-#include <nil/blueprint/zkevm_bbf/exp.hpp>
+#include <nil/blueprint/zkevm_bbf/big_field/circuits/exp.hpp>
 #include <nil/blueprint/bbf/circuit_builder.hpp>
 #include <optional>
 #include <string>
@@ -27,7 +27,7 @@ namespace nil {
             using AssignmentTable = typename PresetTypes<BlueprintFieldType>::AssignmentTable;
 
             blueprint::bbf::circuit_builder<
-                BlueprintFieldType, nil::blueprint::bbf::exponentiation, std::size_t, std::size_t
+                BlueprintFieldType, nil::blueprint::bbf::zkevm_big_field::exponentiation, std::size_t, std::size_t
             > builder(circuits_limits.max_exp_rows, circuits_limits.max_exp_ops);
 
             exp_circuit = std::make_shared<ConstraintSystem>(builder.get_circuit());
