@@ -51,7 +51,7 @@ namespace nil::blueprint::bbf {
 
             static table_params get_minimal_requirements(std::size_t max_bytes, bool is_variable_len) {
             constexpr std::size_t witness = 8;
-            constexpr std::size_t public_inputs = 1;
+            constexpr std::size_t public_inputs = 0;
             constexpr std::size_t constants = 0;
             std::size_t rows = max_bytes;
             return {witness, public_inputs, constants, rows};
@@ -66,21 +66,20 @@ namespace nil::blueprint::bbf {
         TYPE has_prefix;
         std::vector<TYPE> bytes;
         std::vector<TYPE> is_last;
+        std::vector<TYPE> is_prefix;
+        std::vector<TYPE> is_len;
 
         rlp_field(context_type &context_object, input_type rlp_input, std::size_t max_bytes, bool is_variable_len, bool make_links = true) :
             generic_component<FieldType,stage>(context_object) {
 
             bytes = std::vector<TYPE>(max_bytes);
             is_last = std::vector<TYPE>(max_bytes);
-            std::vector<TYPE> is_prefix = std::vector<TYPE>(max_bytes);
+            is_prefix = std::vector<TYPE>(max_bytes);
+            is_len = std::vector<TYPE>(max_bytes);
             std::vector<TYPE> is_big = std::vector<TYPE>(max_bytes);
-            std::vector<TYPE> is_len = std::vector<TYPE>(max_bytes);
             std::vector<TYPE> field_len = std::vector<TYPE>(max_bytes);
             std::vector<TYPE> len_len = std::vector<TYPE>(max_bytes);
             std::vector<TYPE> len_val = std::vector<TYPE>(max_bytes);
-            
-
-            value_type fixed_length = (value_type) max_bytes;
 
             if constexpr (stage == GenerationStage::ASSIGNMENT) {  
                 BOOST_ASSERT(rlp_input.size() <= max_bytes);
@@ -165,9 +164,6 @@ namespace nil::blueprint::bbf {
                 allocate(is_last[i], 7, i);
             }
 
-            if(!is_variable_len){
-                constrain(field_len[0] + is_prefix[0] + len_len[0] - fixed_length);
-            }
             constrain((1-is_prefix[0])*(field_len[0] - 1), "single byte up to 0x79 has no prefix");
             for(std::size_t i = 0; i < max_bytes; i++){
                 lookup(bytes[i], "byte_range_table/full");

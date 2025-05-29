@@ -50,7 +50,7 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_rlp_field_bbf_empty_string) {
     using value_type = typename field_type::value_type;
     std::vector<std::uint8_t> encoded_rlp = {0x80};
 
-    test_bbf_rlp_field<field_type>(encoded_rlp, 2, true);
+    test_bbf_rlp_field<field_type>(encoded_rlp, 9, true);
 }
 
 BOOST_AUTO_TEST_CASE(blueprint_plonk_rlp_field_bbf_to_fail) {
