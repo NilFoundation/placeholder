@@ -87,7 +87,6 @@ namespace nil::blueprint::bbf {
         }
     }
 
-
     std::size_t get_max_rlp_length(std::size_t data_len) {
         std::vector<zkevm_word_type> raw;
         for (size_t i = 0; i < data_len; i++) raw.push_back(0xFF);
@@ -104,8 +103,6 @@ namespace nil::blueprint::bbf {
         using generic_component<FieldType, stage>::lookup;
 
         using typename generic_component<FieldType, stage>::TYPE;
-        // mpt_type trie_type;
-        // inner_node_type node_type;
         std::array<TYPE, 3> prefix;
         std::array<TYPE, 3> prefix_rlc;
         std::array<TYPE, 3> prefix_exists;
@@ -115,26 +112,16 @@ namespace nil::blueprint::bbf {
         std::array<TYPE, 3> prefix_index;
         TYPE len;
         TYPE len_image;
-        // TYPE len_is_zero;
-        // TYPE len_I;
-        // TYPE len_is_one;
-        // TYPE len_minus_one_I;
         TYPE rlc_challenge;
 
         std::uint8_t rlp_constant;
 
         node_header(
             context_type &context_object,
-            // mpt_type _trie_t,
-            // inner_node_type _node_t,
-            // TYPE _rlc_challenge,
             std::uint8_t _rlp_constant
         ): generic_component<FieldType, stage>(context_object, false),
-        // node_type(_node_t),
         rlp_constant(_rlp_constant),
-        ct(context_object) {
-            // rlc_challenge = _rlc_challenge;
-        }
+        ct(context_object) {}
 
         void set_rlc_challenge(TYPE _rlc_challenge) {
             rlc_challenge = _rlc_challenge;
@@ -174,16 +161,10 @@ namespace nil::blueprint::bbf {
         }
 
         void allocate_witness(std::size_t &column_index, std::size_t &row_index) {
-            // rlp len
             allocate(len, column_index ++, row_index);
             allocate(len_image, column_index ++, row_index);
-            // allocate(len_is_zero, column_index ++, row_index);
-            // allocate(len_I, column_index ++, row_index);
-            // allocate(len_is_one, column_index ++, row_index);
-            // allocate(len_minus_one_I, column_index ++, row_index);
             allocate(prefix_1_flag, column_index ++, row_index);
             allocate(prefix_1_image, column_index ++, row_index);
-            // pefix
             for (size_t i = 0; i < 3; i++) {
                 allocate(prefix[i], column_index ++, row_index);
                 allocate(prefix_rlc[i], column_index ++, row_index);
@@ -287,18 +268,6 @@ namespace nil::blueprint::bbf {
         context_type &ct; // :(
 
         void _set_length_info() {
-            // if (node_type == inner_node_type::storage_value)
-            //     BOOST_ASSERT_MSG(raw_data_length <= 32, "Data size exceeded 32 bytes for storage values!");
-            // else if (node_type == inner_node_type::array)
-            //     BOOST_ASSERT_MSG(raw_data_length <= 110, "We only support array of up to 110 bytes!");
-            // else if (node_type == inner_node_type::nonce)
-            //     BOOST_ASSERT_MSG(raw_data_length <= 8, "Data size exceeded 8 bytes for nonce!");
-            // else if (node_type == inner_node_type::balance)
-            //     BOOST_ASSERT_MSG(raw_data_length <= 32, "Data size exceeded 32 bytes for balance!");
-            // else if (node_type == inner_node_type::storage_root)
-            //     BOOST_ASSERT_MSG(raw_data_length <= 32, "Data size exceeded 32 bytes for storage hash!");
-            // else if (node_type == inner_node_type::code_hash)
-            //     BOOST_ASSERT_MSG(raw_data_length <= 32, "Data size exceeded 32 bytes for code hash!");
             if constexpr (stage == GenerationStage::ASSIGNMENT) {
                 if (prefix_exists[2] == 0) {
                     prefix_1_flag = 1;
@@ -309,20 +278,6 @@ namespace nil::blueprint::bbf {
                     len_image = 0;
                     prefix_1_image = 0;
                 }
-
-                // if (len == 0) {
-                //     len_is_zero = 1;
-                // } else {
-                //     len_is_zero = 0;
-                //     len_I = len.inversed();
-                // }
-
-                // if (len == 1) {
-                //     len_is_one = 1;
-                // } else {
-                //     len_is_one = 0;
-                //     len_minus_one_I = (len - 1).inversed();
-                // }
             }
         }
 

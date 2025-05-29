@@ -134,7 +134,7 @@ public:
     template <typename field_type>
     void test_zkevm_mpt_leaf(
         std::string data_source,
-        mpt_type _t, // fix this
+        mpt_type type, // fix this
         std::size_t max_mpt_leaf_size,
         bool expected_result = true
     ) {
@@ -174,7 +174,8 @@ public:
             "mpt_leaf_node",   //  Circuit name
             {} ,               //  Public input
             input,             //  Assignment input (paths to prove)
-            max_mpt_leaf_size  //  Maximum size of mpt circuit,
+            max_mpt_leaf_size, //  Maximum size of mpt circuit,
+            type
         );
         BOOST_CHECK((!check_satisfiability && !generate_proof) || result == expected_result); // Max_rw, Max_mpt
     }
@@ -189,7 +190,7 @@ BOOST_AUTO_TEST_CASE(one_mpt_path) {
     test_zkevm_mpt<field_type>("mpt_path_3.json", 500);
 }
 BOOST_AUTO_TEST_CASE(mpt_leafs) {
-//   test_zkevm_mpt_leaf<field_type>("mpt_leaf_storage.json", mpt_type::storage_trie, 20);
+  test_zkevm_mpt_leaf<field_type>("mpt_leaf_storage.json", mpt_type::storage_trie, 20);
   test_zkevm_mpt_leaf<field_type>("mpt_leaf_account.json", mpt_type::account_trie, 20);
 }
 BOOST_AUTO_TEST_SUITE_END()

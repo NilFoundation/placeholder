@@ -62,12 +62,12 @@ namespace nil::blueprint::bbf {
         using node_inner_string = node_inner_string<FieldType, stage>;
         using node_inner_container = node_inner_container<FieldType, stage>;
 
-        node_inner* key;
+        node_inner_string* key;
         node_inner_container* value;
         TYPE hash_low;
         TYPE hash_high;
         TYPE query_offset;
-        TYPE query_value;
+        std::vector<TYPE> query_value;
         TYPE query_selector;
         TYPE query_value_len;
         TYPE node_exists;
@@ -79,13 +79,15 @@ namespace nil::blueprint::bbf {
         leaf_node(
             context_type &context_object,
             mpt_type _trie_t,
-            std::size_t _row_index
-        ): node_inner_array(context_object),
-        row_index(_row_index) {
+            std::size_t _row_index,
+            query_type _q_type = query_type::full_value_query
+        ): node_inner_array(context_object, _q_type)
+         , row_index(_row_index) {
             key = new node_inner_string(context_object, 33); // 32 bytes is the hash output and one 0x20 byte will be the leaf-node prefix
             this->inners.push_back(key);
-            value = new node_inner_container(context_object, _trie_t);
+            value = new node_inner_container(context_object, _trie_t, _q_type);
             this->inners.push_back(value);
+            query_value.resize(value->get_max_length());
         }
 
         void set_data(std::vector<zkevm_word_type> key_raw, std::vector<zkevm_word_type> value_raw, std::size_t _query_offset, std::size_t _query_selector=0) {
@@ -153,7 +155,11 @@ namespace nil::blueprint::bbf {
                     << std::hex << hash_high << std::dec << "\t"
                     << std::hex << hash_low << std::dec << "\n";
             this->header->print();
-            std::cout << "\tquery value:\tquery offset:\n\t" << query_value << "\t\t" << "\t\t" << query_offset << std::endl;
+            std::cout << "\tquery values:\n\t";
+            for (auto &v : query_value)
+                std::cout << v << " ";
+            
+            std::cout << "\tquery offset:\t" << query_offset << std::endl;
 
             std::cout << "key:\n";
             key->print();
@@ -166,7 +172,10 @@ namespace nil::blueprint::bbf {
         void print_table_entry() {
             std::cout << "hash:\t\t" << std::hex << hash_high << hash_low << std::dec << "\n";
             std::cout << "query offset:\t" << query_offset << std::endl;
-            std::cout << "query value:\t0x" << std::hex << query_value << std::dec << std::endl;
+            std::cout << "query value:\t"; 
+            for (auto &v : query_value)
+                std::cout << std::hex << v << std::dec << " ";
+            std::cout << std::endl;
             std::cout << "query selector:\t" << query_selector << std::endl;
             std::cout << "value len:\t" << query_value_len << std::endl;
             std::cout << "------------------------------------------\n";
@@ -176,11 +185,14 @@ namespace nil::blueprint::bbf {
             std::size_t column_index = 0;
             allocate(hash_low, column_index ++, row_index);
             allocate(hash_high, column_index ++, row_index);
-            // allocate(query_found, column_index ++, row_index);
-            allocate(query_offset, column_index ++, row_index);
-            allocate(query_value, column_index ++, row_index);
+            if (this->q_type == query_type::single_byte_query)
+                allocate(query_offset, column_index ++, row_index);
+            for (size_t i = 0; i < query_value.size(); i++) {
+                allocate(query_value[i], column_index ++, row_index);
+            }
             allocate(query_selector, column_index ++, row_index);
-            allocate(query_value_len, column_index ++, row_index);
+            if (this->q_type == query_type::single_byte_query)
+                allocate(query_value_len, column_index ++, row_index);
             allocate(node_exists, column_index ++, row_index);
             allocate(this->rlc_challenge, column_index ++, row_index);
             node_inner_array::allocate_witness(column_index, row_index);
@@ -202,7 +214,7 @@ namespace nil::blueprint::bbf {
             this->keccak_lookup_constraint();
             TYPE initial_rlc = this->header->get_total_length_constraint();
             this->main_constraints(initial_rlc, 0, this->rlc_challenge);
-            value->query_constraints(query_offset, query_value, query_selector, query_value_len, node_exists);
+            // value->query_constraints(query_offset, query_value, query_selector, query_value_len, node_exists);
         }
 
         std::size_t rows_count() {

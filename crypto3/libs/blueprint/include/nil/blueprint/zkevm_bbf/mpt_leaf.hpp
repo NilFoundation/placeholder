@@ -68,11 +68,6 @@ namespace nil::blueprint::bbf {
         using typename generic_component<FieldType, stage>::TYPE;
         using node_inner_string = node_inner_string<FieldType, stage>;
 
-        // struct mpt_queries {
-        //     std::vector<mpt_query> queries;
-        //     mpt_type type;
-        // };
-
         struct input_type {
             std::vector<mpt_query> queries;
             TYPE rlc_challenge;
@@ -85,22 +80,29 @@ namespace nil::blueprint::bbf {
         using value = typename FieldType::value_type;
         using integral_type = nil::crypto3::multiprecision::big_uint<257>;
 
-        static table_params get_minimal_requirements(std::size_t max_mpt_query_size) {
+        static table_params get_minimal_requirements(std::size_t max_mpt_query_size, mpt_type type) {
+            std::size_t witnesses;
+            if (type == mpt_type::account_trie)
+                witnesses = 571;
+            else if (type == mpt_type::storage_trie)
+                witnesses = 330;
+            else
+                throw "Unsupported trie!";
+
             return {
-                    .witnesses = 571, // 571 for account trie nodes and 312 for storage trie
+                    .witnesses = witnesses,
                     .public_inputs = 0,
                     .constants = 0,
-                    .rows = max_mpt_query_size * 2 // one for keccak, one for account trie, one for storage trie
+                    .rows = max_mpt_query_size * 2 // one for keccak and one for trie
                         + 1168 // rlp_table
                 };
         }
 
         static void allocate_public_inputs(context_type &context, input_type &input,
-                                           std::size_t max_mpt_query_size) {}
+                                           std::size_t max_mpt_query_size, mpt_type type) {}
 
         mpt_leaf_node(context_type &context_object, const input_type input,
-            // mpt_type type, it's not working!!
-            std::size_t max_mpt_query_size)
+            std::size_t max_mpt_query_size, mpt_type type)
             : generic_component<FieldType, stage>(context_object) {
 
             std::vector<std::size_t> keccak_lookup_area;
@@ -110,7 +112,9 @@ namespace nil::blueprint::bbf {
             std::size_t row_index = 0;
 
             for (size_t i = 0; i < max_mpt_query_size; i++) {
-                leaf_node<FieldType, stage>* s = new leaf_node<FieldType, stage>(context_object, mpt_type::account_trie, row_index);
+                query_type q = (type == mpt_type::account_trie || type == mpt_type::storage_trie) ? 
+                                query_type::single_byte_query : query_type::single_byte_query;
+                leaf_node<FieldType, stage>* s = new leaf_node<FieldType, stage>(context_object, type, row_index, q);
                 nodes.push_back(s);
                 row_index += s->rows_count();
             }

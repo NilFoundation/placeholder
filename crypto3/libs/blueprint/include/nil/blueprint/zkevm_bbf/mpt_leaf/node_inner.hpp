@@ -40,6 +40,8 @@
 
 namespace nil::blueprint::bbf {
 
+    enum class query_type { single_byte_query, full_value_query, no_query };
+
     template<typename FieldType, GenerationStage stage>
     class node_inner: public generic_component<FieldType, stage> {
       public:
@@ -52,18 +54,15 @@ namespace nil::blueprint::bbf {
         using node_header = node_header<FieldType, stage>;
 
         node_header* header;
-        bool have_query_constraint;
+        query_type q_type;
 
         TYPE rlc_challenge;
 
         node_inner(
             context_type &context_object,
-            bool _have_query_constraint = false
-        ):
-            generic_component<FieldType, stage>(context_object, false),
-            have_query_constraint(_have_query_constraint) {
-
-        }
+            query_type _q_type
+        ): generic_component<FieldType, stage>(context_object, false)
+         , q_type(_q_type){}
 
         void initialize() {
             _initialize_header();
@@ -112,7 +111,7 @@ namespace nil::blueprint::bbf {
             throw "Method not implemented!";
         }
 
-        virtual TYPE set_query_data(std::size_t offset, std::size_t selector) {
+        virtual std::vector<TYPE> set_query_data(std::size_t offset, std::size_t selector) {
             throw "Method not implemented!";
         }
 
@@ -129,15 +128,19 @@ namespace nil::blueprint::bbf {
         }
 
         virtual TYPE get_query_value_len() {
-            throw "Method not implemented4!";
+            throw "Method not implemented!";
         }
 
         virtual TYPE query_selector_is_found() {
-            throw "Method not implemented4!";
+            throw "Method not implemented!";
         }
 
-        virtual TYPE get_query_value() {
-            throw "Method not implemented4!";
+        virtual std::vector<TYPE> get_query_value() {
+            throw "Method not implemented!";
+        }
+
+        virtual std::size_t get_max_length() {
+            throw "Method not implemented!";
         }
 
         protected:
@@ -153,7 +156,6 @@ namespace nil::blueprint::bbf {
             throw "Method not implemented!";
         }
     };
-
 
 
     template<typename FieldType, GenerationStage stage>
@@ -177,12 +179,10 @@ namespace nil::blueprint::bbf {
         node_inner_string(
             context_type &context_object,
             std::size_t _max_data_length,
-            bool _have_query_constraints = false,
+            query_type _q_type = query_type::no_query,
             bool _is_fixed_length = false
-        ): node_inner(
-            context_object,
-            _have_query_constraints
-        ), max_data_len(_max_data_length)
+        ): node_inner(context_object, _q_type)
+         , max_data_len(_max_data_length)
          , is_fixed_length(_is_fixed_length)
          , len_selector(context_object, _max_data_length+1)
          , offset_selector(context_object, _max_data_length) {
@@ -194,6 +194,15 @@ namespace nil::blueprint::bbf {
             rlc.resize(max_data_len);
         }
 
+        std::size_t get_max_length() {
+            if (this->q_type == query_type::single_byte_query)
+                return 1;
+            else if (this->q_type == query_type::full_value_query)
+                return this->max_data_len;
+            else
+                throw "non-query node doesn't have query length!";
+        }
+
         std::size_t extra_rows_count() {
             return 0;
         }
@@ -202,7 +211,7 @@ namespace nil::blueprint::bbf {
             if constexpr (stage == GenerationStage::ASSIGNMENT) {
                 h->print();
                 auto raw_data_length = static_cast<std::uint64_t>(h->len.to_integral());
-                std::cout << "\trlc_challenge: " << this->rlc_challenge << " query value: " << get_query_value() << std::endl;
+                std::cout << "\trlc_challenge: " << this->rlc_challenge << std::endl;
                 std::cout << "\tdata\tindex\tselector\tfinished\trlc " << std::endl;
                 for (size_t i = 0; i < data.size(); i++) {
                     std::cout << "\t"
@@ -239,7 +248,7 @@ namespace nil::blueprint::bbf {
                     allocate(index[k], column_index++, row_index);
                 }
             }
-            if (this->have_query_constraint)
+            if (this->q_type == query_type::single_byte_query)
                 offset_selector.allocate_witness(column_index, row_index);
             if (!is_fixed_length)
                 len_selector.allocate_witness(column_index, row_index);
@@ -260,30 +269,47 @@ namespace nil::blueprint::bbf {
         }
 
         TYPE get_query_value_len() {
+            if (this->q_type == query_type::single_byte_query)
+                return 1;
             return this->header->len;
         }
 
-        TYPE set_query_data(std::size_t offset, std::size_t selector) {
+        std::vector<TYPE> set_query_data(std::size_t offset, std::size_t selector) {
             // we don't need selector here
-            BOOST_ASSERT_MSG(offset < max_data_len, "Query offset exceeded the data size!");
-            TYPE query_value = data[offset];
-            offset_selector.set_data(offset);
-            return query_value;
+            if (this->q_type == query_type::single_byte_query) {
+                BOOST_ASSERT_MSG(offset < max_data_len, "Query offset exceeded the data size!");
+                TYPE query_value = data[offset];
+                offset_selector.set_data(offset);
+                return {query_value};
+            } 
+            else if (this->q_type == query_type::full_value_query)
+                return data;
+            else 
+                throw "Setting qurey data for non-query node!";
         }
 
         void query_constraints(TYPE query_offset, TYPE query_selector, TYPE node_selector) {
-            offset_selector.constraints(query_offset, false);
+            if (this->q_type == query_type::single_byte_query)
+                offset_selector.constraints(query_offset, false);
         }
 
         TYPE query_selector_is_found() {
-            return offset_selector.selector_is_found();
+            if (this->q_type == query_type::single_byte_query)
+                return offset_selector.selector_is_found();
+            return 1;
         }
 
-        TYPE get_query_value() {
-            TYPE value_sum;
-            for (size_t i = 0; i < max_data_len; i++)
-                value_sum += offset_selector.get_selector(i) * data[i];
-            return value_sum;
+        std::vector<TYPE> get_query_value() {
+            if (this->q_type == query_type::single_byte_query) {
+                TYPE value_sum;
+                for (size_t i = 0; i < max_data_len; i++)
+                    value_sum += offset_selector.get_selector(i) * data[i];
+                return {value_sum};
+            } 
+            else if (this->q_type == query_type::full_value_query)
+                return data;
+            else 
+                throw "Non-query node doesn't have query value!";
         }
 
         std::vector<zkevm_word_type> empty() {
@@ -348,6 +374,8 @@ namespace nil::blueprint::bbf {
         void _set_index_and_rlc(std::size_t &rlp_encoding_index, TYPE &rlc_accumulator) {
             if constexpr (stage == GenerationStage::ASSIGNMENT) {
                 auto raw_data_length = static_cast<std::uint64_t>(h->len.to_integral());
+                if (this->is_fixed_length)
+                    raw_data_length = this->max_data_len;
                 for (size_t j = 0; j < raw_data_length; j++) {
                     index[j] = rlp_encoding_index++;
                     rlc[j] = rlc_accumulator * this->rlc_challenge + this->data[j];
@@ -410,8 +438,8 @@ namespace nil::blueprint::bbf {
         std::vector<node_inner*> inners;
         std::vector<TYPE> selectors;
 
-        static node_inner_array* new_node_inner_array(context_type &context_object, mpt_type trie_type) {
-            node_inner_array* n = new node_inner_array(context_object);
+        static node_inner_array* new_node_inner_array(context_type &context_object, mpt_type trie_type, query_type _q_type) {
+            node_inner_array* n = new node_inner_array(context_object, _q_type);
             std::vector<std::size_t> lengths;
             std::vector<bool> is_fixed;
             if (trie_type == mpt_type::account_trie) {
@@ -436,13 +464,29 @@ namespace nil::blueprint::bbf {
         }
 
         node_inner_array(
-            context_type &context_object
+            context_type &context_object,
+            query_type _q_type
         ):
             node_inner(
-                context_object
+                context_object,
+                _q_type
             ), ct(context_object) {
             h = new node_header_array(context_object);
             this->header = h;
+        }
+
+        std::size_t get_max_length() {
+            if (this->q_type == query_type::single_byte_query)
+                return 1;
+            else if (this->q_type == query_type::full_value_query) {
+                std::size_t max = 0;
+                for (auto &i : inners) {
+                    if (i->get_max_length() > max)
+                        max = i->get_max_length();
+                }
+                return max;
+            } else
+                throw "non-query node doesn't have query length!";
         }
 
         void set_rlc_challenge(TYPE _rlc_challenge) {
@@ -463,7 +507,7 @@ namespace nil::blueprint::bbf {
         }
 
         void print() {
-            std::cout << "array:\nquery val: " << get_query_value() << std::endl;
+            std::cout << "array:\n";
             h->print();
             for (size_t i = 0; i < inners.size(); i++) {
                 std::cout << "inner " << i << " selector " << selectors[i] << ":"<< std::endl;
@@ -497,13 +541,28 @@ namespace nil::blueprint::bbf {
             return {0xC0};
         }
 
-        TYPE set_query_data(std::size_t offset, std::size_t selector) {
+        std::vector<TYPE> set_query_data(std::size_t offset, std::size_t selector) {
             BOOST_ASSERT_MSG(selector < inners.size(), "Query selector is wrong!");
             selectors[selector] = 1;
-            return inners[selector]->set_query_data(offset, 1);
+            // left padding with zero
+            std::vector<TYPE> value_inner = inners[selector]->set_query_data(offset, 1);
+            if (this->q_type == query_type::full_value_query) {
+                std::vector<TYPE> value(this->get_max_length());
+                value.clear();
+                value.resize(this->get_max_length());
+                std::size_t shift = value.size() - value_inner.size();
+                for (size_t i = shift; i < value.size(); i++)
+                    value[i] = value_inner[i - shift];
+                return value;
+            } else if (this->q_type == query_type::single_byte_query) {
+                return value_inner;
+            } else {
+                throw "Setting query data for non-query node!";
+            }
         }
 
         TYPE get_query_value_len() {
+            // TODO remove this when query type is full value
             TYPE sum = 0;
             for (size_t i = 0; i < selectors.size(); i++)
                 sum += selectors[i] * inners[i]->get_query_value_len();
@@ -517,11 +576,23 @@ namespace nil::blueprint::bbf {
             return sum;
         }
 
-        TYPE get_query_value() {
-            TYPE sum = 0;
-            for (size_t i = 0; i < selectors.size(); i++)
-                sum += selectors[i] * inners[i]->get_query_value();
-            return sum;
+        std::vector<TYPE> get_query_value() {
+            std::vector <TYPE> values;
+            if (this->q_type == query_type::single_byte_query) {
+                values.push_back(0);
+                for (size_t i = 0; i < selectors.size(); i++)
+                    values[0] += selectors[i] * inners[i]->get_query_value()[0];
+            } else if (this->q_type == query_type::full_value_query) {
+                values.resize(this->get_max_length());
+                for (size_t i = 0; i < selectors.size(); i++) {
+                    std::vector<TYPE> value_inner = inners[i]->get_query_value();
+                    std::size_t shift = values.size() - value_inner.size();
+                    for (size_t j = shift; j < values.size(); j++){
+                        values[j] += selectors[i] * value_inner[j - shift];
+                    }
+                }
+            }
+            return values;
         }
 
         void query_constraints(TYPE query_offset, TYPE query_selector, TYPE node_selector) {
@@ -529,7 +600,7 @@ namespace nil::blueprint::bbf {
                 i->query_constraints(query_offset, 1, node_selector);
             for (size_t i = 0; i < selectors.size(); i++) {
                 constrain(selectors[i] * (1 - selectors[i]), "Query selector must be binary!");
-                constrain(selectors[i] * (query_selector - i), "Query selector must be binary 2!");
+                constrain(selectors[i] * (query_selector - i));
             }
         }
 
@@ -537,10 +608,11 @@ namespace nil::blueprint::bbf {
             inners.push_back(new node_inner_string(
                 ct,
                 length,
-                true,
+                this->q_type,
                 is_fixed_length
             ));
             selectors.resize(selectors.size() + 1);
+            selectors[selectors.size() - 1] = 0;
         }
 
     protected:
@@ -605,22 +677,21 @@ namespace nil::blueprint::bbf {
 
         node_inner_container(
             context_type &context_object,
-            mpt_type _trie_type
-        ): node_inner(
-            context_object
-            ), trie_type(_trie_type)
-             {
-
+            mpt_type _trie_type,
+            query_type _q_type
+        ): node_inner( context_object, _q_type)
+         , trie_type(_trie_type) {
             h = new node_header_string(context_object);
             this->header = h;
             if (_trie_type == mpt_type::storage_trie)
                 inner = new node_inner_string(
                     context_object,
                     get_max_rlp_length(32),
-                    true
+                    _q_type,
+                    false
                 );
             else
-                inner = node_inner_array::new_node_inner_array(context_object, _trie_type);
+                inner = node_inner_array::new_node_inner_array(context_object, _trie_type, _q_type);
 
         }
 
@@ -634,7 +705,7 @@ namespace nil::blueprint::bbf {
         }
 
         void print() {
-            std::cout << "container:\nquery val: " << inner->get_query_value() << std::endl;
+            std::cout << "container:\n";
             this->header->print();
             std::cout << "\tfirst element image\tfirst element flag\n\t" << first_element_image << "\t\t\t" << first_element_flag << std::endl;
             std::cout << "inner:\n";
@@ -754,20 +825,28 @@ namespace nil::blueprint::bbf {
         }
 
         TYPE get_query_value_len() {
-            inner->get_query_value_len();
             return inner->get_query_value_len();
         }
 
-        TYPE set_query_data(std::size_t query_offset, std::size_t query_selector) {
+        std::vector<TYPE> set_query_data(std::size_t query_offset, std::size_t query_selector) {
             return inner->set_query_data(query_offset, query_selector);
         }
 
-        void query_constraints(TYPE query_offset, TYPE query_value, TYPE query_selector, TYPE query_value_len, TYPE node_selector) {
+        void query_constraints(TYPE query_offset, std::vector<TYPE> query_value, TYPE query_selector, TYPE query_value_len, TYPE node_selector) {
             this->inner->query_constraints(query_offset, query_selector, node_selector);
+            std::vector<TYPE> inner_value = inner->get_query_value();
+            BOOST_ASSERT_MSG(inner_value.size() == query_value.size(), "Value has incorrect length!");
 
-            constrain(inner->query_selector_is_found() - 1, "Query offset exceeded the max length!");
-            constrain(inner->get_query_value() - query_value, "Query value is incorrect!");
-            constrain(query_value_len - inner->get_query_value_len(), "Query value length is incorrect!");
+            if (this->trie_type != mpt_type::storage_trie || this->q_type == query_type::single_byte_query)
+                constrain(inner->query_selector_is_found() - 1, "Query offset exceeded the max length!");
+            for (size_t i = 0; i < query_value.size(); i++)
+                constrain(query_value[i] - inner_value[i], "Query value is incorrect!");
+            if (this->q_type == query_type::single_byte_query)
+                constrain(query_value_len - inner->get_query_value_len(), "Query value length is incorrect!");
+        }
+
+        std::size_t get_max_length() {
+            return inner->get_max_length();
         }
 
     protected:
