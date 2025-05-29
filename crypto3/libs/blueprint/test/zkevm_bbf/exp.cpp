@@ -42,7 +42,7 @@
 
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
-#include <nil/blueprint/zkevm_bbf/exp.hpp>
+#include <nil/blueprint/zkevm_bbf/big_field/circuits/exp.hpp>
 
 #include "./circuit_test_fixture.hpp"
 

@@ -6,7 +6,7 @@
 #include <boost/log/trivial.hpp>
 #include <memory>
 #include <nil/blueprint/bbf/enums.hpp>
-#include <nil/blueprint/zkevm_bbf/bytecode.hpp>
+#include <nil/blueprint/zkevm_bbf/big_field/circuits/bytecode.hpp>
 #include <nil/blueprint/bbf/circuit_builder.hpp>
 #include <nil/proof-generator/preset/limits.hpp>
 #include <nil/proof-generator/types/type_system.hpp>
@@ -25,7 +25,7 @@ namespace nil {
             using AssignmentTable = typename PresetTypes<BlueprintFieldType>::AssignmentTable;
 
             blueprint::bbf::circuit_builder<
-                BlueprintFieldType, nil::blueprint::bbf::bytecode, std::size_t, std::size_t
+                BlueprintFieldType, nil::blueprint::bbf::zkevm_big_field::bytecode, std::size_t, std::size_t
             > builder(circuits_limits.max_bytecode_rows, circuits_limits.max_keccak_blocks);
 
             bytecode_circuit = std::make_shared<ConstraintSystem>(builder.get_circuit());

@@ -53,23 +53,92 @@
 #include <nil/crypto3/math/polynomial/polymorphic_polynomial_dfs.hpp>
 
 #include "../test_plonk_component.hpp"
-
 #include <boost/algorithm/string.hpp>
+
+#include <boost/log/core.hpp>
+#include <boost/log/trivial.hpp>
+#include <boost/log/expressions.hpp>
+#include <boost/log/sinks/sync_frontend.hpp>
+#include <boost/log/sinks/text_ostream_backend.hpp>
+#include <boost/log/sources/severity_logger.hpp>
+#include <boost/log/sources/record_ostream.hpp>
+#include <boost/log/utility/formatting_ostream.hpp>
+#include <boost/log/utility/setup/common_attributes.hpp>
+#include <boost/log/attributes/value_extraction.hpp>
+#include <boost/log/utility/setup/console.hpp>
 
 using namespace nil::crypto3;
 using namespace nil::blueprint;
 using namespace nil::blueprint::bbf;
 
+// Log-related classes
+void my_formatter(boost::log::record_view const& rec, boost::log::formatting_ostream& strm){
+    // Finally, put the record message to the stream
+    strm << rec[boost::log::expressions::smessage];
+}
+
+class zkEVMGlobalFixture {
+public:
+    zkEVMGlobalFixture() {
+        // Initialize the logging system
+        typedef boost::log::sinks::synchronous_sink< boost::log::sinks::text_ostream_backend > text_sink;
+        boost::shared_ptr< text_sink > sink = boost::make_shared< text_sink >();
+
+        sink->locked_backend()->add_stream(boost::shared_ptr< std::ostream >(&std::cout, boost::null_deleter()));
+        sink->set_formatter(&my_formatter);
+        sink->locked_backend()->auto_flush(true);
+        boost::log::core::get()->add_sink(sink);
+
+        std::size_t argc = boost::unit_test::framework::master_test_suite().argc;
+        auto &argv = boost::unit_test::framework::master_test_suite().argv;
+        boost::log::trivial::severity_level log_level = boost::log::trivial::info;
+
+        for( std::size_t i = 0; i < argc; i++ ){
+            std::string arg(argv[i]);
+            if( arg == "--log-level=trace"){
+                log_level = boost::log::trivial::trace;
+            }
+            if( arg == "--log-level=debug"){
+                log_level = boost::log::trivial::debug;
+            }
+            if( arg == "--log-level=info"){
+                log_level = boost::log::trivial::info;
+            }
+            if( arg == "--log-level=warning"){
+                log_level = boost::log::trivial::warning;
+            }
+            if( arg == "--log-level=error"){
+                log_level = boost::log::trivial::error;
+            }
+            if( arg == "--no-log" ){
+                log_level = boost::log::trivial::fatal;
+            }
+        }
+        sink->set_filter(
+            boost::log::trivial::severity >= log_level
+        );
+    }
+};
+
+// Circuit-related fixture
 struct l1_size_restrictions{
     std::size_t max_exponentiations;
     std::size_t max_keccak_blocks;
+
     std::size_t max_bytecode;
-    std::size_t max_mpt;
+    std::size_t instances_bytecode = 1;
+
     std::size_t max_rw;
+    std::size_t instances_rw_8 = 1;
+    std::size_t instances_rw_256 = 1;
+
+    std::size_t max_copy_events = 50;
     std::size_t max_copy;
     std::size_t max_zkevm_rows;
     std::size_t max_exp_rows;
-    std::size_t max_call_commits = 500;
+    std::size_t max_state = 500;
+    std::size_t max_bytecodes_amount = 50;
+    std::size_t max_mpt;
 };
 
 std::vector<std::uint8_t> hex_string_to_bytes(std::string const &hex_string) {
@@ -81,20 +150,20 @@ std::vector<std::uint8_t> hex_string_to_bytes(std::string const &hex_string) {
     return bytes;
 }
 
-boost::property_tree::ptree load_hardhat_input(std::string path){
-    std::ifstream ss;
-    auto test_data_dir = std::getenv("NIL_CO3_TEST_DATA_DIR")
-                             ? std::getenv("NIL_CO3_TEST_DATA_DIR")
-                             : std::string(TEST_DATA_DIR);
-    auto full_path = test_data_dir + path;
-    std::cout << "Open file " << full_path << std::endl;
-    ss.open(full_path);
-    boost::property_tree::ptree pt;
-    boost::property_tree::read_json(ss, pt);
-    ss.close();
+// boost::property_tree::ptree load_hardhat_input(std::string path){
+//     std::ifstream ss;
+//     auto test_data_dir = std::getenv("NIL_CO3_TEST_DATA_DIR")
+//                              ? std::getenv("NIL_CO3_TEST_DATA_DIR")
+//                              : std::string(TEST_DATA_DIR);
+//     auto full_path = test_data_dir + path;
+//     std::cout << "Open file " << full_path << std::endl;
+//     ss.open(full_path);
+//     boost::property_tree::ptree pt;
+//     boost::property_tree::read_json(ss, pt);
+//     ss.close();
 
-    return pt;
-}
+//     return pt;
+// }
 
 template<typename FieldType>
 bool check_proof(
@@ -231,15 +300,13 @@ class CircuitTestFixture {
                          GenerationStage::ASSIGNMENT>::input_type assignment_input,
         ComponentStaticInfoArgs... component_static_info_args) {
         using SmallFieldType = typename FieldType::small_subfield;
-        // Max_copy, Max_rw, Max_keccak, Max_bytecode
-        circuit_builder<SmallFieldType, BBFType, ComponentStaticInfoArgs...> builder(
-            component_static_info_args...);
+        circuit_builder<FieldType, BBFType, ComponentStaticInfoArgs...> builder(component_static_info_args...);
 
         auto &bp = builder.get_circuit();
-        std::size_t max_gates_degree = bp.max_gates_degree();
-        std::size_t max_lookup_degree = bp.max_lookup_gates_degree();
-        SCOPED_LOG("Max gates degree: {}", max_gates_degree);
-        SCOPED_LOG("Max lookup degree: {}", max_lookup_degree);
+        std::size_t max_gates_degree  = bp.max_gates_degree();
+        std::size_t max_lookup_degree  = bp.max_lookup_gates_degree();
+        BOOST_LOG_TRIVIAL(info) << "Max gates degree " << max_gates_degree << std::endl;
+        BOOST_LOG_TRIVIAL(info) << "Max lookup degree " << max_lookup_degree << std::endl;
 
         auto [assignment, component, desc] = builder.assign(assignment_input);
         if (print_to_file) {

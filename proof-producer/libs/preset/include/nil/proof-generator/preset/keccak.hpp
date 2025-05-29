@@ -10,7 +10,7 @@
 #include <nil/proof-generator/types/type_system.hpp>
 #include <nil/proof-generator/preset/limits.hpp>
 #include <nil/blueprint/bbf/circuit_builder.hpp>
-#include <nil/blueprint/zkevm_bbf/keccak.hpp>
+#include <nil/blueprint/zkevm_bbf/big_field/circuits/keccak.hpp>
 #include <optional>
 #include <string>
 
@@ -27,7 +27,7 @@ namespace nil {
             using ConstraintSystem = typename PresetTypes<BlueprintFieldType>::ConstraintSystem;
             using AssignmentTable = typename PresetTypes<BlueprintFieldType>::AssignmentTable;
 
-            bbf::circuit_builder<BlueprintFieldType, bbf::zkevm_keccak, std::size_t> builder(circuits_limits.max_keccak_blocks);
+            bbf::circuit_builder<BlueprintFieldType, bbf::zkevm_big_field::zkevm_keccak, std::size_t> builder(circuits_limits.max_keccak_blocks);
 
             keccak_circuit = std::make_shared<ConstraintSystem>(builder.get_circuit());
 

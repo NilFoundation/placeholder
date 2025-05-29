@@ -6,7 +6,7 @@
 #include <boost/log/trivial.hpp>
 #include <boost/filesystem.hpp>
 #include <nil/crypto3/zk/snark/arithmetization/plonk/assignment.hpp>
-#include <nil/blueprint/zkevm_bbf/bytecode.hpp>
+#include <nil/blueprint/zkevm_bbf/big_field/circuits/bytecode.hpp>
 #include <nil/proof-generator/assigner/trace_parser.hpp>
 #include <nil/proof-generator/assigner/options.hpp>
 
@@ -19,7 +19,7 @@ namespace nil {
                                                              const boost::filesystem::path& trace_base_path,
                                                              const AssignerOptions& options) {
 
-            using ComponentType = nil::blueprint::bbf::bytecode<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT>;
+            using ComponentType = nil::blueprint::bbf::zkevm_big_field::bytecode<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT>;
 
             typename nil::blueprint::bbf::context<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT> context_object(assignment_table, options.circuits_limits.max_total_rows);
 

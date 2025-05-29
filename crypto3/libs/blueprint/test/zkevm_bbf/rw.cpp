@@ -43,9 +43,9 @@
 
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
-#include <nil/blueprint/zkevm_bbf/rw.hpp>
+#include <nil/blueprint/zkevm_bbf/big_field/circuits/rw.hpp>
 //#include <nil/blueprint/zkevm_bbf/rw_small_field.hpp>
-#include <nil/blueprint/zkevm_bbf/input_generators/hardhat_input_generator.hpp>
+#include <nil/blueprint/zkevm_bbf/input_generators/debugtt_input_generator.hpp>
 
 #include "./circuit_test_fixture.hpp"
 
@@ -61,8 +61,8 @@ public:
         std::size_t max_rw_size,
         std::size_t max_call_commits
     ){
-        auto trace = load_hardhat_input(path);
-        nil::blueprint::bbf::zkevm_hardhat_input_generator circuit_inputs(trace);
+        auto trace = load_debugtt_input(path);
+        nil::blueprint::bbf::zkevm_debugtt_input_generator circuit_inputs(trace);
 
         typename nil::blueprint::bbf::rw<field_type, GenerationStage::ASSIGNMENT>::input_type rw_assignment_input;
         rw_assignment_input.rw_operations = circuit_inputs.rw_operations();

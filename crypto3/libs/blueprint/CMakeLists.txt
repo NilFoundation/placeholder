@@ -17,7 +17,9 @@ target_include_directories(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTER
         $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>)
 
 target_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTERFACE
-                      Boost::container
+        Boost::container
+        Boost::log_setup
+        Boost::log
 )
 include(CMTest)
 add_tests(test)

@@ -36,472 +36,284 @@
 namespace nil {
     namespace blueprint {
         namespace bbf {
-            // zkevm_state that is used for all opcodes
-            struct basic_zkevm_state_part {
-                std::size_t     call_id = 0;            // RW counter on start_call
-                zkevm_word_type bytecode_hash = 0;
-                std::size_t     opcode = 0;
-                std::size_t     pc = 0;
-                std::size_t     stack_size = 0;         // BEFORE opcode
-                std::size_t     memory_size = 0;        // BEFORE opcode
-                std::size_t     rw_counter = 0;
-                std::size_t     gas = 0;
-
-                std::vector<zkevm_word_type>            stack_slice; // BEFORE opcode
-            };
-
-            struct call_header_zkevm_state_part {
-                std::size_t     block_id;               // RW counter on start_block
-                std::size_t     tx_id;                  // RW counter on start_transaction
-                zkevm_word_type block_hash;
-                zkevm_word_type tx_hash;
-                zkevm_word_type call_context_address;   // tx_to for transaction depends on CALL/DELEGATECALL opcodes
-                std::size_t     depth;
-
-                std::vector<std::uint8_t> calldata;
-            };
-
-            struct call_context_zkevm_state_part {
-                std::vector<std::uint8_t>   lastcall_returndata_slice; // BEFORE opcode
-                std::size_t                 lastcall_returndataoffset;
-                std::size_t                 lastcall_returndatalength;
-                std::size_t                 lastcall_id;
-            };
-
-            struct world_state_zkevm_state_part{
-                std::map<zkevm_word_type, zkevm_word_type>  storage_slice; // BEFORE opcode
-                std::size_t     modified_items;
-                std::map<std::tuple<rw_operation_type, zkevm_word_type, std::size_t, zkevm_word_type>, std::size_t>  last_write_rw_counter; // BEFORE opcode
-                std::set<std::tuple<zkevm_word_type, std::size_t, zkevm_word_type>> was_accessed; // For SLOAD, SSTORE gas proving
-                std::set<std::tuple<zkevm_word_type, std::size_t, zkevm_word_type>> was_written;
-            };
-
             // Used for all opcodes
-            class zkevm_state{
-            protected:
-                // helpers for data access control
-                bool            is_push;
-                bool            needs_memory;
-                bool            needs_world_state_access;
-                bool            needs_call_header_access;
-                bool            needs_call_context_access;
-
-                basic_zkevm_state_part base;
-                call_header_zkevm_state_part call_header;
-                call_context_zkevm_state_part call_context;
-                world_state_zkevm_state_part   world_state;
-
-                zkevm_word_type _additional_input;       // data for pushX opcode
-                std::map<std::size_t, std::uint8_t>         memory_slice; // BEFORE opcode
+            class abstract_zkevm_state{
             public:
-                zkevm_word_type stack_top(std::size_t depth = 0) const{
-                    BOOST_ASSERT(depth < base.stack_slice.size());
-                    return base.stack_slice[base.stack_slice.size() - 1 - depth];
-                }
-
-                zkevm_word_type memory(std::size_t addr) const{
-                    BOOST_ASSERT(needs_memory);
-                    if( memory_slice.find(addr) == memory_slice.end() )
-                        return 0;
-                    else
-                        return memory_slice.at(addr);
-                }
-
-                zkevm_word_type storage(zkevm_word_type key) const{
-                    BOOST_ASSERT(needs_world_state_access);
-                    if( world_state.storage_slice.find(key) == world_state.storage_slice.end() )
-                        return 0;
-                    else
-                        return world_state.storage_slice.at(key);
-                }
-
-                zkevm_word_type calldata(std::size_t addr) const{
-                    BOOST_ASSERT(needs_call_header_access);
-                    if( addr < call_header.calldata.size() )
-                        return call_header.calldata[addr];
-                    else
-                        return 0;
-                }
-
-                zkevm_word_type returndata(std::size_t addr) const{
-                    BOOST_ASSERT(needs_call_context_access);
-                    if( addr < call_context.lastcall_returndata_slice.size() )
-                        return call_context.lastcall_returndata_slice[addr];
-                    else
-                        return 0;
-
-                }
-
-                std::size_t calldatasize() const{
-                    BOOST_ASSERT(needs_call_header_access);
-                    return call_header.calldata.size();
-                }
-
-                std::size_t lastcall_returndata_offset() const{
-                    BOOST_ASSERT(needs_call_context_access);
-                    return call_context.lastcall_returndataoffset;
-                }
-
-                std::size_t lastcall_returndata_length() const{
-                    BOOST_ASSERT(needs_call_context_access);
-                    return call_context.lastcall_returndatalength;
-                }
-
-                std::size_t returndatasize() const{
-                    BOOST_ASSERT(needs_call_context_access);
-                    return call_context.lastcall_returndata_slice.size();
-                }
-
-                std::size_t last_write(rw_operation_type op, zkevm_word_type address, std::size_t field, zkevm_word_type key) const{
-                    BOOST_ASSERT(needs_world_state_access);
-                    if( world_state.last_write_rw_counter.find(std::make_tuple(op, address, field, key)) == world_state.last_write_rw_counter.end() )
-                        return 0;
-                    return world_state.last_write_rw_counter.at(std::make_tuple(op, address, field, key));
-                }
-
-                std::size_t modified_items_amount() const{
-                    BOOST_ASSERT(needs_world_state_access);
-                    return world_state.modified_items;
-                }
-
-                bool was_accessed(zkevm_word_type address, std::size_t field, zkevm_word_type key) const{
-                    BOOST_ASSERT(needs_world_state_access);
-                    return world_state.was_accessed.contains(std::make_tuple(address, field, key));
-                }
-
-                bool was_written(zkevm_word_type address, std::size_t field, zkevm_word_type key) const{
-                    BOOST_ASSERT(needs_world_state_access);
-                    return world_state.was_written.contains(std::make_tuple(address, field, key));
-                }
-
-                std::size_t lastsubcall_id() const{
-                    BOOST_ASSERT(needs_call_context_access);
-                    return call_context.lastcall_id;
-                }
-
-                std::size_t memory_size() const{
-                    return base.memory_size;
-                }
-
-                std::size_t stack_size() const{
-                    return base.stack_size;
-                }
-
-                std::size_t rw_counter() const{
-                    return base.rw_counter;
-                }
-
-                std::size_t gas() const{
-                    return base.gas;
-                }
-
-                std::size_t pc() const{
-                    return base.pc;
-                }
-
-                std::size_t opcode() const{
-                    return base.opcode;
-                }
-
-                zkevm_word_type bytecode_hash() const{
-                    return base.bytecode_hash;
-                }
-
-                std::size_t call_id() const{
-                    return base.call_id;
-                }
-
-                zkevm_word_type additional_input() const{
-                    BOOST_ASSERT(is_push);
-                    return _additional_input;
-                }
-
-                std::size_t block_id() const{
-                    BOOST_ASSERT(needs_call_header_access);
-                    return call_header.block_id;
-                }
-
-                std::size_t tx_id() const{
-                    BOOST_ASSERT(needs_call_header_access);
-                    return call_header.tx_id;
-                }
-
-                zkevm_word_type call_context_address() const{
-                    BOOST_ASSERT(needs_call_header_access);
-                    return call_header.call_context_address;
-                }
-
-                std::size_t depth() const{
-                    BOOST_ASSERT(needs_call_header_access);
-                    return call_header.depth;
-                }
-
-                zkevm_state(const basic_zkevm_state_part &_base):
-                    base(_base),
-                    is_push(false),
-                    needs_memory(false),
-                    needs_world_state_access(false),
-                    needs_call_header_access(false),
-                    needs_call_context_access(false)
-                    {}
-
-                zkevm_state(const basic_zkevm_state_part &_base, const call_header_zkevm_state_part &_call_header):
-                    base(_base),
-                    call_header(_call_header),
-                    is_push(false),
-                    needs_memory(false),
-                    needs_world_state_access(false),
-                    needs_call_header_access(true),
-                    needs_call_context_access(false){}
-
-
-                zkevm_state(const basic_zkevm_state_part &_base, zkevm_word_type _add_input):
-                    base(_base),
-                    _additional_input(_add_input),
-                    is_push(true),
-                    needs_memory(false),
-                    needs_world_state_access(false),
-                    needs_call_header_access(false),
-                    needs_call_context_access(false) {}
-
-                zkevm_state(const basic_zkevm_state_part &_base, const std::map<size_t, std::uint8_t> &_memory):
-                    base(_base),
-                    is_push(false),
-                    needs_memory(true),
-                    needs_world_state_access(false),
-                    needs_call_header_access(false),
-                    needs_call_context_access(false),
-                    memory_slice(_memory) {}
-
-                zkevm_state(const basic_zkevm_state_part &_base, const std::vector<std::uint8_t> &_memory):
-                    base(_base),
-                    is_push(false),
-                    needs_memory(true),
-                    needs_world_state_access(false),
-                    needs_call_header_access(false),
-                    needs_call_context_access(false)
-                {
-                    for( std::size_t i = 0; i < _memory.size(); i++ ){
-                        memory_slice[i] = _memory[i];
-                    }
-                }
-
-                zkevm_state(const basic_zkevm_state_part &_base, const std::vector<std::uint8_t> _memory,  const call_context_zkevm_state_part &_editable):
-                    base(_base),
-                    call_context(_editable),
-                    is_push(false),
-                    needs_memory(true),
-                    needs_world_state_access(false),
-                    needs_call_header_access(false),
-                    needs_call_context_access(true)
-                {
-                    for( std::size_t i = 0; i < _memory.size(); i++ ){
-                        memory_slice[i] = _memory[i];
-                    }
-                }
-
-                zkevm_state(
-                    const basic_zkevm_state_part &_base,
-                    const call_header_zkevm_state_part &_call_header,
-                    const world_state_zkevm_state_part &_world_state
-                ): base(_base),
-                   call_header(_call_header),
-                   world_state(_world_state),
-                   is_push(false),
-                   needs_memory(false),
-                   needs_world_state_access(true),
-                   needs_call_header_access(true),
-                   needs_call_context_access(false) {}
-
-                zkevm_state(
-                    const basic_zkevm_state_part &_base,
-                    const call_header_zkevm_state_part &_call_header,
-                    const call_context_zkevm_state_part &_call_context,
-                    const world_state_zkevm_state_part &_world_state
-                ): base(_base),
-                    call_header(_call_header),
-                    call_context(_call_context),
-                    world_state(_world_state),
-                    is_push(false),
-                    needs_memory(false),
-                    needs_world_state_access(true),
-                    needs_call_header_access(true),
-                    needs_call_context_access(true) {}
+                virtual zkevm_word_type stack_top(std::size_t depth = 0) const = 0;
+                virtual std::uint8_t    memory(std::size_t addr) const = 0;
+                virtual zkevm_word_type storage(zkevm_word_type key) const = 0;
+                virtual zkevm_word_type initial_storage(zkevm_word_type key) const = 0;
+                virtual std::uint8_t    calldata(std::size_t addr) const = 0;
+                virtual std::uint8_t    returndata(std::size_t addr) const = 0;
+                virtual zkevm_word_type call_context_value() const = 0;
+                virtual std::size_t calldatasize() const = 0;
+                virtual std::size_t lastsubcall_id() const = 0;
+                virtual std::size_t lastcall_returndata_offset() const = 0;
+                virtual std::size_t lastcall_returndata_length() const = 0;
+                virtual std::size_t returndatasize() const = 0;
+                //virtual std::size_t last_write(state_operation_type op, zkevm_word_type address, std::size_t field, zkevm_word_type key) const = 0;
+                virtual std::size_t modified_items_amount() const = 0;
+                virtual bool was_accessed(zkevm_word_type address, std::size_t field, zkevm_word_type key) const = 0;
+                virtual bool was_written(zkevm_word_type address, std::size_t field, zkevm_word_type key) const = 0;
+                virtual std::size_t memory_size() const = 0;
+                virtual std::size_t stack_size() const = 0;
+                virtual std::size_t rw_counter() const = 0;
+                virtual std::size_t gas() const = 0;
+                virtual std::size_t pc() const = 0;
+                virtual std::size_t opcode() const = 0;
+                virtual zkevm_word_type bytecode_hash() const = 0;
+                virtual std::size_t call_id() const = 0;
+                virtual zkevm_word_type additional_input() const = 0;
+                virtual std::size_t block_id() const = 0;
+                virtual std::size_t tx_id() const = 0;
+                virtual zkevm_word_type call_context_address() const = 0;
+                virtual std::size_t depth() const = 0;
+                virtual std::size_t bytecode_size() const = 0;
+                virtual zkevm_word_type keccak_result() const = 0;
             };
 
-            zkevm_state simple_zkevm_state(const basic_zkevm_state_part &_base){
-                return zkevm_state(_base);
-            }
-
-            zkevm_state push_zkevm_state(const basic_zkevm_state_part &_base, zkevm_word_type additional_input){
-                return zkevm_state(_base, additional_input);
-            }
-
-            zkevm_state memory_zkevm_state(const basic_zkevm_state_part &_base, std::vector<std::uint8_t> memory){
-                return zkevm_state(_base, memory);
-            }
-
-            zkevm_state call_header_zkevm_state(const basic_zkevm_state_part &_base, const call_header_zkevm_state_part &_call_header){
-                return zkevm_state(_base, _call_header);
-            }
-
-            zkevm_state returndata_zkevm_state(
-                const basic_zkevm_state_part &_base,
-                const std::vector<std::uint8_t> &memory,
-                const call_context_zkevm_state_part &editable
-            ){
-                return zkevm_state(_base, memory, editable);
-            }
-
-            zkevm_state storage_zkevm_state(
-                const basic_zkevm_state_part &_base,
-                const call_header_zkevm_state_part &_call_header,
-                const world_state_zkevm_state_part &_world_state
-            ){
-                return zkevm_state(_base, _call_header, _world_state);
-            }
-
-            zkevm_state start_block_zkevm_state(zkevm_word_type block_hash, std::size_t block_id){
-                basic_zkevm_state_part base;
-                call_header_zkevm_state_part call_header;
-                base.call_id = block_id;
-                base.opcode = opcode_to_number(zkevm_opcode::start_block);// BEFORE opcode
-                base.rw_counter = block_id;
-                call_header.block_id = block_id;
-                call_header.block_hash = block_hash;
-                return zkevm_state(base, call_header);
-            }
-
-            zkevm_state end_block_zkevm_state(std::size_t block_id, std::size_t rw_counter){
-                basic_zkevm_state_part base;
-                base.call_id = block_id;
-                base.opcode = opcode_to_number(zkevm_opcode::end_block);// BEFORE opcode
-                base.rw_counter = rw_counter;
-                return zkevm_state(base);
-            }
-
-            zkevm_state end_call_zkevm_state(
-                basic_zkevm_state_part base,
-                call_header_zkevm_state_part call_header,
-                call_context_zkevm_state_part call_context,
-                world_state_zkevm_state_part   world_state
-            ){
-                return zkevm_state(base, call_header, call_context, world_state);
-            }
-
-            template <typename FieldType, GenerationStage stage>
-            struct state_vars{
-                using TYPE = typename generic_component<FieldType, stage>::TYPE;
-
-                TYPE call_id;
-                TYPE bytecode_hash_hi;
-                TYPE bytecode_hash_lo;
-                TYPE pc;
-                TYPE opcode;
-                TYPE gas_hi;
-                TYPE gas_lo;
-                TYPE stack_size;
-                TYPE memory_size;
-                TYPE rw_counter;
-
-                TYPE row_counter;
-                TYPE step_start;
-                TYPE row_counter_inv;
-                TYPE opcode_parity;
-                TYPE is_even;
-
-                static std::size_t get_items_amout(){ return 15; }
+            enum class zkevm_state_word_field: std::size_t {
+                storage_key = 0,
+                storage_value = 1,
+                call_context_address = 2,
+                additional_input = 3,
+                call_context_value = 4,
+                initial_storage_value = 5,
+                keccak_result = 6
             };
 
-            template <typename FieldType>
-            class zkevm_state_vars{
-            public:
-                using TYPE = typename generic_component<FieldType, GenerationStage::CONSTRAINTS>::TYPE;
+            enum class zkevm_state_size_t_field: std::size_t {
+                calldatasize = 0,
+                lastsubcall_id = 1,
+                lastcall_returndata_offset = 2,
+                lastcall_returndata_length = 3,
+                was_accessed = 4,
+                was_written = 5,
+                depth = 6,
+                block_id = 7,
+                tx_id = 8,
+                returndatasize = 9,
+                modified_items_amount = 10,
+                bytecode_size = 11
+            };
 
-                zkevm_state_vars(const std::vector<state_vars<FieldType, GenerationStage::CONSTRAINTS>> &_states, std::size_t size){
-                    state.assign(_states.begin()+1, _states.begin() + size + 2);
-                }
-                TYPE tx_hash(std::size_t row) const{
-                    BOOST_ASSERT(row < state.size() - 1);
-                    return state[row].tx_hash;
-                }   // full transaction hash. Now it is not used. But it’ll be used some day
-                TYPE call_id(std::size_t row) const{
-                    BOOST_ASSERT(row < state.size() - 1);
-                    return state[row].call_id;
-                }   // call_id — number of current transaction in block
-                TYPE pc(std::size_t row) const{
-                    //BOOST_ASSERT(row < state.size() - 1);
-                    return state[row].pc;
-                }
-                TYPE gas(std::size_t row) const{
-                    BOOST_ASSERT(row < state.size() - 1);
-                    return state[row].gas_hi * 0x10000 + state[row].gas_lo;
-                }
-                TYPE rw_counter(std::size_t row) const{
-                    BOOST_ASSERT(row < state.size() - 1);
-                    return state[row].rw_counter;
-                }
-                TYPE bytecode_hash_hi(std::size_t row) const{
-                    BOOST_ASSERT(row < state.size() - 1);
-                    return state[row].bytecode_hash_hi;
-                }
-                TYPE bytecode_hash_lo(std::size_t row) const{
-                    BOOST_ASSERT(row < state.size() - 1);
-                    return state[row].bytecode_hash_lo;
-                }
-                TYPE opcode(std::size_t row) const{
-                    BOOST_ASSERT(row < state.size() - 1);
-                    return state[row].opcode;
-                }
-                TYPE additional_input(std::size_t row) const{
-                    BOOST_ASSERT(row < state.size() - 1);
-                    return state[row].additional_input;
-                } // data for pushX opcode
-                TYPE stack_size(std::size_t row) const{
-                    BOOST_ASSERT(row < state.size() - 1);
-                    return state[row].stack_size;
-                }       // BEFORE opcode
-                TYPE memory_size(std::size_t row) const{
-                    BOOST_ASSERT(row < state.size() - 1);
-                    return state[row].memory_size;
-                }      // BEFORE opcode
-                TYPE tx_finish(std::size_t row) const{
-                    BOOST_ASSERT(row < state.size() - 1);
-                    return state[row].tx_finish;
-                }       // convinent, but optional11.
-
-                TYPE tx_hash_next() const{
-                    return state[state.size()-1].tx_hash;
-                } // full transaction hash. Now it is not used. But it’ll be used some day
-                TYPE call_id_next() const{
-                    return state[state.size()-1].call_id;
-                } // call_id — number of current transaction in block
-                TYPE pc_next() const{
-                    return state[state.size()-1].pc;
-                }
-                TYPE gas_next() const{
-                    return state[state.size()-1].gas_hi * 0x10000 + state[state.size()-1].gas_lo;;
-                }
-                TYPE rw_counter_next() const{
-                    return state[state.size()-1].rw_counter;
-                }
-                TYPE bytecode_hash_hi_next() const{
-                    return state[state.size()-1].bytecode_hash_hi;
-                }
-                TYPE bytecode_hash_lo_next() const{
-                    return state[state.size()-1].bytecode_hash_lo;
-                }
-                TYPE opcode_next() const{
-                    return state[state.size()-1].opcode;
-                }
-                TYPE stack_size_next() const{
-                    return state[state.size()-1].stack_size;
-                }       // BEFORE opcode
-                TYPE memory_size_next() const{
-                    return state[state.size()-1].memory_size;
-                }      // BEFORE opcode
+            class zkevm_state : public abstract_zkevm_state{
             protected:
-                std::vector<state_vars<FieldType, GenerationStage::CONSTRAINTS>> state;
+                std::vector<zkevm_word_type> stack;
+                std::size_t memory_offset = 0;
+                std::vector<std::uint8_t> _memory;
+                std::size_t calldata_offset = 0;
+                std::vector<std::uint8_t> _calldata;
+                std::size_t returndata_offset = 0;
+                std::vector<std::uint8_t> _returndata;
+                std::map<zkevm_state_word_field, zkevm_word_type> word_fields;
+                std::map<zkevm_state_size_t_field, std::size_t> size_t_fields;
+                zkevm_word_type _bytecode_hash;
+                std::size_t     _opcode;
+                std::size_t     _pc;
+                std::size_t     _memory_size;
+                std::size_t     _stack_size;
+                std::size_t     _gas;
+                std::size_t     _rw_counter;
+                std::size_t     _call_id;
+            public:
+                zkevm_state(
+                    std::size_t     __call_id,
+                    zkevm_word_type __bytecode_hash,
+                    std::size_t     __pc,
+                    std::size_t     __opcode,
+                    std::size_t     __stack_size,
+                    std::size_t     __memory_size,
+                    std::size_t     __gas,
+                    std::size_t     __rw_counter
+                ):  _bytecode_hash(__bytecode_hash),
+                    _opcode(__opcode),
+                    _pc(__pc),
+                    _memory_size(__memory_size),
+                    _stack_size(__stack_size),
+                    _gas(__gas),
+                    _rw_counter(__rw_counter),
+                    _call_id(__call_id)
+                {}
+                void load_stack(const std::vector<zkevm_word_type> &_stack, std::size_t depth){
+                    BOOST_ASSERT(stack.size() == 0);
+                    if( depth > _stack.size() )
+                        stack = _stack;
+                    else
+                        stack.insert(stack.end(), _stack.end() - depth, _stack.end());
+                }
+                void load_memory(const std::vector<std::uint8_t> &_mem, std::size_t offset, std::size_t length){
+                    BOOST_ASSERT(_memory.size() == 0);
+                    memory_offset = offset;
+                    if( offset >= _mem.size() ) {
+                        _memory.resize(length, 0);
+                        return;
+                    }
+                    _memory.insert(_memory.end(), _mem.begin() + offset, _mem.begin() + std::min(_mem.size(), offset + length));
+                    if( _mem.size() < offset + length){
+                        _memory.resize(offset + length, 0);
+                    }
+                }
+                void load_calldata(const std::vector<std::uint8_t> &_cdata, std::size_t offset, std::size_t length){
+                    BOOST_ASSERT(_calldata.size() == 0);
+                    _calldata.resize(length, 0);
+
+                    calldata_offset = offset;
+                    if( offset >= _cdata.size() ) return;
+
+                    for(std::size_t i = 0; i < std::min(_cdata.size() - offset, length); i++ )
+                        _calldata[i] = _cdata[offset+i];
+                }
+
+                void load_returndata(const std::vector<std::uint8_t> &_rdata, std::size_t offset, std::size_t length){
+                    BOOST_ASSERT(_returndata.size() == 0);
+                    _returndata.resize(length, 0);
+
+                    returndata_offset = offset;
+                    if( offset >= _rdata.size() ) return;
+
+                    for(std::size_t i = 0; i < std::min(_rdata.size() - offset, length); i++ )
+                        _returndata[i] = _rdata[offset+i];
+                }
+
+                void load_word_field(zkevm_state_word_field k, zkevm_word_type v){
+                    BOOST_ASSERT( word_fields.count(k) == 0);
+                    word_fields[k] = v;
+                }
+                void load_size_t_field(zkevm_state_size_t_field k, std::size_t v){
+                    BOOST_ASSERT( size_t_fields.count(k) == 0);
+                    size_t_fields[k] = v;
+                }
+                virtual zkevm_word_type stack_top(std::size_t depth = 0) const override{
+                    if( depth >= stack.size()){
+                        BOOST_LOG_TRIVIAL(fatal) << "Stack depth is out of range! Depth = " << depth << " stack size = " << stack.size();
+                    }
+                    BOOST_ASSERT( depth < stack.size());
+                    return stack.at(stack.size() - 1 - depth);
+                }
+                virtual zkevm_word_type initial_storage(zkevm_word_type key) const override{
+                    BOOST_ASSERT(word_fields.count(zkevm_state_word_field::storage_key));
+                    BOOST_ASSERT(word_fields.count(zkevm_state_word_field::initial_storage_value));
+                    BOOST_ASSERT(word_fields.at(zkevm_state_word_field::storage_key) == key);
+                    return word_fields.at(zkevm_state_word_field::initial_storage_value);
+                }
+                virtual zkevm_word_type storage(zkevm_word_type key) const override{
+                    BOOST_ASSERT(word_fields.count(zkevm_state_word_field::storage_key));
+                    BOOST_ASSERT(word_fields.count(zkevm_state_word_field::storage_value));
+                    BOOST_ASSERT(word_fields.at(zkevm_state_word_field::storage_key) == key);
+                    return word_fields.at(zkevm_state_word_field::storage_value);
+                }
+
+                virtual zkevm_word_type keccak_result() const override{
+                    BOOST_ASSERT(word_fields.count(zkevm_state_word_field::keccak_result));
+                    return word_fields.at(zkevm_state_word_field::keccak_result);
+                }
+
+                virtual std::uint8_t memory(std::size_t addr) const override{
+                    if( addr < memory_offset) {
+                        BOOST_LOG_TRIVIAL(fatal) << "Memory address is out of range! Address = " << addr << " memory_offset = " << memory_offset;
+                    }
+                    if( addr >= memory_offset + _memory.size()){
+                        BOOST_LOG_TRIVIAL(fatal) << "Memory address is out of range! Address = " << addr << " memory_offset = " << memory_offset << " memory_size = " << _memory.size();
+                    }
+                    BOOST_ASSERT( addr >= memory_offset && addr < memory_offset + _memory.size());
+                    return _memory.at(addr - memory_offset);
+                }
+                virtual std::uint8_t calldata(std::size_t addr) const override{
+                    BOOST_ASSERT( addr >= calldata_offset && addr < calldata_offset + _calldata.size());
+                    return _calldata.at(addr - calldata_offset);
+                }
+                virtual std::uint8_t returndata(std::size_t addr) const override{
+                    BOOST_ASSERT( addr >= returndata_offset && addr < returndata_offset + _returndata.size());
+                    return _returndata.at(addr - returndata_offset);
+                }
+                virtual std::size_t calldatasize() const override{
+                    BOOST_ASSERT( size_t_fields.count(zkevm_state_size_t_field::calldatasize) );
+                    return size_t_fields.at(zkevm_state_size_t_field::calldatasize);
+                }
+                virtual zkevm_word_type call_context_value() const override{
+                    BOOST_ASSERT( word_fields.count(zkevm_state_word_field::call_context_value) );
+                    return word_fields.at(zkevm_state_word_field::call_context_value);
+                }
+                virtual std::size_t lastsubcall_id() const override{
+                    BOOST_ASSERT( size_t_fields.count(zkevm_state_size_t_field::lastsubcall_id) );
+                    return size_t_fields.at(zkevm_state_size_t_field::lastsubcall_id);
+                }
+                virtual std::size_t lastcall_returndata_offset() const override{
+                    BOOST_ASSERT( size_t_fields.count(zkevm_state_size_t_field::lastcall_returndata_offset) );
+                    return size_t_fields.at(zkevm_state_size_t_field::lastcall_returndata_offset);
+                }
+                virtual std::size_t lastcall_returndata_length() const override{
+                    BOOST_ASSERT( size_t_fields.count(zkevm_state_size_t_field::lastcall_returndata_length) );
+                    return size_t_fields.at(zkevm_state_size_t_field::lastcall_returndata_length);
+                }
+                virtual std::size_t returndatasize() const override{
+                    BOOST_ASSERT( size_t_fields.count(zkevm_state_size_t_field::returndatasize) );
+                    return size_t_fields.at(zkevm_state_size_t_field::returndatasize);
+                }
+                //virtual std::size_t last_write(state_operation_type op, zkevm_word_type address, std::size_t field, zkevm_word_type key) const = 0;
+                virtual std::size_t modified_items_amount() const override{
+                    BOOST_ASSERT( size_t_fields.count(zkevm_state_size_t_field::modified_items_amount) );
+                    return size_t_fields.at(zkevm_state_size_t_field::modified_items_amount);
+                }
+                virtual bool was_accessed(zkevm_word_type address, std::size_t field, zkevm_word_type key) const override{
+                    BOOST_ASSERT(word_fields.at(zkevm_state_word_field::storage_key) == key);
+                    BOOST_ASSERT(word_fields.at(zkevm_state_word_field::call_context_address) == address);
+                    BOOST_ASSERT( size_t_fields.count(zkevm_state_size_t_field::was_accessed) );
+                    return size_t_fields.at(zkevm_state_size_t_field::was_accessed);
+                }
+                virtual bool was_written(zkevm_word_type address, std::size_t field, zkevm_word_type key) const override{
+                    BOOST_ASSERT( size_t_fields.count(zkevm_state_size_t_field::was_written) );
+                    return size_t_fields.at(zkevm_state_size_t_field::was_written);
+                }
+                virtual std::size_t memory_size() const override{
+                    return _memory_size;
+                }
+                virtual std::size_t stack_size() const override{
+                    return _stack_size;
+                }
+                virtual std::size_t rw_counter() const override{
+                    return _rw_counter;
+                }
+                virtual std::size_t gas() const override{
+                    return _gas;
+                }
+                virtual std::size_t pc() const override{
+                    return _pc;
+                }
+                virtual std::size_t opcode() const override{
+                    return _opcode;
+                }
+                virtual zkevm_word_type bytecode_hash() const override{
+                    return _bytecode_hash;
+                }
+                virtual std::size_t call_id() const override{
+                    return _call_id;
+                }
+                virtual zkevm_word_type additional_input() const override{
+                    BOOST_ASSERT(word_fields.count(zkevm_state_word_field::additional_input));
+                    return word_fields.at(zkevm_state_word_field::additional_input);
+                }
+                virtual std::size_t block_id() const override{
+                    BOOST_ASSERT( size_t_fields.count(zkevm_state_size_t_field::block_id) );
+                    return size_t_fields.at(zkevm_state_size_t_field::block_id);
+                }
+                virtual std::size_t tx_id() const override{
+                    BOOST_ASSERT( size_t_fields.count(zkevm_state_size_t_field::tx_id) );
+                    return size_t_fields.at(zkevm_state_size_t_field::tx_id);
+                }
+                virtual zkevm_word_type call_context_address() const override{
+                    BOOST_ASSERT(word_fields.count(zkevm_state_word_field::call_context_address));
+                    return word_fields.at(zkevm_state_word_field::call_context_address);
+                }
+                virtual std::size_t depth() const override{
+                    BOOST_ASSERT( size_t_fields.count(zkevm_state_size_t_field::depth) );
+                    return size_t_fields.at(zkevm_state_size_t_field::depth);
+                }
+                virtual std::size_t bytecode_size() const override{
+                    BOOST_ASSERT( size_t_fields.count(zkevm_state_size_t_field::bytecode_size) );
+                    return size_t_fields.at(zkevm_state_size_t_field::bytecode_size);
+                }
             };
         } // namespace bbf
     } // namespace blueprint

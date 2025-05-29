@@ -31,7 +31,6 @@
 #include <nil/blueprint/component.hpp>
 
 #include <nil/blueprint/bbf/generic.hpp>
-#include <nil/blueprint/zkevm_bbf/subcomponents/rw_table.hpp>
 
 namespace nil {
     namespace blueprint {
@@ -109,6 +108,24 @@ namespace nil {
 
             std::size_t memory_expansion_cost(std::size_t new_memory_byte_size, std::size_t last_memory_byte_size) {
                 return memory_cost_util(new_memory_byte_size) - memory_cost_util(last_memory_byte_size);
+            }
+
+            std::string byte_vector_to_hex_string(const std::vector<std::uint8_t> &byte_vector, std::size_t offset = 0, int length = -1) {
+                std::stringstream ss;
+                if( length < 0 ) length = byte_vector.size();
+                for (std::size_t i = offset; i < length; ++i) {
+                    ss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(byte_vector[i]);
+                }
+                return ss.str();
+            }
+
+            std::string byte_vector_to_sparse_hex_string(const std::vector<std::uint8_t> &byte_vector, std::size_t offset = 0, int length = -1) {
+                std::stringstream ss;
+                if( length < 0 ) length = byte_vector.size();
+                for (std::size_t i = offset; i < length; ++i) {
+                    ss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(byte_vector[i]) << " ";
+                }
+                return ss.str();
             }
         }
     }

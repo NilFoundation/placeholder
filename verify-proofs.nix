@@ -22,7 +22,7 @@ let
   # Aux function that assembles a shell line for running test binary for specific (test suite, test case, circuit subset) combination
   buildTestRunLines = {binary, test_suite, test_runs}:
     builtins.map
-      (test_name: "${binary} --run_test=${test_suite}/${test_name} -- --proof --run-for-circuits=${lib.strings.concatStringsSep "," test_runs.${test_name}}\n")
+      (test_name: "${binary} --run_test=${test_suite}/${test_name} -- --no-sat-check --proof --run-for-circuits=${lib.strings.concatStringsSep "," test_runs.${test_name}}\n")
       (builtins.attrNames test_runs)
   ;
 
@@ -52,16 +52,16 @@ in stdenv.mkDerivation rec {
   ];
 
   buildPhase = ''
-    ninja blueprint_multi_thread_zkevm_bbf_hardhat_test
+    ninja blueprint_multi_thread_zkevm_bbf_debugtt_test
   '';
 
   cmakeBuildType = if enableDebug then "Debug" else "Release";
   doCheck = true;
 
   test_lines = buildTestRunLines {
-    binary = "./parallel-crypto3/libs/parallel-blueprint/test/blueprint_multi_thread_zkevm_bbf_hardhat_test";
+    binary = "./parallel-crypto3/libs/parallel-blueprint/test/blueprint_multi_thread_zkevm_bbf_debugtt_test";
 
-    test_suite = "zkevm_bbf_hardhat";
+    test_suite = "zkevm_bbf_debugtt";
 
     test_runs = {
 
@@ -69,18 +69,17 @@ in stdenv.mkDerivation rec {
       keccak = [ # circuit names
         "copy"
         "keccak"
-        "exp"
         "rw"
         "bytecode"
         "zkevm"
       ];
 
-      minimal_math = [ "zkevm" "exp" "copy" "keccak" "bytecode" "rw" "call_comit" ];
-      try_catch = [ "zkevm" "exp" "copy" "keccak" "bytecode" "rw" "call_comit" ];
+      minimal_math = [ "zkevm" "zkevm-wide" "copy" "keccak" "rw"  ];
+      try_catch = [ "zkevm" "zkevm-wide" "copy" "bytecode" "rw" ];
+      exp = [ "copy" "rw" "bytecode" "zkevm" "exp" ];
 
       # Need traces in new format
       # calldatacopy = [ "copy" "rw" "bytecode" "zkevm" "exp" "keccak"];
-      # exp = [ "copy" "rw" "bytecode" "zkevm" "exp" "keccak"];
       # logger = [ "copy" "rw" "bytecode" "zkevm" "exp" "keccak"];
       # returndatacopy = [ "copy" "rw" "bytecode" "zkevm" "exp" "keccak" ];
       # mstore8 = [ "copy" "rw" "bytecode" "zkevm" "exp" "keccak"];
