@@ -113,7 +113,7 @@ namespace nil::blueprint::bbf {
 
             for (size_t i = 0; i < max_mpt_query_size; i++) {
                 query_type q = (type == mpt_type::account_trie || type == mpt_type::storage_trie) ? 
-                                query_type::single_byte_query : query_type::single_byte_query;
+                                query_type::full_value_query : query_type::single_byte_query;
                 leaf_node<FieldType, stage>* s = new leaf_node<FieldType, stage>(context_object, type, row_index, q);
                 nodes.push_back(s);
                 row_index += s->rows_count();

@@ -34,7 +34,6 @@
 #include <nil/blueprint/bbf/generic.hpp>
 #include <nil/blueprint/zkevm_bbf/util.hpp>
 #include <nil/blueprint/zkevm_bbf/subcomponents/rlp_table.hpp>
-// #include <nil/blueprint/zkevm_bbf/subcomponents/mpt_leaf_table.hpp>
 #include <nil/blueprint/zkevm_bbf/big_field/subcomponents/keccak_table.hpp>
 #include <nil/blueprint/zkevm_bbf/mpt_leaf.hpp>
 #include <nil/blueprint/zkevm_bbf/mpt_leaf/node_header.hpp>
@@ -214,7 +213,7 @@ namespace nil::blueprint::bbf {
             this->keccak_lookup_constraint();
             TYPE initial_rlc = this->header->get_total_length_constraint();
             this->main_constraints(initial_rlc, 0, this->rlc_challenge);
-            // value->query_constraints(query_offset, query_value, query_selector, query_value_len, node_exists);
+            value->query_constraints(query_offset, query_value, query_selector, query_value_len, node_exists);
         }
 
         std::size_t rows_count() {

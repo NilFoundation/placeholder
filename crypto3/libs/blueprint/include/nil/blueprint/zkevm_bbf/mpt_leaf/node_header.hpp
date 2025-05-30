@@ -366,8 +366,6 @@ namespace nil::blueprint::bbf {
 
         node_header_array(
             context_type &context_object
-            // mpt_type _trie_t,
-            // TYPE _rlc_challenge
         ): node_header(context_object, 0xC0){}
 
         void rlp_lookup_constraints() {
@@ -405,9 +403,6 @@ namespace nil::blueprint::bbf {
 
         node_header_string(
             context_type &context_object
-            // mpt_type _trie_t,
-            // inner_node_type _node_t,
-            // TYPE _rlc_challenge
         ): node_header(context_object, 0x80) {}
 
         void rlp_lookup_constraints(TYPE first_element_image, TYPE first_element, TYPE first_element_flag) {

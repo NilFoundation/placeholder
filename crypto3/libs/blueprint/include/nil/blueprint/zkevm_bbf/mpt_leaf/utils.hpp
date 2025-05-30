@@ -140,11 +140,11 @@ namespace nil::blueprint::bbf {
 
         void _out_of_range_constraints() {
             if (length == 32)
-                constrain(x[4] * y[5] + x[4] * y[6]);
+                constrain(x[4] * y[5] + x[4] * y[6], "selector out of valid range!");
             else if (length == 33)
-                constrain(x[4] * y[6]);
+                constrain(x[4] * y[6], "selector out of valid range!");
             else if (length == 8)
-                constrain(x[2] * y[2]);
+                constrain(x[2] * y[2], "selector out of valid range!");
         }
 
         void print() {

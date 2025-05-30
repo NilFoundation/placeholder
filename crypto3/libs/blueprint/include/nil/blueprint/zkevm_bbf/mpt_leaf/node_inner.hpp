@@ -41,6 +41,7 @@
 namespace nil::blueprint::bbf {
 
     enum class query_type { single_byte_query, full_value_query, no_query };
+    enum class padding_type { right_padding, left_padding };
 
     template<typename FieldType, GenerationStage stage>
     class node_inner: public generic_component<FieldType, stage> {
@@ -171,19 +172,16 @@ namespace nil::blueprint::bbf {
         using node_inner = node_inner<FieldType, stage>;
         using optimized_selector = optimized_selector<FieldType, stage>;
 
-        optimized_selector len_selector;
-        optimized_selector offset_selector;
-
-        // optimized_selector<FieldType, stage> offset_selector;
-
         node_inner_string(
             context_type &context_object,
             std::size_t _max_data_length,
             query_type _q_type = query_type::no_query,
-            bool _is_fixed_length = false
+            bool _is_fixed_length = false,
+            padding_type _padding = padding_type::right_padding
         ): node_inner(context_object, _q_type)
          , max_data_len(_max_data_length)
          , is_fixed_length(_is_fixed_length)
+         , padding(_padding)
          , len_selector(context_object, _max_data_length+1)
          , offset_selector(context_object, _max_data_length) {
             h = new node_header_string(context_object);
@@ -278,12 +276,12 @@ namespace nil::blueprint::bbf {
             // we don't need selector here
             if (this->q_type == query_type::single_byte_query) {
                 BOOST_ASSERT_MSG(offset < max_data_len, "Query offset exceeded the data size!");
-                TYPE query_value = data[offset];
+                TYPE query_value = padded_data()[offset];
                 offset_selector.set_data(offset);
                 return {query_value};
             } 
             else if (this->q_type == query_type::full_value_query)
-                return data;
+                return padded_data();
             else 
                 throw "Setting qurey data for non-query node!";
         }
@@ -299,15 +297,30 @@ namespace nil::blueprint::bbf {
             return 1;
         }
 
+        std::vector<TYPE> padded_data() {
+            if (padding == padding_type::right_padding)
+                return data;
+            if (is_fixed_length == true)
+                return data;
+            std::vector<TYPE> padded(max_data_len);
+            for (size_t i = 0; i < max_data_len; i++) {
+                padded[i] = 0;
+                for (size_t j = 0; j <= i; j++)
+                    padded[i] += data[j] * len_selector.get_selector(max_data_len - i + j);
+            }
+            return padded;
+        }
+
         std::vector<TYPE> get_query_value() {
+            std::vector<TYPE> padded = padded_data();
             if (this->q_type == query_type::single_byte_query) {
                 TYPE value_sum;
                 for (size_t i = 0; i < max_data_len; i++)
-                    value_sum += offset_selector.get_selector(i) * data[i];
+                    value_sum += offset_selector.get_selector(i) * padded[i];
                 return {value_sum};
             } 
             else if (this->q_type == query_type::full_value_query)
-                return data;
+                return padded;
             else 
                 throw "Non-query node doesn't have query value!";
         }
@@ -328,6 +341,9 @@ namespace nil::blueprint::bbf {
         TYPE first_element_flag;
         std::size_t max_data_len;
         bool is_fixed_length;
+        optimized_selector len_selector;
+        optimized_selector offset_selector;
+        padding_type padding;
 
         void _initialize_body() {
             for (size_t j = 0; j < data.size(); j++) {
@@ -442,6 +458,7 @@ namespace nil::blueprint::bbf {
             node_inner_array* n = new node_inner_array(context_object, _q_type);
             std::vector<std::size_t> lengths;
             std::vector<bool> is_fixed;
+            std::vector<padding_type> paddings;
             if (trie_type == mpt_type::account_trie) {
                 lengths = {
                     8,  // nonce
@@ -455,11 +472,17 @@ namespace nil::blueprint::bbf {
                     true,
                     true
                 };
+                paddings = {
+                    padding_type::left_padding,
+                    padding_type::left_padding,
+                    padding_type::right_padding,
+                    padding_type::right_padding
+                };
             } else {
                 throw "Unknown trie type!";
             }
             for (size_t i = 0; i < lengths.size(); i++)
-                n->add_inner(lengths[i], is_fixed[i]);
+                n->add_inner(lengths[i], is_fixed[i], paddings[i]);
             return n;
         }
 
@@ -604,12 +627,13 @@ namespace nil::blueprint::bbf {
             }
         }
 
-        void add_inner(std::size_t length, bool is_fixed_length) {
+        void add_inner(std::size_t length, bool is_fixed_length, padding_type padding) {
             inners.push_back(new node_inner_string(
                 ct,
                 length,
                 this->q_type,
-                is_fixed_length
+                is_fixed_length,
+                padding
             ));
             selectors.resize(selectors.size() + 1);
             selectors[selectors.size() - 1] = 0;
@@ -688,7 +712,8 @@ namespace nil::blueprint::bbf {
                     context_object,
                     get_max_rlp_length(32),
                     _q_type,
-                    false
+                    false,
+                    padding_type::left_padding
                 );
             else
                 inner = node_inner_array::new_node_inner_array(context_object, _trie_type, _q_type);
