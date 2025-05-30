@@ -80,6 +80,83 @@ class zkevm_addmod_bbf : public generic_component<FieldType, stage> {
         return res;
     }
 
+    // Counts the number of cross terms q8_chunks[i] * N8_chunks[j] that reach the maximal value (255^2)
+    // involved in the i-th carryless chunk of the multiplication q * N, where q, N < 2^256 and q*N < 2^257.
+    // This is useful for range-checking later.
+    int count_full_cross_terms(const unsigned char chunk_index) const {
+        // For unrelated q, N < 2^256, the result would be the amount of pairs (i, j) such that 
+        // i + j == chunk_index, for 0 <= i, j < chunk_8_amount. 
+        // However, because we have a bound on q*N, they cannot both have non-zero higher-order chunks.
+
+        // For simplicity, suppose first that q*N < 2^256.
+        // The number of cross-terms is maximized when both are balanced around 2^128.
+        // In this case, q8_chunks[i] == N8_chunks[i] == 0 for all i >= 16.
+
+        // In our real case, q*N < 2^257. In this case, we can also have 
+        // q8_chunks[i] != 0 != N8_chunks[i] for all i < 16, and additionally
+        // q8_chunks[16] == 1 or N8_chunks[i] == 1, with the other being 0. 
+        // The cross-terms that originate from this extra 1 will not reach the maximal value,
+        // so we will not consider them in this function, and account for them separately.
+
+        int res = 0;
+        for (int i = 0; i < 16; i++) {
+            int j = chunk_index - i;
+            if ((j >= 0) && (j < 16)) {
+                res += 1;
+            }
+        }
+        return res;
+    }
+
+    // Given a carryless chunk of the multiplication q*N, we will separate it into an 8-bit 
+    // chunk and a carry, which contains whatever overflows 8 bits. This function computes 
+    // the maximal value of such carry, for accurate range-checking.
+    int max_carry(const unsigned char chunk_index) const {
+        // mul8_carryless_chunks[i] + prev_carry == mul8_chunks[i] + mul8_carries[i] * 256
+        // To bound mul8_carries[i], we need to bound mul8_carryless_chunks[i] and prev_carry.
+        // mul8_carryless_chunks[i] == (sum of some cross terms q8_chunks[i] * N8_chunks[j]).
+
+        // The largest carries happen when both chunks in a cross-term are 2^8 - 1.
+        int max_cross_term = 255 * 255;
+
+        // r8_carryless_chunks[i] <= (number of cross terms) * (cross term value)
+        // We separate cross-terms into two types, those who reach the maximal value, and those
+        // that are smaller. We count the first type in the function below.
+        int number_of_fulL_cross_terms = count_full_cross_terms(chunk_index);
+
+        // The additional non-zero cross-terms originate from the fact that q8_chunks[16] or
+        // N8_chunks[16] migth be 1 (while the others are zero), so this only influences 
+        // carryless chunks 16 to 31. Suppose WLOG that q8_chunks[16] = 1, N8_chunks[16] = 0.
+        // Then the extra cross terms not accounted for above are of the form
+        // q8_chunks[16] * N8_chunks[j], j < 16. Thus, these are bounded by N8_chunks[j] < 2^8 - 1.
+        // Also, because the index on q8_chunks is fixed, only one such term can appear in each
+        // carryless chunk.
+
+        // We now have enough to compute the bounds on mul8_carryless_chunks.
+        int carryless_bound = 0;
+        if (chunk_index < 16) {
+            carryless_bound = number_of_fulL_cross_terms * max_cross_term;
+        } else if (chunk_index < 32) {
+            carryless_bound = number_of_fulL_cross_terms * max_cross_term + 255;
+        }
+
+        // Finally, we also take into account the maximal value of the previous carry
+        int prev_carry = (chunk_index > 0) ? max_carry(chunk_index - 1) : 0;
+
+        // Putting it all together and taking the carry (discarding the lowest 8 bits)
+        int max_carry = (carryless_bound + prev_carry) >> 8;
+        return max_carry;
+
+        // NOTE: this bounds are tight. An example that maximizes them is:
+        // a == 2^256 - 2^128
+        // b == 2^256 - 2^128 - 1
+        // N == 2^128 - 1
+        // In this case, 
+        // q8_chunks[i] == N8_chunks[i] == 2^8 - 1 for all i < 16,
+        // q8_chunks[16] == 1 and N8_chunks[16] == 0,
+        // q8_chunks[i] == N8_chunks[i] == 0 for all i > 16.
+    }
+
     std::vector<TYPE> res;
 
     // Overall strategy: we separate the case N <= 1, which directly results in 0. 
@@ -134,12 +211,7 @@ class zkevm_addmod_bbf : public generic_component<FieldType, stage> {
         std::vector<TYPE> mul8_carries_copy1(chunk_8_amount);          
         std::vector<TYPE> mul8_carries_copy2(chunk_8_amount);          
         std::vector<TYPE> mul8_carries_check(chunk_8_amount);          
-                                                                       
 
-
-
-        // Range checks associated with the values above
-        // TODO: add these
 
         // PART 1: computing the opcode and splitting values in chunks
         if constexpr (stage == GenerationStage:: ASSIGNMENT) {
@@ -178,12 +250,11 @@ class zkevm_addmod_bbf : public generic_component<FieldType, stage> {
             v_chunks = zkevm_word_to_field_element<FieldType>(v);
 
             // // 8-bit chunks
-            N8_chunks = zkevm_word_to_field_element_flexible<FieldType>(N, chunk_8_amount, 8); // TODO: consistency with N_chunks
+            N8_chunks = zkevm_word_to_field_element_flexible<FieldType>(N, chunk_8_amount, 8);
             q8_chunks = zkevm_word_to_field_element_flexible<FieldType>(q, chunk_8_amount, 8);
         }
 
         // 16-bit chunks allocation
-        // TODO
         for (std::size_t i = 0; i < chunk_amount; i++) {
             allocate(a_chunks[i], 2 * chunk_amount + i, 9);
             allocate(b_chunks[i], 2 * chunk_amount + i, 10);
@@ -194,36 +265,38 @@ class zkevm_addmod_bbf : public generic_component<FieldType, stage> {
         }
 
         // 8-bit chunks allocation
-        // TODO
         for (std::size_t i = 0; i < chunk_8_amount; i++) {
             allocate(q8_chunks[i], i, 4);
             q8_chunks_check[i] = q8_chunks[i] * 256;
-            // allocate(q8_chunks_check[i], i, 2);
+            allocate(q8_chunks_check[i], i, 2);
             
             allocate(N8_chunks[i], i, 5);
             N8_chunks_check[i] = N8_chunks[i] * 256;
-            // allocate(N8_chunks_check[i], i, 3);
+            allocate(N8_chunks_check[i], i, 3);
         }
+
+        // Consistency between 8-bit and 16-bit chunks
+        for (std::size_t i = 0; i < chunk_amount; i++) {
+            constrain(N_chunks[i] - N8_chunks[2*i] - N8_chunks[2*i + 1] * 256);
+        }
+
 
         // PART 2: figure out in which case we are
         TYPE N_partial_sum = 0;         // sum of all chunks of N, except for the first one
         for (std::size_t i = 1; i < chunk_amount; i++) {
             N_partial_sum += N_chunks[i];
         }
-        // TODO: allocate
         allocate(N_partial_sum, 33, 8);
         
         TYPE N_partial_sum_inverse;
         if constexpr (stage == GenerationStage::ASSIGNMENT) {
             N_partial_sum_inverse = N_partial_sum.is_zero() ? 0 : N_partial_sum.inversed();
         }
-        // TODO: allocate
         allocate(N_partial_sum_inverse, 34, 8);
         
         // N_partial_sum_is_nonzero == 0  ==>  N_partial_sum != 0
         // N_partial_sum_is_nonzero == 1  <==  N_partial_sum == 0
         TYPE N_partial_sum_is_nonzero = 1 - N_partial_sum * N_partial_sum_inverse;
-        // TODO: allocate
         allocate(N_partial_sum_is_nonzero, 17, 8);
         
         TYPE N_chunk0_is_0_or_1 = N_chunks[0] * (N_chunks[0] - 1);
@@ -231,28 +304,25 @@ class zkevm_addmod_bbf : public generic_component<FieldType, stage> {
         if constexpr (stage == GenerationStage::ASSIGNMENT) {
             N_chunk0_is_0_or_1_inverse = N_chunk0_is_0_or_1.is_zero() ? 0 : N_chunk0_is_0_or_1.inversed();
         }
-        // TODO: allocate
         allocate(N_chunk0_is_0_or_1, 35, 8);
         allocate(N_chunk0_is_0_or_1_inverse, 36, 8);
         // N_chunk0_is_greater_than_1 == 0  ==>  N_chunk[0] > 1
         // N_chunk0_is_greater_than_1 == 1  <==  N_chunk[0] <= 1
         TYPE N_chunk0_is_greater_than_1 = 1 - N_chunk0_is_0_or_1 * N_chunk0_is_0_or_1_inverse;
-        // TODO: allocate
         allocate(N_chunk0_is_greater_than_1, 18, 8);
         
         // nontrivial_modulus == 0  ==>  N > 1
         TYPE nontrivial_modulus = N_chunk0_is_greater_than_1 * N_partial_sum_is_nonzero;
-        // TODO: allocate
         TYPE nontrivial_modulus_inverse;
         if constexpr (stage == GenerationStage::ASSIGNMENT) {
             nontrivial_modulus_inverse = nontrivial_modulus.is_zero() ? 0 : nontrivial_modulus.inversed();
         }
         allocate(nontrivial_modulus, 37, 8);
         allocate(nontrivial_modulus_inverse, 38, 8);
+
         // trivial_modulus == 0 ==> N <= 1
         // trivial_modulus == 1 <== N > 1
         TYPE trivial_modulus = 1 - nontrivial_modulus * nontrivial_modulus_inverse;
-        // TODO: allocate everything
         allocate(trivial_modulus, 19, 8);
         TYPE trivial_modulus_copy1 = trivial_modulus;
         allocate(trivial_modulus_copy1, 17, 10);
@@ -262,7 +332,6 @@ class zkevm_addmod_bbf : public generic_component<FieldType, stage> {
         
         // PART 3: enforcing a + b = q * N + r
         // mul == q * N
-        // TODO: did do everything necessary to adapt it to a 257-bit q*N?
         // Note that there are chunk_8_amount + 1 chunks, since in general q*N < 2^257.
         for (std::size_t i = 0; i < chunk_8_amount + 1; i++) {
             mul8_carryless_chunks[i] = carryless_mul(q8_chunks, N8_chunks, i);
@@ -273,7 +342,7 @@ class zkevm_addmod_bbf : public generic_component<FieldType, stage> {
                 mul8_carries[i] = (mul8_carryless_chunks[i] + prev_carry).to_integral() >> 8;
                 BOOST_ASSERT(mul8_carryless_chunks[i] + prev_carry == mul8_chunks[i] + 256 * mul8_carries[i]);
                 std::cout << "mul8_carries[" << i << "] = " << mul8_carries[i] << std::endl;
-                BOOST_ASSERT(mul8_carries[i] < 256);
+                BOOST_ASSERT(mul8_carries[i] < 512);
             }
             allocate(mul8_chunks[i], i, 6);
 
@@ -311,9 +380,7 @@ class zkevm_addmod_bbf : public generic_component<FieldType, stage> {
             mul8_carries_copy2[i] = mul8_carries_copy1[i];
             allocate(mul8_carries_copy2[i], i, 1);
 
-            // TODO: these bounds are wrong, because of the multiple cross terms that might appear in the same carryless chunk.
-            // I need to do the same as in the MUL opcode.
-            mul8_carries_check[i] = mul8_carries_copy2[i] * 256;
+            mul8_carries_check[i] = mul8_carries_copy2[i] + (two_16 - 1 - max_carry(i));
             allocate(mul8_carries_check[i], i, 0);
         }
 
@@ -335,20 +402,17 @@ class zkevm_addmod_bbf : public generic_component<FieldType, stage> {
                 auto mask16 = (1 << 16) - 1;
                 construct_chunks[i] = (construct_carryless_chunks[i] + prev_carry).to_integral() & mask16;
                 construct_carries[i] = (construct_carryless_chunks[i] + prev_carry).to_integral() >> 16;
-                // TODO: chunks of the construct should be zero, but are not (not only the extra chunk)
                 if ((trivial_modulus != 0)) {
                     BOOST_ASSERT(construct_carryless_chunks[i] + prev_carry == construct_carries[i] * two_16);
                     BOOST_ASSERT(construct_chunks[i] == 0);
                 }
             }
             if (i < chunk_amount) {
-                // allocate(construct_chunks[i], i, 9);
                 allocate(construct_carries[i], i, 11);
                 // Carries are bits
                 constrain(construct_carries[i] * (1 - construct_carries[i]));
             }
             else {
-                // allocate(construct_chunks[i], 17, 10);
                 allocate(construct_carries[i], 18, 10);
                 // The last carry is zero
                 constrain(construct_carries[i]);

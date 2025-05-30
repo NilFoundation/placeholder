@@ -95,7 +95,7 @@ public:
         return (i <= 32) ? i : 2 * chunk_8_amount - i;
     }
 
-    // Given a carryless chunk, we will separate it into an 8-bit chunk and a carry, which
+    // Given a carryless chunkz, we will separate it into an 8-bit chunk and a carry, which
     // contains whatever overflows 8 bits. This function computes the maximal value of such 
     // carry, for accurate range-checking.
     int max_carry(const unsigned char chunk_index) const {
