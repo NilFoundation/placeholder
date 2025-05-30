@@ -356,7 +356,7 @@ BOOST_AUTO_TEST_CASE(minimal_math) {
     max_sizes.max_keccak_blocks = 3;
     max_sizes.max_bytecode = 300;
     max_sizes.max_mpt = 0;
-    max_sizes.max_rw = 1000;
+    max_sizes.max_rw = 500;
     max_sizes.max_copy_events = 70;
     max_sizes.max_copy = 70;
     max_sizes.max_zkevm_rows = 500;

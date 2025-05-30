@@ -125,6 +125,9 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             state_timeline_table_type st(state_table_ct, input.state_trace, max_state);
 
             std::size_t instances_timeline = instances_rw_8 + instances_rw_256 + 1;
+            if constexpr (stage == GenerationStage::ASSIGNMENT) {
+                BOOST_ASSERT(input.timeline.size() < instances_timeline * (max_rw_size - 1));
+            }
             std::vector<std::vector<std::size_t>> timeline_table_areas(instances_timeline);
             std::vector<timeline_table_type> tts;
             for( std::size_t tl_ind = 0; tl_ind < instances_timeline; tl_ind++){
@@ -132,9 +135,23 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                     timeline_table_areas[tl_ind].push_back(current_column++);
                 }
                 context_type timeline_table_ct = context_object.subcontext(timeline_table_areas[tl_ind],0,max_rw_size);
-                tts.emplace_back(timeline_table_ct, input.timeline, max_rw_size);
+                tts.emplace_back(
+                    timeline_table_ct,
+                    input.timeline,
+                    (max_rw_size - 1) * tl_ind,
+                    max_rw_size
+                );
+                if( tl_ind > 0 ) {
+                    constrain(tts[tl_ind].rw_id[0] - tts[tl_ind - 1].rw_id[max_rw_size - 1], "Timeline table instances rw_id connection");
+                    constrain(tts[tl_ind].rw_8_table_selector[0] - tts[tl_ind - 1].rw_8_table_selector[max_rw_size - 1], "Timeline table instances rw_8_table_selector connection");
+                    constrain(tts[tl_ind].rw_256_table_selector[0] - tts[tl_ind - 1].rw_256_table_selector[max_rw_size - 1], "Timeline table instances rw_256_table_selector connection");
+                    constrain(tts[tl_ind].state_table_selector[0] - tts[tl_ind - 1].state_table_selector[max_rw_size - 1], "Timeline table instances state_table_selector connection");
+                    constrain(tts[tl_ind].internal_counter[0] - tts[tl_ind - 1].internal_counter[max_rw_size - 1], "Timeline table instances internal_counter connection");
+                }
+                BOOST_LOG_TRIVIAL(trace) << "Timeline table instance " << tl_ind << " constrained";
             }
             multi_lookup_table("zkevm_timeline", timeline_table_areas, 0, max_rw_size);
+            constrain(tts[0].rw_id[0], "first rw_operation in timeline is start operation");
 
             if constexpr (stage == GenerationStage::CONSTRAINTS) {
                 // All stack and call_context rw operations are presented in timeline.

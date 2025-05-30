@@ -415,8 +415,6 @@ namespace nil {
                     }
                     std::size_t row = (min_row + max_row)/2;
 
-
-
                     std::optional<TYPE> C_rel = C.rotate(-row);
                     if (!C_rel) {
                         throw std::logic_error("Can't shift the constraint in the given direction.");
@@ -692,7 +690,9 @@ namespace nil {
 
             private:
                 void add_constraint(TYPE &C_rel, std::size_t row, std::string name) {
+                    BOOST_LOG_TRIVIAL(trace) << "Adding constraint at row " << row << " with name '" << name << "'";
                     std::size_t stored_row = row - (is_fresh ? row_shift : 0);
+                    BOOST_LOG_TRIVIAL(trace) << "I am here!";
                     constraint_id_type C_id = constraint_id_type(C_rel);
                     if (constraints->find(C_id) == constraints->end()) {
                         constraints->insert({C_id, {C_rel, row_selector<>(desc.rows_amount), {name}}});
