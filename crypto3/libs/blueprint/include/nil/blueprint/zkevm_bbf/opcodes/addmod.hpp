@@ -180,8 +180,7 @@ class zkevm_addmod_bbf : public generic_component<FieldType, stage> {
         std::vector<TYPE> y_chunks(chunk_amount);                       // Final result: y == r when N >= 2, y == 0 otherwise.
 
         // mul == q * N. Note the extra chunk, since q * N < 2^257.
-        std::vector<TYPE> mul_chunks(chunk_amount + 1);                 
-        std::vector<TYPE> mul_chunks_copy(chunk_amount + 1);     
+        std::vector<TYPE> mul_chunks(chunk_amount + 1);          
 
         // a + b == mul + r (mod 2^256)
         // construct_carryless_chunks[i] = construct_chunks[i] + construct_carries[i] * 2^16
@@ -258,10 +257,10 @@ class zkevm_addmod_bbf : public generic_component<FieldType, stage> {
         for (std::size_t i = 0; i < chunk_amount; i++) {
             allocate(a_chunks[i], 2 * chunk_amount + i, 9);
             allocate(b_chunks[i], 2 * chunk_amount + i, 10);
-            allocate(r_chunks[i], chunk_amount + i, 11);
+            allocate(r_chunks[i], chunk_amount + i, 9);
             allocate(N_chunks[i], 2 * chunk_amount + i, 7);
-            allocate(N_chunks_copy[i], 2 * chunk_amount + i, 12);
-            allocate(v_chunks[i], i, 13);
+            allocate(N_chunks_copy[i], 2 * chunk_amount + i, 11);
+            allocate(v_chunks[i], i, 11);
         }
 
         // 8-bit chunks allocation
@@ -326,8 +325,6 @@ class zkevm_addmod_bbf : public generic_component<FieldType, stage> {
         allocate(trivial_modulus, 19, 8);
         TYPE trivial_modulus_copy1 = trivial_modulus;
         allocate(trivial_modulus_copy1, 17, 10);
-        TYPE trivial_modulus_copy2 = trivial_modulus_copy1;
-        allocate(trivial_modulus_copy2, 15, 12);
 
         
         // PART 3: enforcing a + b = q * N + r
@@ -341,8 +338,6 @@ class zkevm_addmod_bbf : public generic_component<FieldType, stage> {
                 mul8_chunks[i] = (mul8_carryless_chunks[i] + prev_carry).to_integral() & mask8;
                 mul8_carries[i] = (mul8_carryless_chunks[i] + prev_carry).to_integral() >> 8;
                 BOOST_ASSERT(mul8_carryless_chunks[i] + prev_carry == mul8_chunks[i] + 256 * mul8_carries[i]);
-                std::cout << "mul8_carries[" << i << "] = " << mul8_carries[i] << std::endl;
-                BOOST_ASSERT(mul8_carries[i] < 512);
             }
             allocate(mul8_chunks[i], i, 6);
 
@@ -390,13 +385,11 @@ class zkevm_addmod_bbf : public generic_component<FieldType, stage> {
             TYPE upper_half = (i < chunk_amount) ? mul8_chunks[2 * i + 1] : 0;
             mul_chunks[i] = lower_half + upper_half * 256;
             allocate(mul_chunks[i], i, 8);
-            mul_chunks_copy[i] = mul_chunks[i];
-            allocate(mul_chunks_copy[i], i, 10);
         }
 
         // mul + r == a + b
         for (std::size_t i = 0; i < chunk_amount + 1; i++) {
-            construct_carryless_chunks[i] = carryless_construct(mul_chunks_copy, r_chunks, a_chunks, b_chunks, i);
+            construct_carryless_chunks[i] = carryless_construct(mul_chunks, r_chunks, a_chunks, b_chunks, i);
             TYPE prev_carry = (i > 0) ? construct_carries[i - 1] : 0;
             if constexpr (stage == GenerationStage::ASSIGNMENT) {
                 auto mask16 = (1 << 16) - 1;
@@ -408,7 +401,7 @@ class zkevm_addmod_bbf : public generic_component<FieldType, stage> {
                 }
             }
             if (i < chunk_amount) {
-                allocate(construct_carries[i], i, 11);
+                allocate(construct_carries[i], i, 9);
                 // Carries are bits
                 constrain(construct_carries[i] * (1 - construct_carries[i]));
             }
@@ -430,7 +423,7 @@ class zkevm_addmod_bbf : public generic_component<FieldType, stage> {
                 TYPE prev_carry = (i > 0) ? add_carries[i - 1] : 0;
                 add_carries[i] = (N_chunks_copy[i] + v_chunks[i] + prev_carry).to_integral() >> 16;
             }
-            allocate(add_carries[i], i, 12);
+            allocate(add_carries[i], i, 10);
             constrain(add_carries[i] * (1 - add_carries[i]));
         }
         for (std::size_t i = 0; i < chunk_amount; i++) {
@@ -441,14 +434,14 @@ class zkevm_addmod_bbf : public generic_component<FieldType, stage> {
                     BOOST_ASSERT(N_chunks_copy[i] + v_chunks[i] + prev_carry == r_chunks[i] + current_carry * two_16);
                 }
             }
-            constrain((N_chunks_copy[i] + v_chunks[i] + prev_carry - r_chunks[i] - current_carry * two_16) * trivial_modulus_copy2);
+            constrain((N_chunks_copy[i] + v_chunks[i] + prev_carry - r_chunks[i] - current_carry * two_16) * trivial_modulus_copy1);
         }
 
 
         // PART 4: selecting the result
         for (std::size_t i = 0; i < chunk_amount; i++) {
-            y_chunks[i] = r_chunks[i] * trivial_modulus_copy2;
-            allocate(y_chunks[i], chunk_amount + i, 13);
+            y_chunks[i] = r_chunks[i] * trivial_modulus_copy1;
+            allocate(y_chunks[i], chunk_amount + i, 11);
             res[i] = y_chunks[i];
         }
 
@@ -461,11 +454,11 @@ class zkevm_addmod_bbf : public generic_component<FieldType, stage> {
         if constexpr( stage == GenerationStage::CONSTRAINTS ){
             // State transition constraints
             // The arguments for pc, gas, stack_size, memory-size and rw_counter correspond to number_of_rows - 1
-            constrain(current_state.pc_next() - current_state.pc(13) - 1);                   // PC transition
-            constrain(current_state.gas(13) - current_state.gas_next() - 8);                 // GAS transition
-            constrain(current_state.stack_size(13) - current_state.stack_size_next() - 2);   // stack_size transition
-            constrain(current_state.memory_size(13) - current_state.memory_size_next());     // memory_size transition
-            constrain(current_state.rw_counter_next() - current_state.rw_counter(13) - 4);   // rw_counter transition
+            constrain(current_state.pc_next() - current_state.pc(11) - 1);                   // PC transition
+            constrain(current_state.gas(11) - current_state.gas_next() - 8);                 // GAS transition
+            constrain(current_state.stack_size(11) - current_state.stack_size_next() - 2);   // stack_size transition
+            constrain(current_state.memory_size(11) - current_state.memory_size_next());     // memory_size transition
+            constrain(current_state.rw_counter_next() - current_state.rw_counter(11) - 4);   // rw_counter transition
 
             // Stack lookup constraints
             // The arguments for call_id, stack_size and rw_counter corresponds to the indices of the rows that contains the data read from the rw_table
@@ -498,18 +491,18 @@ class zkevm_addmod_bbf : public generic_component<FieldType, stage> {
             );
             lookup(tmp, "zkevm_rw");
             tmp = rw_table<FieldType, stage>::stack_lookup(
-                current_state.call_id(12),
-                current_state.stack_size(12) - 3,
-                current_state.rw_counter(12) + 2,
+                current_state.call_id(11),
+                current_state.stack_size(11) - 3,
+                current_state.rw_counter(11) + 2,
                 TYPE(0),// is_write
                 N_128.first,
                 N_128.second
             );
             lookup(tmp, "zkevm_rw");
             tmp = rw_table<FieldType, stage>::stack_lookup(
-                current_state.call_id(13),
-                current_state.stack_size(13) - 3,
-                current_state.rw_counter(13) + 3,
+                current_state.call_id(11),
+                current_state.stack_size(11) - 3,
+                current_state.rw_counter(11) + 3,
                 TYPE(1),// is_write
                 R_128.first,
                 R_128.second
@@ -540,6 +533,6 @@ class zkevm_addmod_operation : public opcode_abstract<FieldType> {
         zkevm_addmod_bbf<FieldType, GenerationStage::CONSTRAINTS> bbf_obj(
             context, current_state);
     }
-    virtual std::size_t rows_amount() override { return 14; }
+    virtual std::size_t rows_amount() override { return 12; }
 };
 }  // namespace nil::blueprint:bbf
