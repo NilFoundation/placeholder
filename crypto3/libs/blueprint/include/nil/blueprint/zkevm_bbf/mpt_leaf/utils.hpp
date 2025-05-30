@@ -147,20 +147,22 @@ namespace nil::blueprint::bbf {
                 constrain(x[2] * y[2], "selector out of valid range!");
         }
 
-        void print() {
-            std::cout << "selector\n";
+        std::string print() {
+            std::stringstream ss;
+            ss << "selector\n";
             if (this->length == 32 || this->length == 33 || this->length == 34) {
                 for (size_t i = 0; i < x.size(); i++)
-                    std::cout << i << "\t" << x[i] << std::endl;
+                    ss << i << "\t" << x[i] << std::endl;
             } else {
                 for (size_t i = 0; i < x.size(); i++)
-                    std::cout << i << "\t" << x[i] << std::endl;
+                    ss << i << "\t" << x[i] << std::endl;
                 for (size_t i = 0; i < y.size(); i++)
-                    std::cout << i << "\t" << y[i] << std::endl;
+                    ss << i << "\t" << y[i] << std::endl;
             }
-            std::cout << "final selector:\n";
+            ss << "final selector:\n";
             for (size_t i = 0; i < this->length; i++)
-                std::cout << i << "\t" << get_selector(i) << std::endl;
+                ss << i << "\t" << get_selector(i) << std::endl;
+            return ss.str();
         }
     };
 }  // namespace nil::blueprint::bbf

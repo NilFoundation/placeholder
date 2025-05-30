@@ -173,30 +173,33 @@ namespace nil::blueprint::bbf {
             }
         }
 
-        void print() {
-            std::cout << "\tdata\tindex\trlc\n";
-            std::cout << "\t" << std::hex << prefix[0] << std::dec << "\t"
+        std::string print() {
+            std::stringstream ss;
+
+            ss << "\tdata\tindex\trlc\n";
+            ss << "\t" << std::hex << prefix[0] << std::dec << "\t"
                       << std::hex << prefix_index[0] << std::dec << "\t"
                       << std::hex << prefix_rlc[0] << std::dec << std::endl;
-            std::cout << "\t" << std::hex << prefix[1] << std::dec << "\t"
+            ss << "\t" << std::hex << prefix[1] << std::dec << "\t"
                       << std::hex << prefix_index[1] << std::dec << "\t"
                       << std::hex << prefix_rlc[1] << std::dec << std::endl;
-            std::cout << "\t" << std::hex << prefix[2] << std::dec << "\t"
+            ss << "\t" << std::hex << prefix[2] << std::dec << "\t"
                       << std::hex << prefix_index[2] << std::dec << "\t"
                       << std::hex << prefix_rlc[2] << std::dec << std::endl;
 
-            std::cout << "\tprefix exists: " <<
+            ss << "\tprefix exists: " <<
                     std::hex << prefix_exists[0] << std::dec << " " <<
                     std::hex << prefix_exists[1] << std::dec << " " <<
                     std::hex << prefix_exists[2] << std::dec << std::endl;
-            std::cout << "\tsecond prefix flag:\tsecond prefix image\n\t"
+            ss << "\tsecond prefix flag:\tsecond prefix image\n\t"
                        << std::hex << prefix_1_flag << std::dec << "\t\t\t"
                        << std::hex << prefix_1_image << std::dec << std::endl;
-            std::cout << "\tlen\tlen_image:\n\t"
+            ss << "\tlen\tlen_image:\n\t"
                     << std::hex << len << std::dec << "\t"
                     // << std::hex << len_is_one<< std::dec << "\t\t"
                     // << std::hex << len_is_zero << std::dec << "\t\t"
                     << std::hex << len_image<< std::dec <<std::dec <<std::endl;
+            return ss.str();
         }
 
         std::size_t get_total_length() {

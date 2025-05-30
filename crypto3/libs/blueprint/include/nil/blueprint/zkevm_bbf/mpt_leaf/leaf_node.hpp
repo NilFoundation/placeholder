@@ -148,36 +148,41 @@ namespace nil::blueprint::bbf {
             hash_high = w_hi<FieldType>(hash);
         }
 
-        void print() {
-            std::cout << "rlp prefix:\n" << std::endl;
-            std::cout << "hash: "
+        std::string print() {
+            std::stringstream ss;
+            ss << "rlp prefix:\n" << std::endl;
+            ss << "hash: "
                     << std::hex << hash_high << std::dec << "\t"
                     << std::hex << hash_low << std::dec << "\n";
-            this->header->print();
-            std::cout << "\tquery values:\n\t";
+            ss << this->header->print();
+            ss << "\tquery values:\n\t";
             for (auto &v : query_value)
-                std::cout << v << " ";
+                ss << v << " ";
             
-            std::cout << "\tquery offset:\t" << query_offset << std::endl;
+            ss << "\tquery offset:\t" << query_offset << std::endl;
 
-            std::cout << "key:\n";
-            key->print();
+            ss << "key:\n";
+            ss << key->print();
 
-            std::cout << "value:\n";
-            value->print();
-            std::cout << "rlc: " << this->last_rlc() << std::endl;
+            ss << "value:\n";
+            ss << value->print();
+            ss << "rlc: " << this->last_rlc() << std::endl;
+            return ss.str();
         }
 
-        void print_table_entry() {
-            std::cout << "hash:\t\t" << std::hex << hash_high << hash_low << std::dec << "\n";
-            std::cout << "query offset:\t" << query_offset << std::endl;
-            std::cout << "query value:\t"; 
-            for (auto &v : query_value)
-                std::cout << std::hex << v << std::dec << " ";
-            std::cout << std::endl;
-            std::cout << "query selector:\t" << query_selector << std::endl;
-            std::cout << "value len:\t" << query_value_len << std::endl;
-            std::cout << "------------------------------------------\n";
+        std::string print_table_entry() {
+            std::stringstream ss;
+            ss << "hash:\t\t" << std::hex << hash_high << hash_low << std::dec << "\n";
+            ss << "query offset:\t" << query_offset << std::endl;
+            ss << "query value:\t"; 
+            for (auto &v : query_value) {
+                ss << std::hex << v << std::dec << " ";
+            }
+            ss << std::endl;
+            ss << "query selector:\t" << query_selector << std::endl;
+            ss << "value len:\t" << query_value_len << std::endl;
+            ss << "------------------------------------------\n";
+            return ss.str();
         }
 
         void allocate_witness(){

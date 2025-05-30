@@ -108,7 +108,7 @@ namespace nil::blueprint::bbf {
             throw "Method not implemented!";
         }
 
-        virtual void print() {
+        std::string virtual print() {
             throw "Method not implemented!";
         }
 
@@ -205,26 +205,28 @@ namespace nil::blueprint::bbf {
             return 0;
         }
 
-        void print() {
+        std::string print() {
+            std::stringstream ss;
             if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                h->print();
+                ss << h->print();
                 auto raw_data_length = static_cast<std::uint64_t>(h->len.to_integral());
-                std::cout << "\trlc_challenge: " << this->rlc_challenge << std::endl;
-                std::cout << "\tdata\tindex\tselector\tfinished\trlc " << std::endl;
+                ss << "\trlc_challenge: " << this->rlc_challenge << std::endl;
+                ss << "\tdata\tindex\tselector\tfinished\trlc " << std::endl;
                 for (size_t i = 0; i < data.size(); i++) {
-                    std::cout << "\t"
+                    ss << "\t"
                         << std::hex << data[i] << std::dec << "\t"
                         << std::hex << index[i] << std::dec <<"\t"
                         << std::hex << offset_selector.get_selector(i) << std::dec <<"\t\t"
                         << std::hex << len_selector.selector_accumulator(i+1) << std::dec <<"\t\t"
                         << std::hex << rlc[i] << std::dec << "\t"
-                         << std::endl;
+                        << std::endl;
                 }
-                // std::cout << "len selector:\n";
-                // len_selector.print();
-                // std::cout << "offset selector:\n";
-                // offset_selector.print();
+                std::cout << "len selector:\n";
+                len_selector.print();
+                std::cout << "offset selector:\n";
+                offset_selector.print();
             }
+            return ss.str();
         }
 
         TYPE last_rlc() {
@@ -529,14 +531,15 @@ namespace nil::blueprint::bbf {
             return inners[inners.size()-1]->last_rlc();
         }
 
-        void print() {
-            std::cout << "array:\n";
-            h->print();
+        std::string print() {
+            std::stringstream ss;
+            ss << "array:\n";
+            ss << h->print();
             for (size_t i = 0; i < inners.size(); i++) {
-                std::cout << "inner " << i << " selector " << selectors[i] << ":"<< std::endl;
-                inners[i]->print();
+                ss << "inner " << i << " selector " << selectors[i] << ":"<< std::endl;
+                ss << inners[i]->print();
             }
-
+            return ss.str();
         }
 
         TYPE first_data() {
@@ -729,12 +732,14 @@ namespace nil::blueprint::bbf {
             return 0;
         }
 
-        void print() {
-            std::cout << "container:\n";
-            this->header->print();
-            std::cout << "\tfirst element image\tfirst element flag\n\t" << first_element_image << "\t\t\t" << first_element_flag << std::endl;
-            std::cout << "inner:\n";
-            this->inner->print();
+        std::string print() {
+            std::stringstream ss;
+            ss << "container:\n";
+            ss << this->header->print();
+            ss << "\tfirst element image\tfirst element flag\n\t" << first_element_image << "\t\t\t" << first_element_flag << std::endl;
+            ss << "inner:\n";
+            ss << this->inner->print();
+            return ss.str();
         }
 
         TYPE last_rlc() {

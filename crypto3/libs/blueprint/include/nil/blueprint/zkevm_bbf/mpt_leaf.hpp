@@ -138,8 +138,8 @@ namespace nil::blueprint::bbf {
                     }
                     std::vector<std::uint8_t> buf = n->hash_input;
                     keccak_buffers.new_buffer(buf);
-                    // n->print();
-                    n->print_table_entry();
+                    BOOST_LOG_TRIVIAL(debug) << n->print();
+                    BOOST_LOG_TRIVIAL(info) << n->print_table_entry();
                 }
             }
 
