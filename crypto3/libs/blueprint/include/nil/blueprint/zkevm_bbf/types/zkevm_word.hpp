@@ -143,6 +143,13 @@ namespace nil {
             return result;
         }
 
+        template <typename T = size_t>
+        std::array<T, 16> w_to_16_le(const zkevm_word_type &val) {
+            std::array<T, 16> result;
+            val.export_bits(result.begin(), 16, false);
+            return result;
+        }
+
         template <typename BlueprintFieldType>
         std::array<typename BlueprintFieldType::value_type, 2> w_to_128(const zkevm_word_type &val){
             std::array<typename BlueprintFieldType::value_type, 2> result;

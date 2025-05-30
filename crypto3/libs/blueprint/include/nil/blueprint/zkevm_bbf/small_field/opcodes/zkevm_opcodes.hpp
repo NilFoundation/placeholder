@@ -39,14 +39,13 @@
 // #include <nil/blueprint/zkevm_bbf/small_field/opcodes/mload.hpp>
 // #include <nil/blueprint/zkevm_bbf/small_field/opcodes/mstore.hpp>
 // #include <nil/blueprint/zkevm_bbf/small_field/opcodes/mstore8.hpp>
-// #include <nil/blueprint/zkevm_bbf/small_field/opcodes/add_sub.hpp>
+ #include <nil/blueprint/zkevm_bbf/small_field/opcodes/add_sub.hpp>
 // #include <nil/blueprint/zkevm_bbf/small_field/opcodes/div_mod.hpp>
 // #include <nil/blueprint/zkevm_bbf/small_field/opcodes/addmod.hpp>
 // #include <nil/blueprint/zkevm_bbf/small_field/opcodes/mulmod.hpp>
 // #include <nil/blueprint/zkevm_bbf/small_field/opcodes/bitwise.hpp>
 #include <nil/blueprint/zkevm_bbf/small_field/opcodes/byte.hpp>
-// #include <nil/blueprint/zkevm_bbf/small_field/opcodes/cmp.hpp>
-// #include <nil/blueprint/zkevm_bbf/small_field/opcodes/scmp.hpp>
+#include <nil/blueprint/zkevm_bbf/small_field/opcodes/cmp.hpp>
 // #include <nil/blueprint/zkevm_bbf/small_field/opcodes/calldatasize.hpp>
 // #include <nil/blueprint/zkevm_bbf/small_field/opcodes/calldataload.hpp>
 // #include <nil/blueprint/zkevm_bbf/small_field/opcodes/callvalue.hpp>
@@ -71,7 +70,6 @@
 #include <nil/blueprint/zkevm_bbf/small_field/opcodes/sar.hpp>
 // #include <nil/blueprint/zkevm_bbf/small_field/opcodes/swapx.hpp>
 // #include <nil/blueprint/zkevm_bbf/small_field/opcodes/pop.hpp>
-// #include <nil/blueprint/zkevm_bbf/small_field/opcodes/eq.hpp>
 // #include <nil/blueprint/zkevm_bbf/small_field/opcodes/calldatacopy.hpp>
 // #include <nil/blueprint/zkevm_bbf/small_field/opcodes/codecopy.hpp>
 #include <nil/blueprint/zkevm_bbf/small_field/opcodes/stop.hpp>
@@ -104,9 +102,9 @@ namespace nil::blueprint::bbf::zkevm_small_field{
         // add all the implemented opcodes here
 
         opcodes[zkevm_opcode::STOP] = std::make_shared<zkevm_stop_operation<BlueprintFieldType>>();
-        // opcodes[zkevm_opcode::ADD] = std::make_shared<zkevm_add_sub_operation<BlueprintFieldType>>(true);
+        opcodes[zkevm_opcode::ADD] = std::make_shared<zkevm_add_sub_operation<BlueprintFieldType>>(true);
         opcodes[zkevm_opcode::MUL] = std::make_shared<zkevm_mul_operation<BlueprintFieldType>>();
-        // opcodes[zkevm_opcode::SUB] = std::make_shared<zkevm_add_sub_operation<BlueprintFieldType>>(false);
+        opcodes[zkevm_opcode::SUB] = std::make_shared<zkevm_add_sub_operation<BlueprintFieldType>>(false);
         // opcodes[zkevm_opcode::DIV] = std::make_shared<zkevm_div_mod_operation<BlueprintFieldType>>(true);
         // opcodes[zkevm_opcode::SDIV] = std::make_shared<zkevm_sdiv_smod_operation<BlueprintFieldType>>(true);
         // opcodes[zkevm_opcode::MOD] = std::make_shared<zkevm_div_mod_operation<BlueprintFieldType>>(false);
@@ -115,11 +113,11 @@ namespace nil::blueprint::bbf::zkevm_small_field{
         // opcodes[zkevm_opcode::MULMOD] = std::make_shared<zkevm_mulmod_operation<BlueprintFieldType>>();
         // opcodes[zkevm_opcode::EXP] = std::make_shared<zkevm_exp_operation<BlueprintFieldType>>();
         opcodes[zkevm_opcode::SIGNEXTEND] = std::make_shared<zkevm_signextend_operation<BlueprintFieldType>>();
-        // opcodes[zkevm_opcode::LT] = std::make_shared<zkevm_cmp_operation<BlueprintFieldType>>(cmp_type::C_LT);
-        // opcodes[zkevm_opcode::GT] = std::make_shared<zkevm_cmp_operation<BlueprintFieldType>>(cmp_type::C_GT);
-        // opcodes[zkevm_opcode::SLT] = std::make_shared<zkevm_scmp_operation<BlueprintFieldType>>(scmp_type::C_SLT);
-        // opcodes[zkevm_opcode::SGT] = std::make_shared<zkevm_scmp_operation<BlueprintFieldType>>(scmp_type::C_SGT);
-        // opcodes[zkevm_opcode::EQ] = std::make_shared<zkevm_eq_operation<BlueprintFieldType>>();
+        opcodes[zkevm_opcode::LT] = std::make_shared<zkevm_cmp_operation<BlueprintFieldType>>(cmp_type::C_LT);
+        opcodes[zkevm_opcode::GT] = std::make_shared<zkevm_cmp_operation<BlueprintFieldType>>(cmp_type::C_GT);
+        opcodes[zkevm_opcode::SLT] = std::make_shared<zkevm_cmp_operation<BlueprintFieldType>>(cmp_type::C_SLT);
+        opcodes[zkevm_opcode::SGT] = std::make_shared<zkevm_cmp_operation<BlueprintFieldType>>(cmp_type::C_SGT);
+        opcodes[zkevm_opcode::EQ] = std::make_shared<zkevm_cmp_operation<BlueprintFieldType>>(cmp_type::C_EQ);
         // opcodes[zkevm_opcode::ISZERO] = std::make_shared<zkevm_iszero_operation<BlueprintFieldType>>();
         // opcodes[zkevm_opcode::AND] = std::make_shared<zkevm_bitwise_operation<BlueprintFieldType>>(bitwise_type::B_AND);
         // opcodes[zkevm_opcode::OR] = std::make_shared<zkevm_bitwise_operation<BlueprintFieldType>>(bitwise_type::B_OR);
