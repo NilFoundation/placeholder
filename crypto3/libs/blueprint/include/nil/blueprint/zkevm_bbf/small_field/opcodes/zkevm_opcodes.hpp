@@ -46,6 +46,7 @@
 // #include <nil/blueprint/zkevm_bbf/small_field/opcodes/bitwise.hpp>
 #include <nil/blueprint/zkevm_bbf/small_field/opcodes/byte.hpp>
 #include <nil/blueprint/zkevm_bbf/small_field/opcodes/cmp.hpp>
+// #include <nil/blueprint/zkevm_bbf/small_field/opcodes/scmp.hpp>
 // #include <nil/blueprint/zkevm_bbf/small_field/opcodes/calldatasize.hpp>
 // #include <nil/blueprint/zkevm_bbf/small_field/opcodes/calldataload.hpp>
 // #include <nil/blueprint/zkevm_bbf/small_field/opcodes/callvalue.hpp>
