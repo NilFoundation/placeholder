@@ -281,7 +281,7 @@ public:
             result = test_bbf_component<SmallFieldType, nil::blueprint::bbf::zkevm_small_field::rw>(
                 "rw-s", {},
                 rw_assignment_input,
-                max_rw,
+                max_zkevm_rows,
                 instances_rw_8,
                 instances_rw_256,
                 max_state
@@ -319,7 +319,14 @@ public:
 
             result = test_bbf_component<BigFieldType, nil::blueprint::bbf::zkevm_small_field::zkevm>(
                 "zkevm-s", {}, zkevm_assignment_input,
-                max_zkevm_rows, max_copy_events, max_rw, max_exponentiations, max_bytecode, max_state
+                max_zkevm_rows,
+                max_copy_events,
+                max_zkevm_rows,
+                instances_rw_8,
+                instances_rw_256,
+                max_exponentiations,
+                max_bytecode,
+                max_state
             );
             BOOST_CHECK(result);
         }
@@ -336,7 +343,7 @@ public:
 
             result = test_bbf_component<SmallFieldType, nil::blueprint::bbf::zkevm_small_field::copy>(
                 "copy-s", {7}, copy_assignment_input,
-                max_copy_events, max_copy, max_rw, max_keccak_blocks, max_bytecode
+                max_copy_events, max_copy, max_rw, instances_rw_8, max_keccak_blocks, max_bytecode
             );
             BOOST_CHECK(result);
         }
@@ -356,10 +363,12 @@ BOOST_AUTO_TEST_CASE(minimal_math) {
     max_sizes.max_keccak_blocks = 3;
     max_sizes.max_bytecode = 300;
     max_sizes.max_mpt = 0;
-    max_sizes.max_rw = 500;
+    max_sizes.max_rw = 1000;    // Doesn't matter for small fields
+
+    max_sizes.instances_rw_8 = 3;
     max_sizes.max_copy_events = 70;
     max_sizes.max_copy = 70;
-    max_sizes.max_zkevm_rows = 500;
+    max_sizes.max_zkevm_rows = 300;
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
     max_sizes.max_state = 500;
@@ -373,6 +382,7 @@ BOOST_AUTO_TEST_CASE(minimal_math) {
         circuits_to_run.insert("bytecode-s");
         circuits_to_run.insert("rw-s");
         circuits_to_run.insert("copy-s");
+        circuits_to_run.insert("zkevm-s");
     }
     complex_test<big_field_type, small_field_type>("minimal_math.json", max_sizes);
 }

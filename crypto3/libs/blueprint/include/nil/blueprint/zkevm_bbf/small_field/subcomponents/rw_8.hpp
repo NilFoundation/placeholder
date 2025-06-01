@@ -63,25 +63,25 @@ namespace nil::blueprint::bbf::zkevm_small_field{
         static constexpr std::size_t chunks_amount = 7;
         static constexpr std::size_t op_selectors_amount = 3;
 
-        static std::size_t get_witness_amount() {
-            return rw_8_table_type::get_witness_amount()
-                + rw_id_chunks_amount +  id_chunks_amount + address_chunks_amount   // Additional chunks
+        static std::size_t get_witness_amount(std::size_t instances_rw_8) {
+            return rw_8_table_type::get_witness_amount(instances_rw_8)
+                + (rw_id_chunks_amount +  id_chunks_amount + address_chunks_amount   // Additional chunks
                 + chunks_amount                                                     // Diff selectors
                 + op_selectors_amount                                               // Selectors for op
-                + 6;
+                + 6) * instances_rw_8;
         }
 
         static table_params get_minimal_requirements(
             std::size_t max_rw_size,
-            std::size_t max_state_size
+            std::size_t instances_rw_8
         ) {
-            std::size_t witness_amount = rw_8<FieldType, stage>::get_witness_amount();
+            std::size_t witness_amount = rw_8<FieldType, stage>::get_witness_amount(instances_rw_8);
             BOOST_LOG_TRIVIAL(info) << "RW circuit witness amount = " << witness_amount;
             return {
                 .witnesses = witness_amount,
                 .public_inputs = 0,
                 .constants = 0,
-                .rows = max_rw_size + max_state_size
+                .rows = max_rw_size
             };
         }
 
@@ -96,10 +96,11 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             std::size_t current_column = 0;
 
             std::vector<std::size_t> rw_8_table_area;
-            for( std::size_t i = 0; i < rw_8_table_type::get_witness_amount(); i++ ) rw_8_table_area.push_back(current_column++);
+            for( std::size_t i = 0; i < rw_8_table_type::get_witness_amount(instances_rw_8); i++ )
+                rw_8_table_area.push_back(current_column++);
             context_type rw_8_table_ct = context_object.subcontext(rw_8_table_area,0,max_rw_size);
-            rw_8_table_type t(rw_8_table_ct, input, max_rw_size);
-
+            rw_8_table_type t(rw_8_table_ct, input, max_rw_size, instances_rw_8);
+/*
             const std::vector<TYPE> &op = t.op;                               // memory, calldata, returndata
             const std::vector<TYPE> &id = t.id;                               // 2 chunks fitted in field element less than 2^25
             const std::vector<TYPE> &address = t.address;                     // 2 chunks fitted in field element less than 2^25
@@ -343,12 +344,12 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                 for( auto &constraint: non_first_row_constraints ){
                     context_object.relative_constrain(context_object.relativize(constraint, -1), 1, max_rw_size - 1);
                 }
-            }
+            }*/
         }
-        const std::vector<TYPE> timeline_lookup(){
-            return _timeline_lookup;
+        const std::vector<std::vector<TYPE>> timeline_lookups(){
+            return _timeline_lookups;
         }
     protected:
-        std::vector<TYPE> _timeline_lookup;
+        std::vector<std::vector<TYPE>> _timeline_lookups;
     };
 }

@@ -64,13 +64,14 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             std::size_t max_copy_events,
             std::size_t max_copy,
             std::size_t max_rw,
+            std::size_t instances_rw_8,
             std::size_t max_keccak_blocks,
             std::size_t max_bytecode
         ) {
             return {
                 .witnesses = copy_advice_amount + copy_table_advice_amount
                         + BytecodeTable::get_witness_amount()
-                        + RWTable::get_witness_amount()
+                        + RWTable::get_witness_amount(instances_rw_8)
                         + KeccakTable::get_witness_amount()
                         + CopyTable::get_witness_amount(),
                 .public_inputs = 1,
@@ -87,6 +88,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             std::size_t max_copy_events,
             std::size_t max_copy,
             std::size_t max_rw,
+            std::size_t instances_rw_8,
             std::size_t max_keccak_blocks,
             std::size_t max_bytecode
         ) {
@@ -98,6 +100,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             std::size_t max_copy_events,
             std::size_t max_copy,
             std::size_t max_rw,
+            std::size_t instances_rw_8,
             std::size_t max_keccak_blocks,
             std::size_t max_bytecode
         ) :generic_component<FieldType,stage>(context_object) {
@@ -121,11 +124,11 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             BytecodeTable bc_t = BytecodeTable(bytecode_ct, input.bytecodes, max_bytecode);
 
             std::vector<std::size_t> rw_lookup_area;
-            for( std::size_t i = 0; i < RWTable::get_witness_amount(); i++){
+            for( std::size_t i = 0; i < RWTable::get_witness_amount(instances_rw_8); i++){
                 rw_lookup_area.push_back(current_column++);
             }
             context_type rw_ct = context_object.subcontext(rw_lookup_area,0,max_rw);
-            RWTable rw_t = RWTable(rw_ct, input.rw_operations, max_rw);
+            RWTable rw_t = RWTable(rw_ct, input.rw_operations, max_rw, instances_rw_8);
 
             std::vector<std::size_t> keccak_lookup_area;
             for( std::size_t i = 0; i < KeccakTable::get_witness_amount(); i++){
@@ -247,7 +250,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
 
                 std::size_t current_column =
                     BytecodeTable::get_witness_amount() + KeccakTable::get_witness_amount()
-                        + RWTable::get_witness_amount() + CopyTable::get_witness_amount();
+                        + RWTable::get_witness_amount(instances_rw_8) + CopyTable::get_witness_amount();
                 allocate(real_id[i], current_column++, i);
                 allocate(is_keccak[i], current_column++, i);
                 allocate(cp_type_keccak_inv[i], current_column++, i);
@@ -268,7 +271,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                 }
                 std::size_t current_column = copy_table_advice_amount
                     + BytecodeTable::get_witness_amount() + KeccakTable::get_witness_amount()
-                    + RWTable::get_witness_amount() + CopyTable::get_witness_amount();
+                    + RWTable::get_witness_amount(instances_rw_8) + CopyTable::get_witness_amount();
 
                 is_first_index = current_column; allocate(is_first[i], current_column++, i);
                 is_write_index = current_column; allocate(is_write[i], current_column++, i);
@@ -410,7 +413,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                 rlc_copy_table_columns.push_back(copy_lookup_area[CopyTable::cp_type_index]);
                 rlc_copy_table_columns.push_back(
                     BytecodeTable::get_witness_amount() + KeccakTable::get_witness_amount() +
-                    RWTable::get_witness_amount() + CopyTable::get_witness_amount()
+                    RWTable::get_witness_amount(instances_rw_8) + CopyTable::get_witness_amount()
                 );
                 rlc_copy_table_columns.push_back(copy_lookup_area[CopyTable::counter_1_index]);
                 rlc_copy_table_columns.push_back(copy_lookup_area[CopyTable::counter_2_index]);

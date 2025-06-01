@@ -79,7 +79,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             std::size_t max_state_size
         ) {
             std::size_t witness_amount =
-                rw_8_type::get_witness_amount()
+                rw_8_type::get_witness_amount(instances_rw_8)
                 + rw_256_type::get_witness_amount()
                 + state_timeline_table_type::get_witness_amount()
                 + timeline_table_type::get_witness_amount() * (instances_rw_8 + instances_rw_256 + 1)
@@ -110,7 +110,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             std::size_t current_column = 0;
 
             std::vector<std::size_t> rw_8_area;
-            for( std::size_t i = 0; i < rw_8_type::get_witness_amount(); i++ ) rw_8_area.push_back(current_column++);
+            for( std::size_t i = 0; i < rw_8_type::get_witness_amount(instances_rw_8); i++ ) rw_8_area.push_back(current_column++);
             context_type rw_8_ct = context_object.subcontext(rw_8_area,0,max_rw_size);
             rw_8_type t8(rw_8_ct, input.rw_trace, max_rw_size, instances_rw_8);
 
@@ -142,11 +142,11 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                     max_rw_size
                 );
                 if( tl_ind > 0 ) {
-                    constrain(tts[tl_ind].rw_id[0] - tts[tl_ind - 1].rw_id[max_rw_size - 1], "Timeline table instances rw_id connection");
-                    constrain(tts[tl_ind].rw_8_table_selector[0] - tts[tl_ind - 1].rw_8_table_selector[max_rw_size - 1], "Timeline table instances rw_8_table_selector connection");
-                    constrain(tts[tl_ind].rw_256_table_selector[0] - tts[tl_ind - 1].rw_256_table_selector[max_rw_size - 1], "Timeline table instances rw_256_table_selector connection");
-                    constrain(tts[tl_ind].state_table_selector[0] - tts[tl_ind - 1].state_table_selector[max_rw_size - 1], "Timeline table instances state_table_selector connection");
-                    constrain(tts[tl_ind].internal_counter[0] - tts[tl_ind - 1].internal_counter[max_rw_size - 1], "Timeline table instances internal_counter connection");
+                    constrain(tts[tl_ind].rw_id[0] - tts[tl_ind - 1].rw_id[max_rw_size - 1], "Timeline table instances rw_id connection", true);
+                    constrain(tts[tl_ind].rw_8_table_selector[0] - tts[tl_ind - 1].rw_8_table_selector[max_rw_size - 1], "Timeline table instances rw_8_table_selector connection", true);
+                    constrain(tts[tl_ind].rw_256_table_selector[0] - tts[tl_ind - 1].rw_256_table_selector[max_rw_size - 1], "Timeline table instances rw_256_table_selector connection", true);
+                    constrain(tts[tl_ind].state_table_selector[0] - tts[tl_ind - 1].state_table_selector[max_rw_size - 1], "Timeline table instances state_table_selector connection", true);
+                    constrain(tts[tl_ind].internal_counter[0] - tts[tl_ind - 1].internal_counter[max_rw_size - 1], "Timeline table instances internal_counter connection", true);
                 }
                 BOOST_LOG_TRIVIAL(trace) << "Timeline table instance " << tl_ind << " constrained";
             }
@@ -154,13 +154,13 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             constrain(tts[0].rw_id[0], "first rw_operation in timeline is start operation");
 
             if constexpr (stage == GenerationStage::CONSTRAINTS) {
-                // All stack and call_context rw operations are presented in timeline.
-                auto rw_8_to_timeline_lookup = t8.timeline_lookup();
-                for( std::size_t i = 0; i < rw_8_to_timeline_lookup.size(); i++ )
-                    rw_8_to_timeline_lookup[i] = context_object.relativize(rw_8_to_timeline_lookup[i], -1);
-                context_object.relative_lookup(rw_8_to_timeline_lookup, "zkevm_timeline", 0, max_rw_size);
-
                 // All memory, calldata, returndata rw operations are presented in timeline.
+                auto rw_8_to_timeline_lookups = t8.timeline_lookups();
+                // for( std::size_t i = 0; i < rw_8_to_timeline_lookup.size(); i++ )
+                //     rw_8_to_timeline_lookup[i] = context_object.relativize(rw_8_to_timeline_lookup[i], -1);
+                // context_object.relative_lookup(rw_8_to_timeline_lookup, "zkevm_timeline", 0, max_rw_size);
+
+                // All stack and call_context rw operations are presented in timeline.
                 auto rw_256_to_timeline_lookup = t256.timeline_lookup();
                 for( std::size_t i = 0; i < rw_256_to_timeline_lookup.size(); i++ )
                     rw_256_to_timeline_lookup[i] = context_object.relativize(rw_256_to_timeline_lookup[i], -1);

@@ -88,6 +88,8 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             std::size_t max_zkevm_rows,
             std::size_t max_copy_events,
             std::size_t max_rw,
+            std::size_t instances_rw_8,
+            std::size_t instances_rw_256,
             std::size_t max_exponentations,
             std::size_t max_bytecode,
             std::size_t max_state
@@ -99,30 +101,36 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                 + opcode_columns_amount
                 + CopyTable::get_witness_amount()
                 + BytecodeTable::get_witness_amount()
-                + RW8Table::get_witness_amount()
+                + RW8Table::get_witness_amount(instances_rw_8)
                 // + ExpTable::get_witness_amount()
                 // + StateTable::get_witness_amount()
                 + RW256Table::get_witness_amount();
+            std::size_t rows_amount = std::max(
+                std::max( max_zkevm_rows, max_state ),
+                std::max(
+                    std::max(max_copy_events * 2, max_rw),
+                    std::max(max_exponentations, max_bytecode)
+                )
+            );
 
-            BOOST_LOG_TRIVIAL(info) <<  "Zkevm circuit witness_amount = " << witness_amount;
+            BOOST_LOG_TRIVIAL(info) <<  "Zkevm circuit witness_amount = " << witness_amount << " rows = " << rows_amount;
             return {
                 .witnesses = witness_amount,
                 .public_inputs = 1,
                 .constants = 0,
-                .rows = std::max(
-                    std::max( max_zkevm_rows, max_state ),
-                    std::max(
-                        std::max(max_copy_events * 2, max_rw),
-                        std::max(max_exponentations, max_bytecode)
-                    )
-                )
+                .rows = rows_amount
             };
         }
 
         static void allocate_public_inputs(
             context_type &context, input_type &input,
-            std::size_t max_zkevm_rows, std::size_t max_copy_events, std::size_t max_rw,
-            std::size_t max_exponentations, std::size_t max_bytecode,
+            std::size_t max_zkevm_rows,
+            std::size_t max_copy_events,
+            std::size_t max_rw,
+            std::size_t instances_rw_8,
+            std::size_t instances_rw_256,
+            std::size_t max_exponentations,
+            std::size_t max_bytecode,
             std::size_t max_state
         ) {
             context.allocate(input.rlc_challenge, 0, 0, column_type::public_input);
@@ -134,6 +142,8 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             std::size_t max_zkevm_rows,
             std::size_t max_copy_events,
             std::size_t max_rw,
+            std::size_t instances_rw_8,
+            std::size_t instances_rw_256,
             std::size_t max_exponentiations,
             std::size_t max_bytecode,
             std::size_t max_state
@@ -184,7 +194,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             std::vector<std::size_t> rw_8_lookup_area;
             std::stringstream r8s;
             r8s << "RW8 area: ";
-            for( std::size_t i = 0; i < RW8Table::get_witness_amount(); i++){
+            for( std::size_t i = 0; i < RW8Table::get_witness_amount(instances_rw_8); i++){
                 r8s << current_column << " ";
                 rw_8_lookup_area.push_back(current_column++);
             }
@@ -226,11 +236,12 @@ namespace nil::blueprint::bbf::zkevm_small_field{
 
             BytecodeTable bc_t = BytecodeTable(bytecode_ct, input.bytecodes, max_bytecode);
         //     ExpTable e_t = ExpTable(exp_ct, input.exponentiations, max_exponentiations);
-            RW8Table rw_8_t = RW8Table(rw_8_ct, input.rw_operations, max_rw);
+            RW8Table rw_8_t = RW8Table(rw_8_ct, input.rw_operations, max_rw, instances_rw_8);
             RW256Table rw_256_t = RW256Table(rw_256_ct, input.rw_operations, max_rw);
             CopyTable c_t = CopyTable(copy_ct, {input.copy_events, input.bytecodes}, max_copy_events);
         //     StateTable s_t = StateTable(state_ct, input.state_operations, max_state);
 
+            BOOST_LOG_TRIVIAL(info) << "ZKEVM small field dynamic tables done";
             auto opcode_impls = get_opcode_implementations<FieldType>();
 
             if constexpr (stage == GenerationStage::ASSIGNMENT) {
@@ -545,14 +556,15 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                 }
 
                 for( auto &constr: erc ){
-                    context_object.relative_constrain(context_object.relativize(constr, -1), 0, max_zkevm_rows);
+                    context_object.relative_constrain(context_object.relativize(constr, -1), 0, max_zkevm_rows - 1);
                 }
                 for( auto &constr: non_padding_rc ){
-                    context_object.relative_constrain(context_object.relativize(constr, -1), 0, max_zkevm_rows-max_opcode_height);
+                    context_object.relative_constrain(context_object.relativize(constr, -1), 0, max_zkevm_rows-max_opcode_height - 1);
                 }
                 for( auto &constr: nfrc ){
-                    context_object.relative_constrain(context_object.relativize(constr, -1), 1, max_zkevm_rows);
+                    context_object.relative_constrain(context_object.relativize(constr, -1), 1, max_zkevm_rows - 1);
                 }
+
                 std::vector<TYPE> tmp(5);
                 tmp[0] = context_object.relativize(evm_opcode_constraint * 2, -1);
                 tmp[1] = context_object.relativize(evm_opcode_constraint * all_states[1].pc, -1);
@@ -566,7 +578,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
     protected:
         static constexpr std::size_t max_opcode_height = 12;
         static constexpr std::size_t opcode_columns_amount = 64;
-        static constexpr std::size_t range_checked_opcode_columns_amount = 32;
+        static constexpr std::size_t range_checked_opcode_columns_amount = 16;
         std::vector<zkevm_opcode> implemented_opcodes = get_implemented_opcodes_list();
     };
 }
