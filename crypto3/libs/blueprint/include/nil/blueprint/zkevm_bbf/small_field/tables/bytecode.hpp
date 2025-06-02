@@ -135,7 +135,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                         } else {  // Metadata bytes
                             tag[cur] = 3;
                             is_opcode[cur] = 0;
-                            push_size = --meta_len;
+                            push_size = 0;
                         }
                     }
                 }
