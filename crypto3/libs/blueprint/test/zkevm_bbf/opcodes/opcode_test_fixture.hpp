@@ -90,6 +90,7 @@ public:
         std::size_t max_copy = max_sizes.max_copy;
         std::size_t max_copy_events = max_sizes.max_copy_events;
         std::size_t max_zkevm_rows = max_sizes.max_zkevm_rows;
+        std::size_t max_zkevm_small_field_rows = max_sizes.max_zkevm_small_field_rows;
         std::size_t max_exponentiations = max_sizes.max_exponentiations;
         std::size_t max_exp_rows = max_sizes.max_exp_rows;
         std::size_t max_state = max_sizes.max_state;

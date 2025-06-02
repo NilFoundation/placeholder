@@ -156,9 +156,10 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             if constexpr (stage == GenerationStage::CONSTRAINTS) {
                 // All memory, calldata, returndata rw operations are presented in timeline.
                 auto rw_8_to_timeline_lookups = t8.timeline_lookups();
-                // for( std::size_t i = 0; i < rw_8_to_timeline_lookup.size(); i++ )
-                //     rw_8_to_timeline_lookup[i] = context_object.relativize(rw_8_to_timeline_lookup[i], -1);
-                // context_object.relative_lookup(rw_8_to_timeline_lookup, "zkevm_timeline", 0, max_rw_size);
+                for( std::size_t i = 0; i < rw_8_to_timeline_lookups.size(); i++ ){
+                    rw_8_to_timeline_lookups[i] = context_object.relativize(rw_8_to_timeline_lookups[i], -1);
+                    context_object.relative_lookup(rw_8_to_timeline_lookups[i], "zkevm_timeline", 0, max_rw_size);
+                }
 
                 // All stack and call_context rw operations are presented in timeline.
                 auto rw_256_to_timeline_lookup = t256.timeline_lookup();

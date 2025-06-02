@@ -137,6 +137,7 @@ public:
         std::size_t max_copy = max_sizes.max_copy;
         std::size_t max_copy_events = max_sizes.max_copy_events;
         std::size_t max_zkevm_rows = max_sizes.max_zkevm_rows;
+        std::size_t max_zkevm_small_field_rows = max_sizes.max_zkevm_small_field_rows == 0? max_zkevm_rows : max_sizes.max_zkevm_small_field_rows;
         std::size_t max_exponentiations = max_sizes.max_exponentiations;
         std::size_t max_exp_rows = max_sizes.max_exp_rows;
         std::size_t max_state = max_sizes.max_state;
@@ -281,7 +282,7 @@ public:
             result = test_bbf_component<SmallFieldType, nil::blueprint::bbf::zkevm_small_field::rw>(
                 "rw-s", {},
                 rw_assignment_input,
-                max_zkevm_rows,
+                max_zkevm_small_field_rows,
                 instances_rw_8,
                 instances_rw_256,
                 max_state
@@ -319,9 +320,9 @@ public:
 
             result = test_bbf_component<BigFieldType, nil::blueprint::bbf::zkevm_small_field::zkevm>(
                 "zkevm-s", {}, zkevm_assignment_input,
-                max_zkevm_rows,
+                max_zkevm_small_field_rows,
                 max_copy_events,
-                max_zkevm_rows,
+                max_zkevm_small_field_rows,
                 instances_rw_8,
                 instances_rw_256,
                 max_exponentiations,
@@ -368,7 +369,8 @@ BOOST_AUTO_TEST_CASE(minimal_math) {
     max_sizes.instances_rw_8 = 3;
     max_sizes.max_copy_events = 70;
     max_sizes.max_copy = 70;
-    max_sizes.max_zkevm_rows = 300;
+    max_sizes.max_zkevm_rows = 400;
+    max_sizes.max_zkevm_small_field_rows = 300;
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
     max_sizes.max_state = 500;

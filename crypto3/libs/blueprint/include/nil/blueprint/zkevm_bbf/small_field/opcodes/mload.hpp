@@ -53,24 +53,30 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             // using Memory_Cost = typename zkevm_big_field::memory_cost<FieldType, stage>;
             // TYPE offset, length, current_mem, next_mem, memory_expansion_cost,
             //     memory_expansion_size, S;
-            // std::vector<TYPE> bytes(32);
+            std::vector<TYPE> bytes(32);
+            std::vector<TYPE> addr_chunks(16);
             // length = 32;
-            // if constexpr (stage == GenerationStage::ASSIGNMENT) {
-            //     auto address = w_to_16(current_state.stack_top())[15];
+            if constexpr (stage == GenerationStage::ASSIGNMENT) {
+                auto a_chunks = w_to_16(current_state.stack_top());
+                std::size_t address = a_chunks[14] * 65536 + a_chunks[15];
             //     offset = address;
             //     current_mem = current_state.memory_size();
             //     next_mem = std::max(offset + length, current_mem);
             //     S = next_mem > current_mem;
-            //     for (std::size_t i = 0; i < 32; i++) {
-            //         auto b = w_to_8(current_state.memory(address + i))[31];
-            //         bytes[i] = TYPE(b);
-            //     }
-            // }
+                for (std::size_t i = 0; i < 32; i++) {
+                    auto b = w_to_8(current_state.memory(address + i))[31];
+                    bytes[i] = TYPE(b);
+                }
+                for (std::size_t i = 0; i < 16; i++) {
+                    addr_chunks[i] = TYPE(a_chunks[i]);
+                }
+            }
 
-            // for (std::size_t i = 0; i < 16; i++) {
-            //     allocate(bytes[i], i + 16, 0);
-            //     allocate(bytes[i + 16], i + 16, 1);
-            // }
+            for (std::size_t i = 0; i < 16; i++) {
+                allocate(bytes[i], i + 16, 0);
+                allocate(bytes[i + 16], i + 16, 1);
+                allocate(addr_chunks[i], i, 0);
+            }
 
             // allocate(offset, 32, 0);
             // allocate(length, 33, 0);
@@ -96,19 +102,14 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             // memory_expansion_size =
             //     (next_memory.word_size - current_memory.word_size) * 32;
 
-            // if constexpr (stage == GenerationStage::CONSTRAINTS) {
-            //     constrain(current_state.pc_next() - current_state.pc(1) -
-            //                 1);  // PC transition
-            //     constrain(current_state.gas(0) - current_state.gas_next() - 3 -
-            //                 memory_expansion_cost);  // GAS transition
-            //     constrain(
-            //         current_state.stack_size(1) -
-            //         current_state.stack_size_next());  // stack_size transition
-            //     constrain(current_state.memory_size(0) - current_mem);  // memory_size transition
-            //     constrain(current_state.memory_size_next() - next_mem);  // memory_size transition
-            //     constrain(current_state.rw_counter_next() - current_state.rw_counter(1) - 34);  // rw_counter transition
+            if constexpr (stage == GenerationStage::CONSTRAINTS) {
+                constrain(current_state.pc_next() - current_state.pc(1) - 1);  // PC transition
+                // constrain(current_state.gas(0) - current_state.gas_next() - 3 - memory_expansion_cost);  // GAS transition
+                constrain(current_state.stack_size(1) - current_state.stack_size_next());  // stack_size transition
+                // constrain(current_state.memory_size(0) - current_mem);  // memory_size transition
+                // constrain(current_state.memory_size_next() - next_mem);  // memory_size transition
+                constrain(current_state.rw_counter_next() - current_state.rw_counter(1) - 34);  // rw_counter transition
 
-            //     auto V_128 = chunks8_to_chunks128<TYPE>(bytes);
             //     std::vector<TYPE> tmp;
             //     tmp = rw_table<FieldType, stage>::stack_lookup(
             //         current_state.call_id(1),
@@ -149,7 +150,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             //         V_128.second
             //     );
             //     lookup(tmp, "zkevm_rw");
-            // }
+            }
         }
     };
 

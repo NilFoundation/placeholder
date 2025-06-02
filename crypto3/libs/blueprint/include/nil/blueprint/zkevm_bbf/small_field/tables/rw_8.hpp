@@ -39,7 +39,10 @@ namespace nil::blueprint::bbf::zkevm_small_field{
         using input_type = typename std::conditional<stage==GenerationStage::ASSIGNMENT, short_rw_operations_vector, std::nullptr_t>::type;
         using integral_type =  nil::crypto3::multiprecision::big_uint<257>;
     protected:
+        std::size_t start;                              // first index used in rw_trace building
         std::size_t end;                                // last assigned operation in rw_trace
+        std::size_t max_rw_size;                        // rows_amount
+        std::size_t ending_internal_counter;            // last internal counter value
     public:
         // rw_8
         std::vector<TYPE> op;                           // memory, calldata, returndata
@@ -55,16 +58,31 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             return 8;
         }
 
+        std::size_t get_start_index() const {
+            return start;
+        }
+
         std::size_t get_last_assigned_index() const {
             return end;
+        }
+
+        std::size_t get_max_rw_size() const {
+            return max_rw_size;
+        }
+
+        std::size_t get_last_internal_counter() const {
+            return ending_internal_counter;
         }
 
         rw_8_table_instance(
             context_type &context_object,
             const input_type &input,
-            std::size_t max_rw_size,
-            std::size_t start
+            std::size_t _max_rw_size,
+            std::size_t _start,
+            std::size_t starting_internal_counter
         ) :generic_component<FieldType,stage>(context_object),
+            max_rw_size(_max_rw_size),
+            end(0),
             op(max_rw_size),
             id(max_rw_size),
             address(max_rw_size),
@@ -72,16 +90,18 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             is_write(max_rw_size),
             value(max_rw_size),
             internal_counter(max_rw_size),
-            is_filled(max_rw_size)
+            is_filled(max_rw_size),
+            start(_start)
         {
             BOOST_LOG_TRIVIAL(info) << "RW8 table instance";
             if constexpr  (stage == GenerationStage::ASSIGNMENT) {
-                auto rw_trace = input;
+                auto &rw_trace = input;
                 BOOST_ASSERT(rw_trace[0].op == rw_operation_type::start);
 
                 std::size_t current_row = 0;
                 std::size_t current_op = start;
-                std::size_t starting_internal_counter = 0;
+
+                ending_internal_counter = starting_internal_counter;
                 while( current_row < max_rw_size && current_op < rw_trace.size() ){
                     const auto &rwop = rw_trace[current_op];
                     current_op++;
@@ -102,8 +122,27 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                     rw_id[current_row] = rwop.rw_counter;
                     value[current_row] = rwop.value;
                     is_filled[current_row] = current_op == 1? 0 :1;
-                    if( starting_internal_counter == 0 && current_row !=0 ) starting_internal_counter = rwop.internal_counter - 1;
-                    internal_counter[current_row] = rwop.internal_counter - starting_internal_counter;
+                    if( current_row == 0 ) {
+                        internal_counter[current_row] = starting_internal_counter;
+                    } else {
+                        internal_counter[current_row] = internal_counter[current_row - 1];
+                        if(
+                            op[current_row] != op[current_row - 1] ||
+                            id[current_row] != id[current_row - 1] ||
+                            address[current_row] != address[current_row - 1]
+                        ){
+                            internal_counter[current_row] = internal_counter[current_row - 1] + 1;
+                            ending_internal_counter++;
+                        }
+                    }
+                    BOOST_LOG_TRIVIAL(debug)
+                        << "rw_8 " << current_row
+                        << std::hex
+                        << ". " << rwop
+                        << std::hex
+                        << " internal_counter = " << internal_counter[current_row]
+                        << std::dec;
+
                     current_row++;
                 }
                 if( current_op == rw_trace.size() ) end = rw_trace.size();
@@ -123,8 +162,16 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                 allocate(is_filled[i], current_column++, i);                // 6
                 allocate(internal_counter[i], current_column++, i);         // 7
             }
-            // lookup_table("zkevm_rw_8",std::vector<std::size_t77>({0,1,2,3,4,5,}),0,max_rw_size);
-            // lookup_table("zkevm_rw_8_timeline",std::vector<std::size_t>({6,3,7}),0,max_rw_size);
+        }
+
+        std::vector<TYPE> timeline_lookup() const {
+            return {
+                is_filled[1] * rw_id[1],
+                is_filled[1],
+                TYPE(0),
+                TYPE(0),
+                is_filled[1] * internal_counter[1]
+            };
         }
 
         static std::vector<std::size_t> get_zkevm_rw_8_lookup_columns() {
@@ -155,6 +202,8 @@ namespace nil::blueprint::bbf::zkevm_small_field{
 
         using InstanceType = rw_8_table_instance<FieldType, stage>;
 
+        std::vector<InstanceType> instances;
+
         rw_8_table(
             context_type &context_object,
             const input_type &input,
@@ -162,8 +211,8 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             std::size_t instances_rw_8
         ) :generic_component<FieldType,stage>(context_object) {
             std::vector<std::vector<std::size_t>>instance_areas(instances_rw_8);
-            std::vector<InstanceType> instances;
             std::size_t current_column = 0;
+            std::size_t starting_internal_counter = 0;
 
             std::vector<std::vector<std::size_t>> rw_8_lookup_areas(instances_rw_8);
             std::vector<std::vector<std::size_t>> rw_8_timeline_lookup_areas(instances_rw_8);
@@ -176,6 +225,17 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                         "instances_rw_8: " << instances_rw_8;
                 }
                 BOOST_ASSERT(input.size() < max_rw_size * instances_rw_8);
+                for( std::size_t i = 0; i < input.size(); i++ ){
+                    if(
+                        input[i].op == rw_operation_type::memory ||
+                        input[i].op == rw_operation_type::calldata ||
+                        input[i].op == rw_operation_type::returndata
+                    ) {
+                        starting_internal_counter = input[i].internal_counter - 1;
+                        break;
+                    }
+                }
+                BOOST_LOG_TRIVIAL(trace) << "starting_internal_counter = " << std::hex << starting_internal_counter;
             }
             for( std::size_t i = 0; i < instances_rw_8; i++ ){
                 for( std::size_t j = 0; j < InstanceType::get_witness_amount(); j++ ){
@@ -188,7 +248,12 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                     rw_8_timeline_lookup_areas[i].push_back(instance_areas[i][j]);
                 }
                 context_type instance_context = context_object.subcontext(instance_areas[i], 0, max_rw_size);
-                instances.emplace_back(instance_context, input, max_rw_size, i==0? 0: instances[i-1].get_last_assigned_index());
+                instances.emplace_back(
+                    instance_context, input,
+                    max_rw_size,
+                    i==0? 0: instances[i-1].get_last_assigned_index(),
+                    i==0? 0: instances[i-1].get_last_internal_counter()
+                );
             }
             multi_lookup_table("zkevm_rw_8", rw_8_lookup_areas, 0, max_rw_size);
             multi_lookup_table("zkevm_rw_8_timeline", rw_8_timeline_lookup_areas, 0, max_rw_size);
@@ -275,6 +340,17 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                 is_write,
                 value_lo
             };
+        }
+
+        std::vector<std::vector<TYPE>> timeline_lookups() const {
+            std::vector<std::vector<TYPE>> result;
+            for( const auto &instance: instances ){
+                auto instance_lookups = instance.timeline_lookup();
+                if( !instance_lookups.empty() ){
+                    result.push_back(instance_lookups);
+                }
+            }
+            return result;
         }
     };
 }
