@@ -322,7 +322,8 @@ namespace nil {
 
                         theta_powers.push_back(starting_power);
                         std::size_t current_power = starting_power;
-std::cout << "We have " << points.size() << " points and " << this->_z.get_batches().size() << " batches" << std::endl; 
+                        SCOPED_LOG("We have {} points and {} batches", points.size(),
+                                   this->_z.get_batches().size());
 
                         for (std::size_t point_index = 0; point_index < points.size(); ++point_index) {
                             for(std::size_t batch_idx : this->_z.get_batches()) {
@@ -501,7 +502,7 @@ std::cout << "We have " << points.size() << " points and " << this->_z.get_batch
                                 auto [point_index, batch_id] = point_batch_pairs[point_batch_index];
                                 auto const& point = points[point_index];
 
-PARALLEL_PROFILE_SCOPE("Compute Q normal parts point {} batch {}, batch size {}", point_index, batch_id, this->_z.get_batch_size(batch_id));
+                                // PARALLEL_PROFILE_SCOPE("Compute Q normal parts point {} batch {}, batch size {}", point_index, batch_id, this->_z.get_batch_size(batch_id));
 
                                 // Run in parallel, parallelizing on the index of the result. I.E. split the polynomial size
                                 // between the threads and run for a given range per thread.
