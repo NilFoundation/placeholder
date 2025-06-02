@@ -130,6 +130,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             std::vector<TYPE> is_metadata(max_bytecode_size);
             std::vector<TYPE> hash_value_rlc(max_bytecodes_amount);
             std::vector<TYPE> is_last_byte(max_bytecode_size);
+            TYPE metadata_length;
 
             if constexpr (stage == GenerationStage::ASSIGNMENT) {
                 const auto &bytecodes = input.bytecodes.get_data();
@@ -141,9 +142,11 @@ namespace nil::blueprint::bbf::zkevm_small_field{
 
                     // Determine the boundary between executable bytes and metadata
                     std::size_t exec_boundary = total_len;  // Default: all bytes are executable
+                    std::cout<< "total_len = " << total_len << std::endl;
                     if (total_len >= 2) {
                         // Metadata length is encoded in the last two bytes
                         std::size_t meta_len = (buffer[total_len - 2] << 8) + buffer[total_len - 1];
+                        metadata_length = meta_len;
                         if (meta_len + 2 <= total_len) {
                             std::size_t boundary = total_len - meta_len - 2 - 1;  // Byte before metadata
                             // Check for stopping opcodes (STOP, INVALID, RETURN) that will
@@ -268,6 +271,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                 // 19. After metadata is metadata or padding
                 non_first_row_constraints.push_back(is_metadata[0] * (is_metadata[1] + is_padding - 1));
                 // 20. Metadata length == length_left + 1 at first metadata
+                non_first_row_constraints.push_back((1 - is_metadata[0]) * is_metadata[1] * (length_left[1] + 1 - metadata_length));
 
                 // 21. After padding is always padding
                 every_row_constraints.push_back(is_padding * (is_header[2] + is_executed[2] + is_metadata[2]));

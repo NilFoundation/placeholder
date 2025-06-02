@@ -34,9 +34,9 @@ namespace nil {
     namespace blueprint {
         namespace bbf {
             struct timeline_item {
-                std::size_t       rw_id;
-                rw_operation_type op;
-                std::size_t       internal_counter;
+                std::size_t       rw_id;                // RW_counter
+                rw_operation_type op;                   // rw_operation_type for given operation
+                std::size_t       internal_counter;     // changed item counter (full address unique identifier)
 
                 bool operator< (const timeline_item &other) const {
                     return rw_id < other.rw_id;;
