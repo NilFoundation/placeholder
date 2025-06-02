@@ -82,6 +82,10 @@ public:
     static void allocate_public_inputs(
             context_type &context, input_type &input) {}
 */
+    static std::size_t get_witness_amount(){
+        return 836;
+    }
+
     // These cells are interfaces to internal data
     std::array<TYPE, 32> parent_hash; // the hash for reference to the node from parent node
     std::array<std::array<TYPE, 32>, 16> child; // 16 32-byte child hashes

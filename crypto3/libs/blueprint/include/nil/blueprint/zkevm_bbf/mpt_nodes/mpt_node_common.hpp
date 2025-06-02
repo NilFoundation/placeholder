@@ -69,26 +69,40 @@ public:
     static void allocate_public_inputs(
             context_type &context, input_type &input) {}
 */
+    static std::size_t get_witness_amount(){
+        return 123;
+    }
+
     // Table columns, listed by order of allocation into the table
-    TYPE                              trie_id;           // ids of the trie
-    std::array<TYPE, NODE_TYPE_COUNT> type_selector;     // node type selector columns (0/1)
+    TYPE                              trie_id;       // ids of the trie
+    std::array<TYPE, NODE_TYPE_COUNT> type_selector; // node type selector columns (0/1)
 
-    std::array<TYPE,32> key_prefix;                      // key prefix that identifies the node in the row
-    TYPE                key_prefix_length;               // length in half-bytes (i.e. 4-bit chunks)
-    TYPE                key_prefix_length_inversed;      // the inverse of the prefix length (see below)
-    std::array<TYPE,32> key_prefix_lower;                // the lower 4 bits of each key_prefix byte
-    std::array<TYPE,32> shifted_key_prefix;              // key_prefix >> 4
+    std::array<TYPE,32> key_prefix;                  // key prefix that identifies the node in the row
+    TYPE                key_prefix_length;           // length in half-bytes (i.e. 4-bit chunks)
+    TYPE                key_prefix_length_inversed;  // the inverse of the prefix length (see below)
+    std::array<TYPE,32> key_prefix_lower;            // the lower 4 bits of each key_prefix byte
+    std::array<TYPE,32> shifted_key_prefix;          // key_prefix >> 4
 
-    TYPE                parent_key_length;               // Parent key length (0 = root, >= 1 = branch or ext)
-    TYPE                parent_key_length_inverse;       // inverse of parent_key_length
-    TYPE                parent_is_ext;
-//    TYPE                parent_key_length_dec_inverse;   // inverse of (parent_key_length - 1)
-    std::array<TYPE, 4> branch_key_bit;                  // the bits of key_prefix_lower[31] (the parent key if parent is branch)
+    TYPE                parent_key_length;           // Parent key length (0 = root, >= 1 = branch or ext)
+    TYPE                parent_key_length_inverse;   // inverse of parent_key_length
+    TYPE                parent_is_ext;               // parent is extension node (0/1)
+                                                     // NB: only branch nodes can have extension nodes as parents but it's
+                                                     // easier to define everything related to extension parents in the
+                                                     // common part.
+
+    std::array<TYPE, 4> branch_key_bit;              // the bits of key_prefix_lower[31] (the parent key if parent is branch)
+    TYPE                pkl_is_odd;                  // the lowest bit of parent_key_length
+    TYPE                parent_key_length_bytes;     // parent_key_length / 2 = length in bytes
+    // auxiliary cells for defining I(x) = 1 iff x == parent_key_length
+    // I(x) = I1(x / 8) * I2(x % 8)
+    std::array<TYPE, 4> pkl_indic_1 = {0,0,0,0};     // I1 indicator function for parent_key_length
+    std::array<TYPE, 8> pkl_indic_2 = {0,0,0,0,0,0,0,0}; // I2 indicator function for parent_key_length
 
     // non-allocated values
     TYPE no_parent;
     TYPE parent_is_branch;
     std::array<TYPE, 16> branch_selector; // branch_selector[j] == 1  <=>  parent_is_branch && (branch_key == j)
+    std::array<TYPE, 32> parent_key_prefix; // key prefix of the parent defined according to parent_key_length
 
     mpt_node_common(context_type &context_object,
         const input_type &input) : generic_component<FieldType,stage>(context_object) {
@@ -112,7 +126,13 @@ public:
             }
             key_prefix_length = input.key_prefix_length;
             parent_key_length = input.parent_key_length;
+            pkl_is_odd = static_cast<std::size_t>(parent_key_length.to_integral() % 2);
+            parent_key_length_bytes = static_cast<std::size_t>(parent_key_length.to_integral() / 2);
+
             parent_is_ext = input.parent_is_ext;
+
+            pkl_indic_1[static_cast<std::size_t>(parent_key_length_bytes.to_integral() / 8)] = 1;
+            pkl_indic_2[static_cast<std::size_t>(parent_key_length_bytes.to_integral() % 8)] = 1;
 //std::cout << "PKL = " << parent_key_length << ", ";
         } // end Assignment-specific code
 
@@ -180,15 +200,48 @@ public:
                 branch_selector[j] *= ((j >> i) & 1) ? branch_key_bit[i] : (1 - branch_key_bit[i]);
             }
         }
-/*
-if constexpr (stage == GenerationStage::ASSIGNMENT) {
-std::cout << ", is_branch = " << parent_is_branch << ", Branch selectors: ";
-        for(std::size_t j = 0; j < 16; j++) {
-std::cout << branch_selector[j] << " ";
+
+        allocate(pkl_is_odd);
+        constrain( pkl_is_odd * (1 - pkl_is_odd) );
+        allocate(parent_key_length_bytes); // TODO: additional constraints?
+        constrain(2*parent_key_length_bytes + pkl_is_odd - parent_key_length);
+
+        TYPE indic1_sum;
+        TYPE indic1_value;
+        for(std::size_t i = 0; i < 4; i++) {
+            allocate(pkl_indic_1[i]);
+            constrain( pkl_indic_1[i] * (1 - pkl_indic_1[i]) );
+            indic1_sum += pkl_indic_1[i];
+            indic1_value += pkl_indic_1[i] * i;
         }
-}
-std::cout << std::endl;
-*/
+        constrain( indic1_sum * (1 - indic1_sum) );
+
+        TYPE indic2_sum;
+        TYPE indic2_value;
+        for(std::size_t i = 0; i < 8; i++) {
+            allocate(pkl_indic_2[i]);
+            constrain( pkl_indic_2[i] * (1 - pkl_indic_2[i]) );
+            indic2_sum += pkl_indic_2[i];
+            indic2_value += pkl_indic_2[i] * i;
+        }
+        constrain( indic2_sum * (1 - indic2_sum) );
+        constrain( indic1_value * 8 + indic2_value - parent_key_length_bytes );
+
+        // the byte sequence to use for parent_key_prefix definition
+        std::array<TYPE, 32> source_bytes;
+        // either key_prefix or shifted_key_prefix depending on pkl_is_odd
+        for(std::size_t i = 0; i < 32; i++) {
+            source_bytes[i] = pkl_is_odd * shifted_key_prefix[i] + (1 - pkl_is_odd) * key_prefix[i];
+        }
+        // different possible values for parent_key_length
+        for(std::size_t l = 0; l < 32; l++) {
+            TYPE selector = pkl_indic_1[l / 8] * pkl_indic_2[l % 8];
+            for(std::size_t i = 0; i < 32; i++) {
+                if (i >= l) {
+                    parent_key_prefix[i] += source_bytes[i - l] * selector;
+                }
+            }
+        }
     }
 };
 } // namespace nil::blueprint::bbf

@@ -80,6 +80,7 @@ public:
             context_type &context, input_type &input) {}
 */
     std::array<TYPE,32> parent_hash;
+    std::array<TYPE, 32> ext_value;  // ext_value[32]
 
     mpt_extension(context_type &context_object,
         const input_type &input) : generic_component<FieldType,stage>(context_object) {
@@ -89,7 +90,6 @@ public:
         TYPE node_length;
         // std::array<TYPE, 2> rlp_node; // rlp_node prefix for an extension node fits into 2 values
         std::array<TYPE, 32> key_part;   // key_part[32]
-        std::array<TYPE, 32> ext_value;  // ext_value[32]
         // TYPE rlp_key_prefix;
         // TYPE rlp_value_prefix;
 

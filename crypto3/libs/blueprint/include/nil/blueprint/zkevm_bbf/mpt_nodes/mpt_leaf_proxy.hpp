@@ -79,6 +79,10 @@ public:
     static void allocate_public_inputs(
             context_type &context, input_type &input) {}
 */
+    static std::size_t get_witness_amount(){
+        return 32;
+    }
+
     std::array<TYPE,32> parent_hash;
 
     mpt_leaf_proxy(context_type &context_object,
