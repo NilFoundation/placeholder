@@ -222,7 +222,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                 every_row_constraints.push_back(is_header[1] * (is_header[1] - 1));
                 every_row_constraints.push_back(is_executed[1] * (is_executed[1] - 1));
                 every_row_constraints.push_back(is_metadata[1] * (is_metadata[1] - 1));
-                // 1. Only one of them may 1 on a row
+                // 1. Only one of them may be 1 on a row
                 TYPE is_filled = is_header[1] + is_executed[1] + is_metadata[1];
                 TYPE is_padding = 1 - is_filled;
                 every_row_constraints.push_back(is_filled * (is_filled -1));
@@ -265,11 +265,15 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                 non_first_row_constraints.push_back(is_last_byte[0] - (is_header[1] + is_padding) * (is_metadata[0] + is_executed[0]));
                 // 18. bytecode_id increased for each bytecode
                 non_first_row_constraints.push_back(is_header[1] * (bytecode_id[1] - bytecode_id[0] - 1));
-                // 19. After padding is always padding
-                every_row_constraints.push_back(is_padding * (is_header[2] + is_executed[2] + is_metadata[2]));
+                // 19. After metadata is metadata or padding
+                non_first_row_constraints.push_back(is_metadata[0] * (is_metadata[1] + is_padding - 1));
+                // 20. Metadata length == length_left + 1 at first metadata
 
-                // 20. Last is always padding
+                // 21. After padding is always padding
+                every_row_constraints.push_back(is_padding * (is_header[2] + is_executed[2] + is_metadata[2]));
+                // 22. Last is always padding
                 constrain(is_header[max_bytecode_size - 1] + is_executed[max_bytecode_size - 1] + is_metadata[max_bytecode_size - 1]);
+
 
                 // Lookup_table
                 BOOST_LOG_TRIVIAL(trace) << "zkevm_bytecode_data_with_rlc "
