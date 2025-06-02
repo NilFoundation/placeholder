@@ -366,7 +366,6 @@ BOOST_AUTO_TEST_CASE(minimal_math) {
     max_sizes.max_mpt = 0;
     max_sizes.max_rw = 1000;    // Doesn't matter for small fields
 
-    max_sizes.instances_rw_8 = 3;
     max_sizes.max_copy_events = 70;
     max_sizes.max_copy = 70;
     max_sizes.max_zkevm_rows = 400;

@@ -129,7 +129,7 @@ struct l1_size_restrictions{
     std::size_t instances_bytecode = 1;
 
     std::size_t max_rw;
-    std::size_t instances_rw_8 = 1;
+    std::size_t instances_rw_8 = 3;
     std::size_t instances_rw_256 = 1;
 
     std::size_t max_copy_events = 50;
