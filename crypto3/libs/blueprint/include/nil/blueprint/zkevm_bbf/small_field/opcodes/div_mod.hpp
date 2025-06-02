@@ -203,7 +203,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                 
                 allocate(b_chunks[i], 2 * chunk_amount + i, 7);
                 b_chunks_copy[i] = b_chunks[i];
-                allocate(b_chunks_copy[i], i, 9);
+                allocate(b_chunks_copy[i], 2 * chunk_amount + i, 9);
                 
                 allocate(q_chunks[i], 2 * chunk_amount + i, 6);
                 q_chunks_copy1[i] = q_chunks[i];
@@ -315,7 +315,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                         BOOST_ASSERT(construct_chunks[i] == 0);
                     }
                 }
-                allocate(construct_carries[i], 2 * chunk_amount + i, 9);
+                allocate(construct_carries[i], i, 9);
                 // Carries are bits
                 constrain(construct_carries[i] * (1 - construct_carries[i]));
 
