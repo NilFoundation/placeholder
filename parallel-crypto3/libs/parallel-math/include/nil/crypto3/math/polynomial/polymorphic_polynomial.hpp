@@ -56,6 +56,14 @@ namespace nil::crypto3::math {
         polymorphic_polynomial(std::vector<small_field_value_type>&& v)
             : val(small_val(std::move(v))) {}
 
+        size_type size() const noexcept {
+            return std::visit([](const auto& v) { return v.size(); }, val);
+        }
+
+        value_type operator[](size_type s) const {
+            return std::visit([s](const auto& v) { return value_type(v[s]); }, val);
+        }
+
         auto& get_big() {
             if (!std::holds_alternative<big_val>(val)) {
                 throw std::logic_error(
