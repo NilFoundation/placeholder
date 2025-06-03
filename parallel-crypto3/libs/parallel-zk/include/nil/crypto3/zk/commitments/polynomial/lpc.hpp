@@ -54,7 +54,6 @@ namespace nil {
         namespace zk {
             namespace commitments {
 
-                // Placeholder-friendly class.
                 // LPCScheme is usually 'batched_list_polynomial_commitment<...>'.
                 template<typename LPCScheme, typename PolynomialType = typename math::polynomial_dfs<
                     typename LPCScheme::params_type::field_type::value_type>>
@@ -89,6 +88,12 @@ namespace nil {
                     value_type _etha;
                     std::map<std::size_t, bool> _batch_fixed;
                     preprocessed_data_type _fixed_polys_values;
+
+                    // If PolynomialType is DFS type, we need to convert this->polys to coefficients form,
+                    // otherwise we do nothing. "_polys_coefficients_ptr" will point to this->_polys if no conversion is required, or to _polys_coefficients
+                    // if conversion was required.
+                    std::map<std::size_t, std::vector<typename PolynomialType::polynomial_type>> _polys_coefficients;
+                    std::map<std::size_t, std::vector<typename PolynomialType::polynomial_type>>* _polys_coefficients_ptr;
 
                 public:
                     // Getters for the upper fields. Used from marshalling only so far.
@@ -148,6 +153,30 @@ namespace nil {
                         // The value of _etha.
                         queue.push(transcript.template challenge<field_type>());
                     } 
+
+                    void convert_polys_to_coefficients_form_if_necessary() {
+                        if constexpr (math::is_any_polynomial_dfs<PolynomialType>::value) {
+                            PROFILE_SCOPE("Convert polys to coefficients form");
+
+                            // Convert this->_polys to coefficients form.
+                            std::vector<std::pair<std::size_t, std::size_t>> indices;
+                            for (const auto& [i, V]: this->_polys) {
+                                _polys_coefficients[i].resize(V.size());
+                                for (std::size_t j = 0; j < V.size(); ++j) {
+                                    indices.push_back({i, j});
+                                }
+                            }
+
+                            parallel_for(0, indices.size(), [this, &indices, &_polys_coefficients](std::size_t i) {
+                                _polys_coefficients[indices[i].first][indices[i].second] =
+                                    this->_polys[indices[i].first][indices[i].second].coefficients();
+                            }, ThreadPool::PoolLevel::HIGH);
+
+                            _polys_coefficients_ptr = &_polys_coefficients;
+                        } else {
+                            _polys_coefficients_ptr = &this->_polys;
+                        }
+                    }
 
                     commitment_type commit(std::size_t index) {
                         this->state_commited(index);
@@ -298,6 +327,7 @@ namespace nil {
                             const value_type& theta,
                             std::size_t starting_power = 0) {
                         PROFILE_SCOPE("LPC prepare combined Q");
+
                         this->build_points_map();
 
                         value_type theta_acc = theta.pow(starting_power);
@@ -322,8 +352,6 @@ namespace nil {
 
                         theta_powers.push_back(starting_power);
                         std::size_t current_power = starting_power;
-                        SCOPED_LOG("We have {} points and {} batches", points.size(),
-                                   this->_z.get_batches().size());
 
                         for (std::size_t point_index = 0; point_index < points.size(); ++point_index) {
                             for(std::size_t batch_idx : this->_z.get_batches()) {
@@ -338,44 +366,11 @@ namespace nil {
                             theta_powers.push_back(current_power);
                         }
 
-                        // If PolynomialType is DFS type, we need to convert this->polys to coefficients form,
-                        // otherwise we do nothing. After this block polys_coefficients_ptr must be used,
-                        // it will point to this->_polys if no conversion is required, or to polys_coefficients
-                        // if conversion was required.
-                        std::map<std::size_t,
-                                 std::vector<typename PolynomialType::polynomial_type>>
-                            polys_coefficients;
-                        std::map<std::size_t,
-                                 std::vector<typename PolynomialType::polynomial_type>>*
-                            polys_coefficients_ptr;
 
-                        if constexpr (std::is_same<math::polynomial_dfs<value_type>,
-                                                   PolynomialType>::value ||
-                                      std::is_same<
-                                          math::polymorphic_polynomial_dfs<field_type>,
-                                          PolynomialType>::value) {
-                            PROFILE_SCOPE("Convert polys to coefficients form");
-                            // Convert this->_polys to coefficients form.
-                            std::vector<std::pair<std::size_t, std::size_t>> indices;
-                            for (const auto& [i, V]: this->_polys) {
-                                polys_coefficients[i].resize(V.size());
-                                for (std::size_t j = 0; j < V.size(); ++j) {
-                                    indices.push_back({i, j});
-                                }
-                            }
-
-                            parallel_for(0, indices.size(), [this, &indices, &polys_coefficients](std::size_t i) {
-                                polys_coefficients[indices[i].first][indices[i].second] =
-                                    this->_polys[indices[i].first][indices[i].second].coefficients();
-                            }, ThreadPool::PoolLevel::HIGH);
-
-                            polys_coefficients_ptr = &polys_coefficients;
-                        } else {
-                            polys_coefficients_ptr = &this->_polys;
-                        }
+                        convert_polys_to_coefficients_form_if_necessary();
 
                         std::vector<std::unordered_map<size_t, math::polynomial<value_type>>> Q_normal_parts = compute_Q_normal_parts(
-                            point_batch_pairs, theta, points, polys_coefficients_ptr, theta_powers_for_each_batch);
+                            point_batch_pairs, theta, points, _polys_coefficients_ptr, theta_powers_for_each_batch);
 
                         {
                             PROFILE_SCOPE("Compute Q normal");
@@ -412,7 +407,7 @@ namespace nil {
                             parallel_for(
                                 0, this->_z.get_batches().size(),
                                 [this, &theta, &theta_powers, &Q_normals,
-                                 polys_coefficients_ptr](std::size_t batch_idx) {
+                                 _polys_coefficients_ptr](std::size_t batch_idx) {
                                     std::size_t i = this->_z.get_batches()[batch_idx];
                                     value_type theta_acc =
                                         theta.pow(theta_powers[i]);
@@ -427,7 +422,7 @@ namespace nil {
 
                                     for (std::size_t j = 0;
                                          j < this->_z.get_batch_size(i); j++) {
-                                        auto g_normal = (*polys_coefficients_ptr)[i][j];
+                                        auto g_normal = (*_polys_coefficients_ptr)[i][j];
                                         g_normal *= theta_acc;
                                         Q_normal += g_normal;
                                         Q_normal -= _fixed_polys_values[i][j] * theta_acc;
@@ -464,7 +459,7 @@ namespace nil {
                         const value_type& theta,
                         const std::vector<value_type>& points,
                         std::map<std::size_t, std::vector<typename PolynomialType::polynomial_type>>*
-                            polys_coefficients_ptr,
+                            _polys_coefficients_ptr,
                         const std::vector<std::size_t>& theta_powers_for_each_batch)
                     {
                         PROFILE_SCOPE("Compute Q normal parts");
@@ -480,7 +475,7 @@ namespace nil {
 
                         for (size_t batch_id: this->_z.get_batches()) {
                             for (std::size_t j = 0; j < this->_z.get_batch_size(batch_id); j++) {
-                                const auto& g_normal = (*polys_coefficients_ptr)[batch_id][j];
+                                const auto& g_normal = (*_polys_coefficients_ptr)[batch_id][j];
                                 Q_normal_parts_sizes[batch_id] = std::max(Q_normal_parts_sizes[batch_id], g_normal.size());
                             }
                         }
@@ -494,7 +489,7 @@ namespace nil {
  
                         parallel_for(
                             0, point_batch_pairs.size(),
-                            [this, &points, &theta, polys_coefficients_ptr, &point_batch_pairs,
+                            [this, &points, &theta, _polys_coefficients_ptr, &point_batch_pairs,
                              &Q_normal_parts, &Q_normal_parts_sizes, &theta_powers_for_each_batch](size_t point_batch_index) {
 
                                 value_type theta_acc = theta.pow(
@@ -502,20 +497,20 @@ namespace nil {
                                 auto [point_index, batch_id] = point_batch_pairs[point_batch_index];
                                 auto const& point = points[point_index];
 
-                                // PARALLEL_PROFILE_SCOPE("Compute Q normal parts point {} batch {}, batch size {}", point_index, batch_id, this->_z.get_batch_size(batch_id));
+PARALLEL_PROFILE_SCOPE("Compute Q normal parts point {} batch {}, batch size {}", point_index, batch_id, this->_z.get_batch_size(batch_id));
 
                                 // Run in parallel, parallelizing on the index of the result. I.E. split the polynomial size
                                 // between the threads and run for a given range per thread.
                                 wait_for_all(parallel_run_in_chunks<void>(
                                     Q_normal_parts_sizes[batch_id],
-                                    [this, polys_coefficients_ptr, batch_id, &point, &Q_normal_parts, point_index, theta_acc, &theta](
+                                    [this, _polys_coefficients_ptr, batch_id, &point, &Q_normal_parts, point_index, theta_acc, &theta](
                                             std::size_t begin, std::size_t end) mutable {
                                         for (std::size_t j = 0; j < this->_z.get_batch_size(batch_id); j++) {
                                             auto iter = this->_points_map[batch_id][j].find(point);
                                             if (iter == this->_points_map[batch_id][j].end())
                                                 continue;
 
-                                            const auto& g_normal = (*polys_coefficients_ptr)[batch_id][j];
+                                            const auto& g_normal = (*_polys_coefficients_ptr)[batch_id][j];
                                             const auto& Z = this->_z.get(batch_id, j, iter->second);
                                             for (size_t i = begin; i < end && i < g_normal.size(); ++i) {
                                                 Q_normal_parts[point_index][batch_id][i] += g_normal[i] * theta_acc;
