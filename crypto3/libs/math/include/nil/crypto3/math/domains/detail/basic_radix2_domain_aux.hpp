@@ -36,6 +36,9 @@
 #include <nil/crypto3/math/algorithms/unity_root.hpp>
 #include <nil/crypto3/math/detail/field_utils.hpp>
 
+#include <nil/actor/core/thread_pool.hpp>
+#include <nil/actor/core/parallelization_utils.hpp>
+
 #include <nil/crypto3/bench/scoped_profiler.hpp>
 
 namespace nil {
@@ -52,11 +55,15 @@ namespace nil {
                         const typename FieldType::value_type &omega,
                         std::vector<typename FieldType::value_type> &cache) {
                     typedef typename FieldType::value_type value_type;
-                    cache.resize(size);
-                    cache[0] = value_type::one();
-                    for (std::size_t i = 1; i < size; ++i) {
-                        cache[i] = cache[i - 1] * omega;
-                    }
+                    cache.resize(size, FieldType::value_type::zero());
+                    wait_for_all(parallel_run_in_chunks<void>(
+                        size,
+                        [&cache, &omega](std::size_t begin, std::size_t end) {
+                            cache[begin] = omega.pow(begin);
+                            for (std::size_t i = begin + 1; i < end; ++i) {
+                                cache[i] = cache[i - 1] * omega;
+                            }
+                        }, ThreadPool::PoolLevel::LOW));
                 }
 
                 /*
@@ -77,26 +84,49 @@ namespace nil {
                         throw std::invalid_argument("expected n == (1u << logn)");
                     bench::register_fft(logn);
 
-                    /* swapping in place (from Storer's book) */
-                    for (std::size_t k = 0; k < n; ++k) {
-                        const std::size_t rk = bitreverse(k, logn);
-                        if (k < rk)
-                            std::swap(a[k], a[rk]);
-                    }
+                    // swapping in place (from Storer's book)
+                    // We can parallelize this look, since k and rk are pairs, they will never intersect.
+                    nil::crypto3::parallel_for(0, n,
+                        [logn, &a](std::size_t k) {
+                            const std::size_t rk = crypto3::math::detail::bitreverse(k, logn);
+                            if (k < rk)
+                                std::swap(a[k], a[rk]);
+                        }
+                    );
 
                     // invariant: m = 2^{s-1}
-                    value_type t;
                     for (std::size_t s = 1, m = 1, inc = n / 2; s <= logn; ++s, m <<= 1, inc >>= 1) {
                         // w_m is 2^s-th root of unity now
-                        for (std::size_t k = 0; k < n; k += 2 * m) {
-                            for (std::size_t j = 0, idx = 0; j < m; ++j, idx += inc) {
-                                t = a[k + j + m];
-                                t *= omega_cache[idx];
-                                a[k + j + m] = a[k + j];
-                                a[k + j + m] -= t;
-                                a[k + j] += t;
-                            }
-                        }
+                        size_t count_k = n / (2 * m) + (n % (2 * m) ? 1 : 0);
+
+                        // Here we can parallelize on the both loops with 'k' and 'm', because for each value of k and m
+                        // the ranges of array 'a' used do not intersect. Think of these 2 loops as 1.
+                        wait_for_all(parallel_run_in_chunks<void>(
+                            m * count_k,
+                            [&a, m, count_k, inc, &omega_cache](std::size_t begin, std::size_t end) {
+                                size_t current_index = begin;
+                                size_t start_k = begin / m;
+                                value_type t;
+                                for (std::size_t k_index = start_k; k_index < count_k; ++k_index) {
+                                    std::size_t k = k_index * 2 * m;
+
+                                    std::size_t j = (start_k == k_index) ? (begin % m): 0;
+                                    std::size_t idx = j * inc;
+
+                                    for (; j < m; ++j, idx += inc) {
+                                        t = a[k + j + m];
+                                        t *= omega_cache[idx];
+                                        a[k + j + m] = a[k + j];
+                                        a[k + j + m] -= t;
+                                        a[k + j] += t;
+
+                                        ++current_index;
+                                        if (current_index == end)
+                                            return;
+                                    }
+                                }
+                            }, ThreadPool::PoolLevel::LOW
+                        ));
                     }
                 }
 

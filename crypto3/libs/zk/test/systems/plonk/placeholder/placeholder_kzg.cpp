@@ -67,7 +67,6 @@
 #include <nil/crypto3/marshalling/algebra/processing/mnt4.hpp>
 #include <nil/crypto3/marshalling/algebra/processing/mnt6.hpp>
 
-
 #include "circuits.hpp"
 #include "placeholder_test_runner.hpp"
 

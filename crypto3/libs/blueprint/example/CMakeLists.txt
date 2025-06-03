@@ -21,7 +21,7 @@ macro(define_blueprint_example name)
                           ${CMAKE_WORKSPACE_NAME}::multiprecision
                           ${CMAKE_WORKSPACE_NAME}::zk
     )
-    set_target_properties(${full_example_name} PROPERTIES CXX_STANDARD 20 CXX_STANDARD_REQUIRED TRUE)
+    set_target_properties(${full_example_name} PROPERTIES CXX_STANDARD 23 CXX_STANDARD_REQUIRED TRUE)
 endmacro()
 
 

@@ -34,6 +34,7 @@
 #include <vector>
 
 namespace nil::crypto3::zk::snark {
+
     /**
      * Forward declaration.
      */

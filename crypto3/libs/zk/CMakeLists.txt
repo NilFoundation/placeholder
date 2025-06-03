@@ -1,10 +1,6 @@
 include(CMConfig)
 include(CMSetupVersion)
 
-if(NOT CMAKE_WORKSPACE_NAME OR NOT ("${CMAKE_WORKSPACE_NAME}" STREQUAL "crypto3"))
-    cm_workspace(crypto3)
-endif()
-
 option(PROFILING_ENABLED "Build with placeholder profiling" FALSE)
 option(ZK_PLACEHOLDER_DEBUG_ENABLED "Build with placeholder testing inside" FALSE)
 
@@ -40,16 +36,15 @@ target_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTERFACE
                       Boost::log
 
                       # Containers and math implementation could be replaced with namespace change
-                      ${CMAKE_WORKSPACE_NAME}::containers
-                      ${CMAKE_WORKSPACE_NAME}::math
-
-                      crypto3::random
+                      crypto3::containers
+                      crypto3::math
+                      crypto3::core
                       crypto3::algebra
                       crypto3::hash
                       crypto3::multiprecision
                       crypto3::marshalling-zk
 
-                      crypto3::benchmark_tools
+                      # crypto3::benchmark_tools
 )
 
 include(CMTest)
@@ -57,7 +52,3 @@ add_tests(test)
 
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
-
-if(BUILD_EXAMPLES)
-    add_subdirectory(example)
-endif()

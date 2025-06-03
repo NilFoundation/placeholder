@@ -1,7 +1,5 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2020-2021 Martun Karapetyan <martun@nil.foundation>
-// Copyright (c) 2024 Alexey Yashunsky <a.yashunsky@nil.foundation>
-//
 //
 // MIT License
 //
@@ -33,28 +31,29 @@
 #include <nil/crypto3/zk/math/non_linear_combination.hpp>
 
 namespace nil::crypto3::zk::snark {
+
     // Used for counting max degree of an expression.
     template<typename VariableType>
     class expression_max_degree_visitor : public boost::static_visitor<std::uint32_t> {
     public:
         expression_max_degree_visitor() {}
 
-        std::uint32_t compute_max_degree(const expression<VariableType>& expr) {
+        std::uint32_t compute_max_degree(const expression<VariableType>& expr) const {
             return boost::apply_visitor(*this, expr.get_expr());
         }
 
-        std::uint32_t operator()(const term<VariableType>& t) {
+        std::uint32_t operator()(const term<VariableType>& t) const {
             return t.get_vars().size();
         }
 
         std::uint32_t operator()(
-                const pow_operation<VariableType>& pow) {
+                const pow_operation<VariableType>& pow) const {
             std::uint32_t result = boost::apply_visitor(*this, pow.get_expr().get_expr());
             return result * pow.get_power();
         }
 
         std::uint32_t operator()(
-                const binary_arithmetic_operation<VariableType>& op) {
+                const binary_arithmetic_operation<VariableType>& op) const {
             std::uint32_t left = boost::apply_visitor(*this, op.get_expr_left().get_expr());
             std::uint32_t right = boost::apply_visitor(*this, op.get_expr_right().get_expr());
             switch (op.get_op()) {
@@ -162,7 +161,7 @@ namespace nil::crypto3::zk::snark {
     // Changes the underlying variable type of an expression. This is useful, when
     // we have a constraint with variable type plonk_variable<AssignmentType>
     // but we need a constraint of variable type
-    // plonk_variable<math::polynomial_dfs<typename FieldType::value_type>>.
+    // plonk_variable<polynomial_dfs<typename FieldType::value_type>>.
     // You can convert between types if the coefficient types are convertable.
     template<typename SourceVariableType, typename DestinationVariableType>
     class expression_variable_type_converter
@@ -208,16 +207,8 @@ namespace nil::crypto3::zk::snark {
                 boost::apply_visitor(*this, op.get_expr_left().get_expr());
             expression<DestinationVariableType> right =
                 boost::apply_visitor(*this, op.get_expr_right().get_expr());
-            switch (op.get_op()) {
-                case ArithmeticOperator::ADD:
-                    return left + right;
-                case ArithmeticOperator::SUB:
-                    return left - right;
-                case ArithmeticOperator::MULT:
-                    return left * right;
-                default:
-                    throw std::invalid_argument("ArithmeticOperator not found");
-            }
+            return binary_arithmetic_operation(std::move(left), std::move(right),
+                                               op.get_op());
         }
     private:
         std::function<typename DestinationVariableType::assignment_type(
@@ -326,11 +317,11 @@ namespace nil::crypto3::zk::snark {
 
         std::optional<expression<VariableType>>
         operator()(const pow_operation<VariableType>& pow) {
-            auto t = boost::apply_visitor(*this, pow.get_expr().get_expr());
-            if (!t)
+            auto term = boost::apply_visitor(*this, pow.get_expr().get_expr());
+            if (!term)
                 return std::nullopt;
             return pow_operation<VariableType>(
-                *t,
+                *term,
                 pow.get_power());
         }
 

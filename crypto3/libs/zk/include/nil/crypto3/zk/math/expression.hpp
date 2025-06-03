@@ -33,10 +33,10 @@
 #include <vector>
 #include <unordered_map>
 #include <functional>
+#include <memory>
 
 #include <boost/functional/hash.hpp>
 #include <boost/variant.hpp>
-#include <boost/variant/recursive_wrapper.hpp>
 
 #include <nil/crypto3/multiprecision/big_uint.hpp>
 
@@ -79,57 +79,45 @@ namespace nil::crypto3::zk::snark {
         // We intentionally don't add variable_type and assignment_type here,
         // They must be converted to term<VariableType> before being used.
         typedef boost::variant<
-            boost::recursive_wrapper<term<VariableType>>,
-            boost::recursive_wrapper<pow_operation<VariableType>>,
-            boost::recursive_wrapper<binary_arithmetic_operation<VariableType>>
+            term<VariableType>,
+            pow_operation<VariableType>,
+            binary_arithmetic_operation<VariableType>
             > expression_type;
 
-        expression()
-            : expr(term<VariableType>(assignment_type::zero())) {
-            update_hash();
-        }
+        expression(): expression(assignment_type::zero()) {}
 
-        expression(const term<VariableType> &expr)
-          : expr(expr) {
+        expression(term<VariableType> expr)
+          : expr(std::make_shared<expression_type>(std::move(expr))) {
             update_hash();
         }
-        expression(const pow_operation<VariableType> &expr)
-          : expr(expr) {
+        expression(pow_operation<VariableType> expr)
+          : expr(std::make_shared<expression_type>(std::move(expr))) {
             update_hash();
         }
-        expression(const binary_arithmetic_operation<VariableType> &expr)
-          : expr(expr) {
+        expression(binary_arithmetic_operation<VariableType> expr)
+            : expr(std::make_shared<expression_type>(std::move(expr))) {
             update_hash();
         }
-        expression(const VariableType &var)
-          : expr(term<VariableType>(var)) {
+        expression(VariableType var)
+          : expr(std::make_shared<expression_type>(term<VariableType>(std::move(var)))) {
             update_hash();
         }
 
         // Constructor for integral types.
-        template<class NumericType>
-        expression(const NumericType& coeff,
-                typename std::enable_if<std::is_integral<NumericType>::value, NumericType>::type* = nullptr)
-          : expr(term<VariableType>((assignment_type)coeff)) {
-            update_hash();
+        template<std::integral NumericType>
+        expression(const NumericType& coeff)
+          : expression(term<VariableType>((assignment_type)coeff)) {
         }
 
         // Constructor for big_uint.
         template<std::size_t Bits>
         expression(const nil::crypto3::multiprecision::big_uint<Bits>& coeff)
-          : expr(term<VariableType>((assignment_type)coeff)) {
-            update_hash();
+          : expression(term<VariableType>((assignment_type)coeff)) {
         }
 
         expression(const assignment_type &coeff)
-          : expr(term<VariableType>(coeff)) {
-            update_hash();
+          : expression(term<VariableType>(coeff)) {
         }
-
-        expression(const expression<VariableType>& other) = default;
-        expression(expression<VariableType>&& other) = default;
-        expression<VariableType>& operator=(const expression<VariableType>& other) = default;
-        expression<VariableType>& operator=(expression<VariableType>&& other) = default;
 
         expression<VariableType> pow(const std::size_t power) const;
         expression<VariableType> operator-() const;
@@ -146,15 +134,16 @@ namespace nil::crypto3::zk::snark {
 
 
         bool is_empty() const {
-            return *this == term<VariableType>(assignment_type::zero());
+            return *this == expression{};
         }
 
         // Used for testing purposes. Checks for EXACT EQUALITY ONLY, no isomorphism!!!
-        bool operator==(const expression<VariableType>& other) const;
-        bool operator!=(const expression<VariableType>& other) const;
+        bool operator==(const expression<VariableType>& other) const {
+            return this->get_expr() == other.get_expr();
+        }
 
         const expression_type& get_expr() const {
-            return expr;
+            return *expr.get();
         }
 
         std::size_t get_hash() const {
@@ -164,15 +153,15 @@ namespace nil::crypto3::zk::snark {
         // This function must be called by all the non-const member functions
         // to make sure a fresh hash value is maintained.
         void update_hash() {
-            switch (expr.which()) {
+            switch (get_expr().which()) {
                 case 0:
-                    hash = boost::get<term<VariableType>>(expr).get_hash();
+                    hash = boost::get<term<VariableType>>(get_expr()).get_hash();
                     break;
                 case 1:
-                    hash = boost::get<pow_operation<VariableType>>(expr).get_hash();
+                    hash = boost::get<pow_operation<VariableType>>(get_expr()).get_hash();
                     break;
                 case 2:
-                    hash = boost::get<binary_arithmetic_operation<VariableType>>(expr).get_hash();
+                    hash = boost::get<binary_arithmetic_operation<VariableType>>(get_expr()).get_hash();
                     break;
             }
         }
@@ -180,7 +169,7 @@ namespace nil::crypto3::zk::snark {
     private:
         // This is private, and we need to be very careful to make sure we recompute the hash value every time this
         // is changed through a non-const function.
-        expression_type expr;
+        std::shared_ptr<expression_type> expr;
 
         // We will store the hash value. This is faster that computing it
         // whenever it's needed, because we need to iterate over subexpressions to compute it.
@@ -231,11 +220,6 @@ namespace nil::crypto3::zk::snark {
             update_hash();
         }
 
-        term(const term<VariableType>& other) = default;
-        term(term<VariableType>&& other) = default;
-        term<VariableType>& operator=(const term<VariableType>& other) = default;
-        term<VariableType>& operator=(term<VariableType>&& other) = default;
-
         bool is_zero() const {
             return coeff == assignment_type::zero();
         }
@@ -250,7 +234,6 @@ namespace nil::crypto3::zk::snark {
         term operator-() const;
 
         bool operator==(const term<VariableType>& other) const;
-        bool operator!=(const term<VariableType>& other) const;
 
         // Used for debugging, to be able to see what's inside the term.
         std::string to_string() const;
@@ -307,14 +290,8 @@ namespace nil::crypto3::zk::snark {
             update_hash();
         }
 
-        pow_operation(const pow_operation<VariableType>& other) = default;
-        pow_operation(pow_operation<VariableType>&& other) = default;
-        pow_operation<VariableType>& operator=(const pow_operation<VariableType>& other) = default;
-        pow_operation<VariableType>& operator=(pow_operation<VariableType>&& other) = default;
-
         // Used for testing purposes, and hashmaps. Checks for EXACT EQUALITY ONLY, no isomorphism!!!
-        bool operator==(const pow_operation<VariableType>& other) const;
-        bool operator!=(const pow_operation<VariableType>& other) const;
+        bool operator==(const pow_operation<VariableType>& other) const = default;
 
         const expression<VariableType>& get_expr() const {
             return expr;
@@ -352,28 +329,15 @@ namespace nil::crypto3::zk::snark {
     public:
         using ArithmeticOperatorType = ArithmeticOperator;
 
-        binary_arithmetic_operation(
-                const expression<VariableType>& expr_left,
-                const expression<VariableType>& expr_right,
-                ArithmeticOperator op)
-            : expr_left(expr_left)
-            , expr_right(expr_right)
-            , op(op) {
+        binary_arithmetic_operation(expression<VariableType> expr_left,
+                                    expression<VariableType> expr_right,
+                                    ArithmeticOperator op)
+            : expr_left(std::move(expr_left)), expr_right(std::move(expr_right)), op(op) {
             update_hash();
         }
 
-        binary_arithmetic_operation(
-            const binary_arithmetic_operation<VariableType>& other) = default;
-        binary_arithmetic_operation(
-            binary_arithmetic_operation<VariableType>&& other) = default;
-        binary_arithmetic_operation<VariableType>& operator=(
-            const binary_arithmetic_operation<VariableType>& other) = default;
-        binary_arithmetic_operation<VariableType>& operator=(
-            binary_arithmetic_operation<VariableType>&& other) = default;
-
         // Used for testing purposes and hashmaps. Checks for EXACT EQUALITY ONLY, no isomorphism!!!
-        bool operator==(const binary_arithmetic_operation<VariableType>& other) const;
-        bool operator!=(const binary_arithmetic_operation<VariableType>& other) const;
+        bool operator==(const binary_arithmetic_operation<VariableType>& other) const = default;
 
         // Use for testing.
         std::string get_operator_string() const {
@@ -422,7 +386,6 @@ namespace nil::crypto3::zk::snark {
         // We will store the hash value. This is faster that computing it
         // whenever it's needed, because we need to iterate over subexpressions to compute it.
         std::size_t hash;
-
     };
 
     /*********** Member function bodies for class 'term' *******************************/
@@ -477,17 +440,15 @@ namespace nil::crypto3::zk::snark {
         if (this->is_empty())
             *this = other;
         else if (!other.is_empty()) {
-            expr = binary_arithmetic_operation<VariableType>(*this, other, ArithmeticOperator::ADD);
+            *this = expression(binary_arithmetic_operation<VariableType>(*this, other, ArithmeticOperator::ADD));
         }
-        update_hash();
         return *this;
     }
 
     template<typename VariableType>
     expression<VariableType>& expression<VariableType>::operator-=(
             const expression<VariableType>& other) {
-        expr = binary_arithmetic_operation<VariableType>(*this, other, ArithmeticOperator::SUB);
-        update_hash();
+        *this = expression(binary_arithmetic_operation<VariableType>(*this, other, ArithmeticOperator::SUB));
         return *this;
     }
 
@@ -497,9 +458,8 @@ namespace nil::crypto3::zk::snark {
         if (this->is_empty() || other.is_empty()) {
             *this = expression<VariableType>();
         } else {
-            expr = binary_arithmetic_operation<VariableType>(*this, other, ArithmeticOperator::MULT);
+            *this = expression(binary_arithmetic_operation<VariableType>(*this, other, ArithmeticOperator::MULT));
         }
-        update_hash();
         return *this;
     }
 
@@ -619,12 +579,6 @@ namespace nil::crypto3::zk::snark {
         return true;
     }
 
-    // Used for testing purposes and hashmaps.
-    template<typename VariableType>
-    bool term<VariableType>::operator!=(const term<VariableType>& other) const {
-        return !(*this == other);
-    }
-
     template<typename VariableType>
     void print_coefficient(std::ostream& os, const term<VariableType>& term) {
         if (term.get_coeff() == -VariableType::assignment_type::one())
@@ -679,49 +633,8 @@ namespace nil::crypto3::zk::snark {
         os << expr.get_expr();
         return os;
     }
-
-    // Used for testing purposes and hashmaps. Checks for EXACT EQUALITY ONLY, no isomorphism!!!
-    template<typename VariableType>
-    bool pow_operation<VariableType>::operator==(
-            const pow_operation<VariableType>& other) const {
-        return this->power == other.get_power() && this->expr == other.get_expr();
-    }
-
-    // Used for testing purposes.
-    template<typename VariableType>
-    bool pow_operation<VariableType>::operator!=(
-            const pow_operation<VariableType>& other) const {
-        return !(*this == other);
-    }
-
-    // Used for testing purposes and hashmaps. Checks for EXACT EQUALITY ONLY, no isomorphism!!!
-    template<typename VariableType>
-    bool binary_arithmetic_operation<VariableType>::operator==(
-            const binary_arithmetic_operation<VariableType>& other) const {
-        return this->op == other.get_op() &&
-               this->expr_left == other.get_expr_left() &&
-               this->expr_right == other.get_expr_right();
-    }
-
-    // Used for testing purposes. Checks for EXACT EQUALITY ONLY, no isomorphism!!!
-    template<typename VariableType>
-    bool binary_arithmetic_operation<VariableType>::operator!=(
-            const binary_arithmetic_operation<VariableType>& other) const {
-        return !(*this == other);
-    }
-
-    // Used for testing purposes and hashmaps. Checks for EXACT EQUALITY ONLY, no isomorphism!!!
-    template<typename VariableType>
-    bool expression<VariableType>::operator==(const expression<VariableType>& other) const {
-        return this->expr == other.get_expr();
-    }
-
-    // Used for testing purposes and hashmaps. Checks for EXACT EQUALITY ONLY, no isomorphism!!!
-    template<typename VariableType>
-    bool expression<VariableType>::operator!=(const expression<VariableType>& other) const {
-        return this->expr != other.get_expr();
-    }
 } // namespace nil::crypto3::zk::snark
+
 
 template <typename VariableType>
 struct std::hash<nil::crypto3::zk::snark::term<VariableType>>

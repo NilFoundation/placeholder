@@ -28,12 +28,11 @@
 
 #include <nil/crypto3/math/polynomial/polynomial.hpp>
 #include <nil/crypto3/math/polynomial/polynomial_dfs.hpp>
+#include <nil/actor/core/parallelization_utils.hpp>
 
 namespace nil {
     namespace crypto3 {
         namespace math {
-
-            /** @brief For a given polynomial f(y) returns a polynomial of f(y*x) */
             template<typename FieldValueType>
             static inline polynomial<FieldValueType>
             polynomial_shift(const polynomial<FieldValueType> &f,
@@ -48,8 +47,6 @@ namespace nil {
                 return f_shifted;
             }
 
-            /** @brief For a given polynomial in DFS form return a polynomial
-             * with coefficients shifted by `shift` */
             template<typename FieldValueType>
             static inline polynomial_dfs<FieldValueType>
             polynomial_shift(const polynomial_dfs<FieldValueType> &f,
@@ -67,10 +64,10 @@ namespace nil {
 
                 polynomial_dfs<FieldValueType> f_shifted(f.degree(), extended_domain_size);
 
-                for (std::size_t index = 0; index < extended_domain_size; index++) {
-                    f_shifted[index] = f[(extended_domain_size + index + domain_scale * shift) %
-                                         (extended_domain_size)];
-                }
+                parallel_for(0, extended_domain_size,
+                    [&f, &f_shifted, shift, extended_domain_size, domain_scale](std::size_t index) {
+                        f_shifted[index] = f[(extended_domain_size + index + domain_scale * shift) % (extended_domain_size)];
+                    });
 
                 return f_shifted;
             }

@@ -27,7 +27,6 @@
 #define BOOST_TEST_MODULE polynomial_view_test
 
 #include <vector>
-#include <cstdint>
 
 #include <boost/test/unit_test.hpp>
 #include <boost/test/data/test_case.hpp>
@@ -193,7 +192,7 @@ BOOST_AUTO_TEST_CASE(polynomial_subtraction_long_b) {
     a -= b;
 
     std::vector<typename FieldType::value_type> a_ans = {
-        FieldType::modulus - 8u, 0u, FieldType::modulus - 7u, 11u, FieldType::modulus - 1u, 
+        FieldType::modulus - 8u, 0u, FieldType::modulus - 7u, 11u, FieldType::modulus - 1u,
         FieldType::modulus - 1u, FieldType::modulus - 5u, FieldType::modulus - 8u};
 
     for (std::size_t i = 0; i < a_ans.size(); i++) {

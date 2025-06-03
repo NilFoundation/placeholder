@@ -9,18 +9,19 @@
 include(CMTest)
 
 target_include_directories(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTERFACE
-    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../../test_tools/include>"
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>")
 
 cm_test_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
-    ${CMAKE_WORKSPACE_NAME}::random
+    crypto3::random
+    crypto3::benchmark_tools
     crypto3::marshalling-zk
+    crypto3::core
     Boost::unit_test_framework
     Boost::log
     )
-set_target_properties(_cm_internal_tests-crypto3-zk-test PROPERTIES CXX_STANDARD 20)
-target_precompile_headers(_cm_internal_tests-crypto3-zk-test REUSE_FROM crypto3_precompiled_headers)
+set_target_properties(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} PROPERTIES CXX_STANDARD 23)
+target_precompile_headers(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} REUSE_FROM crypto3_precompiled_headers)
 
 if(PROFILING_ENABLED)
     add_definitions(-DPROFILING_ENABLED)
@@ -33,37 +34,37 @@ macro(define_zk_test test)
     cm_test(NAME ${full_test_name} SOURCES ${test}.cpp)
 
     target_include_directories(${full_test_name} PRIVATE
-                               "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-                               "$<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>"
+                                "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+                                "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../../test_tools/include>"
+                                "$<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>"
 
                                ${Boost_INCLUDE_DIRS})
 
-    set_target_properties(${full_test_name} PROPERTIES CXX_STANDARD 20)
+    set_target_properties(${full_test_name} PROPERTIES CXX_STANDARD 23)
 
     if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
         target_compile_options(${full_test_name} PRIVATE "-fconstexpr-steps=2147483647")
     elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         target_compile_options(${full_test_name} PRIVATE "-fconstexpr-ops-limit=4294967295")
     endif()
+
     target_precompile_headers(${full_test_name} REUSE_FROM crypto3_precompiled_headers)
 endmacro()
 
 set(TESTS_NAMES
-    "commitment/fri"
     "commitment/lpc"
+    "commitment/fri"
     "commitment/kzg"
     "commitment/fold_polynomial"
     "commitment/proof_of_work"
-    "commitment/type_traits"
 
     "math/expression"
+    "math/dag_expression_evaluator"
 
-    "systems/plonk/type_traits"
     "systems/plonk/placeholder/placeholder_circuits"
     "systems/plonk/placeholder/placeholder_circuits_dFRI"
     "systems/plonk/placeholder/placeholder_goldilocks"
-    # TODO(ioxid): fails with "std::invalid_argument: expected logn <= arithmetic_params<FieldType>::two_adicity"
-    # so Mersenne31 is unsupported for now.
+    # TODO(ioxid): Mersenne31 is unsupported for now.
     # "systems/plonk/placeholder/placeholder_mersenne31"
     "systems/plonk/placeholder/placeholder_koalabear"
     "systems/plonk/placeholder/placeholder_babybear"

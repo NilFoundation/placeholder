@@ -45,7 +45,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
 # TODO: move thread to actor-core
 find_package(Boost REQUIRED COMPONENTS filesystem log program_options thread)
-if(ENABLE_TESTS)
+if(BUILD_TESTS)
     find_package(Boost REQUIRED COMPONENTS unit_test_framework)
 endif()
 
@@ -90,7 +90,7 @@ add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/libs/preset")
 add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/libs/assigner")
 add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/bin/proof-producer")
 
-if (ENABLE_TESTS)
+if (BUILD_TESTS)
     enable_testing()
     add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/tests")
 endif()

@@ -1,7 +1,6 @@
-add_custom_target(tests_output_artifacts_single_thread)
-add_custom_target(tests_output_artifacts_multi_thread)
+add_custom_target(tests_output_artifacts)
 
-# Set properties for build target (single or multi thread)
+# Set properties for build target
 function(set_properties target)
     target_link_libraries(${target} PRIVATE
         GTest::gtest GTest::gtest_main
@@ -21,30 +20,19 @@ endfunction()
 # Add test for OutputArtifacts library
 # .cpp file must have the name of target
 function(add_output_artifacts_test target)
-    add_executable(${target}_single_thread ${target}.cpp)
-    add_executable(${target}_multi_thread ${target}.cpp)
+    add_executable(${target} ${target}.cpp)
 
-    set_properties(${target}_single_thread)
-    set_properties(${target}_multi_thread)
-    target_link_libraries(${target}_single_thread PRIVATE
-        crypto3::all
-    )
-    target_link_libraries(${target}_multi_thread PRIVATE
-        parallel-crypto3::all
-        crypto3::common
-    )
+    set_properties(${target})
+    target_link_libraries(${target} PRIVATE crypto3::all)
 
     if(PROOF_PRODUCER_STATIC_BINARIES)
         # TODO: try to avoid completely static linking here, it's not necessary, but otherwise build fails for some reason
-        target_link_options(${target}_single_thread PRIVATE -static -static-libgcc -static-libstdc++)
-        target_link_options(${target}_multi_thread PRIVATE -static -static-libgcc -static-libstdc++)
+        target_link_options(${target} PRIVATE -static -static-libgcc -static-libstdc++)
     endif()
 
-    target_precompile_headers(${target}_single_thread REUSE_FROM proof_producer_output_artifacts)
-    target_precompile_headers(${target}_multi_thread  REUSE_FROM proof_producer_output_artifacts)
+    target_precompile_headers(${target} REUSE_FROM proof_producer_output_artifacts)
 
-    add_dependencies(tests_output_artifacts_single_thread ${target}_single_thread)
-    add_dependencies(tests_output_artifacts_multi_thread ${target}_multi_thread)
+    add_dependencies(tests_output_artifacts ${target})
 endfunction()
 
 add_output_artifacts_test(test_range)
