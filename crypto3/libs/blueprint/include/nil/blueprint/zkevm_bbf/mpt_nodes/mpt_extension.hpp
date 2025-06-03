@@ -128,8 +128,6 @@ public:
             } else { // if size of key is 1-byte, there is no RLP prefix
                 rlp_prefix = 0;
             }
-            // rlp_child[0] = rlp_key_prefix;
-            // rlp_key_prefix = rlp_prefix;
 
             hash_input.insert( hash_input.end(), byte_vector.begin(), byte_vector.end() );
 
@@ -140,14 +138,11 @@ public:
                 node_key_length -= 2; // otherwise, the second hex is 0 and we skip it too
             }
 
-            // size_t rlp_value_prefix; // RLP for the value in ext nodes
             size_t rlp_node_prefix0, rlp_node_prefix1; // RLP prefixes for the whole node (2-bytes)
             std::array<uint8_t,32> node_value = w_to_8(n.value.at(1));
 
             std::vector<uint8_t> value_byte_vector(node_value.begin(), node_value.end());
             rlp_prefix = 128 + 32; // value in ext node is a hash, so always 32-bytes, hence RLP = 0xa0
-            // rlp_child[1] = rlp_value_prefix;
-            // rlp_value_prefix = rlp_prefix;
             value_byte_vector.emplace(value_byte_vector.begin(), rlp_prefix);
             hash_input.insert( hash_input.end(), value_byte_vector.begin(), value_byte_vector.end() );
             std::size_t total_value_length = hash_input.size(); // size of value to be hashed: rlp_key||key||rlp_value||value
@@ -155,14 +150,11 @@ public:
             // here...
             if (total_value_length <= 55) {
                 rlp_node_prefix0 = 192 + total_value_length;
-                // rlp_node[0] = rlp_node_prefix0;
                 node_length = total_value_length;
                 hash_input.emplace(hash_input.begin(), rlp_node_prefix0);
             } else {
                 rlp_node_prefix1 = node_key_bytes + 34;
                 rlp_node_prefix0 = 247 + 1;
-                // rlp_node[1] = rlp_node_prefix1;
-                // rlp_node[0] = rlp_node_prefix0;
                 node_length = total_value_length;
                 hash_input.emplace(hash_input.begin(), rlp_node_prefix1);
                 hash_input.emplace(hash_input.begin(), rlp_node_prefix0);
@@ -262,13 +254,9 @@ public:
 
         // RLC value computation
         TYPE RLC = input.rlc_challenge;
-        // std::cout << "RLC challenge = " << RLC << std::endl;
-        // std::cout << "node_key_bytes = " << node_key_bytes << std::endl;
 
         // total length of hashed sequence = node_length + (1 or 2, depending on node_length_less_than_55)
         rlc_value_node_prefix = node_length + 2 - node_length_less_than_55;
-        // std::cout << "rlc_value_node_prefix = " << rlc_value_node_prefix << std::endl;
-        // std::cout << "node_length_less_than_55 = " << node_length_less_than_55 << std::endl;
 
         // RLP node prefix
         // the first byte of RLP node prefix is always present
