@@ -22,7 +22,7 @@ let
   # Aux function that assembles a shell line for running test binary for specific (test suite, test case, circuit subset) combination
   buildTestRunLines = {binary, test_suite, test_runs}:
     builtins.map
-      (test_name: "${binary} --run_test=${test_suite}/${test_name} -- --no-sat-check --proof --run-for-circuits=${lib.strings.concatStringsSep "," test_runs.${test_name}}\n")
+      (test_name: "${binary} '--run_test=${test_suite}/${test_name}<*' -- --no-sat-check --proof --run-for-circuits=${lib.strings.concatStringsSep "," test_runs.${test_name}}\n")
       (builtins.attrNames test_runs)
   ;
 

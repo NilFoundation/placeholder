@@ -187,9 +187,13 @@ namespace nil {
                 }
             protected:
                 boost::property_tree::ptree load_debugtt_input(std::string path){
+                    auto test_data_dir = std::getenv("NIL_CO3_TEST_DATA_DIR")
+                                             ? std::getenv("NIL_CO3_TEST_DATA_DIR")
+                                             : std::string(TEST_DATA_DIR);
+                    auto full_path = test_data_dir + path;
                     std::ifstream ss;
-                    BOOST_LOG_TRIVIAL(trace) << "Open file " << std::string(TEST_DATA_DIR) + path << std::endl;
-                    ss.open(std::string(TEST_DATA_DIR) + path);
+                    BOOST_LOG_TRIVIAL(trace) << "Open file " << full_path << std::endl;
+                    ss.open(full_path);
                     boost::property_tree::ptree pt;
                     boost::property_tree::read_json(ss, pt);
                     ss.close();
