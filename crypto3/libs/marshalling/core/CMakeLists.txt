@@ -20,7 +20,7 @@ if(CRYPTO3_MARSHALLING_THROWS)
 endif()
 
 if(NOT CMAKE_CXX_STANDARD)
-    set_target_properties(${test_name} PROPERTIES CXX_STANDARD 20)
+    set_target_properties(${test_name} PROPERTIES CXX_STANDARD 23)
 endif()
 
 cm_setup_version(VERSION 0.1.0 PREFIX ${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME})

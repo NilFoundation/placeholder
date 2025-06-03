@@ -24,7 +24,7 @@ macro(define_marshalling_example name)
         ${Boost_INCLUDE_DIRS})
 
     set_target_properties(marshalling_${name}_example PROPERTIES
-            CXX_STANDARD 20
+            CXX_STANDARD 23
             CXX_STANDARD_REQUIRED TRUE)
 endmacro()
 

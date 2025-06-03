@@ -28,7 +28,6 @@
 #ifndef CRYPTO3_ZK_SPARSE_VECTOR_HPP
 #define CRYPTO3_ZK_SPARSE_VECTOR_HPP
 
-#include <iostream>
 #include <vector>
 #include <numeric>
 

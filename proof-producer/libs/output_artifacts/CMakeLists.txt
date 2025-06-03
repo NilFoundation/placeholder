@@ -7,7 +7,7 @@ target_include_directories(proof_producer_output_artifacts
 )
 
 find_package(Boost REQUIRED COMPONENTS filesystem log)
-if(ENABLE_TESTS)
+if(BUILD_TESTS)
     find_package(Boost REQUIRED COMPONENTS unit_test_framework)
 endif()
 

@@ -76,7 +76,7 @@ namespace nil::crypto3::multiprecision::detail {
 #else
 
 #ifndef NIL_CO3_MP_DISABLE_INTRINSICS
-#warning "x86 intrinsics are not available, addcarry and subborrow optimizations disabled"
+//#warning "x86 intrinsics are not available, addcarry and subborrow optimizations disabled"
 #endif
 
 namespace nil::crypto3::multiprecision::detail {

@@ -31,9 +31,6 @@
 #include <boost/random/uniform_int.hpp>
 
 #include <iostream>
-#include <iomanip>
-#include <fstream>
-#include <regex>
 
 #include <nil/marshalling/status_type.hpp>
 #include <nil/marshalling/field_type.hpp>
@@ -69,7 +66,7 @@
 #include <nil/crypto3/zk/commitments/batched_commitment.hpp> // contains class polys_evaluator
 
 #include <nil/crypto3/test_tools/random_test_initializer.hpp>
-#include  <nil/crypto3/marshalling/zk/detail/random_test_data_generation.hpp>
+#include <nil/crypto3/marshalling/zk/detail/random_test_data_generation.hpp>
 
 using namespace nil::crypto3;
 
@@ -81,8 +78,11 @@ template<typename Endianness, typename PolysEvaluator>
 void test_polys_evaluator_marshalling(PolysEvaluator &evaluator) {
     using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
 
+    evaluator.build_points_map();
+
     auto filled_evaluator = nil::crypto3::marshalling::types::fill_polys_evaluator<Endianness, PolysEvaluator>(evaluator);
     auto _evaluator = nil::crypto3::marshalling::types::make_polys_evaluator<Endianness, PolysEvaluator>(filled_evaluator);
+
     BOOST_CHECK(evaluator == _evaluator);
 
     std::vector<std::uint8_t> cv;

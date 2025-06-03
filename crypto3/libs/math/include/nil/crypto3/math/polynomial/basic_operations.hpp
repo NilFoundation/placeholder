@@ -34,6 +34,8 @@
 #include <nil/crypto3/math/detail/field_utils.hpp>
 #include <nil/crypto3/detail/type_traits.hpp>
 
+#include <nil/actor/core/parallelization_utils.hpp>
+
 namespace nil {
     namespace crypto3 {
         namespace math {
@@ -182,13 +184,13 @@ namespace nil {
 
                     if (a_size > b_size) {
                         c.resize(a_size);
-                        std::transform(
-                                std::begin(b), std::end(b), std::begin(a), std::begin(c), std::plus<value_type>());
+                        nil::crypto3::parallel_transform(
+                            std::begin(b), std::end(b), std::begin(a), std::begin(c), std::plus<value_type>());
                         std::copy(std::begin(a) + b_size, std::end(a), std::begin(c) + b_size);
                     } else {
                         c.resize(b_size);
-                        std::transform(
-                                std::begin(a), std::end(a), std::begin(b), std::begin(c), std::plus<value_type>());
+                        nil::crypto3::parallel_transform(
+                            std::begin(a), std::end(a), std::begin(b), std::begin(c), std::plus<value_type>());
                         std::copy(std::begin(b) + a_size, std::end(b), std::begin(c) + a_size);
                     }
                 }
@@ -210,19 +212,19 @@ namespace nil {
                     c = a;
                 } else if (is_zero(a)) {
                     c.resize(b.size());
-                    std::transform(b.begin(), b.end(), c.begin(), std::negate<value_type>());
+                    nil::crypto3::parallel_transform(b.begin(), b.end(), c.begin(), std::negate<value_type>());
                 } else {
                     std::size_t a_size = a.size();
                     std::size_t b_size = b.size();
 
                     if (a_size > b_size) {
                         c.resize(a_size);
-                        std::transform(a.begin(), a.begin() + b_size, b.begin(), c.begin(), std::minus<value_type>());
+                        nil::crypto3::parallel_transform(a.begin(), a.begin() + b_size, b.begin(), c.begin(), std::minus<value_type>());
                         std::copy(a.begin() + b_size, a.end(), c.begin() + b_size);
                     } else {
                         c.resize(b_size);
-                        std::transform(a.begin(), a.end(), b.begin(), c.begin(), std::minus<value_type>());
-                        std::transform(b.begin() + a_size, b.end(), c.begin() + a_size, std::negate<value_type>());
+                        nil::crypto3::parallel_transform(a.begin(), a.end(), b.begin(), c.begin(), std::minus<value_type>());
+                        nil::crypto3::parallel_transform(b.begin() + a_size, b.end(), c.begin() + a_size, std::negate<value_type>());
                     }
                 }
 
@@ -262,17 +264,17 @@ namespace nil {
                 detail::basic_radix2_fft<FieldType>(u, omega);
                 detail::basic_radix2_fft<FieldType>(v, omega);
 
-                for (std::size_t i = 0; i < n; ++i) {
+                parallel_for(0, n, [&c, &u, &v](std::size_t i){
                     c[i] = u[i] * v[i];
-                }
+                });
 
                 detail::basic_radix2_fft<FieldType>(c, omega.inversed());
 
                 const field_value_type sconst = field_value_type(n).inversed();
 
-                for(std::size_t i = 0; i < n; ++i) {
-                    c[i] = c[i] * sconst;
-                }
+                parallel_for(0, n, [&c, sconst](std::size_t i) {
+                    c[i] *= sconst;
+                });
 
                 condense(c);
             }
@@ -283,7 +285,11 @@ namespace nil {
              * [Bostan, Lecerf, & Schost, 2003. Tellegen's Principle in Practice, on page 39].
              */
             template<typename AlgebraicRange, typename FieldRange>
-            AlgebraicRange transpose_multiplication(const std::size_t &n, const AlgebraicRange &a, const FieldRange &c) {
+            AlgebraicRange
+            transpose_multiplication(const std::size_t &n, const AlgebraicRange &a, const FieldRange &c) {
+                typedef
+                typename std::iterator_traits<decltype(std::begin(
+                        std::declval<AlgebraicRange>()))>::value_type value_type;
 
                 const std::size_t m = a.size();
                 // if (c.size() - 1 > m + n)
@@ -317,9 +323,8 @@ namespace nil {
                 if (d == 0) {
                     value_type c = b[0].inversed();
                     q.resize(a.size());
-                    std::transform(
-                            std::begin(a), std::end(a), std::begin(q),
-                            [&c](const value_type &value) { return value * c; });
+                    nil::crypto3::parallel_transform(
+                            std::begin(a), std::end(a), std::begin(q), [&c](const value_type& value) {return value * c;});
                     // We will always have no reminder here.
                     r.resize(1);
                     r[0] = 0u;
@@ -358,7 +363,7 @@ namespace nil {
                         if (b.size() + shift + 1 > r.size())
                             r.resize(b.size() + shift + 1);
                         auto glambda = [=](value_type x, value_type y) { return y - (x * lead_coeff); };
-                        std::transform(b.begin(), b.end(), r.begin() + shift, r.begin() + shift, glambda);
+                        nil::crypto3::parallel_transform(b.begin(), b.end(), r.begin() + shift, r.begin() + shift, glambda);
 
                         condense(r);
                         r_deg = r.size() - 1;

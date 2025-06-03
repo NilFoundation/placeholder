@@ -25,7 +25,7 @@
 // @file Functions to test the algorithms that route on Benes and AS-Waksman networks.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE routing_algorithms_test
+#define BOOST_TEST_MODULE outing_algorithms_test
 
 #include <boost/test/unit_test.hpp>
 

@@ -114,12 +114,6 @@ namespace nil {
 
                 typedef std::shared_ptr<evaluation_domain<FieldType, ValueType>> result_type;
 
-				// If m is 1, the value of (std::size_t(std::ceil(std::log2(m))) - 1) is -1, and stored in size_t it becomes a
-				// very large value.
-				if (m == 1) {
-					return result_type();
-				}
-
                 const std::size_t big = 1ul << (std::size_t(std::ceil(std::log2(m))) - 1);
                 const std::size_t rounded_small = (1ul << std::size_t(std::ceil(std::log2(m - big))));
 

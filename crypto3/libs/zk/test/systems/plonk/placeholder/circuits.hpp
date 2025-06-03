@@ -29,7 +29,6 @@
 #ifndef CRYPTO3_ZK_TEST_PLONK_CIRCUITS_HPP
 #define CRYPTO3_ZK_TEST_PLONK_CIRCUITS_HPP
 
-#include <memory>
 #define _RND_ algebra::random_element<FieldType>();
 
 #include <nil/crypto3/algebra/random_element.hpp>
@@ -1051,6 +1050,7 @@ namespace nil {
                     return test_circuit;
                 }
 
+
                 // Selector -1 test:
                 //      Table 1: options: {C1, C2}
                 // Lookup gate1:
@@ -1144,23 +1144,17 @@ namespace nil {
                     var c0(0,0,true,var::column_type::constant);
                     var c1(0,0,true,var::column_type::constant);
                     constraints.push_back(2 * pi - w);
-                    plonk_gate<FieldType, plonk_constraint<FieldType>> add_gate(
-                        PLONK_SPECIAL_SELECTOR_ALL_USABLE_ROWS_SELECTED, constraints
-                    );
+                    plonk_gate<FieldType, plonk_constraint<FieldType>> add_gate(PLONK_SPECIAL_SELECTOR_ALL_USABLE_ROWS_SELECTED, constraints);
                     test_circuit.gates.push_back(add_gate);
 
-                    plonk_lookup_table<FieldType> lookup_table(
-                        1, PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED
-                    ); // switched on everywhere except the first row.
+                    plonk_lookup_table<FieldType> lookup_table(1, PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED); // switched on everywhere except the first row.
                     lookup_table.append_option({c0});
                     lookup_table.append_option({c1});
                     test_circuit.lookup_tables.push_back(lookup_table);
 
                     std::vector<plonk_lookup_constraint<FieldType>> lookup_constraints;
                     lookup_constraints.push_back({1, {pi + w}});
-                    plonk_lookup_gate<FieldType, plonk_lookup_constraint<FieldType>> lookup_gate(
-                        PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED, lookup_constraints
-                    );
+                    plonk_lookup_gate<FieldType, plonk_lookup_constraint<FieldType>> lookup_gate(PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED, lookup_constraints);
                     test_circuit.lookup_gates.push_back(lookup_gate);
 
                     return test_circuit;

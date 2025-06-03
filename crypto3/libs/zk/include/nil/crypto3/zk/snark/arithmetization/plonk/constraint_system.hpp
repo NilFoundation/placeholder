@@ -51,10 +51,14 @@ namespace nil {
         namespace zk {
             namespace snark {
                 /************************* PLONK constraint system ****************************/
-                constexpr static std::size_t const PLONK_SPECIAL_SELECTOR_ALL_USABLE_ROWS_SELECTED = std::numeric_limits<std::size_t>::max();
-                constexpr static std::size_t const PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED = std::numeric_limits<std::size_t>::max() - 1; // Useful for lookup tables
-                static constexpr size_t PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED = std::numeric_limits<std::size_t>::max() - 2;
-                static constexpr size_t PLONK_MAX_SELECTOR_ID = std::numeric_limits<std::size_t>::max() - 3;
+                constexpr static std::size_t const PLONK_SPECIAL_SELECTOR_ALL_USABLE_ROWS_SELECTED =
+                    std::numeric_limits<std::size_t>::max();
+                constexpr static std::size_t const PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED =
+                    std::numeric_limits<std::size_t>::max() - 1; // Useful for lookup tables
+                constexpr static std::size_t const PLONK_SPECIAL_SELECTOR_ALL_ROWS_SELECTED =
+                    std::numeric_limits<std::size_t>::max() - 2;
+                constexpr static std::size_t const PLONK_MAX_SELECTOR_ID =
+                    std::numeric_limits<std::size_t>::max() - 3;
 
                 template<typename FieldType>
                 struct plonk_constraint_system {

@@ -73,30 +73,6 @@
             enableDebug = true;
           });
 
-
-          parallel-crypto3 = (pkgs.callPackage ./parallel-crypto3.nix {
-            runTests = false;
-            enableDebug = false;
-          });
-          parallel-crypto3-tests = (pkgs.callPackage ./parallel-crypto3.nix {
-            runTests = true;
-            enableDebug = false;
-          });
-          parallel-crypto3-clang-bench = (pkgs.callPackage ./parallel-crypto3.nix {
-            runTests = true;
-            enableDebug = false;
-            benchmarkTests = true;
-          });
-          parallel-crypto3-debug-tests = (pkgs.callPackage ./parallel-crypto3.nix {
-            enableDebug = true;
-            runTests = true;
-          });
-          parallel-crypto3-clang-debug = (pkgs.callPackage ./parallel-crypto3.nix {
-            stdenv = pkgs.llvmPackages_19.stdenv;
-            enableDebug = true;
-            runTests = false;
-          });
-
           proof-producer = (staticPkgs.callPackage ./proof-producer.nix {
             runTests = false;
             enableDebug = false;
@@ -124,9 +100,7 @@
             runTests = true;
             sanitize = false;
             crypto3_tests = true;
-            parallel_crypto3_tests = true;
             crypto3_bechmarks = true;
-            parallel_crypto3_bechmarks = true;
           });
 
           develop-clang = (pkgs.callPackage ./proof-producer.nix {
@@ -136,9 +110,7 @@
             runTests = true;
             sanitize = false;
             crypto3_tests = true;
-            parallel_crypto3_tests = true;
             crypto3_bechmarks = true;
-            parallel_crypto3_bechmarks = true;
           });
 
           develop-clang-profile = (pkgs.callPackage ./proof-producer.nix {
@@ -148,12 +120,10 @@
             runTests = true;
             sanitize = false;
             crypto3_tests = true;
-            parallel_crypto3_tests = true;
             crypto3_bechmarks = true;
-            parallel_crypto3_bechmarks = true;
             profiling = true;
           });
-          
+
           develop-clang-release = (pkgs.callPackage ./proof-producer.nix {
             staticBuild = false;
             stdenv = pkgs.llvmPackages_19.stdenv;
@@ -161,9 +131,7 @@
             runTests = true;
             sanitize = false;
             crypto3_tests = true;
-            parallel_crypto3_tests = true;
             crypto3_bechmarks = true;
-            parallel_crypto3_bechmarks = true;
           });
 
           # The "all" package will build all packages. Convenient for CI,
@@ -172,7 +140,7 @@
           # fetched from the cache.
           all = pkgs.symlinkJoin {
             name = "all";
-            paths = [ crypto3 parallel-crypto3 proof-producer];
+            paths = [ crypto3 proof-producer ];
           };
           default = develop;
         };
@@ -217,32 +185,6 @@
             benchmarkTests = true;
           });
 
-          parallel-crypto3-gcc = (pkgs.callPackage ./parallel-crypto3.nix {
-            runTests = true;
-            enableDebug = false;
-          });
-          parallel-crypto3-gcc-bench = (pkgs.callPackage ./parallel-crypto3.nix {
-            runTests = true;
-            enableDebug = false;
-            benchmarkTests = true;
-          });
-          parallel-crypto3-clang = (pkgs.callPackage ./parallel-crypto3.nix {
-            stdenv = pkgs.llvmPackages_19.stdenv;
-            runTests = true;
-            enableDebug = false;
-          });
-          parallel-crypto3-clang-sanitize = (pkgs.callPackage ./parallel-crypto3.nix {
-            stdenv = pkgs.llvmPackages_19.stdenv;
-            runTests = true;
-            enableDebug = false;
-          });
-          parallel-crypto3-clang-bench = (pkgs.callPackage ./parallel-crypto3.nix {
-            stdenv = pkgs.llvmPackages_19.stdenv;
-            runTests = true;
-            enableDebug = false;
-            benchmarkTests = true;
-          });
-
           proof-producer-gcc = (staticPkgs.callPackage ./proof-producer.nix {
             runTests = true;
             enableDebug = false;
@@ -266,15 +208,15 @@
 
           all-clang = pkgs.symlinkJoin {
             name = "all";
-            paths = [ crypto3-clang parallel-crypto3-clang proof-producer-clang ];
+            paths = [ crypto3-clang proof-producer-clang ];
           };
           all-clang-sanitize = pkgs.symlinkJoin {
             name = "all";
-            paths = [ crypto3-clang-sanitize parallel-crypto3-clang-sanitize proof-producer-clang-sanitize ];
+            paths = [ proof-producer-clang-sanitize ];
           };
           all-gcc = pkgs.symlinkJoin {
             name = "all";
-            paths = [ crypto3-gcc parallel-crypto3-gcc proof-producer-gcc ];
+            paths = [ crypto3-gcc proof-producer-gcc ];
           };
           default = all-gcc;
         };

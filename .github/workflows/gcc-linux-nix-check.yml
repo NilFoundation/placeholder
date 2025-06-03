@@ -23,14 +23,8 @@ jobs:
         env:
           NIX_CONFIG: |
             cores = 6
-      - name: Run checks for parallel-crypto3
-        run: |
-          nix build -L .?#checks.x86_64-linux.parallel-crypto3-gcc
-        env:
-          NIX_CONFIG: |
-            cores = 6
       - name: Run all checks
-        # This includes cached crypto3 and parallel-crypto3 checks from previous steps. We don't limit cores in this part
+        # This includes cached crypto3 checks from previous steps. We don't limit cores in this part
         run: |
           nix build -L .?#checks.x86_64-linux.all-gcc
           mkdir results

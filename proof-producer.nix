@@ -31,7 +31,7 @@ in stdenv.mkDerivation {
   name = "Proof-producer";
   pname = "proof-producer";
 
-  src = lib.sourceByRegex ./. ["^proof-producer(/.*)?$" "^crypto3(/.*)?$" "^parallel-crypto3(/.*)?$" "CMakeLists.txt"];
+  src = lib.sourceByRegex ./. ["^proof-producer(/.*)?$" "^crypto3(/.*)?$" "CMakeLists.txt"];
   hardeningDisable = [ "fortify" ];
 
   nativeBuildInputs = [ cmake ninja pkg-config ] ++
@@ -49,10 +49,9 @@ in stdenv.mkDerivation {
     [
       "-DCMAKE_INSTALL_PREFIX=${placeholder "out"}"
       "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON" # to allow VSCode navigation/completion/etc
-      (if runTests then "-DENABLE_TESTS=ON" else "-DENABLE_TESTS=OFF")
       (if sanitize then "-DSANITIZE=ON" else "-DSANITIZE=OFF")
       "-DPROOF_PRODUCER_ENABLE=TRUE"
-      (if crypto3_tests then "-DBUILD_CRYPTO3_TESTS=TRUE" else "-DBUILD_CRYPTO3_TESTS=False")
+      (if crypto3_tests then "-DBUILD_TESTS=ON" else "-DBUILD_TESTS=OFF")
       (if parallel_crypto3_tests then "-DBUILD_PARALLEL_CRYPTO3_TESTS=TRUE" else "")
       (if parallel_crypto3_bechmarks then "-DENABLE_BENCHMARKS=ON" else "-DENABLE_BENCHMARKS=OFF")
       (if crypto3_bechmarks then "-DBUILD_CRYPTO3_BENCH_TESTS=ON" else "-DBUILD_CRYPTO3_BENCH_TESTS=OFF")
@@ -68,7 +67,7 @@ in stdenv.mkDerivation {
     # JUNIT file without explicit file name is generated after the name of the master test suite inside `CMAKE_CURRENT_SOURCE_DIR`
     export BOOST_TEST_LOGGER=JUNIT:HRF
     cd proof-producer
-    ctest --verbose --output-on-failure -R
+    ctest --verbose --output-on-failure | tee test_errors.txt
     cd ..
     mkdir -p ${placeholder "out"}/test-logs
     find .. -type f -name '*_test.xml' -exec cp {} ${placeholder "out"}/test-logs \;

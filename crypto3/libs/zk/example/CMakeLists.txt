@@ -20,7 +20,7 @@ macro(define_zk_example name)
             ${CMAKE_WORKSPACE_NAME}::zk
 
             Boost::container)
-    set_target_properties(zk_${name}_example PROPERTIES CXX_STANDARD 20)
+    set_target_properties(zk_${name}_example PROPERTIES CXX_STANDARD 23)
 endmacro()
 
 set(EXAMPLES_NAMES

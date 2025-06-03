@@ -55,8 +55,6 @@ function(setup_proof_producer_target)
         proof_producer_preset
         ${PROOF_PRODUCER_INCLUDES}
     )
-    # Make sure to add these dependencies before the others, since for multi-threaded version dependency on
-    # actor-zk must come first.
     if(ARG_ADDITIONAL_DEPENDENCIES)
         foreach(lib IN LISTS ARG_ADDITIONAL_DEPENDENCIES)
             list(APPEND INTERFACE_LIBS ${lib})
@@ -89,14 +87,9 @@ function(setup_proof_producer_target)
 
 endfunction()
 
-set(SINGLE_THREADED_TARGET "${CURRENT_PROJECT_NAME}-single-threaded")
-setup_proof_producer_target(TARGET_NAME ${SINGLE_THREADED_TARGET} ADDITIONAL_DEPENDENCIES crypto3::all)
-target_precompile_headers(${SINGLE_THREADED_TARGET} REUSE_FROM proof_producer_output_artifacts)
-
-set(MULTI_THREADED_TARGET "${CURRENT_PROJECT_NAME}-multi-threaded")
-setup_proof_producer_target(TARGET_NAME ${MULTI_THREADED_TARGET} ADDITIONAL_DEPENDENCIES parallel-crypto3::all crypto3::common)
-target_precompile_headers(${MULTI_THREADED_TARGET} REUSE_FROM proof_producer_output_artifacts)
-
+set(TARGET "${CURRENT_PROJECT_NAME}")
+setup_proof_producer_target(TARGET_NAME ${TARGET} ADDITIONAL_DEPENDENCIES crypto3::all)
+target_precompile_headers(${TARGET} REUSE_FROM proof_producer_output_artifacts)
 # Install
 install(TARGETS ${SINGLE_THREADED_TARGET} RUNTIME DESTINATION bin)
 install(TARGETS ${MULTI_THREADED_TARGET} RUNTIME DESTINATION bin)

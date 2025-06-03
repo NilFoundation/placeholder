@@ -29,8 +29,10 @@ target_include_directories(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTER
                            ${Boost_INCLUDE_DIRS})
 
 target_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTERFACE
-                      ${CMAKE_WORKSPACE_NAME}::algebra
-                      ${CMAKE_WORKSPACE_NAME}::multiprecision
+
+                      crypto3::core
+                      crypto3::algebra
+                      crypto3::multiprecision
 
                       Boost::random
                   )
@@ -39,7 +41,3 @@ add_tests(test)
 
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
-
-if(BUILD_EXAMPLES)
-    add_subdirectory(example)
-endif()

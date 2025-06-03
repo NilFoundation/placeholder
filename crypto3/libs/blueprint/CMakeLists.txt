@@ -20,6 +20,10 @@ target_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTERFACE
         Boost::container
         Boost::log_setup
         Boost::log
+        crypto3::algebra
+        crypto3::zk
+        crypto3::random
+        crypto3::hash
 )
 include(CMTest)
 add_tests(test)

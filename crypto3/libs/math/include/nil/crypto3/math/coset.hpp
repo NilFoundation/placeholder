@@ -25,8 +25,6 @@
 #ifndef CRYPTO3_MATH_COSET_HPP
 #define CRYPTO3_MATH_COSET_HPP
 
-#include <vector>
-
 namespace nil {
     namespace crypto3 {
         namespace math {

@@ -39,7 +39,7 @@ namespace nil {
         namespace math {
 
             /*!
-             * @brief Perform the standard Extended Euclidean Greatest Common Divisor algorithm.
+             * @brief Perform the standard Extended Euclidean Division algorithm.
              * Input: Polynomial A, Polynomial B.
              * Output: Polynomial G, Polynomial U, Polynomial V, such that G = (A * U) + (B * V).
              */

@@ -26,7 +26,7 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE kzg_test
+#define BOOST_TEST_MODULE parallel_kzg_test
 
 #include <string>
 
@@ -63,7 +63,6 @@
 #include <nil/crypto3/marshalling/algebra/processing/mnt4.hpp>
 #include <nil/crypto3/marshalling/algebra/processing/mnt6.hpp>
 
-
 using namespace nil::crypto3;
 using namespace nil::crypto3::math;
 
@@ -75,7 +74,7 @@ void dump_vector(std::vector<uint8_t> const &x, std::string label = "") {
     std::cout << "[0m" << std::endl;
 }
 
-BOOST_AUTO_TEST_SUITE(kzg_test_suite)
+BOOST_AUTO_TEST_SUITE(parallel_kzg_test_suite)
 
 template<typename curve_type>
 struct kzg_basic_test_runner {
@@ -209,7 +208,7 @@ BOOST_AUTO_TEST_CASE(kzg_false_test) {
     BOOST_CHECK(!zk::algorithms::verify_eval<kzg_type>(params, proof2, pk));
 }
 
-BOOST_AUTO_TEST_CASE(kzg_test_mnt6_accumulated) {
+BOOST_AUTO_TEST_CASE(parallel_kzg_test_mnt6_accumulated) {
 
     typedef algebra::curves::mnt6_298 curve_type;
     typedef typename curve_type::scalar_field_type::value_type scalar_value_type;
@@ -254,7 +253,7 @@ BOOST_AUTO_TEST_CASE(kzg_test_mnt6_accumulated) {
 }
 BOOST_AUTO_TEST_SUITE_END()
 
-BOOST_AUTO_TEST_SUITE(batched_kzg_test_suite)
+BOOST_AUTO_TEST_SUITE(parallel_batched_kzg_test_suite)
 
 template<typename curve_type>
 struct batched_kzg_basic_test_runner {

@@ -33,14 +33,14 @@ target_sources(proof_producer_assigner
         $<TARGET_OBJECTS:proof_producer_proto>
         ${PROTO_HASH_HEADER}
 )
-set_target_properties(proof_producer_assigner PROPERTIES CXX_STANDARD 20)
+set_target_properties(proof_producer_assigner PROPERTIES CXX_STANDARD 23)
 
 target_include_directories(proof_producer_assigner
                             PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include ${CMAKE_CURRENT_BINARY_DIR}
 )
 
 find_package(Boost REQUIRED COMPONENTS filesystem log)
-if(ENABLE_TESTS)
+if(BUILD_TESTS)
     find_package(Boost REQUIRED COMPONENTS unit_test_framework)
 endif()
 

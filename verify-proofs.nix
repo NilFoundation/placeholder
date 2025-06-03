@@ -30,7 +30,7 @@ in stdenv.mkDerivation rec {
   name = "Proof verifier test";
   pname = "proof-verifier-test";
 
-  src = lib.sourceByRegex ./. [ "^crypto3(/.*)?$" "^parallel-crypto3(/.*)?$" "CMakeLists.txt" ];
+  src = lib.sourceByRegex ./. [ "^crypto3(/.*)?$" "CMakeLists.txt" ];
   hardeningDisable = [ "fortify" ];
 
   nativeBuildInputs = [ cmake ninja pkg-config ] ++
@@ -43,23 +43,22 @@ in stdenv.mkDerivation rec {
   buildInputs = [cmake_modules];
 
   cmakeFlags =
-    [
-      "-DPARALLEL_CRYPTO3_ENABLE=TRUE"
-      "-DBUILD_PARALLEL_CRYPTO3_TESTS=TRUE"
-      (if sanitize then "-DSANITIZE=ON" else "-DSANITIZE=OFF")
-      "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON" # to allow VSCode navigation/completion/etc
+  [
+    (if sanitize then "-DSANITIZE=ON" else "-DSANITIZE=OFF")
+    "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON" # to allow VSCode navigation/completion/etc
+    "-DBUILD_TESTS=TRUE"
     "-G Ninja"
   ];
 
   buildPhase = ''
-    ninja blueprint_multi_thread_zkevm_bbf_debugtt_test
+    ninja blueprint_zkevm_bbf_debugtt_test
   '';
 
   cmakeBuildType = if enableDebug then "Debug" else "Release";
   doCheck = true;
 
   test_lines = buildTestRunLines {
-    binary = "./parallel-crypto3/libs/parallel-blueprint/test/blueprint_multi_thread_zkevm_bbf_debugtt_test";
+    binary = "./crypto3/libs/blueprint/test/zkevm_bbf/blueprint_zkevm_bbf_debugtt_test";
 
     test_suite = "zkevm_bbf_debugtt";
 

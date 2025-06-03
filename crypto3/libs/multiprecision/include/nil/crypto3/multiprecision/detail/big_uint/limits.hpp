@@ -10,7 +10,6 @@
 
 #pragma once
 
-#include <climits>
 #include <cstddef>
 #include <limits>
 
@@ -77,7 +76,6 @@ namespace std {
         static constexpr bool has_infinity = false;
         static constexpr bool has_quiet_NaN = false;
         static constexpr bool has_signaling_NaN = false;
-        static constexpr float_denorm_style has_denorm = denorm_absent;
         static constexpr bool has_denorm_loss = false;
         static constexpr number_type infinity() { return 0; }
         static constexpr number_type quiet_NaN() { return 0; }
