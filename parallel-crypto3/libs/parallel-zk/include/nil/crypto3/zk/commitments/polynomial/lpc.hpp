@@ -729,7 +729,6 @@ namespace nil {
                     using merkle_hash_type = typename LPCParams::merkle_hash_type;
 
                     constexpr static const std::size_t m = LPCParams::m;
-                    constexpr static const bool is_const_size = LPCParams::is_const_size;
                     constexpr static const bool is_batched_list_polynomial_commitment = true;
 
                     typedef LPCParams lpc_params;
