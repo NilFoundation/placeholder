@@ -131,5 +131,25 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             }
             lookup_table("zkevm_copy",lookup_columns,0,max_copy_events * 2);
         }
+
+        static std::vector<TYPE> copy_16_bit_lookup(
+            TYPE is_write,
+            TYPE cp_type,
+            TYPE counter_1,
+            TYPE counter_2,
+            TYPE length,
+            std::array<TYPE,16> id
+        ){
+            std::vector<TYPE> result = {};
+            result.push_back(is_write);
+            result.push_back(cp_type);
+            for( std::size_t i = 0; i < 16; i++ ){
+                result.push_back(id[i]);
+            }
+            result.push_back(counter_1);
+            result.push_back(counter_2);
+            result.push_back(length);
+            return result;
+        }
     };
 }
