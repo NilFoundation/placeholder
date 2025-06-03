@@ -404,7 +404,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             std::size_t instances_rw_8
         ) {
             std::size_t witness_amount = rw_8<FieldType, stage>::get_witness_amount(instances_rw_8);
-            BOOST_LOG_TRIVIAL(info) << "RW circuit witness amount = " << witness_amount;
+            BOOST_LOG_TRIVIAL(info) << "RW8 circuit witness amount = " << witness_amount;
             return {
                 .witnesses = witness_amount,
                 .public_inputs = 0,

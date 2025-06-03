@@ -270,7 +270,6 @@ public:
                 zkevm_assignment_input,
                 max_zkevm_rows,
                 max_copy_events,
-                max_rw,
                 instances_rw_8,
                 instances_rw_256,
                 max_exponentiations,

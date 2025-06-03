@@ -322,7 +322,6 @@ public:
                 "zkevm-s", {}, zkevm_assignment_input,
                 max_zkevm_small_field_rows,
                 max_copy_events,
-                max_zkevm_small_field_rows,
                 instances_rw_8,
                 instances_rw_256,
                 max_exponentiations,
@@ -369,7 +368,7 @@ BOOST_AUTO_TEST_CASE(minimal_math) {
     max_sizes.max_copy_events = 70;
     max_sizes.max_copy = 70;
     max_sizes.max_zkevm_rows = 400;
-    max_sizes.max_zkevm_small_field_rows = 300;
+    max_sizes.max_zkevm_small_field_rows = 250;
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
     max_sizes.max_state = 500;

@@ -80,7 +80,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
         ) {
             std::size_t witness_amount =
                 rw_8_type::get_witness_amount(instances_rw_8)
-                + rw_256_type::get_witness_amount()
+                + rw_256_type::get_witness_amount(instances_rw_256)
                 + state_timeline_table_type::get_witness_amount()
                 + timeline_table_type::get_witness_amount() * (instances_rw_8 + instances_rw_256 + 1)
                 + 6;
@@ -115,7 +115,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             rw_8_type t8(rw_8_ct, input.rw_trace, max_rw_size, instances_rw_8);
 
             std::vector<std::size_t> rw_256_area;
-            for( std::size_t i = 0; i < rw_256_type::get_witness_amount(); i++ ) rw_256_area.push_back(current_column++);
+            for( std::size_t i = 0; i < rw_256_type::get_witness_amount(instances_rw_256); i++ ) rw_256_area.push_back(current_column++);
             context_type rw_256_ct = context_object.subcontext(rw_256_area,0,max_rw_size);
             rw_256_type t256(rw_256_ct, input.rw_trace, max_rw_size, instances_rw_256);
 
@@ -162,10 +162,10 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                 }
 
                 // All stack and call_context rw operations are presented in timeline.
-                auto rw_256_to_timeline_lookup = t256.timeline_lookup();
-                for( std::size_t i = 0; i < rw_256_to_timeline_lookup.size(); i++ )
-                    rw_256_to_timeline_lookup[i] = context_object.relativize(rw_256_to_timeline_lookup[i], -1);
-                context_object.relative_lookup(rw_256_to_timeline_lookup, "zkevm_timeline", 0, max_rw_size);
+                // auto rw_256_to_timeline_lookup = t256.timeline_lookup();
+                // for( std::size_t i = 0; i < rw_256_to_timeline_lookup.size(); i++ )
+                //     rw_256_to_timeline_lookup[i] = context_object.relativize(rw_256_to_timeline_lookup[i], -1);
+                // context_object.relative_lookup(rw_256_to_timeline_lookup, "zkevm_timeline", 0, max_rw_size);
 
                 // All original state operations are presented in timeline
                 std::vector<TYPE> state_to_timeline_lookup = {
@@ -200,7 +200,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                     for( std::size_t i = 0; i < timeline_to_rw_256.size(); i++ ){
                         timeline_to_rw_256[i] = context_object.relativize(timeline_to_rw_256[i], -1);
                     }
-                    context_object.relative_lookup(timeline_to_rw_256, "zkevm_rw_256_timeline", 0, max_rw_size);
+                    // context_object.relative_lookup(timeline_to_rw_256, "zkevm_rw_256_timeline", 0, max_rw_size);
                 }
 
                 for( std::size_t tl_ind = 0; tl_ind < instances_timeline; tl_ind++){

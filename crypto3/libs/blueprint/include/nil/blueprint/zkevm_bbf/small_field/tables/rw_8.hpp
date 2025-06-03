@@ -89,14 +89,13 @@ namespace nil::blueprint::bbf::zkevm_small_field{
         {
             BOOST_LOG_TRIVIAL(info) << "RW8 table instance";
             if constexpr  (stage == GenerationStage::ASSIGNMENT) {
-                auto &rw_trace = input;
-                BOOST_ASSERT(rw_trace[0].op == rw_operation_type::start);
+                BOOST_ASSERT(input[0].op == rw_operation_type::start);
 
                 std::size_t current_row = 0;
                 std::size_t current_op = start;
 
-                while( current_row < max_rw_size && current_op < rw_trace.size() ){
-                    const auto &rwop = rw_trace[current_op];
+                while( current_row < max_rw_size && current_op < input.size() ){
+                    const auto &rwop = input[current_op];
                     current_op++;
 
                     if(
@@ -116,7 +115,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                     value[current_row] = rwop.value;
                     current_row++;
                 }
-                if( current_op == rw_trace.size() ) end = rw_trace.size();
+                if( current_op == input.size() ) end = input.size();
                 BOOST_LOG_TRIVIAL(trace) << "rw_8 filled rows amount = " << current_row;
                 for( std::size_t i = current_row; i < max_rw_size; i++ ){
                     op[i] = std::size_t(rw_operation_type::padding);
@@ -184,13 +183,13 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             std::size_t starting_internal_counter = 0;
 
             if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                if( input.size() >= max_rw_size * instances_rw_8 ){
-                    BOOST_LOG_TRIVIAL(fatal) << "Not enough space in rw_8 dynamic table. " <<
-                        "Input size: " << input.size() << ", "
-                        "max_rw_size: " << max_rw_size << ", "
-                        "instances_rw_8: " << instances_rw_8;
-                }
-                BOOST_ASSERT(input.size() < max_rw_size * instances_rw_8);
+                // if( input.size() >= max_rw_size * instances_rw_8 ){
+                //     BOOST_LOG_TRIVIAL(fatal) << "Not enough space in rw_8 dynamic table. " <<
+                //         "Input size: " << input.size() << ", "
+                //         "max_rw_size: " << max_rw_size << ", "
+                //         "instances_rw_8: " << instances_rw_8;
+                // }
+                // BOOST_ASSERT(input.size() < max_rw_size * instances_rw_8);
                 for( std::size_t i = 0; i < input.size(); i++ ){
                     if(
                         input[i].op == rw_operation_type::memory ||
@@ -216,6 +215,25 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                     max_rw_size,
                     i==0? 0: instances[i-1].get_last_assigned_index()
                 );
+            }
+            if constexpr (stage == GenerationStage::ASSIGNMENT) {
+                if( instances.back().get_last_assigned_index() < input.size() ) {
+                    std::size_t need_more = 0;
+                    for( std::size_t i = instances.back().get_last_assigned_index(); i < input.size(); i++ ){
+                        if(
+                            input[i].op == rw_operation_type::memory ||
+                            input[i].op == rw_operation_type::calldata ||
+                            input[i].op == rw_operation_type::returndata
+                        ) {
+                            need_more++;
+                        }
+                    }
+                    BOOST_LOG_TRIVIAL(fatal) << "Not enough space in rw_8 table. "
+                        << "max_rw_size: " << max_rw_size << ", "
+                        << "instances_rw_8: " << instances_rw_8 << ", "
+                        << "need to assign more " << need_more << " operations";
+                    BOOST_ASSERT(false);
+                }
             }
             multi_lookup_table("zkevm_rw_8", rw_8_lookup_areas, 0, max_rw_size);
         }

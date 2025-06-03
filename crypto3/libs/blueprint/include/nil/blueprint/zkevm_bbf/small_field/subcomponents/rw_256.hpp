@@ -63,20 +63,20 @@ namespace nil::blueprint::bbf::zkevm_small_field{
         static constexpr std::size_t chunks_amount = 6;
         static constexpr std::size_t op_selectors_amount = 2;
 
-        static std::size_t get_witness_amount(){
-            return  rw_256_table_type::get_witness_amount()
-                + id_chunks_amount + rw_id_chunks_amount     // Additional chunks
+        static std::size_t get_witness_amount(std::size_t instances_rw_256 ) {
+            return  rw_256_table_type::get_witness_amount(instances_rw_256)
+                + (id_chunks_amount + rw_id_chunks_amount     // Additional chunks
                 + chunks_amount                              // Diff selector
                 + op_selectors_amount                        // Selectors for op
-                + 6;
+                + 8) * instances_rw_256;
         }
 
         static table_params get_minimal_requirements(
             std::size_t max_rw_size,
             std::size_t instances_rw_256
         ) {
-            std::size_t witness_amount = rw_256<FieldType, stage>::get_witness_amount();
-            BOOST_LOG_TRIVIAL(info) << "RW circuit witness amount = " << witness_amount;
+            std::size_t witness_amount = rw_256<FieldType, stage>::get_witness_amount(instances_rw_256);
+            BOOST_LOG_TRIVIAL(info) << "RW256 circuit witness amount = " << witness_amount;
             return {
                 .witnesses = witness_amount,
                 .public_inputs = 0,
@@ -89,16 +89,19 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             context_type &context, input_type &input, std::size_t max_rw_size, std::size_t instances_rw_256
         ) {}
 
-        rw_256(context_type &context_object, const input_type &input,
-            std::size_t max_rw_size, std::size_t instances_rw_256
+        rw_256(context_type &context_object,
+            const input_type &input,
+            std::size_t max_rw_size,
+            std::size_t instances_rw_256
         ) :generic_component<FieldType,stage>(context_object) {
+            BOOST_LOG_TRIVIAL(trace) << "RW256 subcomponent construction";
             std::size_t current_column = 0;
 
             std::vector<std::size_t> rw_256_table_area;
-            for( std::size_t i = 0; i < rw_256_table_type::get_witness_amount(); i++ ) rw_256_table_area.push_back(current_column++);
+            for( std::size_t i = 0; i < rw_256_table_type::get_witness_amount(instances_rw_256); i++ ) rw_256_table_area.push_back(current_column++);
             context_type rw_256_table_ct = context_object.subcontext(rw_256_table_area,0,max_rw_size);
-            rw_256_table_type t(rw_256_table_ct, input, max_rw_size);
-
+            rw_256_table_type t(rw_256_table_ct, input, max_rw_size, instances_rw_256);
+/*
             const std::vector<TYPE> &op = t.op;                                   // stack, call_context
             const std::vector<TYPE> &id = t.id;                                   // 2 chunks fitted in field element less than 2^25
             const std::vector<TYPE> &address = t.address;                         // < 1024
@@ -118,6 +121,8 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                 };
             }
 
+            std::vector<TYPE> internal_counter;                         // 2  chunks fitted in field element less than 2^25
+            std::vector<TYPE> is_filled;                                // bool
             std::vector<TYPE> call_context_selector(max_rw_size);
             std::vector<TYPE> stack_selector(max_rw_size);
 
@@ -323,7 +328,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                 for( auto &constraint: non_first_row_constraints ){
                     context_object.relative_constrain(context_object.relativize(constraint, -1), 1, max_rw_size - 1);
                 }
-            }
+            }*/
         }
         std::vector<TYPE> timeline_lookup(){
             return _timeline_lookup;
