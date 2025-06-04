@@ -335,6 +335,9 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                 chunked_16_lookups.push_back(value[1]);
                 chunked_16_lookups.push_back((255 - value[1]));
                 chunked_16_lookups.push_back(diff[1]);
+                chunked_16_lookups.push_back(512 - id_chunks[1].first); // id < 2^25 => id_chunks.first < 2^9
+                chunked_16_lookups.push_back(512 - rw_id_chunks[1].first); // rw_id < 2^25 => rw_id_chunks.first < 2^9
+                chunked_16_lookups.push_back(512 - address_chunks[1].first); // address < 2^25 => address_chunks.first < 2^9
                 for( std::size_t i = 0; i < chunks_amount; i++ ){
                     chunked_16_lookups.push_back(sorted[i]);
                 }

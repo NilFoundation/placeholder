@@ -86,7 +86,6 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             internal_counter(max_rw_size),
             is_filled(max_rw_size)
         {
-            BOOST_LOG_TRIVIAL(trace) << "RW256 instance";
             if constexpr  (stage == GenerationStage::ASSIGNMENT) {
                 auto rw_trace = input;
                 std::size_t current_row = 0;
@@ -136,6 +135,10 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             }
 
         }
+
+        static constexpr std::size_t get_rw_id_column_index() {
+            return 3;
+        }
     };
 
     template<typename FieldType, GenerationStage stage>
@@ -158,16 +161,17 @@ namespace nil::blueprint::bbf::zkevm_small_field{
         }
 
         std::vector<InstanceType> instances;
+        std::vector<std::vector<std::size_t>> rw_256_table_areas;
 
         rw_256_table(
             context_type &context_object,
             const input_type &input,
             std::size_t max_rw_size,
             std::size_t instances_rw_256
-        ) :generic_component<FieldType,stage>(context_object) {
-            BOOST_LOG_TRIVIAL(trace) << "RW256 table construction";
+        ) : generic_component<FieldType,stage>(context_object),
+            rw_256_table_areas(instances_rw_256)
+        {
             std::size_t current_column = 0;
-            std::vector<std::vector<std::size_t>> rw_256_table_areas(instances_rw_256);
 
             if constexpr (stage == GenerationStage::ASSIGNMENT) {
                 BOOST_ASSERT(input[0].op == rw_operation_type::start);
@@ -365,6 +369,11 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                 result.push_back(value[i] * 256 + value[i+1]);
             }
             return result;
+        }
+
+        std::size_t get_rw_id_column_index(std::size_t instance_index) {
+            BOOST_ASSERT(instance_index < instances.size());
+            return rw_256_table_areas[instance_index][InstanceType::get_rw_id_column_index()];
         }
     };
 }

@@ -128,6 +128,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             if constexpr (stage == GenerationStage::ASSIGNMENT) {
                 BOOST_ASSERT(input.timeline.size() < instances_timeline * (max_rw_size - 1));
             }
+
             std::vector<std::vector<std::size_t>> timeline_table_areas(instances_timeline);
             std::vector<timeline_table_type> tts;
             for( std::size_t tl_ind = 0; tl_ind < instances_timeline; tl_ind++){
@@ -162,10 +163,11 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                 }
 
                 // All stack and call_context rw operations are presented in timeline.
-                // auto rw_256_to_timeline_lookup = t256.timeline_lookup();
-                // for( std::size_t i = 0; i < rw_256_to_timeline_lookup.size(); i++ )
-                //     rw_256_to_timeline_lookup[i] = context_object.relativize(rw_256_to_timeline_lookup[i], -1);
-                // context_object.relative_lookup(rw_256_to_timeline_lookup, "zkevm_timeline", 0, max_rw_size);
+                auto rw_256_to_timeline_lookups = t256.timeline_lookups();
+                for( std::size_t i = 0; i < rw_256_to_timeline_lookups.size(); i++ ){
+                    rw_256_to_timeline_lookups[i] = context_object.relativize(rw_256_to_timeline_lookups[i], -1);
+                    context_object.relative_lookup(rw_256_to_timeline_lookups[i], "zkevm_timeline", 0, max_rw_size);
+                }
 
                 // All original state operations are presented in timeline
                 std::vector<TYPE> state_to_timeline_lookup = {
@@ -200,7 +202,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                     for( std::size_t i = 0; i < timeline_to_rw_256.size(); i++ ){
                         timeline_to_rw_256[i] = context_object.relativize(timeline_to_rw_256[i], -1);
                     }
-                    // context_object.relative_lookup(timeline_to_rw_256, "zkevm_rw_256_timeline", 0, max_rw_size);
+                    context_object.relative_lookup(timeline_to_rw_256, "zkevm_rw_256_timeline", 0, max_rw_size);
                 }
 
                 for( std::size_t tl_ind = 0; tl_ind < instances_timeline; tl_ind++){
