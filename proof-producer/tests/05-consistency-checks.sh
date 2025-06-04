@@ -9,7 +9,7 @@ CIRCUIT=$1
 
 echo "Consistency chacks for circuit: [1;31m$CIRCUIT[0m"
 
-bin/proof-producer/proof-producer-single-threaded \
+bin/proof-producer/proof-producer \
     --stage consistency-checks  \
     --commitment-state-file $CIRCUIT-updated_commitment_state.dat \
     --combined-Q-polynomial-file $CIRCUIT-combined-Q.dat \

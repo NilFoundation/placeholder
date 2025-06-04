@@ -5,7 +5,7 @@ CIRCUIT2=merkle_tree_poseidon_cpp_example
 
 echo "Computing aggregated FRI"
 
-bin/proof-producer/proof-producer-single-threaded \
+bin/proof-producer/proof-producer \
     --stage aggregated-FRI  \
     --assignment-description-file $CIRCUIT1-assignment-description.dat \
     --aggregated-challenge-file "challenge-aggregated.dat" \

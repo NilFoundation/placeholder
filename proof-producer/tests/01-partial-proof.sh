@@ -9,7 +9,7 @@ CIRCUIT=$1
 
 echo "Partial proof for circuit: [1;31m$CIRCUIT[0m"
 
-bin/proof-producer/proof-producer-single-threaded \
+bin/proof-producer/proof-producer \
     --stage generate-partial-proof \
     --max-quotient-chunks 10 \
     --circuit           circuits-and-assignments/$CIRCUIT/circuit.crct \
