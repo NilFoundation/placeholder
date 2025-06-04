@@ -197,14 +197,16 @@ namespace nil {
                         this->_ind_commitments[index].resize(this->_polys[index].size());
                         this->state_commited(index);
 
-                        std::vector<std::uint8_t> result = {};
-                        for (std::size_t i = 0; i < this->_polys[index].size(); ++i) {
+                        nil::crypto3::parallel_for(0, this->_polys[index].size(), [index, this](std::size_t i) {
                             BOOST_ASSERT(this->_polys[index][i].degree() <= _params.commitment_key.size());
                             auto single_commitment = nil::crypto3::zk::algorithms::commit_one<CommitmentSchemeType>(
                                     _params,
                                     this->_polys[index][i]);
-                            this->_ind_commitments[index].push_back(single_commitment);
-                            marshalling::status_type status;
+                            this->_ind_commitments[index][i] = single_commitment;
+                        });
+                        std::vector<std::uint8_t> result;
+                        for (const auto& single_commitment : this->_ind_commitments[index]) {
+                            nil::crypto3::marshalling::status_type status;
                             std::vector<uint8_t> single_commitment_bytes =
                                     marshalling::pack<endianness>(single_commitment, status);
                             THROW_IF_ERROR_STATUS(status, "kzg_v2::commit");
@@ -236,18 +238,33 @@ namespace nil {
                         }
 
                         auto theta = transcript.template challenge<typename CommitmentSchemeType::curve_type::scalar_field_type>();
-                        auto theta_i = CommitmentSchemeType::scalar_value_type::one();
-                        auto f = math::polynomial<typename CommitmentSchemeType::scalar_value_type>::zero();
 
+                        std::vector<std::size_t> theta_i_pows;
+                        theta_i_pows.push_back(0);
                         for (auto const &it: this->_polys) {
                             auto k = it.first;
+                            theta_i_pows.push_back(theta_i_pows[theta_i_pows.size() - 1] + this->_z.get_batch_size(k));
+                        }
+                        std::vector<math::polynomial<typename CommitmentSchemeType::scalar_value_type>> addends(
+                            this->_polys.size(),
+                            math::polynomial<typename CommitmentSchemeType::scalar_value_type>::zero()
+                        );
+                        parallel_for(0, this->_polys.size(), [this, &theta, &theta_i_pows, &addends](std::size_t polys_idx) {
+                            auto it = std::next(this->_polys.begin(), polys_idx);
+                            auto k = it->first;
+                            auto theta_i = theta.pow(theta_i_pows[polys_idx]);
                             for (std::size_t i = 0; i < this->_z.get_batch_size(k); ++i) {
                                 auto diffpoly = set_difference_polynom(_merged_points, this->_points.at(k)[i]);
                                 auto f_i = math::polynomial<typename CommitmentSchemeType::scalar_value_type>(
                                         this->_polys[k][i].coefficients());
-                                f += theta_i * (f_i - this->get_U(k, i)) * diffpoly;
+                                addends[polys_idx] += theta_i * (f_i - this->get_U(k, i)) * diffpoly;
                                 theta_i *= theta;
                             }
+                        }, ThreadPool::PoolLevel::HIGH);
+
+                        auto f = math::polynomial<typename CommitmentSchemeType::scalar_value_type>::zero();
+                        for (const auto& addend : addends) {
+                            f += addend;
                         }
 
                         BOOST_ASSERT(f % this->get_V(_merged_points) ==
@@ -263,20 +280,23 @@ namespace nil {
                         math::polynomial<typename CommitmentSchemeType::scalar_value_type> theta_2_vanish = {
                                 {-theta_2, CommitmentSchemeType::scalar_value_type::one()}};
 
-                        theta_i = CommitmentSchemeType::scalar_value_type::one();
-
-                        auto L = math::polynomial<typename CommitmentSchemeType::scalar_value_type>::zero();
-
-                        for (auto const &it: this->_polys) {
-                            auto k = it.first;
+                        addends.assign(this->_polys.size(), math::polynomial<typename CommitmentSchemeType::scalar_value_type>::zero());
+                        parallel_for(0, this->_polys.size(), [this, &theta, &theta_i_pows, &addends, &theta_2](std::size_t polys_idx) {
+                            auto it = std::next(this->_polys.begin(), polys_idx);
+                            auto k = it->first;
+                            auto theta_i = theta.pow(theta_i_pows[polys_idx]);
                             for (std::size_t i = 0; i < this->_z.get_batch_size(k); ++i) {
                                 auto diffpoly = set_difference_polynom(_merged_points, this->_points.at(k)[i]);
                                 auto Z_T_S_i = diffpoly.evaluate(theta_2);
-                                auto f_i = math::polynomial<typename CommitmentSchemeType::scalar_value_type>(
-                                        this->_polys[k][i].coefficients());
-                                L += theta_i * Z_T_S_i * (f_i - this->get_U(k, i).evaluate(theta_2));
+                                auto f_i = math::polynomial<typename CommitmentSchemeType::scalar_value_type>(this->_polys[k][i].coefficients());
+                                addends[polys_idx] += theta_i * Z_T_S_i * (f_i - this->get_U(k, i).evaluate(theta_2));
                                 theta_i *= theta;
                             }
+                        }, ThreadPool::PoolLevel::HIGH);
+
+                        auto L = math::polynomial<typename CommitmentSchemeType::scalar_value_type>::zero();
+                        for (const auto& addend : addends) {
+                            L += addend;
                         }
 
                         L -= this->get_V(_merged_points).evaluate(theta_2) * f;

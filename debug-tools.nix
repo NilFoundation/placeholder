@@ -22,7 +22,7 @@ let
 in stdenv.mkDerivation {
   name = "debug-tools";
 
-  src = lib.sourceByRegex ./. ["^crypto3(/.*)?$" "^parallel-crypto3(/.*)?$" "CMakeLists.txt"];
+  src = lib.sourceByRegex ./. ["^crypto3(/.*)?$" "CMakeLists.txt"];
 
   nativeBuildInputs = [ cmake ninja pkg-config ] ++
                        (lib.optional (!stdenv.isDarwin) gdb) ++

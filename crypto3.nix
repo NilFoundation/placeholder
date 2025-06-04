@@ -32,10 +32,12 @@ in stdenv.mkDerivation {
 
   cmakeFlags =
     [
-      (if runTests then "-DBUILD_CRYPTO3_TESTS=TRUE" else "-DBUILD_CRYPTO3_TESTS=False")
+      (if runTests then "-DBUILD_TESTS=TRUE" else "-DBUILD_TESTS=False")
       (if sanitize then "-DSANITIZE=ON" else "-DSANITIZE=OFF")
       (if benchmarkTests then "-DBUILD_CRYPTO3_BENCH_TESTS=ON" else "-DBUILD_CRYPTO3_BENCH_TESTS=OFF")
       "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON" # to allow VSCode navigation/completion/etc
+      "-DCMAKE_CXX_STANDARD=23"
+      "-DCMAKE_CXX_STANDARD_REQUIRED=ON"
       "-G Ninja"
     ];
 
@@ -46,7 +48,7 @@ in stdenv.mkDerivation {
     # JUNIT file without explicit file name is generated after the name of the master test suite inside `CMAKE_CURRENT_SOURCE_DIR`
     export BOOST_TEST_LOGGER=JUNIT:HRF
     cd crypto3
-    ctest --verbose --output-on-failure -R | tee test_errors.txt
+    ctest --verbose --output-on-failure | tee test_errors.txt
     cd ..
     mkdir -p ${placeholder "out"}/test-logs
     find .. -type f -name '*_test.xml' -exec cp {} ${placeholder "out"}/test-logs \;

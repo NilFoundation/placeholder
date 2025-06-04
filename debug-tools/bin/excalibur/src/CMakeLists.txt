@@ -59,7 +59,7 @@ add_executable(${C3_TARGET}
 set_target_properties(${C3_TARGET} PROPERTIES
                       LINKER_LANGUAGE CXX
                       EXPORT_NAME ${CMAKE_PROJECT_NAME}
-                      CXX_STANDARD 20
+                      CXX_STANDARD 23
                       CXX_STANDARD_REQUIRED TRUE)
 
 target_link_directories(

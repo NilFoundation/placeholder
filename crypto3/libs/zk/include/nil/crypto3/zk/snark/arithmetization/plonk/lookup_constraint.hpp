@@ -42,7 +42,7 @@ namespace nil {
                 public:
                     using constraint_type = crypto3::zk::snark::plonk_constraint<FieldType>;
                     using base_type = std::vector<constraint_type>;
-                    using expression_type = typename constraint_type::base_type; 
+                    using expression_type = typename constraint_type::base_type;
 
                     // Using the base class's constructors
                     using std::vector<constraint_type>::vector; // Inherit constructors

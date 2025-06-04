@@ -36,8 +36,6 @@ namespace nil {
         namespace math {
             // Default implementation according to Wikipedia
             // https://en.wikipedia.org/wiki/Lagrange_polynomial
-            // For our use case the interpolated polynomial is of very low degree,
-            // 2-3 points and optimizations here are not feasible.
             template<typename InputRange,
                     typename FieldValueType =
                     typename std::iterator_traits<typename InputRange::iterator>::value_type::first_type>

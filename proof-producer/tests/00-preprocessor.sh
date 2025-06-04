@@ -10,7 +10,7 @@ CIRCUIT=$1
 
 echo "Preprocessing circuit: [1;31m$CIRCUIT[0m"
 
-bin/proof-producer/proof-producer-single-threaded \
+bin/proof-producer/proof-producer \
     --circuit           circuits-and-assignments/$CIRCUIT/circuit.crct \
     --assignment-table  circuits-and-assignments/$CIRCUIT/assignment.tbl \
     --common-data $CIRCUIT-common_data.dat \

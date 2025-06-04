@@ -37,6 +37,7 @@
 #include <string>
 #include <type_traits>
 #include <unordered_map>
+#include <vector>
 
 namespace nil::crypto3::bench::detail {
     // NOLINTNEXTLINE

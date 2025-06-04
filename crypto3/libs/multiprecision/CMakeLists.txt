@@ -27,7 +27,7 @@ target_include_directories(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTER
 
 target_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTERFACE
                            ${CMAKE_WORKSPACE_NAME}::benchmark_tools)
-                   
+
 
 set_target_properties(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} PROPERTIES
                       EXPORT_NAME ${CURRENT_PROJECT_NAME})

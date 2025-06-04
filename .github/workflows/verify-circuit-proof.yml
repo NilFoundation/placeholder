@@ -11,7 +11,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Configure
-        run: mkdir build && cd build && cmake ../ -DCMAKE_BUILD_TYPE=Release -DBUILD_PARALLEL_CRYPTO3_TESTS=FALSE -DPARALLEL_CRYPTO3_ENABLE=TRUE -DBUILD_TESTS=TRUE -DBUILD_CRYPTO3_TESTS=TRUE -G Ninja
+        run: mkdir build && cd build && cmake ../ -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=TRUE -G Ninja
         shell: nix develop .#crypto3-tests --command bash -e {0}
       - name: Build
         run: cd build && ninja transpiler_evm_test

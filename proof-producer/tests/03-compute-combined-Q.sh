@@ -15,7 +15,7 @@ CIRCUIT=$1
 
 echo "Computing combined Q for circuit: [1;31m$CIRCUIT[0m, starting power: $2"
 
-bin/proof-producer/proof-producer-single-threaded \
+bin/proof-producer/proof-producer \
     --stage compute-combined-Q  \
     --aggregated-challenge-file           "challenge-aggregated.dat" \
     --combined-Q-starting-power=$2  \

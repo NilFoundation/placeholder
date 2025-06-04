@@ -336,6 +336,10 @@ namespace nil {
                         ) {
                             PROFILE_SCOPE("Create cycle representation");
 
+                            if (constraint_system.copy_constraints().size() == 0) {
+                                return;
+                            }
+
                             {
                                 PROFILE_SCOPE("Initialize maps");
                                 for (std::size_t i = 0;
@@ -403,8 +407,11 @@ namespace nil {
                             }
                         }
 
-                        key_type &operator[](key_type key) {
-                            return _mapping[key];
+                        key_type operator[](key_type key) const {
+                            if (!_mapping.contains(key)) {
+                                return key;
+                            }
+                            return _mapping.at(key);
                         }
                     };
 
@@ -412,7 +419,7 @@ namespace nil {
                         std::shared_ptr<public_assignment_type> public_assignment,
                         std::shared_ptr<math::evaluation_domain<FieldType>> basic_domain
                     ) {
-                        return std::make_shared<plonk_public_polynomial_dfs_table<FieldType>>(    
+                        return std::make_shared<plonk_public_polynomial_dfs_table<FieldType>>(
                             detail::column_range_polynomial_dfs<FieldType>(public_assignment->public_inputs(), basic_domain),
                             detail::column_range_polynomial_dfs<FieldType>(public_assignment->constants(), basic_domain),
                             detail::column_range_polynomial_dfs<FieldType>(public_assignment->selectors(), basic_domain)
@@ -521,6 +528,7 @@ namespace nil {
                             "Preprocessor create permutation polynomials, "
                             "global_indices.size() = {}, domain->size() = {}",
                             global_indices.size(), domain->size());
+                        // TODO: add std::vector<std::size_t> columns_with_copy_constraints;
                         cycle_representation permutation(constraint_system, table_description);
 
                         std::vector<polynomial_dfs_type> S_perm(global_indices.size());
@@ -571,6 +579,7 @@ namespace nil {
                         return result;
                     }
 
+                    // TODO: columns_with_copy_constraints -- It should be extracted from constraint_system
                     static inline preprocessed_data_type process(
                         const plonk_constraint_system<FieldType> &constraint_system,
                         std::shared_ptr<public_assignment_type> public_assignment,
@@ -586,9 +595,9 @@ namespace nil {
                     ) {
                         PROFILE_SCOPE("Placeholder public preprocessor");
 
+                        using public_commitments_type = typename preprocessed_data_type::public_commitments_type;
                         using common_data_type = typename preprocessed_data_type::common_data_type;
                         using verification_key = typename preprocessed_data_type::verification_key;
-                        using public_commitments_type = typename preprocessed_data_type::public_commitments_type;
 
                         std::size_t N_rows = table_description.rows_amount;
                         std::size_t usable_rows = table_description.usable_rows_amount;
@@ -657,8 +666,7 @@ namespace nil {
                         transcript(vk.constraint_system_with_params_hash);
                         transcript(vk.fixed_values_commitment);
 
-                        
-                        auto common_data = std::make_shared<common_data_type>(
+                        auto common_data  = std::make_shared<common_data_type>(
                             std::move(public_commitments), std::move(c_rotations),
                             table_description,
                             max_gates_degree,

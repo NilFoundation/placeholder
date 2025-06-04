@@ -15,15 +15,9 @@ make_proof_for_pair() {
 
     local proof_generator_binary
     if [ "$use_nix" = true ]; then
-        proof_generator_binary="nix run ${script_dir}/..?submodules=1#single-threaded --"
-        if [ "$use_multithreaded" = true ]; then
-            proof_generator_binary="nix run ${script_dir}/..?submodules=1#multi-threaded --"
-        fi
+        proof_generator_binary="nix run ${script_dir}/..?submodules=1#proof-producer --"
     else
-        proof_generator_binary="${script_dir}/../build/bin/proof-generator/proof-generator-single-threaded"
-        if [ "$use_multithreaded" = true ]; then
-            proof_generator_binary="${script_dir}/../build/bin/proof-generator/proof-generator-multi-threaded"
-        fi
+        proof_generator_binary="${script_dir}/../build/bin/proof-producer/proof-producer"
     fi
 
     if [ -f "$crct_file" ]; then
@@ -50,7 +44,6 @@ clean_up() {
 parse_args() {
     base_dir="."
     output_dir=""
-    use_multithreaded=false
     use_nix=false
     args_to_forward=()
     targets=()
@@ -64,10 +57,6 @@ parse_args() {
             --output-dir)
                 output_dir="$2"
                 shift 2
-                ;;
-            --multithreaded)
-                use_multithreaded=true
-                shift
                 ;;
             --use-nix)
                 use_nix=true

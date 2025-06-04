@@ -129,17 +129,6 @@ BOOST_AUTO_TEST_SUITE(placeholder_circuits)
         BOOST_CHECK(test_runner.run_test());
     }
 
-    BOOST_AUTO_TEST_CASE(circuit8)
-    {
-        test_tools::random_test_initializer<field_type> random_test_initializer;
-        auto circuit = circuit_test_8<field_type>(
-                random_test_initializer.alg_random_engines.template get_alg_engine<field_type>(),
-                random_test_initializer.generic_random_engine
-        );
-        test_runner_type test_runner(circuit);
-        BOOST_CHECK(test_runner.run_test());
-    }
-
     BOOST_AUTO_TEST_CASE(circuit_fib)
     {
         test_tools::random_test_initializer<field_type> random_test_initializer;
@@ -150,5 +139,14 @@ BOOST_AUTO_TEST_SUITE(placeholder_circuits)
         BOOST_CHECK(test_runner.run_test());
     }
 
-
+    BOOST_AUTO_TEST_CASE(circuit8)
+    {
+        test_tools::random_test_initializer<field_type> random_test_initializer;
+        auto circuit = circuit_test_8<field_type>(
+                random_test_initializer.alg_random_engines.template get_alg_engine<field_type>(),
+                random_test_initializer.generic_random_engine
+        );
+        test_runner_type test_runner(circuit);
+        BOOST_CHECK(test_runner.run_test());
+    }
 BOOST_AUTO_TEST_SUITE_END()

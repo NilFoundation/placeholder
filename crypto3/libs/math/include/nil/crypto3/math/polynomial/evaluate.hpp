@@ -26,7 +26,6 @@
 #ifndef CRYPTO3_MATH_EVALUATE_HPP
 #define CRYPTO3_MATH_EVALUATE_HPP
 
-#include <algorithm>
 #include <vector>
 
 #include <boost/math/tools/polynomial.hpp>

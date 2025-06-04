@@ -102,7 +102,7 @@ namespace nil {
                 //                }
 
                 bool operator==(const polynomial_dfs_view& rhs) const {
-                    return (*it) == (*(rhs.it)) && _d == rhs._d;
+                    return (*it) == (*(rhs.it)) && _d == rhs.data();
                 }
                 bool operator!=(const polynomial_dfs_view& rhs) const {
                     return !(rhs == *this);
@@ -189,10 +189,10 @@ namespace nil {
                     return it.max_size();
                 }
                 void reserve(size_type _n) {
-                    it.reserve(_n);
+                    return it.reserve(_n);
                 }
                 void shrink_to_fit() BOOST_NOEXCEPT {
-                    it.shrink_to_fit();
+                    return it.shrink_to_fit();
                 }
 
                 reference operator[](size_type _n) BOOST_NOEXCEPT {
@@ -303,10 +303,33 @@ namespace nil {
                     detail::basic_radix2_fft<FieldType>(it, omega_new);
                 }
 
+                //                void resize(size_type _sz, const_reference _x) {
+                //                    BOOST_ASSERT_MSG(_sz >= _d, "Can't restore polynomial in the future");
+                //                    return val.resize(_sz, _x);
+                //                }
+
                 void swap(polynomial_dfs_view& other) {
                     it.swap(other.data());
                     std::swap(_d, other._d);
                 }
+
+                //                std::vector<FieldValueType> evaluate(const std::vector<FieldValueType>& value) const {
+                //                    typedef typename value_type::field_type FieldType;
+                //                    const std::size_t n = detail::power_of_two(this->_d);
+                //
+                //                    std::vector<FieldValueType> c(this->begin(), this->begin() + n);
+                //
+                //                    detail::basic_radix2_fft<FieldType>(c, (this->_omega).inversed());
+                //
+                //                    std::vector<FieldValueType> result(value.size(), 0);
+                //                    auto end = c.end();
+                //                    while (end != c.begin()) {
+                //                        for (size_t i = 0; i < value.size(); ++i) {
+                //                            result[i] = result[i] * value[i] + *--end;
+                //                        }
+                //                    }
+                //                    return result;
+                //                }
 
                 FieldValueType evaluate(const FieldValueType& value) const {
 

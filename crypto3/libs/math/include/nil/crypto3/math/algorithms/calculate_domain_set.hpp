@@ -29,6 +29,9 @@
 #include <nil/crypto3/math/domains/evaluation_domain.hpp>
 #include <nil/crypto3/math/algorithms/make_evaluation_domain.hpp>
 
+#include <nil/actor/core/thread_pool.hpp>
+#include <nil/actor/core/parallelization_utils.hpp>
+
 namespace nil {
     namespace crypto3 {
         namespace math {
@@ -38,12 +41,16 @@ namespace nil {
                 calculate_domain_set(const std::size_t max_domain_degree, const std::size_t set_size) {
 
                 std::vector<std::shared_ptr<evaluation_domain<FieldType>>> domain_set(set_size);
-                for (std::size_t i = 0; i < set_size; i++) {
+
+                // make_evaluation_domain uses LOW level thread pool, so this function needs to use
+                // ThreadPool::PoolLevel::HIGH.
+                parallel_for(0, set_size, [&domain_set, max_domain_degree](std::size_t i){
                     const std::size_t domain_size = std::pow(2, max_domain_degree - i);
                     std::shared_ptr<evaluation_domain<FieldType>> domain =
                         make_evaluation_domain<FieldType>(domain_size);
                     domain_set[i] = domain;
-                }
+                }, ThreadPool::PoolLevel::HIGH);
+
                 return domain_set;
             }
         }    // namespace math

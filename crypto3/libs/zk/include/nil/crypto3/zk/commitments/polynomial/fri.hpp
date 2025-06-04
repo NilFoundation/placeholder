@@ -34,8 +34,6 @@
 
 #include <nil/crypto3/math/polynomial/polynomial.hpp>
 #include <nil/crypto3/math/polynomial/lagrange_interpolation.hpp>
-#include <nil/crypto3/math/domains/evaluation_domain.hpp>
-#include <nil/crypto3/math/algorithms/make_evaluation_domain.hpp>
 
 #include <nil/crypto3/container/merkle/tree.hpp>
 #include <nil/crypto3/container/merkle/proof.hpp>

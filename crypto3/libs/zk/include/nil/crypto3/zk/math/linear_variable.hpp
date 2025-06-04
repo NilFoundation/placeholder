@@ -32,6 +32,7 @@
 #include <vector>
 
 namespace nil::crypto3::zk::snark {
+
     /**
      * Forward declaration.
      */
@@ -108,6 +109,7 @@ namespace nil::crypto3::zk::snark {
                                                    const linear_variable<FieldType> &var) {
         return linear_combination<linear_variable<FieldType>>(field_coeff) - var;
     }
+
 } // namespace nil::crypto3::zk::snark
 
 #endif    // CRYPTO3_ZK_MATH_LINEAR_VARIABLE_HPP

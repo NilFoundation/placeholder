@@ -66,7 +66,7 @@ namespace nil::crypto3::zk::snark {
                          res.degree() + val.degree() + 1}));
                 for (auto domain_size : {res_domain_size, val_domain_size, new_domain_size}) {
                     if (domains.find(domain_size) == domains.end()) {
-                        domains[domain_size] = nil::crypto3::math::make_evaluation_domain<FieldType>(domain_size);
+                        domains[domain_size] = make_evaluation_domain<FieldType>(domain_size);
                     }
                 }
                 res.cached_multiplication(
@@ -101,9 +101,9 @@ namespace nil::crypto3::zk::snark {
             return boost::apply_visitor(*this, expr.get_expr());
         }
 
-        ValueType operator()(const term<VariableType>& t) const {
-            ValueType result = t.get_coeff();
-            for (const VariableType& var : t.get_vars()) {
+        ValueType operator()(const term<VariableType>& term) const {
+            ValueType result = term.get_coeff();
+            for (const VariableType& var : term.get_vars()) {
                 multiplicator.multiply(result, get_var_value(var));
             }
             return result;
@@ -156,12 +156,12 @@ namespace nil::crypto3::zk::snark {
             return std::move(_counts);
         }
 
-        void operator()(const term<VariableType>& t) {
+        void operator()(const term<VariableType>& term) {
             // If there are less than 2 variables,
             // we don't want to waste memory on storing value of
             // coeff * var.
-            if (t.get_vars().size() > 2)
-                _counts[t]++;
+            if (term.get_vars().size() > 2)
+                _counts[term]++;
         }
 
         void operator()(
@@ -215,38 +215,37 @@ namespace nil::crypto3::zk::snark {
             return boost::apply_visitor(*this, _expr.get_expr());
         }
 
-        ValueType operator()(const term<VariableType>& t) {
-            if (t.get_vars().size() == 0)
-                return t.get_coeff();
+        ValueType operator()(const term<VariableType>& term) {
+            if (term.get_vars().size() == 0)
+                return term.get_coeff();
 
-            if (t.get_vars().size() > 2) {
-                auto iter = _cache.find(t);
+            if (term.get_vars().size() > 2) {
+                auto iter = _cache.find(term);
                 if (iter != _cache.end()) {
                     // Here we need to copy the cached object, because we want
                     // the caller to be able to change this value.
                     auto result = iter->second;
                     // Delete from cache to save memory, if not needed any more.
-                    if (--_counts[t] == 0)
+                    if (--_counts[term] == 0)
                         _cache.erase(iter);
                     return result;
                 }
             }
-            ValueType result = t.get_coeff();
-            for (const VariableType& var : t.get_vars()) {
+            ValueType result = term.get_coeff();
+            for (const VariableType& var : term.get_vars()) {
                 if (result.is_one()) {
                     result = _get_var_value(var);
                 } else {
                     multiplicator.multiply(result, _get_var_value(var));
                 }
             }
-            if (_counts[t] > 1) {
-                _cache[t] = result;
+            if (_counts[term] > 1) {
+                _cache[term] = result;
             }
             return result;
         }
 
-        ValueType operator()(
-                const pow_operation<VariableType>& pow) {
+        ValueType operator()(const pow_operation<VariableType>& pow) {
             auto iter = _cache.find(pow);
             if (iter != _cache.end()) {
                 // Here we need to copy the cached object, because we want
@@ -267,8 +266,7 @@ namespace nil::crypto3::zk::snark {
             return result;
         }
 
-        ValueType operator()(
-                const binary_arithmetic_operation<VariableType>& op) {
+        ValueType operator()(const binary_arithmetic_operation<VariableType>& op) {
             auto iter = _cache.find(op);
             if (iter != _cache.end()) {
                 auto result = iter->second;
@@ -310,6 +308,7 @@ namespace nil::crypto3::zk::snark {
         // Stores evaluation results for some subexpressions.
         std::unordered_map<expression<VariableType>, ValueType> _cache;
     };
+
 } // namespace nil::crypto3::zk::snark
 
 #endif    // CRYPTO3_ZK_MATH_EXPRESSION_EVALUATOR_HPP

@@ -28,6 +28,7 @@
 #define CRYPTO3_MATH_POLYNOMIAL_POLYNOM_HPP
 
 #include <algorithm>
+#include <ranges>
 #include <vector>
 
 #include <nil/crypto3/math/polynomial/basic_operations.hpp>
@@ -42,6 +43,8 @@ namespace nil {
                 container_type val;
 
             public:
+                using polynomial_type = polynomial;
+
                 typedef typename container_type::value_type value_type;
                 typedef typename container_type::allocator_type allocator_type;
                 typedef typename container_type::reference reference;
@@ -93,11 +96,6 @@ namespace nil {
                     }
                 }
 
-                ~polynomial() = default;
-
-                polynomial(const polynomial& x) : val(x.val) {
-                }
-
                 polynomial(const polynomial& x, const allocator_type& a) : val(x.val, a) {
                 }
 
@@ -107,9 +105,12 @@ namespace nil {
                 polynomial(std::initializer_list<value_type> il, const allocator_type& a) : val(il, a) {
                 }
 
-                polynomial(polynomial&& x) BOOST_NOEXCEPT
-                    (std::is_nothrow_move_constructible<allocator_type>::value) :
-                    val(std::move(x.val)) {
+                template<typename Subfield>
+                polynomial(const polynomial<Subfield>& x) {
+                    val.resize(x.size());
+                    for (std::size_t i = 0; i < val.size(); ++i) {
+                        val[i] = x[i];
+                    }
                 }
 
                 polynomial(polynomial&& x, const allocator_type& a) : val(std::move(x.val), a) {
@@ -121,7 +122,7 @@ namespace nil {
                     }
                 }
 
-                explicit polynomial(container_type &&c) : val(std::forward<container_type>(c)) {
+                explicit polynomial(container_type&& c) : val(std::move(c)) {
                     if (val.empty()) {
                         val.push_back(FieldValueType::zero());
                     }
@@ -132,23 +133,13 @@ namespace nil {
                     this->operator[](power) = value;
                 }
 
-                polynomial& operator=(const polynomial& x) {
-                    val = x.val;
-                    return *this;
-                }
-
-                polynomial& operator=(polynomial&& x) {
-                    val = x.val;
-                    return *this;
-                }
-
                 polynomial& operator=(const container_type& x) {
                     val = x;
                     return *this;
                 }
 
                 polynomial& operator=(container_type&& x) {
-                    val = x;
+                    val = std::move(x);
                     return *this;
                 }
 
@@ -256,11 +247,11 @@ namespace nil {
                 }
 
                 void reserve(size_type _n) {
-                    val.reserve(_n);
+                    return val.reserve(_n);
                 }
 
                 void shrink_to_fit() BOOST_NOEXCEPT {
-                    val.shrink_to_fit();
+                    return val.shrink_to_fit();
                 }
 
                 reference operator[](size_type _n) BOOST_NOEXCEPT {
@@ -308,7 +299,7 @@ namespace nil {
                 }
 
                 void push_back(value_type&& _x) {
-                    val.push_back(_x);
+                    val.push_back(std::move(_x));
                 }
 
                 template<class... Args>
@@ -359,20 +350,20 @@ namespace nil {
                 }
 
                 void resize(size_type _sz) {
-                    val.resize(_sz);
+                    return val.resize(_sz);
                 }
 
                 void resize(size_type _sz, const_reference _x) {
-                    val.resize(_sz, _x);
+                    return val.resize(_sz, _x);
                 }
 
                 void swap(polynomial& other) {
                     val.swap(other.val);
                 }
 
-                template<typename Range>
+                template<std::ranges::random_access_range Range>
+                    requires(std::ranges::sized_range<Range>)
                 FieldValueType evaluate(const Range& values) const {
-
                     assert(values.size() + 1 == this->size());
 
                     FieldValueType result = (*this)[0];
@@ -383,8 +374,10 @@ namespace nil {
                     return result;
                 }
 
-                FieldValueType evaluate(const FieldValueType& value) const {
-                    FieldValueType result = FieldValueType::zero();
+                template<typename EvaluationFieldValueType>
+                EvaluationFieldValueType evaluate(
+                    const EvaluationFieldValueType& value) const {
+                    auto result = EvaluationFieldValueType::zero();
                     auto end = this->end();
                     while (end != this->begin()) {
                         result = result * value + *--end;
@@ -567,9 +560,10 @@ namespace nil {
             polynomial<FieldValueType, Allocator> operator*(const polynomial<FieldValueType, Allocator>& A,
                                                             const FieldValueType& B) {
                 polynomial<FieldValueType> result(A);
-                for (auto it = result.begin(); it != result.end(); ++it) {
-                    *it *= B;
-                }
+                parallel_foreach(result.begin(), result.end(),
+                    [&B](FieldValueType& v) {
+                        v *= B;
+                    }, ThreadPool::PoolLevel::LOW);
                 return result;
             }
 
@@ -587,9 +581,11 @@ namespace nil {
                                                             const FieldValueType& B) {
                 polynomial<FieldValueType> result(A);
                 FieldValueType B_inversed = B.inversed();
-                for (auto it = result.begin(); it != result.end(); ++it) {
-                    *it *= B_inversed;
-                }
+                parallel_foreach(result.begin(), result.end(),
+                    [&B_inversed](FieldValueType& v) {
+                        v *= B_inversed;
+                    }, ThreadPool::PoolLevel::LOW);
+
                 return result;
             }
 
@@ -621,7 +617,6 @@ namespace nil {
                 }
                 return os;
             }
-
         }    // namespace math
     }        // namespace crypto3
 }    // namespace nil

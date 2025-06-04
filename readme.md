@@ -18,7 +18,6 @@ Supported by [=nil; Foundation](https://nil.foundation).
 root
 ├── crypto3
 ├── debug-tools
-├── parallel-crypto3
 ├── proof-producer
 
 ## Dependencies

@@ -25,10 +25,6 @@
 #ifndef CRYPTO3_MARSHALLING_POLYS_EVALUATOR_HPP
 #define CRYPTO3_MARSHALLING_POLYS_EVALUATOR_HPP
 
-#include <ratio>
-#include <limits>
-#include <type_traits>
-
 #include <boost/assert.hpp>
 
 #include <nil/marshalling/types/bundle.hpp>
@@ -170,20 +166,20 @@ namespace nil {
 
                     PolysEvaluator result;
                     result._polys = make_std_map<TTypeBase, std::size_t, std::vector<polynomial_type>, size_t_marshalling_type, polynomial_vector_marshalling_type>(
-                        std::get<0>(filled_polys_evaluator.value()), 
-                        std::get<1>(filled_polys_evaluator.value()), 
+                        std::get<0>(filled_polys_evaluator.value()),
+                        std::get<1>(filled_polys_evaluator.value()),
                         make_size_t<TTypeBase>,
                         make_polynomial_vector<Endianness, polynomial_type>);
 
                     result._locked = make_std_map<TTypeBase, std::size_t, bool, size_t_marshalling_type, size_t_marshalling_type>(
-                        std::get<2>(filled_polys_evaluator.value()), 
-                        std::get<3>(filled_polys_evaluator.value()), 
+                        std::get<2>(filled_polys_evaluator.value()),
+                        std::get<3>(filled_polys_evaluator.value()),
                         make_size_t<TTypeBase>,
                         make_size_t<TTypeBase>);
 
                     result._points = make_std_map<TTypeBase, std::size_t, std::vector<std::vector<value_type>>, size_t_marshalling_type, array_of_field_element_vector_type>(
-                        std::get<4>(filled_polys_evaluator.value()), 
-                        std::get<5>(filled_polys_evaluator.value()), 
+                        std::get<4>(filled_polys_evaluator.value()),
+                        std::get<5>(filled_polys_evaluator.value()),
                         make_size_t<TTypeBase>,
                         [](const array_of_field_element_vector_type& points) -> std::vector<std::vector<value_type>> {
                             return make_standard_array_list<TTypeBase, std::vector<value_type>, field_element_vector_type>(

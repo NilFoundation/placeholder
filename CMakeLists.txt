@@ -41,14 +41,11 @@ file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/generated-dummy.cpp)
 add_library(crypto3_precompiled_headers STATIC ${CMAKE_CURRENT_BINARY_DIR}/generated-dummy.cpp)
 set_target_properties(crypto3_precompiled_headers PROPERTIES
     LINKER_LANGUAGE CXX
-    CXX_STANDARD 20
+    CXX_STANDARD 23
     CXX_STANDARD_REQUIRED TRUE
 )
 
 add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/crypto3")
-if ((${PARALLEL_CRYPTO3_ENABLE}) OR (${PROOF_PRODUCER_ENABLE}))
-  add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/parallel-crypto3")
-endif()
 if (${PROOF_PRODUCER_ENABLE})
   add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/proof-producer")
 endif()

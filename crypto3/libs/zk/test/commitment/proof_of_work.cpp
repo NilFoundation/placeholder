@@ -41,7 +41,7 @@
 using namespace nil::crypto3::algebra;
 using namespace nil::crypto3::zk::commitments;
 
-BOOST_AUTO_TEST_SUITE(proof_of_work_test_suite)
+BOOST_AUTO_TEST_SUITE(proof_of_knowledge_test_suite)
 
     BOOST_AUTO_TEST_CASE(pow_poseidon_basic_test) {
         using curve_type = curves::pallas;

@@ -25,11 +25,13 @@
 #ifndef CRYPTO3_ZK_STUB_PLACEHOLDER_COMMITMENT_SCHEME_HPP
 #define CRYPTO3_ZK_STUB_PLACEHOLDER_COMMITMENT_SCHEME_HPP
 
-#include <unordered_set>
-#include <set>
-#include <vector>
-#include <utility>
+#include <concepts>
 #include <map>
+#include <set>
+#include <type_traits>
+#include <unordered_set>
+#include <utility>
+#include <vector>
 
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
@@ -40,6 +42,9 @@
 #include <nil/crypto3/zk/transcript/fiat_shamir.hpp>
 #include <nil/crypto3/zk/commitments/type_traits.hpp>
 #include <nil/crypto3/zk/commitments/detail/polynomial/eval_storage.hpp>
+
+#include <nil/actor/core/thread_pool.hpp>
+#include <nil/actor/core/parallelization_utils.hpp>
 
 namespace nil {
     namespace crypto3 {
@@ -73,13 +78,32 @@ namespace nil {
                     std::map<std::size_t, std::vector<polynomial_type>> _polys;
 
                     // _locked[batch] is true after it is commited
-                    std::map<std::size_t, bool> _locked; 
+                    std::map<std::size_t, bool> _locked;
 
                     std::map<std::size_t, std::vector<std::vector<value_type>>> _points;
 
-                    bool operator==(const polys_evaluator& other) const {
-                        return _z == other._z && _polys == other._polys &&
-                            _locked == other._locked && _points == other._points;
+                    bool operator==(const polys_evaluator &other) const {
+                        if (_polys != other._polys) {
+                            std::cout << "polys_evaluator differs in _polys" << std::endl;
+                            return false;
+                        }
+                        if (_locked != other._locked) {
+                            std::cout << "polys_evaluator differs in _locked" << std::endl;
+                            return false;
+                        }
+                        if (_points != other._points) {
+                            std::cout << "polys_evaluator differs in _points" << std::endl;
+                            return false;
+                        }
+                        if (_points_map != other._points_map) {
+                            std::cout << "polys_evaluator differs in _points_map" << std::endl;
+                            return false;
+                        }
+                        if (_z != other._z) {
+                            std::cout << "polys_evaluator differs in _z" << std::endl;
+                            return false;
+                        }
+                        return true;
                     }
 
                     // We frequently search over the this->_points structure, and it's better to keep a hashmap that maps point to
@@ -206,18 +230,28 @@ namespace nil {
                     }
 
                     void eval_polys() {
-                        for(auto const &[k, poly] : _polys) {
-                            _z.set_batch_size(k, poly.size());
-                            auto const &point = _points.at(k);
+                        for (auto const &[k, batch_polys] : _polys) {
+                            _z.set_batch_size(k, batch_polys.size());
+                            auto const &batch_points = _points.at(k);
 
-                            BOOST_ASSERT(poly.size() == point.size() || point.size() == 1);
+                            BOOST_ASSERT(batch_polys.size() == batch_points.size() ||
+                                         batch_points.size() == 1);
 
-                            for (std::size_t i = 0; i < poly.size(); ++i) {
-                                _z.set_poly_points_number(k, i, point[i].size());
-                                for (std::size_t j = 0; j < point[i].size(); j++) {
-                                    _z.set(k, i, j, poly[i].evaluate(point[i][j]));
-                                }
+                            for (std::size_t i = 0; i < batch_polys.size(); ++i) {
+                                _z.set_poly_points_number(k, i, batch_points[i].size());
                             }
+
+                            // We use HIGH level thread pool here, because "evaluate" may use the lower level one.
+                            parallel_for(
+                                0, batch_polys.size(),
+                                [this, &batch_points, k, &batch_polys](std::size_t i) {
+                                    for (std::size_t j = 0; j < batch_points[i].size();
+                                         j++) {
+                                        const auto &point = batch_points[i][j];
+                                        _z.set(k, i, j, batch_polys[i].evaluate(point));
+                                    }
+                                },
+                                ThreadPool::PoolLevel::HIGH);
                         }
                     }
 
@@ -271,7 +305,7 @@ namespace nil {
                             std::size_t batch_id, std::size_t poly_id,
                             const typename field_type::value_type& point) {
                         // We can add points only after polynomails are commited.
-                        BOOST_ASSERT(_locked[batch_id]); 
+                        BOOST_ASSERT(_locked[batch_id]);
 
                         _points[batch_id][poly_id].push_back(point);
                     }
@@ -288,7 +322,7 @@ namespace nil {
                     void append_eval_points(std::size_t batch_id, std::size_t poly_id,
                             std::set<typename field_type::value_type> points) {
                         // We can add points only after polynomails are commited.
-                        BOOST_ASSERT(_locked[batch_id]); 
+                        BOOST_ASSERT(_locked[batch_id]);
 
                         _points[batch_id][poly_id].insert(_points[batch_id][poly_id].end(), points.begin(), points.end());
                     }

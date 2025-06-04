@@ -28,6 +28,7 @@ jobs:
         # This includes cached crypto3 check from previous step. We don't limit cores in this part
         run: |
           nix build -L .?#checks.x86_64-linux.all-clang
+          pwd && find . -maxdepth 3 -type d
           mkdir results
           cp result/test-logs/*_test.xml results/
 

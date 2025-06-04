@@ -39,6 +39,9 @@
 #include <nil/crypto3/hash/algorithm/hash.hpp>
 #include <nil/crypto3/container/merkle/node.hpp>
 
+#include <nil/actor/core/thread_pool.hpp>
+#include <nil/actor/core/parallelization_utils.hpp>
+
 namespace nil {
     namespace crypto3 {
         namespace containers {
@@ -483,21 +486,28 @@ namespace nil {
                 merkle_tree_impl<T, Arity> make_merkle_tree(LeafIterator first, LeafIterator last) {
                     typedef T node_type;
                     typedef typename node_type::hash_type hash_type;
+                    typedef typename node_type::value_type value_type;
+                    typedef typename std::iterator_traits<LeafIterator>::value_type leaf_value_type;
 
                     merkle_tree_impl<T, Arity> ret(std::distance(first, last));
-                    ret.reserve(ret.complete_size());
+                    ret.resize(ret.complete_size());
 
-                    while (first != last) {
-                        ret.emplace_back(crypto3::hash<hash_type>(*first++));
-                    }
+                    nil::crypto3::parallel_transform(first, last, ret.begin(), [](const leaf_value_type& leaf) {
+                        return static_cast<value_type>(crypto3::hash<hash_type>(leaf));
+                    });
 
                     std::size_t row_idx = ret.leaves(), row_size = row_idx / Arity;
                     typename merkle_tree_impl<T, Arity>::iterator it = ret.begin();
 
+                    std::size_t next_row_start_index = std::distance(first, last);
+
                     for (size_t row_number = 1; row_number < ret.row_count(); ++row_number, row_size /= Arity) {
-                        for (size_t i = 0; i < row_size; ++i, it += Arity) {
-                            ret.emplace_back(generate_hash<hash_type>(it, it + Arity));
-                        }
+                        nil::crypto3::parallel_for(0, row_size, [&ret, it, next_row_start_index](std::size_t index) {
+                            ret[next_row_start_index + index] = generate_hash<hash_type>(
+                                it + index * Arity, it + (index + 1) * Arity);
+                        });
+                        next_row_start_index += row_size;
+                        it += row_size * Arity;
                     }
                     return ret;
                 }

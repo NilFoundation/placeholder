@@ -24,8 +24,8 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_ZK_SNARK_ACCUMULATION_VECTOR_HPP
-#define CRYPTO3_ZK_SNARK_ACCUMULATION_VECTOR_HPP
+#ifndef CRYPTO3_ACCUMULATION_VECTOR_HPP
+#define CRYPTO3_ACCUMULATION_VECTOR_HPP
 
 #include <iostream>
 #include <iterator>
@@ -101,4 +101,4 @@ namespace nil {
     }        // namespace crypto3
 }    // namespace nil
 
-#endif    // CRYPTO3_ZK_SNARK_ACCUMULATION_VECTOR_HPP
+#endif    // CRYPTO3_ACCUMULATION_VECTOR_HPP

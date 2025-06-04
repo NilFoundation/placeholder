@@ -23,8 +23,8 @@
 //---------------------------------------------------------------------------//
 
 
-#ifndef CRYPTO3_ZK_PLONK_PLACEHOLDER_TABLE_EXPORT_HPP
-#define CRYPTO3_ZK_PLONK_PLACEHOLDER_TABLE_EXPORT_HPP
+#ifndef PARALLEL_CRYPTO3_ZK_PLONK_PLACEHOLDER_TABLE_EXPORT_HPP
+#define PARALLEL_CRYPTO3_ZK_PLONK_PLACEHOLDER_TABLE_EXPORT_HPP
 
 #include <ostream>
 #include <vector>
@@ -124,4 +124,4 @@ namespace nil {
 } // namespace nil
 
 
-#endif // CRYPTO3_ZK_PLONK_PLACEHOLDER_TABLE_EXPORT_HPP
+#endif // PARALLEL_CRYPTO3_ZK_PLONK_PLACEHOLDER_TABLE_EXPORT_HPP

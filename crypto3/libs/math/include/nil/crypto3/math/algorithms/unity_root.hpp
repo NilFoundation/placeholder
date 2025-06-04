@@ -27,11 +27,9 @@
 #define CRYPTO3_MATH_UNITY_ROOT_HPP
 
 #include <type_traits>
+#include <complex>
 
 #include <boost/math/constants/constants.hpp>
-
-#include <nil/crypto3/multiprecision/big_uint.hpp>
-#include <nil/crypto3/multiprecision/pow.hpp>
 
 #include <nil/crypto3/algebra/totient.hpp>
 #include <nil/crypto3/algebra/type_traits.hpp>
@@ -98,8 +96,7 @@ namespace nil {
                     return {};
                 }
 
-                nil::crypto3::multiprecision::big_mod_rt<Bits>
-                        gen(find_generator(modulo), modulo), result = nil::crypto3::multiprecision::pow(gen, (modulo - 1) / M);
+                nil::crypto3::multiprecision::big_mod_rt<Bits> gen(find_generator(modulo), modulo), result = nil::crypto3::multiprecision::powm(gen, (modulo - 1) / M);
                 if (result == 1u) {
                     result = unity_root(m, modulo);
                 }
@@ -141,7 +138,19 @@ namespace nil {
             }
 
             template<typename FieldType>
-            constexpr typename FieldType::value_type unity_root(const std::size_t n) {
+            constexpr typename std::enable_if<std::is_same<typename FieldType::value_type, std::complex<double>>::value,
+                    typename FieldType::value_type>::type
+            unity_root(const std::size_t n) {
+                const double PI = boost::math::constants::pi<double>();
+
+                return typename FieldType::value_type(cos(2 * PI / n), sin(2 * PI / n));
+            }
+
+            template<typename FieldType>
+            constexpr
+            typename std::enable_if<!std::is_same<typename FieldType::value_type, std::complex<double>>::value,
+                    typename FieldType::value_type>::type
+            unity_root(const std::size_t n) {
 
                 typedef typename FieldType::value_type value_type;
 

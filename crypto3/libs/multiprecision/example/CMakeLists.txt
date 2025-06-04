@@ -13,7 +13,7 @@ macro(define_algebra_example name)
                           Boost::random
                       )
 
-    set_target_properties(algebra_${name}_example PROPERTIES CXX_STANDARD 20)
+    set_target_properties(algebra_${name}_example PROPERTIES CXX_STANDARD 23)
 endmacro()
 
 set(EXAMPLES_NAMES

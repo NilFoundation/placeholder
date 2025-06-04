@@ -24,12 +24,10 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE containter_merkletree_test
+#define BOOST_TEST_MODULE parallel_containter_merkletree_test
 
 #include <nil/crypto3/algebra/random_element.hpp>
 #include <nil/crypto3/algebra/type_traits.hpp>
-#include <nil/crypto3/algebra/curves/jubjub.hpp>
-
 #include <nil/crypto3/hash/block_to_field_elements_wrapper.hpp>
 #include <nil/crypto3/hash/sha2.hpp>
 #include <nil/crypto3/hash/keccak.hpp>
@@ -38,17 +36,18 @@
 #include <nil/crypto3/container/merkle/tree.hpp>
 #include <nil/crypto3/container/merkle/proof.hpp>
 
-#include <nil/crypto3/marshalling/algebra/processing/jubjub.hpp>
-
 #include <boost/test/unit_test.hpp>
 #include <boost/test/data/test_case.hpp>
 #include <boost/test/data/monomorphic.hpp>
 
+#include <chrono>
 #include <cstdio>
-#include <cstdint>
 #include <limits>
 #include <type_traits>
 #include <nil/crypto3/hash/algorithm/hash.hpp>
+
+#include <nil/crypto3/algebra/curves/jubjub.hpp>
+#include <nil/crypto3/marshalling/algebra/processing/jubjub.hpp>
 
 using namespace nil::crypto3;
 using namespace nil::crypto3::containers;
@@ -136,8 +135,10 @@ void testing_validate_template_random_data_compressed_proofs(std::size_t leaf_nu
     }
 
     // standard case
+    auto start = std::chrono::high_resolution_clock::now();
     std::vector<merkle_proof<Hash, Arity>> compressed_proofs = merkle_proof_type::generate_compressed_proofs(tree, proof_idxs);
     bool validate_compressed = merkle_proof_type::validate_compressed_proofs(compressed_proofs, data_for_validation);
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start);
     // case for arity == 4
     if (leaf_number == 16) {
         std::vector<merkle_proof<Hash, Arity>> compressed_proofs_one_idx = merkle_proof_type::generate_compressed_proofs(tree, {3, 2, 1, 5, 11, 11, 0});

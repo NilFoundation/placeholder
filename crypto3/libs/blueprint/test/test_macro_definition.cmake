@@ -14,7 +14,7 @@ macro(define_custom_blueprint_test test prefix)
     target_include_directories(${full_test_name} PRIVATE
                                ${Boost_INCLUDE_DIRS})
 
-    set_target_properties(${full_test_name} PROPERTIES CXX_STANDARD 20)
+    set_target_properties(${full_test_name} PROPERTIES CXX_STANDARD 23)
 
     file(INSTALL "${BLUEPRINT_TEST_ROOT}/zkevm_bbf/data" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
 

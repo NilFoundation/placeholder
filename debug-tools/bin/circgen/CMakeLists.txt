@@ -16,7 +16,7 @@ add_executable(circgen
 set_target_properties(circgen PROPERTIES
     LINKER_LANGUAGE CXX
     EXPORT_NAME circgen
-    CXX_STANDARD 20
+    CXX_STANDARD 23
     CXX_STANDARD_REQUIRED TRUE)
 
 

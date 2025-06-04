@@ -16,10 +16,13 @@ include(CMSetupVersion)
 cm_workspace(crypto3)
 cm_setup_version(VERSION 0.3.0 PREFIX ${CMAKE_WORKSPACE_NAME})
 
-option(BUILD_TESTS "Enable tests" TRUE) # used by CMTest module; If set to false, tests are removed from crypto3::all target. User still can build individual ones.
-option(BUILD_CRYPTO3_TESTS "Enable tests" FALSE)
+option(BUILD_TESTS "Enable tests" TRUE)# used by CMTest module; If set to false, tests are removed from crypto3::all target. User still can build individual ones.
 option(BUILD_CRYPTO3_BENCH_TESTS "Build performance benchmark tests" FALSE)
 option(BUILD_DOCS "Build with configuring Doxygen documentation compiler" FALSE)
+
+if (BUILD_TESTS)
+    enable_testing()
+endif()
 
 # The file compile_commands.json is generated in build directory, so LSP could
 # pick it up and guess all include paths, defines and other stuff.
@@ -50,7 +53,7 @@ endif()
 find_package(Boost REQUIRED COMPONENTS container random filesystem log log_setup program_options thread system unit_test_framework timer)
 
 function(add_tests)
-    if (${BUILD_CRYPTO3_TESTS})
+    if (BUILD_TESTS)
         add_subdirectory(test)
     endif ()
 endfunction(add_tests)
@@ -73,7 +76,8 @@ target_link_libraries(${CMAKE_WORKSPACE_NAME}_all INTERFACE
     crypto3::math
     crypto3::multiprecision
     crypto3::random
-    crypto3::zk)
+    crypto3::zk
+    crypto3::core)
 
 add_library(${CMAKE_WORKSPACE_NAME}_common INTERFACE)
 add_library(${CMAKE_WORKSPACE_NAME}::common ALIAS ${CMAKE_WORKSPACE_NAME}_common)
@@ -89,6 +93,7 @@ target_link_libraries(${CMAKE_WORKSPACE_NAME}_common INTERFACE
     crypto3::marshalling-zk
     crypto3::multiprecision
     crypto3::random
+    crypto3::core
 )
 
 if(BUILD_CRYPTO3_BENCH_TESTS)

@@ -72,10 +72,15 @@ namespace nil {
                     if (m <= 1)
                         throw std::invalid_argument("extended_radix2(): expected m > 1");
 
-                    const std::size_t logm = static_cast<std::size_t>(std::ceil(std::log2(m)));
-                    if (logm != (fields::arithmetic_params<FieldType>::two_adicity + 1))
-                        throw std::invalid_argument(
-                                "extended_radix2(): expected logm == fields::arithmetic_params<FieldType>::two_adicity + 1");
+                    if (!std::is_same<field_value_type, std::complex<double>>::value) {
+                        const std::size_t logm = static_cast<std::size_t>(std::ceil(std::log2(m)));
+                        if (logm !=
+                            (fields::arithmetic_params<FieldType>::two_adicity + 1))
+                            throw std::invalid_argument(
+                                "extended_radix2(): expected logm == "
+                                "fields::arithmetic_params<FieldType>::two_adicity + 1");
+                    }
+                    create_fft_cache();
                 }
 
                 void fft(std::vector<value_type> &a) override {
@@ -100,9 +105,6 @@ namespace nil {
                         shift_i *= shift;
                     }
 
-                    if (fft_cache == nullptr) {
-                        create_fft_cache();
-                    }
                     detail::basic_radix2_fft_cached<FieldType>(a0, fft_cache->first);
                     detail::basic_radix2_fft_cached<FieldType>(a1, fft_cache->first);
 
@@ -143,6 +145,16 @@ namespace nil {
 
                         shift_inverse_i *= shift_inverse;
                     }
+                }
+
+                void batch_fft(std::vector<std::vector<value_type>> &a) override {
+                    // TODO(martun): implement this.
+                    throw std::logic_error{"Not implemented yet"};
+                }
+
+                void batch_inverse_fft(std::vector<std::vector<value_type>> &a) override {
+                    // TODO(martun): implement this.
+                    throw std::logic_error{"Not implemented yet"};
                 }
 
                 std::vector<field_value_type> evaluate_all_lagrange_polynomials(const field_value_type &t) override {

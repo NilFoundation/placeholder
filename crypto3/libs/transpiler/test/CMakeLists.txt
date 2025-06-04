@@ -18,7 +18,7 @@ cm_test_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
                       crypto3::zk
                       Boost::unit_test_framework
 )
-set_target_properties(_cm_internal_tests-crypto3-transpiler-test PROPERTIES CXX_STANDARD 20)
+set_target_properties(_cm_internal_tests-crypto3-transpiler-test PROPERTIES CXX_STANDARD 23)
 target_precompile_headers(_cm_internal_tests-crypto3-transpiler-test REUSE_FROM crypto3_precompiled_headers)
 
 add_custom_target(compile_and_run_transpiler_tests)
@@ -39,7 +39,7 @@ macro(define_transpiler_test name)
 
                                ${Boost_INCLUDE_DIRS})
 
-    set_target_properties(${full_test_name} PROPERTIES CXX_STANDARD 20)
+    set_target_properties(${full_test_name} PROPERTIES CXX_STANDARD 23)
 
     get_target_property(target_type Boost::unit_test_framework TYPE)
     if(target_type STREQUAL "SHARED_LIB")

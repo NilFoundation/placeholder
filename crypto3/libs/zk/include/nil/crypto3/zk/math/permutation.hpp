@@ -28,6 +28,7 @@
 #define CRYPTO3_ZK_MATH_PLONK_PERMUTATION_HPP
 
 namespace nil::crypto3::zk::snark {
+
     struct plonk_permutation {
         typedef std::pair<std::size_t, std::size_t> key_type;
         typedef std::pair<std::size_t, std::size_t> value_type;
@@ -59,6 +60,7 @@ namespace nil::crypto3::zk::snark {
             return _permutation_map[key];
         }
     };
+
 } // namespace nil::crypto3::zk::snark
 
 #endif    // CRYPTO3_ZK_MATH_PLONK_PERMUTATION_HPP
