@@ -55,5 +55,4 @@ include(test_macro_definition.cmake)
 include(define_common_tests.cmake)
 include(define_non_native_with_proof_generation.cmake)
 
-# long tests built with single and multi-threaded modes
 add_subdirectory(zkevm_bbf)

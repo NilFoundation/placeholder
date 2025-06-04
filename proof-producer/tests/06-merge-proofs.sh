@@ -5,7 +5,7 @@ CIRCUIT2=merkle_tree_poseidon_cpp_example
 
 echo "Merging proofs"
 
-bin/proof-producer/proof-producer-single-threaded \
+bin/proof-producer/proof-producer \
     --stage merge-proofs  \
     --partial-proof $CIRCUIT1-proof.dat \
     --partial-proof $CIRCUIT2-proof.dat \

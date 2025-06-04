@@ -14,10 +14,6 @@ This library is used in the [proof-producer](https://github.com/NilFoundation/pl
 It produces gate argument for EVM from `fill-assignment` stage, which generates `circuit.crct` and `assignment.tbl` file.
 It can also create test proof to check gate argument by [evm-placeholder-verification](https://github.com/NilFoundation/evm-placeholder-verification).
 
-In all the calls you can change the executable name from
-proof-producer-single-threaded to proof-producer-multi-threaded to run on all
-the CPUs of your machine.
-
 1. Build proof-producer binary file
 Follow build instruction for [proof-producer](https://github.com/NilFoundation/placeholder/tree/master/proof-producer)
 ```bash
@@ -25,14 +21,14 @@ nix build .#proof-producer -L
 ```
 2. Generate circuit and assignemnt table
 ```bash
-./result/bin/proof-producer-single-threaded \
+./result/bin/proof-producer \
     --stage "preset" \
     --circuit-name "zkevm" \
     --circuit="circuit.crct"
 ```
 
 ```bash
-./result/bin/proof-producer-single-threaded \
+./result/bin/proof-producer \
     --stage "fill-assignment" \
     --circuit-name "zkevm" \
     --trace "trace.pb" \
@@ -41,7 +37,7 @@ nix build .#proof-producer -L
 
 3. Let `output_folder` is a folder for transpiler output. Run to generate gate argument files:
 ```bash
-./result/bin/proof-producer-single-threaded \
+./result/bin/proof-producer \
     --circuit="circuit.crct" \
     --assignment-table="assignment.tbl" \
     --evm-verifier "output_folder" \

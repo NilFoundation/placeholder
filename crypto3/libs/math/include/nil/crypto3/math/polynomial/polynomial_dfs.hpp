@@ -964,8 +964,7 @@ namespace nil {
                 PROFILE_SCOPE("Polynomial Batch product");
 
                 // Pre-create all the domains. We could do this on-the-go, but we want this function to be more
-                // parallelization-friendly. This single-threaded version may look a bit complicated,
-                // but it's now very similar to what we have in parallel code.
+                // parallelization-friendly.
                 std::unordered_map<std::size_t, std::shared_ptr<evaluation_domain<FieldType>>> domain_cache;
 
                 std::size_t min_domain_size = std::numeric_limits<std::size_t>::max();
