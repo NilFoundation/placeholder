@@ -221,7 +221,7 @@
           default = all-gcc;
         };
         apps = {
-          proof-producer = {
+          proof-producer-app = {
             type = "app";
             program = "${self.packages.${system}.proof-producer}/bin/proof-producer";
           };
