@@ -1,5 +1,6 @@
 #---------------------------------------------------------------------------#
-# Copyright (c) 2018-2020 Mikhail Komarov <nemo@nil.foundation>
+# Copyright (c) 2018-2021 Mikhail Komarov <nemo@nil.foundation>
+# Copyright (c) 2024 Vasiliy Olekhov <vasiliy.olekhov@nil.foundation>
 #
 # Distributed under the Boost Software License, Version 1.0
 # See accompanying file LICENSE_1_0.txt or copy at
@@ -8,50 +9,63 @@
 
 include(CMTest)
 
-find_package(Boost REQUIRED COMPONENTS
-    timer
-    unit_test_framework
-)
+add_custom_target(crypto3_benchmarks)
 
-macro(define_bench_test name)
-    set(test_name "crypto3_${name}_bench")
+macro(define_benchmark benchmark)
 
-    set(additional_args "")
-    if(ENABLE_JUNIT_TEST_OUTPUT)
-        set(TEST_RESULTS_DIR "${CMAKE_CURRENT_BINARY_DIR}/junit_results")
-        set(TEST_LOGS_DIR "${TEST_RESULTS_DIR}/logs")
-        file(MAKE_DIRECTORY ${TEST_LOGS_DIR})
+    get_filename_component(name ${benchmark} NAME)
+    string(REPLACE "/" "_" full_name ${benchmark}_benchmark)
 
-        set(additional_args "--log_format=JUNIT"
-                            "--log_sink=${TEST_LOGS_DIR}/${test_name}.xml")
+    add_dependencies(crypto3_benchmarks ${full_name})
+
+    cm_test(NAME ${full_name} SOURCES ${benchmark}.cpp)
+
+    target_include_directories(
+        ${full_name} PRIVATE
+            "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+            "$<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>"
+            ${Boost_INCLUDE_DIRS})
+
+    target_link_libraries(${full_name}
+        ${CMAKE_WORKSPACE_NAME}::random
+        ${CMAKE_WORKSPACE_NAME}::math
+        ${CMAKE_WORKSPACE_NAME}::algebra
+        ${CMAKE_WORKSPACE_NAME}::multiprecision
+        ${CMAKE_WORKSPACE_NAME}::zk
+        ${CMAKE_WORKSPACE_NAME}::benchmark_tools
+
+        Boost::unit_test_framework
+        Boost::timer
+        Boost::random)
+
+    set_target_properties(${full_name}
+        PROPERTIES
+        CXX_STANDARD 23
+        CXX_STANDARD_REQUIRED TRUE)
+
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+        target_compile_options(${full_name} PRIVATE "-fconstexpr-steps=2147483647")
+    elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        target_compile_options(${full_name} PRIVATE "-fconstexpr-ops-limit=4294967295")
     endif()
 
-    cm_test(NAME ${test_name} SOURCES ${name}.cpp ARGS ${additional_args})
-
-    target_include_directories(${test_name} PRIVATE
-                               "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-                               "$<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>"
-
-                               ${Boost_INCLUDE_DIRS})
-
-    set_target_properties(${test_name} PROPERTIES CXX_STANDARD 23)
-    target_precompile_headers(${test_name} REUSE_FROM crypto3_precompiled_headers)
+    target_precompile_headers(${full_name} REUSE_FROM crypto3_precompiled_headers)
 endmacro()
 
-cm_test_link_libraries(
-    crypto3::algebra
-    crypto3::math
-    crypto3::multiprecision
-    crypto3::random
-    crypto3::core
-    Boost::unit_test_framework
-    Boost::timer
+set(BENCHMARK_NAMES
+    "algebra/curves"
+    "algebra/fields"
+    "algebra/multiexp"
+
+    "math/polynomial_dfs"
+
+    "multiprecision/big_mod"
+
+    "zk/lpc"
 )
 
-set(TESTS_NAMES
-    "polynomial_dfs_benchmark"
-)
-
-foreach(TEST_NAME ${TESTS_NAMES})
-    define_bench_test(${TEST_NAME})
+foreach(BENCHMARK_NAME ${BENCHMARK_NAMES})
+    define_benchmark(${BENCHMARK_NAME})
 endforeach()
+
+
