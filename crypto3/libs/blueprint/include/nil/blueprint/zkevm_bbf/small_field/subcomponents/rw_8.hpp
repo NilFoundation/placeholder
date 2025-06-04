@@ -464,8 +464,31 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             for( std::size_t i = 1; i < instances_rw_8; i++ ){
                 constrain(
                     instances[i].internal_counter[0] - instances[i-1].internal_counter[max_rw_size - 1],
-                    "Internal counter of rw_8 instance must be connected to previous instance",
-                    true
+                    "Internal counter of rw_8 instance must be connected to previous instance", true
+                );
+                constrain(
+                    t.instances[i].op[0] - t.instances[i-1].op[max_rw_size - 1],
+                    "Op of rw_8 instance must be connected to previous instance", true
+                );
+                constrain(
+                    t.instances[i].id[0] - t.instances[i-1].id[max_rw_size - 1],
+                    "Id of rw_8 instance must be connected to previous instance", true
+                );
+                constrain(
+                    t.instances[i].address[0] - t.instances[i-1].address[max_rw_size - 1],
+                    "Address of rw_8 instance must be connected to previous instance", true
+                );
+                constrain(
+                    t.instances[i].rw_id[0] - t.instances[i-1].rw_id[max_rw_size - 1],
+                    "Rw_id of rw_8 instance must be connected to previous instance", true
+                );
+                constrain(
+                    t.instances[i].is_write[0] - t.instances[i-1].is_write[max_rw_size - 1],
+                    "Is_write of rw_8 instance must be connected to previous instance", true
+                );
+                constrain(
+                    t.instances[i].value[0] - t.instances[i-1].value[max_rw_size - 1],
+                    "Value of rw_8 instance must be connected to previous instance", true
                 );
             }
         }
