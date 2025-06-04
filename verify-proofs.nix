@@ -71,7 +71,6 @@ in stdenv.mkDerivation rec {
         "rw"
         "bytecode"
         "zkevm"
-        "zkevm-s"
         "rw-s"
         "copy-s"
         "bytecode-s"
