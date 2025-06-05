@@ -77,11 +77,11 @@ public:
     TYPE                              trie_id;       // ids of the trie
     std::array<TYPE, NODE_TYPE_COUNT> type_selector; // node type selector columns (0/1)
 
-    std::array<TYPE,32> key_prefix;                  // key prefix that identifies the node in the row
-    TYPE                key_prefix_length;           // length in half-bytes (i.e. 4-bit chunks)
-    TYPE                key_prefix_length_inversed;  // the inverse of the prefix length (see below)
-    std::array<TYPE,32> key_prefix_lower;            // the lower 4 bits of each key_prefix byte
-    std::array<TYPE,32> shifted_key_prefix;          // key_prefix >> 4
+    std::array<TYPE,32> accumulated_key;             // accumulated_key identifies the node in the row
+    TYPE                accumulated_key_length;      // length in half-bytes (i.e. 4-bit chunks)
+    TYPE                accumulated_key_length_inversed;  // the inverse of the accumulated key length (see below)
+    std::array<TYPE,32> accumulated_key_lower;       // the lower 4 bits of each accumulated_key byte
+    std::array<TYPE,32> shifted_accumulated_key;     // accumulated_key >> 4
 
     TYPE                parent_key_length;           // Parent key length (0 = root, >= 1 = branch or ext)
     TYPE                parent_key_length_inverse;   // inverse of parent_key_length
@@ -90,7 +90,7 @@ public:
                                                      // easier to define everything related to extension parents in the
                                                      // common part.
 
-    std::array<TYPE, 4> branch_key_bit;              // the bits of key_prefix_lower[31] (the parent key if parent is branch)
+    std::array<TYPE, 4> branch_key_bit;              // the bits of accumulated_key_lower[31] (the parent key if parent is branch)
     TYPE                pkl_is_odd;                  // the lowest bit of parent_key_length
     TYPE                parent_key_length_bytes;     // parent_key_length / 2 = length in bytes
     // auxiliary cells for defining I(x) = 1 iff x == parent_key_length
@@ -102,7 +102,7 @@ public:
     TYPE no_parent;
     TYPE parent_is_branch;
     std::array<TYPE, 16> branch_selector; // branch_selector[j] == 1  <=>  parent_is_branch && (branch_key == j)
-    std::array<TYPE, 32> parent_key_prefix; // key prefix of the parent defined according to parent_key_length
+    std::array<TYPE, 32> parent_accumulated_key; // key prefix of the parent defined according to parent_key_length
 
     mpt_node_common(context_type &context_object,
         const input_type &input) : generic_component<FieldType,stage>(context_object) {
@@ -116,15 +116,15 @@ public:
             }
             type_selector[input.type] = 1; // put a 1 into the selector column that corresponds to our node type
 
-            std::array<std::uint8_t,32> key_prefix_byte = w_to_8(input.key_prefix);
-            std::array<std::uint8_t,32> shifted_key_prefix_byte = w_to_8(input.key_prefix >> 4);
+            std::array<std::uint8_t,32> accumulated_key_byte = w_to_8(input.accumulated_key);
+            std::array<std::uint8_t,32> shifted_accumulated_key_byte = w_to_8(input.accumulated_key >> 4);
 
             for(std::size_t i = 0; i < 32; i++) {
-                key_prefix[i] = key_prefix_byte[i];
-                key_prefix_lower[i] = key_prefix_byte[i] & 0xF;
-                shifted_key_prefix[i] = shifted_key_prefix_byte[i];
+                accumulated_key[i] = accumulated_key_byte[i];
+                accumulated_key_lower[i] = accumulated_key_byte[i] & 0xF;
+                shifted_accumulated_key[i] = shifted_accumulated_key_byte[i];
             }
-            key_prefix_length = input.key_prefix_length;
+            accumulated_key_length = input.accumulated_key_length;
             parent_key_length = input.parent_key_length;
             pkl_is_odd = static_cast<std::size_t>(parent_key_length.to_integral() % 2);
             parent_key_length_bytes = static_cast<std::size_t>(parent_key_length.to_integral() / 2);
@@ -141,38 +141,36 @@ public:
             allocate(type_selector[type_index]); // NB: constrained in upper-level component
         }
 
-        TYPE key_prefix_sum; // non-allocated expression for constrain generation
+        TYPE accumulated_key_sum; // non-allocated expression for constrain generation
         for(std::size_t i = 0; i < 32; i++) {
-            allocate(key_prefix[i]);
-            key_prefix_sum += key_prefix[i];
+            allocate(accumulated_key[i]);
+            accumulated_key_sum += accumulated_key[i];
         }
-        allocate(key_prefix_length);
+        allocate(accumulated_key_length);
         if constexpr (stage == GenerationStage::ASSIGNMENT) {
-            key_prefix_length_inversed = key_prefix_length.is_zero() ? 0 : key_prefix_length.inversed();
+            accumulated_key_length_inversed = accumulated_key_length.is_zero() ? 0 : accumulated_key_length.inversed();
         }
-        allocate(key_prefix_length_inversed);
-        constrain(key_prefix_length * (1 - key_prefix_length * key_prefix_length_inversed));
-            // the following constraint ensures that key_prefix_length == 0  =>  key_prefix == (0,...,0)
-        constrain(key_prefix_sum * (1 - key_prefix_length * key_prefix_length_inversed));
+        allocate(accumulated_key_length_inversed);
+        constrain(accumulated_key_length * (1 - accumulated_key_length * accumulated_key_length_inversed));
+            // the following constraint ensures that accumulated_key_length == 0  =>  accumulated_key == (0,...,0)
+        constrain(accumulated_key_sum * (1 - accumulated_key_length * accumulated_key_length_inversed));
 
         for(std::size_t i = 0; i < 32; i++) {
-            allocate(key_prefix_lower[i]);
+            allocate(accumulated_key_lower[i]);
         }
         for(std::size_t i = 0; i < 32; i++) {
-            allocate(shifted_key_prefix[i]);
+            allocate(shifted_accumulated_key[i]);
 
-            // per-byte constraints of the relation: shifted_key_prefix * 16 + key_prefix_lower[31] = key_prefix
-            constrain(shifted_key_prefix[i] * 16 + key_prefix_lower[i]
-                       - (( i > 0 ? key_prefix_lower[i-1] : 0 ) * 256 + key_prefix[i]));
+            // per-byte constraints of the relation: shifted_accumulated_key * 16 + accumulated_key_lower[31] = accumulated_key
+            constrain(shifted_accumulated_key[i] * 16 + accumulated_key_lower[i]
+                       - (( i > 0 ? accumulated_key_lower[i-1] : 0 ) * 256 + accumulated_key[i]));
         }
 
         allocate(parent_key_length);
         if constexpr (stage == GenerationStage::ASSIGNMENT) {
             parent_key_length_inverse = parent_key_length.is_zero() ? 0 : parent_key_length.inversed();
-//            parent_key_length_dec_inverse = (parent_key_length - 1).is_zero() ?  0 : (parent_key_length - 1).inversed();
         }
         allocate(parent_key_length_inverse);
-//        allocate(parent_key_length_dec_inverse);
 
         no_parent = 1 - parent_key_length * parent_key_length_inverse; // <=> parent_length == 0
         constrain( parent_key_length * no_parent );
@@ -182,7 +180,7 @@ public:
 
         TYPE parent_is_branch  = (1 - no_parent) * (1 - parent_is_ext); // has parent and it's not an extension
 
-        TYPE branch_key = key_prefix_lower[31];
+        TYPE branch_key = accumulated_key_lower[31];
         TYPE branch_key_expr;
         for(std::size_t i = 0; i < 4; i++) {
             if constexpr (stage == GenerationStage::ASSIGNMENT) {
@@ -227,18 +225,18 @@ public:
         constrain( indic2_sum * (1 - indic2_sum) );
         constrain( indic1_value * 8 + indic2_value - parent_key_length_bytes );
 
-        // the byte sequence to use for parent_key_prefix definition
+        // the byte sequence to use for parent_accumulated_key definition
         std::array<TYPE, 32> source_bytes;
-        // either key_prefix or shifted_key_prefix depending on pkl_is_odd
+        // either accumulated_key or shifted_accumulated_key depending on pkl_is_odd
         for(std::size_t i = 0; i < 32; i++) {
-            source_bytes[i] = pkl_is_odd * shifted_key_prefix[i] + (1 - pkl_is_odd) * key_prefix[i];
+            source_bytes[i] = pkl_is_odd * shifted_accumulated_key[i] + (1 - pkl_is_odd) * accumulated_key[i];
         }
         // different possible values for parent_key_length
         for(std::size_t l = 0; l < 32; l++) {
             TYPE selector = pkl_indic_1[l / 8] * pkl_indic_2[l % 8];
             for(std::size_t i = 0; i < 32; i++) {
                 if (i >= l) {
-                    parent_key_prefix[i] += source_bytes[i - l] * selector;
+                    parent_accumulated_key[i] += source_bytes[i - l] * selector;
                 }
             }
         }

@@ -319,8 +319,9 @@ public:
         std::cout << "rlc_result = " << rlc_result << std::endl;
 
         // zkevm_word_type power_of_2 = zkevm_word_type(1) << (31 * 8);
-        auto [w_hi, w_lo] = chunks8_to_chunks128<TYPE>(parent_hash);
-        lookup({TYPE(1), rlc_result, w_hi, w_lo}, "keccak_table");
+        auto keccak_tuple = chunks8_to_chunks16<TYPE>(parent_hash);
+        keccak_tuple.emplace(keccak_tuple.begin(), rlc_result);
+        lookup(keccak_tuple, "keccak_table");
     }
 };
 } // namespace nil::blueprint::bbf

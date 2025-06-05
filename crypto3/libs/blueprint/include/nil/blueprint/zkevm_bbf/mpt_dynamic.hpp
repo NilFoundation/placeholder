@@ -39,7 +39,7 @@
 #include <nil/blueprint/zkevm_bbf/mpt_nodes/mpt_leaf_proxy.hpp>
 #include <nil/blueprint/zkevm_bbf/mpt_nodes/mpt_node_common.hpp>
 
-#include <nil/blueprint/zkevm_bbf/big_field/subcomponents/keccak_table.hpp>
+#include <nil/blueprint/zkevm_bbf/small_field/tables/keccak.hpp>
 
 namespace nil::blueprint::bbf {
 
@@ -71,9 +71,9 @@ public:
             .witnesses = 1 // rlc_challenge copy column
                 + mpt_node_common<FieldType, stage>::get_witness_amount() // the common columns for all node types
                 + std::max(mpt_branch<FieldType, stage>::get_witness_amount(), // maximum of needed columns
-                         // mpt_extension<FieldType, stage>::get_witness_amoutn(),
+                         // mpt_extension<FieldType, stage>::get_witness_amount(),
                          mpt_leaf_proxy<FieldType, stage>::get_witness_amount())
-                + 4, // keccak table
+                + zkevm_small_field::keccak_table<FieldType,stage>::get_witness_amount(), // keccak table
             .public_inputs = 1,
             .constants = 0,
             .rows = max_mpt_size
@@ -117,7 +117,7 @@ public:
         // All other columns are delegated to node-specific subcomponents. For them we'll create subcontexts
         std::vector<std::size_t> node_specific_columns;
         std::size_t num_of_node_specific_columns = std::max(mpt_branch<FieldType, stage>::get_witness_amount(),
-                         // mpt_extension<FieldType, stage>::get_witness_amoutn(),
+                         // mpt_extension<FieldType, stage>::get_witness_amount(),
                          mpt_leaf_proxy<FieldType, stage>::get_witness_amount());
 
         for(std::size_t i = 0; i < num_of_node_specific_columns; i++, cur_column++) {
@@ -126,7 +126,7 @@ public:
 
         // The last four columns are for Keccak lookup table
         std::vector<std::size_t> keccak_columns;
-        for(std::size_t i = 0; i < 4; i++, cur_column++) {
+        for(std::size_t i = 0; i < zkevm_small_field::keccak_table<FieldType,stage>::get_witness_amount(); i++, cur_column++) {
             keccak_columns.push_back(cur_column);
         }
 
@@ -193,8 +193,8 @@ public:
            for(std::size_t virtual_node = 0; virtual_node < NODE_TYPE_COUNT; virtual_node++) {
                mpt_node_id n_id = {
                    .trie_id = 0,
-                   .key_prefix = 0,
-                   .key_prefix_length = 0,
+                   .accumulated_key = 0,
+                   .accumulated_key_length = 0,
                    .parent_key_length = 0,
                    .type = mpt_node_type(virtual_node)
                };
@@ -204,9 +204,9 @@ public:
         // at this point deploy_plan contains all the information we need
 
         // a place to store all the sequences that are to be hashed via keccak
-        typename zkevm_big_field::keccak_table<FieldType,stage>::private_input_type keccak_buffers;
+        typename zkevm_small_field::keccak_table<FieldType,stage>::private_input_type keccak_buffers;
         // we need the hash of an empty string as a fallback for some lookups
-        static const auto zerohash = zkevm_keccak_hash({});
+        static const auto zerohash = w_to_16(zkevm_keccak_hash({}));
 
         // prepare the RLC column (independent of everything else)
         for(std::size_t i = 0; i < max_mpt_size; i++) {
@@ -264,11 +264,11 @@ public:
             mpt_node_input_type<FieldType, stage> node_input = {
                 .trie_id = Res.trie_id,
                 .rlc_challenge = rlc_challenge[node_num],
-                .node_key_prefix = Res.key_prefix,
-                .key_prefix_length = Res.key_prefix_length,
+                .node_accumulated_key = Res.accumulated_key,
+                .accumulated_key_length = Res.accumulated_key_length,
                 .parent_key_length = Res.parent_key_length,
-                .shifted_key_prefix = Res.shifted_key_prefix,
-                .branch_key = Res.key_prefix_lower[31], // the last symbol in the key
+                .shifted_accumulated_key = Res.shifted_accumulated_key,
+                .branch_key = Res.accumulated_key_lower[31], // the last symbol in the key
                 .node_data = node_data,
                 .keccak_buffers = &keccak_buffers
             };
@@ -309,9 +309,10 @@ public:
                                 e *= selector;
                             }
                         } else {
-                            exprs[1] *= selector;
-                            exprs[2] = exprs[2]*selector + (1 - selector)*w_hi<FieldType>(zerohash);
-                            exprs[3] = exprs[3]*selector + (1 - selector)*w_lo<FieldType>(zerohash);
+                            exprs[0] *= selector;
+                            for(std::size_t i = 0; i < 16; i++) {
+                                exprs[i+1] = exprs[i+1]*selector + (1 - selector)*zerohash[i];
+                            }
                         }
                         context_object.relative_lookup(exprs, lookup_constraint.first, 0, max_mpt_size - 1);
                     }
@@ -331,12 +332,12 @@ public:
                             get_column(Res.type_selector[branch]),
                             get_column(Res.trie_id)
                         };
-                        // add 32 key_prefix cols into the table
+                        // add 32 accumulated_key cols into the table
                         for(std::size_t i = 0; i < 32; i++) {
-                            k2ch_lookup_columns.push_back(get_column(Res.key_prefix[i]));
+                            k2ch_lookup_columns.push_back(get_column(Res.accumulated_key[i]));
                         }
-                        // key_prefix_length column included
-                        k2ch_lookup_columns.push_back(get_column(Res.key_prefix_length));
+                        // accumulated_key_length column included
+                        k2ch_lookup_columns.push_back(get_column(Res.accumulated_key_length));
 
                         // 32 more columns: the j's child hash from the branch node
                         for(std::size_t i = 0; i < 32; i++) {
@@ -352,9 +353,9 @@ public:
                             get_column(Res.trie_id)
                     };
                     for(std::size_t i = 0; i < 32; i++) {
-                        k2ext_lookup_columns.push_back(get_column(Res.key_prefix[i]));
+                        k2ext_lookup_columns.push_back(get_column(Res.accumulated_key[i]));
                     }
-                    k2ext_lookup_columns.push_back(get_column(Res.key_prefix_length));
+                    k2ext_lookup_columns.push_back(get_column(Res.accumulated_key_length));
                     for(std::size_t i = 0; i < 32; i++) {
                         k2ext_lookup_columns.push_back(get_column(ext_value[i]));
                     }
@@ -375,9 +376,9 @@ public:
                         padding * Res.trie_id * Res.branch_selector[j]
                     };
                     for(std::size_t i = 0; i < 32; i++) {
-                        query.push_back(padding * Res.shifted_key_prefix[i] * Res.branch_selector[j]); // the parent's key_prefix
+                        query.push_back(padding * Res.shifted_accumulated_key[i] * Res.branch_selector[j]); // parent's accumulated_key
                     }
-                    query.push_back(padding * (Res.key_prefix_length - 1) * Res.branch_selector[j]); // the parent's key_prefix length
+                    query.push_back(padding * (Res.accumulated_key_length - 1) * Res.branch_selector[j]); // parent's accumulated_key length
                     for(std::size_t i = 0; i < 32; i++) {
                         query.push_back(padding * parent_hash[i] * Res.branch_selector[j]); // the parent hash bytes
                     }
@@ -394,9 +395,10 @@ public:
                     padding * Res.trie_id * Res.parent_is_ext
                 };
                 for(std::size_t i = 0; i < 32; i++) {
-                    query.push_back(padding * Res.parent_key_prefix[i] * Res.parent_is_ext); // the parent's key_prefix
+                    query.push_back(padding * Res.parent_accumulated_key[i] * Res.parent_is_ext); // parent's accumulated_key
                 }
-                query.push_back(padding * (Res.key_prefix_length - Res.parent_key_length) * Res.parent_is_ext); // the parent's key_prefix length
+                // parent's accumulated_key length
+                query.push_back(padding * (Res.accumulated_key_length - Res.parent_key_length) * Res.parent_is_ext);
                 for(std::size_t i = 0; i < 32; i++) {
                     query.push_back(padding * parent_hash[i] * Res.parent_is_ext); // the parent hash bytes
                 }
@@ -409,7 +411,7 @@ public:
             node_num++;
         }
         context_type keccak_ct = context_object.subcontext(keccak_columns, 0, max_mpt_size);
-        zkevm_big_field::keccak_table<FieldType,stage>(keccak_ct, {input.rlc_challenge, keccak_buffers}, max_mpt_size);
+        zkevm_small_field::keccak_table<FieldType,stage>(keccak_ct, {input.rlc_challenge, keccak_buffers}, max_mpt_size);
         // TODO: last parameter ^^^ should be max_keccak_blocks, but for now max_mpt_size is ok
     }
 };

@@ -83,6 +83,15 @@ namespace nil {
                 return {result_hi, result_lo};
             }
 
+            template <typename TYPE>
+            std::vector<TYPE> chunks8_to_chunks16(const std::array<TYPE, 32> &chunks) {
+                std::vector<TYPE> res;
+                for(std::size_t i = 0; i < 16; i++) {
+                    res.push_back(chunks[2*i] * 0x100 + chunks[2*i+1]);
+                }
+                return res;
+            }
+
             zkevm_word_type exp_by_squaring(zkevm_word_type a, zkevm_word_type n) {
                 if (n == 0x00_big_uint256) return 1;
                 if (n == 0x01_big_uint256) return a;

@@ -23,7 +23,8 @@
 //---------------------------------------------------------------------------//
 #pragma once
 #include <nil/blueprint/bbf/generic.hpp>
-#include <nil/blueprint/zkevm_bbf/big_field/subcomponents/keccak_table.hpp>
+//#include <nil/blueprint/zkevm_bbf/big_field/subcomponents/keccak_table.hpp>
+#include <nil/blueprint/zkevm_bbf/small_field/tables/keccak.hpp>
 
 namespace nil::blueprint::bbf {
 
@@ -37,8 +38,8 @@ struct mpt_node {
 
 struct mpt_node_id {
    std::size_t trie_id;
-   zkevm_word_type key_prefix;
-   std::size_t key_prefix_length;
+   zkevm_word_type accumulated_key;
+   std::size_t accumulated_key_length;
    // not really needed for identification, but it's convenient to store it here
    std::size_t parent_key_length;
    enum mpt_node_type type;
@@ -46,8 +47,8 @@ struct mpt_node_id {
 
    bool operator==(const mpt_node_id& other) const {
        return ((trie_id == other.trie_id) &&
-               (key_prefix == other.key_prefix) &&
-               (key_prefix_length == other.key_prefix_length) &&
+               (accumulated_key == other.accumulated_key) &&
+               (accumulated_key_length == other.accumulated_key_length) &&
                (parent_key_length == other.parent_key_length) &&
                (type == other.type) &&
                (parent_is_ext == other.parent_is_ext));
@@ -68,14 +69,14 @@ using node_private_input = typename std::conditional<stage==GenerationStage::ASS
 template<typename FieldType, GenerationStage stage>
 struct mpt_node_input_type {
     using TYPE = typename generic_component<FieldType, stage>::TYPE;
-    using keccak_buffer_type = typename zkevm_big_field::keccak_table<FieldType,stage>::private_input_type;
+    using keccak_buffer_type = typename zkevm_small_field::keccak_table<FieldType,stage>::private_input_type;
 
     TYPE trie_id;
     TYPE rlc_challenge;
-    std::array<TYPE,32> node_key_prefix;
-    TYPE key_prefix_length;
+    std::array<TYPE,32> node_accumulated_key;
+    TYPE accumulated_key_length;
     TYPE parent_key_length;
-    std::array<TYPE,32> shifted_key_prefix;
+    std::array<TYPE,32> shifted_accumulated_key;
     TYPE branch_key;
     node_private_input<FieldType, stage> node_data;
 
@@ -88,8 +89,8 @@ template<>
 struct std::hash<nil::blueprint::bbf::mpt_node_id> {
     std::size_t operator()(const nil::blueprint::bbf::mpt_node_id &var) const {
         std::size_t result = std::hash<std::size_t>()(var.trie_id);
-        boost::hash_combine(result, std::hash<nil::blueprint::zkevm_word_type>()(var.key_prefix));
-        boost::hash_combine(result, std::hash<std::size_t>()(var.key_prefix_length));
+        boost::hash_combine(result, std::hash<nil::blueprint::zkevm_word_type>()(var.accumulated_key));
+        boost::hash_combine(result, std::hash<std::size_t>()(var.accumulated_key_length));
         boost::hash_combine(result, std::hash<std::size_t>()(var.parent_key_length));
         boost::hash_combine(result, std::hash<std::size_t>()(static_cast<std::size_t>(var.type)));
         boost::hash_combine(result, std::hash<std::size_t>()(static_cast<std::size_t>(var.parent_is_ext)));
