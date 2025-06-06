@@ -40,8 +40,8 @@
 // #include <nil/blueprint/zkevm_bbf/small_field/opcodes/mstore.hpp>
 // #include <nil/blueprint/zkevm_bbf/small_field/opcodes/mstore8.hpp>
  #include <nil/blueprint/zkevm_bbf/small_field/opcodes/add_sub.hpp>
-// #include <nil/blueprint/zkevm_bbf/small_field/opcodes/div_mod.hpp>
 #include <nil/blueprint/zkevm_bbf/small_field/opcodes/addmod.hpp>
+#include <nil/blueprint/zkevm_bbf/small_field/opcodes/div_mod.hpp>
 // #include <nil/blueprint/zkevm_bbf/small_field/opcodes/mulmod.hpp>
 // #include <nil/blueprint/zkevm_bbf/small_field/opcodes/bitwise.hpp>
 #include <nil/blueprint/zkevm_bbf/small_field/opcodes/byte.hpp>
@@ -105,9 +105,9 @@ namespace nil::blueprint::bbf::zkevm_small_field{
         opcodes[zkevm_opcode::ADD] = std::make_shared<zkevm_add_sub_operation<BlueprintFieldType>>(true);
         opcodes[zkevm_opcode::MUL] = std::make_shared<zkevm_mul_operation<BlueprintFieldType>>();
         opcodes[zkevm_opcode::SUB] = std::make_shared<zkevm_add_sub_operation<BlueprintFieldType>>(false);
-        // opcodes[zkevm_opcode::DIV] = std::make_shared<zkevm_div_mod_operation<BlueprintFieldType>>(true);
+        opcodes[zkevm_opcode::DIV] = std::make_shared<zkevm_div_mod_operation<BlueprintFieldType>>(true);
         // opcodes[zkevm_opcode::SDIV] = std::make_shared<zkevm_sdiv_smod_operation<BlueprintFieldType>>(true);
-        // opcodes[zkevm_opcode::MOD] = std::make_shared<zkevm_div_mod_operation<BlueprintFieldType>>(false);
+        opcodes[zkevm_opcode::MOD] = std::make_shared<zkevm_div_mod_operation<BlueprintFieldType>>(false);
         // opcodes[zkevm_opcode::SMOD] = std::make_shared<zkevm_sdiv_smod_operation<BlueprintFieldType>>(false);
         opcodes[zkevm_opcode::ADDMOD] = std::make_shared<zkevm_addmod_operation<BlueprintFieldType>>();
         // opcodes[zkevm_opcode::MULMOD] = std::make_shared<zkevm_mulmod_operation<BlueprintFieldType>>();

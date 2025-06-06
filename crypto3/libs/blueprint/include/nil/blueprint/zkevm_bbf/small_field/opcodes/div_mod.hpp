@@ -73,15 +73,15 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             return res;
         }
 
-        // Counts the number of cross terms q8_chunks[i] * N8_chunks[j] involved in the i-th carryless chunk of
-        // the multiplication q * N, where q, N < 2^256 and q*N < 2^257. This is useful for range-checking later.
+        // Counts the number of cross terms q8_chunks[i] * b8_chunks[j] involved in the i-th carryless chunk of
+        // the multiplication q * b, where q, b < 2^256 and q*b < 2^256. This is useful for range-checking later.
         int count_cross_terms(const unsigned char chunk_index) const {
-            // For unrelated q, N < 2^256, the result would be the amount of pairs (i, j) such that 
+            // For unrelated q, b < 2^256, the result would be the amount of pairs (i, j) such that 
             // i + j == chunk_index, for 0 <= i, j < chunk_8_amount. 
 
-            // However, because we have the bound q*N < 2^256, they cannot both have non-zero higher-order chunks.
+            // However, because we have the bound q*b < 2^256, they cannot both have non-zero higher-order chunks.
             // The number of cross-terms is maximized when both are balanced around 2^128.
-            // In this case, q8_chunks[i] == N8_chunks[i] == 0 for all i >= 16.
+            // In this case, q8_chunks[i] == b8_chunks[i] == 0 for all i >= 16.
             int res = 0;
                 for (int i = 0; i < 16; i++) {
                     int j = chunk_index - i;
@@ -92,18 +92,18 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             return res;
         }
 
-        // Given a carryless chunk of the multiplication q*N, we will separate it into an 8-bit 
+        // Given a carryless chunk of the multiplication q*b, we will separate it into an 8-bit 
         // chunk and a carry, which contains whatever overflows 8 bits. This function computes 
         // the maximal value of such carry, for accurate range-checking.
         int max_carry(const unsigned char chunk_index) const {
             // mul8_carryless_chunks[i] + prev_carry == mul8_chunks[i] + mul8_carries[i] * 256
             // To bound mul8_carries[i], we need to bound mul8_carryless_chunks[i] and prev_carry.
-            // mul8_carryless_chunks[i] == (sum of some cross terms q8_chunks[i] * N8_chunks[j]).
+            // mul8_carryless_chunks[i] == (sum of some cross terms q8_chunks[i] * b8_chunks[j]).
 
             // The largest carries happen when both chunks in a cross-term are 2^8 - 1.
             int max_cross_term = 255 * 255;
 
-            // r8_carryless_chunks[i] <= (number of cross terms) * (cross term value)
+            // mul8_carryless_chunks[i] <= (number of cross terms) * (cross term value)
             int number_of_cross_terms = count_cross_terms(chunk_index);
 
             // We now have enough to compute the bounds on mul8_carryless_chunks.
@@ -136,7 +136,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             std::vector<TYPE> q_chunks_copy1(chunk_amount);
             std::vector<TYPE> q_chunks_copy2(chunk_amount);
             std::vector<TYPE> r_chunks(chunk_amount);       // a % b (if b > 0)
-            std::vector<TYPE> v_chunks(chunk_amount);       // Needed to enforce r < N.
+            std::vector<TYPE> v_chunks(chunk_amount);       // Needed to enforce r < b.
             std::vector<TYPE> y_chunks(chunk_amount);       // Final result: y == r or q (depending on is_div) when b >= 1, and y == 0 otherwise.
             
             // mul == q * b
@@ -243,14 +243,14 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             }
             allocate(b_partial_sum_inverse, 33, 10);
 
-            // nonzero_modulus == 0  ==>  b_partial_sum != 0
-            // nonzero_modulus == 1  <==  b_partial_sum == 0
+            // nonzero_modulus == 0  <==>  b_partial_sum != 0
+            // nonzero_modulus == 1  <==>  b_partial_sum == 0
             TYPE nonzero_modulus = 1 - b_partial_sum * b_partial_sum_inverse;
             allocate(nonzero_modulus, 34, 10);
+            constrain(b_partial_sum * nonzero_modulus);
 
-            // zero_modulus == 0  ==>  b == 0
-            // zero_modulus == 1  <==  b != 0
-            constrain(nonzero_modulus * (1 - nonzero_modulus));
+            // zero_modulus == 0  <==>  b == 0
+            // zero_modulus == 1  <==>  b != 0
             TYPE zero_modulus = 1 - nonzero_modulus;
 
 
@@ -319,7 +319,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                 // Carries are bits
                 constrain(construct_carries[i] * (1 - construct_carries[i]));
 
-                // No need to satisfy these constraints if N == 0, as we will enforce this case separately
+                // No need to satisfy these constraints if b == 0, as we will enforce this case separately
                 constrain((construct_carryless_chunks[i] + prev_carry - construct_carries[i] * two_16) * zero_modulus);
             }
 
@@ -357,10 +357,6 @@ namespace nil::blueprint::bbf::zkevm_small_field{
 
 
             // PART 5: consistency with the stack
-            auto A_128 = chunks16_to_chunks128_reversed<TYPE>(a_chunks);
-            auto B_128 = chunks16_to_chunks128_reversed<TYPE>(b_chunks);
-            auto R_128 = chunks16_to_chunks128_reversed<TYPE>(res);
-
             if constexpr( stage == GenerationStage::CONSTRAINTS ){
                 // State transition constraints
                 // The arguments for pc, gas, stack_size, memory-size and rw_counter correspond to number_of_rows - 1
@@ -373,33 +369,30 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                 // Stack lookup constraints
                 // The arguments for call_id, stack_size and rw_counter corresponds to the indices of the rows that contains the data read from the rw_table
                 std::vector<TYPE> tmp;
-                tmp = rw_table<FieldType, stage>::stack_lookup(
+                tmp = rw_256_table<FieldType, stage>::stack_16_bit_lookup_reversed(
                     current_state.call_id(8),
                     current_state.stack_size(8) - 1,
                     current_state.rw_counter(8),
                     TYPE(0),// is_write
-                    A_128.first,
-                    A_128.second
+                    a_chunks
                 );
-                lookup(tmp, "zkevm_rw");
-                tmp = rw_table<FieldType, stage>::stack_lookup(
+                lookup(tmp, "zkevm_rw_256");
+                tmp = rw_256_table<FieldType, stage>::stack_16_bit_lookup_reversed(
                     current_state.call_id(7),
                     current_state.stack_size(7) - 2,
                     current_state.rw_counter(7) + 1,
                     TYPE(0),// is_write
-                    B_128.first,
-                    B_128.second
+                    b_chunks
                 );
-                lookup(tmp, "zkevm_rw");
-                tmp = rw_table<FieldType, stage>::stack_lookup(
+                lookup(tmp, "zkevm_rw_256");
+                tmp = rw_256_table<FieldType, stage>::stack_16_bit_lookup_reversed(
                     current_state.call_id(11),
                     current_state.stack_size(11) - 2,
                     current_state.rw_counter(11) + 2,
                     TYPE(1),// is_write
-                    R_128.first,
-                    R_128.second
+                    res
                 );
-                lookup(tmp, "zkevm_rw");
+                lookup(tmp, "zkevm_rw_256");
             }
         }
     };
