@@ -21,9 +21,16 @@ def parse_arguments():
                         help="the mode of execution for the binary. Simple subprocess and benchexec are supported")
     parser.add_argument("-s", "--scenario", choices=(["full", "dfri", "single_circuits"] + circuit_names), default="dfri",
                         help="benchmarking scenario. Supported proving and verification for all the available circuit, plus DFRI pipeline")
-    parser.add_argument("-p", "--post-results", action='store_true', help="post results to SigNoz. OTLP_ENDPOINT variable is expected in the environment.")
+    parser.add_argument("-p", "--post-results", action='store_true', help="post results to SigNoz")
+    parser.add_argument("-e", "--otlp-endpoint", help="OTLP endpoint address")
 
-    return parser.parse_args()
+    args = parser.parse_args()
+
+    # Check if OTLP endpoint was passed
+    if args.post_results and args.otlp_endpoint is None:
+        raise ValueError("Posting is requested, but no endpoint was provided")
+
+    return args
 
 def print_results(result_set):
     # TODO: add writing to file in some format suitable for posting
@@ -72,4 +79,4 @@ if __name__ == "__main__":
 
     print_results(results)
     if args.post_results:
-        post_results(results)
+        post_results(results, args.otlp_endpoint)
