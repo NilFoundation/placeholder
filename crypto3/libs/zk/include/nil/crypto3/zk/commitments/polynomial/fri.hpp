@@ -95,7 +95,7 @@ namespace nil {
                 // Proof and verify for one polynomial
                 // One polynomial processing
                 template<typename FRI,
-                    typename PolynomialType,
+                    typename polynomial_dfs_type,
                     typename std::enable_if<std::is_base_of<commitments::fri<typename FRI::field_type,
                             typename FRI::merkle_tree_hash_type,
                             typename FRI::transcript_hash_type,
@@ -105,16 +105,22 @@ namespace nil {
                         FRI>::value,
                     bool>::type = true>
                 static typename FRI::basic_fri::proof_type proof_eval(
-                    PolynomialType &g,
+                    polynomial_dfs_type &g,
                     typename FRI::basic_fri::merkle_tree_type &tree,
                     const typename FRI::params_type &fri_params,
                     typename FRI::transcript_type &transcript = typename FRI::transcript_type()
-                ){
-                    std::map<std::size_t, std::vector<PolynomialType>> gs;
-                    gs[0]={g};
+                ) {
+                    using polynomial_type = typename polynomial_dfs_type::polynomial_type;
+
+                    std::map<std::size_t, std::vector<polynomial_dfs_type>> gs;
+                    gs[0] = {g};
+                    std::map<std::size_t, std::vector<polynomial_type>> gs_coefficients;
+                    gs_coefficients[0] = {polynomial_type(g.coefficients())};
+
                     std::map<std::size_t, typename FRI::basic_fri::merkle_tree_type> trees;
                     trees[0] = typename FRI::basic_fri::merkle_tree_type(tree);
-                    return proof_eval<FRI, PolynomialType>(gs, g, trees, tree, fri_params, transcript);
+                    
+                    return proof_eval<FRI, polynomial_dfs_type>(gs, gs_coefficients, g, trees, tree, fri_params, transcript);
                 }
 
                 template<typename FRI,

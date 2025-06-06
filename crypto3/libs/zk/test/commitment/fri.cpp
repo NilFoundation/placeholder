@@ -133,15 +133,6 @@ void fri_basic_test()
 
 }
 
-BOOST_AUTO_TEST_CASE(fri_basic_test_polynomial) {
-
-    using curve_type = algebra::curves::pallas;
-    using FieldType = typename curve_type::base_field_type;
-    using PolynomialType = math::polynomial<FieldType::value_type>;
-
-    fri_basic_test<FieldType, PolynomialType>();
-}
-
 BOOST_AUTO_TEST_CASE(fri_basic_test_polynomial_dfs) {
 
     using curve_type = algebra::curves::pallas;
