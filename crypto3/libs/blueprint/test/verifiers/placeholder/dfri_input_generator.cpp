@@ -304,11 +304,12 @@ BOOST_FIXTURE_TEST_CASE(lpc_basic_test, test_fixture) {
     typedef hashes::poseidon<nil::crypto3::hashes::detail::pasta_poseidon_policy<FieldType>> merkle_hash_type;
     typedef hashes::poseidon<nil::crypto3::hashes::detail::pasta_poseidon_policy<FieldType>> transcript_hash_type;
     typedef typename containers::merkle_tree<merkle_hash_type, 2> merkle_tree_type;
+    typedef typename math::polynomial_dfs<typename FieldType::value_type> poly_type;
 
     constexpr static const std::size_t lambda = 10;
     constexpr static const std::size_t k = 1;
 
-    constexpr static const std::size_t d = 16;
+    constexpr static const std::size_t d = 15;
     constexpr static const std::size_t r = boost::static_log2<(d - k)>::value;
 
     constexpr static const std::size_t m = 2;
@@ -340,20 +341,20 @@ BOOST_FIXTURE_TEST_CASE(lpc_basic_test, test_fixture) {
                                               12       // grinding_parameter
     );
 
-    using lpc_scheme_type =
-        nil::crypto3::zk::commitments::lpc_commitment_scheme<lpc_type,
-                                                             math::polynomial<typename FieldType::value_type>>;
+    using lpc_scheme_type = nil::crypto3::zk::commitments::lpc_commitment_scheme<
+        lpc_type, poly_type>;
+
     lpc_scheme_type lpc_scheme_prover(fri_params);
     lpc_scheme_type lpc_scheme_verifier(fri_params);
 
     // Generate polynomials
-    lpc_scheme_prover.append_to_batch(0, {1u, 13u, 4u, 1u, 5u, 6u, 7u, 2u, 8u, 7u, 5u, 6u, 1u, 2u, 1u, 1u});
-    lpc_scheme_prover.append_to_batch(1, {0u, 1u});
-    lpc_scheme_prover.append_to_batch(1, {0u, 1u, 2u});
-    lpc_scheme_prover.append_to_batch(1, {0u, 1u, 3u});
-    lpc_scheme_prover.append_to_batch(2, {0u});
-    lpc_scheme_prover.append_to_batch(3, generate_random_polynomial(4, test_global_alg_rnd_engine<FieldType>));
-    lpc_scheme_prover.append_to_batch(3, generate_random_polynomial(9, test_global_alg_rnd_engine<FieldType>));
+    lpc_scheme_prover.append_to_batch(0, poly_type(15, {1u, 13u, 4u, 1u, 5u, 6u, 7u, 2u, 8u, 7u, 5u, 6u, 1u, 2u, 1u, 1u}));
+    lpc_scheme_prover.append_to_batch(1, poly_type(1, {0u, 1u}));
+    lpc_scheme_prover.append_to_batch(1, poly_type(2, {0u, 1u, 2u, 3u}));
+    lpc_scheme_prover.append_to_batch(1, poly_type(2, {0u, 1u, 3u, 4u}));
+    lpc_scheme_prover.append_to_batch(2, poly_type(0, {0u}));
+    lpc_scheme_prover.append_to_batch(3, generate_random_polynomial_dfs(3, test_global_alg_rnd_engine<FieldType>));
+    lpc_scheme_prover.append_to_batch(3, generate_random_polynomial_dfs(7, test_global_alg_rnd_engine<FieldType>));
 
     // Commit
     std::map<std::size_t, typename lpc_type::commitment_type> commitments;
@@ -429,7 +430,7 @@ BOOST_FIXTURE_TEST_CASE(lpc_basic_test, test_fixture) {
     //     constexpr static const std::size_t lambda = 10;
     //     constexpr static const std::size_t k = 1;
 
-    //     constexpr static const std::size_t d = 2048;
+    //     constexpr static const std::size_t d = 2047;
 
     //     constexpr static const std::size_t r = boost::static_log2<(d - k)>::value;
     //     constexpr static const std::size_t m = 2;
@@ -536,7 +537,7 @@ BOOST_FIXTURE_TEST_CASE(lpc_basic_test, test_fixture) {
     //     constexpr static const std::size_t lambda = 10;
     //     constexpr static const std::size_t k = 1;
 
-    //     constexpr static const std::size_t d = 16;
+    //     constexpr static const std::size_t d = 15;
 
     //     constexpr static const std::size_t r = boost::static_log2<(d - k)>::value;
     //     constexpr static const std::size_t m = 2;

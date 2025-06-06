@@ -184,8 +184,6 @@ namespace nil {
 
                         eval_polys_and_add_roots_to_transcipt(transcript);
 
-                        convert_polys_to_coefficients_form();
-
                         // Prepare z-s and combined_Q;
                         auto theta = transcript.template challenge<field_type>();
                         polynomial_type combined_Q = prepare_combined_Q(theta);
@@ -216,9 +214,11 @@ namespace nil {
                     lpc_proof_type proof_eval_lpc_proof(
                             const std::vector<typename fri_type::field_type::value_type>& challenges) {
 
+                        // This is normally called from DFRI, and we don't have polys in coefficients form ready.
+                        convert_polys_to_coefficients_form();
                         typename fri_type::initial_proofs_batch_type initial_proofs =
                             nil::crypto3::zk::algorithms::query_phase_initial_proofs<fri_type, polynomial_type>(
-                            this->_trees, this->_fri_params, this->_polys, challenges);
+                            this->_trees, this->_fri_params, this->_polys, this->_polys_coefficients, challenges);
                         return {this->_z, initial_proofs};
                     }
 
@@ -322,6 +322,7 @@ namespace nil {
                         PROFILE_SCOPE("LPC prepare combined Q");
 
                         this->build_points_map();
+                        convert_polys_to_coefficients_form();
 
                         value_type theta_acc = theta.pow(starting_power);
                         auto points = this->get_unique_points();
