@@ -98,6 +98,7 @@ public:
 
         std::size_t instances_rw_8 = max_sizes.instances_rw_8;
         std::size_t instances_rw_256 = max_sizes.instances_rw_256;
+        std::size_t instances_copy = max_sizes.instances_copy;
 
         typename zkevm_big_field::zkevm_keccak<BigFieldType,nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type keccak_assignment_input;
         keccak_assignment_input.rlc_challenge = 7;
@@ -291,7 +292,13 @@ public:
 
             result = test_bbf_component<SmallFieldType, nil::blueprint::bbf::zkevm_small_field::copy>(
                 "copy-s", {7}, copy_assignment_input,
-                max_copy_events, max_copy, max_rw, instances_rw_8, max_keccak_blocks, max_bytecode
+                max_copy_events,
+                max_copy,
+                instances_copy,
+                max_rw,
+                instances_rw_8,
+                max_keccak_blocks,
+                max_bytecode
             );
             BOOST_CHECK(result);
         }

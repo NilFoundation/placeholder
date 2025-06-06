@@ -87,7 +87,6 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             is_filled(max_rw_size),
             start(_start)
         {
-            BOOST_LOG_TRIVIAL(info) << "RW8 table instance";
             if constexpr  (stage == GenerationStage::ASSIGNMENT) {
                 BOOST_ASSERT(input[0].op == rw_operation_type::start);
 

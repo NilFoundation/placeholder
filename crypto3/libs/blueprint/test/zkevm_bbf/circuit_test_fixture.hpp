@@ -148,6 +148,8 @@ struct l1_size_restrictions{
 
     std::size_t max_copy_events = 50;
     std::size_t max_copy;
+    std::size_t instances_copy = 2;
+
     std::size_t max_zkevm_rows;
     std::size_t max_zkevm_small_field_rows = 0;
     std::size_t max_exp_rows;
