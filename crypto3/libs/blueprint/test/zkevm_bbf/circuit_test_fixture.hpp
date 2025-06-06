@@ -74,7 +74,21 @@ using namespace nil::blueprint::bbf;
 // Log-related classes
 void my_formatter(boost::log::record_view const& rec, boost::log::formatting_ostream& strm){
     // Finally, put the record message to the stream
-    strm << rec[boost::log::expressions::smessage];
+    // Colored output looks nice in terminal, but not in files.
+    // if( rec[boost::log::trivial::severity] == boost::log::trivial::fatal) {
+    //     strm  << "[\x1B[91m" << rec[boost::log::trivial::severity] << "\x1B[0m] " << rec[boost::log::expressions::smessage];
+    // } else if( rec[boost::log::trivial::severity] == boost::log::trivial::error) {
+    //     strm  << "[\x1B[38;2;255;165;0m" << rec[boost::log::trivial::severity] << "\x1B[0m] " << rec[boost::log::expressions::smessage];
+    // } else if( rec[boost::log::trivial::severity] == boost::log::trivial::warning) {
+    //     strm  << "[\x1B[33m" << rec[boost::log::trivial::severity] << "\x1B[0m] " << rec[boost::log::expressions::smessage];
+    // } else if( rec[boost::log::trivial::severity] == boost::log::trivial::info) {
+    //     strm  << "[\x1B[32m" << rec[boost::log::trivial::severity] << "\x1B[0m] " << rec[boost::log::expressions::smessage];
+    // } else {
+    if( rec[boost::log::trivial::severity] > boost::log::trivial::info) {
+        strm  << "[" << rec[boost::log::trivial::severity] << "] " << rec[boost::log::expressions::smessage];
+    } else {
+        strm  << rec[boost::log::expressions::smessage];
+    }
 }
 
 class zkEVMGlobalFixture {
@@ -129,12 +143,16 @@ struct l1_size_restrictions{
     std::size_t instances_bytecode = 1;
 
     std::size_t max_rw;
-    std::size_t instances_rw_8 = 1;
-    std::size_t instances_rw_256 = 1;
+    std::size_t instances_rw_8 = 3;
+    std::size_t instances_rw_256 = 2;
 
     std::size_t max_copy_events = 50;
     std::size_t max_copy;
+    std::size_t max_copy_small_field_rows = 0;
+    std::size_t instances_copy = 2;
+
     std::size_t max_zkevm_rows;
+    std::size_t max_zkevm_small_field_rows = 0;
     std::size_t max_exp_rows;
     std::size_t max_state = 500;
     std::size_t max_bytecodes_amount = 50;

@@ -71,18 +71,14 @@ in stdenv.mkDerivation rec {
         "rw"
         "bytecode"
         "zkevm"
+        "rw-s"
+        "copy-s"
+        "bytecode-s"
       ];
 
-      minimal_math = [ "zkevm" "zkevm-wide" "copy" "keccak" "rw"  ];
-      try_catch = [ "zkevm" "zkevm-wide" "copy" "bytecode" "rw" ];
-      exp = [ "copy" "rw" "bytecode" "zkevm" "exp" ];
-
-      # Need traces in new format
-      # calldatacopy = [ "copy" "rw" "bytecode" "zkevm" "exp" "keccak"];
-      # logger = [ "copy" "rw" "bytecode" "zkevm" "exp" "keccak"];
-      # returndatacopy = [ "copy" "rw" "bytecode" "zkevm" "exp" "keccak" ];
-      # mstore8 = [ "copy" "rw" "bytecode" "zkevm" "exp" "keccak"];
-      # modular_operations = [ "copy" "rw" "bytecode" "zkevm" "exp" "keccak"];
+      minimal_math = [ "zkevm" "zkevm-wide" "copy" "keccak" "rw" "zkevm-s" "rw-s" "copy-s" "bytecode-s" ];
+      try_catch = [ "zkevm" "zkevm-wide" "copy" "bytecode" "rw"  "rw-s" "copy-s" "bytecode-s"];
+      exp = [ "copy" "rw" "bytecode" "zkevm" "exp" "rw-s" "copy-s" "bytecode-s"];
     };
   };
 

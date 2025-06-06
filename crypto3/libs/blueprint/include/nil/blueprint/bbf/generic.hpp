@@ -236,7 +236,7 @@ namespace nil {
                     }
 #endif
                 }
-                void constrain(TYPE C, std::string constraint_name) {
+                void constrain(TYPE C, std::string constraint_name, bool big_rotation = false) {
 #ifdef BLUEPRINT_BBF_VALIDATE_CONSTRAINTS
                     if (C != 0) {
                         // NB: This might be an error, but we don't stop execution,
@@ -398,7 +398,7 @@ namespace nil {
                     return res;
                 }
 
-                void constrain(const TYPE& C, std::string constraint_name) {
+                void constrain(const TYPE& C, std::string constraint_name, bool big_rotation = false) {
                     if (!C.is_absolute()) {
                         std::stringstream ss;
                         ss << "Constraint " << C << " has relative variables, cannot constrain.";
@@ -410,12 +410,10 @@ namespace nil {
                         BOOST_LOG_TRIVIAL(error) << "Constraint " << C << " has no variables!\n";
                     }
                     BOOST_ASSERT(has_vars);
-                    if (max_row - min_row > 2) {
+                    if (!big_rotation && max_row - min_row > 2) {
                         BOOST_LOG_TRIVIAL(warning) << "Constraint " << C << " spans over 3 rows!\n";
                     }
                     std::size_t row = (min_row + max_row)/2;
-
-
 
                     std::optional<TYPE> C_rel = C.rotate(-row);
                     if (!C_rel) {
@@ -809,8 +807,8 @@ namespace nil {
                     ct.copy_constrain(A,B);
                 }
 
-                void constrain(TYPE C, std::string constraint_name = "") {
-                    ct.constrain(C, constraint_name);
+                void constrain(TYPE C, std::string constraint_name = "", bool big_rotation = false) {
+                    ct.constrain(C, constraint_name, big_rotation);
                 }
 
                 void lookup(std::vector<TYPE> C, std::string table_name) {
