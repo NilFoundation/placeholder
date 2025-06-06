@@ -61,7 +61,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
         static constexpr std::size_t rw_id_chunks_amount = 2;
         static constexpr std::size_t address_chunks_amount = 2;
         static constexpr std::size_t chunks_amount = 7;
-        static constexpr std::size_t op_selectors_amount = 3;
+        static constexpr std::size_t op_selectors_amount = 4;
 
         static std::size_t get_witness_amount() {
             return rw_8_table_type::get_witness_amount()
@@ -120,6 +120,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             std::vector<TYPE> memory_selector(max_rw_size);
             std::vector<TYPE> calldata_selector(max_rw_size);
             std::vector<TYPE> returndata_selector(max_rw_size);
+            std::vector<TYPE> log_index_selector(max_rw_size);
 
             std::vector<std::array<TYPE,chunks_amount>> diff_index_selectors(max_rw_size);
             std::vector<std::pair<TYPE, TYPE>> id_chunks(max_rw_size);
@@ -147,11 +148,13 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                         && rw_trace[i].op != rw_operation_type::memory
                         && rw_trace[i].op != rw_operation_type::calldata
                         && rw_trace[i].op != rw_operation_type::returndata
+                        && rw_trace[i].op != rw_operation_type::log_index
                     ) continue;
 
                     memory_selector[current_row] = rw_trace[i].op == rw_operation_type::memory? 1: 0;
                     calldata_selector[current_row] = rw_trace[i].op == rw_operation_type::calldata? 1: 0;
                     returndata_selector[current_row] = rw_trace[i].op == rw_operation_type::returndata? 1: 0;
+                    log_index_selector[current_row] = rw_trace[i].op == rw_operation_type::log_index? 1: 0;
 
                     id_chunks[current_row].first = ((rw_trace[i].id & 0xFFFF0000) >> 16);
                     id_chunks[current_row].second = rw_trace[i].id & 0xFFFF;
@@ -205,6 +208,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                 allocate(memory_selector[i], current_columm++, i);
                 allocate(calldata_selector[i], current_columm++, i);
                 allocate(returndata_selector[i], current_columm++, i);
+                allocate(log_index_selector[i], current_columm++, i);
                 allocate(id_chunks[i].first, current_columm++, i);
                 allocate(id_chunks[i].second, current_columm++, i);
                 allocate(address_chunks[i].first, current_columm++, i);
@@ -231,10 +235,11 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                 every_row_constraints.push_back(memory_selector[1] * (memory_selector[1] - 1));
                 every_row_constraints.push_back(calldata_selector[1] * (calldata_selector[1] - 1));
                 every_row_constraints.push_back(returndata_selector[1] * (returndata_selector[1] - 1));
+                every_row_constraints.push_back(log_index_selector[1] * (log_index_selector[1] - 1));
 
                 // is_filled is sum of rw_operation_type selectors
                 every_row_constraints.push_back(is_filled[1] - (
-                    memory_selector[1] + calldata_selector[1] + returndata_selector[1]
+                    memory_selector[1] + calldata_selector[1] + returndata_selector[1] + log_index_selector[1]
                 ));
 
                 // is_filled is always 0 and 1, so two rw_operation_type selectors cannot be 1 simultaneously
@@ -246,6 +251,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                     memory_selector[1] * std::size_t(rw_operation_type::memory) +
                     calldata_selector[1] * std::size_t(rw_operation_type::calldata) +
                     returndata_selector[1] * std::size_t(rw_operation_type::returndata) +
+                    log_index_selector[1] * std::size_t(rw_operation_type::log_index) +
                     (1 - is_filled[1]) * std::size_t(rw_operation_type::padding)
                 ));
 
@@ -343,6 +349,10 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                 for( auto &constraint: non_first_row_constraints ){
                     context_object.relative_constrain(context_object.relativize(constraint, -1), 1, max_rw_size - 1);
                 }
+
+                context_object.relative_lookup({
+                    context_object.relativize(rw_id[1] * log_index_selector[1], -1)
+                }, "zkevm_log_rw", 0, max_rw_size-1);
             }
         }
         const std::vector<TYPE> timeline_lookup(){

@@ -124,6 +124,10 @@ namespace nil {
                 std::vector<zkevm_word_type> stack;
                 std::vector<std::uint8_t> memory;
                 std::vector<std::uint8_t> bytecode;
+                static constexpr std::size_t filter_chunks_amount = 128;
+                zkevm_word_type tx_filter[filter_chunks_amount];
+                zkevm_word_type block_filter[filter_chunks_amount];
+                
 
                 bool execution_status = true;
                 std::string error_message;
@@ -133,6 +137,10 @@ namespace nil {
                     pc = 0;
                     gas = 0;
                     tx.hash = 0;
+                    for (std::size_t i = 0; i < filter_chunks_amount; i++) {
+                        block_filter[i] = zkevm_word_type(0);
+                    }
+
                     current_opcode = opcode_to_number(zkevm_opcode::start_block);
 
                     _call_stack.push_back(zkevm_call_context());
@@ -266,6 +274,10 @@ namespace nil {
                     memory = {};
                     stack = {};
                     returndata = {};
+                    for (std::size_t i = 0; i < filter_chunks_amount; i++) {
+                        tx_filter[i] = zkevm_word_type(0);
+                    }
+                    
 
                     is_end_call = false;
                 }
@@ -1604,7 +1616,6 @@ namespace nil {
                     for (std::size_t i = 0; i < precomp_args_length; i++) {
                         precomp_input.push_back(memory[precomp_args_offset+i]);
                     }
-
                     decrease_gas(100); // address access (precompiles are always warm)
 
                     auto result = evaluate_precompile(Precompile{precomp_addr},
@@ -1613,6 +1624,7 @@ namespace nil {
 
                     decrease_gas(result.gas_used);
                     returndata = result.data;
+
 
                     std::size_t real_ret_length = std::min(returndata.size(), precomp_ret_length);
                     for (std::size_t i = 0; i < real_ret_length; i++) {
@@ -1705,6 +1717,62 @@ namespace nil {
                     _accounts_current_state[transfer_addr].balance += transfer_value;
                     returndata.clear();
                     //returndata.resize(transfer_args_length, 0);
+                }
+
+                virtual void dummycallprecompile(){
+                    BOOST_LOG_TRIVIAL(trace) << "Dummy call Precompile" << std::endl;
+                    // TODO: implement all precompiles. This function should never be called
+                    std::size_t precomp_gas = std::size_t(stack.back()); stack.pop_back(); // gas
+                    zkevm_word_type precomp_addr = stack.back(); stack.pop_back(); // addr
+                    zkevm_word_type precomp_value = stack.back(); stack.pop_back(); // value
+                    std::size_t precomp_args_offset = std::size_t(stack.back()); stack.pop_back(); // args_offset
+                    std::size_t precomp_args_length = std::size_t(stack.back()); stack.pop_back(); // args_length
+                    std::size_t precomp_ret_offset = std::size_t(stack.back()); stack.pop_back(); // ret_offset
+                    std::size_t precomp_ret_length = std::size_t(stack.back()); stack.pop_back(); // ret_length
+                    std::size_t data_word_size = (precomp_args_length + 31) / 32;
+
+                    BOOST_ASSERT( precomp_value == 0 );
+
+                    BOOST_LOG_TRIVIAL(trace) << "precomp_gas = " << precomp_gas << std::endl;
+                    BOOST_LOG_TRIVIAL(trace) << "precomp_addr = 0x" << std::hex << precomp_addr << std::dec << std::endl;
+                    BOOST_LOG_TRIVIAL(trace) << "precomp_args_offset = " << precomp_args_offset << std::endl;
+                    BOOST_LOG_TRIVIAL(trace) << "precomp_args_length = " << precomp_args_length << std::endl;
+                    BOOST_LOG_TRIVIAL(trace) << "precomp_ret_offset = " << precomp_ret_offset << std::endl;
+                    BOOST_LOG_TRIVIAL(trace) << "precomp_ret_length = " << precomp_ret_length << std::endl;
+
+                    // TODO: memory expansion gas cost
+                    std::size_t next_mem = memory.size();
+                    next_mem = std::max(next_mem, precomp_args_length == 0? 0: precomp_args_offset + precomp_args_length);
+                    next_mem = std::max(next_mem, precomp_ret_length == 0? 0: precomp_ret_offset + precomp_ret_length);
+                    std::size_t memory_expansion = memory_expansion_cost(next_mem, memory.size());
+                    if( next_mem > memory.size()){
+                        BOOST_LOG_TRIVIAL(trace) << "Memory expansion " << memory.size() << "=>" << next_mem << std::endl;
+                        memory.resize(next_mem, 0);
+                    }
+
+                    std::vector<std::uint8_t> precomp_input;
+                    for( std::size_t i = 0; i < precomp_args_length; i++){
+                        precomp_input.push_back(memory[precomp_args_offset+i]);
+                    }
+
+                    auto [status, last_opcode_gas_used, _returndata] = block_loader->compute_precompile(std::size_t(precomp_addr), precomp_input);
+                    returndata = _returndata;
+                    decrease_gas(last_opcode_gas_used);
+                    decrease_gas(100);
+                    decrease_gas(memory_expansion); 
+                    for( std::size_t i = 0; i < returndata.size(); i++){
+                        memory[precomp_ret_offset + i] = returndata[i];
+                    }
+
+                    std::size_t real_ret_length = std::min(returndata.size(), precomp_ret_length);
+                    for( std::size_t i = 0; i < real_ret_length; i++){
+                        memory[precomp_ret_offset + i] = returndata[i];
+                    }
+
+                    stack.push_back(status);
+                    pc++;
+                    _call_stack.back().lastcall_returndataoffset = precomp_ret_offset;
+                    _call_stack.back().lastcall_returndatalength = precomp_ret_length;
                 }
 
                 virtual void call(){
