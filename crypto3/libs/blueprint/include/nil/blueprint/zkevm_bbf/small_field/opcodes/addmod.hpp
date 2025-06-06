@@ -461,11 +461,6 @@ class zkevm_addmod_bbf : public generic_component<FieldType, stage> {
         }
 
         // PART 5: consistency with the stack
-        auto A_128 = chunks16_to_chunks128_reversed<TYPE>(a_chunks);
-        auto B_128 = chunks16_to_chunks128_reversed<TYPE>(b_chunks);
-        auto N_128 = chunks16_to_chunks128_reversed<TYPE>(N_chunks);
-        auto R_128 = chunks16_to_chunks128_reversed<TYPE>(res);
-
         if constexpr( stage == GenerationStage::CONSTRAINTS ){
             // State transition constraints
             // The arguments for pc, gas, stack_size, memory-size and rw_counter correspond to number_of_rows - 1
@@ -485,7 +480,7 @@ class zkevm_addmod_bbf : public generic_component<FieldType, stage> {
                 TYPE(0),// is_write
                 a_chunks
             );
-            lookup(tmp, "zkevm_rw");
+            lookup(tmp, "zkevm_rw_256");
             tmp = rw_256_table<FieldType, stage>::stack_16_bit_lookup_reversed(
                 current_state.call_id(10),
                 current_state.stack_size(10) - 2,
@@ -493,7 +488,7 @@ class zkevm_addmod_bbf : public generic_component<FieldType, stage> {
                 TYPE(0),// is_write
                 b_chunks
             );
-            lookup(tmp, "zkevm_rw");
+            lookup(tmp, "zkevm_rw_256");
             tmp = rw_256_table<FieldType, stage>::stack_16_bit_lookup_reversed(
                 current_state.call_id(7),
                 current_state.stack_size(7) - 3,
@@ -501,7 +496,7 @@ class zkevm_addmod_bbf : public generic_component<FieldType, stage> {
                 TYPE(0),// is_write
                 N_chunks
             );
-            lookup(tmp, "zkevm_rw");
+            lookup(tmp, "zkevm_rw_256");
             tmp = rw_256_table<FieldType, stage>::stack_16_bit_lookup_reversed(
                 current_state.call_id(11),
                 current_state.stack_size(11) - 3,
@@ -509,7 +504,7 @@ class zkevm_addmod_bbf : public generic_component<FieldType, stage> {
                 TYPE(0),// is_write
                 N_chunks
             );
-            lookup(tmp, "zkevm_rw");
+            lookup(tmp, "zkevm_rw_256");
             tmp = rw_256_table<FieldType, stage>::stack_16_bit_lookup_reversed(
                 current_state.call_id(11),
                 current_state.stack_size(11) - 3,
@@ -517,7 +512,7 @@ class zkevm_addmod_bbf : public generic_component<FieldType, stage> {
                 TYPE(1),// is_write
                 res
             );
-            lookup(tmp, "zkevm_rw");
+            lookup(tmp, "zkevm_rw_256");
         }
     }
 };
