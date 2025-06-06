@@ -41,7 +41,7 @@
 // #include <nil/blueprint/zkevm_bbf/small_field/opcodes/mstore8.hpp>
  #include <nil/blueprint/zkevm_bbf/small_field/opcodes/add_sub.hpp>
 // #include <nil/blueprint/zkevm_bbf/small_field/opcodes/div_mod.hpp>
-// #include <nil/blueprint/zkevm_bbf/small_field/opcodes/addmod.hpp>
+#include <nil/blueprint/zkevm_bbf/small_field/opcodes/addmod.hpp>
 // #include <nil/blueprint/zkevm_bbf/small_field/opcodes/mulmod.hpp>
 // #include <nil/blueprint/zkevm_bbf/small_field/opcodes/bitwise.hpp>
 #include <nil/blueprint/zkevm_bbf/small_field/opcodes/byte.hpp>

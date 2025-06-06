@@ -26,13 +26,13 @@
 #pragma once
 
 #include <algorithm>
-#include <nil/blueprint/zkevm_bbf/types/opcode.hpp>
+#include <nil/blueprint/zkevm_bbf/small_field/opcodes/abstract_opcode.hpp>
 #include <numeric>
 #include <vector>
 #include "nil/blueprint/bbf/enums.hpp"
 #include "nil/crypto3/multiprecision/detail/big_uint/arithmetic.hpp"
 
-namespace nil::blueprint::bbf {
+namespace nil::blueprint::bbf::zkevm_small_field {
 template<typename FieldType>
 class opcode_abstract;
 
@@ -478,49 +478,44 @@ class zkevm_addmod_bbf : public generic_component<FieldType, stage> {
             // Stack lookup constraints
             // The arguments for call_id, stack_size and rw_counter corresponds to the indices of the rows that contains the data read from the rw_table
             std::vector<TYPE> tmp;
-            tmp = rw_table<FieldType, stage>::stack_lookup(
+            tmp = rw_256_table<FieldType, stage>::stack_16_bit_lookup_reversed(
                 current_state.call_id(9),
                 current_state.stack_size(9) - 1,
                 current_state.rw_counter(9),
                 TYPE(0),// is_write
-                A_128.first,
-                A_128.second
+                a_chunks
             );
             lookup(tmp, "zkevm_rw");
-            tmp = rw_table<FieldType, stage>::stack_lookup(
+            tmp = rw_256_table<FieldType, stage>::stack_16_bit_lookup_reversed(
                 current_state.call_id(10),
                 current_state.stack_size(10) - 2,
                 current_state.rw_counter(10) + 1,
                 TYPE(0),// is_write
-                B_128.first,
-                B_128.second
+                b_chunks
             );
             lookup(tmp, "zkevm_rw");
-            tmp = rw_table<FieldType, stage>::stack_lookup(
+            tmp = rw_256_table<FieldType, stage>::stack_16_bit_lookup_reversed(
                 current_state.call_id(7),
                 current_state.stack_size(7) - 3,
                 current_state.rw_counter(7) + 2,
                 TYPE(0),// is_write
-                N_128.first,
-                N_128.second
+                N_chunks
             );
             lookup(tmp, "zkevm_rw");
-            tmp = rw_table<FieldType, stage>::stack_lookup(
+            tmp = rw_256_table<FieldType, stage>::stack_16_bit_lookup_reversed(
                 current_state.call_id(11),
                 current_state.stack_size(11) - 3,
                 current_state.rw_counter(11) + 2,
                 TYPE(0),// is_write
-                N_128.first,
-                N_128.second
+                N_chunks
             );
             lookup(tmp, "zkevm_rw");
-            tmp = rw_table<FieldType, stage>::stack_lookup(
+            tmp = rw_256_table<FieldType, stage>::stack_16_bit_lookup_reversed(
                 current_state.call_id(11),
                 current_state.stack_size(11) - 3,
                 current_state.rw_counter(11) + 3,
                 TYPE(1),// is_write
-                R_128.first,
-                R_128.second
+                res
             );
             lookup(tmp, "zkevm_rw");
         }
@@ -550,4 +545,4 @@ class zkevm_addmod_operation : public opcode_abstract<FieldType> {
     }
     virtual std::size_t rows_amount() override { return 13; }
 };
-}  // namespace nil::blueprint:bbf
+}  // namespace nil::blueprint:bbf::zkevm_small_field
