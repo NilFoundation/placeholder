@@ -704,7 +704,8 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                     c_t.length[1]
                 };
                 for( std::size_t i = 0; i < tmp.size(); i++) tmp[i] = context_object.relativize(tmp[i], -1);
-                context_object.relative_lookup(tmp, "zkevm_large_copy", 0, max_copy_events - 1);            }
+                context_object.relative_lookup(tmp, "zkevm_large_copy", 0, max_copy_events - 1);
+            }
 
 
             for( std::size_t i = 1; i < instances_copy; i++ ){
