@@ -120,6 +120,7 @@ public:
         if( !assign ) return;
 
         debugtt_block_loader loader(path);
+        std::cout<<"path: " << path << std::endl;
         nil::blueprint::bbf::zkevm_basic_input_generator circuit_inputs((abstract_block_loader*)(&loader));
         BOOST_LOG_TRIVIAL(trace) << circuit_inputs.print_statistics();
         BOOST_ASSERT(circuit_inputs.get_execution_status());
@@ -349,6 +350,28 @@ BOOST_GLOBAL_FIXTURE(zkEVMGlobalFixture);
 BOOST_FIXTURE_TEST_SUITE(zkevm_bbf_debugtt, zkEVMDebugTTTestFixture)
     using big_field_type = typename nil::crypto3::algebra::curves::alt_bn128_254::scalar_field_type;
     using small_field_type = typename algebra::fields::babybear;
+
+BOOST_AUTO_TEST_CASE(log_metadata) {
+    l1_size_restrictions max_sizes;
+
+    max_sizes.max_keccak_blocks = 30;
+    max_sizes.max_bytecode = 3000;
+    max_sizes.max_mpt = 0;
+    max_sizes.max_rw = 2000;
+    max_sizes.max_copy_events = 70;
+    max_sizes.max_copy = 70;
+    max_sizes.max_zkevm_rows = 500;
+    max_sizes.max_exponentiations = 50;
+    max_sizes.max_exp_rows = 500;
+    max_sizes.max_state = 500;
+
+    if( circuits_to_run.empty() ) {
+        circuits_to_run.insert("bytecode-s");
+        circuits_to_run.insert("rw-s");
+        circuits_to_run.insert("copy-s");
+    }
+    complex_test<big_field_type, small_field_type>("log_metadata.json", max_sizes);
+}
 
 BOOST_AUTO_TEST_CASE(minimal_math) {
     l1_size_restrictions max_sizes;
@@ -916,103 +939,3 @@ BOOST_AUTO_TEST_CASE(transient_storage_revert) {
 }
 
 BOOST_AUTO_TEST_SUITE_END()
-
-
-// TODO(ioxid): these tests work in multithread mode.
-// In single thread mode they can fail to compile.
-// Also compiling in multithread mode takes too long time in CI with GCC.
-
-// BOOST_AUTO_TEST_SUITE(benchmarking_fixed_sizes, *boost::unit_test::disabled())
-
-// constexpr l1_size_restrictions gen_max_sizes(std::size_t max_rows) {
-//     l1_size_restrictions max_sizes;
-//     max_sizes.max_keccak_blocks = max_rows;
-//     max_sizes.max_bytecode = max_rows;
-//     max_sizes.max_mpt = max_rows;
-//     max_sizes.max_rw = max_rows;
-//     max_sizes.max_copy = max_rows;
-//     max_sizes.max_zkevm_rows = max_rows;
-//     max_sizes.max_exponentiations = max_rows;
-//     max_sizes.max_exp_rows = max_rows;
-//     max_sizes.max_call_commits = max_rows;
-//     return max_sizes;
-// }
-
-// BOOST_DATA_TEST_CASE(minimal_math_pallas_fixed_size,
-// boost::unit_test::data::xrange(30)) {
-//     using FieldType = typename algebra::curves::pallas::scalar_field_type;
-//     auto pt = load_hardhat_input("minimal_math.json");
-//     l1_size_restrictions max_sizes;
-
-//     std::size_t size = (1 << sample) - 2;
-
-//     complex_test<FieldType>(pt, gen_max_sizes(size));
-// }
-
-// BOOST_DATA_TEST_CASE(minimal_math_bn254_fixed_size, boost::unit_test::data::xrange(30))
-// {
-//     using FieldType = typename algebra::curves::alt_bn128_254::scalar_field_type;
-//     auto pt = load_hardhat_input("minimal_math.json");
-//     l1_size_restrictions max_sizes;
-
-//     std::size_t size = (1 << sample) - 2;
-
-//     complex_test<FieldType>(pt, gen_max_sizes(size));
-// }
-
-// BOOST_DATA_TEST_CASE(minimal_math_goldilocks_fixed_size,
-//                      boost::unit_test::data::xrange(30)) {
-//     using FieldType = typename algebra::fields::goldilocks;
-//     auto pt = load_hardhat_input("minimal_math.json");
-//     l1_size_restrictions max_sizes;
-
-//     std::size_t size = (1 << sample) - 2;
-
-//     complex_test<FieldType>(pt, gen_max_sizes(size));
-// }
-
-// BOOST_DATA_TEST_CASE(minimal_math_goldilocks_fp2_fixed_size,
-//                      boost::unit_test::data::xrange(30)) {
-//     using FieldType = typename algebra::fields::goldilocks_fp2;
-//     auto pt = load_hardhat_input("minimal_math.json");
-//     l1_size_restrictions max_sizes;
-
-//     std::size_t size = (1 << sample) - 2;
-
-//     complex_test<FieldType>(pt, gen_max_sizes(size));
-// }
-
-// BOOST_DATA_TEST_CASE(minimal_math_babybear_fixed_size,
-//                      boost::unit_test::data::xrange(30)) {
-//     using FieldType = typename algebra::fields::babybear;
-//     auto pt = load_hardhat_input("minimal_math.json");
-//     l1_size_restrictions max_sizes;
-
-//     std::size_t size = (1 << sample) - 2;
-
-//     complex_test<FieldType>(pt, gen_max_sizes(size));
-// }
-
-// BOOST_DATA_TEST_CASE(minimal_math_babybear_fp4_fixed_size,
-//                      boost::unit_test::data::xrange(30)) {
-//     using FieldType = typename algebra::fields::babybear_fp4;
-//     auto pt = load_hardhat_input("minimal_math.json");
-//     l1_size_restrictions max_sizes;
-
-//     std::size_t size = (1 << sample) - 2;
-
-//     complex_test<FieldType>(pt, gen_max_sizes(size));
-// }
-
-// BOOST_DATA_TEST_CASE(minimal_math_babybear_fp5_fixed_size,
-//                      boost::unit_test::data::xrange(30)) {
-//     using FieldType = typename algebra::fields::babybear_fp5;
-//     auto pt = load_hardhat_input("minimal_math.json");
-//     l1_size_restrictions max_sizes;
-
-//     std::size_t size = (1 << sample) - 2;
-
-//     complex_test<FieldType>(pt, gen_max_sizes(size));
-// }
-
-// BOOST_AUTO_TEST_SUITE_END()
