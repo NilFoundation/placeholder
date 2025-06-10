@@ -426,11 +426,12 @@ namespace nil {
                         // 3. append witness commitments to transcript
                         transcript(proof.commitments.at(VARIABLE_VALUES_BATCH));
 
-                        std::vector<typename FieldType::value_type> special_selector_values(3);
-                        {
-                            PROFILE_SCOPE("Evaluate lagrange_0 at challenge");
-                            special_selector_values[0] = common_data.lagrange_0.evaluate(evaluation_challenge);
-                        }
+                        std::vector<typename FieldType::value_type>
+                            special_selector_values(3);
+                        PROFILE_SCOPE("Evaluate lagrange_0 at challenge");
+                        special_selector_values[0] =
+                            common_data.lagrange_0.evaluate(evaluation_challenge);
+                        PROFILE_SCOPE_END();
                         special_selector_values[1] = Z.get(
                             FIXED_VALUES_BATCH, 2*common_data.permuted_columns.size(), 0);
                         special_selector_values[2] = Z.get(

@@ -175,10 +175,10 @@ namespace nil::crypto3::zk::snark {
             // 2. Commit witness columns and public_input columns
             _commitment_scheme.append_many_to_batch(VARIABLE_VALUES_BATCH, _polynomial_table->witnesses());
             _commitment_scheme.append_many_to_batch(VARIABLE_VALUES_BATCH, _polynomial_table->public_inputs());
-            {
-                PROFILE_SCOPE("Variable values precommit");
-                _proof.commitments[VARIABLE_VALUES_BATCH] = _commitment_scheme.commit(VARIABLE_VALUES_BATCH);
-            }
+            TAGGED_PROFILE_SCOPE("{high level} FRI", "Variable values precommit");
+            _proof.commitments[VARIABLE_VALUES_BATCH] =
+                _commitment_scheme.commit(VARIABLE_VALUES_BATCH);
+            PROFILE_SCOPE_END();
             transcript(_proof.commitments[VARIABLE_VALUES_BATCH]);
 
             // 4. permutation_argument
@@ -207,7 +207,8 @@ namespace nil::crypto3::zk::snark {
             central_evaluator->reset_expressions();
 
             if (constraint_system.copy_constraints().size() > 0 || constraint_system.lookup_gates().size() > 0) {
-                PROFILE_SCOPE("Permutation batch precommit");
+                TAGGED_PROFILE_SCOPE("{high level} lookup",
+                                     "Permutation batch precommit");
                 _proof.commitments[PERMUTATION_BATCH] = _commitment_scheme.commit(PERMUTATION_BATCH);
                 transcript(_proof.commitments[PERMUTATION_BATCH]);
             }

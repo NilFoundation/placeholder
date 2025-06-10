@@ -889,7 +889,7 @@ namespace nil {
             template<typename FieldType>
             polynomial_dfs<typename FieldType::value_type> polynomial_sum(
                     std::vector<math::polynomial_dfs<typename FieldType::value_type>> addends) {
-                PROFILE_SCOPE("Polynomial Batch sum");
+                TAGGED_PROFILE_SCOPE("{low level} batch sum", "Polynomial batch sum");
 
                 using FieldValueType = typename FieldType::value_type;
 
@@ -961,7 +961,7 @@ namespace nil {
             template<typename FieldType>
             polynomial_dfs<typename FieldType::value_type> polynomial_product(
                     std::vector<math::polynomial_dfs<typename FieldType::value_type>> multipliers) {
-                PROFILE_SCOPE("Polynomial Batch product");
+                PROFILE_SCOPE("Polynomial batch product");
 
                 // Pre-create all the domains. We could do this on-the-go, but we want this function to be more
                 // parallelization-friendly.
@@ -1029,7 +1029,8 @@ namespace nil {
             std::vector<math::polynomial<typename FieldType::value_type>> polynomial_batch_to_coefficients(
                     std::vector<math::polynomial_dfs<typename FieldType::value_type>> polys_dfs,
                     std::shared_ptr<evaluation_domain<FieldType>> domain) {
-                PROFILE_SCOPE("Polynomial Batch conversion to coefficients form");
+                TAGGED_PROFILE_SCOPE("{low level} FFT",
+                                     "Polynomial batch conversion to coefficients form");
 
                 std::vector<std::vector<typename FieldType::value_type>> data;
                 data.reserve(polys_dfs.size());
@@ -1055,7 +1056,7 @@ namespace nil {
                 if (polys.size() == 0)
                     return {};
 
-                PROFILE_SCOPE("Polynomial Batch conversion from coefficients form");
+                PROFILE_SCOPE("Polynomial batch conversion from coefficients form");
 
                 size_t input_size = polys[0].size();
 

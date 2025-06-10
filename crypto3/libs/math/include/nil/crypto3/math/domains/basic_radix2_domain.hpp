@@ -97,8 +97,12 @@ namespace nil {
                 }
 
                 void resize_to_domain_size(std::vector<std::vector<value_type>> &a) {
-                    PROFILE_SCOPE("resize_to_domain_size {} vectors from size {} to {}",
-                        a.size(), a[0].size(), this->m);
+                    if (a[0].size() == this->m) {
+                        return;
+                    }
+
+                    PROFILE_SCOPE("Resize to domain size {} vectors from size {} to {}",
+                                  a.size(), a[0].size(), this->m);
 
                     for (auto& p: a) {
                         if (p.size() != this->m) {

@@ -68,7 +68,7 @@ namespace nil {
 
                     BOOST_LOG_TRIVIAL(info) << "Preprocessing public data";
 
-                    TIME_LOG_START("Preprocess public data")
+                    PROFILE_SCOPE("Preprocess public data");
                     auto public_preprocessed_data = std::make_shared<PublicPreprocessedData>(
                         nil::crypto3::zk::snark::placeholder_public_preprocessor<BlueprintField, PlaceholderParams>::
                             process(
@@ -79,7 +79,7 @@ namespace nil {
                                 commitment_scheme_fac_.config_.max_quotient_chunks
                             )
                     );
-                    TIME_LOG_END("Preprocess public data")
+                    PROFILE_SCOPE_END();
 
                     notify<PublicPreprocessedData>(*this, public_preprocessed_data);
                     notify<CommonData>(*this, public_preprocessed_data->common_data);
@@ -133,12 +133,12 @@ namespace nil {
 
                     BOOST_LOG_TRIVIAL(info) << "Preprocessing private data";
 
-                    TIME_LOG_START("Preprocess private data")
+                    PROFILE_SCOPE("Preprocess private data");
                     auto private_preprocessed_data = std::make_shared<PrivatePreprocessedData>(
                         nil::crypto3::zk::snark::placeholder_private_preprocessor<BlueprintField, PlaceholderParams>::
                             process(*constraint_system_, assignment_private_table_, *table_description_)
                     );
-                    TIME_LOG_END("Preprocess private data")
+                    PROFILE_SCOPE_END();
 
                     notify<PrivatePreprocessedData>(*this, private_preprocessed_data);
 

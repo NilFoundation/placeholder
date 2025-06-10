@@ -196,7 +196,8 @@ namespace nil {
                         central_evaluator_type& central_expr_evaluator,
                         const value_type& theta
                     ) {
-                        PROFILE_SCOPE("Gate argument prove eval");
+                        TAGGED_PROFILE_SCOPE("{high level} gate",
+                                             "Gate argument prove eval");
 
                         auto registrations = register_gate_argument_expressions(
                             constraint_system, central_expr_evaluator, theta);
@@ -205,22 +206,22 @@ namespace nil {
 
 
                         std::array<polynomial_dfs_type, argument_size> F;
-                        {
-                            PROFILE_SCOPE("Combine evaluation results");
-                            for (const auto& registration : registrations) {
-                                std::array<small_field_polynomial_dfs_type*,
-                                        extension_dimension>
-                                    coefficients;
-                                for (std::size_t i = 0; i < extension_dimension; ++i) {
-                                    coefficients[i] =
-                                        &central_expr_evaluator.get_expression_value(
-                                            registration[i]);
-                                }
-                                auto combined =
-                                    polynomial_dfs_type::extension_from_coefficients(
-                                        coefficients);
-                                F[0] += std::move(combined);
+
+                        TAGGED_PROFILE_SCOPE("{low level} expr eval big field",
+                                             "Combine evaluation results");
+                        for (const auto& registration : registrations) {
+                            std::array<small_field_polynomial_dfs_type*,
+                                       extension_dimension>
+                                coefficients;
+                            for (std::size_t i = 0; i < extension_dimension; ++i) {
+                                coefficients[i] =
+                                    &central_expr_evaluator.get_expression_value(
+                                        registration[i]);
                             }
+                            auto combined =
+                                polynomial_dfs_type::extension_from_coefficients(
+                                    coefficients);
+                            F[0] += std::move(combined);
                         }
                         return F;
                     }
