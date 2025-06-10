@@ -129,7 +129,7 @@ namespace nil {
                     }
 
                     BOOST_LOG_TRIVIAL(info) << "Generating proof...";
-                    TIME_LOG_START("Generating proof");
+                    PROFILE_SCOPE("Generating proof");
 
                     nil::crypto3::zk::snark::placeholder_prover<BlueprintField, PlaceholderParams> prover(
                         *this->public_preprocessed_data_,
@@ -141,7 +141,7 @@ namespace nil {
                     auto proof = prover.process();
 
                     BOOST_LOG_TRIVIAL(info) << "Proof generated";
-                    TIME_LOG_END("Generating proof");
+                    PROFILE_SCOPE_END();
 
                     auto res = write_proof_to_file(proof, this->lpc_scheme_->get_fri_params(), proof_file_);
                     if (!res) {
@@ -209,7 +209,7 @@ namespace nil {
 
                     BOOST_LOG_TRIVIAL(info) << "Generating partial proof...";
 
-                    TIME_LOG_START("Generating partial proof");
+                    PROFILE_SCOPE("Generating partial proof");
                     auto prover = nil::crypto3::zk::snark::placeholder_prover<BlueprintField, PlaceholderParams>(
                             *this->public_preprocessed_data_,
                             *this->private_preprocessed_data_,
@@ -218,7 +218,7 @@ namespace nil {
                             *this->lpc_scheme_,
                             true);
                     Proof proof = prover.process();
-                    TIME_LOG_END("Generating partial proof");
+                    PROFILE_SCOPE_END();
 
                     BOOST_LOG_TRIVIAL(info) << "Proof generated";
 

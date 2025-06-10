@@ -32,109 +32,17 @@
 #include <format>
 #include <iomanip>
 #include <iostream>
+#include <map>
 #include <mutex>
 #include <stack>
+#include <stdexcept>
 #include <string>
 #include <type_traits>
-#include <unordered_map>
 #include <vector>
 
 namespace nil::crypto3::bench::detail {
-    // NOLINTNEXTLINE
-    inline std::atomic_size_t mul_counter;
-    // NOLINTNEXTLINE
-    inline std::atomic_size_t add_counter;
-    // NOLINTNEXTLINE
-    inline std::atomic_size_t sub_counter;
-
-    struct ArithmeticCounters {
-        std::size_t mul_counter;
-        std::size_t add_counter;
-        std::size_t sub_counter;
-
-        std::string compared_to(const ArithmeticCounters& other) const {
-            std::stringstream ss;
-            auto diff = mul_counter - other.mul_counter;
-            if (diff != 0) {
-                ss << "mul: " << diff << ", ";
-            }
-            diff = add_counter - other.add_counter;
-            if (diff != 0) {
-                ss << "add: " << diff << ", ";
-            }
-            diff = sub_counter - other.sub_counter;
-            if (diff != 0) {
-                ss << "sub: " << diff << ", ";
-            }
-            return ss.str();
-        }
-    };
-
-    inline constexpr ArithmeticCounters get_arithmetic_counters() {
-        if (!std::is_constant_evaluated()) {
-            return {mul_counter, add_counter, sub_counter};
-        } else {
-            return {};
-        }
-    }
-
-    constexpr std::size_t FFT_MAX_1 = 30;
-
-    struct FFTCounters {
-        std::array<std::size_t, FFT_MAX_1> ffts;
-
-        std::string compared_to(const FFTCounters& other) const {
-            std::stringstream ss;
-            bool first = true;
-            for (std::size_t i = 0; i < FFT_MAX_1; ++i) {
-                auto diff = ffts[i] - other.ffts[i];
-                if (diff != 0) {
-                    if (!first) {
-                        ss << ", ";
-                    }
-                    ss << "2^" << i << ": " << diff;
-                    first = false;
-                }
-            }
-            return ss.str();
-        }
-    };
-
-    // NOLINTNEXTLINE
-    inline std::array<std::atomic_size_t, FFT_MAX_1> ffts;
-
-    inline FFTCounters get_fft_counters() {
-        FFTCounters counters;
-        for (std::size_t i = 0; i < FFT_MAX_1; ++i) {
-            counters.ffts[i] = ffts[i];
-        }
-        return counters;
-    }
-
-    inline void no_scope_profiling(const std::string& name, bool stop = false) {
-        static std::stack<std::pair<
-            std::string, std::chrono::time_point<std::chrono::high_resolution_clock>>>
-            points;
-        if (stop) {
-            const auto curr = std::chrono::high_resolution_clock::now();
-            auto start = curr;
-            if ((points.size() > 0) && (points.top().first == name)) {
-                start = points.top().second;
-                points.pop();
-            }
-            auto elapsed =
-                std::chrono::duration_cast<std::chrono::milliseconds>(curr - start);
-            std::cout << name << ": " << std::fixed << std::setprecision(3)
-                      << elapsed.count() << " ms" << std::endl;
-        } else {
-            const auto start = std::chrono::high_resolution_clock::now();
-            const auto point = std::make_pair<>(name, start);
-            points.push(point);
-        }
-    }
-
     template<std::integral T>
-    std::string delimitate_number(T number) {
+    inline std::string delimitate_number(T number) {
         std::string str = std::to_string(number);
         for (int i = str.size() - 3; i > 0; i -= 3) {
             str.insert(i, "'");
@@ -142,48 +50,185 @@ namespace nil::crypto3::bench::detail {
         return str;
     }
 
-    // NOLINTNEXTLINE
-    inline std::size_t global_level = 0;
-    // NOLINTNEXTLINE
-    inline std::atomic_bool global_last_open = false;
+    class ArithmeticCounters {
+      public:
+        enum Counter { MUL, ADD, SUB, COUNT };
 
-    inline void print_prefix() {
-        for (std::size_t i = 0; i < global_level; ++i) {
-            std::cout << "│  ";
+      private:
+        static inline std::array<std::atomic_size_t, COUNT> global_counters;
+
+      public:
+        static constexpr ArithmeticCounters get_snapshot() {
+            if (!std::is_constant_evaluated()) {
+                ArithmeticCounters counters;
+                for (std::size_t i = 0; i < COUNT; ++i) {
+                    counters.counters[i] = global_counters[i];
+                }
+                return counters;
+            } else {
+                return {};
+            }
         }
-    }
+
+        template<Counter c>
+        static void register_counter() {
+            global_counters[c]++;
+        }
+
+        std::string compared_to(const ArithmeticCounters& other) const {
+            std::stringstream ss;
+            bool first = true;
+            for (std::size_t i = 0; i < COUNT; ++i) {
+                auto diff = counters[i] - other.counters[i];
+                if (diff == 0) {
+                    continue;
+                }
+                if (!first) {
+                    ss << ", ";
+                }
+                switch (i) {
+                    case MUL:
+                        ss << "mul";
+                        break;
+                    case ADD:
+                        ss << "add";
+                        break;
+                    case SUB:
+                        ss << "sub";
+                        break;
+                    default:
+                        throw std::logic_error("uncovered counter");
+                }
+                ss << ": " << delimitate_number(diff);
+                first = false;
+            }
+            return ss.str();
+        }
+
+      private:
+        std::array<std::size_t, COUNT> counters;
+    };
+
+    class FFTCounters {
+        static constexpr std::size_t FFT_MAX_1 = 30;
+        static constexpr std::size_t FFT_TYPE_MAX_1 = 2;
+
+        static inline std::array<std::array<std::atomic_size_t, FFT_MAX_1>,
+                                 FFT_TYPE_MAX_1>
+            global_ffts;
+
+        template<typename FieldType>
+        static constexpr std::size_t get_field_type() {
+            return FieldType::modulus_bits * FieldType::arity >= 100;
+        }
+
+      public:
+        template<typename FieldType>
+        static void register_fft(std::size_t log_size) {
+            if (log_size >= FFT_MAX_1) {
+                throw std::invalid_argument(std::format(
+                    "Maximum supported FFT size for profiling is {}", FFT_MAX_1 - 1));
+            }
+            global_ffts[get_field_type<FieldType>()][log_size]++;
+        }
+
+        static FFTCounters get_snapshot() {
+            FFTCounters counters;
+            for (std::size_t t = 0; t < FFT_TYPE_MAX_1; ++t) {
+                for (std::size_t i = 0; i < FFT_MAX_1; ++i) {
+                    counters.ffts[t][i] = global_ffts[t][i];
+                }
+            }
+            return counters;
+        }
+
+        std::string compared_to(const FFTCounters& other) const {
+            std::stringstream ss;
+            bool first_type = true;
+            for (std::size_t t = 0; t < FFT_TYPE_MAX_1; ++t) {
+                bool any = false;
+                for (std::size_t i = 0; i < FFT_MAX_1; ++i) {
+                    auto diff = ffts[t][i] - other.ffts[t][i];
+                    if (diff != 0) {
+                        any = true;
+                        break;
+                    }
+                }
+                if (!any) {
+                    continue;
+                }
+                if (!first_type) {
+                    ss << ", ";
+                }
+                ss << (t ? "big: " : "small: ");
+                bool first = true;
+                for (std::size_t i = 0; i < FFT_MAX_1; ++i) {
+                    auto diff = ffts[t][i] - other.ffts[t][i];
+                    if (diff == 0) {
+                        continue;
+                    }
+                    if (!first) {
+                        ss << ", ";
+                    }
+                    ss << "2^" << i << ": " << diff;
+                    first = false;
+                }
+                first_type = false;
+            }
+            return ss.str();
+        }
+
+      private:
+        std::array<std::array<std::size_t, FFT_MAX_1>, FFT_TYPE_MAX_1> ffts;
+    };
 
     // Measures execution time of a given function just once. Prints
     // the time when leaving the function in which this class was created.
     class base_scoped_profiler {
-        inline static std::vector<std::chrono::milliseconds> inner_times;
-
       protected:
-        void print_start() {
-            if (global_last_open) {
-                std::cout << std::endl;
+        static inline std::size_t global_level = 0;
+        static inline std::atomic_bool global_last_open = false;
+        static inline std::vector<base_scoped_profiler*> global_stack;
+        static inline std::map<std::string, std::chrono::milliseconds>
+            global_tag_statistics;
+
+        static void print_prefix() {
+            for (std::size_t i = 0; i < global_level; ++i) {
+                std::cout << "│  ";
             }
+        }
+
+        static void print_prefix_space() {
             for (std::size_t t = 0; t < 2; ++t) {
                 print_prefix();
                 if (t == 0) {
                     std::cout << std::endl;
                 }
             }
-            std::cout << "╭╴" << name;
+        }
+
+        std::string full_name() const { return name + (tag ? " [" + *tag + "]" : ""); }
+
+        void print_start() {
+            if (global_last_open) {
+                std::cout << std::endl;
+            }
+            print_prefix_space();
+            std::cout << "╭╴" << full_name();
             std::cout.flush();
             ++global_level;
             global_last_open = true;
-            inner_times.emplace_back();
+            global_stack.push_back(this);
         }
 
         void print_time_result(std::chrono::milliseconds elapsed,
                                bool has_children = false) {
-            std::cout << std::format("{}: {} ms", name,
+            std::cout << std::format("{}: {} ms", full_name(),
                                      delimitate_number(elapsed.count()));
             if (has_children) {
-                auto self_time = elapsed - inner_times.back();
+                auto self_time = elapsed - inner_time;
                 auto self_percent =
-                    self_time.count() == 0
+                    elapsed.count() == 0
                         ? 0
                         : 100 * (self_time.count() * 1.0 / elapsed.count());
                 std::cout << std::format(" total, {} ms self, {:.2f}% self",
@@ -192,12 +237,25 @@ namespace nil::crypto3::bench::detail {
             }
         }
 
-        std::chrono::milliseconds get_elapsed() {
+        std::chrono::milliseconds get_elapsed() const {
             return std::chrono::duration_cast<std::chrono::milliseconds>(
                 std::chrono::high_resolution_clock::now() - start);
         }
 
-        void print_end() {
+        static void print_tag_statistics(std::chrono::milliseconds elapsed) {
+            std::cout << "Tag statistics:" << std::endl;
+            for (const auto& [key, value] : global_tag_statistics) {
+                auto percent = elapsed.count() == 0
+                                   ? 0
+                                   : 100 * (value.count() * 1.0 / elapsed.count());
+                std::cout << std::format("{}: {} ms, {:.2f}%", key,
+                                         delimitate_number(value.count()), percent)
+                          << std::endl;
+            }
+            global_tag_statistics.clear();
+        }
+
+        std::chrono::milliseconds print_end() {
             auto elapsed = get_elapsed();
             if (global_last_open) {
                 std::cout << '\r';
@@ -205,170 +263,153 @@ namespace nil::crypto3::bench::detail {
                 print_prefix();
                 std::cout << "• ";
                 print_time_result(elapsed);
-                inner_times.pop_back();
-                if (!inner_times.empty()) {
-                    inner_times.back() += elapsed;
+            } else {
+                for (std::size_t t = 0; t < 2; ++t) {
+                    print_prefix();
+                    if (t == 0) {
+                        std::cout << std::endl;
+                        --global_level;
+                    }
                 }
-                global_last_open = false;
-                return;
+                std::cout << "╰╴";
+                print_time_result(elapsed, /*has_children=*/true);
             }
-            for (std::size_t t = 0; t < 2; ++t) {
-                print_prefix();
-                if (t == 0) {
-                    std::cout << std::endl;
-                    --global_level;
-                }
+            global_stack.pop_back();
+            if (!global_stack.empty()) {
+                global_stack.back()->inner_time += elapsed;
             }
-            std::cout << "╰╴";
-            print_time_result(elapsed, /*has_children=*/true);
-            inner_times.pop_back();
-            if (!inner_times.empty()) {
-                inner_times.back() += elapsed;
+            if (tag) {
+                global_tag_statistics[*tag] += elapsed;
             }
             global_last_open = false;
+            return elapsed;
         }
 
-        base_scoped_profiler(std::string name)
-            : start(std::chrono::high_resolution_clock::now()), name(name) {}
+        base_scoped_profiler(std::string name,
+                             std::optional<std::string> tag = std::nullopt)
+            : start(std::chrono::high_resolution_clock::now()), name(name), tag(tag) {}
 
+      public:
+        static void scoped_log(std::string_view text) {
+            if (global_last_open) {
+                std::cout << std::endl;
+                global_last_open = false;
+            }
+            print_prefix_space();
+            std::cout << "[info] " << text << std::endl;
+        }
+
+      protected:
+        std::chrono::milliseconds inner_time = std::chrono::milliseconds::zero();
         std::chrono::time_point<std::chrono::high_resolution_clock> start;
         std::string name;
+        std::optional<std::string> tag;
     };
 
     class scoped_profiler : public base_scoped_profiler {
-        ArithmeticCounters arithmetic_counters;
-        FFTCounters fft_counters;
-
       public:
-        scoped_profiler(std::string name) : base_scoped_profiler(name) {
+        scoped_profiler(std::string name, std::optional<std::string> tag = std::nullopt)
+            : base_scoped_profiler(name, tag) {
             print_start();
 #ifdef NIL_CO3_PROFILE_COUNT_ARITHMETIC_OPS
-            counters = nil::crypto3::multiprecision::detail::get_counters();
+            arithmetic_counters = ArithmeticCounters::get_snapshot();
 #endif
-            fft_counters = get_fft_counters();
+            fft_counters = FFTCounters::get_snapshot();
         }
-        ~scoped_profiler() {
-            print_end();
+
+        void close() {
+            auto elapsed = print_end();
 #ifdef NIL_CO3_PROFILE_COUNT_ARITHMETIC_OPS
-            std::cout << ", arithmetic: "
-                      << get_arithmetic_counters().compared_to(arithmetic_counters);
+            auto arithmetic_str =
+                ArithmeticCounters::get_snapshot().compared_to(arithmetic_counters);
+            if (!arithmetic_str.empty()) {
+                std::cout << ", arithmetic: " << arithmetic_str;
+            }
 #endif
-            auto ffts_str = get_fft_counters().compared_to(fft_counters);
+            auto ffts_str = FFTCounters::get_snapshot().compared_to(fft_counters);
             if (!ffts_str.empty()) {
                 std::cout << ", FFTs: " << ffts_str;
             }
             std::cout << std::endl;
+            if (global_stack.empty() && !global_tag_statistics.empty()) {
+                std::cout << std::endl;
+                print_tag_statistics(elapsed);
+            }
+            closed = true;
         }
+
+        static void close_last() {
+            // NOLINTNEXTLINE
+            static_cast<scoped_profiler*>(base_scoped_profiler::global_stack.back())
+                ->close();
+        }
+
+        ~scoped_profiler() {
+            if (!closed) {
+                close();
+            }
+        }
+
+      private:
+        bool closed = false;
+        ArithmeticCounters arithmetic_counters;
+        FFTCounters fft_counters;
     };
 
     class parallel_scoped_profiler : public base_scoped_profiler {
-        inline static std::mutex output_lock;
+        static inline std::mutex global_output_lock;
 
       public:
         parallel_scoped_profiler(std::string name) : base_scoped_profiler(name) {}
         ~parallel_scoped_profiler() {
             auto elapsed = get_elapsed();
-            std::scoped_lock lock(output_lock);
-            if (detail::global_last_open) {
+            std::scoped_lock lock(global_output_lock);
+            if (base_scoped_profiler::global_last_open) {
                 std::cout << std::endl;
-                detail::global_last_open = false;
+                base_scoped_profiler::global_last_open = false;
             }
-            print_prefix();
+            base_scoped_profiler::print_prefix();
             std::cout << std::endl;
-            print_prefix();
+            base_scoped_profiler::print_prefix();
             std::cout << "[parallel] ";
             print_time_result(elapsed);
             std::cout << std::endl;
         }
     };
-
-    class call_stats {
-      public:
-        // Make this class singleton.
-        static call_stats& get_stats() {
-            static call_stats instance;
-            return instance;
-        }
-
-        void add_stat(const std::string& name, uint64_t time_ms) {
-            call_counts[name]++;
-            call_miliseconds[name] += time_ms;
-        }
-
-      private:
-        call_stats() {}
-        ~call_stats() {
-            for (const auto& [name, count] : call_counts) {
-                uint64_t miliseconds = call_miliseconds[name] / 1000000;
-                std::cout << name << ": " << count << " calls " << miliseconds / 1000
-                          << " sec " << miliseconds % 1000 << " ms" << std::endl;
-            }
-        }
-
-        std::unordered_map<std::string, uint64_t> call_counts;
-        std::unordered_map<std::string, uint64_t> call_miliseconds;
-    };
-
-    // Measures the total execution time of the functions it's placed in, and
-    // the number of calls. Prints the time and number of calls on program
-    // exit.
-    class scoped_aggregate_profiler {
-      public:
-        scoped_aggregate_profiler(std::string name)
-            : start(std::chrono::high_resolution_clock::now()), name(name) {}
-
-        ~scoped_aggregate_profiler() {
-            auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(
-                std::chrono::high_resolution_clock::now() - start);
-            call_stats::get_stats().add_stat(name, elapsed.count());
-        }
-
-      private:
-        std::chrono::time_point<std::chrono::high_resolution_clock> start;
-        std::string name;
-    };
-
-    inline void scoped_log(const std::string& text) {
-        if (detail::global_last_open) {
-            std::cout << std::endl;
-            detail::global_last_open = false;
-        }
-        for (std::size_t t = 0; t < 2; ++t) {
-            detail::print_prefix();
-            if (t == 0) {
-                std::cout << std::endl;
-            }
-        }
-        std::cout << "[info] " << text << std::endl;
-    }
 }  // namespace nil::crypto3::bench::detail
 
 namespace nil::crypto3::bench {
     inline constexpr void register_mul() {
-        if (!std::is_constant_evaluated()) {
 #ifdef NIL_CO3_MP_ENABLE_ARITHMETIC_COUNTERS
-            mul_counter++;
-#endif
+        if (!std::is_constant_evaluated()) {
+            detail::ArithmeticCounters::register_counter<
+                detail::ArithmeticCounters::MUL>();
         }
+#endif
     }
 
     inline constexpr void register_add() {
-        if (!std::is_constant_evaluated()) {
 #ifdef NIL_CO3_MP_ENABLE_ARITHMETIC_COUNTERS
-            add_counter++;
-#endif
+        if (!std::is_constant_evaluated()) {
+            detail::ArithmeticCounters::register_counter<
+                detail::ArithmeticCounters::ADD>();
         }
+#endif
     }
 
     inline constexpr void register_sub() {
-        if (!std::is_constant_evaluated()) {
 #ifdef NIL_CO3_MP_ENABLE_ARITHMETIC_COUNTERS
-            sub_counter++;
-#endif
+        if (!std::is_constant_evaluated()) {
+            detail::ArithmeticCounters::register_counter<
+                detail::ArithmeticCounters::SUB>();
         }
+#endif
     }
 
-    inline void register_fft(std::size_t log_size) { detail::ffts[log_size]++; }
+    template<typename FieldType>
+    void register_fft(std::size_t log_size) {
+        detail::FFTCounters::register_fft<FieldType>(log_size);
+    }
 }  // namespace nil::crypto3::bench
 
 #ifdef PROFILING_ENABLED
@@ -379,27 +420,32 @@ namespace nil::crypto3::bench {
         scoped_profiler_random_name_49a3420b68_, __COUNTER__) {  \
         std::format(__VA_ARGS__)                                 \
     }
+#define TAGGED_PROFILE_SCOPE(TAG, ...)                           \
+    nil::crypto3::bench::detail::scoped_profiler NIL_CO3_CONCAT( \
+        scoped_profiler_random_name_49a3420b68_, __COUNTER__) {  \
+        std::format(__VA_ARGS__), TAG                            \
+    }
+#define PROFILE_SCOPE_END() nil::crypto3::bench::detail::scoped_profiler::close_last()
 #define PARALLEL_PROFILE_SCOPE(...)                                       \
     nil::crypto3::bench::detail::parallel_scoped_profiler NIL_CO3_CONCAT( \
         scoped_profiler_random_name_49a3420b68_, __COUNTER__) {           \
         std::format(__VA_ARGS__)                                          \
     }
-#define SCOPED_LOG(...) do { nil::crypto3::bench::detail::scoped_log(std::format(__VA_ARGS__)); } while (false)
+#define SCOPED_LOG(...)                                                \
+    do {                                                               \
+        nil::crypto3::bench::detail::base_scoped_profiler::scoped_log( \
+            std::format(__VA_ARGS__));                                 \
+    } while (false)
 #else
 #include <boost/log/trivial.hpp>
 #define PROFILE_SCOPE(...)
+#define TAGGED_PROFILE_SCOPE(TAG, ...)
+#define PROFILE_SCOPE_END()
 #define PARALLEL_PROFILE_SCOPE(...)
-#define SCOPED_LOG(...) do { BOOST_LOG_TRIVIAL(info) << std::format(__VA_ARGS__); } while (false)
-#endif
-
-#ifdef TIME_LOG_ENABLED
-#define TIME_LOG_SCOPE(name) nil::crypto3::bench::detail::scoped_profiler profiler(name);
-#define TIME_LOG_START(name) nil::crypto3::bench::detail::no_scope_profiling(name, false);
-#define TIME_LOG_END(name) nil::crypto3::bench::detail::no_scope_profiling(name, true);
-#else
-#define TIME_LOG_SCOPE(name)
-#define TIME_LOG_START(name)
-#define TIME_LOG_END(name)
+#define SCOPED_LOG(...)                                      \
+    do {                                                     \
+        BOOST_LOG_TRIVIAL(info) << std::format(__VA_ARGS__); \
+    } while (false)
 #endif
 
 #endif  // CRYPTO3_SCOPED_PROFILER_HPP

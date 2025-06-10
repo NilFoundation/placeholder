@@ -80,7 +80,7 @@ namespace nil::crypto3::zk::snark {
          *  The provided cache must already contain all the required variables in the required sizes.
          */
         std::vector<polynomial_dfs_type> evaluate(const cached_assignment_table_type& _cached_assignment_table) {
-            PROFILE_SCOPE("DAG evaluator: evaluate");
+            TAGGED_PROFILE_SCOPE("{low level} expr eval", "DAG evaluator: evaluate");
 
             const size_t extended_domain_size = _cached_assignment_table.get_original_domain_size() * _max_degree;
 

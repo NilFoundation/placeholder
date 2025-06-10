@@ -159,7 +159,7 @@ namespace nil {
                     }
 
                     proof_type proof_eval(transcript_type &transcript) {
-                        PROFILE_SCOPE("LPC proof eval");
+                        TAGGED_PROFILE_SCOPE("{high level} FRI", "LPC proof eval");
 
                         eval_polys_and_add_roots_to_transcipt(transcript);
 
@@ -172,16 +172,12 @@ namespace nil {
                     }
 
                     void eval_polys_and_add_roots_to_transcipt(transcript_type &transcript) {
-                        PROFILE_SCOPE("LPC eval polys and add roots to transcript");
-                        {
-                            PROFILE_SCOPE("LPC eval polys");
-                            this->eval_polys();
-                        }
+                        TAGGED_PROFILE_SCOPE("{low level} poly eval", "LPC eval polys");
+                        this->eval_polys();
+                        PROFILE_SCOPE_END();
 
                         BOOST_ASSERT(this->_points.size() == this->_polys.size());
                         BOOST_ASSERT(this->_points.size() == this->_z.get_batches_num());
-
-                        PROFILE_SCOPE("LPC add roots to transcript");
 
                         // For each batch we have a merkle tree.
                         for (auto const& it: this->_trees) {
@@ -350,7 +346,8 @@ namespace nil {
                                       std::is_same<
                                           math::polymorphic_polynomial_dfs<field_type>,
                                           PolynomialType>::value) {
-                            PROFILE_SCOPE("Convert polys to coefficients form");
+                            TAGGED_PROFILE_SCOPE("{low level} FFT",
+                                                 "Convert polys to coefficients form");
                             // Convert this->_polys to coefficients form.
                             std::vector<std::pair<std::size_t, std::size_t>> indices;
                             for (const auto& [i, V]: this->_polys) {
@@ -373,24 +370,24 @@ namespace nil {
                         std::vector<std::unordered_map<size_t, math::polynomial<value_type>>> Q_normal_parts = compute_Q_normal_parts(
                             point_batch_pairs, theta, points, polys_coefficients_ptr, theta_powers_for_each_batch);
 
-                        {
-                            PROFILE_SCOPE("Compute Q normal");
-                            parallel_for(
-                                0, points.size(),
-                                [this, &points, &Q_normals,
-                                 &Q_normal_parts](std::size_t point_index) {
-                                    math::polynomial<value_type>& Q_normal = Q_normals[point_index];
+                        PROFILE_SCOPE("Compute Q normal");
+                        parallel_for(
+                            0, points.size(),
+                            [this, &points, &Q_normals,
+                             &Q_normal_parts](std::size_t point_index) {
+                                math::polynomial<value_type>& Q_normal =
+                                    Q_normals[point_index];
 
-                                    for (size_t batch_index : this->_z.get_batches()) {
-                                        Q_normal += Q_normal_parts[point_index][batch_index];
-                                    }
+                                for (size_t batch_index : this->_z.get_batches()) {
+                                    Q_normal += Q_normal_parts[point_index][batch_index];
+                                }
 
-                                    auto const& point = points[point_index];
-                                    math::polynomial<value_type> V = {-point, 1};
-                                    Q_normal = Q_normal / V;
-                                },
-                                ThreadPool::PoolLevel::HIGH);
-                        }
+                                auto const& point = points[point_index];
+                                math::polynomial<value_type> V = {-point, 1};
+                                Q_normal = Q_normal / V;
+                            },
+                            ThreadPool::PoolLevel::HIGH);
+                        PROFILE_SCOPE_END();
 
                         for (const auto& Q_normal: Q_normals) {
                             combined_Q_normal += Q_normal;
@@ -403,37 +400,35 @@ namespace nil {
                         }
                         Q_normals.assign(this->_z.get_batches().size(), math::polynomial<value_type>{});
 
-                        {
-                            PROFILE_SCOPE("Compute Q normals 2 (with point = etha)");
-                            parallel_for(
-                                0, this->_z.get_batches().size(),
-                                [this, &theta, &theta_powers, &Q_normals,
-                                 polys_coefficients_ptr](std::size_t batch_idx) {
-                                    std::size_t i = this->_z.get_batches()[batch_idx];
-                                    value_type theta_acc =
-                                        theta.pow(theta_powers[i]);
+                        PROFILE_SCOPE("Compute Q normals 2 (with point = etha)");
+                        parallel_for(
+                            0, this->_z.get_batches().size(),
+                            [this, &theta, &theta_powers, &Q_normals,
+                             polys_coefficients_ptr](std::size_t batch_idx) {
+                                std::size_t i = this->_z.get_batches()[batch_idx];
+                                value_type theta_acc = theta.pow(theta_powers[i]);
 
-                                    if (_batch_fixed.find(i) == _batch_fixed.end() ||
-                                        !_batch_fixed[i])
-                                        return;
-                                    math::polynomial<value_type>& Q_normal =
-                                        Q_normals[batch_idx];
-                                    auto point = _etha;
-                                    math::polynomial<value_type> V = {-point, 1u};
+                                if (_batch_fixed.find(i) == _batch_fixed.end() ||
+                                    !_batch_fixed[i])
+                                    return;
+                                math::polynomial<value_type>& Q_normal =
+                                    Q_normals[batch_idx];
+                                auto point = _etha;
+                                math::polynomial<value_type> V = {-point, 1u};
 
-                                    for (std::size_t j = 0;
-                                         j < this->_z.get_batch_size(i); j++) {
-                                        auto g_normal = (*polys_coefficients_ptr)[i][j];
-                                        g_normal *= theta_acc;
-                                        Q_normal += g_normal;
-                                        Q_normal -= _fixed_polys_values[i][j] * theta_acc;
-                                        theta_acc *= theta;
-                                    }
+                                for (std::size_t j = 0; j < this->_z.get_batch_size(i);
+                                     j++) {
+                                    auto g_normal = (*polys_coefficients_ptr)[i][j];
+                                    g_normal *= theta_acc;
+                                    Q_normal += g_normal;
+                                    Q_normal -= _fixed_polys_values[i][j] * theta_acc;
+                                    theta_acc *= theta;
+                                }
 
-                                    Q_normal = Q_normal / V;
-                                },
-                                ThreadPool::PoolLevel::HIGH);
-                        }
+                                Q_normal = Q_normal / V;
+                            },
+                            ThreadPool::PoolLevel::HIGH);
+                        PROFILE_SCOPE_END();
 
                         for (const auto& Q_normal: Q_normals) {
                             combined_Q_normal += Q_normal;

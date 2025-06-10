@@ -340,21 +340,20 @@ namespace nil {
                                 return;
                             }
 
-                            {
-                                PROFILE_SCOPE("Initialize maps");
-                                for (std::size_t i = 0;
-                                     i < table_description.table_width() -
-                                             table_description.selector_columns;
-                                     i++) {
-                                    for (std::size_t j = 0;
-                                         j < table_description.rows_amount; j++) {
-                                        key_type key(i, j);
-                                        this->_mapping[key] = key;
-                                        this->_aux[key] = key;
-                                        this->_sizes[key] = 1;
-                                    }
+                            PROFILE_SCOPE("Initialize maps");
+                            for (std::size_t i = 0;
+                                 i < table_description.table_width() -
+                                         table_description.selector_columns;
+                                 i++) {
+                                for (std::size_t j = 0; j < table_description.rows_amount;
+                                     j++) {
+                                    key_type key(i, j);
+                                    this->_mapping[key] = key;
+                                    this->_aux[key] = key;
+                                    this->_sizes[key] = 1;
                                 }
                             }
+                            PROFILE_SCOPE_END();
 
                             PROFILE_SCOPE("Apply copy constraints");
 
@@ -524,10 +523,9 @@ namespace nil {
                         const plonk_table_description<FieldType>& table_description,
                         std::shared_ptr<math::evaluation_domain<FieldType>> domain
                     ) {
-                        PROFILE_SCOPE(
-                            "Preprocessor create permutation polynomials, "
-                            "global_indices.size() = {}, domain->size() = {}",
-                            global_indices.size(), domain->size());
+                        PROFILE_SCOPE("Preprocessor create permutation polynomials");
+                        SCOPED_LOG("global indices: {}, domain size: {}",
+                                   global_indices.size(), domain->size());
                         // TODO: add std::vector<std::size_t> columns_with_copy_constraints;
                         cycle_representation permutation(constraint_system, table_description);
 

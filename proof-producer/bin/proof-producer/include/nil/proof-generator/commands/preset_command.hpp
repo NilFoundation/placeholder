@@ -48,7 +48,7 @@ namespace nil {
                     std::shared_ptr<AssignmentTable> assignment_table;
                     std::shared_ptr<TableDescription> table_description;
 
-                    TIME_LOG_START("Preset")
+                    PROFILE_SCOPE("Preset");
                     const auto err = CircuitFactory<BlueprintField>::initialize_circuit(
                             circuit_name_,
                             circuit,
@@ -56,7 +56,7 @@ namespace nil {
                             table_description,
                             circuit_limits_
                     );
-                    TIME_LOG_END("Preset")
+                    PROFILE_SCOPE_END();
 
                     if (err) {
                         return CommandResult::Error(ResultCode::InvalidInput, "Can't initialize circuit '{}', err: {}" , circuit_name_, err.value());

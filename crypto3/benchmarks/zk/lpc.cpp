@@ -149,32 +149,33 @@ void lpc_test_case(std::size_t steps)
             }
 
             std::map<std::size_t, typename lpc_scheme_type::commitment_type> commitments;
-            {
-                PROFILE_SCOPE("Polynomial commitment");
-                lpc_scheme_prover.append_to_batch(0, poly);
-                commitments[0] = lpc_scheme_prover.commit(0);
-            }
+            PROFILE_SCOPE("Polynomial commitment");
+            lpc_scheme_prover.append_to_batch(0, poly);
+            commitments[0] = lpc_scheme_prover.commit(0);
+            PROFILE_SCOPE_END();
 
-
-            typename lpc_scheme_type::proof_type proof;
             std::array<std::uint8_t, 96> x_data{};
-            {
-                PROFILE_SCOPE("Proof generation");
-                lpc_scheme_prover.append_eval_point(0,
-                        algebra::fields::arithmetic_params<FieldType>::multiplicative_generator);
-                zk::transcript::fiat_shamir_heuristic_sequential<transcript_hash_type> transcript(x_data);
-                proof = lpc_scheme_prover.proof_eval(transcript);
-            }
 
-            {
-                PROFILE_SCOPE("Verification");
-                zk::transcript::fiat_shamir_heuristic_sequential<transcript_hash_type> transcript_verifier(x_data);
-                lpc_scheme_verifier.set_batch_size(0, proof.z.get_batch_size(0));
+            PROFILE_SCOPE("Proof generation");
+            lpc_scheme_prover.append_eval_point(
+                0,
+                algebra::fields::arithmetic_params<FieldType>::multiplicative_generator);
+            zk::transcript::fiat_shamir_heuristic_sequential<transcript_hash_type>
+                transcript(x_data);
+            auto proof = lpc_scheme_prover.proof_eval(transcript);
+            PROFILE_SCOPE_END();
 
-                lpc_scheme_verifier.append_eval_point(0,
-                        algebra::fields::arithmetic_params<FieldType>::multiplicative_generator);
-                BOOST_CHECK(lpc_scheme_verifier.verify_eval(proof, commitments, transcript_verifier));
-            }
+            PROFILE_SCOPE("Verification");
+            zk::transcript::fiat_shamir_heuristic_sequential<transcript_hash_type>
+                transcript_verifier(x_data);
+            lpc_scheme_verifier.set_batch_size(0, proof.z.get_batch_size(0));
+
+            lpc_scheme_verifier.append_eval_point(
+                0,
+                algebra::fields::arithmetic_params<FieldType>::multiplicative_generator);
+            BOOST_CHECK(
+                lpc_scheme_verifier.verify_eval(proof, commitments, transcript_verifier));
+            PROFILE_SCOPE_END();
         }
 }
 

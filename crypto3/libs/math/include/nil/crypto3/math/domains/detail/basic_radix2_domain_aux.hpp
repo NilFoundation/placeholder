@@ -82,7 +82,7 @@ namespace nil {
                     const std::size_t n = a.size(), logn = log2(n);
                     if (n != (1u << logn))
                         throw std::invalid_argument("expected n == (1u << logn)");
-                    bench::register_fft(logn);
+                    bench::register_fft<FieldType>(logn);
 
                     // swapping in place (from Storer's book)
                     // We can parallelize this look, since k and rk are pairs, they will never intersect.

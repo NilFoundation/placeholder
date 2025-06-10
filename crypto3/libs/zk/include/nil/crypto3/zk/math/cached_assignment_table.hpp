@@ -150,8 +150,9 @@ namespace nil::crypto3::zk::snark {
         }
 
         void ensure_cache(const std::set<variable_type> &variables, std::size_t size) {
-            PROFILE_SCOPE("Ensure cache for {} variables, size {}", variables.size(),
-                          size);
+            TAGGED_PROFILE_SCOPE("{low level} FFT",
+                                 "Ensure cache for {} variables, size {}",
+                                 variables.size(), size);
 
             if (variables.size() == 0)
                 return;
