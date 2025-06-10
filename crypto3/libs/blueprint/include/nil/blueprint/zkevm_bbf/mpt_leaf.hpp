@@ -34,7 +34,7 @@
 #include <nil/blueprint/bbf/generic.hpp>
 #include <nil/blueprint/zkevm_bbf/util.hpp>
 #include <nil/blueprint/zkevm_bbf/subcomponents/rlp_table.hpp>
-#include <nil/blueprint/zkevm_bbf/big_field/subcomponents/keccak_table.hpp>
+#include <nil/blueprint/zkevm_bbf/small_field/tables/keccak.hpp>
 #include <nil/blueprint/zkevm_bbf/mpt_leaf/node_inner.hpp>
 #include <nil/blueprint/zkevm_bbf/mpt_leaf/node_header.hpp>
 #include <nil/blueprint/zkevm_bbf/mpt_leaf/leaf_node.hpp>
@@ -43,6 +43,7 @@
 namespace nil::blueprint::bbf {
 
     struct leaf_node_data {
+        std::vector<zkevm_word_type> original_key;
         std::array<std::vector<zkevm_word_type>, 2> data;
     };
 
@@ -56,7 +57,7 @@ namespace nil::blueprint::bbf {
     class mpt_leaf_node : public generic_component<FieldType, stage> {
         using typename generic_component<FieldType, stage>::context_type;
         using RLPTable = typename bbf::rlp_table<FieldType, stage>;
-        using KeccakTable = typename bbf::zkevm_big_field::keccak_table<FieldType, stage>;
+        using KeccakTable = typename bbf::zkevm_small_field::keccak_table<FieldType, stage>;
         using generic_component<FieldType, stage>::allocate;
         using generic_component<FieldType, stage>::copy_constrain;
         using generic_component<FieldType, stage>::constrain;
@@ -83,17 +84,17 @@ namespace nil::blueprint::bbf {
         static table_params get_minimal_requirements(std::size_t max_mpt_query_size, mpt_type type) {
             std::size_t witnesses;
             if (type == mpt_type::account_trie)
-                witnesses = 571;
+                witnesses = 675;
             else if (type == mpt_type::storage_trie)
-                witnesses = 330;
+                witnesses = 471;
             else
                 throw "Unsupported trie!";
 
             return {
-                    .witnesses = witnesses,
+                    .witnesses = witnesses, // change this to dynamic
                     .public_inputs = 0,
                     .constants = 0,
-                    .rows = max_mpt_query_size * 2 // one for keccak and one for trie
+                    .rows = max_mpt_query_size * 3 // two for keccak and one for trie
                         + 1168 // rlp_table
                 };
         }
@@ -132,12 +133,13 @@ namespace nil::blueprint::bbf {
                         std::size_t selector = input.queries[i].selector;
                         std::vector<zkevm_word_type> key = mn.data[0];
                         std::vector<zkevm_word_type> value = mn.data[1];
-                        n->set_data(key, value, offset, selector);
+                        n->set_data(key, value, mn.original_key, offset, selector);
                     } else {
                         n->set_empty_data();
                     }
-                    std::vector<std::uint8_t> buf = n->hash_input;
-                    keccak_buffers.new_buffer(buf);
+                    for (auto &b : n->get_keccak_buffers())
+                        keccak_buffers.new_buffer(b);
+                    
                     BOOST_LOG_TRIVIAL(debug) << n->print();
                     BOOST_LOG_TRIVIAL(info) << n->print_table_entry();
                 }
@@ -146,27 +148,28 @@ namespace nil::blueprint::bbf {
             for( std::size_t i = 0; i < KeccakTable::get_witness_amount(); i++){
                 keccak_lookup_area.push_back(i);
             }
-            context_type keccak_ct = context_object.subcontext( keccak_lookup_area, max_mpt_query_size, max_mpt_query_size);
-            KeccakTable k_t = KeccakTable(keccak_ct, {input.rlc_challenge, keccak_buffers}, max_mpt_query_size);
+            context_type keccak_ct = context_object.subcontext( keccak_lookup_area, max_mpt_query_size, max_mpt_query_size * 2);
+            KeccakTable k_t = KeccakTable(keccak_ct, {input.rlc_challenge, keccak_buffers}, max_mpt_query_size * 2);
 
             for (std::size_t i = 0; i < RLPTable::get_witness_amount(); i++) {
                 rlp_lookup_area.push_back(i);
             }
-            context_type rlp_ct = context_object.subcontext(rlp_lookup_area, max_mpt_query_size * 2, 1168);
+            context_type rlp_ct = context_object.subcontext(rlp_lookup_area, max_mpt_query_size * 3, 1168);
             RLPTable rlpt = RLPTable(rlp_ct);
 
             for (size_t i = 0; i < max_mpt_query_size; i++)
                 nodes[i]->allocate_witness();
 
-            lookup_table("mpt_leaf_table",std::vector<std::size_t>({
-                    0, // hash_low
-                    1, // hash_high
-                    2, // query_offset
-                    3, // query_value
-                    4, // query_selector
-                    5, // value total length
-                    6  // node exists
-                }), 0, max_mpt_query_size);
+            std::vector<std::size_t> lookup_columns;
+            size_t i = 0;
+            for (; i < 32; i++)
+                lookup_columns.push_back(i); // hash
+            lookup_columns.push_back(i++); // query_offset
+            lookup_columns.push_back(i++); // query_value
+            lookup_columns.push_back(i++); // query_selector
+            lookup_columns.push_back(i++); // value total length
+            lookup_columns.push_back(i++); // node exists
+            lookup_table("mpt_leaf_table", lookup_columns, 0, max_mpt_query_size);
 
             for (size_t i = 0; i < max_mpt_query_size; i++)
                 nodes[i]->constraints();

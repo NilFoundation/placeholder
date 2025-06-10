@@ -70,6 +70,18 @@ public:
         return pt;
     }
 
+    std::vector<zkevm_word_type> string_to_zkevm_word(std::string raw) {
+        std::vector<zkevm_word_type> result;
+        if (raw.length() % 2 == 1) {
+            std::string highest_byte(1, raw[0]);
+            result.push_back(zkevm_word_from_string(highest_byte));
+            raw = raw.substr(1, raw.length()-1);
+        }
+        for (unsigned j = 0; j < raw.length(); j += 2)
+            result.push_back(zkevm_word_from_string(raw.substr(j, 2)));
+        return result;
+    }
+
     template <typename field_type>
     void test_zkevm_mpt(
         std::string data_source,
@@ -149,23 +161,13 @@ public:
             std::size_t selector = 0;
             if (query.get_child_optional( "selector" ))
                 selector = std::stoi(query.get_child_optional( "selector" )->data());
-
             boost::property_tree::ptree node = query.get_child("node");
-            leaf_node_data l = {{}};
+            auto original_key = string_to_zkevm_word(query.get_child("original_key").data());
+            leaf_node_data l = {original_key, {}};
             int i = 0;
             for(const auto &w : node) {
-                std::string hash_value = w.second.data();
-                std::vector<zkevm_word_type> value;
-                if (hash_value.length() % 2 == 1) {
-                    std::string highest_byte(1, hash_value[0]);
-                    value.push_back(zkevm_word_from_string(highest_byte));
-
-                    hash_value = hash_value.substr(1, hash_value.length()-1);
-                }
-                for (unsigned j = 0; j < hash_value.length(); j += 2) {
-                    value.push_back(zkevm_word_from_string(hash_value.substr(j, 2)));
-                }
-                l.data[i++] = value;
+                std::string node_value = w.second.data();
+                l.data[i++] = string_to_zkevm_word(node_value);
             }
             mpt_query single_query = {offset, selector, l};
             input.queries.push_back(single_query);
@@ -192,7 +194,7 @@ BOOST_AUTO_TEST_CASE(one_mpt_path) {
 //    test_zkevm_mpt<field_type>("mpt_path_3.json", 500);
 }
 BOOST_AUTO_TEST_CASE(mpt_leafs) {
-//  test_zkevm_mpt_leaf<field_type>("mpt_leaf_storage.json", mpt_type::storage_trie, 20);
-//  test_zkevm_mpt_leaf<field_type>("mpt_leaf_account.json", mpt_type::account_trie, 20);
+  test_zkevm_mpt_leaf<field_type>("mpt_leaf_storage.json", mpt_type::storage_trie, 20);
+  test_zkevm_mpt_leaf<field_type>("mpt_leaf_account.json", mpt_type::account_trie, 20);
 }
 BOOST_AUTO_TEST_SUITE_END()

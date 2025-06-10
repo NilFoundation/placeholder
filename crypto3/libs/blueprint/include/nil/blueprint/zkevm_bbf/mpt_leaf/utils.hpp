@@ -53,8 +53,6 @@ namespace nil::blueprint::bbf {
             std::size_t _length
         ): generic_component<FieldType, stage>(context_object, false)
          , length(_length) {
-            // For length selector we must support up to length+1 distinct numbers.
-            // Thus we add one to the length handle every case
             if (length == 32 || length == 33 || length == 34) {
                 x.resize(5);
                 y.resize(7);
@@ -91,6 +89,7 @@ namespace nil::blueprint::bbf {
         }
 
         TYPE selector_accumulator(std::size_t index) {
+            BOOST_ASSERT_MSG(index >= 0, "Selector index can't be negative!");
             TYPE sum = 0;
             for (size_t i = 0; i <= index; i++)
                 sum += this->get_selector(i);
@@ -105,6 +104,7 @@ namespace nil::blueprint::bbf {
         }
 
         TYPE get_selector(std::size_t index) {
+            BOOST_ASSERT_MSG(index >= 0, "Selector index can't be negative!");
             if (length == 32 || length == 33 || length == 34)
                 return x[int(index/7)] * y[index % 7];
             else if (length == 8 || length == 9)

@@ -182,7 +182,7 @@ namespace nil::blueprint::bbf {
          , max_data_len(_max_data_length)
          , is_fixed_length(_is_fixed_length)
          , padding(_padding)
-         , len_selector(context_object, _max_data_length+1)
+         , len_selector(context_object, _max_data_length + 1)
          , offset_selector(context_object, _max_data_length) {
             h = new node_header_string(context_object);
             this->header = h;
@@ -335,10 +335,7 @@ namespace nil::blueprint::bbf {
         node_header_string* h;
         std::vector<TYPE> data;
         std::vector<TYPE> index;
-        // std::vector<TYPE> len_selector_x;
-        // std::vector<TYPE> len_selector_y;
         std::vector<TYPE> rlc;
-        // std::vector<TYPE> offset_selector;
         TYPE first_element_image;
         TYPE first_element_flag;
         std::size_t max_data_len;
@@ -352,7 +349,6 @@ namespace nil::blueprint::bbf {
                 data[j] = 0;
                 index[j] = 0;
             }
-            // offset_selector.initialize();
             len_selector.initialize();
         }
 
@@ -405,11 +401,6 @@ namespace nil::blueprint::bbf {
             }
         }
 
-        void _constrain_is_zero(TYPE is_zero, TYPE inverse, TYPE X, TYPE selector=1) {
-            constrain(selector * (is_zero - (1 - X * inverse)));
-            constrain(selector * (X * is_zero));
-        }
-
         void _main_constraints(TYPE initial_index, TYPE rlc_challenge) {
             TYPE first_data_index = initial_index + this->header->get_prefix_length();
             if (is_fixed_length) {
@@ -437,8 +428,213 @@ namespace nil::blueprint::bbf {
                     constrain(rlc[i] - (data_finished * rlc[i-1] + (1 - data_finished) * (rlc[i-1] * rlc_challenge + data[i])), "Data RLC is wrong!");
                 }
             }
+            for (size_t i = 0; i < data.size(); i++)
+                lookup(data[i], "chunk_16_bits/8bits");
         }
     };
+
+
+
+    template<typename FieldType, GenerationStage stage>
+    class node_inner_key: public node_inner_string<FieldType, stage> {
+    public:
+        using typename generic_component<FieldType, stage>::context_type;
+        using generic_component<FieldType, stage>::allocate;
+        using generic_component<FieldType, stage>::constrain;
+        using generic_component<FieldType, stage>::lookup;
+
+        using typename generic_component<FieldType, stage>::TYPE;
+        using node_inner_string = node_inner_string<FieldType, stage>;
+        using optimized_selector = optimized_selector<FieldType, stage>;
+
+        std::size_t original_key_size;
+        std::size_t trie_key_size = 32; // later change this for transaction/receipt trie
+
+        node_inner_key(
+            context_type &context_object,
+            mpt_type _trie_t
+        ): node_inner_string(
+            context_object, 
+            33,  // 32 bytes is the hash output and one byte is for the leaf-node prefix
+            query_type::no_query, 
+            false, 
+            padding_type::right_padding),
+            trie_type(_trie_t) {
+                if (_trie_t == mpt_type::storage_trie) {
+                    original_key_size = 32;
+                } else if (_trie_t == mpt_type::account_trie) {
+                    original_key_size = 20;
+                } else
+                    throw "Unknown trie type!";
+                original_key.resize(original_key_size);
+                original_key_rlc.resize(original_key_size);
+                // Even though we could calculate key prefix with only expressions, 
+                // we use these extra witness columns. It's not obvious at the moment
+                // how to get rid of it with current inner-node architecture..
+                key_prefix.resize(trie_key_size);
+                prefix_length_selector = new optimized_selector(context_object, trie_key_size + 1);
+            }
+
+        std::string print() {
+            std::stringstream ss;
+            ss << "prefix last nibble: " << prefix_last_nibble << std::endl;
+            ss << "key first nibble: " << key_first_nibble << std::endl;
+            ss << "prefix has last nibble: " << prefix_has_last_nibble << std::endl;
+            ss << "prefix length: " << prefix_length_selector->get_value() << std::endl;
+            ss << "key prefix:\n";
+            for (size_t i = 0; i < trie_key_size; i++)
+                ss << std::hex << key_prefix[i] << std::dec << " ";
+            ss << std::endl;
+            ss << node_inner_string::print();
+            return ss.str();
+        }
+
+        void set_key_prefix(std::vector<zkevm_word_type> _original_key) {
+            BOOST_ASSERT_MSG(this->h->len > 0, "Key is at least one byte!");
+            BOOST_ASSERT_MSG(_original_key.size() == original_key_size, "Original key's length is wrong!");
+
+            for (size_t i = 0; i < _original_key.size(); i++)
+                original_key[i] = _original_key[i];
+            
+            std::vector<std::uint8_t> buffer(_original_key.begin(), _original_key.end());
+            std::array<std::uint8_t, 32> trie_key = w_to_8(nil::blueprint::zkevm_keccak_hash(buffer));
+
+            original_key_rlc[0] = this->rlc_challenge * original_key_size + original_key[0];
+            for (size_t i = 1; i < original_key_size; i++)
+                original_key_rlc[i] = original_key_rlc[i-1] * this->rlc_challenge + original_key[i];
+            
+
+            BOOST_LOG_TRIVIAL(debug) << "trie key:\n";
+            for (size_t i = 0; i < trie_key.size(); i++)
+                BOOST_LOG_TRIVIAL(debug) << std::hex << int(trie_key[i]) << std::dec << " ";
+            BOOST_LOG_TRIVIAL(debug) << std::endl;
+
+            std::uint32_t first_byte = static_cast<std::uint32_t>(this->data[0].to_integral());
+            std::size_t prefix_length;
+            TYPE control_nibble = first_byte >> 4;
+            key_first_nibble = first_byte & 0xF;
+            std::size_t len = static_cast<std::uint32_t>(this->h->len.to_integral());
+            if (control_nibble == 2) {
+                BOOST_ASSERT_MSG(key_first_nibble == 0, "Wrong key first nibble!");
+                prefix_last_nibble = 0;
+                key_first_nibble = 0;
+                prefix_length = trie_key.size() - (len - 1);
+            } else if (control_nibble == 3) {
+                prefix_length = trie_key.size() - len;
+                BOOST_ASSERT_MSG(prefix_length < trie_key.size(), "Wrong key size!");
+                prefix_last_nibble = (trie_key[prefix_length] >> 4) & 0xF;
+            }
+            prefix_length_selector->set_data(prefix_length);
+            
+            prefix_has_last_nibble = control_nibble - 2;
+            for (size_t i = trie_key.size() - prefix_length; i < trie_key.size(); i++)
+                key_prefix[i] = trie_key[i - (trie_key.size() - prefix_length)];
+        }
+
+        void allocate_witness(std::size_t &column_index, std::size_t &row_index){
+            node_inner_string::allocate_witness(column_index, row_index);
+
+            allocate(prefix_last_nibble, column_index++, row_index);
+            allocate(key_first_nibble, column_index++, row_index);
+            allocate(prefix_has_last_nibble, column_index++, row_index);
+            for (size_t i = 0; i < original_key.size(); i++)
+                allocate(original_key[i], column_index ++, row_index); 
+            for (size_t i = 0; i < original_key_rlc.size(); i++)
+                allocate(original_key_rlc[i], column_index ++, row_index);
+            for (size_t i = 0; i < key_prefix.size(); i++)
+                allocate(key_prefix[i], column_index++, row_index);
+            
+            prefix_length_selector->allocate_witness(column_index, row_index);
+        }
+
+        std::optional<std::vector<std::uint8_t>> get_keccak_buffer() {
+            if (trie_type == mpt_type::account_trie || trie_type == mpt_type::storage_trie) {
+                std::vector<std::uint8_t> buffer;
+                for (size_t i = 0; i < original_key.size(); i++)
+                    buffer.push_back(static_cast<std::uint64_t>(original_key[i].to_integral()));
+                return buffer;
+            }
+            return std::nullopt;
+        }
+
+        std::pair<std::vector<zkevm_word_type>, std::vector<zkevm_word_type>> empty_key() {
+            std::vector<zkevm_word_type> original_key;
+            if (this->trie_type == mpt_type::storage_trie)
+                for (size_t i = 0; i < 32; i++)
+                    original_key.push_back(0x00);
+            else if (this->trie_type == mpt_type::account_trie)
+                for (size_t i = 0; i < 20; i++)
+                    original_key.push_back(0x00);
+            else
+                throw "Unknown trie type!";
+                
+            std::vector<std::uint8_t> buffer(original_key.begin(), original_key.end());
+            std::vector<zkevm_word_type> trie_key(33);
+            trie_key[0] = 0x20;
+            int i = 1;
+            for (auto &w : w_to_8(nil::blueprint::zkevm_keccak_hash(buffer))) {
+                trie_key[i] = zkevm_word_type(w);
+                i++;
+            }
+            return {trie_key, original_key};
+        }
+
+    protected:
+        mpt_type trie_type;
+        std::vector<TYPE> original_key;
+        std::vector<TYPE> original_key_rlc;
+        std::vector<TYPE> key_prefix;
+        optimized_selector* prefix_length_selector;
+        TYPE prefix_last_nibble;
+        TYPE key_first_nibble;
+        TYPE prefix_has_last_nibble;
+
+        void _initialize_body() {
+            node_inner_string::_initialize_body();
+            prefix_length_selector->initialize();
+        }
+
+        void _main_constraints(TYPE initial_index, TYPE rlc_challenge) {
+            TYPE control_nibble = prefix_has_last_nibble + 2;
+            constrain(prefix_has_last_nibble * (prefix_has_last_nibble - 1), "incorrect control nibble!");
+            constrain(this->data[0] - control_nibble * 0x10 - key_first_nibble, "incorrect first key data!");
+            constrain((1 - prefix_has_last_nibble) * key_first_nibble);
+            constrain(prefix_length_selector->get_value() - ( 
+                prefix_has_last_nibble * (trie_key_size - this->h->len)
+                + (1 - prefix_has_last_nibble) * (trie_key_size - this->h->len + 1))
+            );
+
+            std::array<TYPE, 32> trie_key; // must be changed for transaction and receipt tries
+
+            for (size_t i = 0; i < trie_key_size; i++) {
+                for (size_t j = i; j < trie_key_size; j++) {
+                    trie_key[i] += key_prefix[j] * prefix_length_selector->get_selector(trie_key_size - j + i);
+                }
+                trie_key[i] += (prefix_has_last_nibble * (prefix_last_nibble * 0x10 + key_first_nibble) + (1 - prefix_has_last_nibble) * this->data[1]) * prefix_length_selector->get_selector(i);
+                for (size_t j = 0; j < i; j++) {
+                    trie_key[i] += this->data[i - j] * (prefix_has_last_nibble * prefix_length_selector->get_selector(j)) + (1 - prefix_has_last_nibble) * prefix_length_selector->get_selector(j) * this->data[i - j + 1];
+                }
+            }
+
+            constrain(original_key_rlc[0] - (original_key_size * rlc_challenge + original_key[0]), "Wrong initial RLC in original key!");
+            for (size_t i = 1; i < original_key_size; i++)
+                constrain(original_key_rlc[i] - (original_key_rlc[i-1] * rlc_challenge + original_key[i]), "Wrong RLC in original key!");
+            
+            for (size_t i = 0; i < original_key_size; i++)
+                lookup(original_key[i], "chunk_16_bits/8bits");
+
+            auto keccak_tuple = chunks8_to_chunks16<TYPE>(trie_key);
+            keccak_tuple.emplace(keccak_tuple.begin(), original_key_rlc[original_key_size-1]);
+            lookup(keccak_tuple, "keccak_table");
+            // TODO lookup main MPT circuit table to find the position of this leaf-node
+
+            node_inner_string::_main_constraints(initial_index, rlc_challenge);
+        }
+    
+    };
+
+
+
 
     template<typename FieldType, GenerationStage stage>
     class node_inner_array: public node_inner<FieldType, stage> {
