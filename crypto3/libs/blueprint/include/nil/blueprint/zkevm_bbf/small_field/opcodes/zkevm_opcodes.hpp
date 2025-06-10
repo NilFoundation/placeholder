@@ -71,7 +71,7 @@
 // #include <nil/blueprint/zkevm_bbf/small_field/opcodes/swapx.hpp>
 // #include <nil/blueprint/zkevm_bbf/small_field/opcodes/pop.hpp>
 // #include <nil/blueprint/zkevm_bbf/small_field/opcodes/calldatacopy.hpp>
-// #include <nil/blueprint/zkevm_bbf/small_field/opcodes/codecopy.hpp>
+#include <nil/blueprint/zkevm_bbf/small_field/opcodes/codecopy.hpp>
 #include <nil/blueprint/zkevm_bbf/small_field/opcodes/stop.hpp>
 // #include <nil/blueprint/zkevm_bbf/small_field/opcodes/exp.hpp>
 // #include <nil/blueprint/zkevm_bbf/small_field/opcodes/keccak.hpp>
@@ -107,9 +107,9 @@ namespace nil::blueprint::bbf::zkevm_small_field{
         opcodes[zkevm_opcode::SUB] = std::make_shared<zkevm_add_sub_operation<BlueprintFieldType>>(false);
         // opcodes[zkevm_opcode::DIV] = std::make_shared<zkevm_div_mod_operation<BlueprintFieldType>>(true);
         // opcodes[zkevm_opcode::SDIV] = std::make_shared<zkevm_sdiv_smod_operation<BlueprintFieldType>>(true);
-        opcodes[zkevm_opcode::MOD] = std::make_shared<zkevm_div_mod_operation<BlueprintFieldType>>(false);
+        // opcodes[zkevm_opcode::MOD] = std::make_shared<zkevm_div_mod_operation<BlueprintFieldType>>(false);
         // opcodes[zkevm_opcode::SMOD] = std::make_shared<zkevm_sdiv_smod_operation<BlueprintFieldType>>(false);
-        opcodes[zkevm_opcode::ADDMOD] = std::make_shared<zkevm_addmod_operation<BlueprintFieldType>>();
+        // opcodes[zkevm_opcode::ADDMOD] = std::make_shared<zkevm_addmod_operation<BlueprintFieldType>>();
         // opcodes[zkevm_opcode::MULMOD] = std::make_shared<zkevm_mulmod_operation<BlueprintFieldType>>();
         // opcodes[zkevm_opcode::EXP] = std::make_shared<zkevm_exp_operation<BlueprintFieldType>>();
         opcodes[zkevm_opcode::SIGNEXTEND] = std::make_shared<zkevm_signextend_operation<BlueprintFieldType>>();
@@ -147,7 +147,6 @@ namespace nil::blueprint::bbf::zkevm_small_field{
         // opcodes[zkevm_opcode::CALLDATASIZE] = std::make_shared<zkevm_calldatasize_operation<BlueprintFieldType>>();
         // opcodes[zkevm_opcode::CALLDATALOAD] = std::make_shared<zkevm_calldataload_operation<BlueprintFieldType>>();
         // opcodes[zkevm_opcode::CALLDATACOPY] = std::make_shared<zkevm_calldatacopy_operation<BlueprintFieldType>>();
-        // opcodes[zkevm_opcode::CODECOPY] = std::make_shared<zkevm_codecopy_operation<BlueprintFieldType>>();
 
         // // PC operations
         // opcodes[zkevm_opcode::JUMPI] = std::make_shared<zkevm_jumpi_operation<BlueprintFieldType>>();
@@ -193,7 +192,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
         // opcodes[zkevm_opcode::RETURN] = std::make_shared<zkevm_return_operation<BlueprintFieldType>>();
 
         // // MEMORY EXPANSION
-        // opcodes[zkevm_opcode::CODECOPY] = std::make_shared<zkevm_codecopy_operation<BlueprintFieldType>>();
+        opcodes[zkevm_opcode::CODECOPY] = std::make_shared<zkevm_codecopy_operation<BlueprintFieldType>>();
         // opcodes[zkevm_opcode::MCOPY] = std::make_shared<zkevm_mcopy_operation<BlueprintFieldType>>();
         // opcodes[zkevm_opcode::RETURNDATACOPY] = std::make_shared<zkevm_returndatacopy_operation<BlueprintFieldType>>();
 

@@ -4,6 +4,7 @@ set(ZKEVM_BBF_TESTS_FILES
     "${BLUEPRINT_TEST_ROOT}/zkevm_bbf/opcodes/pushx"
     "${BLUEPRINT_TEST_ROOT}/zkevm_bbf/opcodes/iszero"
     "${BLUEPRINT_TEST_ROOT}/zkevm_bbf/opcodes/mod_ops"
+    "${BLUEPRINT_TEST_ROOT}/zkevm_bbf/opcodes/codecopy"
     "${BLUEPRINT_TEST_ROOT}/zkevm_bbf/opcodes/bitwise"
     "${BLUEPRINT_TEST_ROOT}/zkevm_bbf/opcodes/cmp"
     "${BLUEPRINT_TEST_ROOT}/zkevm_bbf/opcodes/add_sub"

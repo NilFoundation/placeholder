@@ -29,7 +29,7 @@
 #include <nil/blueprint/bbf/generic.hpp>
 #include <nil/blueprint/zkevm_bbf/small_field/subcomponents/word_size.hpp>
 
-namespace nil::blueprint::bbf::zkevm_big_field{
+namespace nil::blueprint::bbf::zkevm_small_field{
 
     template<typename FieldType, GenerationStage stage>
     class memory_cost : public generic_component<FieldType, stage> {
@@ -48,7 +48,7 @@ namespace nil::blueprint::bbf::zkevm_big_field{
         memory_cost(context_type &context_object, TYPE memory_input)
             : generic_component<FieldType, stage>(context_object, false) {
             using integral_type = typename FieldType::integral_type;
-            using Word_Size = typename zkevm_big_field::word_size<FieldType, stage>;
+            using Word_Size = typename zkevm_small_field::word_size<FieldType, stage>;
 
             TYPE mem_words, mem_cost, R;
             std::vector<std::size_t> word_size_lookup_area = {0, 1, 2};

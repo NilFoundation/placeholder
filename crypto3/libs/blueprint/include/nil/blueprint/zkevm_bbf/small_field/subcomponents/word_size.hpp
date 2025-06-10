@@ -26,7 +26,7 @@
 
 #include <nil/blueprint/bbf/generic.hpp>
 
-namespace nil::blueprint::bbf::zkevm_big_field{
+namespace nil::blueprint::bbf::zkevm_small_field{
     template<typename FieldType, GenerationStage stage>
     class word_size : public generic_component<FieldType, stage> {
         using generic_component<FieldType, stage>::allocate;

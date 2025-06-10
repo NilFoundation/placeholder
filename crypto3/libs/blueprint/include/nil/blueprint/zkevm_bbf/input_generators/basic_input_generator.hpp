@@ -1005,13 +1005,16 @@ namespace nil {
                         rw_counter,
                         length
                     );
-                    for( std::size_t i = 0; i < length; i++){
-                        _short_rw_operations.push_back(memory_rw_operation(
-                            call_id, dst + i, rw_counter++, true, memory[dst + i]
-                        ));
-                        cpy.push_byte(memory[dst+i]);
+                    if (memory.size() % 32 == 0) {
+                        for( std::size_t i = 0; i < length; i++){
+                            _short_rw_operations.push_back(memory_rw_operation(
+                                call_id, dst + i, rw_counter++, true, memory[dst + i]
+                            ));
+                            cpy.push_byte(memory[dst+i]);
+                        }
                     }
                     if( length > 0 ) _copy_events.push_back(cpy);
+
                 }
 
                 virtual void dupx( std::size_t d) override {
