@@ -76,8 +76,8 @@ namespace nil::blueprint::bbf::zkevm_small_field{
         // Counts the number of cross terms q8_chunks[i] * b8_chunks[j] involved in the i-th carryless chunk of
         // the multiplication q * b, where q, b < 2^256 and q*b < 2^256. This is useful for range-checking later.
         int count_cross_terms(const unsigned char chunk_index) const {
-            // For unrelated q, b < 2^256, the result would be the amount of pairs (i, j) such that 
-            // i + j == chunk_index, for 0 <= i, j < chunk_8_amount. 
+            // For unrelated q, b < 2^256, the result would be the amount of pairs (i, j) such that
+            // i + j == chunk_index, for 0 <= i, j < chunk_8_amount.
 
             // However, because we have the bound q*b < 2^256, they cannot both have non-zero higher-order chunks.
             // The number of cross-terms is maximized when both are balanced around 2^128.
@@ -92,8 +92,8 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             return res;
         }
 
-        // Given a carryless chunk of the multiplication q*b, we will separate it into an 8-bit 
-        // chunk and a carry, which contains whatever overflows 8 bits. This function computes 
+        // Given a carryless chunk of the multiplication q*b, we will separate it into an 8-bit
+        // chunk and a carry, which contains whatever overflows 8 bits. This function computes
         // the maximal value of such carry, for accurate range-checking.
         int max_carry(const unsigned char chunk_index) const {
             // mul8_carryless_chunks[i] + prev_carry == mul8_chunks[i] + mul8_carries[i] * 256
@@ -110,7 +110,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             int carryless_bound = 0;
             if (chunk_index < 32) {
                 carryless_bound = number_of_cross_terms * max_cross_term;
-            } 
+            }
 
             // Finally, we also take into account the maximal value of the previous carry
             int prev_carry = (chunk_index > 0) ? max_carry(chunk_index - 1) : 0;
@@ -131,43 +131,43 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             // 16-bit chunks
             std::vector<TYPE> a_chunks(chunk_amount);       // input value
             std::vector<TYPE> b_chunks(chunk_amount);       // input modulus
-            std::vector<TYPE> b_chunks_copy(chunk_amount);   
+            std::vector<TYPE> b_chunks_copy(chunk_amount);
             std::vector<TYPE> q_chunks(chunk_amount);       // a / b (if b > 0)
             std::vector<TYPE> q_chunks_copy1(chunk_amount);
             std::vector<TYPE> q_chunks_copy2(chunk_amount);
             std::vector<TYPE> r_chunks(chunk_amount);       // a % b (if b > 0)
             std::vector<TYPE> v_chunks(chunk_amount);       // Needed to enforce r < b.
             std::vector<TYPE> y_chunks(chunk_amount);       // Final result: y == r or q (depending on is_div) when b >= 1, and y == 0 otherwise.
-            
+
             // mul == q * b
             std::vector<TYPE> mul_chunks(chunk_amount);
 
             // a == mul + r (mod 2^256)
             // construct_carryless_chunks[i] = construct_chunks[i] + construct_carries[i] * 2^16
-            std::vector<TYPE> construct_carryless_chunks(chunk_amount); 
+            std::vector<TYPE> construct_carryless_chunks(chunk_amount);
             std::vector<TYPE> construct_chunks(chunk_amount);
-            std::vector<TYPE> construct_carries(chunk_amount);          // Carries containing whatever overflows 16 bits   
+            std::vector<TYPE> construct_carries(chunk_amount);          // Carries containing whatever overflows 16 bits
 
             // b + v == r + 2^256
             std::vector<TYPE> add_carries(chunk_amount);
 
             // 8-bit chunks
-            std::vector<TYPE> q8_chunks(chunk_8_amount);                   
-            std::vector<TYPE> q8_chunks_check(chunk_8_amount);             
-            std::vector<TYPE> b8_chunks(chunk_8_amount);                   
-            std::vector<TYPE> b8_chunks_check(chunk_8_amount);      
+            std::vector<TYPE> q8_chunks(chunk_8_amount);
+            std::vector<TYPE> q8_chunks_check(chunk_8_amount);
+            std::vector<TYPE> b8_chunks(chunk_8_amount);
+            std::vector<TYPE> b8_chunks_check(chunk_8_amount);
 
             // mul8_carryless_chunks[i] = mul8_chunks[i] + mul8_carries[i] * 2^8
             std::vector<TYPE> mul8_carryless_chunks(chunk_8_amount);
-            std::vector<TYPE> mul8_chunks(chunk_8_amount);             
-            std::vector<TYPE> mul8_chunks_check(chunk_8_amount);        
-            std::vector<TYPE> mul8_carries(chunk_8_amount);            // Carries containing whatever overflows 8 bits 
+            std::vector<TYPE> mul8_chunks(chunk_8_amount);
+            std::vector<TYPE> mul8_chunks_check(chunk_8_amount);
+            std::vector<TYPE> mul8_carries(chunk_8_amount);            // Carries containing whatever overflows 8 bits
 
             // We copy the mul8 carries to propagate them to range-checked columns, and then
-            // we also range-check mul8_carries[i] * 256. 
-            std::vector<TYPE> mul8_carries_copy1(chunk_8_amount);          
-            std::vector<TYPE> mul8_carries_copy2(chunk_8_amount);          
-            std::vector<TYPE> mul8_carries_check(chunk_8_amount);       
+            // we also range-check mul8_carries[i] * 256.
+            std::vector<TYPE> mul8_carries_copy1(chunk_8_amount);
+            std::vector<TYPE> mul8_carries_copy2(chunk_8_amount);
+            std::vector<TYPE> mul8_carries_check(chunk_8_amount);
 
 
             // PART 1: computing the opcode and splitting values in chunks
@@ -175,12 +175,12 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                 // Extract input values from stack
                 zkevm_word_type a = current_state.stack_top();
                 zkevm_word_type b = current_state.stack_top(1);
-                
-                zkevm_word_type q = (b > 0) ? (a / b) : 0;       
-                zkevm_word_type r = (b > 0) ? (a % b) : 0; 
-                
+
+                zkevm_word_type q = (b > 0) ? (a / b) : 0;
+                zkevm_word_type r = (b > 0) ? (a % b) : 0;
+
                 // At this point, a = q * b + r, so q is the result of DIV and r is the result of MOD
-                zkevm_word_type v = wrapping_sub(r, b);   
+                zkevm_word_type v = wrapping_sub(r, b);
                 // To prove that r < b, we'll show that b + v = r + 2^256 (i.e. there is always a carry)
 
                 // 16-bit chunks
@@ -200,11 +200,11 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                 allocate(a_chunks[i], 2 * chunk_amount + i, 8);
                 allocate(r_chunks[i], chunk_amount + i, 9);
                 allocate(v_chunks[i], i, 11);
-                
+
                 allocate(b_chunks[i], 2 * chunk_amount + i, 7);
                 b_chunks_copy[i] = b_chunks[i];
                 allocate(b_chunks_copy[i], 2 * chunk_amount + i, 9);
-                
+
                 allocate(q_chunks[i], 2 * chunk_amount + i, 6);
                 q_chunks_copy1[i] = q_chunks[i];
                 allocate(q_chunks_copy1[i], chunk_amount + i, 8);
@@ -217,7 +217,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                 allocate(q8_chunks[i], i, 4);
                 q8_chunks_check[i] = q8_chunks[i] * 256;
                 allocate(q8_chunks_check[i], i, 2);
-                
+
                 allocate(b8_chunks[i], i, 5);
                 b8_chunks_check[i] = b8_chunks[i] * 256;
                 allocate(b8_chunks_check[i], i, 3);
@@ -231,23 +231,23 @@ namespace nil::blueprint::bbf::zkevm_small_field{
 
 
             // PART 2: decide whether b == 0 (trivial case) or b != 0 (we need to actually compute the operation)
-            TYPE b_partial_sum = 0;
-            for (std::size_t i = 1; i < chunk_amount; i++) {
-                b_partial_sum += b_chunks_copy[i];
+            TYPE b_sum = 0;
+            for (std::size_t i = 0; i < chunk_amount; i++) {
+                b_sum += b_chunks_copy[i];
             }
-            allocate(b_partial_sum, 32, 10);
+            allocate(b_sum, 32, 10);
 
-            TYPE b_partial_sum_inverse;
+            TYPE b_sum_inverse;
             if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                b_partial_sum_inverse = b_partial_sum.is_zero() ? 0 : b_partial_sum.inversed();
+                b_sum_inverse = b_sum.is_zero() ? 0 : b_sum.inversed();
             }
-            allocate(b_partial_sum_inverse, 33, 10);
+            allocate(b_sum_inverse, 33, 10);
 
-            // nonzero_modulus == 0  <==>  b_partial_sum != 0
-            // nonzero_modulus == 1  <==>  b_partial_sum == 0
-            TYPE nonzero_modulus = 1 - b_partial_sum * b_partial_sum_inverse;
+            // nonzero_modulus == 0  <==>  b_sum != 0
+            // nonzero_modulus == 1  <==>  b_sum == 0
+            TYPE nonzero_modulus = 1 - b_sum * b_sum_inverse;
             allocate(nonzero_modulus, 34, 10);
-            constrain(b_partial_sum * nonzero_modulus);
+            constrain(b_sum * nonzero_modulus);
 
             // zero_modulus == 0  <==>  b == 0
             // zero_modulus == 1  <==>  b != 0
@@ -266,18 +266,18 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                     BOOST_ASSERT(mul8_carryless_chunks[i] + prev_carry == mul8_chunks[i] + 256 * mul8_carries[i]);
                 }
                 allocate(mul8_chunks[i], i, 6);
-    
+
                 // Range-checking the chunks
-                mul8_chunks_check[i] = mul8_chunks[i] * 256; 
+                mul8_chunks_check[i] = mul8_chunks[i] * 256;
                 allocate(mul8_chunks_check[i], i, 7);
-    
+
                 // Carries are stored in two columns
                 if (i < chunk_8_amount) {
                     int column_offset = i % chunk_amount;
                     int row_offset = i / chunk_amount;
                     allocate(mul8_carries[i], 2 * chunk_amount + column_offset, 4 + row_offset);
                 }
-    
+
                 // Main constraint -- carry propagation
                 constrain(mul8_carryless_chunks[i] + prev_carry - mul8_chunks[i] - mul8_carries[i] * 256);
             }
@@ -288,7 +288,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                 int column_offset = i % chunk_amount;
                 int row_offset = i / chunk_amount;
                 allocate(mul8_carries_copy1[i], 2 * chunk_amount + column_offset, 2 + row_offset);
-            
+
                 mul8_carries_copy2[i] = mul8_carries_copy1[i];
                 allocate(mul8_carries_copy2[i], i, 1);
 

@@ -190,6 +190,20 @@ BOOST_AUTO_TEST_CASE(divs) {
     //     zkevm_opcode::PUSH32,
     //     0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff_big_uint256);
     // opcode_tester.push_opcode(zkevm_opcode::SMOD);
+    opcode_tester.push_opcode(
+        zkevm_opcode::PUSH32,
+        0x1_big_uint256);
+    opcode_tester.push_opcode(
+        zkevm_opcode::PUSH32,
+        0x51a1ceb83b83f1985a81c295d1ff28afef186e02_big_uint256);
+    opcode_tester.push_opcode(zkevm_opcode::DIV);
+    opcode_tester.push_opcode(
+        zkevm_opcode::PUSH32,
+        0x1_big_uint256);
+    opcode_tester.push_opcode(
+        zkevm_opcode::PUSH32,
+        0x51a1ceb83b83f1985a81c295d1ff28afef186e02_big_uint256);
+    opcode_tester.push_opcode(zkevm_opcode::MOD);
     opcode_tester.push_opcode(zkevm_opcode::STOP);
 
     max_sizes.max_keccak_blocks = 50;
