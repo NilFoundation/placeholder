@@ -84,9 +84,9 @@ namespace nil::blueprint::bbf {
         static table_params get_minimal_requirements(std::size_t max_mpt_query_size, mpt_type type) {
             std::size_t witnesses;
             if (type == mpt_type::account_trie)
-                witnesses = 675;
+                witnesses = 643; // must increase if single_byte_query
             else if (type == mpt_type::storage_trie)
-                witnesses = 471;
+                witnesses = 439; // must increase if single_byte_query
             else
                 throw "Unsupported trie!";
 

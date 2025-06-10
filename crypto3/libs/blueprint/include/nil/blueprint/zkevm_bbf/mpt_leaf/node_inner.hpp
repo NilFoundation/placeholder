@@ -300,11 +300,14 @@ namespace nil::blueprint::bbf {
         }
 
         std::vector<TYPE> padded_data() {
-            if (padding == padding_type::right_padding)
-                return data;
+            std::vector<TYPE> padded(max_data_len);
+            if (padding == padding_type::right_padding) {
+                for (size_t i = 0; i < padded.size(); i++)
+                    padded[i] = data[i] * (1 - len_selector.selector_accumulator(i));
+                return padded;
+            }
             if (is_fixed_length == true)
                 return data;
-            std::vector<TYPE> padded(max_data_len);
             for (size_t i = 0; i < max_data_len; i++) {
                 padded[i] = 0;
                 for (size_t j = 0; j <= i; j++)
@@ -412,7 +415,7 @@ namespace nil::blueprint::bbf {
                 TYPE len_is_zero = len_selector.get_selector(0);
                 constrain(len_is_zero * index[0] +
                     (1 - len_is_zero) * (index[0] - first_data_index));
-                constrain(len_is_zero * data[0]);
+                // constrain(len_is_zero * data[0]);
                 constrain(len_is_zero * (rlc[0] - h->prefix_rlc[2]) +
                     (1 - len_is_zero) * (rlc[0] - (h->prefix_rlc[2] * rlc_challenge + data[0])));
             }
@@ -424,7 +427,8 @@ namespace nil::blueprint::bbf {
                     TYPE data_finished = len_selector.selector_accumulator(i); // not including this column
                     constrain( data_finished * index[i] +
                         (1 - data_finished) * (index[i] - index[i-1] - 1));
-                    constrain(data[i] * data_finished);
+                    // we no longer enforce the data to be empty. node_inner_key use the empty space for key prefix
+                    // constrain(data[i] * data_finished);
                     constrain(rlc[i] - (data_finished * rlc[i-1] + (1 - data_finished) * (rlc[i-1] * rlc_challenge + data[i])), "Data RLC is wrong!");
                 }
             }
@@ -468,10 +472,6 @@ namespace nil::blueprint::bbf {
                     throw "Unknown trie type!";
                 original_key.resize(original_key_size);
                 original_key_rlc.resize(original_key_size);
-                // Even though we could calculate key prefix with only expressions, 
-                // we use these extra witness columns. It's not obvious at the moment
-                // how to get rid of it with current inner-node architecture..
-                key_prefix.resize(trie_key_size);
                 prefix_length_selector = new optimized_selector(context_object, trie_key_size + 1);
             }
 
@@ -482,9 +482,12 @@ namespace nil::blueprint::bbf {
             ss << "prefix has last nibble: " << prefix_has_last_nibble << std::endl;
             ss << "prefix length: " << prefix_length_selector->get_value() << std::endl;
             ss << "key prefix:\n";
-            for (size_t i = 0; i < trie_key_size; i++)
-                ss << std::hex << key_prefix[i] << std::dec << " ";
-            ss << std::endl;
+            if constexpr (stage == GenerationStage::ASSIGNMENT) {
+                std::size_t len = static_cast<std::uint32_t>(this->h->len.to_integral());
+                for (size_t i = len; i < trie_key_size + 1 ;i++)
+                    ss << std::hex << this->data[i] << std::dec << " ";
+                ss << std::endl;
+            }
             ss << node_inner_string::print();
             return ss.str();
         }
@@ -504,10 +507,12 @@ namespace nil::blueprint::bbf {
                 original_key_rlc[i] = original_key_rlc[i-1] * this->rlc_challenge + original_key[i];
             
 
-            BOOST_LOG_TRIVIAL(debug) << "trie key:\n";
+            std::stringstream ss;
+            ss << "trie key:\n";
             for (size_t i = 0; i < trie_key.size(); i++)
-                BOOST_LOG_TRIVIAL(debug) << std::hex << int(trie_key[i]) << std::dec << " ";
-            BOOST_LOG_TRIVIAL(debug) << std::endl;
+                ss << std::hex << int(trie_key[i]) << std::dec << " ";
+            ss << std::endl;
+            BOOST_LOG_TRIVIAL(debug) << ss.str();
 
             std::uint32_t first_byte = static_cast<std::uint32_t>(this->data[0].to_integral());
             std::size_t prefix_length;
@@ -527,8 +532,9 @@ namespace nil::blueprint::bbf {
             prefix_length_selector->set_data(prefix_length);
             
             prefix_has_last_nibble = control_nibble - 2;
-            for (size_t i = trie_key.size() - prefix_length; i < trie_key.size(); i++)
-                key_prefix[i] = trie_key[i - (trie_key.size() - prefix_length)];
+
+            for (size_t i = trie_key_size + 1 - prefix_length; i < trie_key_size + 1; i++)
+                this->data[i] = trie_key[i - trie_key_size - 1 + prefix_length];
         }
 
         void allocate_witness(std::size_t &column_index, std::size_t &row_index){
@@ -541,8 +547,8 @@ namespace nil::blueprint::bbf {
                 allocate(original_key[i], column_index ++, row_index); 
             for (size_t i = 0; i < original_key_rlc.size(); i++)
                 allocate(original_key_rlc[i], column_index ++, row_index);
-            for (size_t i = 0; i < key_prefix.size(); i++)
-                allocate(key_prefix[i], column_index++, row_index);
+            // for (size_t i = 0; i < key_prefix.size(); i++)
+            //     allocate(key_prefix[i], column_index++, row_index);
             
             prefix_length_selector->allocate_witness(column_index, row_index);
         }
@@ -583,7 +589,7 @@ namespace nil::blueprint::bbf {
         mpt_type trie_type;
         std::vector<TYPE> original_key;
         std::vector<TYPE> original_key_rlc;
-        std::vector<TYPE> key_prefix;
+        // std::vector<TYPE> key_prefix;
         optimized_selector* prefix_length_selector;
         TYPE prefix_last_nibble;
         TYPE key_first_nibble;
@@ -604,11 +610,11 @@ namespace nil::blueprint::bbf {
                 + (1 - prefix_has_last_nibble) * (trie_key_size - this->h->len + 1))
             );
 
-            std::array<TYPE, 32> trie_key; // must be changed for transaction and receipt tries
-
+            std::array<TYPE, 32> trie_key; // 32 must be changed for transaction and receipt tries
+            // ab 14 d6 88 2 a7 63 f7 db 87 53 46 d0 3f bf 86 f1 37 de 55 81 4b 19 1c 6 9e 72 1f 47 47 47 33
             for (size_t i = 0; i < trie_key_size; i++) {
-                for (size_t j = i; j < trie_key_size; j++) {
-                    trie_key[i] += key_prefix[j] * prefix_length_selector->get_selector(trie_key_size - j + i);
+                for (size_t j = i + 1; j < trie_key_size; j++) {
+                    trie_key[i] += this->data[trie_key_size + 1 - j + i] * prefix_length_selector->get_selector(j);
                 }
                 trie_key[i] += (prefix_has_last_nibble * (prefix_last_nibble * 0x10 + key_first_nibble) + (1 - prefix_has_last_nibble) * this->data[1]) * prefix_length_selector->get_selector(i);
                 for (size_t j = 0; j < i; j++) {
