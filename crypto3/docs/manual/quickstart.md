@@ -1,4 +1,4 @@
-\page Quickstart Quickstart
+\page Quickstart
 
 Quickstart
 ========================
