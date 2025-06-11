@@ -26,12 +26,10 @@
 
 #include <boost/test/unit_test.hpp>
 
-#include <nil/crypto3/algebra/curves/pallas.hpp>
-#include <nil/crypto3/algebra/fields/arithmetic_params/pallas.hpp>
-#include <nil/crypto3/algebra/curves/vesta.hpp>
-#include <nil/crypto3/algebra/fields/arithmetic_params/vesta.hpp>
 #include <nil/crypto3/algebra/curves/alt_bn128.hpp>
 #include <nil/crypto3/algebra/fields/arithmetic_params/alt_bn128.hpp>
+#include <nil/crypto3/algebra/fields/babybear.hpp>
+#include <nil/crypto3/algebra/fields/arithmetic_params/babybear.hpp>
 #include <nil/crypto3/algebra/random_element.hpp>
 
 #include <nil/crypto3/hash/algorithm/hash.hpp>
@@ -43,6 +41,7 @@
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
 #include <nil/blueprint/zkevm_bbf/big_field/circuits/bytecode.hpp>
+#include <nil/blueprint/zkevm_bbf/small_field/circuits/bytecode.hpp>
 
 #include "./circuit_test_fixture.hpp"
 
@@ -56,20 +55,21 @@ std::string bytecode_mstore8 = "0x608060405234801561001057600080fd5b506004361061
 
 class zkEVMBytecodeTestFixture: public CircuitTestFixture {
 public:
-    template <typename field_type>
-    void test_zkevm_bytecode(
+    template <typename FieldType>
+    void test_big_zkevm_bytecode(
         const nil::blueprint::bbf::zkevm_keccak_buffers &bytecodes,
         const nil::blueprint::bbf::zkevm_keccak_buffers &keccak_buffers,
         std::size_t max_bytecode_size,
         std::size_t max_keccak_blocks,
         bool expected_result = true
     ){
-        typename bytecode<field_type, GenerationStage::ASSIGNMENT>::input_type bytecode_assignment_input;
+        using SmallFieldType = typename FieldType::small_subfield;
+        typename zkevm_big_field::bytecode<SmallFieldType, GenerationStage::ASSIGNMENT>::input_type bytecode_assignment_input;
         bytecode_assignment_input.rlc_challenge = 7;
         bytecode_assignment_input.bytecodes = bytecodes;
         bytecode_assignment_input.keccak_buffers = keccak_buffers;
 
-        bool result = test_bbf_component<field_type, bytecode>(
+        bool result = test_bbf_component<FieldType, zkevm_big_field::bytecode>(
             "bytecode",
             {7},                        //  Public input
             bytecode_assignment_input,  //  Assignment input
@@ -78,10 +78,38 @@ public:
         );
         BOOST_CHECK((!check_satisfiability && !generate_proof) || result == expected_result); // Max_rw, Max_mpt
     }
+
+
+    template <typename FieldType>
+    void test_small_zkevm_bytecode(
+        const nil::blueprint::bbf::zkevm_keccak_buffers &bytecodes,
+        const nil::blueprint::bbf::zkevm_keccak_buffers &keccak_buffers,
+        std::size_t max_bytecode_size,
+        std::size_t max_keccak_blocks,
+        bool expected_result = true
+    ){
+        using SmallFieldType = typename FieldType::small_subfield;
+        typename zkevm_small_field::bytecode<SmallFieldType, GenerationStage::ASSIGNMENT>::input_type bytecode_assignment_input;
+        bytecode_assignment_input.rlc_challenge = 7;
+        bytecode_assignment_input.bytecodes = bytecodes;
+        bytecode_assignment_input.keccak_buffers = keccak_buffers;
+
+        bool result = test_bbf_component<FieldType, zkevm_small_field::bytecode>(
+            "bytecode-s",
+            {7},                        //  Public input
+            bytecode_assignment_input,  //  Assignment input
+            max_bytecode_size,          //  Sizes
+            max_keccak_blocks,          //  Keccak blocks amount
+            5                           //  Max bytecodes amount
+        );
+        BOOST_CHECK((!check_satisfiability && !generate_proof) || result == expected_result); // Max_rw, Max_mpt
+    }
 };
 
+BOOST_GLOBAL_FIXTURE(zkEVMGlobalFixture);
 BOOST_FIXTURE_TEST_SUITE(zkevm_bbf_bytecode, zkEVMBytecodeTestFixture)
-    using field_type = nil::crypto3::algebra::curves::alt_bn128_254::scalar_field_type;
+    using big_field_type = nil::crypto3::algebra::curves::alt_bn128_254::scalar_field_type;
+    using small_field_type = nil::crypto3::algebra::fields::babybear_fp4;
 BOOST_AUTO_TEST_CASE(one_contract){
     nil::blueprint::bbf::zkevm_keccak_buffers input;
     input.new_buffer(hex_string_to_bytes(bytecode_for));
@@ -91,7 +119,8 @@ BOOST_AUTO_TEST_CASE(one_contract){
     keccak_input.new_buffer(hex_string_to_bytes("0xffaa"));
     keccak_input.new_buffer(hex_string_to_bytes("0x00ed"));
     keccak_input.new_buffer(hex_string_to_bytes("0xffaa12312384710283470321894798234702918470189347"));
-    test_zkevm_bytecode<field_type>(input, keccak_input, 1000, 30);
+    test_big_zkevm_bytecode<big_field_type>(input, keccak_input, 1000, 30);
+    test_small_zkevm_bytecode<small_field_type>(input, keccak_input, 1000, 30);
 }
 
 BOOST_AUTO_TEST_CASE(two_contracts){
@@ -103,7 +132,8 @@ BOOST_AUTO_TEST_CASE(two_contracts){
     keccak_input.new_buffer(hex_string_to_bytes(bytecode_for));
     keccak_input.new_buffer(hex_string_to_bytes(bytecode_addition));
 
-    test_zkevm_bytecode<field_type>(input, keccak_input, 5000, 30);
+    test_big_zkevm_bytecode<big_field_type>(input, keccak_input, 5000, 30);
+    test_small_zkevm_bytecode<small_field_type>(input, keccak_input, 5000, 30);
 }
 
 BOOST_AUTO_TEST_CASE(mstore8){
@@ -115,7 +145,8 @@ BOOST_AUTO_TEST_CASE(mstore8){
     keccak_input.new_buffer(hex_string_to_bytes("0xffaa"));
     keccak_input.new_buffer(hex_string_to_bytes("0x00ed"));
     keccak_input.new_buffer(hex_string_to_bytes("0xffaa12312384710283470321894798234702918470189347"));
-    test_zkevm_bytecode<field_type>(input, keccak_input, 10000, 50);
+    test_big_zkevm_bytecode<big_field_type>(input, keccak_input, 10000, 50);
+    test_small_zkevm_bytecode<small_field_type>(input, keccak_input, 10000, 50);
 }
 
 BOOST_AUTO_TEST_CASE(not_hashed){
@@ -130,6 +161,24 @@ BOOST_AUTO_TEST_CASE(not_hashed){
     keccak_input.new_buffer(hex_string_to_bytes("0x00ed"));
     keccak_input.new_buffer(hex_string_to_bytes("0xffaa12312384710283470321894798234702918470189347"));
 
-    test_zkevm_bytecode<field_type>(input, keccak_input, 5000, 50, false);
+    test_big_zkevm_bytecode<big_field_type>(input, keccak_input, 5000, 50, false);
+    test_small_zkevm_bytecode<small_field_type>(input, keccak_input, 5000, 50, false);
 }
+
+BOOST_AUTO_TEST_CASE(new_error){
+    nil::blueprint::bbf::zkevm_keccak_buffers input;
+    std::string bytecode1 = "0x608060405234801561000f575f80fd5b5060043610610029575f3560e01c806367779dfd1461002d575b5f80fd5b610035610037565b005b5f805f9054906101000a900473ffffffffffffffffffffffffffffffffffffffff1690505f60605f8054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16620f4240600f6040516024016100aa9190610bbe565b6040516020818303038152906040527f64b3cfe6000000000000000000000000000000000000000000000000000000007bffffffffffffffffffffffffffffffffffffffffffffffffffffffff19166020820180517bffffffffffffffffffffffffffffffffffffffffffffffffffffffff83818316178352505050506040516101349190610c43565b5f604051808303815f8787f1925050503d805f811461016e576040519150601f19603f3d011682016040523d82523d5f602084013e610173565b606091505b508092508193505050811561019e5760015f81548092919061019490610c8f565b91905055506101b6565b60025f8154809291906101b090610c8f565b91905055505b5f8054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16620f42406301ffffe06040516024016102059190610d1e565b6040516020818303038152906040527f64b3cfe6000000000000000000000000000000000000000000000000000000007bffffffffffffffffffffffffffffffffffffffffffffffffffffffff19166020820180517bffffffffffffffffffffffffffffffffffffffffffffffffffffffff838183161783525050505060405161028f9190610c43565b5f604051808303815f8787f1925050503d805f81146102c9576040519150601f19603f3d011682016040523d82523d5f602084013e6102ce565b606091505b50809250819350505081156102f95760015f8154809291906102ef90610c8f565b9190505550610311565b60025f81548092919061030b90610c8f565b91905055505b5f8054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16620f42406301ffffe16040516024016103609190610d70565b6040516020818303038152906040527f64b3cfe6000000000000000000000000000000000000000000000000000000007bffffffffffffffffffffffffffffffffffffffffffffffffffffffff19166020820180517bffffffffffffffffffffffffffffffffffffffffffffffffffffffff83818316178352505050506040516103ea9190610c43565b5f604051808303815f8787f1925050503d805f8114610424576040519150601f19603f3d011682016040523d82523d5f602084013e610429565b606091505b50809250819350505081156104545760015f81548092919061044a90610c8f565b919050555061046c565b60025f81548092919061046690610c8f565b91905055505b5f8054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16620f42406301fffffe6040516024016104bb9190610dc2565b6040516020818303038152906040527f64b3cfe6000000000000000000000000000000000000000000000000000000007bffffffffffffffffffffffffffffffffffffffffffffffffffffffff19166020820180517bffffffffffffffffffffffffffffffffffffffffffffffffffffffff83818316178352505050506040516105459190610c43565b5f604051808303815f8787f1925050503d805f811461057f576040519150601f19603f3d011682016040523d82523d5f602084013e610584565b606091505b50809250819350505081156105af5760015f8154809291906105a590610c8f565b91905055506105c7565b60025f8154809291906105c190610c8f565b91905055505b5f8054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16620f42406301ffffff6040516024016106169190610e14565b6040516020818303038152906040527f64b3cfe6000000000000000000000000000000000000000000000000000000007bffffffffffffffffffffffffffffffffffffffffffffffffffffffff19166020820180517bffffffffffffffffffffffffffffffffffffffffffffffffffffffff83818316178352505050506040516106a09190610c43565b5f604051808303815f8787f1925050503d805f81146106da576040519150601f19603f3d011682016040523d82523d5f602084013e6106df565b606091505b508092508193505050811561070a5760015f81548092919061070090610c8f565b9190505550610722565b60025f81548092919061071c90610c8f565b91905055505b5f8054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16620f424063020000006040516024016107719190610e66565b6040516020818303038152906040527f64b3cfe6000000000000000000000000000000000000000000000000000000007bffffffffffffffffffffffffffffffffffffffffffffffffffffffff19166020820180517bffffffffffffffffffffffffffffffffffffffffffffffffffffffff83818316178352505050506040516107fb9190610c43565b5f604051808303815f8787f1925050503d805f8114610835576040519150601f19603f3d011682016040523d82523d5f602084013e61083a565b606091505b50809250819350505081156108655760015f81548092919061085b90610c8f565b919050555061087d565b60025f81548092919061087790610c8f565b91905055505b5f8054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16620f42407fff000000000000000000000000000000000000000000000000000000000000006040516024016108e89190610eb8565b6040516020818303038152906040527f64b3cfe6000000000000000000000000000000000000000000000000000000007bffffffffffffffffffffffffffffffffffffffffffffffffffffffff19166020820180517bffffffffffffffffffffffffffffffffffffffffffffffffffffffff83818316178352505050506040516109729190610c43565b5f604051808303815f8787f1925050503d805f81146109ac576040519150601f19603f3d011682016040523d82523d5f602084013e6109b1565b606091505b50809250819350505081156109dc5760015f8154809291906109d290610c8f565b91905055506109f4565b60025f8154809291906109ee90610c8f565b91905055505b5f8054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16620f42407fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff604051602401610a5f9190610f0a565b6040516020818303038152906040527f64b3cfe6000000000000000000000000000000000000000000000000000000007bffffffffffffffffffffffffffffffffffffffffffffffffffffffff19166020820180517bffffffffffffffffffffffffffffffffffffffffffffffffffffffff8381831617835250505050604051610ae99190610c43565b5f604051808303815f8787f1925050503d805f8114610b23576040519150601f19603f3d011682016040523d82523d5f602084013e610b28565b606091505b5080925081935050508115610b535760015f815480929190610b4990610c8f565b9190505550610b6b565b60025f815480929190610b6590610c8f565b91905055505b505050565b5f819050919050565b5f60ff82169050919050565b5f819050919050565b5f610ba8610ba3610b9e84610b70565b610b85565b610b79565b9050919050565b610bb881610b8e565b82525050565b5f602082019050610bd15f830184610baf565b92915050565b5f81519050919050565b5f81905092915050565b5f5b83811015610c08578082015181840152602081019050610bed565b5f8484015250505050565b5f610c1d82610bd7565b610c278185610be1565b9350610c37818560208601610beb565b80840191505092915050565b5f610c4e8284610c13565b915081905092915050565b7f4e487b71000000000000000000000000000000000000000000000000000000005f52601160045260245ffd5b5f819050919050565b5f610c9982610c86565b91507fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff8203610ccb57610cca610c59565b5b600182019050919050565b5f819050919050565b5f63ffffffff82169050919050565b5f610d08610d03610cfe84610cd6565b610b85565b610cdf565b9050919050565b610d1881610cee565b82525050565b5f602082019050610d315f830184610d0f565b92915050565b5f819050919050565b5f610d5a610d55610d5084610d37565b610b85565b610cdf565b9050919050565b610d6a81610d40565b82525050565b5f602082019050610d835f830184610d61565b92915050565b5f819050919050565b5f610dac610da7610da284610d89565b610b85565b610cdf565b9050919050565b610dbc81610d92565b82525050565b5f602082019050610dd55f830184610db3565b92915050565b5f819050919050565b5f610dfe610df9610df484610ddb565b610b85565b610cdf565b9050919050565b610e0e81610de4565b82525050565b5f602082019050610e275f830184610e05565b92915050565b5f819050919050565b5f610e50610e4b610e4684610e2d565b610b85565b610cdf565b9050919050565b610e6081610e36565b82525050565b5f602082019050610e795f830184610e57565b92915050565b5f819050919050565b5f610ea2610e9d610e9884610e7f565b610b85565b610c86565b9050919050565b610eb281610e88565b82525050565b5f602082019050610ecb5f830184610ea9565b92915050565b5f819050919050565b5f610ef4610eef610eea84610ed1565b610b85565b610c86565b9050919050565b610f0481610eda565b82525050565b5f602082019050610f1d5f830184610efb565b9291505056";
+    std::string bytecode2 = "0x608060405234801561000f575f80fd5b5060043610610029575f3560e01c806364b3cfe61461002d575b5f80fd5b610047600480360381019061004291906100d6565b61005d565b6040516100549190610110565b60405180910390f35b5f8060405180606001604052806029815260200161019e6029913990505f835190505f8081548092919061009090610156565b91905055508092505050919050565b5f80fd5b5f819050919050565b6100b5816100a3565b81146100bf575f80fd5b50565b5f813590506100d0816100ac565b92915050565b5f602082840312156100eb576100ea61009f565b5b5f6100f8848285016100c2565b91505092915050565b61010a816100a3565b82525050565b5f6020820190506101235f830184610101565b92915050565b7f4e487b71000000000000000000000000000000000000000000000000000000005f52601160045260245ffd5b5f610160826100a3565b91507fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff820361019257610191610129565b5b60018201905091905056fe112233445566778899ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff";
+
+    input.new_buffer(hex_string_to_bytes(bytecode1));
+    input.new_buffer(hex_string_to_bytes(bytecode2));
+
+    nil::blueprint::bbf::zkevm_keccak_buffers keccak_input;
+    keccak_input.new_buffer(hex_string_to_bytes(bytecode1));
+    keccak_input.new_buffer(hex_string_to_bytes(bytecode2));
+
+    // test_big_zkevm_bytecode<big_field_type>(input, keccak_input, 5000, 50);
+    test_small_zkevm_bytecode<small_field_type>(input, keccak_input, 5000, 50);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
