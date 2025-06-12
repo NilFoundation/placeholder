@@ -153,7 +153,7 @@ BOOST_AUTO_TEST_SUITE(marshalling_random)
     static constexpr std::size_t lambda = 40;
     static constexpr std::size_t m = 2;
 
-    constexpr static const std::size_t d = 16;
+    constexpr static const std::size_t d = 15;
     constexpr static const std::size_t final_polynomial_degree = 1; // final polynomial degree
     constexpr static const std::size_t r = boost::static_log2<(d - final_polynomial_degree)>::value;
 
@@ -169,7 +169,8 @@ BOOST_AUTO_TEST_SUITE(marshalling_random)
             hash_type, hash_type, m
     >;
     using LPC = typename nil::crypto3::zk::commitments::batched_list_polynomial_commitment<field_type, lpc_params_type>;
-    using lpc_scheme_type = nil::crypto3::zk::commitments::lpc_commitment_scheme<LPC, math::polynomial<typename field_type::value_type>>;
+    using poly_type = math::polynomial_dfs<typename field_type::value_type>;
+    using lpc_scheme_type = nil::crypto3::zk::commitments::lpc_commitment_scheme<LPC, poly_type>;
 
 BOOST_FIXTURE_TEST_CASE(lpc_proof_test, test_tools::random_test_initializer<field_type>) {
 
@@ -216,7 +217,7 @@ BOOST_FIXTURE_TEST_CASE(batches_num_3_test, test_tools::random_test_initializer<
     constexpr static const std::size_t lambda = 40;
     constexpr static const std::size_t k = 1;
 
-    constexpr static const std::size_t d = 16;
+    constexpr static const std::size_t d = 15;
 
     constexpr static const std::size_t r = boost::static_log2<(d - k)>::value;
     constexpr static const std::size_t m = 2;
@@ -227,6 +228,7 @@ BOOST_FIXTURE_TEST_CASE(batches_num_3_test, test_tools::random_test_initializer<
         list_polynomial_commitment_params<merkle_hash_type, transcript_hash_type, m>
             lpc_params_type;
     typedef zk::commitments::list_polynomial_commitment<field_type, lpc_params_type> lpc_type;
+    typedef math::polynomial_dfs<typename field_type::value_type> poly_type;
 
     static_assert(zk::is_commitment<fri_type>::value);
     static_assert(zk::is_commitment<lpc_type>::value);
@@ -244,15 +246,15 @@ BOOST_FIXTURE_TEST_CASE(batches_num_3_test, test_tools::random_test_initializer<
         2 /*expand_factor*/
     );
 
-    using lpc_scheme_type = nil::crypto3::zk::commitments::lpc_commitment_scheme<lpc_type, math::polynomial<typename field_type::value_type>>;
+    using lpc_scheme_type = nil::crypto3::zk::commitments::lpc_commitment_scheme<lpc_type, poly_type>;
     lpc_scheme_type lpc_scheme_prover(fri_params);
 
     // Generate polynomials
-    lpc_scheme_prover.append_to_batch(0, {1u, 13u, 4u, 1u, 5u, 6u, 7u, 2u, 8u, 7u, 5u, 6u, 1u, 2u, 1u, 1u});
-    lpc_scheme_prover.append_to_batch(2, {0u, 1u});
-    lpc_scheme_prover.append_to_batch(2, {0u, 1u, 2u});
-    lpc_scheme_prover.append_to_batch(2, {0u, 1u, 3u});
-    lpc_scheme_prover.append_to_batch(3, {0u});
+    lpc_scheme_prover.append_to_batch(0, poly_type(15, {1u, 13u, 4u, 1u, 5u, 6u, 7u, 2u, 8u, 7u, 5u, 6u, 1u, 2u, 1u, 1u}));
+    lpc_scheme_prover.append_to_batch(2, poly_type(1, {0u, 1u}));
+    lpc_scheme_prover.append_to_batch(2, poly_type(2, {0u, 1u, 2u, 3u}));
+    lpc_scheme_prover.append_to_batch(3, poly_type(2, {0u, 1u, 3u, 4u}));
+    lpc_scheme_prover.append_to_batch(3, poly_type(0, {0u}));
 
     // Commit
     std::map<std::size_t, typename lpc_type::commitment_type> commitments;

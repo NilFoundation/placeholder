@@ -95,6 +95,9 @@ namespace nil {
                     const value_type& get_etha() const {return _etha;}
                     const std::map<std::size_t, bool>& get_batch_fixed() const {return _batch_fixed;}
                     const preprocessed_data_type& get_fixed_polys_values() const {return _fixed_polys_values;}
+                    const std::map<std::size_t, std::vector<typename polynomial_dfs_type::polynomial_type>>& get_polys_coefficients() const {
+                        return _polys_coefficients;
+                    }
 
                     // We must set it in verifier, taking this value from common data.
                     void set_fixed_polys_values(const preprocessed_data_type& value) {_fixed_polys_values = value;}
@@ -107,13 +110,16 @@ namespace nil {
                             const typename fri_type::params_type& fri_params,
                             const value_type& etha,
                             const std::map<std::size_t, bool>& batch_fixed,
-                            const preprocessed_data_type& fixed_polys_values)
+                            const preprocessed_data_type& fixed_polys_values,
+                            std::map<std::size_t, std::vector<typename polynomial_dfs_type::polynomial_type>> polys_coefficients
+                            )
                         : polys_evaluator_type(polys_evaluator)
                         , _trees(trees)
                         , _fri_params(fri_params)
                         , _etha(etha)
                         , _batch_fixed(batch_fixed)
                         , _fixed_polys_values(fixed_polys_values)
+                        , _polys_coefficients(std::move(polys_coefficients))
                     {
                     }
 
