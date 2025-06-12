@@ -22,7 +22,7 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE blueprint_plonk_opcodes_test_codecopy
+#define BOOST_TEST_MODULE blueprint_plonk_opcodes_test_metadata
 
 #include <boost/assert.hpp>
 #include <boost/test/unit_test.hpp>
@@ -49,39 +49,12 @@ using big_field_type =
     typename nil::crypto3::algebra::curves::alt_bn128_254::scalar_field_type;
 using small_field_type = typename algebra::fields::babybear;
 
-BOOST_AUTO_TEST_CASE(codecopy) {
+BOOST_AUTO_TEST_CASE(metadata) {
     zkevm_opcode_tester opcode_tester;
 
     l1_size_restrictions max_sizes;
 
-    opcode_tester.push_opcode(zkevm_opcode::PUSH1, 0x10_big_uint256);
-    opcode_tester.push_opcode(zkevm_opcode::PUSH1, 0x0_big_uint256);
-    opcode_tester.push_opcode(zkevm_opcode::PUSH1, 0x0_big_uint256);
-    opcode_tester.push_opcode(zkevm_opcode::CODECOPY);
-    opcode_tester.push_opcode(zkevm_opcode::PUSH1, 0x8_big_uint256);
-    opcode_tester.push_opcode(zkevm_opcode::PUSH1, 0x1F_big_uint256);
-    opcode_tester.push_opcode(zkevm_opcode::PUSH1, 0x0_big_uint256);
-    opcode_tester.push_opcode(zkevm_opcode::CODECOPY);
-    //length bigger than bytecode size
-    opcode_tester.push_opcode(zkevm_opcode::PUSH1, 0x90_big_uint256);
-    opcode_tester.push_opcode(zkevm_opcode::PUSH1, 0x0_big_uint256);
-    opcode_tester.push_opcode(zkevm_opcode::PUSH1, 0x0_big_uint256);
-    opcode_tester.push_opcode(zkevm_opcode::CODECOPY);
-    //length bigger than code limit
-    opcode_tester.push_opcode(zkevm_opcode::PUSH4, hex_string_to_bytes("0x10001"));
-    opcode_tester.push_opcode(zkevm_opcode::PUSH1, 0x0_big_uint256);
-    opcode_tester.push_opcode(zkevm_opcode::PUSH1, 0x0_big_uint256);
-    opcode_tester.push_opcode(zkevm_opcode::CODECOPY);
-    //offset bigger than code limit
-    opcode_tester.push_opcode(zkevm_opcode::PUSH1, 0x0_big_uint256);
-    opcode_tester.push_opcode(zkevm_opcode::PUSH4, hex_string_to_bytes("0x10001"));
-    opcode_tester.push_opcode(zkevm_opcode::PUSH1, 0x0_big_uint256);
-    //dest offset is bigger than max memory
-    opcode_tester.push_opcode(zkevm_opcode::PUSH1, 0x0_big_uint256);
-    opcode_tester.push_opcode(zkevm_opcode::PUSH1, 0x0_big_uint256);
-    opcode_tester.push_opcode(zkevm_opcode::PUSH5, hex_string_to_bytes("0x20000000"));
     opcode_tester.push_opcode(zkevm_opcode::STOP);
-    // test with metadata
     std::vector<std::uint8_t> metadata = {
     0xa1, 0x65, 0x62, 0x7a, 0x7a, 0x72, 0x30, 0x58, 0x20,  
     0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0,       

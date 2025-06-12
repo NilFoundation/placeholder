@@ -1,6 +1,7 @@
 set(ZKEVM_BBF_TESTS_FILES
     "${BLUEPRINT_TEST_ROOT}/zkevm_bbf/debugtt"
     "${BLUEPRINT_TEST_ROOT}/zkevm_bbf/vmtrace"
+    "${BLUEPRINT_TEST_ROOT}/zkevm_bbf/bytecode"
     "${BLUEPRINT_TEST_ROOT}/zkevm_bbf/opcodes/pushx"
     "${BLUEPRINT_TEST_ROOT}/zkevm_bbf/opcodes/iszero"
     "${BLUEPRINT_TEST_ROOT}/zkevm_bbf/opcodes/mod_ops"
@@ -19,4 +20,5 @@ set(ZKEVM_BBF_TESTS_FILES
     "${BLUEPRINT_TEST_ROOT}/zkevm_bbf/opcodes/gas"
     "${BLUEPRINT_TEST_ROOT}/zkevm_bbf/opcodes/pc"
     "${BLUEPRINT_TEST_ROOT}/zkevm_bbf/opcodes/msize"
+    "${BLUEPRINT_TEST_ROOT}/zkevm_bbf/opcodes/metadata"
 )

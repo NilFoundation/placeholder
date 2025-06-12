@@ -117,7 +117,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             for( std::size_t i = 0; i < max_copy_events * 2; i++ ){
                 if constexpr (stage == GenerationStage::ASSIGNMENT) { is_write[i] = i%2; }
                 allocate(is_write[i], is_write_index, i);
-                allocate(cp_type[i], cp_type_index , i);
+                allocate(cp_type[i], cp_type_index, i);
                 for( std::size_t j = 0; j < 16; j++){
                     allocate(id[i][j], id_start_index + j, i);
                 }

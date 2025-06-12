@@ -86,8 +86,6 @@ namespace nil {
 
                 void push_metadata(const std::vector<std::uint8_t> &metadata) {
                     BOOST_LOG_TRIVIAL(trace) << "Adding metadata of size " << metadata.size() << " bytes" << std::endl;
-                    std::cout <<"Adding metadata of size " << metadata.size() << " bytes" << std::endl;
-                    std::cout <<"bytecode length: " << bytecode.size() << std::endl;
                     
                     // Add metadata bytes to bytecode
                     bytecode.insert(bytecode.end(), metadata.begin(), metadata.end());
@@ -99,7 +97,6 @@ namespace nil {
                     std::uint16_t metadata_length = static_cast<std::uint16_t>(metadata.size());
                     bytecode.push_back(static_cast<std::uint8_t>((metadata_length >> 8) & 0xFF)); // High byte
                     bytecode.push_back(static_cast<std::uint8_t>(metadata_length & 0xFF));        // Low byte
-                    std::cout <<"bytecode length after: " << bytecode.size() << std::endl;
                     
                     BOOST_LOG_TRIVIAL(trace) << "Metadata added. Total bytecode size: " << bytecode.size() << std::endl;
                 }

@@ -142,9 +142,11 @@ namespace nil::blueprint::bbf::zkevm_small_field{
 
                     // Determine the boundary between executable bytes and metadata
                     std::size_t exec_boundary = total_len;  // Default: all bytes are executable
+                    std::cout << "total_len: " << total_len << std::endl;
                     if (total_len >= 2) {
                         // Metadata length is encoded in the last two bytes
                         std::size_t meta_len = (buffer[total_len - 2] << 8) + buffer[total_len - 1];
+                        
                         if (meta_len + 2 <= total_len) {
                             std::size_t boundary = total_len - meta_len - 2 - 1;  // Byte before metadata
                             // Check for stopping opcodes (STOP, INVALID, RETURN) that will
@@ -153,7 +155,12 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                                 (buffer[boundary] == 0x00 || buffer[boundary] == 0xfe ||
                                 buffer[boundary] == 0xf3)
                             ) {
+                                std::cout << "meta_len: " << meta_len << std::endl;
                                 exec_boundary = boundary + 1;  // Set boundary after the stopping opcode
+                            }
+                            else {
+                                std::cout << "no STOP opcode at metadata boundary" << std::endl;
+                                std::cout<< "boundary opcode: " << std::hex << buffer[boundary] << std::dec << std::endl;
                             }
                         }
                     }
@@ -188,6 +195,10 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                         push_size[cur] = push_size_value;
                         rlc_challenge[cur] = input.rlc_challenge;
                         value_rlc[cur] = value_rlc[cur - 1] * input.rlc_challenge + byte;
+
+                        std::cout << "value[i]: " << value[cur] << std::endl;
+                        std::cout<<"push_size[i]: " << push_size[cur] << std::endl;
+                        std::cout << "is_opcode[i]: " << is_opcode[cur] << std::endl;
                     }
                     is_last_byte[cur - 1] = 1;
                     hash_value_rlc[i] = value_rlc[cur - 1];

@@ -997,7 +997,8 @@ namespace nil {
                     append_stack_reads(3);
 
                     zkevm_basic_evm::codecopy();
-                    copy_event cpy = codecopy_copy_event(
+                    if (memory.size() % 32 == 0) {
+                        copy_event cpy = codecopy_copy_event(
                         bytecode_hash,
                         src,
                         call_id,
@@ -1005,16 +1006,15 @@ namespace nil {
                         rw_counter,
                         length
                     );
-                    if (memory.size() % 32 == 0) {
                         for( std::size_t i = 0; i < length; i++){
                             _short_rw_operations.push_back(memory_rw_operation(
                                 call_id, dst + i, rw_counter++, true, memory[dst + i]
                             ));
                             cpy.push_byte(memory[dst+i]);
                         }
+                        if( length > 0 ) _copy_events.push_back(cpy);
                     }
-                    if( length > 0 ) _copy_events.push_back(cpy);
-
+                    
                 }
 
                 virtual void dupx( std::size_t d) override {
