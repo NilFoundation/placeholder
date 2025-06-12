@@ -95,15 +95,15 @@ namespace nil {
                 // Proof and verify for one polynomial
                 // One polynomial processing
                 template<typename FRI,
-                    typename polynomial_dfs_type,
-                    typename std::enable_if<std::is_base_of<commitments::fri<typename FRI::field_type,
+                    typename polynomial_dfs_type>
+                    requires(
+                        std::is_base_of<commitments::fri<typename FRI::field_type,
                             typename FRI::merkle_tree_hash_type,
                             typename FRI::transcript_hash_type,
                             FRI::m,
                             typename FRI::grinding_type
-                        >,
-                        FRI>::value,
-                    bool>::type = true>
+                        >, FRI>::value && 
+                        math::is_any_polynomial_dfs<polynomial_dfs_type>::value)
                 static typename FRI::basic_fri::proof_type proof_eval(
                     polynomial_dfs_type &g,
                     typename FRI::basic_fri::merkle_tree_type &tree,

@@ -1008,21 +1008,6 @@ namespace nil {
                     typename FRI::initial_proofs_batch_type proof;
                     proof.initial_proofs.resize(fri_params.lambda);
 
-                    // If we have DFS polynomials, and we are going to resize them, better
-                    // convert them to coefficients form, and compute their values in
-                    // those 2 * FRI::lambda points each, which is normally 2 * 20. In
-                    // case lambda becomes much larger than log(2, average polynomial
-                    // size), then this will not be optimal. For lambda = 20 and 2^20 rows
-                    // in assignment table, it's faster and uses less RAM.
-                    TAGGED_PROFILE_SCOPE("{low level} FFT",
-                                         "Convert g polynomials to coefficients");
-                    std::map<std::size_t,
-                             std::vector<typename polynomial_dfs_type::polynomial_type>>
-                        g_coeffs =
-                            convert_polynomials_to_coefficients<FRI, polynomial_dfs_type>(
-                                fri_params, g);
-                    PROFILE_SCOPE_END();
-
                     TAGGED_PROFILE_SCOPE("{low level} poly eval",
                                          "Compute initial proofs of size {}",
                                          fri_params.lambda);
