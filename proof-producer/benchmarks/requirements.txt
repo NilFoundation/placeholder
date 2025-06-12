@@ -16,7 +16,7 @@ opentelemetry-sdk==1.30.0
 opentelemetry-semantic-conventions==0.51b0
 protobuf==5.29.3
 PyYAML==6.0.2
-requests==2.32.3
+requests==2.32.4
 typing_extensions==4.12.2
 urllib3==2.3.0
 wrapt==1.17.2
