@@ -150,21 +150,6 @@ std::vector<std::uint8_t> hex_string_to_bytes(std::string const &hex_string) {
     return bytes;
 }
 
-// boost::property_tree::ptree load_hardhat_input(std::string path){
-//     std::ifstream ss;
-//     auto test_data_dir = std::getenv("NIL_CO3_TEST_DATA_DIR")
-//                              ? std::getenv("NIL_CO3_TEST_DATA_DIR")
-//                              : std::string(TEST_DATA_DIR);
-//     auto full_path = test_data_dir + path;
-//     std::cout << "Open file " << full_path << std::endl;
-//     ss.open(full_path);
-//     boost::property_tree::ptree pt;
-//     boost::property_tree::read_json(ss, pt);
-//     ss.close();
-
-//     return pt;
-// }
-
 template<typename FieldType>
 bool check_proof(
     const nil::blueprint::circuit<
@@ -300,7 +285,8 @@ class CircuitTestFixture {
                          GenerationStage::ASSIGNMENT>::input_type assignment_input,
         ComponentStaticInfoArgs... component_static_info_args) {
         using SmallFieldType = typename FieldType::small_subfield;
-        circuit_builder<FieldType, BBFType, ComponentStaticInfoArgs...> builder(component_static_info_args...);
+        circuit_builder<SmallFieldType, BBFType, ComponentStaticInfoArgs...> builder(
+            component_static_info_args...);
 
         auto &bp = builder.get_circuit();
         std::size_t max_gates_degree  = bp.max_gates_degree();
