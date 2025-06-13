@@ -28,7 +28,6 @@
 namespace nil::blueprint::bbf::zkevm_small_field{
     // This is a table where all read/write operations are ordered by rw_id.
     // Main purpose is to prove that rw and state table contain only operations that are presented in timeline.
-
     template<typename FieldType, GenerationStage stage>
     class timeline_table : public generic_component<FieldType, stage> {
         using typename generic_component<FieldType, stage>::context_type;
@@ -51,15 +50,13 @@ namespace nil::blueprint::bbf::zkevm_small_field{
         std::vector<TYPE> state_table_selector;
         std::vector<TYPE> internal_counter;
 
-        static std::size_t get_witness_amount(
-            std::size_t instances_timeline
-        ){ return 5 * instances_timeline; }
+        static std::size_t get_witness_amount(){ return 5; }
 
         timeline_table(
             context_type &context_object,
             const input_type &input,
-            std::size_t max_timeline,
-            std::size_t instances_timeline
+            std::size_t start,
+            std::size_t max_timeline
         )
             :generic_component<FieldType,stage>(context_object),
             rw_id(max_timeline),
@@ -70,10 +67,13 @@ namespace nil::blueprint::bbf::zkevm_small_field{
         {
             if constexpr  (stage == GenerationStage::ASSIGNMENT) {
                 auto timeline = input;
-                BOOST_ASSERT(timeline.size() <= max_timeline);
             //     // BOOST_ASSERT(timeline[0].op == rw_operation_type::start);
 
                 BOOST_LOG_TRIVIAL(trace) << "Timeline table:";
+
+                // internal counter is changed item unique id for rw_circuit (rw8, rw_256, rw_state)
+                // rw_8_start_internal_counter is used to normalize internal_counter for memory, calldata and returndata operations
+                // May be done during input preparation
                 std::size_t rw_8_start_internal_counter = 0xFFFFFFFFFFFFFFFF;
                 for( std::size_t i = 0; i < timeline.size(); i++ ){
                     if( (
@@ -83,28 +83,33 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                         ) && (timeline[i].internal_counter < rw_8_start_internal_counter)
                     ) rw_8_start_internal_counter = timeline[i].internal_counter;
                 }
-                for( std::size_t i = 0; i < timeline.size(); i++ ){
-                    rw_id[i] = timeline[i].rw_id;
+
+                for( std::size_t i = 0; i < (timeline.size() < start? 0: std::min(timeline.size() - start, max_timeline)); i++ ){
+                    rw_id[i] = timeline[start+i].rw_id;
                     rw_256_table_selector[i] = (
-                        timeline[i].op == rw_operation_type::stack ||
-                        timeline[i].op == rw_operation_type::call_context
+                        timeline[start+i].op == rw_operation_type::stack ||
+                        timeline[start+i].op == rw_operation_type::call_context
                     )? 1: 0;
                     rw_8_table_selector[i] = (
-                        timeline[i].op == rw_operation_type::memory ||
-                        timeline[i].op == rw_operation_type::calldata ||
-                        timeline[i].op == rw_operation_type::returndata
+                        timeline[start+i].op == rw_operation_type::memory ||
+                        timeline[start+i].op == rw_operation_type::calldata ||
+                        timeline[start+i].op == rw_operation_type::returndata
                     )? 1: 0;
                     state_table_selector[i] = (
-                        timeline[i].op == rw_operation_type::state_call_context ||
-                        timeline[i].op == rw_operation_type::state ||
-                        timeline[i].op == rw_operation_type::transient_storage ||
-                        timeline[i].op == rw_operation_type::access_list
+                        timeline[start+i].op == rw_operation_type::state_call_context ||
+                        timeline[start+i].op == rw_operation_type::state ||
+                        timeline[start+i].op == rw_operation_type::transient_storage ||
+                        timeline[start+i].op == rw_operation_type::access_list
                     )? 1: 0;
                     internal_counter[i] = (
-                        timeline[i].op == rw_operation_type::memory ||
-                        timeline[i].op == rw_operation_type::calldata ||
-                        timeline[i].op == rw_operation_type::returndata
-                    )? timeline[i].internal_counter - rw_8_start_internal_counter + 1: timeline[i].internal_counter;
+                        timeline[start+i].op == rw_operation_type::memory ||
+                        timeline[start+i].op == rw_operation_type::calldata ||
+                        timeline[start+i].op == rw_operation_type::returndata
+                    )? timeline[start+i].internal_counter - rw_8_start_internal_counter + 1: timeline[start+i].internal_counter;
+                    BOOST_LOG_TRIVIAL(trace)
+                        << "timeline " << i << " : " << std::size_t(timeline[start+i].op)
+                        << " rw_id = " << rw_id[i]
+                        << " internal_counter =" << internal_counter[i];
                 }
             }
             for( std::size_t i = 0; i < max_timeline; i++ ){
@@ -116,43 +121,40 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                 allocate(internal_counter[i], current_column++, i);
             }
             if constexpr  (stage == GenerationStage::CONSTRAINTS) {
-                constrain(rw_id[0]);
+                std::vector<std::pair<TYPE, std::string>> every_row_constraints;
+                std::vector<std::pair<TYPE, std::string>> non_first_row_constraints;
+                std::vector<std::pair<TYPE, std::string>> not_first_and_not_last_row_constraints;
 
-                std::vector<TYPE> every_row_constraints;
-                std::vector<TYPE> non_first_row_constraints;
-
-                non_first_row_constraints.push_back(rw_8_table_selector[1] * (rw_8_table_selector[1] - 1));
-                non_first_row_constraints.push_back(rw_256_table_selector[1] * (rw_256_table_selector[1] - 1));
-                non_first_row_constraints.push_back(state_table_selector[1] * (state_table_selector[1] - 1));
-                non_first_row_constraints.push_back(
+                // Selectors are 0 or 1
+                non_first_row_constraints.push_back({rw_8_table_selector[1] * (rw_8_table_selector[1] - 1), "timeline: rw_8_table_selector is 0 or 1"});
+                non_first_row_constraints.push_back({rw_256_table_selector[1] * (rw_256_table_selector[1] - 1), "timeline: rw_8_table_selector is 0 or 1"});
+                non_first_row_constraints.push_back({state_table_selector[1] * (state_table_selector[1] - 1), "timeline: rw_8_table_selector is 0 or 1"});
+                // Only one selector is switched on at once
+                non_first_row_constraints.push_back({
                     (state_table_selector[1] + rw_8_table_selector[1] + rw_256_table_selector[1] - 1)
-                    * (state_table_selector[1] + rw_8_table_selector[1] + rw_256_table_selector[1])
+                    * (state_table_selector[1] + rw_8_table_selector[1] + rw_256_table_selector[1]),
+                    "timeline: only one selector may be 1 on at once"}
                 );
-                non_first_row_constraints.push_back(
+                not_first_and_not_last_row_constraints.push_back({
                     (1 - state_table_selector[1] - rw_8_table_selector[1] - rw_256_table_selector[1]) *
-                    (state_table_selector[2] + rw_8_table_selector[2] + rw_256_table_selector[2])
-                );
-                non_first_row_constraints.push_back(
-                    (state_table_selector[1] + rw_8_table_selector[1] + rw_256_table_selector[1]) * (rw_id[1] - rw_id[0] - 1)
-                );
+                    (state_table_selector[2] + rw_8_table_selector[2] + rw_256_table_selector[2]),
+                    "timeline: after padding may be only padding" });
+                non_first_row_constraints.push_back({
+                    (state_table_selector[1] + rw_8_table_selector[1] + rw_256_table_selector[1]) * (rw_id[1] - rw_id[0] - 1),
+                    "timeline: rw_id is increasing for non-padding rows"
+                });
 
                 for( auto& constraint: every_row_constraints){
-                    context_object.relative_constrain(context_object.relativize(constraint, -1), 0, max_timeline - 1);
+                    context_object.relative_constrain(context_object.relativize(constraint.first, -1), 0, max_timeline - 1, constraint.second);
                 }
                 for( auto &constraint: non_first_row_constraints ){
-                    context_object.relative_constrain(context_object.relativize(constraint, -1), 1, max_timeline - 1);
+                    context_object.relative_constrain(context_object.relativize(constraint.first, -1), 1, max_timeline - 1, constraint.second);
+                }
+                for( auto &constraint: not_first_and_not_last_row_constraints ){
+                    context_object.relative_constrain(context_object.relativize(constraint.first, -1), 1, max_timeline - 2, constraint.second);
                 }
             }
-            std::vector<std::vector<std::size_t>> timeline_lookup_columns;
-            std::size_t current_id = 0;
-            for( std::size_t i = 0; i < instances_timeline; i++ ){
-                std::vector<std::size_t> current_lookup;
-                for( std::size_t j = 0; j < 5; j++ ){
-                    current_lookup.push_back(current_id++);
-                }
-                timeline_lookup_columns.push_back(current_lookup);
-            }
-            multi_lookup_table("zkevm_timeline",timeline_lookup_columns,0,max_timeline);
+            // This component doesn't define dynamic lookup tables, because we are sure that it will be used only as an instance for multitable
         }
     };
 }
