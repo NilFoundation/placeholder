@@ -208,6 +208,8 @@ BOOST_AUTO_TEST_SUITE(marshalling_real)
     using Endianness = nil::crypto3::marshalling::option::big_endian;
     using curve_type = nil::crypto3::algebra::curves::vesta;
     using field_type = curve_type::scalar_field_type;
+    using value_type = field_type::value_type;
+
     using merkle_hash_type = nil::crypto3::hashes::keccak_1600<256>;
     using transcript_hash_type = nil::crypto3::hashes::keccak_1600<256>;
     using merkle_tree_type = typename containers::merkle_tree<merkle_hash_type, 2>;
@@ -228,7 +230,7 @@ BOOST_FIXTURE_TEST_CASE(batches_num_3_test, test_tools::random_test_initializer<
         list_polynomial_commitment_params<merkle_hash_type, transcript_hash_type, m>
             lpc_params_type;
     typedef zk::commitments::list_polynomial_commitment<field_type, lpc_params_type> lpc_type;
-    typedef math::polynomial_dfs<typename field_type::value_type> poly_type;
+    typedef math::polynomial_dfs<value_type> poly_type;
 
     static_assert(zk::is_commitment<fri_type>::value);
     static_assert(zk::is_commitment<lpc_type>::value);
@@ -254,7 +256,7 @@ BOOST_FIXTURE_TEST_CASE(batches_num_3_test, test_tools::random_test_initializer<
     lpc_scheme_prover.append_to_batch(2, poly_type(1, {0u, 1u}));
     lpc_scheme_prover.append_to_batch(2, poly_type(2, {0u, 1u, 2u, 3u}));
     lpc_scheme_prover.append_to_batch(3, poly_type(2, {0u, 1u, 3u, 4u}));
-    lpc_scheme_prover.append_to_batch(3, poly_type(0, {0u}));
+    lpc_scheme_prover.append_to_batch(3, poly_type(0, std::initializer_list<value_type>{0u}));
 
     // Commit
     std::map<std::size_t, typename lpc_type::commitment_type> commitments;
