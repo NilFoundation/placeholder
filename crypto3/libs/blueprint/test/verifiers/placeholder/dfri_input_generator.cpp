@@ -352,7 +352,7 @@ BOOST_FIXTURE_TEST_CASE(lpc_basic_test, test_fixture) {
     lpc_scheme_prover.append_to_batch(1, poly_type(1, {0u, 1u}));
     lpc_scheme_prover.append_to_batch(1, poly_type(2, {0u, 1u, 2u, 3u}));
     lpc_scheme_prover.append_to_batch(1, poly_type(2, {0u, 1u, 3u, 4u}));
-    lpc_scheme_prover.append_to_batch(2, poly_type(0, {0u}));
+    lpc_scheme_prover.append_to_batch(2, poly_type(0, std::initializer_list<value_type>{0u}));
     lpc_scheme_prover.append_to_batch(3, generate_random_polynomial_dfs(3, test_global_alg_rnd_engine<FieldType>));
     lpc_scheme_prover.append_to_batch(3, generate_random_polynomial_dfs(7, test_global_alg_rnd_engine<FieldType>));
 
