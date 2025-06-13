@@ -26,12 +26,10 @@
 
 #include <boost/test/unit_test.hpp>
 
-#include <nil/crypto3/algebra/curves/pallas.hpp>
-#include <nil/crypto3/algebra/fields/arithmetic_params/pallas.hpp>
-#include <nil/crypto3/algebra/curves/vesta.hpp>
-#include <nil/crypto3/algebra/fields/arithmetic_params/vesta.hpp>
 #include <nil/crypto3/algebra/curves/alt_bn128.hpp>
 #include <nil/crypto3/algebra/fields/arithmetic_params/alt_bn128.hpp>
+#include <nil/crypto3/algebra/fields/babybear.hpp>
+#include <nil/crypto3/algebra/fields/arithmetic_params/babybear.hpp>
 #include <nil/crypto3/algebra/random_element.hpp>
 
 #include <nil/crypto3/hash/algorithm/hash.hpp>
@@ -43,6 +41,7 @@
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
 #include <nil/blueprint/zkevm_bbf/big_field/circuits/bytecode.hpp>
+#include <nil/blueprint/zkevm_bbf/small_field/circuits/bytecode.hpp>
 
 #include "./circuit_test_fixture.hpp"
 
@@ -56,20 +55,21 @@ std::string bytecode_mstore8 = "0x608060405234801561001057600080fd5b506004361061
 
 class zkEVMBytecodeTestFixture: public CircuitTestFixture {
 public:
-    template <typename field_type>
-    void test_zkevm_bytecode(
+    template <typename FieldType>
+    void test_big_zkevm_bytecode(
         const nil::blueprint::bbf::zkevm_keccak_buffers &bytecodes,
         const nil::blueprint::bbf::zkevm_keccak_buffers &keccak_buffers,
         std::size_t max_bytecode_size,
         std::size_t max_keccak_blocks,
         bool expected_result = true
     ){
-        typename bytecode<field_type, GenerationStage::ASSIGNMENT>::input_type bytecode_assignment_input;
+        using SmallFieldType = typename FieldType::small_subfield;
+        typename zkevm_big_field::bytecode<SmallFieldType, GenerationStage::ASSIGNMENT>::input_type bytecode_assignment_input;
         bytecode_assignment_input.rlc_challenge = 7;
         bytecode_assignment_input.bytecodes = bytecodes;
         bytecode_assignment_input.keccak_buffers = keccak_buffers;
 
-        bool result = test_bbf_component<field_type, bytecode>(
+        bool result = test_bbf_component<FieldType, zkevm_big_field::bytecode>(
             "bytecode",
             {7},                        //  Public input
             bytecode_assignment_input,  //  Assignment input
@@ -78,10 +78,38 @@ public:
         );
         BOOST_CHECK((!check_satisfiability && !generate_proof) || result == expected_result); // Max_rw, Max_mpt
     }
+
+
+    template <typename FieldType>
+    void test_small_zkevm_bytecode(
+        const nil::blueprint::bbf::zkevm_keccak_buffers &bytecodes,
+        const nil::blueprint::bbf::zkevm_keccak_buffers &keccak_buffers,
+        std::size_t max_bytecode_size,
+        std::size_t max_keccak_blocks,
+        bool expected_result = true
+    ){
+        using SmallFieldType = typename FieldType::small_subfield;
+        typename zkevm_small_field::bytecode<SmallFieldType, GenerationStage::ASSIGNMENT>::input_type bytecode_assignment_input;
+        bytecode_assignment_input.rlc_challenge = 7;
+        bytecode_assignment_input.bytecodes = bytecodes;
+        bytecode_assignment_input.keccak_buffers = keccak_buffers;
+
+        bool result = test_bbf_component<FieldType, zkevm_small_field::bytecode>(
+            "bytecode-s",
+            {7},                        //  Public input
+            bytecode_assignment_input,  //  Assignment input
+            max_bytecode_size,          //  Sizes
+            max_keccak_blocks,          //  Keccak blocks amount
+            5                           //  Max bytecodes amount
+        );
+        BOOST_CHECK((!check_satisfiability && !generate_proof) || result == expected_result); // Max_rw, Max_mpt
+    }
 };
 
+BOOST_GLOBAL_FIXTURE(zkEVMGlobalFixture);
 BOOST_FIXTURE_TEST_SUITE(zkevm_bbf_bytecode, zkEVMBytecodeTestFixture)
-    using field_type = nil::crypto3::algebra::curves::alt_bn128_254::scalar_field_type;
+    using big_field_type = nil::crypto3::algebra::curves::alt_bn128_254::scalar_field_type;
+    using small_field_type = nil::crypto3::algebra::fields::babybear_fp4;
 BOOST_AUTO_TEST_CASE(one_contract){
     nil::blueprint::bbf::zkevm_keccak_buffers input;
     input.new_buffer(hex_string_to_bytes(bytecode_for));
@@ -91,7 +119,8 @@ BOOST_AUTO_TEST_CASE(one_contract){
     keccak_input.new_buffer(hex_string_to_bytes("0xffaa"));
     keccak_input.new_buffer(hex_string_to_bytes("0x00ed"));
     keccak_input.new_buffer(hex_string_to_bytes("0xffaa12312384710283470321894798234702918470189347"));
-    test_zkevm_bytecode<field_type>(input, keccak_input, 1000, 30);
+    test_big_zkevm_bytecode<big_field_type>(input, keccak_input, 1000, 30);
+    test_small_zkevm_bytecode<small_field_type>(input, keccak_input, 1000, 30);
 }
 
 BOOST_AUTO_TEST_CASE(two_contracts){
@@ -103,7 +132,8 @@ BOOST_AUTO_TEST_CASE(two_contracts){
     keccak_input.new_buffer(hex_string_to_bytes(bytecode_for));
     keccak_input.new_buffer(hex_string_to_bytes(bytecode_addition));
 
-    test_zkevm_bytecode<field_type>(input, keccak_input, 5000, 30);
+    test_big_zkevm_bytecode<big_field_type>(input, keccak_input, 5000, 30);
+    test_small_zkevm_bytecode<small_field_type>(input, keccak_input, 5000, 30);
 }
 
 BOOST_AUTO_TEST_CASE(mstore8){
@@ -115,7 +145,8 @@ BOOST_AUTO_TEST_CASE(mstore8){
     keccak_input.new_buffer(hex_string_to_bytes("0xffaa"));
     keccak_input.new_buffer(hex_string_to_bytes("0x00ed"));
     keccak_input.new_buffer(hex_string_to_bytes("0xffaa12312384710283470321894798234702918470189347"));
-    test_zkevm_bytecode<field_type>(input, keccak_input, 10000, 50);
+    test_big_zkevm_bytecode<big_field_type>(input, keccak_input, 10000, 50);
+    test_small_zkevm_bytecode<small_field_type>(input, keccak_input, 10000, 50);
 }
 
 BOOST_AUTO_TEST_CASE(not_hashed){
@@ -130,6 +161,19 @@ BOOST_AUTO_TEST_CASE(not_hashed){
     keccak_input.new_buffer(hex_string_to_bytes("0x00ed"));
     keccak_input.new_buffer(hex_string_to_bytes("0xffaa12312384710283470321894798234702918470189347"));
 
-    test_zkevm_bytecode<field_type>(input, keccak_input, 5000, 50, false);
+    test_big_zkevm_bytecode<big_field_type>(input, keccak_input, 5000, 50, false);
+    test_small_zkevm_bytecode<small_field_type>(input, keccak_input, 5000, 50, false);
 }
+
+BOOST_AUTO_TEST_CASE(new_error, *boost::unit_test::disabled()){
+    nil::blueprint::bbf::zkevm_keccak_buffers input;
+    std::string bytecode2 = "0x608060405234801561000f575f80fd5b5060043610610029575f3560e01c806364b3cfe61461002d575b5f80fd5b610047600480360381019061004291906100d6565b61005d565b6040516100549190610110565b60405180910390f35b5f8060405180606001604052806029815260200161019e6029913990505f835190505f8081548092919061009090610156565b91905055508092505050919050565b5f80fd5b5f819050919050565b6100b5816100a3565b81146100bf575f80fd5b50565b5f813590506100d0816100ac565b92915050565b5f602082840312156100eb576100ea61009f565b5b5f6100f8848285016100c2565b91505092915050565b61010a816100a3565b82525050565b5f6020820190506101235f830184610101565b92915050565b7f4e487b71000000000000000000000000000000000000000000000000000000005f52601160045260245ffd5b5f610160826100a3565b91507fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff820361019257610191610129565b5b60018201905091905056fe112233445566778899ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff";
+
+    input.new_buffer(hex_string_to_bytes(bytecode2));
+
+    nil::blueprint::bbf::zkevm_keccak_buffers keccak_input;
+    keccak_input.new_buffer(hex_string_to_bytes(bytecode2));
+    test_small_zkevm_bytecode<small_field_type>(input, keccak_input, 5000, 50);
+}
+
 BOOST_AUTO_TEST_SUITE_END()

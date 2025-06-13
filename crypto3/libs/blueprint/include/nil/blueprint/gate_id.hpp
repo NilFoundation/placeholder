@@ -58,9 +58,9 @@ namespace nil {
             nil::crypto3::random::algebraic_engine<BlueprintFieldType> random_engine =
                 nil::crypto3::random::algebraic_engine<BlueprintFieldType>(dev);
 
-            std::array<std::array<std::vector<value_type>, 3>, 2> witnesses;
-            std::array<std::array<std::vector<value_type>, 3>, 2> constants;
-            std::array<std::array<std::vector<value_type>, 3>, 2> selectors;
+            std::map<std::tuple<std::size_t, std::size_t, std::size_t>, value_type> witnesses;
+            std::map<std::tuple<std::size_t, std::size_t, std::size_t>, value_type> constants;
+            std::map<std::tuple<std::size_t, std::size_t, std::size_t>, value_type> selectors;
             // Used to separate constraints from each other in ids.
             std::vector<value_type> constraint_mults;
             // Used to separate lookup variables from each other in ids.
@@ -81,7 +81,6 @@ namespace nil {
             }
 
             value_set() {
-
                 constraint_mults.reserve(starting_constraint_mults_size);
                 for (std::size_t i = 0; i < starting_constraint_mults_size; i++) {
                     constraint_mults.emplace_back(generate_constraint_mult());
@@ -104,10 +103,14 @@ namespace nil {
             }
 
             inline const value_type& get_value_helper(
-                    std::array<std::array<std::vector<value_type>, 3>, 2> &container,
-                    std::size_t point, std::size_t index, std::size_t rotation) {
+                std::map<std::tuple<std::size_t, std::size_t, std::size_t>, value_type> &container,
+                std::size_t point, std::size_t index, std::size_t rotation
+            ) {
                 BOOST_ASSERT_MSG(point == 0 || point == 1, "Point must be either 0 or 1.");
-                return get_power_helper(container[point][rotation + 1], index);
+                if( container.find({point, index, rotation} ) == container.end() ) {
+                    container[{point, index, rotation}] = generate_constraint_mult();
+                }
+                return container[{point, index, rotation}];
             }
 
         public:
@@ -292,7 +295,7 @@ namespace nil {
                 for (std::size_t i = 0; i < constraint.lookup_input.size(); i++) {
                     nil::crypto3::zk::snark::expression_evaluator<var> evaluator_1(
                         constraint.lookup_input[i],
-                        [this](const var &var) -> const value_type& { 
+                        [this](const var &var) -> const value_type& {
                             return this->values.get_first_value(var);
                         });
                     nil::crypto3::zk::snark::expression_evaluator<var> evaluator_2(
