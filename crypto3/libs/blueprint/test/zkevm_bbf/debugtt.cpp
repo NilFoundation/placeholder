@@ -65,11 +65,13 @@
 #include <nil/blueprint/zkevm_bbf/big_field/circuits/bytecode.hpp>
 #include <nil/blueprint/zkevm_bbf/big_field/circuits/keccak.hpp>
 #include <nil/blueprint/zkevm_bbf/big_field/circuits/exp.hpp>
+#include <nil/blueprint/zkevm_bbf/big_field/circuits/logs.hpp>
 
 #include <nil/blueprint/zkevm_bbf/small_field/circuits/rw.hpp>
 #include <nil/blueprint/zkevm_bbf/small_field/circuits/bytecode.hpp>
 #include <nil/blueprint/zkevm_bbf/small_field/circuits/copy.hpp>
 #include <nil/blueprint/zkevm_bbf/small_field/circuits/zkevm.hpp>
+#include <nil/blueprint/zkevm_bbf/small_field/circuits/logs.hpp>
 
 #include "./circuit_test_fixture.hpp"
 
@@ -150,6 +152,7 @@ class zkEVMDebugTTTestFixture: public CircuitTestFixture {
         std::size_t max_exp_rows = max_sizes.max_exp_rows;
         std::size_t max_state = max_sizes.max_state;
         std::size_t max_bytecodes_amount = max_sizes.max_bytecodes_amount;
+        std::size_t max_filter_indices = max_sizes.max_filter_indices;
 
         std::size_t instances_rw_8 = max_sizes.instances_rw_8;
         std::size_t instances_rw_256 = max_sizes.instances_rw_256;
@@ -203,10 +206,11 @@ class zkEVMDebugTTTestFixture: public CircuitTestFixture {
                 rw_assignment_input.rw_trace = circuit_inputs.short_rw_operations();
                 rw_assignment_input.timeline = circuit_inputs.timeline();
                 rw_assignment_input.state_trace = circuit_inputs.state_operations();
+                rw_assignment_input.filter_indices = circuit_inputs.filter_indices();
 
                 result = test_bbf_component<FieldType,
                                             nil::blueprint::bbf::zkevm_big_field::rw>(
-                    "rw", {}, rw_assignment_input, max_rw, max_state);
+                    "rw", {}, rw_assignment_input, max_rw, max_state, max_filter_indices);
                 BOOST_CHECK(result);
             }
 
@@ -264,11 +268,13 @@ class zkEVMDebugTTTestFixture: public CircuitTestFixture {
                 zkevm_assignment_input.exponentiations = circuit_inputs.exponentiations();
                 zkevm_assignment_input.state_operations =
                     circuit_inputs.state_operations();
+                zkevm_assignment_input.filter_indices =
+                    circuit_inputs.filter_indices();
 
                 result = test_bbf_component<FieldType,
                                             nil::blueprint::bbf::zkevm_big_field::zkevm>(
                     "zkevm", {}, zkevm_assignment_input, max_zkevm_rows, max_copy, max_rw,
-                    max_exponentiations, max_bytecode, max_state);
+                    max_exponentiations, max_bytecode, max_state, max_filter_indices);
                 BOOST_CHECK(result);
             }
 
@@ -289,12 +295,30 @@ class zkEVMDebugTTTestFixture: public CircuitTestFixture {
                     circuit_inputs.exponentiations();
                 zkevm_wide_assignment_input.state_operations =
                     circuit_inputs.state_operations();
+                zkevm_wide_assignment_input.filter_indices =
+                    circuit_inputs.filter_indices();
 
                 result =
                     test_bbf_component<FieldType,
                                        nil::blueprint::bbf::zkevm_big_field::zkevm_wide>(
                         "zkevm_wide", {}, zkevm_wide_assignment_input, max_zkevm_rows,
-                        max_copy, max_rw, max_exponentiations, max_bytecode, max_state);
+                        max_copy, max_rw, max_exponentiations, max_bytecode, max_state, max_filter_indices);
+                BOOST_CHECK(result);
+            }
+
+            const std::string log_circuit = "logs";
+            if (should_run_circuit(log_circuit)) {
+                BOOST_LOG_TRIVIAL(info) << "circuit '" << log_circuit << "'";
+                typename zkevm_big_field::logs<SmallFieldType, GenerationStage::ASSIGNMENT>::input_type log_assignment_input;
+                log_assignment_input.rlc_challenge = 7;
+                log_assignment_input.filter_indices = circuit_inputs.filter_indices();
+                log_assignment_input.keccak_buffers = circuit_inputs.logs_buffers();
+                log_assignment_input.rw_trace = circuit_inputs.short_rw_operations();
+
+                result = test_bbf_component<FieldType, nil::blueprint::bbf::zkevm_big_field::logs>(
+                    log_circuit, {}, log_assignment_input,
+                max_keccak_blocks, max_filter_indices, max_rw
+                );
                 BOOST_CHECK(result);
             }
         }
@@ -311,11 +335,12 @@ class zkEVMDebugTTTestFixture: public CircuitTestFixture {
             rw_assignment_input.rw_trace = circuit_inputs.short_rw_operations();
             rw_assignment_input.timeline = circuit_inputs.timeline();
             rw_assignment_input.state_trace = circuit_inputs.state_operations();
+            rw_assignment_input.filter_indices = circuit_inputs.filter_indices();
 
             result =
                 test_bbf_component<FieldType, nil::blueprint::bbf::zkevm_small_field::rw>(
                     "rw-s", {}, rw_assignment_input, max_rw, instances_rw_8,
-                    instances_rw_256, max_state);
+                    instances_rw_256, max_state,max_filter_indices);
             BOOST_CHECK(result);
         }
 
@@ -377,6 +402,22 @@ class zkEVMDebugTTTestFixture: public CircuitTestFixture {
                 max_keccak_blocks, max_bytecode);
             BOOST_CHECK(result);
         }
+
+        const std::string logs_s_circuit = "logs-s";
+        if (should_run_circuit(logs_s_circuit)) {
+            BOOST_LOG_TRIVIAL(info) << "circuit '" << logs_s_circuit << "'";
+            typename zkevm_small_field::logs<SmallFieldType, GenerationStage::ASSIGNMENT>::input_type log_assignment_input;
+            log_assignment_input.rlc_challenge = 7;
+            log_assignment_input.filter_indices = circuit_inputs.filter_indices();
+            log_assignment_input.keccak_buffers = circuit_inputs.logs_buffers();
+            log_assignment_input.rw_trace = circuit_inputs.short_rw_operations();
+
+            result = test_bbf_component<FieldType, nil::blueprint::bbf::zkevm_small_field::logs>(
+                logs_s_circuit, {7}, log_assignment_input,
+               max_keccak_blocks, max_filter_indices, max_rw, instances_rw_8);
+            BOOST_CHECK(result);
+        }
+
     }
 };
 
@@ -395,7 +436,7 @@ using fields = std::tuple<big_field_type, small_field_extension_type>;
 BOOST_AUTO_TEST_CASE_TEMPLATE(minimal_math, Field, fields) {
     l1_size_restrictions max_sizes;
 
-    max_sizes.max_keccak_blocks = 3;
+    max_sizes.max_keccak_blocks = 30;
     max_sizes.max_bytecode = 300;
     max_sizes.max_mpt = 0;
     max_sizes.max_rw = 1000;
@@ -405,6 +446,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(minimal_math, Field, fields) {
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
     max_sizes.max_state = 500;
+    max_sizes.max_filter_indices = 100;
 
     if (circuits_to_run.empty()) {
         circuits_to_run.insert("zkevm");
@@ -412,9 +454,11 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(minimal_math, Field, fields) {
         circuits_to_run.insert("rw");
         circuits_to_run.insert("bytecode");
         circuits_to_run.insert("copy");
+        circuits_to_run.insert("logs");
         circuits_to_run.insert("bytecode-s");
         circuits_to_run.insert("rw-s");
         circuits_to_run.insert("copy-s");
+        circuits_to_run.insert("logs-s");
     }
     complex_test<Field>("minimal_math.json", max_sizes);
 }
@@ -422,7 +466,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(minimal_math, Field, fields) {
 BOOST_AUTO_TEST_CASE_TEMPLATE(call_counter, Field, fields) {
     l1_size_restrictions max_sizes;
 
-    max_sizes.max_keccak_blocks = 10;
+    max_sizes.max_keccak_blocks = 100;
     max_sizes.max_bytecode = 3000;
     max_sizes.max_mpt = 0;
     max_sizes.max_rw = 3000;
@@ -432,16 +476,19 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(call_counter, Field, fields) {
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
     max_sizes.max_state = 500;
+    max_sizes.max_filter_indices = 100;
 
     if( circuits_to_run.empty() ) {
         circuits_to_run.insert("zkevm");
-        //circuits_to_run.insert("zkevm-wide");
+        // circuits_to_run.insert("zkevm-wide");
         circuits_to_run.insert("rw");
         circuits_to_run.insert("bytecode");
         circuits_to_run.insert("copy");
+        circuits_to_run.insert("logs");
         circuits_to_run.insert("bytecode-s");
         circuits_to_run.insert("rw-s");
         circuits_to_run.insert("copy-s");
+        circuits_to_run.insert("logs-s");
     }
     complex_test<Field>("call_counter.json", max_sizes);
 }
@@ -449,7 +496,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(call_counter, Field, fields) {
 BOOST_AUTO_TEST_CASE_TEMPLATE(delegatecall_counter, Field, fields) {
     l1_size_restrictions max_sizes;
 
-    max_sizes.max_keccak_blocks = 10;
+    max_sizes.max_keccak_blocks = 100;
     max_sizes.max_bytecode = 3000;
     max_sizes.max_mpt = 0;
     max_sizes.max_rw = 4000;
@@ -459,6 +506,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(delegatecall_counter, Field, fields) {
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
     max_sizes.max_state = 500;
+    max_sizes.max_filter_indices = 100;
 
     if( circuits_to_run.empty() ) {
         circuits_to_run.insert("zkevm");
@@ -466,9 +514,11 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(delegatecall_counter, Field, fields) {
         circuits_to_run.insert("rw");
         circuits_to_run.insert("bytecode");
         circuits_to_run.insert("copy");
+        circuits_to_run.insert("logs");
         circuits_to_run.insert("bytecode-s");
         circuits_to_run.insert("rw-s");
         circuits_to_run.insert("copy-s");
+        circuits_to_run.insert("logs-s");
     }
     complex_test<Field>("delegatecall.json", max_sizes);
 }
@@ -486,6 +536,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(staticcall, Field, fields) {
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
     max_sizes.max_state = 500;
+    max_sizes.max_filter_indices = 100;
 
     if( circuits_to_run.empty() ) {
         circuits_to_run.insert("zkevm");
@@ -493,9 +544,11 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(staticcall, Field, fields) {
         circuits_to_run.insert("rw");
         circuits_to_run.insert("bytecode");
         circuits_to_run.insert("copy");
+        circuits_to_run.insert("logs");
         circuits_to_run.insert("bytecode-s");
         circuits_to_run.insert("rw-s");
         circuits_to_run.insert("copy-s");
+        circuits_to_run.insert("logs-s");
     }
     complex_test<Field>("staticcall.json", max_sizes);
 }
@@ -503,7 +556,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(staticcall, Field, fields) {
 BOOST_AUTO_TEST_CASE_TEMPLATE(counter, Field, fields) {
     l1_size_restrictions max_sizes;
 
-    max_sizes.max_keccak_blocks = 10;
+    max_sizes.max_keccak_blocks = 100;
     max_sizes.max_bytecode = 3000;
     max_sizes.max_mpt = 0;
     max_sizes.max_rw = 3000;
@@ -513,6 +566,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(counter, Field, fields) {
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
     max_sizes.max_state = 500;
+    max_sizes.max_filter_indices = 100;
 
     if( circuits_to_run.empty() ) {
         circuits_to_run.insert("zkevm");
@@ -520,9 +574,11 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(counter, Field, fields) {
         circuits_to_run.insert("rw");
         circuits_to_run.insert("bytecode");
         circuits_to_run.insert("copy");
+        circuits_to_run.insert("logs");
         circuits_to_run.insert("bytecode-s");
         circuits_to_run.insert("rw-s");
         circuits_to_run.insert("copy-s");
+        circuits_to_run.insert("logs-s");
     }
     complex_test<Field>("counter.json", max_sizes);
 }
@@ -530,7 +586,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(counter, Field, fields) {
 BOOST_AUTO_TEST_CASE_TEMPLATE(keccak, Field, fields) {
     l1_size_restrictions max_sizes;
 
-    max_sizes.max_keccak_blocks = 10;
+    max_sizes.max_keccak_blocks = 100;
     max_sizes.max_bytecode = 3000;
     max_sizes.max_mpt = 0;
     max_sizes.max_rw = 5000;
@@ -540,6 +596,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(keccak, Field, fields) {
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
     max_sizes.max_state = 500;
+    max_sizes.max_filter_indices = 100;
 
     if( circuits_to_run.empty() ) {
         circuits_to_run.insert("zkevm");
@@ -548,9 +605,11 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(keccak, Field, fields) {
         circuits_to_run.insert("bytecode");
         circuits_to_run.insert("copy");
         circuits_to_run.insert("keccak");
+        circuits_to_run.insert("logs");
         circuits_to_run.insert("bytecode-s");
         circuits_to_run.insert("rw-s");
         circuits_to_run.insert("copy-s");
+        circuits_to_run.insert("logs-s");
     }
     complex_test<Field>("keccak.json", max_sizes);
 }
@@ -558,7 +617,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(keccak, Field, fields) {
 BOOST_AUTO_TEST_CASE_TEMPLATE(call_keccak, Field, fields) {
     l1_size_restrictions max_sizes;
 
-    max_sizes.max_keccak_blocks = 10;
+    max_sizes.max_keccak_blocks = 100;
     max_sizes.max_bytecode = 3000;
     max_sizes.max_mpt = 0;
     max_sizes.max_rw = 5000;
@@ -568,6 +627,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(call_keccak, Field, fields) {
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
     max_sizes.max_state = 500;
+    max_sizes.max_filter_indices = 100;
 
     if (circuits_to_run.empty()) {
         circuits_to_run.insert("zkevm");
@@ -576,9 +636,11 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(call_keccak, Field, fields) {
         circuits_to_run.insert("bytecode");
         circuits_to_run.insert("copy");
         circuits_to_run.insert("keccak");
+        circuits_to_run.insert("logs");
         circuits_to_run.insert("bytecode-s");
         circuits_to_run.insert("rw-s");
         circuits_to_run.insert("copy-s");
+        circuits_to_run.insert("logs-s");
     }
     complex_test<Field>("call_keccak.json", max_sizes);
 }
@@ -586,7 +648,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(call_keccak, Field, fields) {
 BOOST_AUTO_TEST_CASE_TEMPLATE(indexed_log, Field, fields) {
     l1_size_restrictions max_sizes;
 
-    max_sizes.max_keccak_blocks = 10;
+    max_sizes.max_keccak_blocks = 100;
     max_sizes.max_bytecode = 3000;
     max_sizes.max_mpt = 0;
     max_sizes.max_rw = 3000;
@@ -596,6 +658,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(indexed_log, Field, fields) {
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
     max_sizes.max_state = 500;
+    max_sizes.max_filter_indices = 100;
 
     if( circuits_to_run.empty() ) {
         circuits_to_run.insert("zkevm");
@@ -603,17 +666,49 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(indexed_log, Field, fields) {
         circuits_to_run.insert("rw");
         circuits_to_run.insert("bytecode");
         circuits_to_run.insert("copy");
+        circuits_to_run.insert("logs");
         circuits_to_run.insert("bytecode-s");
         circuits_to_run.insert("rw-s");
         circuits_to_run.insert("copy-s");
+        circuits_to_run.insert("logs-s");
     }
     complex_test<Field>("indexed_log.json", max_sizes);
+}
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(simple_log, Field, fields) {
+    l1_size_restrictions max_sizes;
+
+    max_sizes.max_keccak_blocks = 100;
+    max_sizes.max_bytecode = 3000;
+    max_sizes.max_mpt = 0;
+    max_sizes.max_rw = 3000;
+    max_sizes.max_copy_events = 70;
+    max_sizes.max_copy = 500;
+    max_sizes.max_zkevm_rows = 1000;
+    max_sizes.max_exponentiations = 50;
+    max_sizes.max_exp_rows = 500;
+    max_sizes.max_state = 500;
+    max_sizes.max_filter_indices = 100;
+
+    if( circuits_to_run.empty() ) {
+        circuits_to_run.insert("zkevm");
+        //circuits_to_run.insert("zkevm-wide");
+        circuits_to_run.insert("rw");
+        circuits_to_run.insert("bytecode");
+        circuits_to_run.insert("copy");
+        circuits_to_run.insert("logs");
+        circuits_to_run.insert("bytecode-s");
+        circuits_to_run.insert("rw-s");
+        circuits_to_run.insert("copy-s");
+        circuits_to_run.insert("logs-s");
+    }
+    complex_test<Field>("simple_log.json", max_sizes);
 }
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(cold_sstore, Field, fields) {
     l1_size_restrictions max_sizes;
 
-    max_sizes.max_keccak_blocks = 10;
+    max_sizes.max_keccak_blocks = 100;
     max_sizes.max_bytecode = 3000;
     max_sizes.max_mpt = 0;
     max_sizes.max_rw = 3000;
@@ -623,6 +718,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(cold_sstore, Field, fields) {
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
     max_sizes.max_state = 500;
+    max_sizes.max_filter_indices = 100;
 
     if( circuits_to_run.empty() ) {
         circuits_to_run.insert("zkevm");
@@ -630,9 +726,11 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(cold_sstore, Field, fields) {
         circuits_to_run.insert("rw");
         circuits_to_run.insert("bytecode");
         circuits_to_run.insert("copy");
+        circuits_to_run.insert("logs");
         circuits_to_run.insert("bytecode-s");
         circuits_to_run.insert("rw-s");
         circuits_to_run.insert("copy-s");
+        circuits_to_run.insert("logs-s");
     }
     complex_test<Field>("cold_sstore.json", max_sizes);
 }
@@ -640,7 +738,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(cold_sstore, Field, fields) {
 BOOST_AUTO_TEST_CASE_TEMPLATE(try_catch, Field, fields) {
     l1_size_restrictions max_sizes;
 
-    max_sizes.max_keccak_blocks = 50;
+    max_sizes.max_keccak_blocks = 100;
     max_sizes.max_bytecode = 5000;
     max_sizes.max_mpt = 0;
     max_sizes.max_rw = 8000;
@@ -650,6 +748,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(try_catch, Field, fields) {
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
     max_sizes.max_state = 500;
+    max_sizes.max_filter_indices = 100;
 
     if( circuits_to_run.empty() ) {
         circuits_to_run.insert("zkevm");
@@ -657,9 +756,11 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(try_catch, Field, fields) {
         circuits_to_run.insert("rw");
         circuits_to_run.insert("bytecode");
         circuits_to_run.insert("copy");
+        circuits_to_run.insert("logs");
         circuits_to_run.insert("bytecode-s");
         circuits_to_run.insert("rw-s");
         circuits_to_run.insert("copy-s");
+        circuits_to_run.insert("logs-s");
     }
     complex_test<Field>("try_catch.json", max_sizes);
 }
@@ -667,7 +768,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(try_catch, Field, fields) {
 BOOST_AUTO_TEST_CASE_TEMPLATE(try_catch2, Field, fields) {
     l1_size_restrictions max_sizes;
 
-    max_sizes.max_keccak_blocks = 50;
+    max_sizes.max_keccak_blocks = 100;
     max_sizes.max_bytecode = 5000;
     max_sizes.max_mpt = 0;
     max_sizes.max_rw = 8000;
@@ -677,6 +778,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(try_catch2, Field, fields) {
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
     max_sizes.max_state = 500;
+    max_sizes.max_filter_indices = 100;
 
     if( circuits_to_run.empty() ) {
         circuits_to_run.insert("zkevm");
@@ -684,9 +786,11 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(try_catch2, Field, fields) {
         circuits_to_run.insert("rw");
         circuits_to_run.insert("bytecode");
         circuits_to_run.insert("copy");
+        circuits_to_run.insert("logs");
         circuits_to_run.insert("bytecode-s");
         circuits_to_run.insert("rw-s");
         circuits_to_run.insert("copy-s");
+        circuits_to_run.insert("logs-s");
     }
     complex_test<Field>("try_catch2.json", max_sizes);
 }
@@ -694,7 +798,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(try_catch2, Field, fields) {
 BOOST_AUTO_TEST_CASE_TEMPLATE(try_catch_cold, Field, fields) {
     l1_size_restrictions max_sizes;
 
-    max_sizes.max_keccak_blocks = 50;
+    max_sizes.max_keccak_blocks = 100;
     max_sizes.max_bytecode = 6000;
     max_sizes.max_mpt = 0;
     max_sizes.max_rw = 8000;
@@ -704,6 +808,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(try_catch_cold, Field, fields) {
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
     max_sizes.max_state = 500;
+     max_sizes.max_filter_indices = 100;
 
     if( circuits_to_run.empty() ) {
         circuits_to_run.insert("zkevm");
@@ -711,9 +816,11 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(try_catch_cold, Field, fields) {
         circuits_to_run.insert("rw");
         circuits_to_run.insert("bytecode");
         circuits_to_run.insert("copy");
+        circuits_to_run.insert("logs");
         circuits_to_run.insert("bytecode-s");
         circuits_to_run.insert("rw-s");
         circuits_to_run.insert("copy-s");
+        circuits_to_run.insert("logs-s");
     }
     complex_test<Field>("try_catch_cold.json", max_sizes);
 }
@@ -731,6 +838,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(sar, Field, fields) {
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
     max_sizes.max_state = 500;
+     max_sizes.max_filter_indices = 100;
 
     if( circuits_to_run.empty() ) {
         circuits_to_run.insert("zkevm");
@@ -738,9 +846,11 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(sar, Field, fields) {
         circuits_to_run.insert("rw");
         circuits_to_run.insert("bytecode");
         circuits_to_run.insert("copy");
+        circuits_to_run.insert("logs");
         circuits_to_run.insert("bytecode-s");
         circuits_to_run.insert("rw-s");
         circuits_to_run.insert("copy-s");
+        circuits_to_run.insert("logs-s");
     }
     complex_test<Field>("sar.json", max_sizes);
 }
@@ -758,6 +868,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(scmp, Field, fields) {
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
     max_sizes.max_state = 500;
+     max_sizes.max_filter_indices = 100;
 
     if( circuits_to_run.empty() ) {
         circuits_to_run.insert("zkevm");
@@ -765,9 +876,11 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(scmp, Field, fields) {
         circuits_to_run.insert("rw");
         circuits_to_run.insert("bytecode");
         circuits_to_run.insert("copy");
+        circuits_to_run.insert("logs");
         circuits_to_run.insert("bytecode-s");
         circuits_to_run.insert("rw-s");
         circuits_to_run.insert("copy-s");
+        circuits_to_run.insert("logs-s");
     }
     complex_test<Field>("scmp.json", max_sizes);
 }
@@ -785,6 +898,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(exp, Field, fields) {
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 3000;
     max_sizes.max_state = 500;
+     max_sizes.max_filter_indices = 100;
 
     if( circuits_to_run.empty() ) {
         circuits_to_run.insert("zkevm");
@@ -793,9 +907,11 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(exp, Field, fields) {
         circuits_to_run.insert("bytecode");
         circuits_to_run.insert("copy");
         circuits_to_run.insert("exp");
+        circuits_to_run.insert("logs");
         circuits_to_run.insert("bytecode-s");
         circuits_to_run.insert("rw-s");
         circuits_to_run.insert("copy-s");
+        circuits_to_run.insert("logs-s");
     }
     complex_test<Field>("exp.json", max_sizes);
 }
@@ -812,6 +928,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(modular, Field, fields) {
     max_sizes.max_zkevm_rows = 1000;
     max_sizes.max_exponentiations = 10;
     max_sizes.max_exp_rows = 100;
+     max_sizes.max_filter_indices = 100;
 
     if( circuits_to_run.empty() ) {
         circuits_to_run.insert("zkevm");
@@ -819,9 +936,11 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(modular, Field, fields) {
         circuits_to_run.insert("rw");
         circuits_to_run.insert("bytecode");
         circuits_to_run.insert("copy");
+        circuits_to_run.insert("logs");
         circuits_to_run.insert("bytecode-s");
         circuits_to_run.insert("rw-s");
         circuits_to_run.insert("copy-s");
+        circuits_to_run.insert("logs-s");
     }
     complex_test<Field>("modular.json", max_sizes);
 }
@@ -841,6 +960,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(precompiles, Field, fields) {
     max_sizes.max_zkevm_rows = 500;
     max_sizes.max_exponentiations = 10;
     max_sizes.max_exp_rows = 100;
+     max_sizes.max_filter_indices = 100;
 
     if( circuits_to_run.empty() ) {
         circuits_to_run.insert("zkevm");
@@ -848,9 +968,11 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(precompiles, Field, fields) {
         circuits_to_run.insert("rw");
         circuits_to_run.insert("bytecode");
         circuits_to_run.insert("copy");
+        circuits_to_run.insert("logs");
         circuits_to_run.insert("bytecode-s");
         circuits_to_run.insert("rw-s");
         circuits_to_run.insert("copy-s");
+        circuits_to_run.insert("logs-s");
     }
     complex_test<Field>("precompiles.json", max_sizes);
 }
@@ -869,6 +991,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(mem, Field, fields) {
     max_sizes.max_zkevm_rows = 4500;
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
+     max_sizes.max_filter_indices = 100;
 
     if( circuits_to_run.empty() ) {
         circuits_to_run.insert("zkevm");
@@ -876,9 +999,11 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(mem, Field, fields) {
         circuits_to_run.insert("rw");
         circuits_to_run.insert("bytecode");
         circuits_to_run.insert("copy");
+        circuits_to_run.insert("logs");
         circuits_to_run.insert("bytecode-s");
         circuits_to_run.insert("rw-s");
         circuits_to_run.insert("copy-s");
+        circuits_to_run.insert("logs-s");
     }
     complex_test<Field>("mem.json", max_sizes);
 }
@@ -895,6 +1020,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(codecopy, Field, fields) {
     max_sizes.max_zkevm_rows = 500;
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
+     max_sizes.max_filter_indices = 100;
 
     if( circuits_to_run.empty() ) {
         circuits_to_run.insert("zkevm");
@@ -902,9 +1028,11 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(codecopy, Field, fields) {
         circuits_to_run.insert("rw");
         circuits_to_run.insert("bytecode");
         circuits_to_run.insert("copy");
+        circuits_to_run.insert("logs");
         circuits_to_run.insert("bytecode-s");
         circuits_to_run.insert("rw-s");
         circuits_to_run.insert("copy-s");
+        circuits_to_run.insert("logs-s");
     }
     complex_test<Field>("codecopy.json", max_sizes);
 }
@@ -921,6 +1049,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(transient_storage, Field, fields) {
     max_sizes.max_zkevm_rows = 5000;
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
+     max_sizes.max_filter_indices = 100;
 
     if( circuits_to_run.empty() ) {
         circuits_to_run.insert("zkevm");
@@ -928,9 +1057,11 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(transient_storage, Field, fields) {
         circuits_to_run.insert("rw");
         circuits_to_run.insert("bytecode");
         circuits_to_run.insert("copy");
+        circuits_to_run.insert("logs");
         circuits_to_run.insert("bytecode-s");
         circuits_to_run.insert("rw-s");
         circuits_to_run.insert("copy-s");
+        circuits_to_run.insert("logs-s");
     }
     complex_test<Field>("transient_storage.json", max_sizes);
 }
@@ -947,15 +1078,18 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(transient_storage_revert, Field, fields) {
     max_sizes.max_zkevm_rows = 4000;
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
+    max_sizes.max_filter_indices = 100;
 
     if( circuits_to_run.empty() ) {
         circuits_to_run.insert("zkevm");
         circuits_to_run.insert("rw");
         circuits_to_run.insert("bytecode");
         circuits_to_run.insert("copy");
+        circuits_to_run.insert("logs");
         circuits_to_run.insert("bytecode-s");
         circuits_to_run.insert("rw-s");
         circuits_to_run.insert("copy-s");
+        circuits_to_run.insert("logs-s");
     }
     complex_test<Field>("transient_storage_revert.json", max_sizes);
 }

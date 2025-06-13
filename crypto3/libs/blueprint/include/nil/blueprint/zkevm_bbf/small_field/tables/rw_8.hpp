@@ -78,6 +78,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                         && rw_trace[i].op != rw_operation_type::memory
                         && rw_trace[i].op != rw_operation_type::calldata
                         && rw_trace[i].op != rw_operation_type::returndata
+                        && rw_trace[i].op != rw_operation_type::log_index
                     ) continue;
                     op[current_row] = std::size_t(rw_trace[i].op);
                     id[current_row] = rw_trace[i].id;
@@ -108,6 +109,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             }
             lookup_table("zkevm_rw_8",std::vector<std::size_t>({0,1,2,3,4,5,}),0,max_rw_size);
             lookup_table("zkevm_rw_8_timeline",std::vector<std::size_t>({6,3,7}),0,max_rw_size);
+            lookup_table("zkevm_rw_8_log",std::vector<std::size_t>({0,3}),0,max_rw_size);
         }
 
         static std::vector<TYPE> memory_lookup(

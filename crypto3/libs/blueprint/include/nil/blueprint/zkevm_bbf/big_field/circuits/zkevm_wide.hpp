@@ -37,6 +37,7 @@
 #include <nil/blueprint/bbf/generic.hpp>
 #include <nil/blueprint/zkevm_bbf/big_field/subcomponents/zkevm_state_vars.hpp>
 #include <nil/blueprint/zkevm_bbf/big_field/subcomponents/keccak_table.hpp>
+#include <nil/blueprint/zkevm_bbf/big_field/subcomponents/log_table.hpp>
 #include <nil/blueprint/zkevm_bbf/big_field/subcomponents/bytecode_table.hpp>
 #include <nil/blueprint/zkevm_bbf/big_field/subcomponents/rw_table.hpp>
 #include <nil/blueprint/zkevm_bbf/big_field/subcomponents/state_table.hpp>
@@ -68,6 +69,7 @@ namespace nil::blueprint::bbf::zkevm_big_field{
         using StateTable = state_table<FieldType, stage>;
         using ExpTable = exp_table<FieldType, stage>;
         using CopyTable = copy_table<FieldType, stage>;
+        using LogTable = log_table<FieldType, stage>;
 
         struct input_type {
             TYPE rlc_challenge;
@@ -81,6 +83,7 @@ namespace nil::blueprint::bbf::zkevm_big_field{
                 std::vector<zkevm_state>, std::monostate
             > zkevm_states;
             ExpTable::input_type exponentiations;
+            LogTable::input_type filter_indices;
         };
 
         static table_params get_minimal_requirements(
@@ -89,7 +92,8 @@ namespace nil::blueprint::bbf::zkevm_big_field{
             std::size_t max_rw,
             std::size_t max_exponentations,
             std::size_t max_bytecode,
-            std::size_t max_state
+            std::size_t max_state,
+            std::size_t max_filter_indices
         ) {
             std::size_t implemented_opcodes_amount = get_implemented_opcodes_list().size();
             std::cout << "Implemented opcodes amount = " << implemented_opcodes_amount << std::endl;
@@ -102,16 +106,11 @@ namespace nil::blueprint::bbf::zkevm_big_field{
                     + RWTable::get_witness_amount()
                     + ExpTable::get_witness_amount()
                     + CopyTable::get_witness_amount()
-                    + StateTable::get_witness_amount(),
+                    + StateTable::get_witness_amount()
+                    + LogTable::get_witness_amount(),
                 .public_inputs = 1,
-                .constants = 0,
-                .rows = std::max(
-                    std::max( max_zkevm_rows, max_state ),
-                    std::max(
-                        std::max(max_copy, max_rw),
-                        std::max(max_exponentations, max_bytecode)
-                    )
-                )
+                .constants = 1,
+                .rows = std::max({max_zkevm_rows, max_state,max_copy, max_rw, max_exponentations, max_bytecode, max_filter_indices})
             };
         }
 
@@ -119,7 +118,7 @@ namespace nil::blueprint::bbf::zkevm_big_field{
             context_type &context, input_type &input,
             std::size_t max_zkevm_rows, std::size_t max_copy, std::size_t max_rw,
             std::size_t max_exponentations, std::size_t max_bytecode,
-            std::size_t max_state
+            std::size_t max_state, std::size_t max_filter_indices
         ) {
             context.allocate(input.rlc_challenge, 0, 0, column_type::public_input);
         }
@@ -132,7 +131,8 @@ namespace nil::blueprint::bbf::zkevm_big_field{
             std::size_t max_rw,
             std::size_t max_exponentiations,
             std::size_t max_bytecode,
-            std::size_t max_state
+            std::size_t max_state,
+            std::size_t max_filter_indices
         ) :generic_component<FieldType,stage>(context_object), implemented_opcodes(get_implemented_opcodes_list()) {
             std::size_t implemented_opcodes_amount = implemented_opcodes.size();
             std::size_t opcode_selectors_amount = implemented_opcodes_amount;
@@ -195,17 +195,28 @@ namespace nil::blueprint::bbf::zkevm_big_field{
             }
             BOOST_LOG_TRIVIAL(trace) << ss.str();
 
+            std::vector<std::size_t> log_lookup_area;
+            std::stringstream ls;
+            ls << "Log area: ";
+            for( std::size_t i = 0; i < LogTable::get_witness_amount(); i++){
+                ls << current_column << " ";
+                log_lookup_area.push_back(current_column++);
+            }
+            BOOST_LOG_TRIVIAL(trace) << ls.str();
+
             context_type bytecode_ct = context_object.subcontext(bytecode_lookup_area,0,max_bytecode);
             context_type exp_ct = context_object.subcontext( exp_lookup_area, 0, max_exponentiations);
             context_type rw_ct = context_object.subcontext(rw_lookup_area,0,max_rw);
             context_type copy_ct = context_object.subcontext( copy_lookup_area,0,max_copy);
             context_type state_ct = context_object.subcontext( state_lookup_area,0,max_state);
+            context_type log_ct = context_object.subcontext( log_lookup_area, 0, max_filter_indices);
 
             BytecodeTable bc_t = BytecodeTable(bytecode_ct, input.bytecodes, max_bytecode);
             ExpTable e_t = ExpTable(exp_ct, input.exponentiations, max_exponentiations);
             RWTable rw_t = RWTable(rw_ct, input.rw_operations, max_rw, true);
             CopyTable c_t = CopyTable(copy_ct, input.copy_events, max_copy, true);
             StateTable s_t = StateTable(state_ct, input.state_operations, max_state);
+            LogTable l_t = LogTable(log_ct, input.filter_indices, max_filter_indices);
 
             auto opcode_impls = get_opcode_implementations<FieldType>();
 

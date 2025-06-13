@@ -19,6 +19,7 @@
 #include <nil/blueprint/zkevm_bbf/types/short_rw_operation.hpp>
 #include <nil/blueprint/zkevm_bbf/types/zkevm_state.hpp>
 #include <nil/blueprint/zkevm_bbf/types/copy_event.hpp>
+#include <nil/blueprint/zkevm_bbf/types/log.hpp>
 #include <nil/blueprint/assert.hpp>
 
 #include <nil/proof-generator/assigner/trace.pb.h>
@@ -61,7 +62,8 @@ namespace nil {
         const char MPT_EXTENSION[] = ".mpt";
         const char EXP_EXTENSION[] = ".exp";
         const char KECCAK_EXTENSION[] = ".keccak";
-
+        const char FILTER_EXTENSION[] = ".filter";
+        
         using TraceIndex = uint64_t; // value expected to be the same for all traces from the same set
         using TraceIndexOpt = std::optional<TraceIndex>;
 
@@ -190,6 +192,11 @@ namespace nil {
             return extend_base_path(trace_base_path, KECCAK_EXTENSION);
         }
 
+        boost::filesystem::path get_filter_trace_path(const boost::filesystem::path& trace_base_path) {
+            return extend_base_path(trace_base_path, FILTER_EXTENSION);
+        }
+
+
         std::vector<std::uint8_t> string_to_bytes(const std::string& str) {
             std::vector<std::uint8_t> res(str.size());
             for (std::size_t i = 0; i < str.size(); i++) {
@@ -211,6 +218,7 @@ namespace nil {
         using BytecodeTraces = std::unordered_map<std::string, std::string>; // contract address -> bytecode
         using RWTraces = blueprint::bbf::short_rw_operations_vector;
         using ZKEVMTraces = std::vector<blueprint::bbf::zkevm_state>;
+        using FilterTraces = std::vector<blueprint::bbf::zkevm_filter_indices>;
         using CopyEvents = std::vector<blueprint::bbf::copy_event>;
         using ExpTraces = std::vector<exp_input>;
 
@@ -358,6 +366,7 @@ namespace nil {
             };
         }
 
+        
         [[nodiscard]] DeserializeResultOpt<CopyEvents> deserialize_copy_events_from_file(
             const boost::filesystem::path& copy_traces_file,
             const AssignerOptions& opts,
@@ -447,7 +456,7 @@ namespace nil {
             for (const auto& pb_hashed_buffer: pb_traces.hashed_buffers()) {
                 result.push_back(keccak_input{
                     .buffer = string_to_bytes(pb_hashed_buffer.buffer()),
-                    .hash =proto_uint256_to_zkevm_word(pb_hashed_buffer.keccak_hash())
+                    .hash = proto_uint256_to_zkevm_word(pb_hashed_buffer.keccak_hash())
                 });
             }
 
@@ -456,6 +465,49 @@ namespace nil {
                 .index = pb_traces.trace_idx()
             };
         }
+
+        [[nodiscard]] DeserializeResultOpt<FilterTraces> deserialize_filter_traces_from_file(
+            const boost::filesystem::path& filter_traces_path,
+            const AssignerOptions& opts,
+            TraceIndexOpt base_index = {}
+        ) {
+            const auto pb_traces = read_pb_traces_from_file<executionproofs::FilterTraces>(filter_traces_path, base_index, opts);
+
+            std::vector<blueprint::bbf::zkevm_filter_indices> filter_indices;
+            filter_indices.reserve(pb_traces.zkevm_filter_indices_size());
+
+            for (const auto& pb_filter_indice: pb_traces.zkevm_filter_indices()) {
+                const std::size_t filter_chunks_amount = 128;
+                blueprint::zkevm_word_type log_filter[filter_chunks_amount] = {};
+                size_t i = 0;
+                for (const auto& pb_filter_chunk : pb_filter_indice.filter()) {
+                    log_filter[i] = proto_uint256_to_zkevm_word(pb_filter_chunk);
+                    i++;
+                }
+                blueprint::bbf::zkevm_filter_indices indices{
+                    .block_id = static_cast<uint64_t>(pb_filter_indice.block_id()),
+                    .tx_id = static_cast<uint64_t>(pb_filter_indice.tx_id()),
+                    .index = static_cast<uint64_t>(pb_filter_indice.index()),
+                    .value = static_cast<uint64_t>(pb_filter_indice.value()),
+                    .type = static_cast<uint64_t>(pb_filter_indice.type()),
+                    .indice = static_cast<uint64_t>(pb_filter_indice.indice()),
+                    .is_last = static_cast<uint64_t>(pb_filter_indice.is_last()),
+                    .is_block = static_cast<uint64_t>(pb_filter_indice.is_block()),
+                    .is_final = static_cast<uint64_t>(pb_filter_indice.is_final()),
+                    .hash = proto_uint256_to_zkevm_word(pb_filter_indice.hash()),
+                    .buffer = string_to_bytes(pb_filter_indice.buffer()),
+                };
+                std::copy(log_filter, log_filter + filter_chunks_amount, indices.filter);
+                filter_indices.push_back(indices);
+            }
+
+            return DeserializeResult<FilterTraces>{
+                .value = std::move(filter_indices),
+                .index = pb_traces.trace_idx()
+            };
+        }
+
+
     } // namespace proof_producer
 } // namespace nil
 #endif  // PROOF_GENERATOR_LIBS_ASSIGNER_TRACE_PARSER_HPP_
