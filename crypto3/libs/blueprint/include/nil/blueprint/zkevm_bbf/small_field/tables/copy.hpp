@@ -44,92 +44,109 @@ namespace nil::blueprint::bbf::zkevm_small_field{
         };
 
         // For connection with upper-level circuits
-        std::vector<TYPE>                 is_write;
-        std::vector<TYPE>                 cp_type;
-        std::vector<std::array<TYPE, 16>> id;   // For memory, calldata, returndata it would be call_id,
-                                                // For bytecode it's bytecode_id
-                                                // for keccak it'll be full hash
-        std::vector<TYPE>                 counter_1;
-        std::vector<TYPE>                 counter_2;
-        std::vector<TYPE>                 length;
+        std::vector<TYPE>                   src_type;
+        std::vector<TYPE>                   src_id;   // For memory, calldata, returndata it would be call_id,
+                                                      // For bytecode it's bytecode_id
+                                                      // It cannot be keccak for now.
+                                                      // If we need to prove that some data is a part of keccak buffer make it similar to dst_id
+        std::vector<TYPE>                   src_counter_1;
+        std::vector<TYPE>                   src_counter_2;
+        std::vector<TYPE>                   dst_type;
+        std::vector<std::array<TYPE,16>>    dst_id;
+        std::vector<TYPE>                   dst_counter_1;
+        std::vector<TYPE>                   dst_counter_2;
+        std::vector<TYPE>                   length;
 
-        static constexpr std::size_t is_write_index = 0;
-        static constexpr std::size_t cp_type_index = 1;
-        static constexpr std::size_t id_start_index = 2;
-        static constexpr std::size_t counter_1_index = 18;
-        static constexpr std::size_t counter_2_index = 19;
-        static constexpr std::size_t length_index = 20;
+        // static constexpr std::size_t cp_type_index = 1;
+        // static constexpr std::size_t id_start_index = 2;
+        // static constexpr std::size_t counter_1_index = 18;
+        // static constexpr std::size_t counter_2_index = 19;
+        // static constexpr std::size_t length_index = 20;
 
         static std::size_t get_witness_amount(){
-            return 21;
+            return 24;
         }
+
+        static constexpr std::size_t  src_type_index = 0;
+        static constexpr std::size_t  src_id_index = 1;
+        static constexpr std::size_t  src_counter_1_index = 2;
+        static constexpr std::size_t  src_counter_2_index = 3;
+        static constexpr std::size_t  dst_type_index = 4;
+        static constexpr std::size_t  dst_counter_1_index = 21;
+        static constexpr std::size_t  dst_counter_2_index = 22;
+        static constexpr std::size_t  length_index = 23;
 
         copy_table(context_type &context_object, const input_type &complex_input, std::size_t max_copy_events)
             :generic_component<FieldType,stage>(context_object),
-            is_write(max_copy_events * 2),
-            cp_type(max_copy_events * 2),
-            id(max_copy_events * 2),
-            counter_1(max_copy_events * 2),
-            counter_2(max_copy_events * 2),
-            length(max_copy_events * 2)
+            src_type(max_copy_events),
+            src_id(max_copy_events),
+            src_counter_1(max_copy_events),
+            src_counter_2(max_copy_events),
+            dst_type(max_copy_events),
+            dst_id(max_copy_events),
+            dst_counter_1(max_copy_events),
+            dst_counter_2(max_copy_events),
+            length(max_copy_events)
         {
             const auto &input = complex_input.copy_events;
             const auto &bytecodes = complex_input.bytecodes;
 
             if constexpr (stage == GenerationStage::ASSIGNMENT) {
                 BOOST_ASSERT(input.size() < max_copy_events);
-                std::size_t current_row = 0;
 
                 std::map<zkevm_word_type, std::size_t> bytecode_ids;
                 for(std::size_t index = 0; index < bytecodes.get_data().size(); index++){
                     bytecode_ids[bytecodes.get_data()[index].second] = index + 1;
                 }
 
-                for( auto &cp: input ){
-                    length[current_row] = cp.length;
-                    length[current_row + 1] = cp.length;
-                    cp_type[current_row] = copy_op_to_num(cp.source_type);
-                    cp_type[current_row+1] = copy_op_to_num(cp.destination_type);
+                for( std::size_t i = 0; i < input.size(); i++ ){
+                    const auto &cp = input[i];
+                    length[i] = cp.length;
+                    src_type[i] = copy_op_to_num(cp.source_type);
+                    dst_type[i] = copy_op_to_num(cp.destination_type);
 
                     if( cp.source_type == copy_operand_type::keccak ){
-                        auto id_chunks = w_to_16(cp.source_id);
-                        for( std::size_t i = 0; i < id_chunks.size(); i++) id[current_row][i] = id_chunks[i];
+                        BOOST_ASSERT(false);
+                        BOOST_LOG_TRIVIAL(fatal) << "Keccak buffer as a copy source is not supported in copy table";
                     } else if (cp.source_type == copy_operand_type::bytecode ) {
-                        id[current_row][15] = bytecode_ids[cp.source_id];
+                        src_id[i] = bytecode_ids[cp.source_id];
                     } else {
-                        id[current_row][15] = cp.source_id;
+                        src_id[i] = cp.source_id;
                     }
                     if( cp.destination_type == copy_operand_type::keccak ){
                         auto id_chunks = w_to_16(cp.destination_id);
-                        for( std::size_t i = 0; i < id_chunks.size(); i++) id[current_row + 1][i] = id_chunks[i];
+                        for( std::size_t j = 0; j < id_chunks.size(); j++) dst_id[i][j] = id_chunks[j];
                     } else if (cp.destination_type == copy_operand_type::bytecode ) {
-                        id[current_row + 1][15] = bytecode_ids[cp.destination_id];
+                        dst_id[i][15] = bytecode_ids[cp.destination_id];
                     } else {
-                        id[current_row + 1][15] = cp.destination_id;
+                        dst_id[i][15] = cp.destination_id;
                     }
-                    counter_1[current_row] = cp.src_counter_1;
-                    counter_2[current_row] = cp.src_counter_2;
-                    counter_1[current_row+1] = cp.dst_counter_1;
-                    counter_2[current_row+1] = cp.dst_counter_2;
-                    current_row += 2;
+                    src_counter_1[i] = cp.src_counter_1;
+                    src_counter_2[i] = cp.src_counter_2;
+                    dst_counter_1[i] = cp.dst_counter_1;
+                    dst_counter_2[i] = cp.dst_counter_2;
                 }
             }
-            for( std::size_t i = 0; i < max_copy_events * 2; i++ ){
-                if constexpr (stage == GenerationStage::ASSIGNMENT) { is_write[i] = i%2; }
-                allocate(is_write[i], is_write_index, i);
-                allocate(cp_type[i], cp_type_index , i);
+            for( std::size_t i = 0; i < max_copy_events; i++ ){
+                std::size_t current_column = 0;
+                allocate(src_type[i], current_column++ , i);
+                allocate(src_id[i], current_column++ , i);
+                allocate(src_counter_1[i], current_column++ , i);
+                allocate(src_counter_2[i], current_column++ , i);
+                allocate(dst_type[i], current_column++ , i);
                 for( std::size_t j = 0; j < 16; j++){
-                    allocate(id[i][j], id_start_index + j, i);
+                    allocate(dst_id[i][j], current_column++, i);
                 }
-                allocate(counter_1[i], counter_1_index, i);
-                allocate(counter_2[i], counter_2_index, i);
-                allocate(length[i], length_index, i);
+                allocate(dst_counter_1[i], current_column++, i);
+                allocate(dst_counter_2[i], current_column++, i);
+                allocate(length[i], current_column++, i);
             }
             std::vector<std::size_t> lookup_columns;
             for( std::size_t i = 0; i < get_witness_amount(); i++){
                 lookup_columns.push_back(i);
             }
-            lookup_table("zkevm_copy",lookup_columns,0,max_copy_events * 2);
+            lookup_table("zkevm_copy",lookup_columns,0,max_copy_events);
         }
     };
 }
+

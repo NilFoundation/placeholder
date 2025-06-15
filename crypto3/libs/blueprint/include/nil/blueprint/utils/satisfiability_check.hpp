@@ -179,7 +179,7 @@ namespace nil {
                     }
 
                     if (verbose) {
-                        BOOST_LOG_TRIVIAL(error) << "\tCheck gate " << i << std::endl;
+                        BOOST_LOG_TRIVIAL(info) << "\tCheck gate " << i << std::endl;
                         progress_printer_.Reset(selector);
                     }
 
@@ -199,12 +199,12 @@ namespace nil {
                     }
 
                     if (verbose) {
-                        BOOST_LOG_TRIVIAL(error) << "\tGate " << i << " checked" << std::endl;
+                        BOOST_LOG_TRIVIAL(info) << "\tGate " << i << " checked" << std::endl;
                     }
                 }
 
                 if (verbose) {
-                    BOOST_LOG_TRIVIAL(error) << "Gates checked. Check lookups" << std::endl;
+                    BOOST_LOG_TRIVIAL(info) << "Gates checked. Check lookups" << std::endl;
                 }
 
                 auto lookup_check_fn = [
@@ -352,7 +352,7 @@ namespace nil {
                     }
 
                     if (verbose) {
-                        BOOST_LOG_TRIVIAL(error) << "\tLookup gate " << i << std::endl;
+                        BOOST_LOG_TRIVIAL(info) << "\tLookup gate " << i << std::endl;
                         progress_printer_.Reset(selector);
                     }
 
@@ -372,7 +372,7 @@ namespace nil {
                     }
 
                     if (verbose) {
-                        BOOST_LOG_TRIVIAL(error) << "\tLookup gate " << i << " checked" << std::endl;
+                        BOOST_LOG_TRIVIAL(info) << "\tLookup gate " << i << " checked" << std::endl;
                     }
                 }
 
@@ -470,7 +470,7 @@ namespace nil {
                         }
 
                         if (progress_.load() == kMaxProgress) {
-                            BOOST_LOG_TRIVIAL(error) << '\n';
+                            std::cout << '\n';
                         }
                     }
                 }
