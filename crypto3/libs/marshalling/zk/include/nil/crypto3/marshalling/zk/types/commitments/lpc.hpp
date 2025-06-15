@@ -259,7 +259,7 @@ namespace nil {
                         TTypeBase,
                         std::tuple<
                             // std::map<std::size_t, precommitment_type> _trees;
-                            nil::crypto3::marshalling::types::standard_size_t_array_list< TTypeBase >,
+                            nil::crypto3::marshalling::types::standard_size_t_array_list<TTypeBase>,
                             nil::crypto3::marshalling::types::standard_array_list<
                                     TTypeBase,
                                     typename precommitment_type<TTypeBase, LPCScheme>::type
@@ -280,6 +280,12 @@ namespace nil {
                                 TTypeBase, LPCScheme,
                                 std::enable_if_t<nil::crypto3::zk::is_lpc<LPCScheme>>
                             >::type,
+                            // std::map<std::size_t, std::vector<typename polynomial_dfs_type::polynomial_type>> _polys_coefficients
+                            nil::crypto3::marshalling::types::standard_size_t_array_list<TTypeBase>,
+                            nil::crypto3::marshalling::types::standard_array_list<
+                                TTypeBase,
+                                polynomial_vector<TTypeBase, typename LPCScheme::polynomial_type::polynomial_type>
+                            >,
                             // LPC derives from polys_evaluator, so we need to marshall that as well.
                             polys_evaluator<TTypeBase, typename LPCScheme::polys_evaluator_type>
                         >
@@ -291,6 +297,10 @@ namespace nil {
                                                  std::enable_if_t<nil::crypto3::zk::is_lpc<LPCScheme>>>::type
                 fill_commitment_scheme(const LPCScheme &scheme) {
                     using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
+                    using size_t_marshalling_type = nil::crypto3::marshalling::types::integral<TTypeBase, std::size_t>;
+                    // Yes, on the next line we need "::polynomial_type" twice, the first one intentionally returns poly_dfs.
+                    using polynomial_type = typename LPCScheme::polynomial_type::polynomial_type;
+                    using polynomial_vector_marshalling_type = polynomial_vector<TTypeBase, polynomial_type>;
                     using result_type = typename commitment_scheme_state<nil::crypto3::marshalling::field_type<Endianness>, LPCScheme>::type;
 
                     // std::map<std::size_t, precommitment_type> _trees;
@@ -317,6 +327,15 @@ namespace nil {
                             nil::crypto3::marshalling::types::integral<TTypeBase, std::size_t>(value));
                     }
 
+                    // std::map<std::size_t, std::vector<typename polynomial_dfs_type::polynomial_type>> _polys_coefficients
+                    auto [filled_polys_keys, filled_polys_values] = fill_std_map<
+                            TTypeBase,
+                            size_t_marshalling_type,
+                            polynomial_vector_marshalling_type,
+                            std::size_t,
+                            std::vector<polynomial_type>>(
+                        scheme.get_polys_coefficients(), fill_size_t<TTypeBase>, fill_polynomial_vector<Endianness, polynomial_type>);
+
                     return result_type(std::make_tuple(
                         filled_trees_keys,
                         filled_trees_values,
@@ -325,6 +344,8 @@ namespace nil {
                         filled_batch_fixed_keys,
                         filled_batch_fixed_values,
                         fill_commitment_preprocessed_data<Endianness, LPCScheme>(scheme.get_fixed_polys_values()),
+                        filled_polys_keys,
+                        filled_polys_values,
                         fill_polys_evaluator<Endianness, typename LPCScheme::polys_evaluator_type>(
                             static_cast<typename LPCScheme::polys_evaluator_type>(scheme))
                     ));
@@ -337,6 +358,18 @@ namespace nil {
                         nil::crypto3::marshalling::field_type<Endianness>, LPCScheme,
                         std::enable_if_t<nil::crypto3::zk::is_lpc<LPCScheme>>>::type& filled_commitment_scheme
                 ) {
+                    using nil::crypto3::marshalling::types::make_size_t;
+                    using nil::crypto3::marshalling::types::make_std_map;
+
+                    // Yes, on the next line we need "::polynomial_type" twice, the first one intentionally returns poly_dfs.
+                    using polynomial_type = typename LPCScheme::polynomial_type::polynomial_type;
+
+                    using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
+                    using value_type = typename polynomial_type::value_type;
+
+                    using size_t_marshalling_type = nil::crypto3::marshalling::types::integral<TTypeBase, std::size_t>;
+                    using polynomial_vector_marshalling_type = polynomial_vector<TTypeBase, polynomial_type>;
+
                     std::map<std::size_t, typename LPCScheme::precommitment_type> trees;
                     const auto& filled_tree_keys = std::get<0>(filled_commitment_scheme.value()).value();
                     const auto& filled_tree_values = std::get<1>(filled_commitment_scheme.value()).value();
@@ -362,7 +395,6 @@ namespace nil {
                         return nil::crypto3::marshalling::status_type::invalid_msg_data;
                     }
 
-
                     for (std::size_t i = 0; i < batch_fixed_keys.size(); i++) {
                         // Here we convert the value from type size_t back into a 'bool', which is not good.
                         batch_fixed[std::size_t(batch_fixed_keys[i].value())] = bool(batch_fixed_values[i].value());
@@ -372,12 +404,20 @@ namespace nil {
                         make_commitment_preprocessed_data<Endianness, LPCScheme>(
                             std::get<6>(filled_commitment_scheme.value()));
 
+                    auto polys_coefficients = make_std_map<
+                        TTypeBase, std::size_t, std::vector<polynomial_type>,
+                        size_t_marshalling_type, polynomial_vector_marshalling_type>(
+                            std::get<7>(filled_commitment_scheme.value()),
+                            std::get<8>(filled_commitment_scheme.value()),
+                            make_size_t<TTypeBase>,
+                            make_polynomial_vector<Endianness, polynomial_type>);
+
                     typename LPCScheme::polys_evaluator_type evaluator = make_polys_evaluator<
                             Endianness, typename LPCScheme::polys_evaluator_type>(
-                        std::get<7>(filled_commitment_scheme.value())
+                        std::get<9>(filled_commitment_scheme.value())
                         );
 
-                    return LPCScheme(evaluator, trees, fri_params, etha, batch_fixed, fixed_polys_values);
+                    return LPCScheme(evaluator, trees, fri_params, etha, batch_fixed, fixed_polys_values, polys_coefficients);
                 }
 
                 template <typename TTypeBase, typename LPCScheme>

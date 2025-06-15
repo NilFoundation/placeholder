@@ -1,4 +1,4 @@
-requests==2.32.2
+requests==2.32.4
 opentelemetry-distro[otlp]==0.45b0
 opentelemetry-instrumentation-requests==0.45b0
 opentelemetry-util-http==0.45b0

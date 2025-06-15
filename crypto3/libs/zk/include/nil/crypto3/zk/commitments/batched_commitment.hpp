@@ -80,31 +80,10 @@ namespace nil {
                     // _locked[batch] is true after it is commited
                     std::map<std::size_t, bool> _locked;
 
+                    // _points[batch_id][poly_id] contains all the points for the given batch and polynomial in the batch. It may have repetitions.
                     std::map<std::size_t, std::vector<std::vector<value_type>>> _points;
 
-                    bool operator==(const polys_evaluator &other) const {
-                        if (_polys != other._polys) {
-                            std::cout << "polys_evaluator differs in _polys" << std::endl;
-                            return false;
-                        }
-                        if (_locked != other._locked) {
-                            std::cout << "polys_evaluator differs in _locked" << std::endl;
-                            return false;
-                        }
-                        if (_points != other._points) {
-                            std::cout << "polys_evaluator differs in _points" << std::endl;
-                            return false;
-                        }
-                        if (_points_map != other._points_map) {
-                            std::cout << "polys_evaluator differs in _points_map" << std::endl;
-                            return false;
-                        }
-                        if (_z != other._z) {
-                            std::cout << "polys_evaluator differs in _z" << std::endl;
-                            return false;
-                        }
-                        return true;
-                    }
+                    bool operator==(const polys_evaluator &other) const = default;
 
                     // We frequently search over the this->_points structure, and it's better to keep a hashmap that maps point to
                     // it's index in vector for faster search. We need to duplicate this data for now, because the order of points matters.
@@ -112,14 +91,14 @@ namespace nil {
 
                     // Creates '_points_map'. We need to think about re-designing this class later. Currently this is used from LPC.
                     void build_points_map() {
-                        for (const auto& [i, V]: this->_points) {
-                            _points_map[i].resize(V.size());
+                        for (const auto& [batch_id, V]: this->_points) {
+                            _points_map[batch_id].resize(V.size());
                             for (std::size_t j = 0; j < V.size(); ++j) {
                                 const auto& batch = V[j];
                                 for (std::size_t k = 0; k < batch.size(); ++k) {
                                     // We need to store the index of the first occurance of each point.
-                                    if (_points_map[i][j].find(batch[k]) == _points_map[i][j].end())
-                                        _points_map[i][j][batch[k]] = k;
+                                    if (_points_map[batch_id][j].find(batch[k]) == _points_map[batch_id][j].end())
+                                        _points_map[batch_id][j][batch[k]] = k;
                                 }
                             }
                         }
@@ -230,25 +209,25 @@ namespace nil {
                     }
 
                     void eval_polys() {
-                        for (auto const &[k, batch_polys] : _polys) {
-                            _z.set_batch_size(k, batch_polys.size());
-                            auto const &batch_points = _points.at(k);
+                        for (auto const &[batch_id, batch_polys] : _polys) {
+                            _z.set_batch_size(batch_id, batch_polys.size());
+                            auto const &batch_points = _points.at(batch_id);
 
                             BOOST_ASSERT(batch_polys.size() == batch_points.size() ||
                                          batch_points.size() == 1);
 
                             for (std::size_t i = 0; i < batch_polys.size(); ++i) {
-                                _z.set_poly_points_number(k, i, batch_points[i].size());
+                                _z.set_poly_points_number(batch_id, i, batch_points[i].size());
                             }
 
                             // We use HIGH level thread pool here, because "evaluate" may use the lower level one.
                             parallel_for(
                                 0, batch_polys.size(),
-                                [this, &batch_points, k, &batch_polys](std::size_t i) {
+                                [this, &batch_points, batch_id, &batch_polys](std::size_t i) {
                                     for (std::size_t j = 0; j < batch_points[i].size();
                                          j++) {
                                         const auto &point = batch_points[i][j];
-                                        _z.set(k, i, j, batch_polys[i].evaluate(point));
+                                        _z.set(batch_id, i, j, batch_polys[i].evaluate(point));
                                     }
                                 },
                                 ThreadPool::PoolLevel::HIGH);

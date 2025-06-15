@@ -251,9 +251,9 @@ BOOST_AUTO_TEST_CASE(marshalling_fri_basic_test) {
             );
 
     // commit
-    math::polynomial<typename field_type::value_type> f = {{
+    math::polynomial_dfs<typename field_type::value_type> f = {15, {
         1u, 3u, 4u, 1u, 5u, 6u, 7u, 2u, 8u, 7u, 5u, 6u, 1u, 2u, 1u, 1u}};
-    std::array<std::vector<math::polynomial<typename field_type::value_type>>, 1> fs;
+    std::array<std::vector<math::polynomial_dfs<typename field_type::value_type>>, 1> fs;
     fs[0].resize(1);
     fs[0][0] = f;
     typename fri_type::merkle_tree_type tree = zk::algorithms::precommit<fri_type>(
