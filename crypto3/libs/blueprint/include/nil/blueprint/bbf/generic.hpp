@@ -276,6 +276,10 @@ namespace nil {
                     return res;
                 }
 
+                TYPE W(std::size_t col, std::size_t row) {
+                    return at.witness(get_col(col, column_type::witness),get_row(row));
+                }
+
                 private:
                     // reference to the actual assignment table
                     assignment_type &at;

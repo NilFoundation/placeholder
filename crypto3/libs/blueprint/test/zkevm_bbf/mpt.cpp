@@ -124,15 +124,6 @@ public:
         }
         paths.push_back(single_path);
 
-/*
-        bool result = test_bbf_component<field_type, mpt>(
-            "mpt",                 //  Circuit name
-            {} ,                   //  Public input
-            paths,                 //  Assignment input (paths to prove)
-            max_mpt_size           //  Maximum size of mpt circuit
-        );
-        BOOST_CHECK((!check_satisfiability && !generate_proof) || result == expected_result); // Max_rw, Max_mpt
-*/
         bool result = test_bbf_component<field_type, mpt_dynamic>(
             "mpt_dynamic",         //  Circuit name
             {} ,                   //  Public input
@@ -189,9 +180,9 @@ BOOST_FIXTURE_TEST_SUITE(zkevm_bbf_mpt_leaf, zkEVMMPTTestFixture)
     using field_type = nil::crypto3::algebra::curves::alt_bn128_254::scalar_field_type;
 BOOST_AUTO_TEST_CASE(one_mpt_path) {
     test_zkevm_mpt<field_type>("mpt_path_0.json", 500);
-//    test_zkevm_mpt<field_type>("mpt_path_1.json", 500);
-//    test_zkevm_mpt<field_type>("mpt_path_2.json", 500);
-//    test_zkevm_mpt<field_type>("mpt_path_3.json", 500);
+    test_zkevm_mpt<field_type>("mpt_path_1.json", 500);
+    test_zkevm_mpt<field_type>("mpt_path_2.json", 500);
+    test_zkevm_mpt<field_type>("mpt_path_3.json", 500);
 }
 BOOST_AUTO_TEST_CASE(mpt_leafs) {
   test_zkevm_mpt_leaf<field_type>("mpt_leaf_storage.json", mpt_type::storage_trie, 20);

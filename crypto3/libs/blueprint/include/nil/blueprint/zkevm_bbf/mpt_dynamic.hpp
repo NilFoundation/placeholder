@@ -51,6 +51,7 @@ class mpt_dynamic : public generic_component<FieldType, stage> {
     using generic_component<FieldType, stage>::constrain;
     using generic_component<FieldType, stage>::lookup;
     using generic_component<FieldType, stage>::lookup_table;
+    using generic_component<FieldType, stage>::multi_lookup_table;
 
 public:
     using typename generic_component<FieldType, stage>::table_params;
@@ -124,7 +125,7 @@ public:
             node_specific_columns.push_back(cur_column);
         }
 
-        // The last four columns are for Keccak lookup table
+        // The last columns are for Keccak lookup table
         std::vector<std::size_t> keccak_columns;
         for(std::size_t i = 0; i < zkevm_small_field::keccak_table<FieldType,stage>::get_witness_amount(); i++, cur_column++) {
             keccak_columns.push_back(cur_column);
@@ -262,28 +263,42 @@ public:
             }
 
             mpt_node_input_type<FieldType, stage> node_input = {
-                .trie_id = Res.trie_id,
                 .rlc_challenge = rlc_challenge[node_num],
+
                 .node_accumulated_key = Res.accumulated_key,
-                .accumulated_key_length = Res.accumulated_key_length,
-                .parent_key_length = Res.parent_key_length,
-                .shifted_accumulated_key = Res.shifted_accumulated_key,
-                .branch_key = Res.accumulated_key_lower[31], // the last symbol in the key
+                .node_last_nibble = Res.last_nibble,
+                .node_nibble_present = Res.nibble_present,
+
                 .node_data = node_data,
                 .keccak_buffers = &keccak_buffers
             };
 
             std::array<TYPE, 32> parent_hash; // allocated by node-specific code
             std::array<std::array<TYPE, 32>, 16> child; // 16 32-byte child hashes for branch nodes
+
+            std::array<TYPE, 32> child_accumulated_key;
+            TYPE child_nibble_present;
+            TYPE ext_child_last_nibble;
+            std::array<TYPE, 16> child_last_nibble;
+            std::array<TYPE, 15> child_accumulated_key_last_byte;
+
             std::array<TYPE, 32> ext_value; // allocated by extension nodes
 
             if (n.type == branch) {
                 auto res = mpt_branch(node_row_context, node_input);
                 parent_hash = res.parent_hash;
                 child = res.child;
+
+                child_accumulated_key = res.child_accumulated_key;
+                child_nibble_present = res.child_nibble_present;
+                child_last_nibble = res.child_last_nibble;
+                child_accumulated_key_last_byte = res.child_accumulated_key_last_byte;
             } else if (n.type == extension) {
                 auto res = mpt_extension(node_row_context, node_input);
                 parent_hash = res.parent_hash;
+                child_accumulated_key = res.child_accumulated_key;
+                child_nibble_present = res.child_nibble_present;
+                ext_child_last_nibble = res.child_last_nibble;
                 ext_value = res.ext_value;
             } else if (n.type == leaf) {
                 parent_hash = mpt_leaf_proxy(node_row_context, node_input).parent_hash;
@@ -318,43 +333,48 @@ public:
                     }
                 }
 
-                std::array<std::string, 16> table_name;
-                for(std::size_t j = 0; j < 16; j++) {
-                    std::stringstream table_num;
-                    table_num << std::hex << j;
-                    table_name[j] = "key_to_child_hash_" + table_num.str();
-                }
-
-                // declare key_child_hash tables
+                // unified key_to_child_hash lookup table:
+                // (branch_selector,trie_id,
+                //  child_nibble_present,child_accumulated_key,child_last_nibble, parent_accumulated_key_length,
+                //  hash)
+                //
+                // NB: branch_selector == 1 => meaningful information, branch_selector == 0 => junk
+                // NB: to work correctly we need at least one row with zeroes everywhere
                 if (n.type == branch) {
-                    for(std::size_t j = 0; j < 16; j++) {
-                        std::vector<std::size_t> k2ch_lookup_columns = {
+                    std::vector<std::vector<std::size_t>> options;
+                    std::vector<std::size_t> common_option_header = {
                             get_column(Res.type_selector[branch]),
                             get_column(Res.trie_id)
-                        };
-                        // add 32 accumulated_key cols into the table
-                        for(std::size_t i = 0; i < 32; i++) {
-                            k2ch_lookup_columns.push_back(get_column(Res.accumulated_key[i]));
-                        }
-                        // accumulated_key_length column included
-                        k2ch_lookup_columns.push_back(get_column(Res.accumulated_key_length));
+                    };
+                    common_option_header.push_back(get_column(child_nibble_present));
 
-                        // 32 more columns: the j's child hash from the branch node
-                        for(std::size_t i = 0; i < 32; i++) {
-                            k2ch_lookup_columns.push_back(get_column(child[j][i]));
-                        }
-
-                        lookup_table(table_name[j], k2ch_lookup_columns, 0, max_mpt_size);
+                    for(std::size_t i = 0; i < 31; i++) {
+                        common_option_header.push_back(get_column(child_accumulated_key[i]));
                     }
+                    for(std::size_t j = 0; j < 16; j++) {
+                        options.push_back(common_option_header);
+                        options[j].push_back(get_column(j > 0 ? child_accumulated_key_last_byte[j-1] :
+                                                                child_accumulated_key[31]));
+                        options[j].push_back(get_column(child_last_nibble[j]));
+                        options[j].push_back(get_column(Res.accumulated_key_length));
+                        for(std::size_t i = 0; i < 32; i++) {
+                            options[j].push_back(get_column(child[j][i]));
+                        }
+
+                    }
+                    multi_lookup_table("key_to_child_hash", options, 0, max_mpt_size);
                 }
+
                 if (n.type == extension) {
                     std::vector<std::size_t> k2ext_lookup_columns = {
                             get_column(Res.type_selector[extension]),
                             get_column(Res.trie_id)
                     };
+                    k2ext_lookup_columns.push_back(get_column(child_nibble_present));
                     for(std::size_t i = 0; i < 32; i++) {
-                        k2ext_lookup_columns.push_back(get_column(Res.accumulated_key[i]));
+                        k2ext_lookup_columns.push_back(get_column(child_accumulated_key[i]));
                     }
+                    k2ext_lookup_columns.push_back(get_column(ext_child_last_nibble));
                     k2ext_lookup_columns.push_back(get_column(Res.accumulated_key_length));
                     for(std::size_t i = 0; i < 32; i++) {
                         k2ext_lookup_columns.push_back(get_column(ext_value[i]));
@@ -368,35 +388,38 @@ public:
                 for(std::size_t type_index = 0; type_index < NODE_TYPE_COUNT; type_index++) {
                     padding += Res.type_selector[type_index];
                 }
+                // queries from branch children to its parent via unified key_to_child_hash lookup table
+                std::vector<TYPE> query = {
+                    padding * Res.parent_is_branch,
+                    padding * Res.trie_id * Res.parent_is_branch
+                };
+                query.push_back(padding * Res.nibble_present * Res.parent_is_branch);
 
-                // query branch children:
-                for(std::size_t j = 0; j < 16; j++) {
-                    std::vector<TYPE> query = {
-                        padding * Res.branch_selector[j],
-                        padding * Res.trie_id * Res.branch_selector[j]
-                    };
-                    for(std::size_t i = 0; i < 32; i++) {
-                        query.push_back(padding * Res.shifted_accumulated_key[i] * Res.branch_selector[j]); // parent's accumulated_key
-                    }
-                    query.push_back(padding * (Res.accumulated_key_length - 1) * Res.branch_selector[j]); // parent's accumulated_key length
-                    for(std::size_t i = 0; i < 32; i++) {
-                        query.push_back(padding * parent_hash[i] * Res.branch_selector[j]); // the parent hash bytes
-                    }
-
-                    for(auto &e : query) {
-                        e = context_object.relativize(e, -node_num);
-                    }
-                    context_object.relative_lookup(query, table_name[j], 0, max_mpt_size - 1);
+                for(std::size_t i = 0; i < 32; i++) {
+                    query.push_back(padding * Res.accumulated_key[i] * Res.parent_is_branch); // the node's accumulated_key
                 }
 
+                query.push_back(padding * Res.last_nibble * Res.parent_is_branch);
+                query.push_back(padding * (Res.accumulated_key_length - 1) * Res.parent_is_branch); // parent's accumulated_key length
+                for(std::size_t i = 0; i < 32; i++) {
+                    query.push_back(padding * parent_hash[i] * Res.parent_is_branch); // the hash bytes to check against parent
+                }
+
+                for(auto &e : query) {
+                    e = context_object.relativize(e, -node_num);
+                }
+                context_object.relative_lookup(query, "key_to_child_hash", 0, max_mpt_size - 1);
+
                 // query extension node value:
-                std::vector<TYPE> query = {
+                query = {
                     padding * Res.parent_is_ext,
                     padding * Res.trie_id * Res.parent_is_ext
                 };
+                query.push_back(padding * Res.nibble_present * Res.parent_is_ext);
                 for(std::size_t i = 0; i < 32; i++) {
-                    query.push_back(padding * Res.parent_accumulated_key[i] * Res.parent_is_ext); // parent's accumulated_key
+                    query.push_back(padding * Res.accumulated_key[i] * Res.parent_is_ext); // the node's accumulated_key
                 }
+                query.push_back(padding * Res.last_nibble * Res.parent_is_ext);
                 // parent's accumulated_key length
                 query.push_back(padding * (Res.accumulated_key_length - Res.parent_key_length) * Res.parent_is_ext);
                 for(std::size_t i = 0; i < 32; i++) {

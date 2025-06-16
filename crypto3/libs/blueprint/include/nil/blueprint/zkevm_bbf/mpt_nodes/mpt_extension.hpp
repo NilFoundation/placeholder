@@ -82,6 +82,10 @@ public:
     std::array<TYPE,32> parent_hash;
     std::array<TYPE, 32> ext_value;  // ext_value[32]
 
+    std::array<TYPE, 32> child_accumulated_key;
+    TYPE child_nibble_present;
+    TYPE child_last_nibble;
+
     mpt_extension(context_type &context_object,
         const input_type &input) : generic_component<FieldType,stage>(context_object) {
 
@@ -103,6 +107,18 @@ public:
         std::array<TYPE, 32> rlc_key;
         std::array<TYPE, 32> rlc_value;
 
+        // cells for computing the accumulated key
+        std::array<TYPE,32> key_part_lower;   // the lower 4 bits of each key_part byte
+        std::array<TYPE,32> shifted_key_part; // key_part >> 4
+        TYPE key_part_length;
+        TYPE key_part_length_is_odd;
+        TYPE key_part_length_half;
+        // auxiliary cells for defining I(x) = 1 iff x == key_part_length_half
+        // I(x) = I1(x / 8) * I2(x % 8)
+        std::array<TYPE, 4> kplh_indic_1 = {0,0,0,0};     // I1 indicator function for key_part_length_half
+        std::array<TYPE, 8> kplh_indic_2 = {0,0,0,0,0,0,0,0}; // I2 indicator function for key_part_length_half
+        // ====
+
         std::size_t node_key_bytes;
 
         if constexpr (stage == GenerationStage::ASSIGNMENT) {
@@ -115,6 +131,7 @@ public:
             key_length_bytes = node_key_bytes;
 
             std::array<uint8_t,32> key_value = w_to_8(n.value.at(0));
+            std::array<uint8_t,32> shifted_key_value = w_to_8(n.value.at(0) >> 4);
             std::vector<uint8_t> byte_vector;
             size_t rlp_prefix; // RLP for the key in extension node
 
@@ -137,6 +154,12 @@ public:
             } else {
                 node_key_length -= 2; // otherwise, the second hex is 0 and we skip it too
             }
+            key_part_length = node_key_length; // now store it in a cell for further use
+            key_part_length_is_odd = node_key_length % 2;
+            key_part_length_half = node_key_length / 2;
+
+            kplh_indic_1[(node_key_length / 2) / 8] = 1;
+            kplh_indic_2[(node_key_length / 2) % 8] = 1;
 
             size_t rlp_node_prefix0, rlp_node_prefix1; // RLP prefixes for the whole node (2-bytes)
             std::array<uint8_t,32> node_value = w_to_8(n.value.at(1));
@@ -180,6 +203,8 @@ public:
             // std::array<std::uint8_t,32> key_part_byte = w_to_8(node_key_part);
             for(std::size_t i = 0; i < 32; i++) {
                 key_part[i] = key_value[i];
+                key_part_lower[i] = key_value[i] & 0xF;
+                shifted_key_part[i] = shifted_key_value[i];
                 ext_value[i] = node_value[i];
             }
 
@@ -217,7 +242,72 @@ public:
         for(std::size_t i = 0; i < 32; i++) {
             allocate(key_part[i]);
         }
-        // col 67-98: value of ext node (in bytes)
+        for(std::size_t i = 0; i < 32; i++) {
+            allocate(key_part_lower[i]);
+        }
+        for(std::size_t i = 0; i < 32; i++) {
+            allocate(shifted_key_part[i]);
+            // per-byte constraints of the relation: shifted_key_part * 16 + key_part_lower[31] = key_part
+            constrain(shifted_key_part[i] * 16 + key_part_lower[i]
+                       - (( i > 0 ? key_part_lower[i-1] : 0 ) * 256 + key_part[i]));
+        }
+        allocate(key_part_length); // 6-bit
+        allocate(key_part_length_is_odd);
+        allocate(key_part_length_half); // 5-bit
+        constrain(key_part_length_is_odd * (1 - key_part_length_is_odd));
+        constrain(2 * key_part_length_half + key_part_length_is_odd - key_part_length);
+
+        child_nibble_present = input.node_nibble_present * (1 - key_part_length_is_odd) +
+                               (1 - input.node_nibble_present) * key_part_length_is_odd;
+        allocate(child_nibble_present);
+        child_last_nibble = key_part_lower[31] * child_nibble_present;
+        allocate(child_last_nibble);
+
+        std::array<TYPE, 32> source_bytes; // the source of key_part bytes to be concatenated with accumulated key
+        for(std::size_t i = 0; i < 32; i++) {
+            source_bytes[i] = child_nibble_present * shifted_key_part[i] + (1 - child_nibble_present) * key_part[i];
+        }
+        TYPE indic1_sum;
+        TYPE indic1_value;
+        for(std::size_t i = 0; i < 4; i++) {
+            allocate(kplh_indic_1[i]);
+            constrain( kplh_indic_1[i] * (1 - kplh_indic_1[i]) );
+            indic1_sum += kplh_indic_1[i];
+            indic1_value += kplh_indic_1[i] * i;
+        }
+        constrain( indic1_sum * (1 - indic1_sum) );
+
+        TYPE indic2_sum;
+        TYPE indic2_value;
+        for(std::size_t i = 0; i < 8; i++) {
+            allocate(kplh_indic_2[i]);
+            constrain(kplh_indic_2[i] * (1 - kplh_indic_2[i]) );
+            indic2_sum += kplh_indic_2[i];
+            indic2_value += kplh_indic_2[i] * i;
+        }
+        constrain( indic2_sum * (1 - indic2_sum) );
+        constrain( indic1_value * 8 + indic2_value - key_part_length_half );
+
+        // different possible values for key_part_length_half
+        for(std::size_t l = 0; l < 32; l++) {
+            TYPE selector = kplh_indic_1[l / 8] * kplh_indic_2[l % 8]; // selector == 1  <=>  key_part_length_half == l
+            for(std::size_t i = 0; i < 32; i++) {
+                if (i < 32 - l) {
+                    child_accumulated_key[i] += input.node_accumulated_key[i + l] * selector;
+                }
+                if (i >= 32 - l) {
+                    child_accumulated_key[i] += source_bytes[i] * selector;
+                }
+                if (i == 32 - l) {
+                    child_accumulated_key[i] += input.node_nibble_present * input.node_last_nibble * 16 * selector;
+                }
+            }
+        }
+        for(std::size_t i = 0; i < 32; i++) {
+            allocate(child_accumulated_key[i]);
+        }
+
+        // col 67-98: value of ext node (in bytes) // TODO: starting from here the column numbers in comments are wrong
         for(std::size_t i = 0; i < 32; i++) {
             allocate(ext_value[i]);
         }

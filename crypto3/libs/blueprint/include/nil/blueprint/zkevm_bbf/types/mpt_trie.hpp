@@ -23,7 +23,6 @@
 //---------------------------------------------------------------------------//
 #pragma once
 #include <nil/blueprint/bbf/generic.hpp>
-//#include <nil/blueprint/zkevm_bbf/big_field/subcomponents/keccak_table.hpp>
 #include <nil/blueprint/zkevm_bbf/small_field/tables/keccak.hpp>
 
 namespace nil::blueprint::bbf {
@@ -71,13 +70,12 @@ struct mpt_node_input_type {
     using TYPE = typename generic_component<FieldType, stage>::TYPE;
     using keccak_buffer_type = typename zkevm_small_field::keccak_table<FieldType,stage>::private_input_type;
 
-    TYPE trie_id;
     TYPE rlc_challenge;
+
     std::array<TYPE,32> node_accumulated_key;
-    TYPE accumulated_key_length;
-    TYPE parent_key_length;
-    std::array<TYPE,32> shifted_accumulated_key;
-    TYPE branch_key;
+    TYPE node_last_nibble;
+    TYPE node_nibble_present;
+
     node_private_input<FieldType, stage> node_data;
 
     keccak_buffer_type* keccak_buffers;

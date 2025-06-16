@@ -83,12 +83,17 @@ public:
             context_type &context, input_type &input) {}
 */
     static std::size_t get_witness_amount(){
-        return 836;
+        return 900;
     }
 
     // These cells are interfaces to internal data
     std::array<TYPE, 32> parent_hash; // the hash for reference to the node from parent node
     std::array<std::array<TYPE, 32>, 16> child; // 16 32-byte child hashes
+
+    std::array<TYPE, 32> child_accumulated_key;
+    TYPE child_nibble_present;
+    std::array<TYPE, 16> child_last_nibble;
+    std::array<TYPE, 15> child_accumulated_key_last_byte;
 
     mpt_branch(context_type &context_object,
         const input_type &input) : generic_component<FieldType,stage>(context_object) {
@@ -177,6 +182,27 @@ public:
             for(std::size_t b = 0; b < 32; b++) { // the 32 bytes of each child
                 allocate(child[i][b]);
             }
+        }
+
+        child_nibble_present = 1 - input.node_nibble_present;
+        allocate(child_nibble_present);
+
+        for(std::size_t i = 0; i < 31; i++) {
+            child_accumulated_key[i] = child_nibble_present * input.node_accumulated_key[i]
+                                         + (1 - child_nibble_present) * input.node_accumulated_key[i+1];
+            allocate(child_accumulated_key[i]);
+        }
+        child_accumulated_key[31] = child_nibble_present * input.node_accumulated_key[31]
+                                      + (1 - child_nibble_present) * 16 * input.node_last_nibble;
+        allocate(child_accumulated_key[31]);
+
+        for(std::size_t i = 0; i < 15; i++) {
+            child_accumulated_key_last_byte[i] = child_accumulated_key[31] + (1 - child_nibble_present) * (i + 1);
+            allocate(child_accumulated_key_last_byte[i]);
+        }
+        for(std::size_t i = 0; i < 16; i++) {
+            child_last_nibble[i] = child_nibble_present * i; // Yes, we need a zero column (i == 0) for the lookup table!
+            allocate(child_last_nibble[i]);
         }
 
         // expressions for generating constraints
