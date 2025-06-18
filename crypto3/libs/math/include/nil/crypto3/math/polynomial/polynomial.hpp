@@ -29,9 +29,12 @@
 
 #include <algorithm>
 #include <ranges>
+#include <type_traits>
 #include <vector>
 
 #include <nil/crypto3/math/polynomial/basic_operations.hpp>
+
+#include <nil/crypto3/algebra/fields/utils.hpp>
 
 namespace nil {
     namespace crypto3 {
@@ -357,27 +360,33 @@ namespace nil {
                     return val.resize(_sz, _x);
                 }
 
-                void swap(polynomial& other) {
-                    val.swap(other.val);
-                }
+                void swap(polynomial& other) noexcept { val.swap(other.val); }
 
-                template<std::ranges::random_access_range Range>
+                template<std::ranges::range Range>
                     requires(std::ranges::sized_range<Range>)
-                FieldValueType evaluate(const Range& values) const {
-                    assert(values.size() + 1 == this->size());
+                algebra::fields::choose_extension_field_t<
+                    FieldValueType, std::ranges::range_value_t<Range>>
+                evaluate_powers(const Range& values) const {
+                    BOOST_ASSERT(values.size() >= size());
 
-                    FieldValueType result = (*this)[0];
-                    for (std::size_t i = 0; i < values.size(); i++) {
-                        result += (*this)[i + 1] * values[i];
+                    auto result = algebra::fields::choose_extension_field_t<
+                        FieldValueType, std::ranges::range_value_t<Range>>::zero();
+
+                    auto it = values.begin();
+                    for (std::size_t i = 0; i < size(); ++i) {
+                        result += (*this)[i] * *it;
+                        ++it;
                     }
 
                     return result;
                 }
 
                 template<typename EvaluationFieldValueType>
-                EvaluationFieldValueType evaluate(
-                    const EvaluationFieldValueType& value) const {
-                    auto result = EvaluationFieldValueType::zero();
+                algebra::fields::choose_extension_field_t<FieldValueType,
+                                                          EvaluationFieldValueType>
+                evaluate(const EvaluationFieldValueType& value) const {
+                    auto result = algebra::fields::choose_extension_field_t<
+                        FieldValueType, EvaluationFieldValueType>::zero();
                     auto end = this->end();
                     while (end != this->begin()) {
                         result = result * value + *--end;
@@ -617,7 +626,18 @@ namespace nil {
                 }
                 return os;
             }
-        }    // namespace math
+
+            template<typename FieldValue>
+            std::vector<FieldValue> compute_powers(FieldValue v, std::size_t size) {
+                std::vector<FieldValue> result(size);
+                auto acc = FieldValue::one();
+                for (std::size_t i = 0; i < size; ++i) {
+                    result[i] = acc;
+                    acc *= v;
+                }
+                return result;
+            }
+        }  // namespace math
     }        // namespace crypto3
 }    // namespace nil
 

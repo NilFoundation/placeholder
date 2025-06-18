@@ -32,6 +32,8 @@
 
 #include <nil/crypto3/math/polynomial/polynomial.hpp>
 
+#include <nil/crypto3/algebra/fields/utils.hpp>
+
 namespace nil::crypto3::math {
     template<typename FieldType>
     class polymorphic_polynomial {
@@ -115,9 +117,30 @@ namespace nil::crypto3::math {
             return a;
         }
 
-        template<typename Evaluationvalue_type>
-        Evaluationvalue_type evaluate(const Evaluationvalue_type& a) const {
-            return std::visit([a](const auto &v){ return v.evaluate(a); }, val);
+        template<std::ranges::range Range>
+            requires(std::ranges::sized_range<Range>)
+        algebra::fields::choose_extension_field_t<value_type,
+                                                  std::ranges::range_value_t<Range>>
+        evaluate_powers(const Range& r) const {
+            return std::visit(
+                [&r](const auto& v) {
+                    return algebra::fields::choose_extension_field_t<
+                        value_type, std::ranges::range_value_t<Range>>(
+                        v.evaluate_powers(r));
+                },
+                val);
+        }
+
+        template<typename PointFieldValueType>
+        algebra::fields::choose_extension_field_t<value_type, PointFieldValueType>
+        evaluate(const PointFieldValueType& a) const {
+            return std::visit(
+                [a](const auto& v) {
+                    return algebra::fields::choose_extension_field_t<value_type,
+                                                                     PointFieldValueType>(
+                        v.evaluate(a));
+                },
+                val);
         }
     };
 
