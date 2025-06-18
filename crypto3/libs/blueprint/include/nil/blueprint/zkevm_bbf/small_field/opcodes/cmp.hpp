@@ -192,8 +192,6 @@ class zkevm_cmp_bbf : generic_component<Field, stage> {
                     current_state.rw_counter(0) + 2,
                     TYPE(1),// is_write
                     std::array<TYPE, 16>{result}), "zkevm_rw_256");
-        } else {
-            std::cout << "\tASSIGNMENT implemented" << std::endl;
         }
     }
 

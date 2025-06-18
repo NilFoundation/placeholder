@@ -22,7 +22,7 @@ let
   # Aux function that assembles a shell line for running test binary for specific (test suite, test case, circuit subset) combination
   buildTestRunLines = {binary, test_suite, test_runs}:
     builtins.map
-      (test_name: "${binary} '--run_test=${test_suite}/${test_name}<*' -- --no-sat-check --proof --run-for-circuits=${lib.strings.concatStringsSep "," test_runs.${test_name}}\n")
+      (test_name: "${binary} '--run_test=${test_suite}/${test_name}' -- --no-sat-check --proof --run-for-circuits=${lib.strings.concatStringsSep "," test_runs.${test_name}}\n")
       (builtins.attrNames test_runs)
   ;
 
@@ -71,18 +71,14 @@ in stdenv.mkDerivation rec {
         "rw"
         "bytecode"
         "zkevm"
+        "rw-s"
+        "copy-s"
+        "bytecode-s"
       ];
 
-      minimal_math = [ "zkevm" "zkevm-wide" "copy" "keccak" "rw"  ];
-      try_catch = [ "zkevm" "zkevm-wide" "copy" "bytecode" "rw" ];
-      exp = [ "copy" "rw" "bytecode" "zkevm" "exp" ];
-
-      # Need traces in new format
-      # calldatacopy = [ "copy" "rw" "bytecode" "zkevm" "exp" "keccak"];
-      # logger = [ "copy" "rw" "bytecode" "zkevm" "exp" "keccak"];
-      # returndatacopy = [ "copy" "rw" "bytecode" "zkevm" "exp" "keccak" ];
-      # mstore8 = [ "copy" "rw" "bytecode" "zkevm" "exp" "keccak"];
-      # modular_operations = [ "copy" "rw" "bytecode" "zkevm" "exp" "keccak"];
+      minimal_math = [ "zkevm" "zkevm-wide" "copy" "keccak" "rw" "zkevm-s" "rw-s" "copy-s" "bytecode-s" ];
+      try_catch = [ "zkevm" "zkevm-wide" "copy" "bytecode" "rw"  "rw-s" "copy-s" "bytecode-s"];
+      exp = [ "copy" "rw" "bytecode" "zkevm" "exp" "rw-s" "copy-s" "bytecode-s"];
     };
   };
 

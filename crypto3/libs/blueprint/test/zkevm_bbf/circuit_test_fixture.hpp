@@ -52,6 +52,8 @@
 
 #include <nil/crypto3/math/polynomial/polymorphic_polynomial_dfs.hpp>
 
+#include <nil/blueprint/utils/constraint_system_stat.hpp>
+
 #include "../test_plonk_component.hpp"
 #include <boost/algorithm/string.hpp>
 
@@ -72,27 +74,42 @@ using namespace nil::blueprint;
 using namespace nil::blueprint::bbf;
 
 // Log-related classes
-void my_formatter(boost::log::record_view const& rec, boost::log::formatting_ostream& strm){
+void file_formatter(boost::log::record_view const& rec, boost::log::formatting_ostream& strm){
     // Finally, put the record message to the stream
-    strm << rec[boost::log::expressions::smessage];
+    if( rec[boost::log::trivial::severity] > boost::log::trivial::info) {
+        strm  << "[" << rec[boost::log::trivial::severity] << "] " << rec[boost::log::expressions::smessage];
+    } else {
+        strm  << rec[boost::log::expressions::smessage];
+    }
 }
+
+
+void colored_formatter(boost::log::record_view const& rec, boost::log::formatting_ostream& strm){
+    // Colored output looks nice in terminal, but not in files.
+    // Use --color-log to enable colored output in terminal.
+    if( rec[boost::log::trivial::severity] == boost::log::trivial::fatal) {
+        strm  << "[\x1B[91m" << rec[boost::log::trivial::severity] << "\x1B[0m] " << rec[boost::log::expressions::smessage];
+    } else if( rec[boost::log::trivial::severity] == boost::log::trivial::error) {
+        strm  << "[\x1B[38;2;255;165;0m" << rec[boost::log::trivial::severity] << "\x1B[0m] " << rec[boost::log::expressions::smessage];
+    } else if( rec[boost::log::trivial::severity] == boost::log::trivial::warning) {
+        strm  << "[\x1B[33m" << rec[boost::log::trivial::severity] << "\x1B[0m] " << rec[boost::log::expressions::smessage];
+    } else if( rec[boost::log::trivial::severity] == boost::log::trivial::info) {
+        strm  << "[\x1B[32m" << rec[boost::log::trivial::severity] << "\x1B[0m] " << rec[boost::log::expressions::smessage];
+    } else {
+        strm  << rec[boost::log::expressions::smessage];
+    }
+}
+
 
 class zkEVMGlobalFixture {
 public:
     zkEVMGlobalFixture() {
         // Initialize the logging system
-        typedef boost::log::sinks::synchronous_sink< boost::log::sinks::text_ostream_backend > text_sink;
-        boost::shared_ptr< text_sink > sink = boost::make_shared< text_sink >();
-
-        sink->locked_backend()->add_stream(boost::shared_ptr< std::ostream >(&std::cout, boost::null_deleter()));
-        sink->set_formatter(&my_formatter);
-        sink->locked_backend()->auto_flush(true);
-        boost::log::core::get()->add_sink(sink);
+        boost::log::trivial::severity_level log_level = boost::log::trivial::info;
+        bool is_color = false;
 
         std::size_t argc = boost::unit_test::framework::master_test_suite().argc;
         auto &argv = boost::unit_test::framework::master_test_suite().argv;
-        boost::log::trivial::severity_level log_level = boost::log::trivial::info;
-
         for( std::size_t i = 0; i < argc; i++ ){
             std::string arg(argv[i]);
             if( arg == "--log-level=trace"){
@@ -113,7 +130,23 @@ public:
             if( arg == "--no-log" ){
                 log_level = boost::log::trivial::fatal;
             }
+            if( arg == "--color-log" ){
+                is_color = true;
+            }
         }
+
+        typedef boost::log::sinks::synchronous_sink< boost::log::sinks::text_ostream_backend > text_sink;
+        boost::shared_ptr< text_sink > sink = boost::make_shared< text_sink >();
+
+        sink->locked_backend()->add_stream(boost::shared_ptr< std::ostream >(&std::cout, boost::null_deleter()));
+        if (is_color) {
+            sink->set_formatter(&colored_formatter);
+        } else {
+            sink->set_formatter(&file_formatter);
+        }
+        sink->locked_backend()->auto_flush(true);
+        boost::log::core::get()->add_sink(sink);
+
         sink->set_filter(
             boost::log::trivial::severity >= log_level
         );
@@ -129,12 +162,16 @@ struct l1_size_restrictions{
     std::size_t instances_bytecode = 1;
 
     std::size_t max_rw;
-    std::size_t instances_rw_8 = 1;
-    std::size_t instances_rw_256 = 1;
+    std::size_t instances_rw_8 = 3;
+    std::size_t instances_rw_256 = 2;
 
     std::size_t max_copy_events = 50;
     std::size_t max_copy;
+    std::size_t max_copy_small_field_rows = 0;
+    std::size_t instances_copy = 2;
+
     std::size_t max_zkevm_rows;
+    std::size_t max_zkevm_small_field_rows = 0;
     std::size_t max_exp_rows;
     std::size_t max_state = 500;
     std::size_t max_bytecodes_amount = 50;
@@ -289,10 +326,7 @@ class CircuitTestFixture {
             component_static_info_args...);
 
         auto &bp = builder.get_circuit();
-        std::size_t max_gates_degree  = bp.max_gates_degree();
-        std::size_t max_lookup_degree  = bp.max_lookup_gates_degree();
-        BOOST_LOG_TRIVIAL(info) << "Max gates degree " << max_gates_degree << std::endl;
-        BOOST_LOG_TRIVIAL(info) << "Max lookup degree " << max_lookup_degree << std::endl;
+        BOOST_LOG_TRIVIAL(info) << constrain_system_stat<SmallFieldType>(bp);
 
         auto [assignment, component, desc] = builder.assign(assignment_input);
         if (print_to_file) {

@@ -23,6 +23,7 @@
 //---------------------------------------------------------------------------//
 #pragma once
 
+#include <nil/blueprint/zkevm_bbf/types/opcode_enum.hpp>
 #include <nil/blueprint/zkevm_bbf/types/hashed_buffers.hpp>
 #include <nil/blueprint/zkevm_bbf/small_field/tables/bytecode.hpp>
 #include <nil/blueprint/zkevm_bbf/small_field/tables/bytecode_hash.hpp>
@@ -185,10 +186,16 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                         push_size[cur] = push_size_value;
                         rlc_challenge[cur] = input.rlc_challenge;
                         value_rlc[cur] = value_rlc[cur - 1] * input.rlc_challenge + byte;
+                        if( is_opcode[cur] == 1 )
+                            BOOST_LOG_TRIVIAL(trace) << cur << ". " << opcode_from_number(byte);
+                        else if (is_executed[cur] == 1)
+                            BOOST_LOG_TRIVIAL(trace) << cur << ". Data" << std::hex << " 0x" << std::setw(2) << std::setfill('0') << std::size_t(byte) << std::dec;
+                        else
+                            BOOST_LOG_TRIVIAL(trace) << cur << ". Metadata" << std::hex << " 0x" << std::setw(2) << std::setfill('0') << std::size_t(byte) << std::dec;
                     }
                     is_last_byte[cur - 1] = 1;
                     hash_value_rlc[i] = value_rlc[cur - 1];
-                }
+                 }
             }
 
             std::size_t is_last_byte_index = 0;
