@@ -208,8 +208,13 @@ namespace nil {
                         return eval_map;
                     }
 
-                    void eval_polys() {
-                        for (auto const &[batch_id, batch_polys] : _polys) {
+                    void eval_polys() { eval_polys_impl(_polys); }
+
+                    template<typename T>
+                    void eval_polys_impl(
+                        const std::map<std::size_t, std::vector<T>> &polys) {
+                        TAGGED_PROFILE_SCOPE("{low level} poly eval", "LPC eval polys");
+                        for (auto const &[batch_id, batch_polys] : polys) {
                             _z.set_batch_size(batch_id, batch_polys.size());
                             auto const &batch_points = _points.at(batch_id);
 

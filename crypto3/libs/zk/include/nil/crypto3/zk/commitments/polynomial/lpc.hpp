@@ -188,6 +188,7 @@ namespace nil {
                     proof_type proof_eval(transcript_type &transcript) {
                         TAGGED_PROFILE_SCOPE("{high level} FRI", "LPC proof eval");
 
+                        convert_polys_to_coefficients_form();
                         eval_polys_and_add_roots_to_transcipt(transcript);
 
                         // Prepare z-s and combined_Q;
@@ -198,10 +199,9 @@ namespace nil {
                         return proof_type({this->_z, fri_proof});
                     }
 
-                    void eval_polys_and_add_roots_to_transcipt(transcript_type &transcript) {
-                        TAGGED_PROFILE_SCOPE("{low level} poly eval", "LPC eval polys");
-                        this->eval_polys();
-                        PROFILE_SCOPE_END();
+                    void eval_polys_and_add_roots_to_transcipt(
+                        transcript_type& transcript) {
+                        this->eval_polys_impl(_polys_coefficients);
 
                         BOOST_ASSERT(this->_points.size() == this->_polys.size());
                         BOOST_ASSERT(this->_points.size() == this->_z.get_batches_num());
@@ -328,7 +328,6 @@ namespace nil {
                         PROFILE_SCOPE("LPC prepare combined Q");
 
                         this->build_points_map();
-                        convert_polys_to_coefficients_form();
 
                         value_type theta_acc = theta.pow(starting_power);
                         auto points = this->get_unique_points();

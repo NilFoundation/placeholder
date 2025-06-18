@@ -245,6 +245,7 @@ namespace nil::crypto3::zk::snark {
                 if constexpr (nil::crypto3::zk::is_lpc<commitment_scheme_type>) {
                     // This is required for aggregated prover. If we do not run the LPC proof right now,
                     // we still need to push the merkle tree roots into the transcript.
+                    _commitment_scheme.convert_polys_to_coefficients_form();
                     _commitment_scheme.eval_polys_and_add_roots_to_transcipt(transcript);
                 }
             }
