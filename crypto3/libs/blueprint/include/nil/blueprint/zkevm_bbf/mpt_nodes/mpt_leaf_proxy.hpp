@@ -130,8 +130,8 @@ public:
                 value_byte_vector.push_back(node_value[i]);
             }
             rlp_value_prefix = 128 + node_value_bytes;
-            rlp_node_prefix0 = 192 + node_key_bytes + node_value_bytes + 2;
-            value_byte_vector.emplace(value_byte_vector.begin(), rlp_value_prefix);
+            rlp_node_prefix0 = 192 + node_key_bytes + node_value_bytes + 1 + (second_value > 127);
+            if (second_value > 127) value_byte_vector.emplace(value_byte_vector.begin(), rlp_value_prefix);
             hash_input.insert( hash_input.end(), value_byte_vector.begin(), value_byte_vector.end() );
             std::size_t total_value_length = hash_input.size();
             hash_input.emplace(hash_input.begin(), rlp_node_prefix0);

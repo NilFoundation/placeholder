@@ -183,6 +183,7 @@ BOOST_AUTO_TEST_CASE(one_mpt_path) {
     test_zkevm_mpt<field_type>("mpt_path_1.json", 500);
     test_zkevm_mpt<field_type>("mpt_path_2.json", 500);
     test_zkevm_mpt<field_type>("mpt_path_3.json", 500);
+    test_zkevm_mpt<field_type>("mpt_path_4.json", 500);
 }
 BOOST_AUTO_TEST_CASE(mpt_leafs) {
   test_zkevm_mpt_leaf<field_type>("mpt_leaf_storage.json", mpt_type::storage_trie, 20);
