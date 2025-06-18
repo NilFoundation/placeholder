@@ -139,7 +139,7 @@ namespace nil::blueprint::bbf {
                         RLC[i] = RLC[i-1];
                     }
                 }
-                if(bytes[0] >= 0xf8){
+                else if(bytes[0] >= 0xf8){
                     is_prefix[0] = 1;
                     is_big[0] = 1;
                     len_len[0] = bytes[0] - 0xf7;
@@ -170,6 +170,8 @@ namespace nil::blueprint::bbf {
                     for(std::size_t i = rll+1; i < header_rows; i++){
                         RLC[i] = RLC[i-1];
                     }
+                }else{
+                    BOOST_ASSERT_MSG(false, "input longer than 65535");
                 }
 
                 for(std::size_t i = 1; i< header_rows; i++){
@@ -265,26 +267,24 @@ namespace nil::blueprint::bbf {
                     constrain(is_big[i]*(1-is_big[i]), "is_big is binary");
                     constrain(is_len[i]*(1-is_len[i]), "is_len is binary");
                     constrain(is_last[i]*(1-is_last[i]), "is_last is binary");
-                    constrain(is_big[i]*(1-is_prefix[i]), "is_big only first row");
+                    // constrain(is_big[i]*(1-is_prefix[i]), "is_big only first row");
                     constrain((1-is_big[i])*is_prefix[i]*(bytes[i] - array_len[i] - 0xc0), "is_big false condition");
                     constrain(is_big[i]*(len_val[i] - array_len[i]), "len_val is equal to array_len for big inputs");
                     constrain(is_big[i]*(bytes[i] - len_len[i] - 0xf7), "is_big true condition");
-                    if(i < header_rows - 1) {
-                        constrain(is_len[i]*(len_len[i] - len_len[i+1] - 1));
-                        
-                    }
                     if(i >= 1) {
                         constrain(is_len[i-1]*is_len[i]*(len_val[i-1] * 256 + bytes[i] - len_val[i]));
                         constrain((1-is_len[i])*(len_val[i] - len_val[i-1]));
                         constrain((1-is_len[i])*(RLC[i] - RLC[i-1]), "RLC stays same for non-header bytes after prefix");
                         constrain(is_len[i]*(RLC[i] - bytes[i] - rlc_challenge[i]*RLC[i-1]), "otherwise update RLC");
+                        constrain((1-is_len[i])*is_len[i-1]*len_len[i], "len_len 0 after last len byte");
+                        constrain(is_len[i-1]*(len_len[i-1] - len_len[i] - 1), "len_len decrements by 1");
                     }
                 }
                 copy_constrain(len_val[1], bytes[1]);
                 copy_constrain(len_val[0],len_val[header_rows - 1]);
                 constrain((1-is_big[0])*(RLC[0] - bytes[0] - rlc_challenge[0]*(array_len[0]+1)), "rlc computation start value if not big");
                 constrain(is_big[0]*(RLC[0] - bytes[0] - rlc_challenge[0]*(array_len[0]+1 + len_len[0])), "rlc computation start value if big");
-
+                lookup((1-is_prefix[0])*256 + bytes[0] - 192, "byte_range_table/full"); // is_prefix = bytes[0] >= 0xc0 
 
                 std::size_t field_index = 0;
                 std::size_t cur_row = header_rows;

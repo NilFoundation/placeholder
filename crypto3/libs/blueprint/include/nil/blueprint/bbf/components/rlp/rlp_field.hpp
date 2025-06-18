@@ -165,6 +165,7 @@ namespace nil::blueprint::bbf {
             }
 
             constrain((1-is_prefix[0])*(field_len[0] - 1), "single byte up to 0x79 has no prefix");
+            lookup((1-is_prefix[0])*256 + bytes[0] - 128, "byte_range_table/full"); // is_prefix = bytes[0] >= 0x80 
             for(std::size_t i = 0; i < max_bytes; i++){
                 lookup(bytes[i], "byte_range_table/full");
                 constrain(is_prefix[i]*(1-is_prefix[i]), "is_prefix is binary");
