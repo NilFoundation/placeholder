@@ -644,7 +644,18 @@ namespace nil {
                 }
 
                 virtual void mload(){
-                    std::size_t offset = std::size_t(stack.back()); stack.pop_back();
+                    zkevm_word_type full_offset = stack.back(); stack.pop_back();
+                    if( full_offset > (1 << 25) - 32 ) {
+                        BOOST_LOG_TRIVIAL(error) << "MLOAD offset too large: " << std::hex << full_offset << std::dec;
+                        decrease_gas(gas+1);
+                        pc++;
+                        return;
+                    }
+                    // BOOST_LOG_TRIVIAL(trace) << "MLOAD offset: " << std::hex << full_offset << std::dec;
+                    zkevm_word_type result = 0;
+
+                    // TODO: process overflows
+                    std::size_t offset = std::size_t(full_offset);
 
                     std::size_t memory_size_word = (memory.size() + 31) / 32;
                     std::size_t last_memory_cost = memory_size_word * memory_size_word / 512 + (3*memory_size_word);
@@ -654,13 +665,12 @@ namespace nil {
                     std::size_t new_memory_cost = memory_size_word * memory_size_word / 512 + (3*memory_size_word);
                     std::size_t memory_expansion = new_memory_cost - last_memory_cost;
 
-                    zkevm_word_type result = 0;
                     for( std::size_t i = 0; i < 32; i++){
                         result = (result << 8) + memory[offset + i];
                     }
+                    decrease_gas(3 + memory_expansion);
 
                     stack.push_back(result);
-                    decrease_gas(3 + memory_expansion);
                     pc++;
                 }
 
@@ -705,10 +715,10 @@ namespace nil {
                     stack.push_back(_accounts_current_state[call_context_address].storage[addr]);
                     if( _call_stack.back().was_accessed.count({call_context_address, 0, addr}) == 0){
                         _call_stack.back().was_accessed.insert({call_context_address, 0, addr});
-                        BOOST_LOG_TRIVIAL(trace) << "COLD {" << std::hex << call_context_address << ", " << addr << "}"  << std::endl;
+                        BOOST_LOG_TRIVIAL(trace) << "COLD {" << std::hex << call_context_address << ", " << addr << "} = " << stack.back()  << std::endl;
                         decrease_gas(2000);
                     } else {
-                        BOOST_LOG_TRIVIAL(trace) << "WARM {" << std::hex << call_context_address << ", " << addr << "}"  << std::endl;
+                        BOOST_LOG_TRIVIAL(trace) << "WARM {" << std::hex << call_context_address << ", " << addr << "} = " << stack.back() << std::endl;
                     }
                     decrease_gas(100);
                     pc++;
@@ -810,7 +820,7 @@ namespace nil {
                 virtual void invalid(){
                     returndata.clear();
                     call_status = 0;
-                    _accounts_current_state = _call_stack[_call_stack.size() - 2].state;
+                    _accounts_current_state = _call_stack[_call_stack.size() - 1].state;
                     _call_stack.back().was_accessed = _call_stack[_call_stack.size() - 2].was_accessed;
                     _call_stack.back().transient_storage = _call_stack[_call_stack.size() - 2].transient_storage;
                     is_end_call = true;
@@ -866,11 +876,17 @@ namespace nil {
                 }
 
                 virtual void calldataload(){
-                    std::size_t offset = std::size_t(stack.back()); stack.pop_back();
                     zkevm_word_type result;
-                    for( std::size_t i = 0; i < 32; i++){
-                        result = ((offset + i) < calldata.size())? (result << 8) + calldata[offset+i]: result << 8;
+                    if( stack.back() >= calldata.size() )
+                        result = 0;
+                    else {
+                        std::size_t offset = std::size_t(stack.back());
+                        for( std::size_t i = 0; i < 32; i++){
+                            result = ((offset + i) < calldata.size())? (result << 8) + calldata[offset+i]: result << 8;
+                        }
                     }
+
+                    stack.pop_back();
                     stack.push_back(result);
                     pc++;
                     decrease_gas(3);
@@ -1812,7 +1828,7 @@ namespace nil {
                     // TODO: It's only gas error!
                     gas = 0;
                     call_status = 0;
-                    _accounts_current_state = _call_stack[_call_stack.size() - 2].state;
+                    _accounts_current_state = _call_stack[_call_stack.size() - 1].state;
                     _call_stack.back().was_accessed = _call_stack[_call_stack.size() - 2].was_accessed;
                     _call_stack.back().transient_storage = _call_stack[_call_stack.size() - 2].transient_storage;
                     is_end_call = true;

@@ -85,6 +85,7 @@ BOOST_AUTO_TEST_CASE(opcode_not) {
         circuits_to_run.insert("bytecode-s");
         circuits_to_run.insert("rw-s");
         circuits_to_run.insert("copy-s");
+        circuits_to_run.insert("zkevm-s");
     }
     complex_opcode_test<big_field_type, small_field_type>(opcode_tester, max_sizes);
 }

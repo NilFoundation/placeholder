@@ -38,15 +38,15 @@ namespace nil {
             enum class rw_operation_type: std::uint8_t {
                 // Grouped by call, no revertions
                 start = 0,
-                call_context = 1,
+                call_context = 1,       // rw_256
                 stack = 2,
                 memory = 3,
-                calldata = 4,
+                calldata = 4,           // rw_8
                 returndata = 5,
                 blobhash = 6,
                 state_call_context = 7,
                 access_list = 8,
-                state = 9,              // Grouped by block, includes STORAGE and ACCOUNT operations
+                state = 9,               // Grouped by block, includes STORAGE and ACCOUNT operations
                 transient_storage = 10,  // Grouped by transaction
                 padding = 11
             };
