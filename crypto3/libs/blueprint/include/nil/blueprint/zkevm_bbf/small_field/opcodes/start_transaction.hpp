@@ -20,6 +20,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
         zkevm_start_transaction_bbf(context_type &context_object, const opcode_input_type<FieldType, stage> &current_state):
             generic_component<FieldType,stage>(context_object, false)
         {
+            // ! Not implemented yet
             if constexpr( stage == GenerationStage::CONSTRAINTS ){
                 constrain(current_state.pc_next());                                                                     // PC transition
                 // constrain(current_state.gas(0) - current_state.gas_next());                                          // GAS transition

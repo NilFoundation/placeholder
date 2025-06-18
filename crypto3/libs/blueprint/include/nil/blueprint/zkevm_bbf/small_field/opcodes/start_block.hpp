@@ -20,6 +20,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
         zkevm_start_block_bbf(context_type &context_object, const opcode_input_type<FieldType, stage> &current_state):
             generic_component<FieldType,stage>(context_object, false)
         {
+            // ! Not finished
             // TODO: Append all block context rw operations
             if constexpr( stage == GenerationStage::CONSTRAINTS ){
                 constrain(current_state.pc(0));                                                 // PC transition

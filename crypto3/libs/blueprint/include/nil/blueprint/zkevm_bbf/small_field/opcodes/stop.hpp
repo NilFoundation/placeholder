@@ -20,6 +20,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
         zkevm_stop_bbf(context_type &context_object, const opcode_input_type<FieldType, stage> &current_state):
             generic_component<FieldType,stage>(context_object, false)
         {
+            // ! Not implemented yet
             // TYPE depth, depth_inv;
             // TYPE bytecode_length;
             // TYPE is_from_bytecode;

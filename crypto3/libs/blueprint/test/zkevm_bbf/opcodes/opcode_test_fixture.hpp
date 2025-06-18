@@ -58,6 +58,7 @@
 #include <nil/blueprint/zkevm_bbf/small_field/circuits/rw.hpp>
 #include <nil/blueprint/zkevm_bbf/small_field/circuits/bytecode.hpp>
 #include <nil/blueprint/zkevm_bbf/small_field/circuits/zkevm.hpp>
+#include <nil/blueprint/zkevm_bbf/small_field/circuits/copy.hpp>
 
 #include "../circuit_test_fixture.hpp"
 
@@ -89,6 +90,7 @@ public:
         std::size_t max_copy = max_sizes.max_copy;
         std::size_t max_copy_events = max_sizes.max_copy_events;
         std::size_t max_zkevm_rows = max_sizes.max_zkevm_rows;
+        std::size_t max_zkevm_small_field_rows = max_sizes.max_zkevm_small_field_rows;
         std::size_t max_exponentiations = max_sizes.max_exponentiations;
         std::size_t max_exp_rows = max_sizes.max_exp_rows;
         std::size_t max_state = max_sizes.max_state;
@@ -96,6 +98,7 @@ public:
 
         std::size_t instances_rw_8 = max_sizes.instances_rw_8;
         std::size_t instances_rw_256 = max_sizes.instances_rw_256;
+        std::size_t instances_copy = max_sizes.instances_copy;
 
         typename zkevm_big_field::zkevm_keccak<BigFieldType,nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type keccak_assignment_input;
         keccak_assignment_input.rlc_challenge = 7;
@@ -264,11 +267,40 @@ public:
             // zkevm_assignment_input.state_operations = circuit_inputs.state_operations();
 
             result = test_bbf_component<SmallFieldType, nil::blueprint::bbf::zkevm_small_field::zkevm>(
-                "zkevm-s", {}, zkevm_assignment_input,
-                max_zkevm_rows, max_copy_events, max_rw, max_exponentiations, max_bytecode, max_state
+                "zkevm-s", {},
+                zkevm_assignment_input,
+                max_zkevm_rows,
+                max_copy_events,
+                instances_rw_8,
+                instances_rw_256,
+                max_exponentiations,
+                max_bytecode,
+                max_state
             );
             BOOST_CHECK(result);
         }
 
+        const std::string copy_s_circuit = "copy-s";
+        if (should_run_circuit(copy_s_circuit)) {
+            BOOST_LOG_TRIVIAL(info) << "circuit '" << copy_s_circuit << "'";
+            typename zkevm_small_field::copy<SmallFieldType, GenerationStage::ASSIGNMENT>::input_type copy_assignment_input;
+            copy_assignment_input.rlc_challenge = 7;
+            copy_assignment_input.bytecodes = circuit_inputs.bytecodes();
+            copy_assignment_input.keccak_buffers = circuit_inputs.keccaks();
+            copy_assignment_input.rw_operations = circuit_inputs.short_rw_operations();
+            copy_assignment_input.copy_events = circuit_inputs.copy_events();
+
+            result = test_bbf_component<SmallFieldType, nil::blueprint::bbf::zkevm_small_field::copy>(
+                "copy-s", {7}, copy_assignment_input,
+                max_copy_events,
+                max_copy,
+                instances_copy,
+                max_rw,
+                instances_rw_8,
+                max_keccak_blocks,
+                max_bytecode
+            );
+            BOOST_CHECK(result);
+        }
     }
 };
