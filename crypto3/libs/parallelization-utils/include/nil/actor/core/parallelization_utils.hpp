@@ -26,6 +26,7 @@
 #define CRYPTO3_PARALLELIZATION_UTILS_HPP
 
 #include <future>
+#include <vector>
 
 #include <nil/actor/core/thread_pool.hpp>
 
