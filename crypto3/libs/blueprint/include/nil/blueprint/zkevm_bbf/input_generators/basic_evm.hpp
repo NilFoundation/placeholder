@@ -675,9 +675,15 @@ namespace nil {
                 }
 
                 virtual void mstore(){
-                    std::size_t offset = std::size_t(stack.back()); stack.pop_back();
+                    auto full_offset = stack.back(); stack.pop_back();
                     auto value = stack.back(); stack.pop_back();
+                    if( full_offset > (1 << 25) - 32 ) {
+                        decrease_gas(gas+1);
+                        pc++;
+                        return;
+                    }
 
+                    std::size_t offset = std::size_t(full_offset);
                     std::size_t new_mem_size = std::max(offset + 32, memory.size());
                     std::size_t memory_expansion = memory_expansion_cost(new_mem_size, memory.size());
 
@@ -694,14 +700,20 @@ namespace nil {
                 }
 
                 virtual void mstore8(){
-                    std::size_t offset = std::size_t(stack.back()); stack.pop_back();
+                    auto full_offset = stack.back(); stack.pop_back();
                     auto value = stack.back(); stack.pop_back();
+                    if( full_offset > (1 << 25) - 1 ) {
+                        decrease_gas(gas+1);
+                        pc++;
+                        return;
+                    }
 
+                    std::size_t offset = std::size_t(full_offset);
                     std::size_t memory_size_word = (memory.size() + 31) / 32;
                     std::size_t last_memory_cost = memory_size_word * memory_size_word / 512 + (3*memory_size_word);
 
                     if( memory.size() < offset + 1) memory.resize(offset + 1);
-                        memory[offset] = std::uint8_t(std::size_t(value % 256));
+                    memory[offset] = std::uint8_t(std::size_t(value % 256));
 
                     memory_size_word = (memory.size() + 31) / 32;
                     std::size_t new_memory_cost = memory_size_word * memory_size_word / 512 + (3*memory_size_word);
@@ -1542,21 +1554,38 @@ namespace nil {
                 }
 
                 virtual void codecopy() {
+                    // 6M memory bytes gives 60M+ gas cost
+                    // max gas cost is 36M for now, might go up to 60M
+                    constexpr static const std::size_t max_dest_offset = 8388608;  // 2^23
+                    // max contract size is 24,576 bytes, so offset and length need to fit in
+                    // first chunk
+                    constexpr static const std::size_t max_offset = 65536;
+                    constexpr static const std::size_t max_length = 65536;
                     std::size_t dst = std::size_t(stack.back()); stack.pop_back();
                     std::size_t src = std::size_t(stack.back()); stack.pop_back();
                     std::size_t length = std::size_t(stack.back()); stack.pop_back();
 
+                    bool overflow = (dst > max_dest_offset) ||
+                                    (src > max_offset) ||
+                                    (length > max_length);
+
                     std::size_t minimum_word_size = (length + 31) / 32;
                     std::size_t next_mem = std::max(dst + length, memory.size());
                     std::size_t memory_expansion = memory_expansion_cost(next_mem, memory.size());
-                    std::size_t next_memory_size = (memory_size_word_util(next_mem))*32;
+                    std::size_t next_memory_size = memory_size_word_util(next_mem) * 32;
 
-                    if( memory.size() < dst + length) memory.resize(dst + length, 0);
-                    for( std::size_t i = 0; i < length; i++){
-                        memory[dst+i] = src + i < bytecode.size()? bytecode[src+i]: 0;
+
+                    if (overflow) {
+                        memory.resize(memory.size() - 1);
+                        increase_gas(1);
                     }
-
-                    decrease_gas(3 + 3 * minimum_word_size + memory_expansion); //dynamic gas
+                    else {
+                        if( memory.size() < dst + length) memory.resize(next_memory_size);
+                        for( std::size_t i = 0; i < length; i++){
+                            memory[dst+i] = src + i < bytecode.size()? bytecode[src+i]: 0;
+                        }
+                        decrease_gas(3 + 3 * minimum_word_size + memory_expansion); //dynamic gas
+                    }
                     pc++;
                 }
 
@@ -1788,6 +1817,7 @@ namespace nil {
                 }
 
                 virtual void end_transaction(){
+                    BOOST_LOG_TRIVIAL(trace) << "basic_evm::End transaction" << std::endl;
                     auto returned_call = _call_stack.back();
                     _call_stack.pop_back();
                     depth--;
@@ -1807,6 +1837,7 @@ namespace nil {
                 }
 
                 virtual void end_block(){
+                    BOOST_LOG_TRIVIAL(trace) << "basic_evm::End block" << std::endl;
                     depth--;
                     pc = 0;
                     gas = 0;
@@ -1869,6 +1900,10 @@ namespace nil {
                     }
                 }
 
+                void increase_gas(std::size_t cost) {
+                    gas += cost;
+                }
+
                 // Should be called *after* memory expansion, address access
                 // and transfer fees are deducted.
                 size_t cap_call_gas(zkevm_word_type gas_sent) {
@@ -1897,4 +1932,3 @@ namespace nil {
         } // namespace bbf
     } // namespace blueprint
 } // namespace nil
-

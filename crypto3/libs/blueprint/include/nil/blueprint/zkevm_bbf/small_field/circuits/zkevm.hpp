@@ -226,7 +226,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
         //     ExpTable e_t = ExpTable(exp_ct, input.exponentiations, max_exponentiations);
             RW8Table rw_8_t = RW8Table(rw_8_ct, input.rw_operations, max_zkevm_rows, instances_rw_8);
             RW256Table rw_256_t = RW256Table(rw_256_ct, input.rw_operations, max_zkevm_rows, instances_rw_256);
-            // CopyTable c_t = CopyTable(copy_ct, {input.copy_events, input.bytecodes}, max_copy_events);
+            CopyTable c_t = CopyTable(copy_ct, {input.copy_events, input.bytecodes}, max_copy_events);
         //     StateTable s_t = StateTable(state_ct, input.state_operations, max_state);
 
             BOOST_LOG_TRIVIAL(info) << "ZKEVM small field dynamic tables done";

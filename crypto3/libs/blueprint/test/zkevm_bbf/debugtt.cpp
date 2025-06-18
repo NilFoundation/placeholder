@@ -34,11 +34,14 @@
 #include <boost/test/unit_test.hpp>
 
 #include <nil/crypto3/algebra/curves/alt_bn128.hpp>
+#include <nil/crypto3/algebra/fields/babybear.hpp>
+#include <nil/crypto3/algebra/curves/pallas.hpp>
+#include <nil/crypto3/algebra/fields/goldilocks.hpp>
+
 #include <nil/crypto3/algebra/fields/arithmetic_params/alt_bn128.hpp>
 #include <nil/crypto3/algebra/fields/arithmetic_params/babybear.hpp>
+#include <nil/crypto3/algebra/fields/arithmetic_params/pallas.hpp>
 #include <nil/crypto3/algebra/fields/arithmetic_params/goldilocks.hpp>
-#include <nil/crypto3/algebra/fields/babybear.hpp>
-#include <nil/crypto3/algebra/fields/goldilocks.hpp>
 #include <nil/crypto3/algebra/random_element.hpp>
 
 #include <nil/crypto3/hash/algorithm/hash.hpp>
@@ -1102,7 +1105,7 @@ BOOST_AUTO_TEST_CASE(call_large_memory_key) {
     max_sizes.max_zkevm_rows = 4000;
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
-    max_sizes.max_zkevm_small_field_rows = 8000;
+    max_sizes.max_zkevm_small_field_rows = 6000;
 
     if( circuits_to_run.empty() ) {
         // circuits_to_run.insert("zkevm");       // Previous version doesn't support large memory keys
@@ -1114,6 +1117,58 @@ BOOST_AUTO_TEST_CASE(call_large_memory_key) {
         circuits_to_run.insert("copy-s");
     }
     complex_test<big_field_type, small_field_extension_type>("call_large_memory_key.json", max_sizes);
+}
+
+BOOST_AUTO_TEST_CASE(call_large_mstore_key) {
+    l1_size_restrictions max_sizes;
+
+    max_sizes.max_keccak_blocks = 50;
+    max_sizes.max_bytecode = 8000;
+    max_sizes.max_mpt = 0;
+    max_sizes.max_rw = 10000;
+    max_sizes.max_copy = 500;
+    max_sizes.max_copy_events = 70;
+    max_sizes.max_zkevm_rows = 4000;
+    max_sizes.max_exponentiations = 50;
+    max_sizes.max_exp_rows = 500;
+    max_sizes.max_zkevm_small_field_rows = 6000;
+
+    if( circuits_to_run.empty() ) {
+        // circuits_to_run.insert("zkevm");       // Previous version doesn't support large memory keys
+        // circuits_to_run.insert("rw");
+        // circuits_to_run.insert("bytecode");    // Doesn't work for now
+        // circuits_to_run.insert("copy");        // Previous version doesn't support large memory keys
+        circuits_to_run.insert("bytecode-s");
+        circuits_to_run.insert("rw-s");
+        circuits_to_run.insert("copy-s");
+    }
+    complex_test<big_field_type, small_field_extension_type>("call_large_mstore_key.json", max_sizes);
+}
+
+BOOST_AUTO_TEST_CASE(call_large_mstore8_key) {
+    l1_size_restrictions max_sizes;
+
+    max_sizes.max_keccak_blocks = 50;
+    max_sizes.max_bytecode = 8000;
+    max_sizes.max_mpt = 0;
+    max_sizes.max_rw = 10000;
+    max_sizes.max_copy = 500;
+    max_sizes.max_copy_events = 70;
+    max_sizes.max_zkevm_rows = 4000;
+    max_sizes.max_exponentiations = 50;
+    max_sizes.max_exp_rows = 500;
+    max_sizes.max_zkevm_small_field_rows = 6000;
+
+    if( circuits_to_run.empty() ) {
+        // circuits_to_run.insert("zkevm");       // Previous version doesn't support large memory keys
+        // circuits_to_run.insert("rw");
+        // circuits_to_run.insert("bytecode");    // Doesn't work for now
+        // circuits_to_run.insert("copy");        // Previous version doesn't support large memory keys
+        circuits_to_run.insert("bytecode-s");
+        circuits_to_run.insert("rw-s");
+        circuits_to_run.insert("copy-s");
+    }
+    complex_test<big_field_type, small_field_extension_type>("call_large_mstore8_key.json", max_sizes);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

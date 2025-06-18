@@ -38,8 +38,8 @@
 #include <nil/blueprint/zkevm_bbf/small_field/opcodes/pushx.hpp>
 #include <nil/blueprint/zkevm_bbf/small_field/opcodes/mload.hpp>
 #include <nil/blueprint/zkevm_bbf/small_field/opcodes/mstore.hpp>
-// #include <nil/blueprint/zkevm_bbf/small_field/opcodes/mstore8.hpp>
- #include <nil/blueprint/zkevm_bbf/small_field/opcodes/add_sub.hpp>
+#include <nil/blueprint/zkevm_bbf/small_field/opcodes/mstore8.hpp>
+#include <nil/blueprint/zkevm_bbf/small_field/opcodes/add_sub.hpp>
 #include <nil/blueprint/zkevm_bbf/small_field/opcodes/addmod.hpp>
 #include <nil/blueprint/zkevm_bbf/small_field/opcodes/div_mod.hpp>
 // #include <nil/blueprint/zkevm_bbf/small_field/opcodes/mulmod.hpp>
@@ -130,7 +130,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
         // opcodes[zkevm_opcode::KECCAK256] = std::make_shared<zkevm_keccak_operation<BlueprintFieldType>>();
         // // Memory operations
         opcodes[zkevm_opcode::MSTORE] = std::make_shared<zkevm_mstore_operation<BlueprintFieldType>>();
-        // opcodes[zkevm_opcode::MSTORE8] = std::make_shared<zkevm_mstore8_operation<BlueprintFieldType>>();
+        opcodes[zkevm_opcode::MSTORE8] = std::make_shared<zkevm_mstore8_operation<BlueprintFieldType>>();
         opcodes[zkevm_opcode::MLOAD] = std::make_shared<zkevm_mload_operation<BlueprintFieldType>>();
         // opcodes[zkevm_opcode::MSIZE] = std::make_shared<zkevm_msize_operation<BlueprintFieldType>>();
 

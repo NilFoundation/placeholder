@@ -515,35 +515,41 @@ namespace nil {
                 }
 
                 virtual void mstore() override{
-                    std::size_t offset = std::size_t(stack.back());
-
+                    zkevm_word_type full_offset = stack.back();
                     _zkevm_states.back().load_stack(stack,2);
                     append_stack_reads(2);
                     zkevm_basic_evm::mstore();
-                    for( std::size_t i = 0; i < 32; i++){
-                        _short_rw_operations.push_back(memory_rw_operation(
-                            call_id,
-                            offset + i,
-                            rw_counter++,
-                            true,
-                            memory[offset + i]
-                        ));
+
+                    if( full_offset < (1 << 25) - 31 ){
+                        std::size_t offset = std::size_t(full_offset);
+                        for( std::size_t i = 0; i < 32; i++){
+                            _short_rw_operations.push_back(memory_rw_operation(
+                                call_id,
+                                offset + i,
+                                rw_counter++,
+                                true,
+                                memory[offset + i]
+                            ));
+                        }
                     }
                 }
 
                 virtual void mstore8() override{
-                    std::size_t offset = std::size_t(stack.back());
-
+                    zkevm_word_type full_offset = stack.back();
                     _zkevm_states.back().load_stack(stack,2);
                     append_stack_reads(2);
                     zkevm_basic_evm::mstore8();
-                    _short_rw_operations.push_back(memory_rw_operation(
-                        call_id,
-                        offset,
-                        rw_counter++,
-                        true,
-                        memory[offset]
-                    ));
+
+                    if( full_offset < (1 << 25) ){
+                        std::size_t offset = std::size_t(full_offset);
+                        _short_rw_operations.push_back(memory_rw_operation(
+                            call_id,
+                            offset,
+                            rw_counter++,
+                            true,
+                            memory[offset]
+                        ));
+                    }
                 }
 
                 virtual void tload() override{
@@ -885,6 +891,7 @@ namespace nil {
                 }
 
                 virtual void gas_error() override{
+                    BOOST_LOG_TRIVIAL(trace) << "Gas error";
                     _short_rw_operations.push_back(call_context_header_operation(
                         call_id,
                         call_context_field::call_status,
@@ -1008,21 +1015,23 @@ namespace nil {
                     append_stack_reads(3);
 
                     zkevm_basic_evm::codecopy();
-                    copy_event cpy = codecopy_copy_event(
-                        bytecode_hash,
-                        src,
-                        call_id,
-                        dst,
-                        rw_counter,
-                        length
-                    );
-                    for( std::size_t i = 0; i < length; i++){
-                        _short_rw_operations.push_back(memory_rw_operation(
-                            call_id, dst + i, rw_counter++, true, memory[dst + i]
-                        ));
-                        cpy.push_byte(memory[dst+i]);
+                    if (memory.size() % 32 == 0) {
+                        copy_event cpy = codecopy_copy_event(
+                            bytecode_hash,
+                            src,
+                            call_id,
+                            dst,
+                            rw_counter,
+                            length
+                        );
+                        for( std::size_t i = 0; i < length; i++){
+                            _short_rw_operations.push_back(memory_rw_operation(
+                                call_id, dst + i, rw_counter++, true, memory[dst + i]
+                            ));
+                            cpy.push_byte(memory[dst+i]);
+                        }
+                        if( length > 0 ) _copy_events.push_back(cpy);
                     }
-                    if( length > 0 ) _copy_events.push_back(cpy);
                 }
 
                 virtual void dupx( std::size_t d) override {
@@ -1319,6 +1328,7 @@ namespace nil {
                 }
 
                 virtual void end_transaction() override{
+                    BOOST_LOG_TRIVIAL(trace) << "End transaction";
                     after_call_last_state_operation_update();
                     zkevm_basic_evm::end_transaction();
                     _short_rw_operations.push_back(call_context_header_operation(
@@ -1339,6 +1349,7 @@ namespace nil {
                 }
 
                 virtual void end_block() override{
+                    BOOST_LOG_TRIVIAL(trace) << "End block";
                     zkevm_basic_evm::end_block();
                     _zkevm_states.push_back(zkevm_state(
                         call_id,

@@ -38,20 +38,28 @@ namespace nil {
     namespace blueprint {
         namespace bbf {
             enum class copy_operand_type {
-                padding, memory, bytecode, calldata, log, keccak, returndata
+                padding = 0,
+                memory = 1,
+                bytecode = 2,
+                calldata = 3,
+                log = 4,
+                keccak = 5,
+                returndata = 6
             };
             std::size_t copy_op_to_num(copy_operand_type copy_op){
-                switch(copy_op){
-                case copy_operand_type::padding:       return 0;
-                case copy_operand_type::memory:        return 1;
-                case copy_operand_type::bytecode:      return 2;
-                case copy_operand_type::log:           return 3;
-                case copy_operand_type::keccak:        return 4;
-                case copy_operand_type::calldata:      return 5;
-                case copy_operand_type::returndata:    return 6;
+                return std::size_t(copy_op);
+            }
+            std::string copy_op_to_string(copy_operand_type copy_op){
+                switch (copy_op) {
+                    case copy_operand_type::padding: return "padding";
+                    case copy_operand_type::memory: return "memory";
+                    case copy_operand_type::bytecode: return "bytecode";
+                    case copy_operand_type::calldata: return "calldata";
+                    case copy_operand_type::log: return "log";
+                    case copy_operand_type::keccak: return "keccak";
+                    case copy_operand_type::returndata: return "returndata";
+                    default: return "unknown";
                 }
-                BOOST_ASSERT(false);
-                return 0;
             }
             static constexpr std::size_t copy_operand_types_amount = 7;
 
