@@ -146,9 +146,9 @@ namespace nil::blueprint::bbf {
 
         std::string print_table_entry() {
             std::stringstream ss;
-            ss << "hash:\t\t";
+            ss << "original key:\t";
 
-            for (auto &i : node_hash) {
+            for (auto &i : key->original_key) {
                 if (i <= 0xF)
                     ss << "0";
                 ss << std::hex << i << std::dec;
@@ -168,9 +168,8 @@ namespace nil::blueprint::bbf {
 
         void allocate_witness(){
             std::size_t column_index = 0;
-            for (size_t i = 0; i < node_hash.size(); i++)
-                allocate(node_hash[i], column_index ++, row_index); 
-            
+            for (size_t i = 0; i < key->original_key.size(); i++)
+                allocate(key->original_key[i], column_index ++, row_index); 
             if (this->q_type == query_type::single_byte_query)
                 allocate(query_offset, column_index ++, row_index);
 
@@ -183,6 +182,8 @@ namespace nil::blueprint::bbf {
 
             allocate(node_exists, column_index ++, row_index);
             allocate(this->rlc_challenge, column_index ++, row_index);
+            for (size_t i = 0; i < node_hash.size(); i++)
+                allocate(node_hash[i], column_index ++, row_index); 
             node_inner_array::allocate_witness(column_index, row_index);
             // std::cout << "witnessesss " << column_index << std::endl;
         }
@@ -193,13 +194,23 @@ namespace nil::blueprint::bbf {
             lookup(keccak_tuple, "keccak_table");
         }
 
+        void mpt_lookup_constraint() {
+            TYPE selector = 1;
+            TYPE trie_id = 1;
+            TYPE child_nibble_present = key->prefix_has_last_nibble;
+            TYPE parent_length = key->get_prefix_length() * 2 + child_nibble_present - 1;
+            std::vector<TYPE> accumulated_key = key->get_accumulated_key();
+            // TODO lookup main MPT circuit table to find the position of this leaf-node
+
+        }
+
         void constraints() {
             this->rlp_lookup_constraints();
             this->keccak_lookup_constraint();
             TYPE initial_rlc = this->header->get_total_length_constraint();
             this->main_constraints(initial_rlc, 0, this->rlc_challenge);
             value->query_constraints(query_offset, query_value, query_selector, query_value_len, node_exists);
-            // key->key_prefix_constraints(key_prefix, this->rlc_challenge);
+            mpt_lookup_constraint();
         }
 
         std::size_t rows_count() {

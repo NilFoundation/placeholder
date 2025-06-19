@@ -81,8 +81,12 @@ namespace nil {
                     return 8;
                 }
 
+                constexpr std::size_t get_rows_amount() {
+                    return 1168;
+                }
+
                 rlp_table(context_type &context_object) :
-                    max_rows(1168),
+                    max_rows(get_rows_amount()),
                     generic_component<FieldType,stage>(context_object) {
                     size_t row_index = 0;
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {

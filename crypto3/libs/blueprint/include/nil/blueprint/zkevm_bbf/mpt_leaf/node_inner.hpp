@@ -63,7 +63,8 @@ namespace nil::blueprint::bbf {
             context_type &context_object,
             query_type _q_type
         ): generic_component<FieldType, stage>(context_object, false)
-         , q_type(_q_type){}
+         , q_type(_q_type)
+         , ct(context_object) {}
 
         void initialize() {
             _initialize_header();
@@ -145,6 +146,7 @@ namespace nil::blueprint::bbf {
         }
 
         protected:
+        context_type &ct;
         void _initialize_header() {
             header->initialize();
         }
@@ -156,6 +158,11 @@ namespace nil::blueprint::bbf {
         virtual void _main_constraints(TYPE initial_index, TYPE rlc_challenge) {
             throw "Method not implemented!";
         }
+
+        // void _constrain_all_rows(TYPE c, std::string constrain_name="") {
+        //     if constexpr (stage == GenerationStage::CONSTRAINTS)
+        //         this->ct.relative_constrain(this->ct.relativize(c, 1), 0, 1, constrain_name);
+        // }
     };
 
 
@@ -414,19 +421,20 @@ namespace nil::blueprint::bbf {
 
                 TYPE len_is_zero = len_selector.get_selector(0);
                 constrain(len_is_zero * index[0] +
-                    (1 - len_is_zero) * (index[0] - first_data_index));
+                    (1 - len_is_zero) * (index[0] - first_data_index), "Determine initial index based on whether RLP length is zero or not!");
                 // constrain(len_is_zero * data[0]);
                 constrain(len_is_zero * (rlc[0] - h->prefix_rlc[2]) +
-                    (1 - len_is_zero) * (rlc[0] - (h->prefix_rlc[2] * rlc_challenge + data[0])));
+                    (1 - len_is_zero) * (rlc[0] - (h->prefix_rlc[2] * rlc_challenge + data[0])), "Determine initial RLC based on whether RLP length is zero or not!");
+
             }
 
-            for (size_t i = 1; i < data.size(); i++) {
+            for (size_t i = 1; i < 2; i++) {
                 if (is_fixed_length) {
                     constrain(rlc[i] - (rlc[i-1] * rlc_challenge + data[i]), "For fixed length strings RLC should always accumulate!");
                 } else {
                     TYPE data_finished = len_selector.selector_accumulator(i); // not including this column
                     constrain( data_finished * index[i] +
-                        (1 - data_finished) * (index[i] - index[i-1] - 1));
+                        (1 - data_finished) * (i+9) * (index[i-1] + 1 - index[i]), "Index must increase if data is not finished!");
                     // we no longer enforce the data to be empty. node_inner_key use the empty space for key prefix
                     // constrain(data[i] * data_finished);
                     constrain(rlc[i] - (data_finished * rlc[i-1] + (1 - data_finished) * (rlc[i-1] * rlc_challenge + data[i])), "Data RLC is wrong!");
@@ -453,6 +461,8 @@ namespace nil::blueprint::bbf {
 
         std::size_t original_key_size;
         std::size_t trie_key_size = 32; // later change this for transaction/receipt trie
+        TYPE prefix_has_last_nibble;
+        std::vector<TYPE> original_key;
 
         node_inner_key(
             context_type &context_object,
@@ -477,11 +487,41 @@ namespace nil::blueprint::bbf {
 
         std::string print() {
             std::stringstream ss;
-            ss << "prefix last nibble: " << prefix_last_nibble << std::endl;
-            ss << "key first nibble: " << key_first_nibble << std::endl;
-            ss << "prefix has last nibble: " << prefix_has_last_nibble << std::endl;
-            ss << "prefix length: " << prefix_length_selector->get_value() << std::endl;
-            ss << "key prefix:\n";
+            ss << "node inner key:";
+
+            TYPE selector = 1;
+            TYPE trie_id = 1;
+            TYPE child_nibble_present = prefix_has_last_nibble;
+            TYPE parent_length = prefix_length_selector->get_value() * 2 + child_nibble_present - 1;
+            ss << "\tparent lookup info:\n";
+            ss << "\t\tchild_nibble_present " << child_nibble_present << std::endl;
+            ss << "\t\tparent_length " << parent_length << std::endl;
+            ss << "\t\taccumulated key: ";
+
+               
+            std::vector<TYPE> child(trie_key_size);
+            for (size_t i = 0; i < trie_key_size; i++) {
+                for (size_t j = i + 1; j < trie_key_size; j++) {
+                    child[trie_key_size - j + i] += this->data[trie_key_size + 1 - j + i] * prefix_length_selector->get_selector(j);
+                }
+            }
+
+            for (size_t i = 0; i < trie_key_size - 1; i++) {
+                if constexpr (stage == GenerationStage::ASSIGNMENT)
+                    if (child[i] < 0x10)
+                        ss << "0";
+                ss << std::hex << child[i] << std::dec;
+            }
+            ss << std::endl;
+            ss << "\t\tlast byte: " << std::hex << child[trie_key_size - 1] << std::dec << std::endl;
+
+
+
+            ss << "\tprefix last nibble: " << prefix_last_nibble << std::endl;
+            ss << "\tkey first nibble: " << key_first_nibble << std::endl;
+            ss << "\tprefix has last nibble: " << prefix_has_last_nibble << std::endl;
+            ss << "\tprefix length: " << prefix_length_selector->get_value() << std::endl;
+            ss << "\tkey prefix:\n";
             if constexpr (stage == GenerationStage::ASSIGNMENT) {
                 std::size_t len = static_cast<std::uint32_t>(this->h->len.to_integral());
                 for (size_t i = len; i < trie_key_size + 1 ;i++)
@@ -547,8 +587,6 @@ namespace nil::blueprint::bbf {
                 allocate(original_key[i], column_index ++, row_index); 
             for (size_t i = 0; i < original_key_rlc.size(); i++)
                 allocate(original_key_rlc[i], column_index ++, row_index);
-            // for (size_t i = 0; i < key_prefix.size(); i++)
-            //     allocate(key_prefix[i], column_index++, row_index);
             
             prefix_length_selector->allocate_witness(column_index, row_index);
         }
@@ -585,15 +623,27 @@ namespace nil::blueprint::bbf {
             return {trie_key, original_key};
         }
 
+        TYPE get_prefix_length() {
+            return prefix_length_selector->get_value();
+        }
+
+        std::vector<TYPE> get_accumulated_key() {
+            std::vector<TYPE> accumulated_key(trie_key_size);
+            for (size_t i = 0; i < trie_key_size; i++) {
+                for (size_t j = i + 1; j < trie_key_size; j++) {
+                    accumulated_key[trie_key_size - j + i] += this->data[trie_key_size + 1 - j + i] * prefix_length_selector->get_selector(j);
+                }
+            }
+            return accumulated_key;
+        }
+
     protected:
         mpt_type trie_type;
-        std::vector<TYPE> original_key;
         std::vector<TYPE> original_key_rlc;
         // std::vector<TYPE> key_prefix;
         optimized_selector* prefix_length_selector;
         TYPE prefix_last_nibble;
         TYPE key_first_nibble;
-        TYPE prefix_has_last_nibble;
 
         void _initialize_body() {
             node_inner_string::_initialize_body();
@@ -604,14 +654,23 @@ namespace nil::blueprint::bbf {
             TYPE control_nibble = prefix_has_last_nibble + 2;
             constrain(prefix_has_last_nibble * (prefix_has_last_nibble - 1), "incorrect control nibble!");
             constrain(this->data[0] - control_nibble * 0x10 - key_first_nibble, "incorrect first key data!");
-            constrain((1 - prefix_has_last_nibble) * key_first_nibble);
+            constrain((1 - prefix_has_last_nibble) * key_first_nibble, "key_first_nibble must be zero if key doesn't have a nibble!");
             constrain(prefix_length_selector->get_value() - ( 
                 prefix_has_last_nibble * (trie_key_size - this->h->len)
                 + (1 - prefix_has_last_nibble) * (trie_key_size - this->h->len + 1))
+                , "Prefix length should be calculated based on both prefix_has_last_nibble and key's rlp header length"
             );
 
-            std::array<TYPE, 32> trie_key; // 32 must be changed for transaction and receipt tries
-            // ab 14 d6 88 2 a7 63 f7 db 87 53 46 d0 3f bf 86 f1 37 de 55 81 4b 19 1c 6 9e 72 1f 47 47 47 33
+            constrain(original_key_rlc[0] - (original_key_size * rlc_challenge + original_key[0]), "Wrong initial RLC in original key!");
+            for (size_t i = 1; i < original_key_size; i++)
+                constrain(original_key_rlc[i] - (original_key_rlc[i-1] * rlc_challenge + original_key[i]), "Wrong RLC in original key!");
+            
+            for (size_t i = 0; i < original_key_size; i++)
+                lookup(original_key[i], "chunk_16_bits/8bits");
+
+
+            // 32 must be changed for transaction and receipt tries
+            std::array<TYPE, 32> trie_key;
             for (size_t i = 0; i < trie_key_size; i++) {
                 for (size_t j = i + 1; j < trie_key_size; j++) {
                     trie_key[i] += this->data[trie_key_size + 1 - j + i] * prefix_length_selector->get_selector(j);
@@ -622,18 +681,10 @@ namespace nil::blueprint::bbf {
                 }
             }
 
-            constrain(original_key_rlc[0] - (original_key_size * rlc_challenge + original_key[0]), "Wrong initial RLC in original key!");
-            for (size_t i = 1; i < original_key_size; i++)
-                constrain(original_key_rlc[i] - (original_key_rlc[i-1] * rlc_challenge + original_key[i]), "Wrong RLC in original key!");
-            
-            for (size_t i = 0; i < original_key_size; i++)
-                lookup(original_key[i], "chunk_16_bits/8bits");
-
             auto keccak_tuple = chunks8_to_chunks16<TYPE>(trie_key);
             keccak_tuple.emplace(keccak_tuple.begin(), original_key_rlc[original_key_size-1]);
             lookup(keccak_tuple, "keccak_table");
-            // TODO lookup main MPT circuit table to find the position of this leaf-node
-
+            
             node_inner_string::_main_constraints(initial_index, rlc_challenge);
         }
     
@@ -858,7 +909,7 @@ namespace nil::blueprint::bbf {
             TYPE total_len;
             for (auto &i : inners)
                 total_len += i->get_total_length_constraint();
-            constrain(h->len - total_len);
+            constrain(h->len - total_len, "Array node's rlp length must be sum of all of its inner nodes' length!");
 
             TYPE next_index, previous_rlc;
             for (size_t i = 0; i < this->inners.size(); i++) {
@@ -875,7 +926,7 @@ namespace nil::blueprint::bbf {
 
         void rlp_lookup_constraints() {
             h->rlp_lookup_constraints();
-            for (size_t i = 0; i < this->inners.size(); i++){
+            for (size_t i = 0; i < 1; i++){
                 this->inners[i]->rlp_lookup_constraints();
             }
         }
@@ -1043,7 +1094,7 @@ namespace nil::blueprint::bbf {
             else
                 throw "Unknown trie type!";
         }
-
+        
         void peek_and_encode_data(std::vector<zkevm_word_type> &raw, std::size_t &rlp_encoding_index, TYPE &rlc_accumulator) {
             h->peek_and_encode_data(raw, rlp_encoding_index, rlc_accumulator, false);
             inner->peek_and_decode_data(raw, rlp_encoding_index, rlc_accumulator);
@@ -1068,13 +1119,12 @@ namespace nil::blueprint::bbf {
             this->inner->query_constraints(query_offset, query_selector, node_selector);
             std::vector<TYPE> inner_value = inner->get_query_value();
             BOOST_ASSERT_MSG(inner_value.size() == query_value.size(), "Value has incorrect length!");
-
-            if (this->trie_type != mpt_type::storage_trie || this->q_type == query_type::single_byte_query)
-                constrain(inner->query_selector_is_found() - 1, "Query offset exceeded the max length!");
+            if (this->q_type == query_type::single_byte_query) {
+                constrain(1 - inner->query_selector_is_found(), "Query offset exceeded the max length!");
+                constrain(query_value_len - inner->get_query_value_len(), "Query value length is incorrect!");
+            }
             for (size_t i = 0; i < query_value.size(); i++)
                 constrain(query_value[i] - inner_value[i], "Query value is incorrect!");
-            if (this->q_type == query_type::single_byte_query)
-                constrain(query_value_len - inner->get_query_value_len(), "Query value length is incorrect!");
         }
 
         std::size_t get_max_length() {
