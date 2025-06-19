@@ -56,6 +56,17 @@ eval "$configurePhase" // automatically move to the build directory
 ninja algebra_curves_test
 ```
 
+## Benchmarks
+
+Building the benchmarks:
+```bash
+nix develop .#crypto3-clang-bench
+eval "$configurePhase" // automatically move to the build directory
+ninja crypto3_benchmarks
+```
+
+Then run the benchmarks in 'build/crypto3/benchmarks' folder.
+
 ## Usage
 
 The suite is used as header-only libraries.
