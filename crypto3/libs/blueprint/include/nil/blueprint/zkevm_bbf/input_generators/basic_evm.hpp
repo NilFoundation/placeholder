@@ -1542,21 +1542,41 @@ namespace nil {
                 }
 
                 virtual void codecopy() {
-                    std::size_t dst = std::size_t(stack.back()); stack.pop_back();
-                    std::size_t src = std::size_t(stack.back()); stack.pop_back();
-                    std::size_t length = std::size_t(stack.back()); stack.pop_back();
+                    // 6M memory bytes gives 60M+ gas cost
+                    // max gas cost is 36M for now, might go up to 60M
+                    constexpr static const std::size_t max_dest_offset = 1 << 22;
+                    constexpr static const std::size_t max_length = 1 << 22;
+                    //  max contract size is 24,576 bytes, so offset need to fit in first chunk
+                    constexpr static const std::size_t max_offset = 65536;
 
-                    std::size_t minimum_word_size = (length + 31) / 32;
-                    std::size_t next_mem = std::max(dst + length, memory.size());
-                    std::size_t memory_expansion = memory_expansion_cost(next_mem, memory.size());
-                    std::size_t next_memory_size = (memory_size_word_util(next_mem))*32;
+                    auto dst = stack.back(); stack.pop_back();
+                    auto src = stack.back(); stack.pop_back();
+                    auto lgt = stack.back(); stack.pop_back();
 
-                    if( memory.size() < dst + length) memory.resize(dst + length, 0);
-                    for( std::size_t i = 0; i < length; i++){
-                        memory[dst+i] = src + i < bytecode.size()? bytecode[src+i]: 0;
+                    bool overflow = (dst > max_dest_offset) ||
+                                    (lgt > max_length);
+
+
+                    if (overflow) {
+                        decrease_gas(gas + 1);
+                        memory.clear();
                     }
+                    else {
+                        std::size_t distance = std::size_t(dst);
+                        std::size_t length = std::size_t(lgt);
+                        std::size_t source = src < max_offset ? std::size_t(src) : max_offset;
 
-                    decrease_gas(3 + 3 * minimum_word_size + memory_expansion); //dynamic gas
+                        std::size_t minimum_word_size = (length + 31) / 32;
+                        std::size_t next_mem = std::max(distance + length, memory.size());
+                        std::size_t memory_expansion = memory_expansion_cost(next_mem, memory.size());
+                        std::size_t next_memory_size = memory_size_word_util(next_mem) * 32;
+
+                        if( memory.size() < distance + length) memory.resize(next_memory_size);
+                        for( std::size_t i = 0; i < length; i++){
+                            memory[distance+i] = source + i < bytecode.size()? bytecode[source+i]: 0;
+                        }
+                        decrease_gas(3 + 3 * minimum_word_size + memory_expansion); //dynamic gas
+                    }
                     pc++;
                 }
 
@@ -1869,6 +1889,10 @@ namespace nil {
                     }
                 }
 
+                void increase_gas(std::size_t cost) {
+                    gas += cost;
+                }
+
                 // Should be called *after* memory expansion, address access
                 // and transfer fees are deducted.
                 size_t cap_call_gas(zkevm_word_type gas_sent) {
@@ -1897,4 +1921,3 @@ namespace nil {
         } // namespace bbf
     } // namespace blueprint
 } // namespace nil
-

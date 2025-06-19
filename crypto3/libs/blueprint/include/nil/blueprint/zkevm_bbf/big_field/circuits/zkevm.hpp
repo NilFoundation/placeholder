@@ -420,7 +420,7 @@ namespace nil::blueprint::bbf::zkevm_big_field{
                         opcode_impls[current_opcode]->rows_amount();
                     std::size_t current_opcode_rows_amount = std::ceil(float(current_opcode_bare_rows_amount)/2) * 2;
                     BOOST_ASSERT(current_opcode_rows_amount <= max_opcode_height);
-
+                    
                     TYPE o4 = opcode_selectors[1][opcode_num/4];
                     TYPE parity = opcode_num%2 ? all_states[1].opcode_parity: 1 - all_states[1].opcode_parity;
                     TYPE is_even = all_states[1].is_even;
