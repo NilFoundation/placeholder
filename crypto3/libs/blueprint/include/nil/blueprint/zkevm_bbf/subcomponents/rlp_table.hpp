@@ -1,6 +1,5 @@
 //---------------------------------------------------------------------------//
-// Copyright (c) 2024 Elen_imagea Tatuzova   <e.tatuzova@nil.foundation>
-// Copyright (c) 2024 Alexey Yashunsky <a.yashunsky@nil.foundation>
+// Copyright (c) 2024 Amirhossein Khajehpour   <a.khajepour@nil.foundation>
 //
 // MIT License
 //

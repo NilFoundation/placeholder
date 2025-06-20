@@ -57,11 +57,14 @@ public:
     using typename generic_component<FieldType, stage>::table_params;
     using typename generic_component<FieldType, stage>::TYPE;
 
-    using input_paths = typename std::conditional<stage==GenerationStage::ASSIGNMENT, mpt_paths_vector, std::nullptr_t>::type;
+    using input_nodes = typename std::conditional<stage==GenerationStage::ASSIGNMENT, mpt_nodes_vector, std::nullptr_t>::type;
+    using input_root = typename std::conditional<stage==GenerationStage::ASSIGNMENT, zkevm_word_type, std::nullptr_t>::type;
+
     struct input_type {
         TYPE rlc_challenge;
 
-        input_paths paths_vector;
+        input_nodes nodes_vector;
+        input_root root;
     };
 
     using value_type = typename FieldType::value_type;
@@ -137,59 +140,78 @@ public:
         std::unordered_map<mpt_node_id, mpt_node> deploy_plan;
 
         if constexpr (stage == GenerationStage::ASSIGNMENT) {
-           for(auto &p : input.paths_vector) { // enumerate paths
-               std::size_t trie_id = 1; // TODO : adjust later
-               zkevm_word_type path_key;
-               std::size_t accumulated_length = 0;
+            std::size_t trie_id = 1; // TODO : adjust later
 
-               std::cout << "slot number = " << std::hex << p.slotNumber << std::dec << std::endl;
-               std::array<uint8_t,32> slotNumber = w_to_8(p.slotNumber);
-               std::vector<uint8_t> buffer(slotNumber.begin(), slotNumber.end());
-               path_key = nil::blueprint::zkevm_keccak_hash(buffer);
-               std::cout << "path key = " << std::hex << path_key << std::dec << std::endl;
+            struct node_temporary_holder {
+                std::size_t accumulated_key_len;
+                zkevm_word_type accumulated_key;
+                bool is_extension;
+                std::size_t key_len;
+            };
 
-               zkevm_word_type key_suffix = path_key;
-               zkevm_word_type accumulated_key = path_key;
-               bool is_parent_ext = false;
-               std::size_t prev_key_length = 0;
-               for(auto &n : p.proof) {
-                   std::cout << "\nnode type = " << n.type << std::endl;
-
-                   // determine the node key prefix, depending on the node type
-                   std::size_t key_length = 0;     // size of key in each node (bytes)- for branch = 1
-
-                   if (n.type != branch) { // extension or leaf
-                       zkevm_word_type first_value = n.value.at(0);
-                       key_length = n.len.at(0);
-
-                       zkevm_word_type k0 = n.value.at(0) >> 4*(key_length - 1);
-                       if ((k0 == 1) || (k0 == 3)) {
-                           key_length--; // then we only skip the first hex symbol
-                       } else {
-                           key_length -= 2; // otherwise, the second hex is 0 and we skip it too
-                       }
-                   } else {
-                       key_length = 1;
-                   }
-
-                   zkevm_word_type key_before_accum = path_key >> 4*(64 - accumulated_length);
-                   std::cout << "key prefix : " << std::hex << key_before_accum << std::dec << std::endl;
-
-                   mpt_node_id n_id = { trie_id, key_before_accum, accumulated_length, prev_key_length, n.type, is_parent_ext };
-                   is_parent_ext = (n.type == extension);
-                   prev_key_length = key_length;
-
-                   if (deploy_plan.find(n_id) != deploy_plan.end()) {
-                       // TODO process node _replacement_
-                       std::cout << "We have a replacement" << std::endl;
-                       BOOST_ASSERT(0); // When we encounter such a situation, we need code here
-                   } else {
-                       deploy_plan[n_id] = n;
-                   }
-
-                   accumulated_length += key_length; // for the next node
+            std::map<zkevm_word_type, node_temporary_holder> parents;
+            parents.insert(std::pair<zkevm_word_type, node_temporary_holder> (input.root, {
+                0, 0, false, 0
+            }));
+            for(auto &node : input.nodes_vector) { // enumerate nodes
+                node_temporary_holder parent = parents.at(node.hash);
+                if (node.type == branch) {
+                    for (size_t i = 0; i < 16; i++) {
+                        if (node.value[i] != 0) {
+                            parents.insert(std::pair<zkevm_word_type, node_temporary_holder> (
+                                node.value[i], {
+                                    parent.accumulated_key_len + 1,
+                                    (parent.accumulated_key << 4) + i,
+                                    false,
+                                    1
+                                }
+                            ));
+                        }
+                    }
+                } else if (node.type == extension)  {
+                    zkevm_word_type k0 = node.value[0];
+                    std::size_t accumulated_key_length;
+                    zkevm_word_type accumulated_key;
+                    std::size_t key_extension_length;
+                    zkevm_word_type key_extension;
+                    
+                    while (k0 > 3)
+                        k0 >>= 4;
+                    BOOST_ASSERT_MSG(k0 == 1 || k0 == 0, "Wrong extension node format!");
+                    if (k0 == 0)
+                        key_extension_length = node.len[0] - 2;
+                    else
+                        key_extension_length = node.len[0] - 1;
+                    key_extension = node.value[0] - (k0 << key_extension_length * 4);
+                    parents.insert(std::pair<zkevm_word_type, node_temporary_holder> (
+                        node.value[1], {
+                            parent.accumulated_key_len + key_extension_length,
+                            (parent.accumulated_key << 4 * key_extension_length) + key_extension,
+                            true,
+                            key_extension_length
+                        }
+                    ));
                 }
-           }
+                BOOST_LOG_TRIVIAL(info) << "node added:\n";
+                
+                BOOST_LOG_TRIVIAL(info) << "\thash:\t\t\t" << std::hex << node.hash << std::dec << std::endl;
+                BOOST_LOG_TRIVIAL(info) << "\taccumulated_key:\t" << std::hex << parent.accumulated_key << std::dec << std::endl;
+                BOOST_LOG_TRIVIAL(info) << "\taccumulated_key_len:\t" << std::hex << parent.accumulated_key_len << std::dec << std::endl;
+                BOOST_LOG_TRIVIAL(info) << "\tkey_len:\t\t" << std::hex << parent.key_len << std::dec << std::endl;
+                BOOST_LOG_TRIVIAL(info) << "\ttype:\t\t\t" << std::hex << node.type << std::dec << std::endl;
+                BOOST_LOG_TRIVIAL(info) << "\tis_extension:\t\t" << std::hex << parent.is_extension << std::dec << std::endl;
+
+                mpt_node_id n_id = { trie_id, parent.accumulated_key, parent.accumulated_key_len, parent.key_len, node.type, parent.is_extension };
+
+                if (deploy_plan.find(n_id) != deploy_plan.end()) {
+                    // TODO process node _replacement_
+                    std::cout << "We have a replacement" << std::endl;
+                    BOOST_ASSERT(0); // When we encounter such a situation, we need code here
+                } else {
+                    deploy_plan[n_id] = node;
+                }
+                // }
+            }
         } else {
            for(std::size_t virtual_node = 0; virtual_node < NODE_TYPE_COUNT; virtual_node++) {
                mpt_node_id n_id = {

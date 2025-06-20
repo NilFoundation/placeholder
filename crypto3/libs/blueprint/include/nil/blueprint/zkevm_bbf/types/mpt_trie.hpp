@@ -33,6 +33,7 @@ struct mpt_node {
    enum mpt_node_type type;
    std::vector<zkevm_word_type> value;
    std::vector<std::size_t> len;
+   zkevm_word_type hash;
 };
 
 struct mpt_node_id {
@@ -54,12 +55,12 @@ struct mpt_node_id {
    }
 };
 
-struct mpt_path {
-    zkevm_word_type slotNumber; // TODO change this
-    std::vector<mpt_node> proof;
-};
+// struct mpt_path {
+//     zkevm_word_type slotNumber; // TODO change this
+//     std::vector<mpt_node> proof;
+// };
 
-class mpt_paths_vector : public std::vector<mpt_path> {
+class mpt_nodes_vector : public std::vector <mpt_node> {
 };
 
 template<typename FieldType, GenerationStage stage>
@@ -95,4 +96,3 @@ struct std::hash<nil::blueprint::bbf::mpt_node_id> {
         return result;
     }
 };
-

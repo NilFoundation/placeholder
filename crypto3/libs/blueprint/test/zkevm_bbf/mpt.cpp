@@ -1,5 +1,6 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2025 Alexey Yashunsky <a.yashunsky@nil.foundation>
+// Copyright (c) 2025 Amirhossein Khajehpour <a.khajepour@nil.foundation>
 //
 // MIT License
 //
@@ -47,6 +48,7 @@
 #include <nil/blueprint/zkevm_bbf/mpt_leaf.hpp>
 #include <nil/blueprint/zkevm_bbf/mpt_dynamic.hpp>
 
+#include <unordered_map>
 #include "./circuit_test_fixture.hpp"
 
 using namespace nil::crypto3;
@@ -82,52 +84,54 @@ public:
         return result;
     }
 
+    mpt_node read_node_from_list(boost::property_tree::ptree raw) {
+        mpt_node node;
+        node.hash = zkevm_word_from_string(raw.get_child("hash").data());
+        for(const auto &w : raw.get_child("inners")) {
+            std::string value = w.second.data();
+            node.value.push_back(zkevm_word_from_string(value));
+            node.len.push_back(value.length());
+        }
+        return node;
+    }
+
     template <typename field_type>
     void test_zkevm_mpt(
         std::string data_source,
         std::size_t max_mpt_size,
         bool expected_result = true
     ) {
-        mpt_paths_vector paths;
-
         boost::property_tree::ptree src_data = load_json_input(data_source);
 
-        mpt_path single_path;
+        auto root = zkevm_word_from_string(src_data.get_child("root").data());
 
-        std::string path_key = src_data.get<std::string>("storageProof..key");
-        boost::property_tree::ptree proof_path = src_data.get_child("storageProof..proof");
+        std::vector<mpt_node> nodes;
+        
 
-        // std::cout << "key = " << path_key << std::endl;
-        single_path.slotNumber = zkevm_word_from_string(path_key); // TODO it's not slot number always
+        boost::property_tree::ptree _nodes = src_data.get_child("nodes");
 
-        for(const auto &v : proof_path) {
-            boost::property_tree::ptree node = v.second;
-
-            mpt_node single_node = {extension, {}, {}};
-            if (node.size() == 17) {
-                single_node.type = branch;
+        for(const auto &v : _nodes) {
+            boost::property_tree::ptree raw = v.second;
+            mpt_node node = read_node_from_list(raw);
+            if (node.value.size() == 17)
+                node.type = branch;
+            else {
+                char control_nibble = raw.get_child("inners").begin()->second.data()[0];
+                if (control_nibble == '2' || control_nibble == '3')
+                    node.type = leaf;
+                else if (control_nibble == '0' || control_nibble == '1')
+                    node.type = extension;
+                else {}
+                    // throw
             }
-
-            // std::cout << "[" << std::endl;
-
-            for(const auto &w : node) {
-                std::string hash_value = w.second.data();
-                // std::cout << "    value = " << hash_value << std::endl;
-                single_node.value.push_back(zkevm_word_from_string(hash_value));
-                single_node.len.push_back(hash_value.length());
-            }
-            // std::cout << "]" << std::endl;
-            single_path.proof.push_back(single_node);
+            nodes.push_back(node);
         }
-        if (single_path.proof.back().value.size() != 17){ // the last node is either a leaf node or a branch node (if leaf doesn't exist)
-            single_path.proof.back().type = leaf;
-        }
-        paths.push_back(single_path);
+
 
         bool result = test_bbf_component<field_type, mpt_dynamic>(
             "mpt_dynamic",         //  Circuit name
             {} ,                   //  Public input
-            { 7,  paths },         //  Assignment input: rlc_challenge, paths to prove
+            { 7,  nodes, root },         //  Assignment input: rlc_challenge, paths to prove
             max_mpt_size           //  Maximum size of mpt circuit
         );
         BOOST_CHECK((!check_satisfiability && !generate_proof) || result == expected_result); // Max_rw, Max_mpt
@@ -179,11 +183,12 @@ BOOST_GLOBAL_FIXTURE(zkEVMGlobalFixture);
 BOOST_FIXTURE_TEST_SUITE(zkevm_bbf_mpt_leaf, zkEVMMPTTestFixture)
     using field_type = nil::crypto3::algebra::curves::alt_bn128_254::scalar_field_type;
 BOOST_AUTO_TEST_CASE(one_mpt_path) {
-    test_zkevm_mpt<field_type>("mpt_path_0.json", 500);
-    test_zkevm_mpt<field_type>("mpt_path_1.json", 500);
-    test_zkevm_mpt<field_type>("mpt_path_2.json", 500);
-    test_zkevm_mpt<field_type>("mpt_path_3.json", 500);
-    test_zkevm_mpt<field_type>("mpt_path_4.json", 500);
+    test_zkevm_mpt<field_type>("mpt_storage_path_0.json", 500);
+    test_zkevm_mpt<field_type>("mpt_storage_path_1.json", 500);
+    test_zkevm_mpt<field_type>("mpt_storage_path_2.json", 500);
+    test_zkevm_mpt<field_type>("mpt_storage_path_3.json", 500);
+    test_zkevm_mpt<field_type>("mpt_storage_two_leaves_batch_0.json", 500);
+    test_zkevm_mpt<field_type>("mpt_account_no_leaf_batch_0.json", 500);
 }
 BOOST_AUTO_TEST_CASE(mpt_leafs) {
   test_zkevm_mpt_leaf<field_type>("mpt_leaf_storage.json", mpt_type::storage_trie, 20);
