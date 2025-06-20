@@ -30,7 +30,10 @@
 #include <nil/blueprint/bbf/circuit_builder.hpp>
 #include <nil/blueprint/bbf/components/algebra/fields/non_native/flexible_multiplication.hpp>
 #include <nil/crypto3/algebra/curves/pallas.hpp>
+#include <nil/crypto3/algebra/curves/secp_k1.hpp>
 #include <nil/crypto3/algebra/curves/vesta.hpp>
+#include <nil/crypto3/algebra/fields/babybear.hpp>
+#include <nil/crypto3/algebra/fields/goldilocks.hpp>
 #include <nil/crypto3/random/algebraic_engine.hpp>
 
 using namespace nil;
@@ -141,13 +144,12 @@ void mult_tests() {
 
         foreign_value_type src_x = generate_random(), src_y = generate_random();
 
-        extended_integral_type x = extended_integral_type(
-                                   integral_type(src_x.to_integral())),
-                               y = extended_integral_type(
-                                   integral_type(src_y.to_integral())),
+        extended_integral_type x = src_x.to_integral(),
+                               y = src_y.to_integral(),
                                extended_base = 1,
                                ext_pow = extended_base << (num_chunks * bit_size_chunk),
-                               p = NonNativeFieldType::modulus, pp = ext_pow - p;
+                               p = NonNativeFieldType::modulus,
+                               pp = ext_pow - p;
 
         public_input.resize(5 * num_chunks);
         // public_input should contain x,y,p,pp,zero
@@ -193,15 +195,13 @@ void mult_tests_to_fail() {
 
         foreign_value_type src_x = generate_random(), src_y = generate_random();
 
-        extended_integral_type x = extended_integral_type(
-                                   integral_type(src_x.to_integral())),
-                               y = extended_integral_type(
-                                   integral_type(src_y.to_integral())),
+        extended_integral_type x = src_x.to_integral(),
+                               y = src_y.to_integral(),
                                extended_base = 1,
                                ext_pow = extended_base << (num_chunks * bit_size_chunk),
                                p = NonNativeFieldType::modulus,
                                // Forcing the test to fail by substracting pp by 1
-            pp = ext_pow - p - 1;
+                               pp = ext_pow - p - 1;
 
         public_input.resize(4 * num_chunks + 1);
         for (std::size_t j = 0; j < num_chunks; j++) {
@@ -230,6 +230,9 @@ BOOST_AUTO_TEST_SUITE(blueprint_plonk_test_suite)
 BOOST_AUTO_TEST_CASE(blueprint_plonk_bbf_flexible_multiplication_test) {
     using pallas_field_type = typename crypto3::algebra::curves::pallas::base_field_type;
     using vesta_field_type = typename crypto3::algebra::curves::vesta::base_field_type;
+    using secp256k1_field_type = typename crypto3::algebra::curves::secp256k1::base_field_type;
+    using crypto3::algebra::fields::goldilocks;
+    using crypto3::algebra::fields::babybear;
 
     std::cout << "Scenario 1\n";
     mult_tests<pallas_field_type, vesta_field_type, 3, 96, random_tests_amount>();
@@ -242,11 +245,20 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_bbf_flexible_multiplication_test) {
 
     std::cout << "Scenario 4\n";
     mult_tests<vesta_field_type, pallas_field_type, 5, 63, random_tests_amount>();
+
+    std::cout << "Scenario 5\n";
+    mult_tests<goldilocks, secp256k1_field_type, 16, 29, random_tests_amount>();
+
+    std::cout << "Scenario 6\n";
+    mult_tests<babybear, secp256k1_field_type, 41, 12, random_tests_amount>();
 }
 
 BOOST_AUTO_TEST_CASE(blueprint_plonk_bbf_flexible_multiplication_test_to_fail) {
     using pallas_field_type = typename crypto3::algebra::curves::pallas::base_field_type;
+    using secp256k1_field_type = typename crypto3::algebra::curves::secp256k1::base_field_type;
     using vesta_field_type = typename crypto3::algebra::curves::vesta::base_field_type;
+    using crypto3::algebra::fields::goldilocks;
+    using crypto3::algebra::fields::babybear;
 
     std::cout << "Scenario 1\n";
     mult_tests_to_fail<pallas_field_type, vesta_field_type, 4, 64, random_tests_amount>();
@@ -259,6 +271,12 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_bbf_flexible_multiplication_test_to_fail) {
 
     std::cout << "Scenario 4\n";
     mult_tests_to_fail<vesta_field_type, pallas_field_type, 5, 63, random_tests_amount>();
+
+    std::cout << "Scenario 5\n";
+    mult_tests_to_fail<goldilocks, secp256k1_field_type, 16, 29, random_tests_amount>();
+
+    std::cout << "Scenario 6\n";
+    mult_tests_to_fail<babybear, secp256k1_field_type, 41, 12, random_tests_amount>();
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -104,6 +104,7 @@ namespace nil {
                                             std::size_t bit_size_chunk,
                                             bool make_links = true)
                         : generic_component<FieldType, stage>(context_object) {
+
                         using extended_integral_type =
                             nil::crypto3::multiprecision::big_uint<
                                 2 * NonNativeFieldType::modulus_bits>;
@@ -179,14 +180,14 @@ namespace nil {
                             allocate(P[i]);
                         }
 
-                        integral_type pow = 1;
+                        TYPE pow = 1;
                         for (std::size_t j = 0; j < num_chunks; ++j) {
                             x_n += X[j] * pow;
                             y_n += Y[j] * pow;
                             q_n += Q[j] * pow;
                             r_n += R[j] * pow;
                             p_n += P[j] * pow;
-                            pow <<= bit_size_chunk;
+                            pow *= integral_type{1} << bit_size_chunk;
                         }
 
                         allocate(x_n);
@@ -209,6 +210,7 @@ namespace nil {
                         //      q_3 ⋅ pp_0
                         //   Result = z_0 ⋅ 2^{0b} + z_1 ⋅ 2^{1b} + z_2 ⋅ 2^{2b} + z_3 ⋅
                         //   2^{3b}
+                        BOOST_ASSERT(num_chunks * 2 * (integral_type{1} << 2 * bit_size_chunk) < FieldType::modulus);
                         for (std::size_t i = 0; i < num_chunks; ++i) {
                             Z[i] = TYPE(0);
                             for (std::size_t j = 0; j <= i; ++j) {

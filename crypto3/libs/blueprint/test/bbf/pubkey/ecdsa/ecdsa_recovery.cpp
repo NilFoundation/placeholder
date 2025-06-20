@@ -32,6 +32,8 @@
 #include <nil/crypto3/algebra/curves/pallas.hpp>
 #include <nil/crypto3/algebra/curves/secp_k1.hpp>
 #include <nil/crypto3/algebra/curves/vesta.hpp>
+#include <nil/crypto3/algebra/fields/arithmetic_params/babybear.hpp>
+#include <nil/crypto3/algebra/fields/arithmetic_params/goldilocks.hpp>
 #include <nil/crypto3/random/algebraic_engine.hpp>
 
 using namespace nil;
@@ -111,7 +113,7 @@ void test_ecdsa_recovery(
         typename bbf::components::pallas_ecdsa_recovery<
             FieldType, bbf::GenerationStage::ASSIGNMENT>::input_type input;
 
-        auto B =
+        static auto B =
             bbf::circuit_builder<FieldType, bbf::components::pallas_ecdsa_recovery,
                                  std::size_t, std::size_t>(num_chunks, bit_size_chunk);
 
@@ -121,7 +123,7 @@ void test_ecdsa_recovery(
                              crypto3::algebra::curves::vesta::base_field_type>) {
         typename bbf::components::vesta_ecdsa_recovery<
             FieldType, bbf::GenerationStage::ASSIGNMENT>::input_type input;
-        auto B =
+        static auto B =
             bbf::circuit_builder<FieldType, bbf::components::vesta_ecdsa_recovery,
                                  std::size_t, std::size_t>(num_chunks, bit_size_chunk);
 
@@ -130,7 +132,7 @@ void test_ecdsa_recovery(
                                                        256>::base_field_type>) {
         typename bbf::components::secp_k1_256_ecdsa_recovery<
             FieldType, bbf::GenerationStage::ASSIGNMENT>::input_type input;
-        auto B =
+        static auto B =
             bbf::circuit_builder<FieldType, bbf::components::secp_k1_256_ecdsa_recovery,
                                  std::size_t, std::size_t>(num_chunks, bit_size_chunk);
 
@@ -175,7 +177,7 @@ void multi_test_recovery() {
                  (scalar_integral_type(r.to_integral()) >= n) ||
                  (scalar_integral_type(s.to_integral()) >= m));
 
-        std::cout << "Random test # " << (i + 1) << std::endl;
+        std::cout << "Random test #" << (i + 1) << std::endl;
         test_ecdsa_recovery<FieldType, CurveType, num_chunks, bit_size_chunk>(z, r, s, v,
                                                                               QA);
     }
@@ -204,7 +206,7 @@ void multi_test_recovery_invalid() {
         nil::crypto3::algebra::curves::coordinates::affine>::params_type::b;
 
     for (std::size_t i = 0; i < RandomTestAmount; i++) {
-        std::cout << "Random test # " << (i + 1) << std::endl;
+        std::cout << "Random test #" << (i + 1) << std::endl;
         d = generate_random_scalar();  // private key
         QA = G * d;                    // public key
 
@@ -301,6 +303,23 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_pubkey_non_native_ecdsa_secp_k1_256) {
     multi_test_recovery<pallas_base_field,secp_k1_256, 3, 96, random_tests_amount>();
 
     test_real_data<pallas_base_field, secp_k1_256, 3, 96>();
+}
+
+BOOST_AUTO_TEST_CASE(blueprint_plonk_pubkey_non_native_ecdsa_secp256k1_goldilocks) {
+    using crypto3::algebra::curves::secp256k1;
+    using crypto3::algebra::fields::goldilocks;
+
+    // can be 16, 29
+    multi_test_recovery<goldilocks, secp256k1, 17, 28, random_tests_amount>();
+}
+
+BOOST_AUTO_TEST_CASE(blueprint_plonk_pubkey_non_native_ecdsa_secp256k1_babybear) {
+    using crypto3::algebra::curves::secp256k1;
+    using crypto3::algebra::fields::babybear;
+
+    multi_test_recovery<babybear, secp256k1, 41, 12, random_tests_amount>();
+
+    test_real_data<babybear, secp256k1, 41, 12>();
 }
 
 BOOST_AUTO_TEST_SUITE_END()

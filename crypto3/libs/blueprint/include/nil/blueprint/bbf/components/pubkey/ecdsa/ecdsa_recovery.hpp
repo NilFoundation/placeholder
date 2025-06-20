@@ -84,7 +84,7 @@ namespace nil {
                         std::size_t witness = 7 * num_chunks;
                         constexpr std::size_t public_inputs = 1;
                         constexpr std::size_t constants = 1;
-                        constexpr std::size_t rows = 131072 - 1;
+                        std::size_t rows = num_chunks >= 16 ? 150000 : 131072 - 1;
                         return {witness, public_inputs, constants, rows};
                     }
 
