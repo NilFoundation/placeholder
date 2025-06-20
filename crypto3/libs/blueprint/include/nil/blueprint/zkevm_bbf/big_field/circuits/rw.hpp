@@ -88,7 +88,7 @@ namespace nil::blueprint::bbf::zkevm_big_field{
                 + chunks_amount                                 // Additional chunks
                 + diff_index_selectors_amount                   // Diff selector
                 + op_selectors_amount                           // Selectors for op
-                + 6;
+                + 7;
             BOOST_LOG_TRIVIAL(info) << "RW circuit witness amount = " << witness_amount;
             return {
                 .witnesses = witness_amount,
@@ -115,7 +115,6 @@ namespace nil::blueprint::bbf::zkevm_big_field{
             std::size_t RETURNDATA_OP = std::size_t(rw_operation_type::returndata);
             std::size_t BLOBHASH_OP = std::size_t(rw_operation_type::blobhash);
             std::size_t PADDING_OP = std::size_t(rw_operation_type::padding);
-            std::size_t LOG_INDEX_OP = std::size_t(rw_operation_type::log_index);
 
             std::size_t current_column = 0;
 
@@ -159,6 +158,7 @@ namespace nil::blueprint::bbf::zkevm_big_field{
             std::vector<TYPE> diff(max_rw_size);
             std::vector<TYPE> inv_diff(max_rw_size);
             std::vector<TYPE> is_diff_non_zero(max_rw_size);
+            std::vector<TYPE> is_log_address(max_rw_size);
 
             // std::vector<TYPE> not_first_or_padding(max_rw_size);
             // std::vector<TYPE> firsts_diff_index_bits(max_rw_size);
@@ -180,7 +180,6 @@ namespace nil::blueprint::bbf::zkevm_big_field{
             op_selector_indices[rw_operation_type::returndata] = index++;
             op_selector_indices[rw_operation_type::blobhash] = index++;
             op_selector_indices[rw_operation_type::padding] = index++;
-            op_selector_indices[rw_operation_type::log_index] = index++;
 
             if constexpr (stage == GenerationStage::ASSIGNMENT) {
                 for(std::size_t i = 0; i < input.timeline.size(); i++){
@@ -241,7 +240,9 @@ namespace nil::blueprint::bbf::zkevm_big_field{
 
                     diff[i] = sorted[diff_ind] - sorted_prev[diff_ind];
                     inv_diff[i] = diff[i] == 0? 0: diff[i].inversed();
-                    is_diff_non_zero[i] = diff[i] * inv_diff[i];         
+                    is_diff_non_zero[i] = diff[i] * inv_diff[i];  
+                    is_log_address[i] = address[i] == std::uint8_t(call_context_field::log_index);
+                           
                 }
 
                 is_first[rw_trace.size()] = 1;
@@ -249,6 +250,7 @@ namespace nil::blueprint::bbf::zkevm_big_field{
                 diff[rw_trace.size()] = op[rw_trace.size()] - op[rw_trace.size() - 1];
                 inv_diff[rw_trace.size()] = diff[rw_trace.size()] == 0? 0: diff[rw_trace.size()].inversed();
                 is_diff_non_zero[rw_trace.size()] = diff[rw_trace.size()] == 0? 0 : 1;
+                is_log_address[rw_trace.size()] = 0;
                 for( std::size_t i = rw_trace.size(); i < max_rw_size; i++ ){
                     op_selectors[i][op_selector_indices[rw_operation_type::padding]] = 1;
                 }
@@ -270,6 +272,7 @@ namespace nil::blueprint::bbf::zkevm_big_field{
                 allocate(is_diff_non_zero[i], ++cur_column, i);
                 allocate(is_first[i], ++cur_column, i);
                 allocate(is_last[i], ++cur_column, i);
+                allocate(is_log_address[i], ++cur_column, i);
             }
 
             constrain(op[0] - START_OP);
@@ -335,6 +338,10 @@ namespace nil::blueprint::bbf::zkevm_big_field{
                 non_first_row_constraints.push_back(diff[1] * inv_diff[1] - is_diff_non_zero[1]);
                 non_first_row_constraints.push_back(diff[1] * (is_diff_non_zero[1] - 1));
                 non_first_row_constraints.push_back(inv_diff[1] * (is_diff_non_zero[1] - 1));
+                non_first_row_constraints.push_back(is_log_address[1] * (is_log_address[1] - 1));
+                //under constrain
+                non_first_row_constraints.push_back(is_log_address[1] * (std::uint8_t(call_context_field::log_index) - address[1]));
+
 
                 TYPE id_composition;
                 std::size_t cur_chunk = 0;
@@ -368,9 +375,8 @@ namespace nil::blueprint::bbf::zkevm_big_field{
                 TYPE returndata_selector = op_selectors[1][op_selector_indices[rw_operation_type::returndata]];
                 TYPE blobhash_selector = op_selectors[1][op_selector_indices[rw_operation_type::blobhash]];
                 TYPE padding_selector = op_selectors[1][op_selector_indices[rw_operation_type::padding]];
-                TYPE log_index_selector = op_selectors[1][op_selector_indices[rw_operation_type::log_index]];
 
-                every_row_constraints.push_back(is_filled[1] - (calldata_selector + returndata_selector + memory_selector + stack_selector + call_context_selector + blobhash_selector + log_index_selector));
+                every_row_constraints.push_back(is_filled[1] - (calldata_selector + returndata_selector + memory_selector + stack_selector + call_context_selector + blobhash_selector));
                 every_row_constraints.push_back((calldata_selector + returndata_selector) *  is_write[1] * (1 - is_first[1]) );
                 every_row_constraints.push_back(is_write[1] *(blobhash_selector + padding_selector));
                 non_first_row_constraints.push_back((1 - padding_selector) * (1 - is_diff_non_zero[1]));
@@ -421,7 +427,7 @@ namespace nil::blueprint::bbf::zkevm_big_field{
                 }, "zkevm_timeline", 0, max_state-1);
 
                 context_object.relative_lookup({
-                    context_object.relativize(rw_id[1] * log_index_selector, -1)
+                    context_object.relativize(rw_id[1] * call_context_selector * is_log_address[1] * is_write[1], -1)
                 }, "zkevm_log_rw", 0, max_rw_size-1);
 
 

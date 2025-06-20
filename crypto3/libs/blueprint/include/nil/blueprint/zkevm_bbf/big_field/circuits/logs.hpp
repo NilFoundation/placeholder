@@ -581,8 +581,9 @@ namespace nil::blueprint::bbf::zkevm_big_field {
 
                     tmp = {context_object.relativize(
                         std::vector<TYPE>(
-                            {TYPE(std::size_t(rw_operation_type::log_index)) *
+                            {TYPE(std::size_t(rw_operation_type::call_context)) *
                                  selector[1],
+                             std::uint8_t(call_context_field::log_index) * selector[1],
                              rw_id[1] * selector[1]}),
                         -1)};
                     context_object.relative_lookup(tmp, "zkevm_rw_log", 0,

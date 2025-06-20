@@ -98,7 +98,6 @@ public:
         std::size_t max_exp_rows = max_sizes.max_exp_rows;
         std::size_t max_state = max_sizes.max_state;
         std::size_t max_bytecodes_amount = max_sizes.max_bytecodes_amount;
-        std::size_t max_call_commits = max_sizes.max_call_commits;
         std::size_t max_filter_indices = max_sizes.max_filter_indices;
 
         std::size_t instances_rw_8 = max_sizes.instances_rw_8;
@@ -315,7 +314,7 @@ public:
 
             result = test_bbf_component<SmallFieldType, nil::blueprint::bbf::zkevm_small_field::logs>(
                 log_circuit, {7}, log_assignment_input,
-               max_keccak_blocks, max_filter_indices, max_rw, instances_rw_8
+               max_keccak_blocks, max_filter_indices, max_rw, instances_rw_256
             );
             BOOST_CHECK(result);
         }

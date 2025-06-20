@@ -32,7 +32,7 @@
 
 #include <nil/blueprint/bbf/components/hashes/keccak/util.hpp>
 #include <nil/blueprint/bbf/generic.hpp>
-#include <nil/blueprint/zkevm_bbf/small_field/subcomponents/rw_8.hpp>
+#include <nil/blueprint/zkevm_bbf/small_field/subcomponents/rw_256.hpp>
 #include <nil/blueprint/zkevm_bbf/small_field/tables/keccak.hpp>
 #include <nil/blueprint/zkevm_bbf/small_field/tables/log.hpp>
 #include <nil/blueprint/zkevm_bbf/small_field/tables/log_filter.hpp>
@@ -54,7 +54,7 @@ namespace nil::blueprint::bbf::zkevm_small_field {
         using LogTable = log_table<FieldType, stage>;
         using LogFilterTable = log_filter_table<FieldType, stage>;
         using KeccakTable = zkevm_small_field::keccak_table<FieldType, stage>;
-        using RWTable = rw_8<FieldType, stage>;
+        using RWTable = rw_256<FieldType, stage>;
         using rw_tables_input_type =
             typename std::conditional<stage == GenerationStage::ASSIGNMENT,
                                       short_rw_operations_vector, std::nullptr_t>::type;
@@ -80,13 +80,14 @@ namespace nil::blueprint::bbf::zkevm_small_field {
         static table_params get_minimal_requirements(std::size_t max_filter_indices,
                                                      std::size_t max_keccak_blocks,
                                                      std::size_t max_rw_size,
-                                                     std::size_t instances_rw_8) {
+                                                     std::size_t instances_rw_256) {
             return {
                 .witnesses = LogTable::get_witness_amount() +
                              LogFilterTable::get_witness_amount() +
                              KeccakTable::get_witness_amount() +
-                             RWTable::get_witness_amount() + 21 + filter_chunks_amount +
-                             2 * filter_bit_per_chunk + buffer_size,
+                             RWTable::get_witness_amount(instances_rw_256) + 21 +
+                             filter_chunks_amount + 2 * filter_bit_per_chunk +
+                             buffer_size,
                 .public_inputs = 1,
                 .constants = 1,
                 .rows = std::max({max_filter_indices + max_keccak_blocks + max_rw_size})};
@@ -96,13 +97,13 @@ namespace nil::blueprint::bbf::zkevm_small_field {
                                            std::size_t max_filter_indices,
                                            std::size_t max_keccak_blocks,
                                            std::size_t max_rw_size,
-                                           std::size_t instances_rw_8) {
+                                           std::size_t instances_rw_256) {
             context.allocate(input.rlc_challenge, 0, 0, column_type::public_input);
         }
 
         logs(context_type &context_object, const input_type &input,
              std::size_t max_filter_indices, std::size_t max_keccak_blocks,
-             std::size_t max_rw_size, std::size_t instances_rw_8)
+             std::size_t max_rw_size, std::size_t instances_rw_256)
             : generic_component<FieldType, stage>(context_object) {
             std::vector<std::size_t> log_lookup_area;
             std::vector<std::size_t> log_filter_lookup_area;
@@ -117,7 +118,7 @@ namespace nil::blueprint::bbf::zkevm_small_field {
                 log_filter_lookup_area.push_back(current_column++);
             for (std::size_t i = 0; i < KeccakTable::get_witness_amount(); i++)
                 keccak_lookup_area.push_back(current_column++);
-            for (std::size_t i = 0; i < RWTable::get_witness_amount(); i++)
+            for (std::size_t i = 0; i < RWTable::get_witness_amount(instances_rw_256); i++)
                 rw_lookup_area.push_back(current_column++);
 
             context_type log_ct =
@@ -134,7 +135,7 @@ namespace nil::blueprint::bbf::zkevm_small_field {
                 LogFilterTable(log_ft_ct, input.filter_indices, max_filter_indices);
             KeccakTable keccak_t(keccak_ct, {input.rlc_challenge, input.keccak_buffers},
                                  max_keccak_blocks);
-            RWTable r_t = RWTable(rw_ct, input.rw_trace, max_rw_size, instances_rw_8);
+            RWTable r_t = RWTable(rw_ct, input.rw_trace, max_rw_size, instances_rw_256);
 
             const std::vector<TYPE> &selector = l_ft.selector;
             const std::vector<TYPE> &block_id = l_ft.block_id;
@@ -257,7 +258,7 @@ namespace nil::blueprint::bbf::zkevm_small_field {
                 std::size_t cur_column = LogTable::get_witness_amount() +
                                          LogFilterTable::get_witness_amount() +
                                          KeccakTable::get_witness_amount() +
-                                         RWTable::get_witness_amount();
+                                         RWTable::get_witness_amount(instances_rw_256);
 
                 allocate(rlc_challenge[i], cur_column++, i);
                 for (std::size_t j = 0; j < buffer_size; j++) {
@@ -576,10 +577,12 @@ namespace nil::blueprint::bbf::zkevm_small_field {
                     context_object.relative_lookup(context_object.relativize(tmp, -1),
                                                    "zkevm_log_order", 0,
                                                    max_filter_indices);
-                    tmp = {{TYPE(std::size_t(rw_operation_type::log_index)) * selector[1],
-                            rw_id[1] * selector[1]}};
+                    tmp = {
+                        {TYPE(std::size_t(rw_operation_type::call_context)) * selector[1],
+                         std::uint8_t(call_context_field::log_index) * selector[1],
+                         rw_id[1] * selector[1]}};
                     context_object.relative_lookup(context_object.relativize(tmp, -1),
-                                                   "zkevm_rw_8_log", 0,
+                                                   "zkevm_rw_256_log", 0,
                                                    max_filter_indices);
                 }
             }

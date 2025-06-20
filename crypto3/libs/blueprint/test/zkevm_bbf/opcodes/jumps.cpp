@@ -78,7 +78,6 @@ BOOST_AUTO_TEST_CASE(jump) {
         circuits_to_run.insert("rw");
         circuits_to_run.insert("bytecode");
         circuits_to_run.insert("copy");
-        circuits_to_run.insert("logs");
         circuits_to_run.insert("bytecode-s");
         circuits_to_run.insert("rw-s");
         circuits_to_run.insert("copy-s");
@@ -132,7 +131,6 @@ BOOST_AUTO_TEST_CASE(jumpi) {
         circuits_to_run.insert("rw");
         circuits_to_run.insert("bytecode");
         circuits_to_run.insert("copy");
-        circuits_to_run.insert("logs");
         circuits_to_run.insert("bytecode-s");
         circuits_to_run.insert("rw-s");
         circuits_to_run.insert("copy-s");

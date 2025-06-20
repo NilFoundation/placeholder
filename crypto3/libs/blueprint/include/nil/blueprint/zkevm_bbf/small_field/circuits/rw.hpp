@@ -87,6 +87,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                 + rw_256_type::get_witness_amount(instances_rw_256)
                 + state_timeline_table_type::get_witness_amount()
                 + timeline_table_type::get_witness_amount() * (instances_rw_8 + instances_rw_256 + 1)
+                + log_table_type::get_witness_amount()
                 + 6;
             BOOST_LOG_TRIVIAL(info) << "RW circuit witness amount = " << witness_amount;
             return {
@@ -130,6 +131,11 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             context_type state_table_ct = context_object.subcontext(state_timeline_table_area,0,max_state);
             state_timeline_table_type st(state_table_ct, input.state_trace, max_state);
 
+            std::vector<std::size_t> log_table_area;
+            for( std::size_t i = 0; i < log_table_type::get_witness_amount(); i++ ) log_table_area.push_back(current_column++);
+            context_type log_table_ct = context_object.subcontext(log_table_area,0,max_filter_indices);
+            log_table_type lt(log_table_ct, input.filter_indices, max_filter_indices);
+
             std::size_t instances_timeline = instances_rw_8 + instances_rw_256 + 1;
             if constexpr (stage == GenerationStage::ASSIGNMENT) {
                 BOOST_ASSERT(input.timeline.size() < instances_timeline * (max_rw_size - 1));
@@ -159,11 +165,6 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             }
             multi_lookup_table("zkevm_timeline", timeline_table_areas, 0, max_rw_size);
             constrain(tts[0].rw_id[0], "first rw_operation in timeline is start operation");
-
-             std::vector<std::size_t> log_table_area;
-            for( std::size_t i = 0; i < log_table_type::get_witness_amount(); i++ ) log_table_area.push_back(current_column++);
-            context_type log_table_ct = context_object.subcontext(log_table_area,0,max_filter_indices);
-            log_table_type lt(log_table_ct, input.filter_indices, max_filter_indices);
 
             if constexpr (stage == GenerationStage::CONSTRAINTS) {
                 // All memory, calldata, returndata rw operations are presented in timeline.
@@ -227,6 +228,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                     }
                     context_object.relative_lookup(timeline_to_state, "zkevm_state_timeline", 0, max_rw_size);
                 }
+
             }
         }
     };

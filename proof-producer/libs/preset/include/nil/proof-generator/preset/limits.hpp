@@ -16,7 +16,6 @@ namespace nil {
             const std::size_t max_exp_rows = 25000;
             const std::size_t max_exp_ops = 50;
             const std::size_t max_state_rows = 12000;
-            const std::size_t max_call_commits = 500;
             const std::size_t max_filter_indices = 1000;
 
             const std::size_t RLC_CHALLENGE = 7; // should be the same between all components
@@ -33,7 +32,6 @@ namespace nil {
             std::size_t max_exp_rows;
             std::size_t max_exp_ops;
             std::size_t max_state_rows;
-            std::size_t max_call_commits;
             std::size_t max_filter_indices;
             std::size_t RLC_CHALLENGE;
 
@@ -48,7 +46,6 @@ namespace nil {
                 max_exp_rows(limits::max_exp_rows),
                 max_exp_ops(limits::max_exp_ops),
                 max_state_rows(limits::max_state_rows),
-                max_call_commits(limits::max_call_commits),
                 max_filter_indices(limits::max_filter_indices),
                 RLC_CHALLENGE(limits::RLC_CHALLENGE) {}
         };

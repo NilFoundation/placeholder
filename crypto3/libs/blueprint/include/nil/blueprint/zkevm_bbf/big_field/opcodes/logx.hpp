@@ -72,9 +72,8 @@ namespace nil::blueprint::bbf::zkevm_big_field {
                 S = next_mem > current_mem;
                 for (std::size_t i = 0; i < x; i++) {
                     topics_lo[i] = w_lo<FieldType>(current_state.stack_top(2 + i));
-                    topics_hi[i] = w_hi<FieldType>(current_state.stack_top(2 + i)); 
+                    topics_hi[i] = w_hi<FieldType>(current_state.stack_top(2 + i));
                 }
-
             }
 
             allocate(offset, 32, 0);
@@ -126,7 +125,7 @@ namespace nil::blueprint::bbf::zkevm_big_field {
                 constrain(current_state.memory_size_next() -
                           next_mem);  // memory_size transition
                 constrain(current_state.rw_counter_next() - current_state.rw_counter(0) -
-                          3 - x - length);  // rw_counter transition
+                          4 - x - length);  // rw_counter transition
                 std::vector<TYPE> tmp;
                 tmp = rw_table<FieldType, stage>::stack_lookup(
                     current_state.call_id(0), current_state.stack_size(0) - 1,
@@ -153,15 +152,27 @@ namespace nil::blueprint::bbf::zkevm_big_field {
                         x == i + 1, current_state.rw_counter(0) + 2 + x);
                     lookup(tmp, "zkevm_log_opcode");
                 }
-                tmp = rw_table<FieldType, stage>::log_lookup(
-                    current_state.call_id(0),
-                    current_state.rw_counter(0) + 2 + x,
-                    log_index);
-                lookup(tmp, "zkevm_rw");
                 tmp = log_table<FieldType, stage>::log_opcode_lookup(
                     block_id, tx_id, log_index, call_context_address_hi,
-                    call_context_address_lo, 0, x == 0, current_state.rw_counter(0) + 2 + x);
+                    call_context_address_lo, 0, x == 0,
+                    current_state.rw_counter(0) + 2 + x);
                 lookup(tmp, "zkevm_log_opcode");
+
+                tmp = rw_table<FieldType, stage>::call_context_editable_lookup(
+                    current_state.call_id(0), std::size_t(call_context_field::log_index),
+                    current_state.rw_counter(0) + 2 + x,
+                    TYPE(1),  // is_write
+                    0,        // value_hi
+                    log_index);
+                lookup(tmp, "zkevm_rw");
+
+                tmp = rw_table<FieldType, stage>::call_context_editable_lookup(
+                    current_state.call_id(0), std::size_t(call_context_field::log_index),
+                    current_state.rw_counter(0) + 3 + x,
+                    TYPE(0),  // is_write
+                    0,        // value_hi
+                    log_index);
+                lookup(tmp, "zkevm_rw");
             }
         }
     };

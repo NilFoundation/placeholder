@@ -176,7 +176,6 @@ struct l1_size_restrictions{
     std::size_t max_state = 500;
     std::size_t max_bytecodes_amount = 50;
     std::size_t max_mpt;
-    std::size_t max_call_commits = 500;
     std::size_t max_filter_indices;
 };
 
@@ -240,7 +239,7 @@ bool check_proof(
         grinding_bits != 0, grinding_bits);
     lpc_scheme_type lpc_scheme(fri_params);
 
-    SCOPED_LOG("Public preprocessor");
+    // SCOPED_LOG("Public preprocessor");
     typename nil::crypto3::zk::snark::placeholder_public_preprocessor<
         SmallFieldType, lpc_placeholder_params_type>::preprocessed_data_type
         lpc_preprocessed_public_data =
@@ -250,7 +249,7 @@ bool check_proof(
                                                       lpc_scheme,
                                                       max_quotient_poly_chunks);
 
-    SCOPED_LOG("Private preprocessor");
+    // SCOPED_LOG("Private preprocessor");
     typename nil::crypto3::zk::snark::placeholder_private_preprocessor<
         SmallFieldType, lpc_placeholder_params_type>::preprocessed_data_type
         lpc_preprocessed_private_data =
@@ -259,7 +258,7 @@ bool check_proof(
                 lpc_placeholder_params_type>::process(bp, assignment.private_table(),
                                                       desc);
 
-    SCOPED_LOG("Prover");
+    // SCOPED_LOG("Prover");
     auto lpc_proof = nil::crypto3::zk::snark::
         placeholder_prover<FieldType, lpc_placeholder_params_type>::process(
             lpc_preprocessed_public_data, std::move(lpc_preprocessed_private_data), desc,
@@ -268,7 +267,7 @@ bool check_proof(
     // We must not use the same instance of lpc_scheme.
     lpc_scheme_type verifier_lpc_scheme(fri_params);
 
-    SCOPED_LOG("Verifier");
+    // SCOPED_LOG("Verifier");
     bool verifier_res = nil::crypto3::zk::snark::
         placeholder_verifier<FieldType, lpc_placeholder_params_type>::process(
             *lpc_preprocessed_public_data.common_data, lpc_proof, desc, bp,

@@ -125,22 +125,6 @@ namespace nil::blueprint::bbf::zkevm_big_field{
             };
         }
 
-        static std::vector<TYPE> log_lookup(
-            TYPE call_id,
-            TYPE rw_counter,
-            TYPE log_index
-        ){
-            return {
-                TYPE(std::size_t(rw_operation_type::log_index)),
-                call_id,
-                log_index,            // address
-                rw_counter,
-                TYPE(1),              // is_write
-                TYPE(0),              // value_hi
-                log_index
-            };
-        }
-
         static std::vector<TYPE> calldata_r_lookup(
             TYPE call_id,
             TYPE calldata_address,
@@ -258,7 +242,7 @@ namespace nil::blueprint::bbf::zkevm_big_field{
             }
             lookup_table("zkevm_rw",std::vector<std::size_t>({0,1,2,3,4,5,6}),0,max_rw_size);
             lookup_table("zkevm_rw_timeline",std::vector<std::size_t>({7,3,8}),0,max_rw_size);
-            lookup_table("zkevm_rw_log",std::vector<std::size_t>({0,3}),0,max_rw_size);
+            lookup_table("zkevm_rw_log",std::vector<std::size_t>({0,2,3}),0,max_rw_size);
         }
     };
 }

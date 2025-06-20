@@ -82,8 +82,10 @@ namespace nil {
             public:
                 virtual zkevm_keccak_buffers keccaks() const {return _keccaks;}
                 virtual zkevm_keccak_buffers bytecodes() const  { return _bytecodes;}
+                virtual zkevm_keccak_buffers logs_buffers() const  { return _logs_buffers;}
                 virtual state_operations_vector state_operations()  const {return _state_operations;}
                 virtual short_rw_operations_vector short_rw_operations()  const {return _short_rw_operations;}
+                virtual std::vector<zkevm_filter_indices> filter_indices()  const { return _filter_indices;}
                 virtual std::vector<copy_event> copy_events()  const { return _copy_events;}
                 virtual std::vector<zkevm_state> zkevm_states()  const { return _zkevm_states;}
                 virtual std::vector<std::pair<zkevm_word_type, zkevm_word_type>>  exponentiations() const {return _exponentiations;}
@@ -988,10 +990,17 @@ namespace nil {
                     }
                     _logs.push_back({tx_id, log_index, call_context_address, topics});
 
-                    _short_rw_operations.push_back(log_rw_operation(
+                    _short_rw_operations.push_back(call_context_w_operation(
                             call_id,
+                            call_context_field::log_index,
                             rw_counter++,
-                            true,
+                            log_index
+                        ));
+                    
+                    _short_rw_operations.push_back(call_context_r_operation(
+                            call_id,
+                            call_context_field::log_index,
+                            rw_counter++,
                             log_index
                         ));
 

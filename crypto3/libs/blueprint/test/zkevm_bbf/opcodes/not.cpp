@@ -83,7 +83,6 @@ BOOST_AUTO_TEST_CASE(opcode_not) {
         circuits_to_run.insert("rw");
         circuits_to_run.insert("bytecode");
         circuits_to_run.insert("copy");
-        circuits_to_run.insert("logs");
         circuits_to_run.insert("bytecode-s");
         circuits_to_run.insert("rw-s");
         circuits_to_run.insert("copy-s");

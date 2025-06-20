@@ -69,7 +69,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
         static constexpr std::size_t rw_id_chunks_amount = 2;
         static constexpr std::size_t address_chunks_amount = 2;
         static constexpr std::size_t chunks_amount = 7;
-        static constexpr std::size_t op_selectors_amount = 4;
+        static constexpr std::size_t op_selectors_amount = 3;
 
         static std::size_t get_witness_amount() {
             return (rw_id_chunks_amount +  id_chunks_amount + address_chunks_amount   // Additional chunks
@@ -107,7 +107,6 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             std::vector<TYPE> memory_selector(max_rw_size);
             std::vector<TYPE> calldata_selector(max_rw_size);
             std::vector<TYPE> returndata_selector(max_rw_size);
-            std::vector<TYPE> log_index_selector(max_rw_size);
 
             std::vector<std::array<TYPE,chunks_amount>> diff_index_selectors(max_rw_size);
             std::vector<std::pair<TYPE, TYPE>> id_chunks(max_rw_size);
@@ -141,12 +140,14 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                     memory_selector[i] = op[i] == std::size_t(rw_operation_type::memory)? 1: 0;
                     calldata_selector[i] = op[i] == std::size_t(rw_operation_type::calldata)? 1: 0;
                     returndata_selector[i] = op[i] == std::size_t(rw_operation_type::returndata)? 1: 0;
-                    log_index_selector[i] = op[i] == rw_operation_type::log_index? 1: 0;
                     id_chunks[i].first = ((id[i].to_integral() & 0xFFFF0000) >> 16);
                     id_chunks[i].second = id[i].to_integral() & 0xFFFF;
 
                     address_chunks[i].first = ((address[i].to_integral() & 0xFFFF0000) >> 16);
                     address_chunks[i].second = address[i].to_integral() & 0xFFFF;
+
+                    rw_id_chunks[i].first = ((rw_id[i].to_integral() & 0xFFFF0000) >> 16);
+                    rw_id_chunks[i].second = rw_id[i].to_integral() & 0xFFFF;
 
                     sorted_prev = sorted;
                     sorted[0] = op[i];
@@ -183,7 +184,6 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                 allocate(memory_selector[i], current_columm++, i);
                 allocate(calldata_selector[i], current_columm++, i);
                 allocate(returndata_selector[i], current_columm++, i);
-                allocate(log_index_selector[i], current_columm++, i);
                 allocate(id_chunks[i].first, current_columm++, i);
                 allocate(id_chunks[i].second, current_columm++, i);
                 allocate(address_chunks[i].first, current_columm++, i);
@@ -215,18 +215,11 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                 every_row_constraints.push_back({memory_selector[1] * (memory_selector[1] - 1), "Memory selector is 0 or 1"});
                 every_row_constraints.push_back({calldata_selector[1] * (calldata_selector[1] - 1), "Calldata selector is 0 or 1"});
                 every_row_constraints.push_back({returndata_selector[1] * (returndata_selector[1] - 1), "Returndata selector is 0 or 1"});
-                every_row_constraints.push_back(log_index_selector[1] * (log_index_selector[1] - 1), "Log index selector is 0 or 1");
 
                 // is_filled is sum of rw_operation_type selectors
                 every_row_constraints.push_back({is_filled[1] - (
                     memory_selector[1] + calldata_selector[1] + returndata_selector[1]
                 ), "is_filled is a sum of rw_operation_type selectors"});
-                
-
-                // is_filled is sum of rw_operation_type selectors
-                every_row_constraints.push_back(is_filled[1] - (
-                    memory_selector[1] + calldata_selector[1] + returndata_selector[1] + log_index_selector[1]
-                ));
 
                 // is_filled is always 0 and 1, so two rw_operation_type selectors cannot be 1 simultaneously
                 every_row_constraints.push_back( {is_filled[1] * (is_filled[1] - 1), "Is_filled is always 0 or 1"} );
@@ -237,7 +230,6 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                     memory_selector[1] * std::size_t(rw_operation_type::memory) +
                     calldata_selector[1] * std::size_t(rw_operation_type::calldata) +
                     returndata_selector[1] * std::size_t(rw_operation_type::returndata) +
-                    log_index_selector[1] * std::size_t(rw_operation_type::log_index) +
                     (1 - is_filled[1]) * std::size_t(rw_operation_type::padding)
                 ), "Op is encoded correctly by rw_operation_type selectors"});
 
@@ -360,13 +352,6 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                     std::vector<TYPE> tmp = {context_object.relativize(constraint, -1)};
                     context_object.relative_lookup(tmp, "chunk_16_bits/full", 0, max_rw_size-1);
                 }
-                for( auto &constraint: non_first_row_constraints ){
-                    context_object.relative_constrain(context_object.relativize(constraint, -1), 1, max_rw_size - 1);
-                }
-
-                context_object.relative_lookup({
-                    context_object.relativize(rw_id[1] * log_index_selector[1], -1)
-                }, "zkevm_log_rw", 0, max_rw_size-1);
             }
         }
         std::vector<TYPE> timeline_lookup() const {

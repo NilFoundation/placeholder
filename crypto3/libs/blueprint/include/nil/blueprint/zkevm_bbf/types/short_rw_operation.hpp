@@ -120,22 +120,6 @@ namespace nil {
                 return r;
             }
 
-            short_rw_operation log_rw_operation(
-                std::size_t id,
-                std::size_t rw_id,
-                bool is_write,
-                std::size_t value
-            ){
-                short_rw_operation r;
-                r.op = rw_operation_type::log_index;
-                r.id = id;
-                r.address = value;
-                r.rw_counter = rw_id;
-                r.is_write = is_write;
-                r.value = zkevm_word_type(value);
-                return r;
-            }
-
             short_rw_operation calldata_rw_operation(
                 std::size_t id,
                 std::size_t address,
@@ -195,6 +179,7 @@ namespace nil {
                     || field == call_context_field::lastcall_returndata_offset
                     || field == call_context_field::lastcall_returndata_length
                     || field == call_context_field::call_status
+                    || field == call_context_field::log_index
                 );
                 short_rw_operation r;
                 r.op = rw_operation_type::call_context;
@@ -216,6 +201,7 @@ namespace nil {
                     field == call_context_field::lastcall_id
                     || field == call_context_field::lastcall_returndata_offset
                     || field == call_context_field::lastcall_returndata_length
+                    || field == call_context_field::log_index
                 );
                 short_rw_operation r;
                 r.op = rw_operation_type::call_context;
