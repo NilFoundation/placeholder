@@ -75,6 +75,7 @@ BOOST_AUTO_TEST_CASE(opcode_not) {
     max_sizes.max_zkevm_rows = 300;
     max_sizes.max_exp_rows = 500;
     max_sizes.max_exponentiations = 50;
+    max_sizes.max_filter_indices = 500;
 
     if( circuits_to_run.empty() ) {
         circuits_to_run.insert("zkevm");

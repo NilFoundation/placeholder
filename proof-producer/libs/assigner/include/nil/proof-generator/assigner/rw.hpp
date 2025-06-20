@@ -35,11 +35,12 @@ namespace nil {
                 return std::format("rw operations size {} exceeds circuit limit {}", input->value.size(), options.circuits_limits.max_rw_rows);
             }
 
-            // TODO: state operations, timeline
+            // TODO: state operations, timeline, indices
             ComponentType instance(
-                context_object, {input->value, {}, {}},
+                context_object, {input->value, {}, {}, {}},
                 options.circuits_limits.max_rw_rows,
-                options.circuits_limits.max_state_rows
+                options.circuits_limits.max_state_rows,
+                options.circuits_limits.max_filter_indices
             );
 
             return {};

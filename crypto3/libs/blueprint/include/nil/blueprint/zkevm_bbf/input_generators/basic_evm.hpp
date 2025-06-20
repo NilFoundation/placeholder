@@ -124,6 +124,10 @@ namespace nil {
                 std::vector<zkevm_word_type> stack;
                 std::vector<std::uint8_t> memory;
                 std::vector<std::uint8_t> bytecode;
+                static constexpr std::size_t filter_chunks_amount = 128;
+                zkevm_word_type tx_filter[filter_chunks_amount];
+                zkevm_word_type block_filter[filter_chunks_amount];
+                
 
                 bool execution_status = true;
                 std::string error_message;
@@ -133,6 +137,10 @@ namespace nil {
                     pc = 0;
                     gas = 0;
                     tx.hash = 0;
+                    for (std::size_t i = 0; i < filter_chunks_amount; i++) {
+                        block_filter[i] = zkevm_word_type(0);
+                    }
+
                     current_opcode = opcode_to_number(zkevm_opcode::start_block);
 
                     _call_stack.push_back(zkevm_call_context());
@@ -266,6 +274,10 @@ namespace nil {
                     memory = {};
                     stack = {};
                     returndata = {};
+                    for (std::size_t i = 0; i < filter_chunks_amount; i++) {
+                        tx_filter[i] = zkevm_word_type(0);
+                    }
+                    
 
                     is_end_call = false;
                 }
@@ -1620,7 +1632,6 @@ namespace nil {
                     for (std::size_t i = 0; i < precomp_args_length; i++) {
                         precomp_input.push_back(memory[precomp_args_offset+i]);
                     }
-
                     decrease_gas(100); // address access (precompiles are always warm)
 
                     auto result = evaluate_precompile(Precompile{precomp_addr},
@@ -1629,6 +1640,7 @@ namespace nil {
 
                     decrease_gas(result.gas_used);
                     returndata = result.data;
+
 
                     std::size_t real_ret_length = std::min(returndata.size(), precomp_ret_length);
                     for (std::size_t i = 0; i < real_ret_length; i++) {

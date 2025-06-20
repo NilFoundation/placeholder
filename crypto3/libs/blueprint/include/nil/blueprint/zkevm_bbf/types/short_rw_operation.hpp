@@ -179,6 +179,7 @@ namespace nil {
                     || field == call_context_field::lastcall_returndata_offset
                     || field == call_context_field::lastcall_returndata_length
                     || field == call_context_field::call_status
+                    || field == call_context_field::log_index
                 );
                 short_rw_operation r;
                 r.op = rw_operation_type::call_context;
@@ -200,6 +201,7 @@ namespace nil {
                     field == call_context_field::lastcall_id
                     || field == call_context_field::lastcall_returndata_offset
                     || field == call_context_field::lastcall_returndata_length
+                    || field == call_context_field::log_index
                 );
                 short_rw_operation r;
                 r.op = rw_operation_type::call_context;

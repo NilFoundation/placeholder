@@ -83,7 +83,7 @@ BOOST_AUTO_TEST_CASE(logx) {
     opcode_tester.push_opcode(zkevm_opcode::LOG4);
     opcode_tester.push_opcode(zkevm_opcode::STOP);
 
-    max_sizes.max_keccak_blocks = 10;
+    max_sizes.max_keccak_blocks = 100;
     max_sizes.max_bytecode = 3000;
     max_sizes.max_mpt = 0;
     max_sizes.max_rw = 5000;
@@ -91,6 +91,7 @@ BOOST_AUTO_TEST_CASE(logx) {
     max_sizes.max_zkevm_rows = 100;
     max_sizes.max_exp_rows = 500;
     max_sizes.max_exponentiations = 50;
+    max_sizes.max_filter_indices = 500;
 
     if( circuits_to_run.empty() ) {
         circuits_to_run.insert("zkevm");
@@ -98,9 +99,11 @@ BOOST_AUTO_TEST_CASE(logx) {
         circuits_to_run.insert("rw");
         circuits_to_run.insert("bytecode");
         circuits_to_run.insert("copy");
+        circuits_to_run.insert("logs");
         circuits_to_run.insert("bytecode-s");
         circuits_to_run.insert("rw-s");
         circuits_to_run.insert("copy-s");
+        circuits_to_run.insert("logs-s");
     }
     complex_opcode_test<big_field_type, small_field_type>(opcode_tester, max_sizes);
 }

@@ -152,6 +152,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
         using generic_component<FieldType, stage>::constrain;
         using generic_component<FieldType, stage>::lookup;
         using generic_component<FieldType, stage>::multi_lookup_table;
+        using generic_component<FieldType, stage>::lookup_table;
     public:
         using typename generic_component<FieldType,stage>::TYPE;
         using input_type = typename std::conditional<stage==GenerationStage::ASSIGNMENT, short_rw_operations_vector, std::nullptr_t>::type;

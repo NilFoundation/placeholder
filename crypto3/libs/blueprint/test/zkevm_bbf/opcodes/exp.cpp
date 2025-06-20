@@ -117,6 +117,7 @@ BOOST_AUTO_TEST_CASE(exp) {
     max_sizes.max_zkevm_rows = 300;
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 10000;
+    max_sizes.max_filter_indices = 500;
 
     if( circuits_to_run.empty() ) {
         circuits_to_run.insert("zkevm");
@@ -128,6 +129,7 @@ BOOST_AUTO_TEST_CASE(exp) {
         circuits_to_run.insert("bytecode-s");
         circuits_to_run.insert("rw-s");
         circuits_to_run.insert("copy-s");
+        circuits_to_run.insert("logs-s");
     }
     complex_opcode_test<big_field_type, small_field_type>(opcode_tester, max_sizes);
 }

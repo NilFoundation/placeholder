@@ -63,6 +63,7 @@ namespace nil {
                 virtual std::size_t opcode() const = 0;
                 virtual zkevm_word_type bytecode_hash() const = 0;
                 virtual std::size_t call_id() const = 0;
+                virtual std::size_t log_index() const = 0;
                 virtual zkevm_word_type additional_input() const = 0;
                 virtual std::size_t block_id() const = 0;
                 virtual std::size_t tx_id() const = 0;
@@ -94,7 +95,8 @@ namespace nil {
                 tx_id = 8,
                 returndatasize = 9,
                 modified_items_amount = 10,
-                bytecode_size = 11
+                bytecode_size = 11,
+                log_index = 12
             };
 
             class zkevm_state : public abstract_zkevm_state{
@@ -289,6 +291,10 @@ namespace nil {
                 }
                 virtual std::size_t call_id() const override{
                     return _call_id;
+                }
+                virtual std::size_t log_index() const override{
+                    BOOST_ASSERT(size_t_fields.count(zkevm_state_size_t_field::log_index));
+                    return size_t_fields.at(zkevm_state_size_t_field::log_index);
                 }
                 virtual zkevm_word_type additional_input() const override{
                     BOOST_ASSERT(word_fields.count(zkevm_state_word_field::additional_input));

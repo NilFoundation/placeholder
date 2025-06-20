@@ -105,7 +105,9 @@ namespace nil {
 
                 lastcall_id = 13,
                 lastcall_returndata_offset = 14,
-                lastcall_returndata_length = 15
+                lastcall_returndata_length = 15,
+
+                log_index = 16
             };
             static constexpr std::size_t call_context_readonly_field_amount = 13;
             static constexpr std::size_t call_context_fields_amount = 12;

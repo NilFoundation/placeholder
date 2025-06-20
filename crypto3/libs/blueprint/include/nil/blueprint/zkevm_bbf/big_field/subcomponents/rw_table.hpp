@@ -242,6 +242,7 @@ namespace nil::blueprint::bbf::zkevm_big_field{
             }
             lookup_table("zkevm_rw",std::vector<std::size_t>({0,1,2,3,4,5,6}),0,max_rw_size);
             lookup_table("zkevm_rw_timeline",std::vector<std::size_t>({7,3,8}),0,max_rw_size);
+            lookup_table("zkevm_rw_log",std::vector<std::size_t>({0,2,3}),0,max_rw_size);
         }
     };
 }

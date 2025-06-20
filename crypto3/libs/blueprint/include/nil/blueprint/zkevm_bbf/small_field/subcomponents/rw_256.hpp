@@ -75,7 +75,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             return (id_chunks_amount + rw_id_chunks_amount   // Additional chunks
                 + chunks_amount                              // Diff selectors
                 + op_selectors_amount                        // Selectors for op
-                + 10);
+                + 11);
         }
 
         std::size_t max_rw_size;
@@ -92,6 +92,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
         std::vector<TYPE> diff;
         std::vector<TYPE> inv_diff;
         std::vector<TYPE> is_diff_non_zero; // For lower constraints degree
+        std::vector<TYPE> is_log_address;
 
         static constexpr std::size_t get_is_filled_column_index() {
             return 0;
@@ -115,7 +116,8 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             is_first(max_rw_size),
             diff(max_rw_size),
             inv_diff(max_rw_size),
-            is_diff_non_zero(max_rw_size)
+            is_diff_non_zero(max_rw_size),
+            is_log_address(max_rw_size)
         {
             BOOST_LOG_TRIVIAL(trace) << "RW256 instance construction";
 
@@ -150,6 +152,8 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                 for( std::size_t i = 0; i < max_rw_size; i++ ){
                     call_context_selector[i] = op[i] == std::size_t(rw_operation_type::call_context)? 1: 0;
                     stack_selector[i] = op[i] == std::size_t(rw_operation_type::stack)? 1: 0;
+
+                    is_log_address[i] = address[i] == std::uint8_t(call_context_field::log_index);
 
                     id_chunks[i].first = ((id[i].to_integral() & 0xFFFF0000) >> 16);
                     id_chunks[i].second = id[i].to_integral() & 0xFFFF;
@@ -200,6 +204,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                 allocate(diff[i], current_columm++, i);
                 allocate(inv_diff[i], current_columm++, i);
                 allocate(is_diff_non_zero[i], current_columm++, i);
+                allocate(is_log_address[i], current_columm++, i);
                 for( std::size_t j = 0; j < chunks_amount; j++ ){
                     allocate(diff_index_selectors[i][j], current_columm++, i);
                 }
@@ -301,7 +306,9 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                 non_first_row_constraints.push_back({diff[1] * (is_diff_non_zero[1] - 1), "Diff and inv_diff are correct"});
                 non_first_row_constraints.push_back({inv_diff[1] * (is_diff_non_zero[1] - 1), "Diff and inv_diff are correct"});
                 non_first_row_constraints.push_back({is_filled[1] * (is_diff_non_zero[1] - 1), "For all filled rows diff is non-zero"});
-
+                non_first_row_constraints.push_back({is_log_address[1] * (is_log_address[1] - 1), "is_log_address is correct"});
+                //under constrain
+                non_first_row_constraints.push_back({is_log_address[1] * (std::uint8_t(call_context_field::log_index) - address[1]), "is_log_address is correct"});
                 // is_write is always 0 or 1
                 every_row_constraints.push_back({is_write[1] * (is_write[1] - 1), "Is_write is always 0 or 1"});
 
@@ -350,6 +357,9 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                     std::vector<TYPE> tmp = {context_object.relativize(constraint, -1)};
                     context_object.relative_lookup(tmp, "chunk_16_bits/full", 0, max_rw_size-1);
                 }
+                context_object.relative_lookup({
+                    context_object.relativize(rw_id[1] * call_context_selector[1] * is_log_address[1] * is_write[1], -1)
+                }, "zkevm_log_rw", 0, max_rw_size-1);
             }
         }
         std::vector<TYPE> timeline_lookup(){

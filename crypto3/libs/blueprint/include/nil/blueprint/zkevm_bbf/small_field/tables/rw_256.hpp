@@ -210,6 +210,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                 }
             }
             multi_lookup_table("zkevm_rw_256", rw_256_table_areas, 0, max_rw_size);
+            lookup_table("zkevm_rw_256_log",std::vector<std::size_t>({0,2,3}),0,max_rw_size);
         }
 
 

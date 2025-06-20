@@ -31,6 +31,7 @@
 #include <nil/blueprint/component.hpp>
 
 #include <nil/blueprint/bbf/generic.hpp>
+#include <nil/blueprint/zkevm_bbf/small_field/tables/log.hpp>
 #include <nil/blueprint/zkevm_bbf/small_field/tables/state_timeline_table.hpp>
 #include <nil/blueprint/zkevm_bbf/small_field/tables/timeline_table.hpp>
 
@@ -58,11 +59,13 @@ namespace nil::blueprint::bbf::zkevm_small_field{
         using rw_256_type = rw_256<FieldType, stage>;
         using state_timeline_table_type = state_timeline_table<FieldType, stage>;
         using timeline_table_type = timeline_table<FieldType, stage>;
+        using log_table_type = log_table<FieldType, stage>;
 
         struct input_type{
             rw_tables_input_type                             rw_trace;
             typename timeline_table_type::input_type         timeline;
             typename state_timeline_table_type::input_type   state_trace;
+            typename log_table_type::input_type filter_indices;
         };
 
         // using value = typename FieldType::value_type;
@@ -76,20 +79,22 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             std::size_t max_rw_size,
             std::size_t instances_rw_8,
             std::size_t instances_rw_256,
-            std::size_t max_state_size
+            std::size_t max_state_size,
+            std::size_t max_filter_indices
         ) {
             std::size_t witness_amount =
                 rw_8_type::get_witness_amount(instances_rw_8)
                 + rw_256_type::get_witness_amount(instances_rw_256)
                 + state_timeline_table_type::get_witness_amount()
                 + timeline_table_type::get_witness_amount() * (instances_rw_8 + instances_rw_256 + 1)
+                + log_table_type::get_witness_amount()
                 + 6;
             BOOST_LOG_TRIVIAL(info) << "RW circuit witness amount = " << witness_amount;
             return {
                 .witnesses = witness_amount,
                 .public_inputs = 0,
-                .constants = 0,
-                .rows = max_rw_size + max_state_size
+                .constants = 1,
+                .rows = max_rw_size + max_state_size + max_filter_indices
             };
         }
 
@@ -98,14 +103,16 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             std::size_t max_rw_size,
             std::size_t instances_rw_8,
             std::size_t instances_rw_256,
-            std::size_t max_state
+            std::size_t max_state,
+            std::size_t max_filter_indices
         ) {}
 
         rw(context_type &context_object, const input_type &input,
             std::size_t max_rw_size,
             std::size_t instances_rw_8,
             std::size_t instances_rw_256,
-            std::size_t max_state
+            std::size_t max_state,
+            std::size_t max_filter_indices
         ) :generic_component<FieldType,stage>(context_object) {
             std::size_t current_column = 0;
 
@@ -123,6 +130,11 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             for( std::size_t i = 0; i < state_timeline_table_type::get_witness_amount(); i++ ) state_timeline_table_area.push_back(current_column++);
             context_type state_table_ct = context_object.subcontext(state_timeline_table_area,0,max_state);
             state_timeline_table_type st(state_table_ct, input.state_trace, max_state);
+
+            std::vector<std::size_t> log_table_area;
+            for( std::size_t i = 0; i < log_table_type::get_witness_amount(); i++ ) log_table_area.push_back(current_column++);
+            context_type log_table_ct = context_object.subcontext(log_table_area,0,max_filter_indices);
+            log_table_type lt(log_table_ct, input.filter_indices, max_filter_indices);
 
             std::size_t instances_timeline = instances_rw_8 + instances_rw_256 + 1;
             if constexpr (stage == GenerationStage::ASSIGNMENT) {
@@ -216,6 +228,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                     }
                     context_object.relative_lookup(timeline_to_state, "zkevm_state_timeline", 0, max_rw_size);
                 }
+
             }
         }
     };

@@ -4,6 +4,7 @@ from web3 import Web3
 import time
 import sys
 
+
 RPC_URL = "https://0xrpc.io/eth"
 #BLOCK_NUMBER = "0x1393622"  # 20526626 in hex
 #BLOCK_NUMBER = "0x1393624"  # 20526628 in hex
