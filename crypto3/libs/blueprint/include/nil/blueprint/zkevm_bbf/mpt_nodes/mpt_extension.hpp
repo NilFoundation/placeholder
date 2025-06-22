@@ -79,6 +79,11 @@ public:
     static void allocate_public_inputs(
             context_type &context, input_type &input) {}
 */
+
+    static std::size_t get_witness_amount(){
+        return 293;
+    }
+
     std::array<TYPE,32> parent_hash;
     std::array<TYPE, 32> ext_value;  // ext_value[32]
 

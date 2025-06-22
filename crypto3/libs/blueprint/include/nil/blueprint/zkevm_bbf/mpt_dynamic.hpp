@@ -74,9 +74,9 @@ public:
         return {
             .witnesses = 1 // rlc_challenge copy column
                 + mpt_node_common<FieldType, stage>::get_witness_amount() // the common columns for all node types
-                + std::max(mpt_branch<FieldType, stage>::get_witness_amount(), // maximum of needed columns
-                         // mpt_extension<FieldType, stage>::get_witness_amount(),
-                         mpt_leaf_proxy<FieldType, stage>::get_witness_amount())
+                + std::max({mpt_branch<FieldType, stage>::get_witness_amount(), // maximum of needed columns
+                         mpt_extension<FieldType, stage>::get_witness_amount(),
+                         mpt_leaf_proxy<FieldType, stage>::get_witness_amount()})
                 + zkevm_small_field::keccak_table<FieldType,stage>::get_witness_amount(), // keccak table
             .public_inputs = 1,
             .constants = 0,
@@ -120,9 +120,9 @@ public:
 
         // All other columns are delegated to node-specific subcomponents. For them we'll create subcontexts
         std::vector<std::size_t> node_specific_columns;
-        std::size_t num_of_node_specific_columns = std::max(mpt_branch<FieldType, stage>::get_witness_amount(),
-                         // mpt_extension<FieldType, stage>::get_witness_amount(),
-                         mpt_leaf_proxy<FieldType, stage>::get_witness_amount());
+        std::size_t num_of_node_specific_columns = std::max({mpt_branch<FieldType, stage>::get_witness_amount(),
+                         mpt_extension<FieldType, stage>::get_witness_amount(),
+                         mpt_leaf_proxy<FieldType, stage>::get_witness_amount()});
 
         for(std::size_t i = 0; i < num_of_node_specific_columns; i++, cur_column++) {
             node_specific_columns.push_back(cur_column);
