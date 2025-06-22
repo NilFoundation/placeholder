@@ -106,6 +106,7 @@ public:
         TYPE rlc_value_node_prefix;
         std::array<TYPE, 32> rlc_key;
         std::array<TYPE, 32> rlc_value;
+        std::array<TYPE, 32> rlc_key_new;
 
         // cells for computing the accumulated key
         std::array<TYPE,32> key_part_lower;   // the lower 4 bits of each key_part byte
@@ -117,6 +118,9 @@ public:
         // I(x) = I1(x / 8) * I2(x % 8)
         std::array<TYPE, 4> kplh_indic_1 = {0,0,0,0};     // I1 indicator function for key_part_length_half
         std::array<TYPE, 8> kplh_indic_2 = {0,0,0,0,0,0,0,0}; // I2 indicator function for key_part_length_half
+
+        std::array<TYPE, 4> rlc_indic_1 = {0,0,0,0};     // I1 indicator function for key_part_length_half
+        std::array<TYPE, 8> rlc_indic_2 = {0,0,0,0,0,0,0,0}; // I2 indicator function for key_part_length_half
         // ====
 
         std::size_t node_key_bytes;
@@ -127,6 +131,10 @@ public:
             std::vector<uint8_t> hash_input;
             std::size_t node_key_length = n.len.at(0);
             node_key_bytes = ceil(node_key_length/2);
+
+            // different indicators for RLC key  
+            rlc_indic_1[(node_key_length / 2) / 8] = 1;
+            rlc_indic_2[(node_key_length / 2) % 8] = 1;
 
             key_length_bytes = node_key_bytes;
 
@@ -183,12 +191,12 @@ public:
                 hash_input.emplace(hash_input.begin(), rlp_node_prefix0);
             }
 
-            for(std::size_t i = 0; i < hash_input.size(); i++) {
-                std::cout << "hash_input[" << i << "] = " << std::hex << unsigned(hash_input[i]) << std::dec << std::endl;
-            }
+            // for(std::size_t i = 0; i < hash_input.size(); i++) {
+            //     std::cout << "hash_input[" << i << "] = " << std::hex << unsigned(hash_input[i]) << std::dec << std::endl;
+            // }
 
-            std::cout << "node_key_bytes = " << std::hex << node_key_bytes << std::dec << std::endl;
-            std::cout << "total_value_length = " << total_value_length << std::endl;
+            // std::cout << "node_key_bytes = " << std::hex << node_key_bytes << std::dec << std::endl;
+            // std::cout << "total_value_length = " << total_value_length << std::endl;
 
             zkevm_word_type hash_value = nil::blueprint::zkevm_keccak_hash(hash_input);
             input.keccak_buffers->new_buffer({hash_input, hash_value});
@@ -197,7 +205,7 @@ public:
             for(std::size_t i = 0; i < 32; i++) {
                 parent_hash[i] = hash_value_byte[i];
             }
-            std::cout << "hash value = " << std::hex << hash_value << std::dec << std::endl;
+            // std::cout << "hash value = " << std::hex << hash_value << std::dec << std::endl;
 
             // zkevm_word_type node_key_part = n.value.at(0);
             // std::array<std::uint8_t,32> key_part_byte = w_to_8(node_key_part);
@@ -214,8 +222,8 @@ public:
             }
             std::cout << "]" << std::endl;
 
-            std::cout << "key_length_bytes = " << key_length_bytes << std::endl;
-            std::cout << "node_length = " << node_length << std::endl;
+            // std::cout << "key_length_bytes = " << key_length_bytes << std::endl;
+            // std::cout << "node_length = " << node_length << std::endl;
         }
 
         // NB: parent_hash allocations should precede everything else according to mpt_dynamic structure
@@ -288,6 +296,27 @@ public:
         constrain( indic2_sum * (1 - indic2_sum) );
         constrain( indic1_value * 8 + indic2_value - key_part_length_half );
 
+        TYPE rlc_indi1_sum;
+        TYPE rlc_indic1_value;
+        for(std::size_t i = 0; i < 4; i++) {
+            allocate(rlc_indic_1[i]);
+            constrain( rlc_indic_1[i] * (1 - rlc_indic_1[i]) );
+            rlc_indi1_sum += rlc_indic_1[i];
+            rlc_indic1_value += rlc_indic_1[i] * i;
+        }
+        constrain( rlc_indi1_sum * (1 - rlc_indi1_sum) );
+
+        TYPE rlc_indic2_sum;
+        TYPE rlc_indic2_value;
+        for(std::size_t i = 0; i < 8; i++) {
+            allocate(rlc_indic_2[i]);
+            constrain(rlc_indic_2[i] * (1 - rlc_indic_2[i]) );
+            rlc_indic2_sum += rlc_indic_2[i];
+            rlc_indic2_value += rlc_indic_2[i] * i;
+        }
+        constrain( rlc_indic2_sum * (1 - rlc_indic2_sum) );
+        constrain( rlc_indic1_value * 8 + rlc_indic2_value - key_length_bytes );
+
         // different possible values for key_part_length_half
         for(std::size_t l = 0; l < 32; l++) {
             TYPE selector = kplh_indic_1[l / 8] * kplh_indic_2[l % 8]; // selector == 1  <=>  key_part_length_half == l
@@ -352,15 +381,15 @@ public:
         // the first byte of RLP node prefix is always present
         rlc_value_node_prefix *= RLC;
         rlc_value_node_prefix += rlp_node[0];
-        std::cout << "rlc_value_node_prefix = " << rlc_value_node_prefix << std::endl;
+        // std::cout << "rlc_value_node_prefix = " << rlc_value_node_prefix << std::endl;
 
         // the second byte is optional
         rlc_value_node_prefix *= node_length_less_than_55 + (1 - node_length_less_than_55)*RLC;
         rlc_value_node_prefix += (1 - node_length_less_than_55) * rlp_node[1];
         allocate(rlc_value_node_prefix);
-        std::cout << "rlc_value_node_prefix = " << rlc_value_node_prefix << std::endl;
-        std::cout << "rlp_node[0] = " << rlp_node[0] << std::endl;
-        std::cout << "key_length_bytes = " << key_length_bytes << std::endl;
+        // std::cout << "rlc_value_node_prefix = " << rlc_value_node_prefix << std::endl;
+        // std::cout << "rlp_node[0] = " << rlp_node[0] << std::endl;
+        // std::cout << "key_length_bytes = " << key_length_bytes << std::endl;
 
         TYPE rlc_key_prefix, rlc_value_prefix; // non-allocated expressions for RLC of the RLP child prefix
 
@@ -368,31 +397,49 @@ public:
         rlc_key_prefix *= key_length_is_one_byte + (1 - key_length_is_one_byte) * RLC;
         rlc_key_prefix += rlp_key_prefix;
         allocate(rlc_key_prefix);
-        std::cout << "rlc_key_prefix = " << rlc_key_prefix << std::endl;
-        std::cout << "node_key_bytes = " << node_key_bytes << std::endl;
+        // std::cout << "rlc_key_prefix = " << rlc_key_prefix << std::endl;
+        // std::cout << "node_key_bytes = " << node_key_bytes << std::endl;
 
-        // we store only _one_ RLC for each _pair_ of bytes in a child hash
-        // loop through pairs of bytes
-        std::array<TYPE, 32> byte_not_in_key;
-        for(std::size_t b = 0; b < 32; b++) {
-            // TODO : This block is temporarily moved to assignment stage
-            // to assure no wrong constraints are generated. Must be fixed,
-            // otherwise the circuit is underconstrained!
-            if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                byte_not_in_key[b] = (b < 32 - node_key_bytes) ? 1 : 0;
-                rlc_key[b] = (b == 0) ? rlc_key_prefix : rlc_key[b-1];
-                rlc_key[b] *= byte_not_in_key[b] + (1 - byte_not_in_key[b]) * RLC;
-                rlc_key[b] += key_part[b]; // first byte in pair
-            }
-            allocate(rlc_key[b]);
-            std::cout << "rlc_key[" << b << "] = " << rlc_key[b] << std::endl;
+        // // we store only _one_ RLC for each _pair_ of bytes in a child hash
+        // // loop through pairs of bytes
+        // std::array<TYPE, 32> byte_not_in_key;
+        // for(std::size_t b = 0; b < 32; b++) {
+        //     // TODO : This block is temporarily moved to assignment stage
+        //     // to assure no wrong constraints are generated. Must be fixed,
+        //     // otherwise the circuit is underconstrained!
+        //     if constexpr (stage == GenerationStage::ASSIGNMENT) {
+        //         byte_not_in_key[b] = (b < 32 - node_key_bytes) ? 1 : 0;
+        //         rlc_key[b] = (b == 0) ? rlc_key_prefix : rlc_key[b-1];
+        //         rlc_key[b] *= byte_not_in_key[b] + (1 - byte_not_in_key[b]) * RLC;
+        //         rlc_key[b] += key_part[b]; // first byte in pair
+        //     }
+        //     allocate(rlc_key[b]);
+        //     std::cout << "rlc_key[" << b << "] = " << rlc_key[b] << std::endl;
+        // }
+
+        for(std::size_t l = 0; l < 32; l++) {
+            TYPE selector = rlc_indic_1[l / 8] * rlc_indic_2[l % 8]; // selector == 1  <=>  node_key_length == l (bytes)
+            TYPE rlc_prev = rlc_key_prefix;
+            for(std::size_t b = 0; b < 32; b++) {
+                rlc_key[b] += (rlc_prev * selector);
+                if (b >= 32 - l) {
+                    rlc_key[b] *= RLC * selector + (1 - selector);
+                    rlc_key[b] += key_part[b] * selector;
+                    rlc_prev *= RLC * selector + (1 - selector);
+                    rlc_prev += key_part[b] * selector;
+                }
+            }            
         }
+        for(std::size_t b = 0; b < 32; b++) {
+            allocate(rlc_key[b]);
+            // std::cout << "rlc_key[" << b << "] = " << rlc_key[b] << std::endl;
+        }   
 
         rlc_value_prefix = rlc_key[31];
         rlc_value_prefix *= RLC;
         rlc_value_prefix += rlp_value_prefix;
         allocate(rlc_value_prefix);
-        std::cout << "rlc_value_prefix = " << rlc_value_prefix << std::endl;
+        // std::cout << "rlc_value_prefix = " << rlc_value_prefix << std::endl;
 
         // we store only _one_ RLC for each _pair_ of bytes in a child hash
         // loop through pairs of bytes
@@ -401,7 +448,7 @@ public:
             rlc_value[b] *= RLC;
             rlc_value[b] += ext_value[b]; // first byte in pair
             allocate(rlc_value[b]);
-            std::cout << "rlc_value[" << b << "] = " << rlc_value[b] << std::endl;
+            // std::cout << "rlc_value[" << b << "] = " << rlc_value[b] << std::endl;
         }
 
         TYPE rlc_result = rlc_value[31] ;
