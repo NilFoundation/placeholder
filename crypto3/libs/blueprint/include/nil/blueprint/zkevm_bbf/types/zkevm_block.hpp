@@ -61,9 +61,10 @@ namespace nil {
                 // Pectra
                 zkevm_word_type  requests_hash;
 
-                // fork_type
                 std::size_t fork_type;
+                std::size_t tx_amount;
                 std::vector<std::uint8_t>      rlp_encoding;
+                std::map<std::size_t, zkevm_word_type> old_blocks_hashes;
             };
 
             bool is_valid_block_header(const zkevm_block &obj){

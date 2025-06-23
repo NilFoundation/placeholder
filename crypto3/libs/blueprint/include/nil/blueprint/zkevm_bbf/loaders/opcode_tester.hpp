@@ -83,7 +83,7 @@ namespace nil {
 
                 opcode_tester_block_loader(const zkevm_opcode_tester &opcode_tester) {
                     block.hash = zkevm_keccak_hash({0, 1, 2, 3, 4, 5});
-                    block.number = 123;
+                    block.block_number = {1, 2, 3};
                     block.parent_hash = zkevm_keccak_hash({0, 1, 2, 3, 4, 4});
                     block.tx_amount = 1;
 

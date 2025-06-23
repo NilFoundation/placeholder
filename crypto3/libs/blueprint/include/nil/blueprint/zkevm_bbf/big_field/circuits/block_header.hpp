@@ -383,7 +383,7 @@ namespace nil::blueprint::bbf::zkevm_big_field{
                     }
                     // lookup(tmp, "block_header_table");
                 }
-            }
+            }   
         }
     };
 }

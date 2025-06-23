@@ -1284,7 +1284,7 @@ namespace nil {
                 }
 
                 virtual void basefee() {
-                    stack.push_back(block.basefee);
+                    stack.push_back(zkevm_word_from_bytes(block.base_fee));
                     decrease_gas(2);
                     pc++;
                 }
@@ -1330,23 +1330,23 @@ namespace nil {
                 }
 
                 virtual void coinbase(){
-                    stack.push_back(block.coinbase);
-                    _call_stack.back().was_accessed.insert({block.coinbase, 1, 0});
+                    stack.push_back(block.miner);
+                    _call_stack.back().was_accessed.insert({block.miner, 1, 0});
                     decrease_gas(2);
                     pc++;
                 }
                 virtual void timestamp(){
-                    stack.push_back(block.timestamp);
+                    stack.push_back(zkevm_word_from_bytes(block.timestamp));
                     decrease_gas(2);
                     pc++;
                 }
                 virtual void number(){
-                    stack.push_back(block.number);
+                    stack.push_back(zkevm_word_from_bytes(block.number));
                     decrease_gas(2);
                     pc++;
                 }
                 virtual void difficulty(){
-                    stack.push_back(block.difficulty);
+                    stack.push_back(zkevm_word_from_bytes(block.difficulty));
                     decrease_gas(2);
                     pc++;
                 }

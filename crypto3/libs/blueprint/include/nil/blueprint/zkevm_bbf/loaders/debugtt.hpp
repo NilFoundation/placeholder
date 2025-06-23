@@ -74,11 +74,56 @@ namespace nil {
                     block.hash = block_list[current_block].first;
                     const auto &bt = block_list[current_block].second;
 
-                    block.number = atoi(bt.get_child("block.number").data().c_str());
-                    block.basefee = zkevm_word_from_string(bt.get_child("block.baseFeePerGas").data());
-                    block.difficulty = atoi(bt.get_child("block.difficulty").data().c_str());
-                    block.timestamp = atoi(bt.get_child("block.timestamp").data().c_str());
                     block.parent_hash = zkevm_word_from_string(bt.get_child("block.parentHash").data());
+                    block.sha3_uncles = zkevm_word_from_string(bt.get_child("block.sha3Uncles").data());
+                    block.miner = zkevm_word_from_string(bt.get_child("block.miner").data());
+                    block.state_root = zkevm_word_from_string(bt.get_child("block.stateRoot").data());
+                    block.tx_root = zkevm_word_from_string(bt.get_child("block.transactionsRoot").data());
+                    block.receipts_root = zkevm_word_from_string(bt.get_child("block.receiptsRoot").data());
+                    block.mix_hash = zkevm_word_from_string(bt.get_child("block.mixHash").data());
+
+                    block.timestamp = hex_string_to_bytes(bt.get_child("block.timestamp").data());
+                    block.block_number = hex_string_to_bytes(bt.get_child("block.number").data());
+                    
+                    auto logsbloom  = bt.get_child("block.logsBloom").data();
+                    for (std::size_t i = 0; i < 8; i++){
+                        block.logs_bloom[i] = zkevm_word_from_string(logsbloom.substr(64*i+2, 64));
+                    }
+
+                    std::size_t bn = 0;
+                    for (std::uint8_t b : block.block_number){
+                        bn = (bn << 8) | b;
+                    }
+                    // block numbers after each fork (https://ethereum.org/en/history/)
+                    if (bn >= 22431084) block.fork_type = 4;      // Pectra
+                    else if (bn >= 19426587) block.fork_type = 3; // Dencun
+                    else if (bn >= 17034870) block.fork_type = 2; // Shapella
+                    else if (bn >= 12965000) block.fork_type = 1; // London
+                    else block.fork_type = 0;
+
+                    auto nonce = hex_string_to_bytes(bt.get_child("block.nonce").data());
+                    BOOST_ASSERT(nonce.size() == 8);
+                    for(std::size_t i = 0; i < nonce.size(); i++){
+                        block.nonce[i] = nonce[i];
+                    }
+                    // block.difficulty = hex_string_to_bytes(bt.get_child("block.difficulty").data()); 
+                    block.gas_limit = hex_string_to_bytes(bt.get_child("block.gasLimit").data()); 
+                    block.gas_used = hex_string_to_bytes(bt.get_child("block.gasUsed").data()); 
+                    block.extra_data = hex_string_to_bytes(bt.get_child("block.extraData").data()); 
+
+                    if (block.fork_type >= 1) {
+                        block.base_fee =  hex_string_to_bytes(bt.get_child("block.baseFeePerGas").data());
+                    }
+
+                    if (block.fork_type >= 2) {
+                        block.withdrawals_root = zkevm_word_from_string(bt.get_child("block.withdrawalsRoot").data());
+                    }
+
+                    if (block.fork_type >= 3) {
+                        block.blob_gas_used = hex_string_to_bytes(bt.get_child("block.blobGasUsed").data()); 
+                        block.excess_blob_gas = hex_string_to_bytes(bt.get_child("block.excessBlobGas").data()); 
+                        block.parent_beacon_root = zkevm_word_from_string(bt.get_child("block.parentBeaconBlockRoot").data());
+                    }
 
                     BOOST_LOG_TRIVIAL(trace) << "ZKEVM HARDHAT INPUT GENERATOR loaded" << std::endl;
                     // 1. Load eth_accounts. Not good that we have only one initial state for all blocks
