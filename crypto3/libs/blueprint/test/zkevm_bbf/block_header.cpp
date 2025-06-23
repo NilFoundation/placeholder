@@ -21,6 +21,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //---------------------------------------------------------------------------//
+
 #define BOOST_TEST_MODULE plonk_block_header_test
 #include <array>
 #include <boost/test/unit_test.hpp>
@@ -29,11 +30,11 @@
 #include <ctime>
 #include <random>
 #include <nil/blueprint/bbf/circuit_builder.hpp>
-#include <nil/blueprint/zkevm_bbf/block_header.hpp>
+#include <nil/blueprint/zkevm_bbf/big_field/circuits/block_header.hpp>
 #include <nil/crypto3/algebra/curves/pallas.hpp>
 #include <nil/blueprint/zkevm_bbf/types/zkevm_word.hpp>
 #include <nil/blueprint/zkevm_bbf/types/zkevm_block.hpp>
-#include <nil/blueprint/zkevm_bbf/subcomponents/block_header_table.hpp>
+#include <nil/blueprint/zkevm_bbf/big_field/subcomponents/block_header_table.hpp>
 #include <nil/crypto3/test_tools/random_test_initializer.hpp>
 #include <nil/blueprint/zkevm_bbf/util/ptree.hpp>
 
@@ -57,23 +58,23 @@ using namespace nil::blueprint;
 //     return bytes;
 // }
 
-// boost::property_tree::ptree load_json_input(std::string path){
-//     std::ifstream ss;
-//     std::cout << "Open file " << std::string(TEST_DATA_DIR) + path << std::endl;
-//     ss.open(std::string(TEST_DATA_DIR) + path);
-//     if( !ss.is_open() ){
-//         BOOST_LOG_TRIVIAL(trace) << "Cannot open file " << std::string(TEST_DATA_DIR) + path ;
-//         exit(1);
-//     }
-//     boost::property_tree::ptree pt;
-//     boost::property_tree::read_json(ss, pt);
-//     ss.close();
+boost::property_tree::ptree load_json_input(std::string path){
+    std::ifstream ss;
+    std::cout << "Open file " << std::string(TEST_DATA_DIR) + path << std::endl;
+    ss.open(std::string(TEST_DATA_DIR) + path);
+    if( !ss.is_open() ){
+        BOOST_LOG_TRIVIAL(trace) << "Cannot open file " << std::string(TEST_DATA_DIR) + path ;
+        exit(1);
+    }
+    boost::property_tree::ptree pt;
+    boost::property_tree::read_json(ss, pt);
+    ss.close();
 
-//     return pt;
-// }
+    return pt;
+}
 
 bbf::zkevm_block block_loader(std::string path) {
-    auto block_ptree = load_hardhat_input(path + std::string("block.json"));
+    auto block_ptree = load_json_input(path + std::string("block.json"));
 
     bbf::zkevm_block block = {};
     block.hash = zkevm_word_from_string(block_ptree.get_child("block.hash").data());
@@ -141,11 +142,11 @@ public:
         bool expected_result = true) {
 
         nil::crypto3::test_tools::random_test_initializer<field_type> rnd;
-        typename bbf::block_header<field_type, bbf::GenerationStage::ASSIGNMENT>::input_type assignment_inputs;
+        typename bbf::zkevm_big_field::block_header<field_type, bbf::GenerationStage::ASSIGNMENT>::input_type assignment_inputs;
         assignment_inputs.input_blocks = {block};
         assignment_inputs.rlc_challenge = 7 ;//rnd.alg_random_engines.template get_alg_engine<field_type>()();
 
-        bool result = test_bbf_component<field_type, bbf::block_header>(
+        bool result = test_bbf_component<field_type, bbf::zkevm_big_field::block_header>(
             "block_header",
             {7},                        //  Public input
             assignment_inputs,  //  Assignment input

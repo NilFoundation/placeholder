@@ -101,7 +101,7 @@ namespace nil::blueprint::bbf {
                 if(bytes[0] >= 0xb8 && bytes[0] <= 0xbf){
                     is_big[0] = 1;
                     len_len[0] = bytes[0] - 0xb7;
-                    real_len_len = integral_type(len_len[0].data);
+                    real_len_len = len_len[0].to_integral();
 
                     auto rll = static_cast<std::size_t>(real_len_len);
                     for(std::size_t i = rll; i>=1; i--){
@@ -122,7 +122,7 @@ namespace nil::blueprint::bbf {
                     }
                 }
 
-                real_field_len = integral_type(field_len[0].data);
+                real_field_len = field_len[0].to_integral();
                 cur += static_cast<std::size_t>(real_len_len);
                 
                 while(cur < rlp_input.size()){

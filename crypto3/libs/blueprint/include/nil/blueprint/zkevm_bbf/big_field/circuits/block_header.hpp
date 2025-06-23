@@ -30,10 +30,10 @@
 #include <nil/blueprint/bbf/components/rlp/rlp_array.hpp>
 #include <nil/blueprint/zkevm_bbf/util.hpp>
 #include <nil/blueprint/bbf/components/hashes/keccak/util.hpp>
-#include <nil/blueprint/zkevm_bbf/subcomponents/keccak_table.hpp>
-#include <nil/blueprint/zkevm_bbf/subcomponents/block_header_table.hpp>
+#include <nil/blueprint/zkevm_bbf/big_field/subcomponents/keccak_table.hpp>
+#include <nil/blueprint/zkevm_bbf/big_field/subcomponents/block_header_table.hpp>
 
-namespace nil::blueprint::bbf{
+namespace nil::blueprint::bbf::zkevm_big_field{
 
     std::string field_name_from_index(std::size_t index){
         switch(index) {
@@ -95,14 +95,15 @@ namespace nil::blueprint::bbf{
         using generic_component<FieldType, stage>::lookup;
         using generic_component<FieldType, stage>::lookup_table;
 
+        using KeccakTable = keccak_table<FieldType, stage>;
+        using BlockHeaderTable = block_header_table<FieldType, stage>;
+        using RLPArray = rlp_array<FieldType, stage>;
+
     public:
 
         using typename generic_component<FieldType, stage>::table_params;
         using typename generic_component<FieldType, stage>::TYPE;
-
-        using KeccakTable = typename bbf::keccak_table<FieldType, stage>;
-        using BlockHeaderTable = typename bbf::block_header_table<FieldType, stage>;
-        using RLPArray = typename bbf::rlp_array<FieldType, stage>;
+        
         using value_type = typename FieldType::value_type;
         using field_integral_type = typename FieldType::integral_type;
         using zkevm_word_type = nil::blueprint::zkevm_word_type;
@@ -322,8 +323,8 @@ namespace nil::blueprint::bbf{
             context_type keccak_ct = context_object.subcontext(keccak_lookup_area, 0, keccak_max_blocks);
             KeccakTable kt(keccak_ct, {input.rlc_challenge, keccak_buffers}, keccak_max_blocks);
 
-            // context_type block_header_ct = context_object.subcontext(block_header_lookup_area, 0, max_rows);
-            // BlockHeaderTable bht(block_header_ct, input.input_blocks, max_blocks); 
+            context_type block_header_ct = context_object.subcontext(block_header_lookup_area, 0, max_rows);
+            BlockHeaderTable bht(block_header_ct, input.input_blocks, max_blocks); 
 
             if constexpr (stage == GenerationStage::CONSTRAINTS) {
                 for(std::size_t i = 0; i < max_blocks; i++) {
@@ -378,7 +379,7 @@ namespace nil::blueprint::bbf{
                     tmp.push_back(is_constructed[row]*block_number[row]);
                     tmp.push_back(is_constructed[row]*tag[row]);
                     for(std::size_t i = 0; i < 32; i++){
-                        tmp.push_back(is_constructed[row]*value[row][i]);
+                        tmp.push_back(is_constructed[row]*value[row][31-i]);
                     }
                     // lookup(tmp, "block_header_table");
                 }

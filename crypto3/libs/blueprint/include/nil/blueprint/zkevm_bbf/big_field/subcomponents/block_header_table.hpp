@@ -30,7 +30,7 @@
 #include <nil/blueprint/zkevm_bbf/types/zkevm_block.hpp>
 
 
-namespace nil::blueprint::bbf{
+namespace nil::blueprint::bbf::zkevm_big_field{
     // Component for block header table
     std::string field_name_from_tag(std::size_t index){
         switch(index) {
@@ -139,16 +139,10 @@ namespace nil::blueprint::bbf{
 
                 std::size_t block_counter = 0;
                 zkevm_block block;
-                std::size_t cur_row = 1;
-                while (block_counter < max_blocks){
-                    if(block_counter < input.size()){
-                        block = input[block_counter];
-                    }
-                    else {
-                        block = {}; //Maybe GENESIS_BLOCK?
-                        std::cout << "Empty block: " << block << std::endl;
-                    }
-
+                std::size_t cur_row = 0;
+                while (block_counter < input.size()){
+                    block = input[block_counter];
+                    
                     TYPE bn = 0;
                     for (std::size_t i = 0; i < block.block_number.size(); i++){
                         bn += block.block_number[i] * (1 << (8*i));
@@ -256,6 +250,13 @@ namespace nil::blueprint::bbf{
                     block_counter++;
                     cur_row += 29;
                 }
+                while ( cur_row < max_rows ) {
+                    selector[cur_row] = 0;
+                    tag[cur_row] = 0;
+                    block_number[cur_row] = 0;
+                    for(std::size_t j = 0; j < 32; j++) value[cur_row][j] = 0;
+                    cur_row++;
+                }
 
                 std::cout << std::left << std::setfill(' ') << std::setw(15) << "block number";
                 std::cout << std::left << "|" << std::setfill(' ') << std::setw(20) << "field";
@@ -308,9 +309,9 @@ namespace nil::blueprint::bbf{
 
             
             // declare dynamic lookup table
-            // std::vector<std::size_t> lookup_area;
-            // for (std::size_t i = 0; i < 35; i++) lookup_area.push_back(i);
-            // lookup_table("block_header_table", lookup_area, 0, max_rows);
+            std::vector<std::size_t> lookup_area;
+            for (std::size_t i = 0; i < 35; i++) lookup_area.push_back(i);
+            lookup_table("block_header_table", lookup_area, 0, max_rows);
         };
     };
 }

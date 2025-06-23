@@ -133,7 +133,7 @@ namespace nil::blueprint::bbf {
                 if(bytes[0] >= 0xc0 && bytes[0] <= 0xf7){
                     is_prefix[0] = 1;
                     array_len[0] = bytes[0] - 0xc0;
-                    real_array_len = integral_type(array_len[0].data);
+                    real_array_len = array_len[0].to_integral();
                     RLC[0] = bytes[0] + theta * (array_len[0] + 1);
                     for(std::size_t i = 1; i < header_rows; i++){
                         RLC[i] = RLC[i-1];
@@ -143,7 +143,7 @@ namespace nil::blueprint::bbf {
                     is_prefix[0] = 1;
                     is_big[0] = 1;
                     len_len[0] = bytes[0] - 0xf7;
-                    real_len_len = integral_type(len_len[0].data);
+                    real_len_len = len_len[0].to_integral();
 
                     auto rll = static_cast<std::size_t>(real_len_len);
                     for(std::size_t i = 1; i<=rll; i++){

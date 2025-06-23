@@ -31,6 +31,7 @@
 #include <nil/blueprint/component.hpp>
 
 #include <nil/blueprint/bbf/generic.hpp>
+#include <nil/blueprint/zkevm_bbf/types/zkevm_word.hpp>
 
 namespace nil {
     namespace blueprint {
