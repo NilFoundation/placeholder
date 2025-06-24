@@ -1,5 +1,6 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2025 Alexey Yashunsky <a.yashunsky@nil.foundation>
+// Copyright (c) 2025 Georgios Fotiadis <gfotiadis@nil.foundation>
 //
 // MIT License
 //
@@ -95,12 +96,8 @@ public:
         const input_type &input) : generic_component<FieldType,stage>(context_object) {
 
         TYPE key_length_bytes;
-        // std::array<TYPE, 2> rlp_child; // extension nodes have only two children: key and value
         TYPE node_length;
-        // std::array<TYPE, 2> rlp_node; // rlp_node prefix for an extension node fits into 2 values
         std::array<TYPE, 32> key_part;   // key_part[32]
-        // TYPE rlp_key_prefix;
-        // TYPE rlp_value_prefix;
 
         TYPE value_length_bytes = 32; // instead of allocating we use it as a constant for now
         TYPE node_num_of_bytes = 1; // node_num_of_bytes: number of bytes that compose the size of node = 1 or 2. Always 1 for extensions?
@@ -196,13 +193,6 @@ public:
                 hash_input.emplace(hash_input.begin(), rlp_node_prefix0);
             }
 
-            // for(std::size_t i = 0; i < hash_input.size(); i++) {
-            //     std::cout << "hash_input[" << i << "] = " << std::hex << unsigned(hash_input[i]) << std::dec << std::endl;
-            // }
-
-            // std::cout << "node_key_bytes = " << std::hex << node_key_bytes << std::dec << std::endl;
-            // std::cout << "total_value_length = " << total_value_length << std::endl;
-
             zkevm_word_type hash_value = nil::blueprint::zkevm_keccak_hash(hash_input);
             input.keccak_buffers->new_buffer({hash_input, hash_value});
 
@@ -210,10 +200,7 @@ public:
             for(std::size_t i = 0; i < 32; i++) {
                 parent_hash[i] = hash_value_byte[i];
             }
-            // std::cout << "hash value = " << std::hex << hash_value << std::dec << std::endl;
 
-            // zkevm_word_type node_key_part = n.value.at(0);
-            // std::array<std::uint8_t,32> key_part_byte = w_to_8(node_key_part);
             for(std::size_t i = 0; i < 32; i++) {
                 key_part[i] = key_value[i];
                 key_part_lower[i] = key_value[i] & 0xF;
@@ -221,37 +208,22 @@ public:
                 ext_value[i] = node_value[i];
             }
 
-            std::cout << "[" << std::endl;
-            for(auto &v : n.value) {
-                std::cout << "    value = " << std::hex << v << std::dec << std::endl;
-            }
-            std::cout << "]" << std::endl;
-
-            // std::cout << "key_length_bytes = " << key_length_bytes << std::endl;
-            // std::cout << "node_length = " << node_length << std::endl;
+            // std::cout << "[" << std::endl;
+            // for(auto &v : n.value) {
+            //     std::cout << "    value = " << std::hex << v << std::dec << std::endl;
+            // }
+            // std::cout << "]" << std::endl;
         }
 
         // NB: parent_hash allocations should precede everything else according to mpt_dynamic structure
-        // col 0-31: parent_hash bytes
         for(std::size_t i = 0; i < 32; i++) {
             allocate(parent_hash[i]);
         }
-        // col 32: length of key part before RLP prefix (in bytes)
         allocate(key_length_bytes);
         lookup(key_length_bytes, "chunk_16_bits/8bits");
-        // col 33: length of value before RLP prefix (in bytes)
         allocate(value_length_bytes);
-        // col 34: length of ext node before RLP prefix (in bytes):
-        // rlp_key_prefix || key_part || rlp_value_prefix || value
         allocate(node_length);
         lookup(node_length, "chunk_16_bits/8bits");
-        // allocate(rlp_key_prefix);
-        // allocate(rlp_value_prefix);
-        // for(std::size_t i = 0; i < 2; i++) {
-        //     // allocate(rlp_child[i]);
-        //     allocate(rlp_node[i]);
-        // }
-        // col 35-66: key part of ext node (in bytes)
         for(std::size_t i = 0; i < 32; i++) {
             allocate(key_part[i]);
         }
@@ -341,7 +313,6 @@ public:
             allocate(child_accumulated_key[i]);
         }
 
-        // col 67-98: value of ext node (in bytes) // TODO: starting from here the column numbers in comments are wrong
         for(std::size_t i = 0; i < 32; i++) {
             allocate(ext_value[i]);
         }
@@ -354,13 +325,11 @@ public:
             key_length_inverse = (key_length_bytes == 1) ? 0 : key_length_bytes.inversed();
             node_length_inverse = (node_length < 55) ? 0 : node_length.inversed();
         }
-        // col 99:
         allocate(key_length_inverse);
         TYPE key_length_is_one_byte = 1 - key_length_bytes * key_length_inverse;
         constrain(key_length_bytes * key_length_is_one_byte * (1 - key_length_bytes * key_length_is_one_byte));
         rlp_key_prefix = (1 - key_length_is_one_byte) * (128 + key_length_bytes);
 
-        // col 100:
         allocate(node_length_inverse);
         TYPE node_length_less_than_55 = 1 - node_length * node_length_inverse;
         constrain(node_length * node_length_less_than_55 * (node_length - node_length * node_length_less_than_55));
@@ -368,9 +337,7 @@ public:
         rlp_node[0] = 192 + node_length_less_than_55 * node_length + (1 - node_length_less_than_55) * 56;
         rlp_node[1] = (1 - node_length_less_than_55) * node_length;
 
-        // constrain(rlp_key_prefix * (128 + key_length_bytes - rlp_key_prefix) );
         constrain(rlp_key_prefix - ( (1 - key_length_is_one_byte) * (128 + key_length_bytes) ));
-        // constrain(128 + value_length_bytes - rlp_value_prefix); // if rlp_child[1] is constant, we don't need to allocate and constrain it
         constrain(rlp_node[1] - ( (1 - node_length_less_than_55) * node_length ));
         constrain(rlp_node[0] - ( 192 + node_length_less_than_55 * node_length + (1 - node_length_less_than_55) * 56 ));
         constrain((192 + node_length - rlp_node[0]) * (247 + node_num_of_bytes - rlp_node[0]) );
@@ -391,36 +358,14 @@ public:
         // the second byte is optional
         rlc_value_node_prefix *= node_length_less_than_55 + (1 - node_length_less_than_55)*RLC;
         rlc_value_node_prefix += (1 - node_length_less_than_55) * rlp_node[1];
-        allocate(rlc_value_node_prefix);
-        // std::cout << "rlc_value_node_prefix = " << rlc_value_node_prefix << std::endl;
-        // std::cout << "rlp_node[0] = " << rlp_node[0] << std::endl;
-        // std::cout << "key_length_bytes = " << key_length_bytes << std::endl;
+        allocate(rlc_value_node_prefix); 
 
         TYPE rlc_key_prefix, rlc_value_prefix; // non-allocated expressions for RLC of the RLP child prefix
 
         rlc_key_prefix = rlc_value_node_prefix;
         rlc_key_prefix *= key_length_is_one_byte + (1 - key_length_is_one_byte) * RLC;
         rlc_key_prefix += rlp_key_prefix;
-        allocate(rlc_key_prefix);
-        // std::cout << "rlc_key_prefix = " << rlc_key_prefix << std::endl;
-        // std::cout << "node_key_bytes = " << node_key_bytes << std::endl;
-
-        // // we store only _one_ RLC for each _pair_ of bytes in a child hash
-        // // loop through pairs of bytes
-        // std::array<TYPE, 32> byte_not_in_key;
-        // for(std::size_t b = 0; b < 32; b++) {
-        //     // TODO : This block is temporarily moved to assignment stage
-        //     // to assure no wrong constraints are generated. Must be fixed,
-        //     // otherwise the circuit is underconstrained!
-        //     if constexpr (stage == GenerationStage::ASSIGNMENT) {
-        //         byte_not_in_key[b] = (b < 32 - node_key_bytes) ? 1 : 0;
-        //         rlc_key[b] = (b == 0) ? rlc_key_prefix : rlc_key[b-1];
-        //         rlc_key[b] *= byte_not_in_key[b] + (1 - byte_not_in_key[b]) * RLC;
-        //         rlc_key[b] += key_part[b]; // first byte in pair
-        //     }
-        //     allocate(rlc_key[b]);
-        //     std::cout << "rlc_key[" << b << "] = " << rlc_key[b] << std::endl;
-        // }
+        allocate(rlc_key_prefix); 
 
         for(std::size_t l = 0; l < 32; l++) {
             TYPE selector = rlc_indic_1[l / 8] * rlc_indic_2[l % 8]; // selector == 1  <=>  node_key_length == l (bytes)
@@ -435,30 +380,27 @@ public:
                 }
             }            
         }
-        for(std::size_t b = 0; b < 32; b++) {
+        for(std::size_t b = 0; b < 32; b++) { 
             allocate(rlc_key[b]);
-            // std::cout << "rlc_key[" << b << "] = " << rlc_key[b] << std::endl;
         }   
 
         rlc_value_prefix = rlc_key[31];
         rlc_value_prefix *= RLC;
         rlc_value_prefix += rlp_value_prefix;
-        allocate(rlc_value_prefix);
-        // std::cout << "rlc_value_prefix = " << rlc_value_prefix << std::endl;
+        allocate(rlc_value_prefix); 
 
         // we store only _one_ RLC for each _pair_ of bytes in a child hash
         // loop through pairs of bytes
-        for(std::size_t b = 0; b < 32; b++) {
+        for(std::size_t b = 0; b < 32; b++) { 
             rlc_value[b] = (b == 0) ? rlc_value_prefix : rlc_value[b-1];
             rlc_value[b] *= RLC;
             rlc_value[b] += ext_value[b]; // first byte in pair
             allocate(rlc_value[b]);
-            // std::cout << "rlc_value[" << b << "] = " << rlc_value[b] << std::endl;
         }
 
         TYPE rlc_result = rlc_value[31] ;
 
-        std::cout << "rlc_result = " << rlc_result << std::endl;
+        BOOST_LOG_TRIVIAL(trace) << "rlc_result = " << rlc_result << std::endl;
 
         // zkevm_word_type power_of_2 = zkevm_word_type(1) << (31 * 8);
         auto keccak_tuple = chunks8_to_chunks16<TYPE>(parent_hash);

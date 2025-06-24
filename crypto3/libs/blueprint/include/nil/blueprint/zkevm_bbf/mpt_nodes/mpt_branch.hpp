@@ -1,5 +1,6 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2025 Alexey Yashunsky <a.yashunsky@nil.foundation>
+// Copyright (c) 2025 Georgios Fotiadis <gfotiadis@nil.foundation>
 //
 // MIT License
 //
