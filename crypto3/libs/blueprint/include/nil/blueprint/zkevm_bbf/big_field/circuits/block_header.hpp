@@ -265,7 +265,7 @@ namespace nil::blueprint::bbf::zkevm_big_field{
                             std::cout << std::dec << std::endl;
                             
                             if(field_index == 8) {
-                                bn = value[row-1][0] + value[row-1][1] * 256 + value[row-1][2] * (65536)  + value[row-1][3] * (65536 * 256);
+                                bn = value[row-1][3] + value[row-1][2] * 256 + value[row-1][1] * (65536)  + value[row-1][0] * (65536 * 256);
                                 is_block_number[row-1] = 1;
                             }
 
@@ -360,7 +360,7 @@ namespace nil::blueprint::bbf::zkevm_big_field{
                     constrain(is_constructed[row]*(is_constructed[row]-1), "is_constructed is 0 or 1");
                     constrain(is_block_number[row]*(is_block_number[row]-1));
                     constrain(is_constructed[row]*is_block_number[row]*
-                        (block_number[row] - (value[row][0] + value[row][1] * 256 + value[row][2] * (65536)  + value[row][3] * (65536 * 256))), 
+                        (block_number[row] - (value[row][3] + value[row][2] * 256 + value[row][1] * (65536)  + value[row][0] * (65536 * 256))), 
                         "block number composition from values");
 
                     if(row > 1 && row < max_rows - 1) {
@@ -381,7 +381,7 @@ namespace nil::blueprint::bbf::zkevm_big_field{
                     for(std::size_t i = 0; i < 32; i++){
                         tmp.push_back(is_constructed[row]*value[row][31-i]);
                     }
-                    // lookup(tmp, "block_header_table");
+                    lookup(tmp, "block_header_table");
                 }
             }   
         }
