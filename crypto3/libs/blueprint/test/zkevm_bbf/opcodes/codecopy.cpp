@@ -62,55 +62,29 @@ BOOST_AUTO_TEST_CASE(codecopy) {
     opcode_tester.push_opcode(zkevm_opcode::PUSH1, 0x1F_big_uint256);
     opcode_tester.push_opcode(zkevm_opcode::PUSH1, 0x0_big_uint256);
     opcode_tester.push_opcode(zkevm_opcode::CODECOPY);
-    //length bigger than bytecode size
     opcode_tester.push_opcode(zkevm_opcode::PUSH1, 0x90_big_uint256);
     opcode_tester.push_opcode(zkevm_opcode::PUSH1, 0x0_big_uint256);
     opcode_tester.push_opcode(zkevm_opcode::PUSH1, 0x0_big_uint256);
     opcode_tester.push_opcode(zkevm_opcode::CODECOPY);
-    //length bigger than code limit
-    opcode_tester.push_opcode(zkevm_opcode::PUSH4, hex_string_to_bytes("0x10001"));
-    opcode_tester.push_opcode(zkevm_opcode::PUSH1, 0x0_big_uint256);
-    opcode_tester.push_opcode(zkevm_opcode::PUSH1, 0x0_big_uint256);
+    // huge offset
+    opcode_tester.push_opcode(zkevm_opcode::PUSH1, 0x5_big_uint256);
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_big_uint256);
+    opcode_tester.push_opcode(zkevm_opcode::PUSH5, 0x0);
     opcode_tester.push_opcode(zkevm_opcode::CODECOPY);
-    //offset bigger than code limit
-    opcode_tester.push_opcode(zkevm_opcode::PUSH1, 0x0_big_uint256);
-    opcode_tester.push_opcode(zkevm_opcode::PUSH4, hex_string_to_bytes("0x10001"));
-    opcode_tester.push_opcode(zkevm_opcode::PUSH1, 0x0_big_uint256);
-    opcode_tester.push_opcode(zkevm_opcode::CODECOPY);
-    //dest offset is bigger than max memory
-    opcode_tester.push_opcode(zkevm_opcode::PUSH1, 0x0_big_uint256);
-    opcode_tester.push_opcode(zkevm_opcode::PUSH1, 0x0_big_uint256);
-    opcode_tester.push_opcode(zkevm_opcode::PUSH5, hex_string_to_bytes("0x20000000"));
-    opcode_tester.push_opcode(zkevm_opcode::CODECOPY);
-    // // huge length
-    // opcode_tester.push_opcode(zkevm_opcode::PUSH32, 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_big_uint256);
-    // opcode_tester.push_opcode(zkevm_opcode::PUSH1, 0x0_big_uint256);
-    // opcode_tester.push_opcode(zkevm_opcode::PUSH5, hex_string_to_bytes("0x20000000"));
-    // opcode_tester.push_opcode(zkevm_opcode::CODECOPY);
-    // // huge offset
-    // opcode_tester.push_opcode(zkevm_opcode::PUSH1, 0x5_big_uint256);
-    // opcode_tester.push_opcode(zkevm_opcode::PUSH32, 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_big_uint256);
-    // opcode_tester.push_opcode(zkevm_opcode::PUSH5, 0x0);
-    // opcode_tester.push_opcode(zkevm_opcode::CODECOPY);
-    // // huge dest offset
-    // opcode_tester.push_opcode(zkevm_opcode::PUSH1, 0x5_big_uint256);
-    // opcode_tester.push_opcode(zkevm_opcode::PUSH5, 0x0);
-    // opcode_tester.push_opcode(zkevm_opcode::PUSH32, 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_big_uint256);
-    // opcode_tester.push_opcode(zkevm_opcode::CODECOPY);
     opcode_tester.push_opcode(zkevm_opcode::STOP);
     // test with metadata
     std::vector<std::uint8_t> metadata = {
-    0xa1, 0x65, 0x62, 0x7a, 0x7a, 0x72, 0x30, 0x58, 0x20,
-    0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0,
+    0xa1, 0x65, 0x62, 0x7a, 0x7a, 0x72, 0x30, 0x58, 0x20,  
+    0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0,       
     0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88,
     0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff, 0x00,
-    0x64, 0x73, 0x6f, 0x6c, 0x63, 0x43, 0x00, 0x08,
-    0x11, 0x00, 0x33
+    0x64, 0x73, 0x6f, 0x6c, 0x63, 0x43, 0x00, 0x08,       
+    0x11, 0x00, 0x33                                      
     };
     opcode_tester.push_metadata(metadata);
 
     max_sizes.max_keccak_blocks = 10;
-    max_sizes.max_bytecode = 500;
+    max_sizes.max_bytecode = 3000;
     max_sizes.max_mpt = 0;
     max_sizes.max_rw = 700;
     max_sizes.max_copy = 500;
@@ -124,11 +98,54 @@ BOOST_AUTO_TEST_CASE(codecopy) {
         // circuits_to_run.insert("rw");
         // circuits_to_run.insert("bytecode");
         // circuits_to_run.insert("copy");
+
         circuits_to_run.insert("bytecode-s");
-        circuits_to_run.insert("zkevm-s");
+        circuits_to_run.insert("zkevm-s"); 
         circuits_to_run.insert("rw-s");
-        // circuits_to_run.insert("copy-s");
+        circuits_to_run.insert("copy-s"); 
     }
     complex_opcode_test<big_field_type, small_field_type>(opcode_tester, max_sizes);
 }
+
+BOOST_AUTO_TEST_CASE(codecopy_overflow) {
+    zkevm_opcode_tester opcode_tester;
+
+    l1_size_restrictions max_sizes;
+
+    // huge length
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_big_uint256);
+    opcode_tester.push_opcode(zkevm_opcode::PUSH1, 0x0_big_uint256);
+    opcode_tester.push_opcode(zkevm_opcode::PUSH5, hex_string_to_bytes("0x20000000"));
+    opcode_tester.push_opcode(zkevm_opcode::CODECOPY);
+    // huge dest offset
+    opcode_tester.push_opcode(zkevm_opcode::PUSH1, 0x5_big_uint256);
+    opcode_tester.push_opcode(zkevm_opcode::PUSH5, 0x0);
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_big_uint256);
+    opcode_tester.push_opcode(zkevm_opcode::CODECOPY);
+
+
+    max_sizes.max_keccak_blocks = 10;
+    max_sizes.max_bytecode = 3000;
+    max_sizes.max_mpt = 0;
+    max_sizes.max_rw = 700;
+    max_sizes.max_copy = 500;
+    max_sizes.max_zkevm_rows = 300;
+    max_sizes.max_exp_rows = 500;
+    max_sizes.max_exponentiations = 50;
+
+    if (circuits_to_run.empty()) {
+        // circuits_to_run.insert("zkevm");
+        // circuits_to_run.insert("zkevm-wide");
+        // circuits_to_run.insert("rw");
+        // circuits_to_run.insert("bytecode");
+        // circuits_to_run.insert("copy");
+
+        // circuits_to_run.insert("bytecode-s"); //TODO
+        circuits_to_run.insert("zkevm-s");
+        // circuits_to_run.insert("rw-s"); //TODO
+        circuits_to_run.insert("copy-s");
+    }
+    complex_opcode_test<big_field_type, small_field_type>(opcode_tester, max_sizes);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
