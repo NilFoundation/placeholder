@@ -149,8 +149,8 @@ namespace nil::blueprint::bbf::zkevm_small_field{
 
                     if( is_first_byte ){
                         BOOST_LOG_TRIVIAL(debug)
-                            << "\tCopy event " << copy_op_to_num(cp.source_type)
-                            << " => " << copy_op_to_num(cp.destination_type)
+                            << "\tCopy event " << copy_op_to_string(cp.source_type)
+                            << " => " << copy_op_to_string(cp.destination_type)
                             << " data size " << cp.size()
                             << std::endl;
                         is_first_byte = false;
@@ -194,10 +194,10 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                         is_last[current_row + 1] = 1;
                     }
 
-                    BOOST_LOG_TRIVIAL(trace) << "\t\t" << current_row << ". "
+                    BOOST_LOG_TRIVIAL(debug) << "\t\t" << current_row << ". "
                         << std::hex
-                        << cp.source_id << " " << counter_1[current_row] << " " << counter_2[current_row] << "    "
-                        << cp.destination_id << " " << counter_1[current_row+1] << " " << counter_2[current_row+1] << "    "
+                        << id[current_row] << " " << counter_1[current_row] << " " << counter_2[current_row] << "    "
+                        << id[current_row + 1] << " " << counter_1[current_row+1] << " " << counter_2[current_row+1] << "    "
                         << cp.get_key(current_byte_index) <<  " => "
                         << cp.get_value(current_byte_index) << std::dec
                         << " length " << length[current_row] << " " << length[current_row + 1]

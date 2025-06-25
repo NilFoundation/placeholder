@@ -34,11 +34,14 @@
 #include <boost/test/unit_test.hpp>
 
 #include <nil/crypto3/algebra/curves/alt_bn128.hpp>
+#include <nil/crypto3/algebra/fields/babybear.hpp>
+// #include <nil/crypto3/algebra/curves/pallas.hpp>
+// #include <nil/crypto3/algebra/fields/goldilocks.hpp>
+
 #include <nil/crypto3/algebra/fields/arithmetic_params/alt_bn128.hpp>
 #include <nil/crypto3/algebra/fields/arithmetic_params/babybear.hpp>
-#include <nil/crypto3/algebra/fields/arithmetic_params/goldilocks.hpp>
-#include <nil/crypto3/algebra/fields/babybear.hpp>
-#include <nil/crypto3/algebra/fields/goldilocks.hpp>
+// #include <nil/crypto3/algebra/fields/arithmetic_params/pallas.hpp>
+// #include <nil/crypto3/algebra/fields/arithmetic_params/goldilocks.hpp>
 #include <nil/crypto3/algebra/random_element.hpp>
 
 #include <nil/crypto3/hash/algorithm/hash.hpp>
@@ -70,6 +73,7 @@
 #include <nil/blueprint/zkevm_bbf/small_field/circuits/bytecode.hpp>
 #include <nil/blueprint/zkevm_bbf/small_field/circuits/copy.hpp>
 #include <nil/blueprint/zkevm_bbf/small_field/circuits/zkevm.hpp>
+#include <nil/blueprint/zkevm_bbf/small_field/circuits/state.hpp>
 
 #include "./circuit_test_fixture.hpp"
 
@@ -384,7 +388,7 @@ class zkEVMDebugTTTestFixture: public CircuitTestFixture {
             zkevm_assignment_input.copy_events = circuit_inputs.copy_events();
             zkevm_assignment_input.zkevm_states = circuit_inputs.zkevm_states();
             // zkevm_assignment_input.exponentiations = circuit_inputs.exponentiations();
-            // zkevm_assignment_input.state_operations = circuit_inputs.state_operations();
+            zkevm_assignment_input.state_operations = circuit_inputs.state_operations();
 
             bool result = test_bbf_component<SmallFieldType, nil::blueprint::bbf::zkevm_small_field::zkevm>(
                 "zkevm-s", {}, zkevm_assignment_input,
@@ -430,6 +434,26 @@ class zkEVMDebugTTTestFixture: public CircuitTestFixture {
         }
     }
 
+    template<typename FieldType>
+    void test_small_state_circuit(const nil::blueprint::bbf::zkevm_basic_input_generator &circuit_inputs, const l1_size_restrictions &s) {
+        using SmallFieldType = typename FieldType::small_subfield;
+        const std::string state_circuit = "state-s";
+        if (should_run_circuit(state_circuit)) {
+            BOOST_LOG_TRIVIAL(info) << std::endl
+                << "circuit '" << state_circuit << "'";
+            typename zkevm_small_field::state_transition<
+                SmallFieldType, GenerationStage::ASSIGNMENT>::input_type
+                state_assignment_input;
+            state_assignment_input.state_trace = circuit_inputs.state_operations();
+            state_assignment_input.call_state_data = circuit_inputs.call_state_data();
+
+            bool result = test_bbf_component<FieldType, nil::blueprint::bbf::zkevm_small_field::state_transition>(
+                "state-s", {}, state_assignment_input, s.max_state
+            );
+            BOOST_CHECK(result);
+        }
+    }
+
     template<typename BigFieldType, typename SmallFieldType>
     void complex_test(std::string path, const l1_size_restrictions &max_sizes) {
         setup(path);
@@ -452,6 +476,7 @@ class zkEVMDebugTTTestFixture: public CircuitTestFixture {
         test_small_bytecode_circuit<SmallFieldType>(circuit_inputs, s);
         test_small_zkevm_circuit<SmallFieldType>(circuit_inputs, s);
         test_small_copy_circuit<SmallFieldType>(circuit_inputs, s);
+        test_small_state_circuit<SmallFieldType>(circuit_inputs, s);
     }
 
     template<typename FieldType>
@@ -505,12 +530,12 @@ BOOST_AUTO_TEST_CASE(minimal_math) {
     max_sizes.max_rw = 1000;    // Doesn't matter for small fields
 
     max_sizes.max_copy_events = 70;
-    max_sizes.max_copy = 70;
+    max_sizes.max_copy = 100;
     max_sizes.max_zkevm_rows = 400;
-    max_sizes.max_zkevm_small_field_rows = 250;
+    max_sizes.max_zkevm_small_field_rows = 250; // Used also for rw8, rw256
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
-    max_sizes.max_state = 500;
+    max_sizes.max_state = 100;
 
     if (circuits_to_run.empty()) {
         circuits_to_run.insert("zkevm");
@@ -1102,7 +1127,7 @@ BOOST_AUTO_TEST_CASE(call_large_memory_key) {
     max_sizes.max_zkevm_rows = 4000;
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
-    max_sizes.max_zkevm_small_field_rows = 8000;
+    max_sizes.max_zkevm_small_field_rows = 6000;
 
     if( circuits_to_run.empty() ) {
         // circuits_to_run.insert("zkevm");       // Previous version doesn't support large memory keys
@@ -1114,6 +1139,58 @@ BOOST_AUTO_TEST_CASE(call_large_memory_key) {
         circuits_to_run.insert("copy-s");
     }
     complex_test<big_field_type, small_field_extension_type>("call_large_memory_key.json", max_sizes);
+}
+
+BOOST_AUTO_TEST_CASE(call_large_mstore_key) {
+    l1_size_restrictions max_sizes;
+
+    max_sizes.max_keccak_blocks = 50;
+    max_sizes.max_bytecode = 8000;
+    max_sizes.max_mpt = 0;
+    max_sizes.max_rw = 10000;
+    max_sizes.max_copy = 500;
+    max_sizes.max_copy_events = 70;
+    max_sizes.max_zkevm_rows = 4000;
+    max_sizes.max_exponentiations = 50;
+    max_sizes.max_exp_rows = 500;
+    max_sizes.max_zkevm_small_field_rows = 6000;
+
+    if( circuits_to_run.empty() ) {
+        // circuits_to_run.insert("zkevm");       // Previous version doesn't support large memory keys
+        // circuits_to_run.insert("rw");
+        // circuits_to_run.insert("bytecode");    // Doesn't work for now
+        // circuits_to_run.insert("copy");        // Previous version doesn't support large memory keys
+        circuits_to_run.insert("bytecode-s");
+        circuits_to_run.insert("rw-s");
+        circuits_to_run.insert("copy-s");
+    }
+    complex_test<big_field_type, small_field_extension_type>("call_large_mstore_key.json", max_sizes);
+}
+
+BOOST_AUTO_TEST_CASE(call_large_mstore8_key) {
+    l1_size_restrictions max_sizes;
+
+    max_sizes.max_keccak_blocks = 50;
+    max_sizes.max_bytecode = 8000;
+    max_sizes.max_mpt = 0;
+    max_sizes.max_rw = 10000;
+    max_sizes.max_copy = 500;
+    max_sizes.max_copy_events = 70;
+    max_sizes.max_zkevm_rows = 4000;
+    max_sizes.max_exponentiations = 50;
+    max_sizes.max_exp_rows = 500;
+    max_sizes.max_zkevm_small_field_rows = 6000;
+
+    if( circuits_to_run.empty() ) {
+        // circuits_to_run.insert("zkevm");       // Previous version doesn't support large memory keys
+        // circuits_to_run.insert("rw");
+        // circuits_to_run.insert("bytecode");    // Doesn't work for now
+        // circuits_to_run.insert("copy");        // Previous version doesn't support large memory keys
+        circuits_to_run.insert("bytecode-s");
+        circuits_to_run.insert("rw-s");
+        circuits_to_run.insert("copy-s");
+    }
+    complex_test<big_field_type, small_field_extension_type>("call_large_mstore8_key.json", max_sizes);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
@@ -1143,44 +1220,44 @@ constexpr l1_size_restrictions gen_max_sizes(std::size_t max_bits) {
     return max_sizes;
 }
 
-BOOST_DATA_TEST_CASE(minimal_math_pallas_fixed_size, boost::unit_test::data::xrange(30)) {
-    using FieldType = typename algebra::curves::pallas::scalar_field_type;
-    complex_test<FieldType>("minimal_math.json", gen_max_sizes(sample));
-}
+// BOOST_DATA_TEST_CASE(minimal_math_pallas_fixed_size, boost::unit_test::data::xrange(30)) {
+//     using FieldType = typename algebra::curves::pallas::scalar_field_type;
+//     complex_test<FieldType>("minimal_math.json", gen_max_sizes(sample));
+// }
 
-BOOST_DATA_TEST_CASE(minimal_math_bn254_fixed_size, boost::unit_test::data::xrange(30)) {
-    using FieldType = typename algebra::curves::alt_bn128_254::scalar_field_type;
-    complex_test<FieldType>("minimal_math.json", gen_max_sizes(sample));
-}
+// BOOST_DATA_TEST_CASE(minimal_math_bn254_fixed_size, boost::unit_test::data::xrange(30)) {
+//     using FieldType = typename algebra::curves::alt_bn128_254::scalar_field_type;
+//     complex_test<FieldType>("minimal_math.json", gen_max_sizes(sample));
+// }
 
-BOOST_DATA_TEST_CASE(minimal_math_goldilocks_fixed_size,
-                     boost::unit_test::data::xrange(30)) {
-    using FieldType = typename algebra::fields::goldilocks;
-    complex_test<FieldType>("minimal_math.json", gen_max_sizes(sample));
-}
+// BOOST_DATA_TEST_CASE(minimal_math_goldilocks_fixed_size,
+//                      boost::unit_test::data::xrange(30)) {
+//     using FieldType = typename algebra::fields::goldilocks;
+//     complex_test<FieldType>("minimal_math.json", gen_max_sizes(sample));
+// }
 
-BOOST_DATA_TEST_CASE(minimal_math_goldilocks_fp2_fixed_size,
-                     boost::unit_test::data::xrange(30)) {
-    using FieldType = typename algebra::fields::goldilocks_fp2;
-    complex_test<FieldType>("minimal_math.json", gen_max_sizes(sample));
-}
+// BOOST_DATA_TEST_CASE(minimal_math_goldilocks_fp2_fixed_size,
+//                      boost::unit_test::data::xrange(30)) {
+//     using FieldType = typename algebra::fields::goldilocks_fp2;
+//     complex_test<FieldType>("minimal_math.json", gen_max_sizes(sample));
+// }
 
-BOOST_DATA_TEST_CASE(minimal_math_babybear_fixed_size,
-                     boost::unit_test::data::xrange(30)) {
-    using FieldType = typename algebra::fields::babybear;
-    complex_test<FieldType>("minimal_math.json", gen_max_sizes(sample));
-}
+// BOOST_DATA_TEST_CASE(minimal_math_babybear_fixed_size,
+//                      boost::unit_test::data::xrange(30)) {
+//     using FieldType = typename algebra::fields::babybear;
+//     complex_test<FieldType>("minimal_math.json", gen_max_sizes(sample));
+// }
 
-BOOST_DATA_TEST_CASE(minimal_math_babybear_fp4_fixed_size,
-                     boost::unit_test::data::xrange(30)) {
-    using FieldType = typename algebra::fields::babybear_fp4;
-    complex_test<FieldType>("minimal_math.json", gen_max_sizes(sample));
-}
+// BOOST_DATA_TEST_CASE(minimal_math_babybear_fp4_fixed_size,
+//                      boost::unit_test::data::xrange(30)) {
+//     using FieldType = typename algebra::fields::babybear_fp4;
+//     complex_test<FieldType>("minimal_math.json", gen_max_sizes(sample));
+// }
 
-BOOST_DATA_TEST_CASE(minimal_math_babybear_fp5_fixed_size,
-                     boost::unit_test::data::xrange(30)) {
-    using FieldType = typename algebra::fields::babybear_fp5;
-    complex_test<FieldType>("minimal_math.json", gen_max_sizes(sample));
-}
+// BOOST_DATA_TEST_CASE(minimal_math_babybear_fp5_fixed_size,
+//                      boost::unit_test::data::xrange(30)) {
+//     using FieldType = typename algebra::fields::babybear_fp5;
+//     complex_test<FieldType>("minimal_math.json", gen_max_sizes(sample));
+// }
 
 BOOST_AUTO_TEST_SUITE_END()

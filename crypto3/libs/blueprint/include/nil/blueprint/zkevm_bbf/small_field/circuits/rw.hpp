@@ -31,7 +31,7 @@
 #include <nil/blueprint/component.hpp>
 
 #include <nil/blueprint/bbf/generic.hpp>
-#include <nil/blueprint/zkevm_bbf/small_field/tables/state_timeline_table.hpp>
+#include <nil/blueprint/zkevm_bbf/small_field/tables/state.hpp>
 #include <nil/blueprint/zkevm_bbf/small_field/tables/timeline_table.hpp>
 
 #include <nil/blueprint/zkevm_bbf/small_field/subcomponents/rw_8.hpp>
@@ -56,13 +56,13 @@ namespace nil::blueprint::bbf::zkevm_small_field{
 
         using rw_8_type = rw_8<FieldType, stage>;
         using rw_256_type = rw_256<FieldType, stage>;
-        using state_timeline_table_type = state_timeline_table<FieldType, stage>;
+        using state_table_type = state_table<FieldType, stage>;
         using timeline_table_type = timeline_table<FieldType, stage>;
 
         struct input_type{
             rw_tables_input_type                             rw_trace;
             typename timeline_table_type::input_type         timeline;
-            typename state_timeline_table_type::input_type   state_trace;
+            typename state_table_type::input_type   state_trace;
         };
 
         // using value = typename FieldType::value_type;
@@ -81,7 +81,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             std::size_t witness_amount =
                 rw_8_type::get_witness_amount(instances_rw_8)
                 + rw_256_type::get_witness_amount(instances_rw_256)
-                + state_timeline_table_type::get_witness_amount()
+                + state_table_type::get_witness_amount(state_table_mode::timeline)
                 + timeline_table_type::get_witness_amount() * (instances_rw_8 + instances_rw_256 + 1)
                 + 6;
             BOOST_LOG_TRIVIAL(info) << "RW circuit witness amount = " << witness_amount;
@@ -119,10 +119,11 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             context_type rw_256_ct = context_object.subcontext(rw_256_area,0,max_rw_size);
             rw_256_type t256(rw_256_ct, input.rw_trace, max_rw_size, instances_rw_256);
 
-            std::vector<std::size_t> state_timeline_table_area;
-            for( std::size_t i = 0; i < state_timeline_table_type::get_witness_amount(); i++ ) state_timeline_table_area.push_back(current_column++);
-            context_type state_table_ct = context_object.subcontext(state_timeline_table_area,0,max_state);
-            state_timeline_table_type st(state_table_ct, input.state_trace, max_state);
+            std::vector<std::size_t> state_table_area;
+            for( std::size_t i = 0; i < state_table_type::get_witness_amount(state_table_mode::timeline); i++ )
+                state_table_area.push_back(current_column++);
+            context_type state_table_ct = context_object.subcontext(state_table_area,0,max_state);
+            state_table_type st(state_table_ct, input.state_trace, max_state, state_table_mode::timeline);
 
             std::size_t instances_timeline = instances_rw_8 + instances_rw_256 + 1;
             if constexpr (stage == GenerationStage::ASSIGNMENT) {

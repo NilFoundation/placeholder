@@ -232,6 +232,28 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             return result;
         }
 
+        // Used for addresses
+        static std::vector<TYPE> call_context_read_only_16_bit_lookup(
+            TYPE call_id,
+            std::size_t field,
+            const std::array<TYPE, 10> &value
+        ){
+            std::vector<TYPE> result = {
+                TYPE(std::size_t(rw_operation_type::call_context)),
+                call_id,
+                TYPE(field),                                          // address
+                call_id + field,                                      // rw_id
+                TYPE(0),                                              // is_write
+            };
+            for( std::size_t i = 0; i < 6; i++ ){
+                result.push_back(TYPE(0));
+            }
+            for( std::size_t i = 0; i < 10; i++ ){
+                result.push_back(value[i]);
+            }
+            return result;
+        }
+
         static std::vector<TYPE> call_context_read_only_16_bit_lookup(
             TYPE call_id,
             std::size_t field,
