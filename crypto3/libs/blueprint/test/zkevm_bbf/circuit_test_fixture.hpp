@@ -34,9 +34,6 @@
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
 
-// #include <nil/blueprint/zkevm_bbf/input_generators/opcode_tester.hpp>
-// #include <nil/blueprint/zkevm_bbf/input_generators/opcode_tester_input_generator.hpp>
-
 #include <nil/crypto3/zk/snark/systems/plonk/placeholder/prover.hpp>
 #include <nil/crypto3/zk/snark/systems/plonk/placeholder/verifier.hpp>
 #include <nil/crypto3/zk/snark/systems/plonk/placeholder/params.hpp>
@@ -46,10 +43,7 @@
 #include <nil/crypto3/math/polynomial/polymorphic_polynomial_dfs.hpp>
 
 #include <nil/blueprint/utils/constraint_system_stat.hpp>
-
-#include "../test_plonk_component.hpp"
 #include <boost/algorithm/string.hpp>
-
 #include <boost/log/core.hpp>
 #include <boost/log/trivial.hpp>
 #include <boost/log/expressions.hpp>
@@ -61,6 +55,7 @@
 #include <boost/log/utility/setup/common_attributes.hpp>
 #include <boost/log/attributes/value_extraction.hpp>
 #include <boost/log/utility/setup/console.hpp>
+#include "../test_plonk_component.hpp"
 
 using namespace nil::crypto3;
 using namespace nil::blueprint;
