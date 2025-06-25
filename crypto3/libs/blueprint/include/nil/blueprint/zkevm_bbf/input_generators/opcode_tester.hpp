@@ -34,6 +34,7 @@ namespace nil {
 
             // This is a class that bytecodes as a sequence of bytes.
             // It emulates contract if we don't want to compile contract from the solidity code e t.c.
+
             class zkevm_opcode_tester{
             public:
                 zkevm_opcode_tester(){}
@@ -83,6 +84,22 @@ namespace nil {
                     }
                 }
 
+                void push_metadata(const std::vector<std::uint8_t> &metadata) {
+                    BOOST_LOG_TRIVIAL(trace) << "Adding metadata of size " << metadata.size() << " bytes" << std::endl;
+                    
+                    // Add metadata bytes to bytecode
+                    bytecode.insert(bytecode.end(), metadata.begin(), metadata.end());
+                    
+                    // Add metadata length as last 2 bytes (big-endian format)
+                    // Assuming metadata.size() fits in 16 bits (max 65535 bytes)
+                    BOOST_ASSERT(metadata.size() <= 0xFFFF);
+                    
+                    std::uint16_t metadata_length = static_cast<std::uint16_t>(metadata.size());
+                    bytecode.push_back(static_cast<std::uint8_t>((metadata_length >> 8) & 0xFF)); // High byte
+                    bytecode.push_back(static_cast<std::uint8_t>(metadata_length & 0xFF));        // Low byte
+                    
+                    BOOST_LOG_TRIVIAL(trace) << "Metadata added. Total bytecode size: " << bytecode.size() << std::endl;
+                }
                 const std::vector<std::uint8_t> &get_bytecode() const {
                     return bytecode;
                 }

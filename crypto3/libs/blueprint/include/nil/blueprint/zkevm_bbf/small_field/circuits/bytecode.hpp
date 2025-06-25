@@ -65,7 +65,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
         ) {
             BOOST_ASSERT(max_bytecode_size > max_keccak_blocks + max_bytecodes_amount);
             return {
-                .witnesses = BytecodeTable::get_witness_amount() + std::max(KeccakTable::get_witness_amount(), BytecodeHashTable::get_witness_amount()) + 15,
+                .witnesses = BytecodeTable::get_witness_amount() + std::max(KeccakTable::get_witness_amount(), BytecodeHashTable::get_witness_amount()) + 16,
                 .public_inputs = 1,
                 .constants = 10,
                 .rows = max_bytecode_size
@@ -125,6 +125,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             std::vector<TYPE> rlc_challenge(max_bytecode_size);
             std::vector<TYPE> push_size(max_bytecode_size);
             std::vector<TYPE> length_left(max_bytecode_size);
+            std::vector<TYPE> metadata_count(max_bytecode_size);
             std::vector<TYPE> value_rlc(max_bytecode_size);
             std::vector<TYPE> is_header(max_bytecode_size);
             std::vector<TYPE> is_executed(max_bytecode_size);
@@ -145,6 +146,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                     if (total_len >= 2) {
                         // Metadata length is encoded in the last two bytes
                         std::size_t meta_len = (buffer[total_len - 2] << 8) + buffer[total_len - 1];
+
                         if (meta_len + 2 <= total_len) {
                             std::size_t boundary = total_len - meta_len - 2 - 1;  // Byte before metadata
                             // Check for stopping opcodes (STOP, INVALID, RETURN) that will
@@ -162,6 +164,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
 
                     // Header
                     length_left[cur] = total_len;
+                    metadata_count[cur] = 0;
                     value_rlc[cur] = total_len;
                     is_header[cur] = 1;
                     rlc_challenge[cur] = input.rlc_challenge;
@@ -172,12 +175,13 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                     for(std::size_t j = 0; j < buffer.size(); j++, cur++){
                         length_left[cur] = length_left[cur - 1] - 1;
                         if( j < exec_boundary ){
+                            metadata_count[cur] = 0;
                             is_executed[cur] = 1;
                         } else {
+                            metadata_count[cur] = metadata_count[cur - 1] + 1;
                             is_metadata[cur] = 1;
                         }
                         auto byte = buffer[j];
-
                         if (push_size_value == 0) {
                             if (byte > 0x5f && byte < 0x80)  push_size_value = byte - 0x5f;  // Set PUSH size
                         } else {
@@ -187,11 +191,11 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                         rlc_challenge[cur] = input.rlc_challenge;
                         value_rlc[cur] = value_rlc[cur - 1] * input.rlc_challenge + byte;
                         if( is_opcode[cur] == 1 )
-                            BOOST_LOG_TRIVIAL(trace) << cur << ". " << opcode_from_number(byte);
+                            BOOST_LOG_TRIVIAL(trace) << cur << ". " << std::hex << index[cur] << " " << opcode_from_number(byte);
                         else if (is_executed[cur] == 1)
-                            BOOST_LOG_TRIVIAL(trace) << cur << ". Data" << std::hex << " 0x" << std::setw(2) << std::setfill('0') << std::size_t(byte) << std::dec;
+                            BOOST_LOG_TRIVIAL(trace) << cur << ". " << std::hex << index[cur] << " Data  0x" << std::setw(2) << std::setfill('0') << std::size_t(byte) << std::dec;
                         else
-                            BOOST_LOG_TRIVIAL(trace) << cur << ". Metadata" << std::hex << " 0x" << std::setw(2) << std::setfill('0') << std::size_t(byte) << std::dec;
+                            BOOST_LOG_TRIVIAL(trace) << cur << ". " << std::hex << index[cur] << " Metadata 0x" << std::setw(2) << std::setfill('0') << std::size_t(byte) << std::dec;
                     }
                     is_last_byte[cur - 1] = 1;
                     hash_value_rlc[i] = value_rlc[cur - 1];
@@ -206,6 +210,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             for( std::size_t i = 0; i < max_bytecode_size; i++ ){
                 current_column = BytecodeTable::get_witness_amount() + std::max(KeccakTable::get_witness_amount(), BytecodeHashTable::get_witness_amount());
                 allocate(length_left[i], current_column++, i);
+                allocate(metadata_count[i], current_column++, i);
                 value_rlc_index = current_column; allocate(value_rlc[i], current_column++, i);
                 allocate(push_size[i], current_column++, i);
                 allocate(rlc_challenge[i], current_column++, i);
@@ -229,7 +234,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                 every_row_constraints.push_back(is_header[1] * (is_header[1] - 1));
                 every_row_constraints.push_back(is_executed[1] * (is_executed[1] - 1));
                 every_row_constraints.push_back(is_metadata[1] * (is_metadata[1] - 1));
-                // 1. Only one of them may 1 on a row
+                // 1. Only one of them may be 1 on a row
                 TYPE is_filled = is_header[1] + is_executed[1] + is_metadata[1];
                 TYPE is_padding = 1 - is_filled;
                 every_row_constraints.push_back(is_filled * (is_filled -1));
@@ -272,10 +277,21 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                 non_first_row_constraints.push_back(is_last_byte[0] - (is_header[1] + is_padding) * (is_metadata[0] + is_executed[0]));
                 // 18. bytecode_id increased for each bytecode
                 non_first_row_constraints.push_back(is_header[1] * (bytecode_id[1] - bytecode_id[0] - 1));
-                // 19. After padding is always padding
+                // 19. After metadata is metadata or padding
+                non_first_row_constraints.push_back(is_metadata[0] * (is_metadata[1] + is_padding - 1));
+                // 20. If metadata, is_opcode = 0
+                every_row_constraints.push_back(is_metadata[1] * is_opcode[1]);
+                // 21. Metadata_count does not change if is_executed
+                non_first_row_constraints.push_back((is_executed[1]) * (metadata_count[1] - metadata_count[0]));
+                // 22. Metadata count inrement by 1 for metadata
+                non_first_row_constraints.push_back(is_metadata[1] * (metadata_count[1] - metadata_count[0] - 1));
+                // 24. Metadata count is equal to last 2 metadata bytes
+                non_first_row_constraints.push_back(is_last_byte[1] * metadata_count[1] * (value[1] + value[0] * 256 - metadata_count[1] + 2));
+                // 25 Length left decrease by 1 if not padding
+                non_first_row_constraints.push_back((length_left[0] - length_left[1] - 1) * (is_executed[1] + is_metadata[1]));
+                // 26. After padding is always padding
                 every_row_constraints.push_back(is_padding * (is_header[2] + is_executed[2] + is_metadata[2]));
-
-                // 20. Last is always padding
+                // 27. Last is always padding
                 constrain(is_header[max_bytecode_size - 1] + is_executed[max_bytecode_size - 1] + is_metadata[max_bytecode_size - 1]);
 
                 // Lookup_table

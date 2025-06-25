@@ -50,105 +50,160 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             const opcode_input_type<FieldType, stage> &current_state)
             : generic_component<FieldType, stage>(context_object, false)
         {
-            // ! Not implemented yet
+            const std::size_t two_25 = 1 << 25;
+            // ! Gas calculation not implemented yet
             // using Word_Size = typename zkevm_big_field::word_size<FieldType, stage>;
             // using Memory_Cost = typename zkevm_big_field::memory_cost<FieldType, stage>;
             // TYPE offset, length, current_mem, next_mem, memory_expansion_cost,
             //     memory_expansion_size, S;
-            // std::vector<TYPE> value(32);
-            // length = 32;
-            // if constexpr (stage == GenerationStage::ASSIGNMENT) {
-            //     auto offsetess = w_to_16(current_state.stack_top())[15];
-            //     offset = offsetess;
-            //     current_mem = current_state.memory_size();
-            //     next_mem = std::max(offset + length, current_mem);
-            //     BOOST_LOG_TRIVIAL(trace) << "\tCurrent memory size: " << current_mem << " next memory size: " << next_mem;
-            //     S = next_mem > current_mem;
-            //     auto bytes = w_to_8(current_state.stack_top(1));
-            //     for (std::size_t i = 0; i < 32; i++) {
-            //         value[i] = bytes[i];
-            //     }
-            // }
-            // for (std::size_t i = 0; i < 16; i++) {
-            //     // Values are range-checked by RW circuit, so use
-            //     // non-range-checked columns
-            //     allocate(value[i], i + 16, 0);
-            //     // Values are range-checked by RW circuit, so use
-            //     // non-range-checked columns
-            //     allocate(value[i + 16], i + 16, 1);
-            // }
 
-            // allocate(offset, 32, 0);
-            // allocate(length, 33, 0);
-            // allocate(current_mem, 34, 0);
-            // allocate(next_mem, 35, 0);
-            // allocate(S, 36, 0);
-            // constrain(S * (S - 1));
-            // constrain(S * (next_mem - offset - length) + (1 - S) * (next_mem - current_mem));
+            std::array<TYPE, 32> bytes;
+            std::array<TYPE, 16> offset_chunks;
 
-            // allocate(memory_expansion_cost, 37, 0);
-            // allocate(memory_expansion_size, 38, 0);
-            // std::vector<std::size_t> memory_cost_lookup_area = {42, 43, 44, 45, 46, 47};
-            // context_type current_memory_ct = context_object.subcontext(memory_cost_lookup_area, 0, 1);
-            // context_type next_memory_ct = context_object.subcontext(memory_cost_lookup_area, 1, 1);
-            // Memory_Cost current_memory = Memory_Cost(current_memory_ct, current_mem);
-            // Memory_Cost next_memory = Memory_Cost(next_memory_ct, next_mem);
-            // memory_expansion_cost = next_memory.cost - current_memory.cost;
-            // memory_expansion_size = (next_memory.word_size - current_memory.word_size) * 32;
+            TYPE subchunk_14_0, diff_14_0;    // < 2^9
+            TYPE subchunk_14_1, diff_14_1;    // < 2^7
+            // Offset0 is assigned on row 0, offset1 on row 1
+            TYPE offset0, offset1; // offset0 == offset1 == offset_chunks[15] + chunk_14_0 * 0x10000
 
-            // if constexpr (stage == GenerationStage::CONSTRAINTS) {
-            //     constrain(current_state.pc_next() - current_state.pc(1) - 1);  // PC transition
+            TYPE high_chunks_sum; // sum of 14 high chunks and chunk_14_1
+            TYPE high_chunks_sum_inv; // 1 / high_chunks_sum
+            TYPE is_offset_in_range; // 1 if offset < 2^25, 0 otherwise
+
+            // offset + 31 = last_offset_lo + last_offset_hi * 0x10000 + carry * 2^25
+            TYPE last_offset_lo; // (offset + 31)% 0x10000< 2^16
+            TYPE last_offset_hi, diff_last_offset_hi; // ((offset + 31) / 0x10000) % 2^9
+            TYPE carry; // 1 if offset + 31 >= 2^25, 0 otherwise
+
+            // need_lookup0 == need_lookup1 == is_offset_in_range * (1 - carry)
+            TYPE need_lookup0, need_lookup1;  // 1 if offset+31 < 2^25, 0 otherwise
+
+            if constexpr (stage == GenerationStage::ASSIGNMENT) {
+                BOOST_LOG_TRIVIAL(trace) << "\t" << "address = " << std::hex << current_state.stack_top() << std::dec;
+                auto a_chunks = w_to_16(current_state.stack_top());
+                for( std::size_t i = 0; i < 16; i++ ) { offset_chunks[i] = TYPE(a_chunks[i]); }
+
+                subchunk_14_0 = a_chunks[14] >> 9; // 0x1ff = 511
+                subchunk_14_1 = a_chunks[14] & 0x1ff; // 0x1ff = 511
+                diff_14_0 = 0x7f - subchunk_14_0; // 0x7f = 127
+                diff_14_1 = 0x1ff - subchunk_14_1; // 0x1ff = 511
+                is_offset_in_range = (current_state.stack_top() <= 0x2000000 - 1) ? TYPE(1) : TYPE(0); // 0x2000000 = 2^25
+                std::size_t address = (a_chunks[14] & 0x1ff) * 0x10000 + a_chunks[15];
+                offset0 = offset1 = address;
+
+                auto b = w_to_8(current_state.stack_top(1));
+                for (std::size_t i = 0; i < 32; i++) { bytes[i] = b[i]; }
+
+                for (std::size_t i = 0; i < 16; i++) {
+                    offset_chunks[i] = TYPE(a_chunks[i]);
+                }
+                for ( std::size_t i = 0; i < 14; i++ ) {
+                    high_chunks_sum += offset_chunks[i];
+                }
+                high_chunks_sum += subchunk_14_0;
+                high_chunks_sum_inv = (high_chunks_sum != 0) ? TYPE(1) / high_chunks_sum : TYPE(0);
+
+                last_offset_lo = (address + 31) & 0xffff; // < 2^16
+                last_offset_hi = ((address + 31) >> 16) & 0x1ff; // < 2^9
+                diff_last_offset_hi = 0x1ff - last_offset_hi; // < 2^9
+                carry = (address + 31) >> 25; // 0 or 1
+
+                need_lookup0 = need_lookup1 = (current_state.stack_top() <= 0x2000000 - 32) ? TYPE(1) : TYPE(0); // 0x2000000 = 2^25
+            }
+            for (std::size_t i = 0; i < 16; i++) {
+                allocate(offset_chunks[i], i, 0);
+                allocate(bytes[i], i + 16, 0);
+                allocate(bytes[i + 16], i + 16, 1);
+            }
+
+            // Range-checked
+            allocate(subchunk_14_0, 0, 1);
+            allocate(diff_14_0, 1, 1);
+            allocate(subchunk_14_1, 2, 1);
+            allocate(diff_14_1, 3, 1);
+            allocate(last_offset_hi, 4, 1);
+            allocate(diff_last_offset_hi, 5, 1);
+            allocate(last_offset_lo, 6, 1);
+            allocate(carry, 7, 1);
+            allocate(is_offset_in_range, 8, 1);
+
+            // Non-range checked
+            allocate(offset0, 32, 0);
+            allocate(offset1, 32, 1);
+            allocate(need_lookup0, 33, 0);
+            allocate(need_lookup1, 33, 1);
+            allocate(high_chunks_sum, 34, 0);
+            allocate(high_chunks_sum_inv, 35, 0);
+
+            TYPE high_chunks_sum_constraint;
+            for( std::size_t i = 0; i < 14; i++ ){
+                high_chunks_sum_constraint += offset_chunks[i];
+            }
+            high_chunks_sum_constraint += subchunk_14_0;
+            constrain(high_chunks_sum_constraint - high_chunks_sum); // high_chunks_sum decomposition
+
+            constrain(is_offset_in_range * (is_offset_in_range - 1));                    // offset_in_range is 0 or 1
+            constrain(high_chunks_sum * high_chunks_sum_inv - (1 - is_offset_in_range)); // high_chunks_sum_inv is 0 or 1
+            constrain(is_offset_in_range * high_chunks_sum);                             // offset_in_range is 0 if high_chunks_sum is not
+            constrain(is_offset_in_range * high_chunks_sum_inv);                         // offset_in_range is 0 high_chunks_sum_inv is not
+            constrain(subchunk_14_0 + diff_14_0 - 0x7f);                                 // Range-check for subchunk_14_1
+            constrain(subchunk_14_1 + diff_14_1 - 0x1ff);                                // Range-check for subchunk_14_0
+            constrain(subchunk_14_0 * 0x200 + subchunk_14_1 - offset_chunks[14]);        // offset_chunks[14] decomposition
+            constrain(offset_chunks[15] + subchunk_14_1 * 0x10000 - offset0);
+            constrain(offset0 - offset1);
+
+            constrain(carry * (carry - 1));                                      // carry is 0 or 1
+            constrain(last_offset_lo + last_offset_hi * 0x10000 + carry * two_25 - offset0 - 31); // last_offset_lo = offset + 31
+            constrain(last_offset_hi + diff_last_offset_hi - 0x1ff);            // last_offset_hi + diff_last_offset_hi = 0x1ff
+            constrain(need_lookup0 - is_offset_in_range * (1 - carry));         // need_lookup0 is 0 if offset is not in range
+            constrain(need_lookup0 - need_lookup1);
+
+            if constexpr (stage == GenerationStage::CONSTRAINTS) {
+                constrain(current_state.pc_next() - current_state.pc(1) - 1);  // PC transition
             //     constrain(current_state.gas(0) - current_state.gas_next() - 3 - memory_expansion_cost);  // GAS transition
-            //     constrain(current_state.stack_size(1) - current_state.stack_size_next() - 2);  // stack_size transition
+                constrain(current_state.stack_size(1) - current_state.stack_size_next() - 2);  // stack_size transition
             //     constrain(current_state.memory_size(0) - current_mem);  // memory_size transition
             //     constrain(current_state.memory_size_next() - next_mem);  // memory_size transition
-            //     constrain(current_state.rw_counter_next() -
-            //                 current_state.rw_counter(1) -
-            //                 34);  // rw_counter transition
-            //     auto V_128 = chunks8_to_chunks128<TYPE>(value);
+                constrain(current_state.rw_counter_next() - current_state.rw_counter(1) - 2 - 32 * need_lookup1);  // rw_counter transition
 
-            //     std::vector<TYPE> tmp;
-            //     tmp = rw_table<FieldType, stage>::stack_lookup(
-            //         current_state.call_id(1),
-            //         current_state.stack_size(1) - 1,
-            //         current_state.rw_counter(1),
-            //         TYPE(0),                                               // is_write
-            //         TYPE(0),                                               // hi bytes are 0
-            //         offset
-            //     );
-            //     lookup(tmp, "zkevm_rw");
-            //     tmp = rw_table<FieldType, stage>::stack_lookup(
-            //         current_state.call_id(1),
-            //         current_state.stack_size(1) - 2,
-            //         current_state.rw_counter(1) + 1,
-            //         TYPE(0),                                               // is_write
-            //         V_128.first,
-            //         V_128.second
-            //     );
-            //     lookup(tmp, "zkevm_rw");
+                lookup(rw_256_table<FieldType, stage>::stack_16_bit_lookup(
+                    current_state.call_id(1),
+                    current_state.stack_size(1) - 1,
+                    current_state.rw_counter(1),
+                    TYPE(0),                                               // hi bytes are 0
+                    offset_chunks
+                ), "zkevm_rw_256");
+                lookup(rw_256_table<FieldType, stage>::stack_8_bit_lookup(
+                    current_state.call_id(1),
+                    current_state.stack_size(1) - 2,
+                    current_state.rw_counter(1) + 1,
+                    TYPE(0),                                               // is_write
+                    bytes
+                ), "zkevm_rw_256");
 
-            //     for( std::size_t i = 0; i < 32; i++){
-            //         if( i < 16){
-            //             tmp = rw_table<FieldType, stage>::memory_lookup(
-            //                 current_state.call_id(0),
-            //                 offset + i,
-            //                 current_state.rw_counter(0) + 2 + i,
-            //                 TYPE(1),                                               // is_write                                             // hi bytes are 0
-            //                 value[i]
-            //             );
-            //             lookup(tmp, "zkevm_rw");
-            //         } else {
-            //             tmp = rw_table<FieldType, stage>::memory_lookup(
-            //                 current_state.call_id(1),
-            //                 offset + i,
-            //                 current_state.rw_counter(1) + 2 + i,
-            //                 TYPE(1),                                               // is_write
-            //                 value[i]
-            //             );
-            //             lookup(tmp, "zkevm_rw");
-            //         }
-            //     }
-            // }
+                for( std::size_t i = 0; i < 32; i++){
+                    if( i < 16){
+                        std::vector<TYPE> tmp = rw_8_table<FieldType, stage>::memory_lookup(
+                            current_state.call_id(0),
+                            offset0 + i,
+                            current_state.rw_counter(0) + 2 + i,
+                            TYPE(1),                                               // is_write
+                            bytes[i]
+                        );
+                        for( std::size_t j = 0; j < tmp.size(); j++ ) tmp[j] = tmp[j] * need_lookup0;
+                        lookup(tmp, "zkevm_rw_8");
+                    } else {
+                        std::vector<TYPE> tmp = rw_8_table<FieldType, stage>::memory_lookup(
+                            current_state.call_id(1),
+                            offset1 + i,
+                            current_state.rw_counter(1) + 2 + i,
+                            TYPE(1),                                               // is_write
+                            bytes[i]
+                        );
+                        for( std::size_t j = 0; j < tmp.size(); j++ ) tmp[j] = tmp[j] * need_lookup1;
+                        lookup(tmp, "zkevm_rw_8");
+                    }
+                }
+            }
         }
     };
 

@@ -388,10 +388,6 @@ namespace nil {
                     }
                 }
 
-                if (verbose) {
-                    BOOST_LOG_TRIVIAL(info) << " ";
-                }
-
                 return true;
             }
 

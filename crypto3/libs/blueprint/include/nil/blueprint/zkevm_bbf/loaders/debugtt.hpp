@@ -80,7 +80,7 @@ namespace nil {
                     block.timestamp = atoi(bt.get_child("block.timestamp").data().c_str());
                     block.parent_hash = zkevm_word_from_string(bt.get_child("block.parentHash").data());
 
-                    BOOST_LOG_TRIVIAL(trace) << "ZKEVM HARDHAT INPUT GENERATOR loaded" << std::endl;
+                    BOOST_LOG_TRIVIAL(trace) << "ZKEVM DEBUGTT INPUT GENERATOR loaded" << std::endl;
                     // 1. Load eth_accounts. Not good that we have only one initial state for all blocks
                     for( auto &account: bt.get_child("eth_accounts")){
                         BOOST_LOG_TRIVIAL(trace)  << "Account " << account.first.data() << std::endl;
