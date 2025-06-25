@@ -994,31 +994,61 @@ namespace nil {
                 }
 
                 virtual void codecopy() override{
-                    std::size_t dst = std::size_t(stack[stack.size() - 1]);
-                    std::size_t src = std::size_t(stack[stack.size() - 2]);
-                    std::size_t length = std::size_t(stack[stack.size() - 3]);
+                    _zkevm_states.back().load_size_t_field(
+                        zkevm_state_size_t_field::bytecode_size, bytecode.size()
+                    );
+                    constexpr static const std::size_t max_offset = 65536;
+                    auto dst = stack[stack.size() - 1];
+                    auto src = stack[stack.size() - 2];
+                    auto lgt = stack[stack.size() - 3];
 
                     _zkevm_states.back().load_stack(stack, 3);
                     append_stack_reads(3);
 
                     zkevm_basic_evm::codecopy();
-                    if (memory.size() % 32 == 0) {
+                    if (memory.size() != 0) {
+                        std::size_t distance = std::size_t(dst);
+                        std::size_t length = std::size_t(lgt);
+                        std::size_t source = src < max_offset ? std::size_t(src) : max_offset;
+
+                        
+                        std::size_t real_length = (source >= bytecode.size()) ? 0 : std::min(length, bytecode.size() - source);
+                        std::size_t false_length = length - real_length;
                         copy_event cpy = codecopy_copy_event(
                             bytecode_hash,
-                            src,
+                            source,
                             call_id,
-                            dst,
+                            distance,
                             rw_counter,
-                            length
+                            real_length
                         );
+
+                        //TODO
+                        // copy_event cpy2 = codecopy_copy_event(
+                        //     bytecode_hash,
+                        //     source,
+                        //     call_id,
+                        //     distance + real_length,
+                        //     rw_counter + real_length,
+                        //     false_length
+                        // );
+
                         for( std::size_t i = 0; i < length; i++){
                             _short_rw_operations.push_back(memory_rw_operation(
-                                call_id, dst + i, rw_counter++, true, memory[dst + i]
+                                call_id, distance + i, rw_counter++, true, memory[distance + i]
                             ));
-                            cpy.push_byte(memory[dst+i]);
+                            
+                            if (source + i < bytecode.size()) {
+                                cpy.push_byte(memory[distance + i]);
+                            }
+                            // else {
+                            //     cpy2.push_byte(memory[distance + i]);
+                            // }
                         }
-                        if( length > 0 ) _copy_events.push_back(cpy);
+                        if( real_length > 0 ) _copy_events.push_back(cpy);
+                        // if( false_length > 0 ) _copy_events.push_back(cpy2);
                     }
+                    
                 }
 
                 virtual void dupx( std::size_t d) override {
