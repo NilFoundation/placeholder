@@ -162,13 +162,17 @@ public:
 
             // std::cout << "hash value = " << std::hex << hash_value << std::dec << std::endl;
             std::size_t child_num = 0;
+            BOOST_LOG_TRIVIAL(trace) << "branches:\n";
             for(auto &v : n.value) {
                 // std::cout << "    value = " << std::hex << v << std::dec << std::endl;
                 if (child_num < 16) { // branch nodes have an empty 17-th value
+                    BOOST_LOG_TRIVIAL(trace) << child_num << " ";
                     std::array<std::uint8_t,32> child_value_byte = w_to_8(v);
                     for(std::size_t i = 0; i < 32; i++) {
                         child[child_num][i] = child_value_byte[i];
+                        BOOST_LOG_TRIVIAL(trace) << std::hex << child[child_num][i] << std::dec << " ";
                     }
+                    BOOST_LOG_TRIVIAL(trace) << std::endl;
                 }
                 child_num++;
             }

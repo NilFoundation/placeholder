@@ -315,6 +315,56 @@ public:
                 child_nibble_present = res.child_nibble_present;
                 child_last_nibble = res.child_last_nibble;
                 child_accumulated_key_last_byte = res.child_accumulated_key_last_byte;
+
+
+
+                if constexpr (stage == GenerationStage::ASSIGNMENT) {
+                    std::stringstream ss;
+                    ss << "selector: " << Res.type_selector[branch] << std::endl;
+                    ss << "trie_id: " << Res.trie_id << std::endl;
+                    ss << "child nibble present: " << child_nibble_present << std::endl;
+                    ss << "child accumulated key: ";
+                    for(std::size_t i = 0; i < 31; i++)
+                        ss << std::hex << child_accumulated_key[i] << std::dec << " ";
+                    ss << "\n";
+                    for(std::size_t j = 0; j < 16; j++) {
+                    ss << "last byte: " << std::hex << (j > 0 ? child_accumulated_key_last_byte[j-1] :
+                                                                child_accumulated_key[31]) << std::dec << std::endl;
+                        ss << "child lat nibble: " << std::hex << child_last_nibble[j] << std::dec << "\n";
+                        ss << "accumulated key length: " << std::hex << Res.accumulated_key_length << std::dec << "\n";
+                        ss << "child: ";
+                        for(std::size_t i = 0; i < 32; i++) {
+                            if (static_cast<std::uint8_t>(child[j][i].to_integral()) < 0x10)
+                                ss << "0";
+                            ss << std::hex << child[j][i] << std::dec;
+                        }
+                        ss << std::endl;
+                    }
+                    ss << "starting:\n";
+
+                    for(std::size_t j = 0; j < 16; j++) {
+                        ss << std::hex << Res.type_selector[branch] << std::dec << " ";
+                        ss << std::hex << Res.trie_id << std::dec << " ";
+                        ss << std::hex << child_nibble_present << std::dec << " ";
+                        for(std::size_t i = 0; i < 31; i++) {
+                            ss << std::hex << child_accumulated_key[i] << std::dec << " ";
+                        }
+
+                        ss << std::hex << (j > 0 ? child_accumulated_key_last_byte[j-1] :
+                            child_accumulated_key[31]) << std::dec << " ";
+                        ss << std::hex << child_last_nibble[j] << std::dec << " ";
+                        ss << std::hex << Res.accumulated_key_length << std::dec << " ";
+
+                        for(std::size_t i = 0; i < 32; i++) {
+                            ss << std::hex << child[j][i] << std::dec << " ";
+                        }
+                        ss << std::endl;
+                    }
+                    BOOST_LOG_TRIVIAL(trace) << ss.str();
+
+                }
+                // 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 8c 0 1 51 cd d8 ba d1 17 16 2a cf c2 5a 3b a5 11 3 97 e4 96 4f 78 f6 53 f8 d0 aa da 88 ed dc d2 1f b7 
+                // 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0  1 51 cd d8 ba d1 17 16 2a cf c2 5a 3b a5 11 3 97 e4 96 4f 78 f6 53 f8 d0 aa da 88 ed dc d2 1f b7 
             } else if (n.type == extension) {
                 auto res = mpt_extension(node_row_context, node_input);
                 parent_hash = res.parent_hash;

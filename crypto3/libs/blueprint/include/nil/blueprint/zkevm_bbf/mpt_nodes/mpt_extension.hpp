@@ -97,6 +97,7 @@ public:
 
         TYPE key_length_bytes;
         TYPE node_length;
+        TYPE k0;
         std::array<TYPE, 32> key_part;   // key_part[32]
 
         TYPE value_length_bytes = 32; // instead of allocating we use it as a constant for now
@@ -158,8 +159,8 @@ public:
 
             hash_input.insert( hash_input.end(), byte_vector.begin(), byte_vector.end() );
 
-            zkevm_word_type k0 = n.value.at(0) >> 4*(node_key_length - 1);
-            if ((k0 == 1) || (k0 == 3)) {
+            k0 = n.value.at(0) >> 4*(node_key_length - 1);
+            if ((k0 == 1) || (k0 == 0)) {
                 node_key_length--; // then we only skip the first hex symbol
             } else {
                 node_key_length -= 2; // otherwise, the second hex is 0 and we skip it too
@@ -239,6 +240,8 @@ public:
         allocate(key_part_length); // 6-bit
         allocate(key_part_length_is_odd);
         allocate(key_part_length_half); // 5-bit
+        allocate(k0);
+        constrain((k0 - 1) * k0);
         constrain(key_part_length_is_odd * (1 - key_part_length_is_odd));
         constrain(2 * key_part_length_half + key_part_length_is_odd - key_part_length);
 
@@ -249,9 +252,15 @@ public:
         allocate(child_last_nibble);
 
         std::array<TYPE, 32> source_bytes; // the source of key_part bytes to be concatenated with accumulated key
+        BOOST_LOG_TRIVIAL(trace) << "source byte:\n";
+        BOOST_LOG_TRIVIAL(trace) << "child_nibble_present: " << child_nibble_present << std::endl;
+
         for(std::size_t i = 0; i < 32; i++) {
             source_bytes[i] = child_nibble_present * shifted_key_part[i] + (1 - child_nibble_present) * key_part[i];
+
+            BOOST_LOG_TRIVIAL(trace) << std::hex << source_bytes[i] << std::dec << " ";
         }
+        std::cout << std::endl;
         TYPE indic1_sum;
         TYPE indic1_value;
         for(std::size_t i = 0; i < 4; i++) {
@@ -297,18 +306,14 @@ public:
         // different possible values for key_part_length_half
         for(std::size_t l = 0; l < 32; l++) {
             TYPE selector = kplh_indic_1[l / 8] * kplh_indic_2[l % 8]; // selector == 1  <=>  key_part_length_half == l
-            for(std::size_t i = 0; i < 32; i++) {
-                if (i < 32 - l) {
-                    child_accumulated_key[i] += input.node_accumulated_key[i + l] * selector;
-                }
-                if (i >= 32 - l) {
-                    child_accumulated_key[i] += source_bytes[i] * selector;
-                }
-                if (i == 32 - l) {
-                    child_accumulated_key[i] += input.node_nibble_present * input.node_last_nibble * 16 * selector;
-                }
-            }
+            BOOST_LOG_TRIVIAL(trace) << "selector - " << l << ": " << selector << std::endl;
         }
+        BOOST_LOG_TRIVIAL(trace) << "\nchild_accumulated_key:\n";
+        for (size_t i = 0; i < child_accumulated_key.size(); i++)
+        {
+            BOOST_LOG_TRIVIAL(trace) << std::hex << child_accumulated_key[i] << std::dec << " ";
+        }
+        BOOST_LOG_TRIVIAL(trace) << "\n";
         for(std::size_t i = 0; i < 32; i++) {
             allocate(child_accumulated_key[i]);
         }
