@@ -252,14 +252,18 @@ public:
         allocate(child_last_nibble);
 
         std::array<TYPE, 32> source_bytes; // the source of key_part bytes to be concatenated with accumulated key
-        BOOST_LOG_TRIVIAL(trace) << "source byte:\n";
-        BOOST_LOG_TRIVIAL(trace) << "child_nibble_present: " << child_nibble_present << std::endl;
-
+        if constexpr (stage == GenerationStage::ASSIGNMENT) {
+            BOOST_LOG_TRIVIAL(trace) << "child_nibble_present: " << child_nibble_present << std::endl;
+            BOOST_LOG_TRIVIAL(trace) << "source byte:\n";
+        }
+        std::stringstream ss;
         for(std::size_t i = 0; i < 32; i++) {
             source_bytes[i] = child_nibble_present * shifted_key_part[i] + (1 - child_nibble_present) * key_part[i];
-
-            BOOST_LOG_TRIVIAL(trace) << std::hex << source_bytes[i] << std::dec << " ";
+            ss << std::hex << source_bytes[i] << std::dec << " ";
         }
+        if constexpr (stage == GenerationStage::ASSIGNMENT)
+            BOOST_LOG_TRIVIAL(trace) << ss.str();
+
         std::cout << std::endl;
         TYPE indic1_sum;
         TYPE indic1_value;
@@ -306,14 +310,29 @@ public:
         // different possible values for key_part_length_half
         for(std::size_t l = 0; l < 32; l++) {
             TYPE selector = kplh_indic_1[l / 8] * kplh_indic_2[l % 8]; // selector == 1  <=>  key_part_length_half == l
-            BOOST_LOG_TRIVIAL(trace) << "selector - " << l << ": " << selector << std::endl;
+            for(std::size_t i = 0; i < 32; i++) {
+                if (i < 31 - l) {
+                    child_accumulated_key[i] += input.node_accumulated_key[i + l] * selector;
+                }
+                if (i > 31 - l) {
+                    child_accumulated_key[i] += source_bytes[i] * selector;
+                }
+                if (i == 31 - l) {
+                    child_accumulated_key[i] += input.node_nibble_present * input.node_last_nibble * 16 * selector
+                                            + (source_bytes[i] - k0 * 0x10) * selector;
+                    constrain((1 - k0) * source_bytes[i] * selector, "if k0 is zero k1 must be zero");
+                }
+            }
+            if constexpr (stage == GenerationStage::ASSIGNMENT)
+                BOOST_LOG_TRIVIAL(trace) << "selector - " << l << ": " << selector << std::endl;
         }
-        BOOST_LOG_TRIVIAL(trace) << "\nchild_accumulated_key:\n";
-        for (size_t i = 0; i < child_accumulated_key.size(); i++)
-        {
-            BOOST_LOG_TRIVIAL(trace) << std::hex << child_accumulated_key[i] << std::dec << " ";
+        if constexpr (stage == GenerationStage::ASSIGNMENT) {
+            BOOST_LOG_TRIVIAL(trace) << "\nchild_accumulated_key:\n";
+            std::stringstream ss;
+            for (size_t i = 0; i < child_accumulated_key.size(); i++)
+                ss << std::hex << child_accumulated_key[i] << std::dec << " ";
+            BOOST_LOG_TRIVIAL(trace) << ss.str() << "\n";
         }
-        BOOST_LOG_TRIVIAL(trace) << "\n";
         for(std::size_t i = 0; i < 32; i++) {
             allocate(child_accumulated_key[i]);
         }

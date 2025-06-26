@@ -330,7 +330,7 @@ public:
                     for(std::size_t j = 0; j < 16; j++) {
                     ss << "last byte: " << std::hex << (j > 0 ? child_accumulated_key_last_byte[j-1] :
                                                                 child_accumulated_key[31]) << std::dec << std::endl;
-                        ss << "child lat nibble: " << std::hex << child_last_nibble[j] << std::dec << "\n";
+                        ss << "child last nibble: " << std::hex << child_last_nibble[j] << std::dec << "\n";
                         ss << "accumulated key length: " << std::hex << Res.accumulated_key_length << std::dec << "\n";
                         ss << "child: ";
                         for(std::size_t i = 0; i < 32; i++) {
