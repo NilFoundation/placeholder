@@ -269,7 +269,7 @@ namespace nil {
                     append_call_context_readonly_fields();
                     rw_counter += call_context_readonly_field_amount;
 
-                    if( _bytecode_hashes.count(bytecode_hash) == 0){
+                    if (!call_is_precompile && _bytecode_hashes.count(bytecode_hash) == 0) {
                         _keccaks.new_buffer(
                             bytecode
                         );
@@ -304,15 +304,25 @@ namespace nil {
                     print_accounts_current_state();
                 }
 
-                // virtual void dummycallprecompile() override{
-                //     BOOST_LOG_TRIVIAL(fatal) << "dummy_call_precompile not supported";
-                //     BOOST_ASSERT(false);
-                // }
+                virtual void execute_precompile() override {
+                    zkevm_basic_evm::execute_precompile();
 
-                // virtual void dummyprecompile() override{
-                //     BOOST_LOG_TRIVIAL(fatal) << "dummy_precompile not supported";
-                //     BOOST_ASSERT(false);
-                // }
+                    for (size_t i = 0; i < returndata.size(); ++i) {
+                        _short_rw_operations.push_back(returndata_rw_operation(
+                            call_id,
+                            i,
+                            rw_counter++,
+                            true,
+                            returndata[i]
+                        ));
+                    }
+
+                    _short_rw_operations.push_back(call_context_header_operation(
+                        call_id,
+                        call_context_field::call_status,
+                        call_status
+                    ));
+                }
 
                 virtual void transfer_to_eth_account() override{
                     zkevm_basic_evm::transfer_to_eth_account();
@@ -1263,7 +1273,9 @@ namespace nil {
                         rw_counter
                     ));
                     after_call_last_state_operation_update();
+
                     zkevm_basic_evm::end_call();
+
                     _short_rw_operations.push_back(call_context_header_operation(
                         call_id,
                         call_context_field::returndata_size,
