@@ -1,6 +1,7 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2025 Alexey Yashunsky <a.yashunsky@nil.foundation>
 // Copyright (c) 2025 Georgios Fotiadis <gfotiadis@nil.foundation>
+// Copyright (c) 2025 Amirhossein Khajehpour <a.khajepour@nil.foundation>
 //
 // MIT License
 //
@@ -97,7 +98,6 @@ public:
 
         TYPE key_length_bytes;
         TYPE node_length;
-        TYPE k0;
         std::array<TYPE, 32> key_part;   // key_part[32]
 
         TYPE value_length_bytes = 32; // instead of allocating we use it as a constant for now
@@ -159,10 +159,11 @@ public:
 
             hash_input.insert( hash_input.end(), byte_vector.begin(), byte_vector.end() );
 
-            k0 = n.value.at(0) >> 4*(node_key_length - 1);
-            if ((k0 == 1) || (k0 == 0)) {
+            auto k0 = n.value.at(0) >> 4*(node_key_length - 1);
+            BOOST_ASSERT_MSG(k0 == 1 || k0 == 0, "k0 is wrong in extension node!");
+            if (k0 == 1) {
                 node_key_length--; // then we only skip the first hex symbol
-            } else {
+            } else if (k0 == 0) {
                 node_key_length -= 2; // otherwise, the second hex is 0 and we skip it too
             }
             key_part_length = node_key_length; // now store it in a cell for further use
@@ -240,8 +241,6 @@ public:
         allocate(key_part_length); // 6-bit
         allocate(key_part_length_is_odd);
         allocate(key_part_length_half); // 5-bit
-        allocate(k0);
-        constrain((k0 - 1) * k0);
         constrain(key_part_length_is_odd * (1 - key_part_length_is_odd));
         constrain(2 * key_part_length_half + key_part_length_is_odd - key_part_length);
 
@@ -251,20 +250,25 @@ public:
         child_last_nibble = key_part_lower[31] * child_nibble_present;
         allocate(child_last_nibble);
 
-        std::array<TYPE, 32> source_bytes; // the source of key_part bytes to be concatenated with accumulated key
         if constexpr (stage == GenerationStage::ASSIGNMENT) {
-            BOOST_LOG_TRIVIAL(trace) << "child_nibble_present: " << child_nibble_present << std::endl;
+            BOOST_LOG_TRIVIAL(trace) << "nibbles_present " << input.node_nibble_present << " " << key_part_length_is_odd << std::endl;
             BOOST_LOG_TRIVIAL(trace) << "source byte:\n";
         }
         std::stringstream ss;
-        for(std::size_t i = 0; i < 32; i++) {
-            source_bytes[i] = child_nibble_present * shifted_key_part[i] + (1 - child_nibble_present) * key_part[i];
-            ss << std::hex << source_bytes[i] << std::dec << " ";
-        }
-        if constexpr (stage == GenerationStage::ASSIGNMENT)
+        if constexpr (stage == GenerationStage::ASSIGNMENT) {
+            ss << "\nkey_part:\n";
+            for(std::size_t i = 0; i < 32; i++) {
+                ss << std::hex << key_part[i] << std::dec << " ";
+            }
+            
+            ss << "\nnode_accum:\n";
+            for(std::size_t i = 0; i < 32; i++) {
+                ss << std::hex << input.node_accumulated_key[i] << std::dec << " ";
+            }
+            
+            
             BOOST_LOG_TRIVIAL(trace) << ss.str();
-
-        std::cout << std::endl;
+        }
         TYPE indic1_sum;
         TYPE indic1_value;
         for(std::size_t i = 0; i < 4; i++) {
@@ -310,21 +314,72 @@ public:
         // different possible values for key_part_length_half
         for(std::size_t l = 0; l < 32; l++) {
             TYPE selector = kplh_indic_1[l / 8] * kplh_indic_2[l % 8]; // selector == 1  <=>  key_part_length_half == l
+            // k0 and k1 related constraints:
+            constrain(selector * key_part_length_is_odd * (shifted_key_part[31 - l] - 1), "if nibble exist k0 must be 1");
+            constrain(selector * (1 - key_part_length_is_odd) * key_part[32 - l - 1], "if nibble doesn't exist k0 and k1 are 0");
+
             for(std::size_t i = 0; i < 32; i++) {
-                if (i < 31 - l) {
-                    child_accumulated_key[i] += input.node_accumulated_key[i + l] * selector;
-                }
-                if (i > 31 - l) {
-                    child_accumulated_key[i] += source_bytes[i] * selector;
-                }
-                if (i == 31 - l) {
-                    child_accumulated_key[i] += input.node_nibble_present * input.node_last_nibble * 16 * selector
-                                            + (source_bytes[i] - k0 * 0x10) * selector;
-                    constrain((1 - k0) * source_bytes[i] * selector, "if k0 is zero k1 must be zero");
-                }
+                // parent share of the final child_accumulated_key:
+                    // there is no extra byte in the end
+                    if (i <= 31 - l) {
+                        child_accumulated_key[i] += selector * 
+                            (1 - input.node_nibble_present * key_part_length_is_odd) * 
+                            input.node_accumulated_key[i + l];
+                    }
+                    if (i == 32 - l) {
+                        // only parent has an extra nibble
+                        child_accumulated_key[i] += selector * 
+                            input.node_nibble_present * (1 - key_part_length_is_odd) * 
+                            (input.node_last_nibble * 0x10 + shifted_key_part[32 - l]);
+                        
+                        // only key_part has an extra nibble
+                        child_accumulated_key[i] += selector *
+                            (1 - input.node_nibble_present) * key_part_length_is_odd *
+                            (l >= 1 ? shifted_key_part[32 - l]: child_last_nibble);
+
+                        // none of them has an extra nibble
+                        child_accumulated_key[i] += selector *
+                            (1 - input.node_nibble_present) * (1 - key_part_length_is_odd) *
+                            key_part[32 - l];
+                    }
+                    // there is an extra byte in the end
+                    if (l < 31 && i < 31 - l) {
+                        // both parent and key_part have the extra nibble
+                        child_accumulated_key[i] += selector * 
+                            input.node_nibble_present * key_part_length_is_odd * 
+                            input.node_accumulated_key[i + l + 1];
+                    }
+                    if (i == 31 - l) {
+                        // both parent and key_part have the extra nibble
+                        child_accumulated_key[i] += selector * 
+                            input.node_nibble_present * key_part_length_is_odd * 
+                            (input.node_last_nibble * 0x10 + key_part[31 - l] - 0x10);
+                    }
+                // key_part share of the final child_accumulated_key
+                    // there was no extra byte in the end
+                    if (i > 32 - l) {
+                        // one of them has an extra nibble
+                        child_accumulated_key[i] += selector * 
+                            ((1 - input.node_nibble_present) * key_part_length_is_odd + input.node_nibble_present * (1 - key_part_length_is_odd)) *
+                            shifted_key_part[i];
+                        // none has extra nibble
+                        child_accumulated_key[i] += selector * 
+                            ((1 - input.node_nibble_present) * (1 - key_part_length_is_odd)) *
+                            key_part[i];
+                    }
+                    // there was an extra byte in the end
+                    if (i > 31 - l) {
+                        // both parent and key_part have the extra nibble
+                        child_accumulated_key[i] += selector * 
+                            input.node_nibble_present * key_part_length_is_odd * 
+                            key_part[i];
+                    }
             }
-            if constexpr (stage == GenerationStage::ASSIGNMENT)
-                BOOST_LOG_TRIVIAL(trace) << "selector - " << l << ": " << selector << std::endl;
+            // std::cout << std::endl;
+            if constexpr (stage == GenerationStage::ASSIGNMENT) {
+                if (selector == 1)
+                    BOOST_LOG_TRIVIAL(trace) << "length: " << l << std::endl;
+            }
         }
         if constexpr (stage == GenerationStage::ASSIGNMENT) {
             BOOST_LOG_TRIVIAL(trace) << "\nchild_accumulated_key:\n";

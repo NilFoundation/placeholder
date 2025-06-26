@@ -169,14 +169,12 @@ public:
                         }
                     }
                 } else if (node.type == extension)  {
-                    zkevm_word_type k0 = node.value[0];
+                    zkevm_word_type k0 = node.value[0] >> (node.len.at(0) - 1)*4;
                     std::size_t accumulated_key_length;
                     zkevm_word_type accumulated_key;
                     std::size_t key_extension_length;
                     zkevm_word_type key_extension;
                     
-                    while (k0 > 3)
-                        k0 >>= 4;
                     BOOST_ASSERT_MSG(k0 == 1 || k0 == 0, "Wrong extension node format!");
                     if (k0 == 0)
                         key_extension_length = node.len[0] - 2;

@@ -188,7 +188,18 @@ BOOST_AUTO_TEST_CASE(one_mpt_path) {
     test_zkevm_mpt<field_type>("mpt_storage_path_2.json", 500);
     test_zkevm_mpt<field_type>("mpt_storage_path_3.json", 500);
     test_zkevm_mpt<field_type>("mpt_storage_two_leaves_batch_0.json", 500);
-    test_zkevm_mpt<field_type>("mpt_account_no_leaf_batch_0.json", 500);
+    test_zkevm_mpt<field_type>("mpt_account_no_leaf_batch_0.json", 2000);
+    test_zkevm_mpt<field_type>("mpt_extension_0.json", 500);
+    test_zkevm_mpt<field_type>("mpt_extension_1.json", 500);
+    test_zkevm_mpt<field_type>("mpt_extension_2.json", 500);
+    test_zkevm_mpt<field_type>("mpt_extension_3.json", 500);
+    test_zkevm_mpt<field_type>("mpt_extension_4.json", 500);
+    test_zkevm_mpt<field_type>("mpt_extension_5.json", 500);
+    test_zkevm_mpt<field_type>("mpt_extension_6.json", 500);
+    test_zkevm_mpt<field_type>("mpt_extension_7.json", 500);
+    test_zkevm_mpt<field_type>("mpt_extension_8.json", 500);
+    test_zkevm_mpt<field_type>("mpt_extension_9.json", 500);
+    test_zkevm_mpt<field_type>("mpt_extension_batch.json", 2000);
 }
 BOOST_AUTO_TEST_CASE(mpt_leafs) {
   test_zkevm_mpt_leaf<field_type>("mpt_leaf_storage.json", mpt_type::storage_trie, 20);
