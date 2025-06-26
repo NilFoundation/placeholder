@@ -960,16 +960,16 @@ BOOST_AUTO_TEST_CASE(modular) {
 }
 
 // May be tested when block loader will be updated
-BOOST_AUTO_TEST_CASE(precompiles, *boost::unit_test::disabled()) {
+BOOST_AUTO_TEST_CASE(precompiles) {
     l1_size_restrictions max_sizes;
 
-    max_sizes.max_keccak_blocks = 4;
-    max_sizes.max_bytecode = 300;
+    max_sizes.max_keccak_blocks = 7;
+    max_sizes.max_bytecode = 1000;
     max_sizes.max_mpt = 0;
-    max_sizes.max_rw = 500;
-    max_sizes.max_copy = 70;
+    max_sizes.max_rw = 5000;
+    max_sizes.max_copy = 500;
     max_sizes.max_copy_events = 70;
-    max_sizes.max_zkevm_rows = 500;
+    max_sizes.max_zkevm_rows = 4000;
     max_sizes.max_exponentiations = 10;
     max_sizes.max_exp_rows = 100;
 

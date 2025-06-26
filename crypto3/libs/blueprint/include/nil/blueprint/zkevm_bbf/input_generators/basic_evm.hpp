@@ -106,6 +106,7 @@ namespace nil {
                 std::vector<std::uint8_t> returndata;
                 bool            call_is_create;
                 bool            call_is_create2;
+                bool            call_is_precompile;
 
                 // Gas passed to be passed to a new call, must be capped
                 zkevm_word_type call_gas_sent;
@@ -285,17 +286,20 @@ namespace nil {
                     BOOST_LOG_TRIVIAL(trace) << "Basic start call";
 
                     if (!call_is_create && !call_is_create2) {
-                        bytecode = _accounts_current_state[call_addr].bytecode;
+                        bytecode = call_is_precompile ?
+                                   std::vector<uint8_t>{} :
+                                   _accounts_current_state[call_addr].bytecode;
                         bytecode_hash = zkevm_keccak_hash(bytecode);
 
                         // address access cost
-                        if (_call_stack.back().was_accessed.contains({call_addr, 1, 0})) {
+                        if (call_is_precompile ||
+                            _call_stack.back().was_accessed.contains({call_addr, 1, 0})) {
                             decrease_gas(100);
                         } else {
                             decrease_gas(2600);
+                            _call_stack.back().was_accessed.insert({call_addr, 1, 0});
                         }
                     }
-                    _call_stack.back().was_accessed.insert({call_addr, 1, 0});
 
                     _call_stack.push_back(zkevm_call_context());
                     _call_stack.back().call_pc = pc;
@@ -355,6 +359,11 @@ namespace nil {
                 }
 
                 virtual void execute_call(){
+                    if (call_is_precompile) {
+                        execute_precompile();
+                        return;
+                    }
+
                     BOOST_LOG_TRIVIAL(trace) << "Basic execute call";
 
                     while (!is_end_call){
@@ -1478,6 +1487,7 @@ namespace nil {
                     call_value = value;
                     call_is_create = true;
                     call_is_create2 = false;
+                    call_is_precompile = false;
                     call_gas_sent = gas;
                     is_start_call = true;
                 }
@@ -1521,6 +1531,7 @@ namespace nil {
                     call_value = value;
                     call_is_create = false;
                     call_is_create2 = true;
+                    call_is_precompile = false;
                     call_gas_sent = gas;
                     call_status = call_context_address;
                     is_start_call = true;
@@ -1592,6 +1603,7 @@ namespace nil {
                 virtual void delegatecall(){
                     call_is_create = false;
                     call_is_create2 = false;
+                    call_is_precompile = false;
                     call_gas_sent = std::size_t(stack.back());  stack.pop_back();
                     call_addr = stack.back()& 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_big_uint256;;  stack.pop_back();
                     call_value = 0;
@@ -1611,71 +1623,20 @@ namespace nil {
                     is_start_call = true;
                 }
 
-                virtual void precompile(bool is_static) {
-                    BOOST_LOG_TRIVIAL(trace) << "Precompile" << std::endl;
+                virtual void execute_precompile() {
+                    BOOST_LOG_TRIVIAL(trace) << "Precompile "
+                                             << std::hex << call_addr << std::dec
+                                             << " execute call" << std::endl;
 
-                    zkevm_word_type precomp_gas = stack.back(); stack.pop_back();
-                    std::size_t precomp_addr = std::size_t(stack.back()); stack.pop_back(); // addr
-
-                    if (!is_static) {
-                        zkevm_word_type precomp_value = stack.back(); stack.pop_back(); // value
-                        BOOST_ASSERT( precomp_value == 0 );
-                    }
-
-                    std::size_t precomp_args_offset = std::size_t(stack.back()); stack.pop_back(); // args_offset
-                    std::size_t precomp_args_length = std::size_t(stack.back()); stack.pop_back(); // args_length
-                    std::size_t precomp_ret_offset = std::size_t(stack.back()); stack.pop_back(); // ret_offset
-                    std::size_t precomp_ret_length = std::size_t(stack.back()); stack.pop_back(); // ret_length
-                    std::size_t data_word_size = (precomp_args_length + 31) / 32;
-
-                    BOOST_LOG_TRIVIAL(trace) << "precomp_gas = " << precomp_gas << std::endl;
-                    BOOST_LOG_TRIVIAL(trace) << "precomp_addr = 0x" << std::hex << precomp_addr << std::dec << std::endl;
-                    BOOST_LOG_TRIVIAL(trace) << "precomp_args_offset = " << precomp_args_offset << std::endl;
-                    BOOST_LOG_TRIVIAL(trace) << "precomp_args_length = " << precomp_args_length << std::endl;
-                    BOOST_LOG_TRIVIAL(trace) << "precomp_ret_offset = " << precomp_ret_offset << std::endl;
-                    BOOST_LOG_TRIVIAL(trace) << "precomp_ret_length = " << precomp_ret_length << std::endl;
-
-                    // TODO: memory expansion gas cost
-                    std::size_t next_mem = memory.size();
-                    next_mem = std::max(next_mem, precomp_args_length == 0? 0: precomp_args_offset + precomp_args_length);
-                    next_mem = std::max(next_mem, precomp_ret_length == 0? 0: precomp_ret_offset + precomp_ret_length);
-                    if (next_mem > memory.size()) {
-                        BOOST_LOG_TRIVIAL(trace) << "Memory expansion " << memory.size() << "=>" << next_mem << std::endl;
-                        decrease_gas(memory_expansion_cost(next_mem, memory.size()));
-                        memory.resize(next_mem, 0);
-                    }
-
-                    std::vector<std::uint8_t> precomp_input;
-                    for (std::size_t i = 0; i < precomp_args_length; i++) {
-                        precomp_input.push_back(memory[precomp_args_offset+i]);
-                    }
-
-                    decrease_gas(100); // address access (precompiles are always warm)
-
-                    auto result = evaluate_precompile(Precompile{precomp_addr},
-                                                     cap_call_gas(precomp_gas),
-                                                     precomp_input);
+                    auto result = evaluate_precompile(
+                            Precompile{size_t(call_addr)}, gas, calldata);
 
                     decrease_gas(result.gas_used);
+                    call_status = result.success;
                     returndata = result.data;
-
-                    std::size_t real_ret_length = std::min(returndata.size(), precomp_ret_length);
-                    for (std::size_t i = 0; i < real_ret_length; i++) {
-                        memory[precomp_ret_offset + i] = returndata[i];
-                    }
-
-                    stack.push_back(result.success);
-                    pc++;
-                    _call_stack.back().lastcall_returndataoffset = precomp_ret_offset;
-                    _call_stack.back().lastcall_returndatalength = precomp_ret_length;
                 };
 
                 virtual void staticcall() {
-                    if (stack[stack.size() - 2] >= 0x1 && stack[stack.size() - 2] <= 0xa) {
-                        precompile(true);
-                        return;
-                    }
-
                     call_gas_sent = stack.back();  stack.pop_back();
                     call_addr = stack.back() & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_big_uint256;  stack.pop_back();
                     call_value = 0;
@@ -1687,9 +1648,10 @@ namespace nil {
                     std::size_t ret_length = std::size_t(stack.back());  stack.pop_back();
                     _call_stack.back().lastcall_returndataoffset = ret_offset;
                     _call_stack.back().lastcall_returndatalength = ret_length;
+
                     call_is_create = false;
                     call_is_create2 = false;
-
+                    call_is_precompile = call_addr >= 0x1 && call_addr <= 0xa;
 
                     // TODO: check memory expansion
                     std::size_t next_mem = memory.size();
@@ -1753,11 +1715,9 @@ namespace nil {
                 }
 
                 virtual void call(){
-                    if (stack[stack.size() - 2] >= 0x1 && stack[stack.size() - 2] <= 0xa) {
-                        precompile(false);
-                        return;
-                    }
-                    if( _accounts_current_state[stack[stack.size() - 2] & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_big_uint256].bytecode.size() == 0 ){
+                    call_is_precompile = stack[stack.size() - 2] >= 0x1 && stack[stack.size() - 2] <= 0xa;
+                    if (!call_is_precompile &&
+                        _accounts_current_state[stack[stack.size() - 2] & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_big_uint256].bytecode.size() == 0) {
                         this->transfer_to_eth_account();
                         return;
                     }

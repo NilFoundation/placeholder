@@ -277,13 +277,15 @@ namespace nil {
                     if( !check_equal<std::size_t>(stack.size(), opcode_description.get_child("stack").size(), "Wrong stack size") ) return;
                     std::size_t d = 0;
                     for( const auto &v: opcode_description.get_child("stack") ){
-                        if( !check_equal<zkevm_word_type>(stack[d], zkevm_word_from_string(v.second.data()), "Wrong stack") ) {
+                        auto expected = zkevm_word_from_string(v.second.data());
+                        if( !check_equal<zkevm_word_type>(stack[d], expected, "Wrong stack") ) {
                             std::size_t ind = 0;
                             for( const auto &v: opcode_description.get_child("stack") ){
+                                auto expected = zkevm_word_from_string(v.second.data());
                                 BOOST_LOG_TRIVIAL(error)
                                     << "Stack[" << ind << "] = "
                                     << std::hex << stack[ind]
-                                    << " != " << v.second.data()
+                                    << " != " << expected
                                     << std::dec;
                                 ind++;
                             }
