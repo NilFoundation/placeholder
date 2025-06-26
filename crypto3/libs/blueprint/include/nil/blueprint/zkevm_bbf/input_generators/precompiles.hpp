@@ -351,9 +351,11 @@ namespace nil::blueprint::bbf {
         auto m = read_cpp_int(input, m_size);
 
         boost::multiprecision::cpp_int o = boost::multiprecision::powm(b, e, m);
-        PrecompileResult result{1, gas_fee};
-        boost::multiprecision::export_bits(o, std::back_inserter(result.data), 8);
-        return result;
+
+        std::vector<uint8_t> output(m_size);
+        boost::multiprecision::export_bits(o, output.rbegin(), 8,
+                                           /* big_endian = */ false);
+        return {1, gas_fee, std::move(output)};
     }
 
     // EIP-196
