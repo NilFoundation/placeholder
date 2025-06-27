@@ -136,6 +136,7 @@ public:
             node_key_bytes = ceil(node_key_length/2);
 
             // different indicators for RLC key
+            BOOST_ASSERT_MSG(node_key_length <= 64, "Extension node key part can't be more than 32 bytes!");
             // TODO fix this
             BOOST_ASSERT_MSG(node_key_length != 64, "Current implementation doesn't support extension nodes with key part length 32 bytes!");
             rlc_indic_1[(node_key_length / 2) / 8] = 1;
