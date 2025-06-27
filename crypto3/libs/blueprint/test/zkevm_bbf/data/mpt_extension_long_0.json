@@ -1,0 +1,34 @@
+{
+    "root": "1aaf3614a043a1f91afcf8da0f39bc7986b59f978e15a604bddb3aa2cc9c4e99",
+    "nodes": [
+        {
+            "hash": "1aaf3614a043a1f91afcf8da0f39bc7986b59f978e15a604bddb3aa2cc9c4e99",
+            "inners": [
+                "12c345567890132435467980a7b3b2c8e8f0a8e837281203c0adaff73ecdae",
+                "d73b94849f13c85fd0bb087f2e3e6b61324428a1e69bfdcdd54b7700d567166b"
+            ]
+        },
+        {
+            "hash": "d73b94849f13c85fd0bb087f2e3e6b61324428a1e69bfdcdd54b7700d567166b",
+            "inners": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "50413d9875a546e709d06ef6f2335c9b0b8d0e63e1d41721bbfc49d532c19b3b",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "205554320c8a4e7f6af9231b590ff12df46e6e8961490b6398690f71f784d43d",
+                ""
+            ]
+        }
+    ]
+}

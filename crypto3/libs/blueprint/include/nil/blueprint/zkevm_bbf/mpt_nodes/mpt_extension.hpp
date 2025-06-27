@@ -135,7 +135,9 @@ public:
             std::size_t node_key_length = n.len.at(0);
             node_key_bytes = ceil(node_key_length/2);
 
-            // different indicators for RLC key  
+            // different indicators for RLC key
+            // TODO fix this
+            BOOST_ASSERT_MSG(node_key_length != 64, "Current implementation doesn't support extension nodes with key part length 32 bytes!");
             rlc_indic_1[(node_key_length / 2) / 8] = 1;
             rlc_indic_2[(node_key_length / 2) % 8] = 1;
 
@@ -183,6 +185,8 @@ public:
             std::size_t total_value_length = hash_input.size(); // size of value to be hashed: rlp_key||key||rlp_value||value
 
             // here...
+            // TODO this must be fixed
+            BOOST_ASSERT_MSG(total_value_length <= 55, "Current implementation is underconstrained for extension nodes with length more than 55 bytes!");
             if (total_value_length <= 55) {
                 rlp_node_prefix0 = 192 + total_value_length;
                 node_length = total_value_length;
@@ -252,7 +256,6 @@ public:
 
         if constexpr (stage == GenerationStage::ASSIGNMENT) {
             BOOST_LOG_TRIVIAL(trace) << "nibbles_present " << input.node_nibble_present << " " << key_part_length_is_odd << std::endl;
-            BOOST_LOG_TRIVIAL(trace) << "source byte:\n";
         }
         std::stringstream ss;
         if constexpr (stage == GenerationStage::ASSIGNMENT) {
@@ -265,6 +268,11 @@ public:
             for(std::size_t i = 0; i < 32; i++) {
                 ss << std::hex << input.node_accumulated_key[i] << std::dec << " ";
             }
+            ss << "\nshifted:\n";
+            for(std::size_t i = 0; i < 32; i++) {
+                ss << std::hex << shifted_key_part[i] << std::dec << " ";
+            }
+            ss << key_part_lower[31];
             
             
             BOOST_LOG_TRIVIAL(trace) << ss.str();
@@ -273,21 +281,21 @@ public:
         TYPE indic1_value;
         for(std::size_t i = 0; i < 4; i++) {
             allocate(kplh_indic_1[i]);
-            constrain( kplh_indic_1[i] * (1 - kplh_indic_1[i]) );
+            constrain( kplh_indic_1[i] * (1 - kplh_indic_1[i]), "length selector dimentions must be binary!" );
             indic1_sum += kplh_indic_1[i];
             indic1_value += kplh_indic_1[i] * i;
         }
-        constrain( indic1_sum * (1 - indic1_sum) );
+        constrain(indic1_sum - 1, "length selector dimension one!" );
 
         TYPE indic2_sum;
         TYPE indic2_value;
         for(std::size_t i = 0; i < 8; i++) {
             allocate(kplh_indic_2[i]);
-            constrain(kplh_indic_2[i] * (1 - kplh_indic_2[i]) );
+            constrain(kplh_indic_2[i] * (1 - kplh_indic_2[i]), "length selector dimentions must be binary!" );
             indic2_sum += kplh_indic_2[i];
             indic2_value += kplh_indic_2[i] * i;
         }
-        constrain( indic2_sum * (1 - indic2_sum) );
+        constrain(indic2_sum - 1, "length selector dimension two!" );
         constrain( indic1_value * 8 + indic2_value - key_part_length_half );
 
         TYPE rlc_indi1_sum;
