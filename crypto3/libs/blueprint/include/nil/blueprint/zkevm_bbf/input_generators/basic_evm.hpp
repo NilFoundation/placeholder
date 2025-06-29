@@ -39,7 +39,8 @@ namespace nil {
     namespace blueprint {
         namespace bbf {
             static constexpr std::size_t MAX_ZKEVM_MEMORY_SIZE = (1 << 22);
-            static constexpr std::size_t MAX_ZKEVM_GAS_ERROR_BOUND = std::numeric_limits<std::size_t>::max() - (1 << 26);
+            static constexpr std::size_t MAX_ZKEVM_GAS_BOUND = (1 << 26);
+            static constexpr std::size_t MAX_ZKEVM_GAS_ERROR_BOUND = std::numeric_limits<std::size_t>::max() - MAX_ZKEVM_GAS_BOUND;
 
             class zkevm_basic_evm{
                 using extended_integral_type = nil::crypto3::multiprecision::big_uint<512>;

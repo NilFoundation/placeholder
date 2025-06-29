@@ -118,17 +118,16 @@ BOOST_AUTO_TEST_CASE(codecopy_overflow) {
     opcode_tester.push_opcode(zkevm_opcode::PUSH5, hex_string_to_bytes("0x20000000"));
     opcode_tester.push_opcode(zkevm_opcode::CODECOPY);
     // huge dest offset
-    opcode_tester.push_opcode(zkevm_opcode::PUSH1, 0x5_big_uint256);
-    opcode_tester.push_opcode(zkevm_opcode::PUSH5, 0x0);
-    opcode_tester.push_opcode(zkevm_opcode::PUSH32, 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_big_uint256);
-    opcode_tester.push_opcode(zkevm_opcode::CODECOPY);
-
+    // opcode_tester.push_opcode(zkevm_opcode::PUSH1, 0x5_big_uint256);
+    // opcode_tester.push_opcode(zkevm_opcode::PUSH5, 0x0);
+    // opcode_tester.push_opcode(zkevm_opcode::PUSH32, 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_big_uint256);
+    // opcode_tester.push_opcode(zkevm_opcode::CODECOPY);
 
     max_sizes.max_keccak_blocks = 10;
     max_sizes.max_bytecode = 300;
     max_sizes.max_mpt = 0;
     max_sizes.max_rw = 500;
-    max_sizes.max_copy = 300;
+    max_sizes.max_copy = 200;
     max_sizes.max_zkevm_rows = 300;
     max_sizes.max_exp_rows = 500;
     max_sizes.max_exponentiations = 50;

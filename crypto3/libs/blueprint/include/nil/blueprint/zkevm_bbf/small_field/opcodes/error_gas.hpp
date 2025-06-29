@@ -48,11 +48,14 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             TYPE gas_chunk_hi, diff_chunk_hi; // < 2^10
             TYPE gas_chunk_lo; // < 2^16
 
-            const std::size_t hi_chunk_bound = (MAX_ZKEVM_GAS_ERROR_BOUND >> 16);
+            const std::size_t hi_chunk_bound = (MAX_ZKEVM_GAS_BOUND >> 16);
 
             if constexpr( stage == GenerationStage::ASSIGNMENT){
-                auto gas = TYPE(0) - current_state.gas();
-                BOOST_ASSERT(gas.to_integral() < MAX_ZKEVM_GAS_ERROR_BOUND);
+                std::size_t current_gas = std::numeric_limits<std::size_t>::max() - current_state.gas();
+                TYPE gas = current_gas;
+                BOOST_LOG_TRIVIAL(trace) << std::hex << "current_gas = "  << current_gas << " gas = " << gas <<std::dec;
+                BOOST_ASSERT(current_state.gas() >= MAX_ZKEVM_GAS_ERROR_BOUND);
+                BOOST_ASSERT(current_gas < MAX_ZKEVM_GAS_BOUND);
                 gas_chunk_lo = gas.to_integral() & (0xFFFF);
                 gas_chunk_hi = gas.to_integral() >> 16;
                 diff_chunk_hi = hi_chunk_bound - 1 - gas_chunk_hi;
@@ -61,15 +64,14 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             allocate(gas_chunk_hi, 1, 0);
             allocate(diff_chunk_hi, 2, 0);
 
-            constrain(hi_chunk_bound - 1 - diff_chunk_hi - gas_chunk_hi);
+            constrain(hi_chunk_bound - 1 - diff_chunk_hi- gas_chunk_hi);
 
             if constexpr( stage == GenerationStage::CONSTRAINTS){
-                //constrain(current_state.pc_next() - current_state.pc(0) - 1);                   // PC transition
-                //constrain(current_state.gas(0) - current_state.gas_next() - 3);                 // GAS transition
+                //constrain(current_state.pc_next() - current_state.pc(0) - 1);                 // PC transition
                 constrain(current_state.gas(0) + gas_chunk_lo + 0x10000 * gas_chunk_hi);
-                // constrain(current_state.stack_size(0) - current_state.stack_size_next());       // stack_size transition
-                // constrain(current_state.memory_size(0) - current_state.memory_size_next());     // memory_size transition
-                constrain(current_state.rw_counter_next() - current_state.rw_counter(0));   // rw_counter transition
+                // constrain(current_state.stack_size(0) - current_state.stack_size_next());    // stack_size transition
+                // constrain(current_state.memory_size(0) - current_state.memory_size_next());  // memory_size transition
+                constrain(current_state.rw_counter_next() - current_state.rw_counter(0));       // rw_counter transition
             }
         }
     };
