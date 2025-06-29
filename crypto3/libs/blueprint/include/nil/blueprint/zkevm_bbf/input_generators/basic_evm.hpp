@@ -38,6 +38,9 @@
 namespace nil {
     namespace blueprint {
         namespace bbf {
+            static constexpr std::size_t MAX_ZKEVM_MEMORY_SIZE = (1 << 22);
+            static constexpr std::size_t MAX_ZKEVM_GAS_ERROR_BOUND = std::numeric_limits<std::size_t>::max() - (1 << 26);
+
             class zkevm_basic_evm{
                 using extended_integral_type = nil::crypto3::multiprecision::big_uint<512>;
 
@@ -1372,6 +1375,7 @@ namespace nil {
                     pc++;
                     decrease_gas(2);
                 }
+
                 virtual void returndatacopy(){
                     std::size_t dst = std::size_t(stack.back()); stack.pop_back();
                     std::size_t src = std::size_t(stack.back()); stack.pop_back();
@@ -1380,7 +1384,7 @@ namespace nil {
                     std::size_t minimum_word_size = (length + 31) / 32;
                     std::size_t next_mem = std::max(dst + length, memory.size());
                     std::size_t memory_expansion = memory_expansion_cost(next_mem, memory.size());
-                    std::size_t next_memory_size = (memory_size_word_util(next_mem))*32;
+                    std::size_t next_memory_size = next_mem;
 
                     if( memory.size() < dst + length) memory.resize(dst + length);
                     for( std::size_t i = 0; i < length; i++){
@@ -1556,35 +1560,35 @@ namespace nil {
                 virtual void codecopy() {
                     // 6M memory bytes gives 60M+ gas cost
                     // max gas cost is 36M for now, might go up to 60M
-                    constexpr static const std::size_t max_dest_offset = 8388608;  // 2^23
-                    // max contract size is 24,576 bytes, so offset and length need to fit in
-                    // first chunk
-                    constexpr static const std::size_t max_offset = 65536;
-                    constexpr static const std::size_t max_length = 65536;
-                    std::size_t dst = std::size_t(stack.back()); stack.pop_back();
-                    std::size_t src = std::size_t(stack.back()); stack.pop_back();
-                    std::size_t length = std::size_t(stack.back()); stack.pop_back();
+                    constexpr static const std::size_t max_dest_offset = MAX_ZKEVM_MEMORY_SIZE;
+                    constexpr static const std::size_t max_length = MAX_ZKEVM_MEMORY_SIZE;
+                    //  max contract size is 24,576 bytes, so offset need to fit in first chunk
+                    constexpr static const std::size_t max_offset = 1 << 16;
 
-                    bool overflow = (dst > max_dest_offset) ||
-                                    (src > max_offset) ||
-                                    (length > max_length);
+                    auto dst = stack.back(); stack.pop_back();
+                    auto src = stack.back(); stack.pop_back();
+                    auto lgt = stack.back(); stack.pop_back();
 
-                    std::size_t minimum_word_size = (length + 31) / 32;
-                    std::size_t next_mem = std::max(dst + length, memory.size());
-                    std::size_t memory_expansion = memory_expansion_cost(next_mem, memory.size());
-                    std::size_t next_memory_size = memory_size_word_util(next_mem) * 32;
-
+                    bool overflow = (dst >= max_dest_offset) || (lgt >= max_length) || (dst + lgt >= max_length);
 
                     if (overflow) {
-                        memory.resize(memory.size() - 1);
-                        increase_gas(1);
+                        decrease_gas(gas + 1);
+                        memory.clear();
                     }
                     else {
-                        if( memory.size() < dst + length) memory.resize(next_memory_size);
+                        std::size_t destination = std::size_t(dst);
+                        std::size_t length = std::size_t(lgt);
+                        std::size_t source = src < max_offset ? std::size_t(src) : max_offset;
+
+                        std::size_t l_words = (length + 31) / 32;
+                        std::size_t next_mem = std::max(destination + length, memory.size());
+                        std::size_t memory_expansion = memory_expansion_cost(next_mem, memory.size());
+
+                        if( memory.size() < destination + length) memory.resize(next_mem);
                         for( std::size_t i = 0; i < length; i++){
-                            memory[dst+i] = src + i < bytecode.size()? bytecode[src+i]: 0;
+                            memory[destination+i] = source + i < bytecode.size()? bytecode[source+i]: 0;
                         }
-                        decrease_gas(3 + 3 * minimum_word_size + memory_expansion); //dynamic gas
+                        decrease_gas(3 + 3 * l_words + memory_expansion); //dynamic gas
                     }
                     pc++;
                 }
@@ -1894,6 +1898,7 @@ namespace nil {
                 void decrease_gas(std::size_t cost) {
                     if( cost > gas ){
                         BOOST_LOG_TRIVIAL(trace) << "Gas limit exceeded";
+                        gas -= cost;
                         this->gas_error();
                     } else {
                         gas -= cost;

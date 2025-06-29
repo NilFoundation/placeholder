@@ -155,17 +155,19 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                 is_cold * 2100 +                                  // is_cold
                 is_clean * (1 - is_equal) * was_zero * 19900 +   // is_clean => is_cold
                 is_clean * (1 - is_equal) * (1 - was_zero) * 2800;
+            allocate(gas_cost, 32, 2);
+
             if constexpr ( stage == GenerationStage::ASSIGNMENT ){
                 BOOST_LOG_TRIVIAL(trace) << "\tGas cost = " << gas_cost << std::endl;
             }
 
             // TODO: Append refunds
             if constexpr( stage == GenerationStage::CONSTRAINTS ){
-                constrain(current_state.pc_next() - current_state.pc(0) - 1);                   // PC transition
-                constrain(current_state.gas(0) - current_state.gas_next() - gas_cost);               // GAS transition
-                constrain(current_state.stack_size(0) - current_state.stack_size_next() - 2);   // stack_size transition
-                constrain(current_state.memory_size(0) - current_state.memory_size_next());     // memory_size transition
-                constrain(current_state.rw_counter_next() - current_state.rw_counter(0) - 4);   // rw_counter transition
+                constrain(current_state.pc_next() - current_state.pc(2) - 1);                   // PC transition
+                constrain(current_state.gas(2) - current_state.gas_next() - gas_cost);               // GAS transition
+                constrain(current_state.stack_size(2) - current_state.stack_size_next() - 2);   // stack_size transition
+                constrain(current_state.memory_size(2) - current_state.memory_size_next());     // memory_size transition
+                constrain(current_state.rw_counter_next() - current_state.rw_counter(2) - 4);   // rw_counter transition
 
                 // 1. Read call_context_address from call_context
                 lookup(rw_256_table<FieldType, stage>::call_context_read_only_16_bit_lookup(

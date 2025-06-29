@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------//
-// Copyright (c) 2025 Antoine Cyr <antoinecyr@nil.foundation>
+// Copyright (c) 2025 Elena Tatuzova <e.tatuzova@nil.foundation>
 //
 // MIT License
 //
@@ -28,8 +28,9 @@
 
 #include <nil/blueprint/bbf/generic.hpp>
 #include <nil/blueprint/zkevm_bbf/small_field/subcomponents/word_size.hpp>
+#include "nil/blueprint/zkevm_bbf/types/zkevm_word.hpp"
 
-namespace nil::blueprint::bbf::zkevm_small_field{
+namespace nil::blueprint::bbf::zkevm_small_field {
 
     template<typename FieldType, GenerationStage stage>
     class memory_cost : public generic_component<FieldType, stage> {
@@ -37,42 +38,56 @@ namespace nil::blueprint::bbf::zkevm_small_field{
         using generic_component<FieldType, stage>::copy_constrain;
         using generic_component<FieldType, stage>::constrain;
 
-        public:
+        using value_type = typename FieldType::value_type;
+
+        constexpr static const std::size_t chunk_amount = 6;
+        constexpr static const value_type two_7 = 128;
+        constexpr static const value_type two_15 = 32768;
+        constexpr static const value_type two_16 = 65536;
+        constexpr static const value_type two_18 = 262144;
+        constexpr static const value_type two_23 = 8388608;
+
+      public:
         using typename generic_component<FieldType, stage>::TYPE;
         using typename generic_component<FieldType, stage>::context_type;
 
-        public:
+      public:
+        // Assigned cells
+        TYPE low, diff_low;   // size in words. (memory_input + 31)%32  < 32
+        TYPE mid, diff_mid;   // memory_words % 512                     < 512
+        TYPE high, diff_high;   // memory_words / 512                   < 256
+        // Output expressions (not assigned)
         TYPE cost;
         TYPE word_size;
 
         memory_cost(context_type &context_object, TYPE memory_input)
-            : generic_component<FieldType, stage>(context_object, false) {
-            using integral_type = typename FieldType::integral_type;
-            using Word_Size = typename zkevm_small_field::word_size<FieldType, stage>;
-
-            TYPE mem_words, mem_cost, R;
-            std::vector<std::size_t> word_size_lookup_area = {0, 1, 2};
-
-            context_type word_size_ct =
-                context_object.subcontext(word_size_lookup_area, 0, 1);
-
-            Word_Size word = Word_Size(word_size_ct, memory_input);
-            mem_words = word.size;
-
+            : generic_component<FieldType, stage>(context_object, false)
+        {
             if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                integral_type memory2 =
-                    integral_type(mem_words.to_integral()) * integral_type(mem_words.to_integral());
-                mem_cost = memory2 / 512 + 3 * integral_type(mem_words.to_integral());
-                R = memory2 % 512;
+                zkevm_word_type mem_words = (memory_input.to_integral() + 31) / 32;
+                low = (memory_input.to_integral() + 31) % 32;
+                diff_low = 31 - low;
+                mid = mem_words % 512;
+                diff_mid = 511 - mid;
+                high = mem_words / 512;
+                diff_high = 255 - high;
             }
+            allocate(low, 0, 0);
+            allocate(diff_low, 1, 0);
+            allocate(mid, 2, 0);
+            allocate(diff_mid, 3, 0);
+            allocate(high, 4, 0);
+            allocate(diff_high, 5, 0);
 
-            allocate(mem_words, 3, 0);
-            allocate(mem_cost, 4, 0);
-            allocate(R, 5, 0);
-            constrain((mem_cost - 3 * mem_words) * 512 - mem_words * mem_words + R);
+            // Range-checks
+            constrain(low + diff_low - 255);
+            constrain(mid + diff_mid - 511);
+            constrain(high + diff_high - 31);
 
-            cost = mem_cost;
-            word_size = word.size;
+            // (memory_input + 31) decomposition.
+            constrain(memory_input + 31 - low - mid * 32 - high * 512 * 32);
+            cost = 3 * (mid + 512 * high) + (mid * mid + 1024 * high * high * 512 * 512 );
+            word_size = mid + 512 * high;
         };
     };
-}
+}  // namespace nil::blueprint::bbf::zkevm_small_field
