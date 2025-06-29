@@ -83,7 +83,7 @@ public:
 */
 
     static std::size_t get_witness_amount(){
-        return 293;
+        return 294;
     }
 
     std::array<TYPE,32> parent_hash;
@@ -122,7 +122,7 @@ public:
         std::array<TYPE, 4> kplh_indic_1 = {0,0,0,0};     // I1 indicator function for key_part_length_half
         std::array<TYPE, 8> kplh_indic_2 = {0,0,0,0,0,0,0,0}; // I2 indicator function for key_part_length_half
 
-        std::array<TYPE, 4> rlc_indic_1 = {0,0,0,0};     // I1 indicator function for key_part_length_half
+        std::array<TYPE, 5> rlc_indic_1 = {0,0,0,0,0};     // I1 indicator function for key_part_length_half
         std::array<TYPE, 8> rlc_indic_2 = {0,0,0,0,0,0,0,0}; // I2 indicator function for key_part_length_half
         // ====
 
@@ -137,8 +137,6 @@ public:
 
             // different indicators for RLC key
             BOOST_ASSERT_MSG(node_key_length <= 64, "Extension node key part can't be more than 32 bytes!");
-            // TODO fix this
-            BOOST_ASSERT_MSG(node_key_length != 64, "Current implementation doesn't support extension nodes with key part length 32 bytes!");
             rlc_indic_1[(node_key_length / 2) / 8] = 1;
             rlc_indic_2[(node_key_length / 2) % 8] = 1;
 
@@ -187,7 +185,7 @@ public:
 
             // here...
             // TODO this must be fixed
-            BOOST_ASSERT_MSG(total_value_length <= 55, "Current implementation is underconstrained for extension nodes with length more than 55 bytes!");
+            // BOOST_ASSERT_MSG(total_value_length <= 55, "Current implementation is underconstrained for extension nodes with length more than 55 bytes!");
             if (total_value_length <= 55) {
                 rlp_node_prefix0 = 192 + total_value_length;
                 node_length = total_value_length;
@@ -301,7 +299,7 @@ public:
 
         TYPE rlc_indi1_sum;
         TYPE rlc_indic1_value;
-        for(std::size_t i = 0; i < 4; i++) {
+        for(std::size_t i = 0; i < 5; i++) {
             allocate(rlc_indic_1[i]);
             constrain( rlc_indic_1[i] * (1 - rlc_indic_1[i]) );
             rlc_indi1_sum += rlc_indic_1[i];
@@ -455,7 +453,7 @@ public:
         rlc_key_prefix += rlp_key_prefix;
         allocate(rlc_key_prefix); 
 
-        for(std::size_t l = 0; l < 32; l++) {
+        for(std::size_t l = 1; l <= 32; l++) {
             TYPE selector = rlc_indic_1[l / 8] * rlc_indic_2[l % 8]; // selector == 1  <=>  node_key_length == l (bytes)
             TYPE rlc_prev = rlc_key_prefix;
             for(std::size_t b = 0; b < 32; b++) {

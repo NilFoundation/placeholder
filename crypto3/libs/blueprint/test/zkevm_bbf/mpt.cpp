@@ -201,7 +201,7 @@ BOOST_AUTO_TEST_CASE(one_mpt_path) {
     test_zkevm_mpt<field_type>("mpt_extension_9.json", 500);
     test_zkevm_mpt<field_type>("mpt_extension_batch.json", 2000);
     // test_zkevm_mpt<field_type>("mpt_extension_long_0.json", 50); // circuit underconstrained
-    // test_zkevm_mpt<field_type>("mpt_extension_long_0.json", 50); // selector overflow issue
+    test_zkevm_mpt<field_type>("mpt_extension_long_0.json", 50); // selector overflow issue
 }
 BOOST_AUTO_TEST_CASE(mpt_leafs) {
   test_zkevm_mpt_leaf<field_type>("mpt_leaf_storage.json", mpt_type::storage_trie, 20);
