@@ -113,9 +113,9 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                 allocate(key[i], i, 0);
                 allocate(V[i], i+16, 0);
                 allocate(previous_V[i], i+32, 0);
+                allocate(equal_chunks[i], i+16, 1);
                 allocate(initial_V[i], i, 2);
                 allocate(clean_chunks[i], i+16, 2);
-                allocate(equal_chunks[i], i+32, 2);
 
                 constrain((clean_chunks[i] - initial_V[i] + previous_V[i]) * (clean_chunks[i] - previous_V[i] + initial_V[i])); // clean_chunks[i] = |initial_V[i] - previous_V[i]|
                 constrain((equal_chunks[i] - previous_V[i] + V[i]) * (equal_chunks[i] - V[i] + previous_V[i])); // equal_chunks[i] = |previous_V[i] - V[i]|
@@ -124,14 +124,14 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                 equal_chunks_sum += equal_chunks[i];
                 chunks_sum += previous_V[i];
             }
-            allocate(is_cold, 11, 1);
-            allocate(is_clean, 12, 1);
-            allocate(was_zero, 13, 1);
-            allocate(is_equal, 14, 1);
-            allocate(chunks_sum, 32, 1);
-            allocate(chunks_sum_inv, 33, 1);
-            allocate(equal_chunks_sum_inv, 34, 1);
-            allocate(clean_chunks_sum_inv, 35, 1);
+            allocate(is_cold, 32, 1);
+            allocate(is_clean, 33, 1);
+            allocate(was_zero, 34, 1);
+            allocate(is_equal, 35, 1);
+            allocate(chunks_sum, 36, 1);
+            allocate(chunks_sum_inv, 37, 1);
+            allocate(equal_chunks_sum_inv, 38, 1);
+            allocate(clean_chunks_sum_inv, 39, 1);
 
             constrain(is_cold * (1 - is_cold));
 
@@ -155,7 +155,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                 is_cold * 2100 +                                  // is_cold
                 is_clean * (1 - is_equal) * was_zero * 19900 +   // is_clean => is_cold
                 is_clean * (1 - is_equal) * (1 - was_zero) * 2800;
-            allocate(gas_cost, 32, 2);
+            allocate(gas_cost, 40, 2);
 
             if constexpr ( stage == GenerationStage::ASSIGNMENT ){
                 BOOST_LOG_TRIVIAL(trace) << "\tGas cost = " << gas_cost << std::endl;
