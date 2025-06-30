@@ -46,242 +46,90 @@ namespace nil::blueprint::bbf::zkevm_small_field {
       public:
         using typename generic_component<FieldType, stage>::TYPE;
 
-        zkevm_codecopy_bbf(context_type &context_object,
-                           const opcode_input_type<FieldType, stage> &current_state)
-            : generic_component<FieldType, stage>(context_object, false) {
-            using Word_Size = typename zkevm_small_field::word_size<FieldType, stage>;
-            using Memory_Cost = typename zkevm_small_field::memory_cost<FieldType, stage>;
+        // 1. Range checks
+        //      a) dest_offset < 2^22          else is_gas_error = true
+        //      b) length < 2^22               else is_gas_error = true
+        //      c) dest_offset + length < 2^22 else is_gas_error = true
+        // 2. bytecode_size lookup
+        // 3. is_bytecode_copy_event
+        //      a) if length == 0             then is_bytecode_copy_event = false
+        //      b) if offset >= bytecode_size then is_bytecode_copy_event = false;
+        //      c) if offset < bytecode_size  then
+        //              is_bytecode_copy_event = true;
+        //              real_copy_size = std::min(bytecode_size - offset, length)
+        // 4. is_zero_copy_event
+        //      b) if offset + length <= bytecode_size  then  is_zero_copy_event = false;
+        //      c) if offset + length > bytecode_size   then
+        //              is_zero_copy_event = true;
+        //              zero_copy_size = std::min(length, offset+length - bytecode_size);
 
-            constexpr static const typename FieldType::value_type two_16 = 65536;
+        zkevm_codecopy_bbf(context_type &context_object, const opcode_input_type<FieldType, stage> &current_state)
+            : generic_component<FieldType, stage>(context_object, false)
+        {
+            // using Memory_Cost = typename zkevm_small_field::memory_cost<FieldType, stage>;
 
-            // 6M memory bytes gives 60M+ gas cost
-            // max gas cost is 36M for now, might go up to 60M
-            constexpr static const std::size_t max_dest_offset = 1<<25;  // 2^25
-            //  max contract size is 24,576 bytes, so offset and length need to fit in
-            //  first chunk
-            constexpr static const std::size_t max_offset = 65536;
-            constexpr static const std::size_t max_length = 65536;
+            // std::array<TYPE, 16> dest_offset_chunks;  // < 2^22
+            // std::array<TYPE, 16> offset_chunks;
+            // std::array<TYPE, 16> length_chunks;       // < 2^22
 
-            std::vector<TYPE> DEST_OFFSET(16);  // 16-bit chunks of destination offset
-            std::vector<TYPE> OFFSET(16);       // 16-bit chunks of offset
-            std::vector<TYPE> LENGTH(16);       // 16-bit chunks of length
-            std::vector<TYPE> dest_offset_bits(16);  // 16 bits of the 2nd chunk
+            // // ALLOCATION
+            // for (std::size_t i = 0; i < 16; i++) {
+            //     allocate(dest_offset_chunks[i], i, 0);
+            //     allocate(offset_chunks[i], i+16, 0);
+            //     allocate(length_chunks[i], i, 1);
+            // }
+            // if constexpr (stage == GenerationStage::CONSTRAINTS) {
+            //     // PC transition
+            //     constrain(current_state.pc_next() - current_state.pc(2) - 1);
+            //     // GAS transition
+            //     // next -1 if out of range
+            //     // constrain((current_state.gas(4) - current_state.gas_next() - 3 -
+            //     //            3 * minimum_word_size - memory_expansion_cost) *
+            //     //               overflow +
+            //     //           (overflow - 1) * current_state.gas_next());
+            //     // stack_size transition
+            //     // constrain(current_state.stack_size(4) - current_state.stack_size_next() -
+            //     //           3);`
+            //     // memory_size transition
+            //     // next - 1 if out of range
+            //     // constrain((current_state.memory_size_next() -
+            //     //            current_state.memory_size(4) - memory_expansion_size) *
+            //     //               overflow +
+            //     //           (overflow - 1) * current_state.memory_size_next());
+            //     // rw_counter transition
+            //     // constrain(current_state.rw_counter_next() - current_state.rw_counter(4) -
+            //     //           3 - length * overflow);
 
-            // Variables
-            TYPE dest_offset,           // destination memory offset
-                offset,                 // bytecode offset
-                length,                 // number of bytes to copy
-                current_mem,            // current memory size
-                next_mem,               // memory size after operation
-                memory_expansion_cost,  // gas cost for memory expansion
-                memory_expansion_size,  // bytes of memory expansion
-                S,                      // memory expansion flag
-                length_inv,             // multiplicative inverse of length
-                is_length_non_zero,     // length > 0 flag
-                valid_dest_offset,      // destination offset within range
-                valid_offset,           // offset within range
-                valid_length,           // length within range
-                all_valid,              // all parameters valid
-                valid_lookup;           // all_valid and length non zero
-
-            if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                dest_offset = w_lo<FieldType>(current_state.stack_top());
-                offset = w_lo<FieldType>(current_state.stack_top(1));
-                length = w_lo<FieldType>(current_state.stack_top(2));
-
-                BOOST_LOG_TRIVIAL(trace)
-                    << "Codecopy: dest_offset = " << std::hex << dest_offset
-                    << ", offset = " << offset
-                    << ", length = " << length << std::dec;
-
-                current_mem = current_state.memory_size();
-                next_mem = length.is_zero() ? current_mem
-                                            : std::max(dest_offset + length, current_mem);
-                S = next_mem > current_mem;
-                length_inv = length == 0 ? 0 : length.inversed();
-                is_length_non_zero = length == 0 ? 0 : 1;
-
-                auto d = w_to_16(current_state.stack_top());
-                auto o = w_to_16(current_state.stack_top(1));
-                auto l = w_to_16(current_state.stack_top(2));
-                for (std::size_t i = 0; i < 16; i++) {
-                    DEST_OFFSET[i] = d[i];
-                    OFFSET[i] = o[i];
-                    LENGTH[i] = l[i];
-                }
-
-                valid_dest_offset = dest_offset < max_dest_offset ? 1 : 0;
-                valid_offset = offset < max_offset ? 1 : 0;
-                valid_length = length < max_length ? 1 : 0;
-
-                auto value = DEST_OFFSET[14].to_integral();
-                for (int i = 15; i >= 0; i--) {
-                    dest_offset_bits[i] = value % 2;
-                    value /= 2;
-                }
-            }
-            all_valid = valid_dest_offset * valid_offset * valid_length;
-            valid_lookup = all_valid * is_length_non_zero;
-
-            // ALLOCATION
-            for (std::size_t i = 0; i < 16; i++) {
-                allocate(DEST_OFFSET[i], i, 0);
-                allocate(OFFSET[i], i + 16, 0);
-                allocate(LENGTH[i], i, 1);
-                allocate(dest_offset_bits[i], i + 16, 1);
-            }
-            allocate(dest_offset, 32, 0);
-            allocate(offset, 33, 0);
-            allocate(length, 34, 0);
-            allocate(current_mem, 35, 0);
-            allocate(next_mem, 36, 0);
-            allocate(S, 37, 0);
-            allocate(length_inv, 38, 0);
-            allocate(is_length_non_zero, 39, 0);
-            allocate(valid_dest_offset, 40, 0);
-            allocate(valid_offset, 41, 0);
-            allocate(valid_length, 32, 1);
-            allocate(all_valid, 33, 1);
-            allocate(valid_lookup, 34, 1);
-
-            std::vector<std::size_t> word_size_lookup_area = {37, 38, 39};
-            allocate(memory_expansion_cost, 40, 1);
-            allocate(memory_expansion_size, 41, 1);
-            std::vector<std::size_t> memory_cost_lookup_area = {42, 43, 44, 45, 46, 47};
-
-            context_type word_size_ct =
-                context_object.subcontext(word_size_lookup_area, 1, 1);
-
-            context_type current_memory_ct =
-                context_object.subcontext(memory_cost_lookup_area, 0, 1);
-            context_type next_memory_ct =
-                context_object.subcontext(memory_cost_lookup_area, 1, 1);
-
-            Memory_Cost current_memory = Memory_Cost(current_memory_ct, current_mem);
-            Memory_Cost next_memory = Memory_Cost(next_memory_ct, next_mem);
-            memory_expansion_cost = next_memory.cost - current_memory.cost;
-            memory_expansion_size =
-                (next_memory.word_size - current_memory.word_size) * 32;
-
-            Word_Size minimum_word = Word_Size(word_size_ct, length);
-
-            // Validity constraints
-            // valid_dest_offset is 0 or 1
-            constrain(valid_dest_offset * (1 - valid_dest_offset));
-            // valid_offset is 0 or 1
-            constrain(valid_offset * (1 - valid_offset));
-            // valid_length is 0 or 1
-            constrain(valid_length * (1 - valid_length));
-            // high chunks are not 0
-            for (std::size_t i = 0; i < 15; i++) {
-                constrain(OFFSET[i] * valid_offset);
-                constrain(LENGTH[i] * valid_length);
-            }
-            for (std::size_t i = 0; i < 14; i++) {
-                constrain(DEST_OFFSET[i] * valid_dest_offset);
-            }
-
-            // Decompose DEST_OFFSET[14] in bits
-            int pow = 1;
-            TYPE dest_offset_chunk = 0;
-            for (int i = 15; i >= 0; i--) {
-                dest_offset_chunk += dest_offset_bits[i] * pow;
-                pow *= 2;
-            }
-            constrain(dest_offset_chunk - DEST_OFFSET[14]);
-            // high 7 bits of 2nd dest_offset chunk are 0
-            for (std::size_t i = 0; i < 7; i++) {
-                constrain(dest_offset_bits[i] * valid_dest_offset);
-            }
-
-            // If within range, lower chunks == whole chunks
-            constrain((OFFSET[15] - offset) * valid_offset);
-            constrain((LENGTH[15] - length) * valid_length);
-            constrain((DEST_OFFSET[15] + DEST_OFFSET[14] * two_16 - dest_offset) *
-                      valid_dest_offset);
-
-            // Length inverse constraints
-            // if length > 0, then is_length_non_zero = 1
-            constrain(is_length_non_zero - length_inv * length);
-            // if length = 0, then length_inv = 0
-            constrain(length_inv * (1 - is_length_non_zero));
-            // if length = 0, then is_length_non_zero = 0
-            constrain(length * (1 - is_length_non_zero));
-
-            // Memory expansion constraints
-            // S is 0 or 1
-            constrain(S * (S - 1));
-            // if S = 1, next_mem = dest_offset + length
-            // if S = 0, next_mem = current_mem
-            constrain(S * (next_mem - dest_offset - length) +
-                      (1 - S) * (next_mem - current_mem));
-
-            if constexpr (stage == GenerationStage::CONSTRAINTS) {
-                // PC transition
-                constrain(current_state.pc_next() - current_state.pc(0) - 1);
-                // GAS transition
-                // next -1 if out of range
-                constrain((current_state.gas(0) - current_state.gas_next() - 3 -
-                           3 * minimum_word.size - memory_expansion_cost) *
-                              all_valid +
-                          (all_valid - 1) *
-                              (current_state.gas(0) - current_state.gas_next() + 1));
-                // stack_size transition
-                constrain(current_state.stack_size(0) - current_state.stack_size_next() -
-                          3);
-                // memory_size transition
-                // next - 1 if out of range
-                constrain((current_state.memory_size_next() -
-                           current_state.memory_size(0) - memory_expansion_size) *
-                              all_valid +
-                          (all_valid - 1) * (current_state.memory_size_next() -
-                                             current_state.memory_size(0) + 1));
-                // rw_counter transition
-                constrain(current_state.rw_counter_next() - current_state.rw_counter(0) -
-                          3 - length * all_valid);
-
-                using RwTable = rw_256_table<FieldType, stage>;
-                lookup(RwTable::stack_16_bit_lookup(
-                    current_state.call_id(0),
-                    current_state.stack_size(0) - 1,
-                    current_state.rw_counter(0),
-                    TYPE(0),  // is_write
-                    DEST_OFFSET
-                ), "zkevm_rw_256");
-                lookup(RwTable::stack_16_bit_lookup(
-                    current_state.call_id(0),
-                    current_state.stack_size(0) - 2,
-                    current_state.rw_counter(0) + 1,
-                    TYPE(0),  // is_write
-                    OFFSET
-                ), "zkevm_rw_256");
-                lookup(RwTable::stack_16_bit_lookup(
-                    current_state.call_id(0),
-                    current_state.stack_size(0) - 3,
-                    current_state.rw_counter(0) + 2,
-                    TYPE(0),  // is_write
-                    LENGTH
-                ), "zkevm_rw_256");
-
-                using CopyTable = copy_table<FieldType, stage>;
-                auto tmp = CopyTable::codecopy_lookup(
-                    current_state.bytecode_id(0),       // src_id
-                    offset,                             // src_counter_1
-                    current_state.call_id(0),           // dst_id
-                    dest_offset,                        // dst_counter_1
-                    (current_state.rw_counter(0) + 3),  // dst_counter_2
-                    length                              // length
-                );
-                for( std::size_t i = 0; i < tmp.size(); i++ ) {tmp[i] = tmp[i] * valid_lookup;}
-                lookup(tmp,"zkevm_copy");
-            }
+            //     using RwTable = rw_256_table<FieldType, stage>;
+            //     lookup(RwTable::stack_16_bit_lookup(
+            //         current_state.call_id(0),
+            //         current_state.stack_size(0) - 1,
+            //         current_state.rw_counter(0),
+            //         TYPE(0),  // is_write
+            //         dest_offset_chunks
+            //     ), "zkevm_rw_256");
+            //     lookup(RwTable::stack_16_bit_lookup(
+            //         current_state.call_id(1),
+            //         current_state.stack_size(1) - 2,
+            //         current_state.rw_counter(1) + 1,
+            //         TYPE(0),  // is_write
+            //         offset_chunks
+            //     ), "zkevm_rw_256");
+            //     lookup(RwTable::stack_16_bit_lookup(
+            //         current_state.call_id(2),
+            //         current_state.stack_size(2) - 3,
+            //         current_state.rw_counter(2) + 2,
+            //         TYPE(0),  // is_write
+            //         length_chunks
+            //     ), "zkevm_rw_256");
+            // }
         }
     };
 
     template<typename FieldType>
     class zkevm_codecopy_operation : public opcode_abstract<FieldType> {
-    public:
-        virtual std::size_t rows_amount() override { return 2; }
+      public:
+        virtual std::size_t rows_amount() override { return 3; }
         virtual void fill_context(
             typename generic_component<
                 FieldType, GenerationStage::ASSIGNMENT>::context_type &context,
@@ -299,4 +147,4 @@ namespace nil::blueprint::bbf::zkevm_small_field {
                 context, current_state);
         }
     };
-}
+}  // namespace nil::blueprint::bbf::zkevm_small_field
