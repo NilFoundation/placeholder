@@ -105,7 +105,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                 // + StateTable::get_witness_amount()
                 + RW256Table::get_witness_amount(instances_rw_256);
             std::size_t rows_amount = std::max(
-                std::max( max_zkevm_rows, max_state ),
+                max_zkevm_rows,
                 std::max(
                     max_copy_events * 2 + max_state,
                     std::max(max_exponentations, max_bytecode)

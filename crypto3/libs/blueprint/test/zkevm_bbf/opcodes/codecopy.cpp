@@ -124,13 +124,15 @@ BOOST_AUTO_TEST_CASE(codecopy_overflow) {
     // opcode_tester.push_opcode(zkevm_opcode::CODECOPY);
 
     max_sizes.max_keccak_blocks = 10;
-    max_sizes.max_bytecode = 300;
+    max_sizes.max_bytecode = 200;
     max_sizes.max_mpt = 0;
-    max_sizes.max_rw = 500;
+    max_sizes.max_rw = 200;
+    max_sizes.max_copy_events = 5;
     max_sizes.max_copy = 200;
-    max_sizes.max_zkevm_rows = 300;
-    max_sizes.max_exp_rows = 500;
-    max_sizes.max_exponentiations = 50;
+    max_sizes.max_zkevm_rows = 200;
+    max_sizes.max_exp_rows = 200;
+    max_sizes.max_state = 5;
+    max_sizes.max_exponentiations = 5;
 
     if (circuits_to_run.empty()) {
         // circuits_to_run.insert("zkevm");
@@ -139,7 +141,7 @@ BOOST_AUTO_TEST_CASE(codecopy_overflow) {
         // circuits_to_run.insert("bytecode");
         // circuits_to_run.insert("copy");
 
-        // circuits_to_run.insert("bytecode-s"); //TODO
+        circuits_to_run.insert("bytecode-s"); //TODO
         circuits_to_run.insert("zkevm-s");
         // circuits_to_run.insert("rw-s"); //TODO
         circuits_to_run.insert("copy-s");
