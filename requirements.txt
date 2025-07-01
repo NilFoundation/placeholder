@@ -12,3 +12,7 @@ opentelemetry-semantic-conventions==0.45b0
 opentelemetry-util-http==0.45b0
 opentelemetry-sdk
 junitparser==3.2.0
+rlp==4.1.0
+trie==3.1.0
+parsimonious==0.10.0
+yarl==1.20.1
