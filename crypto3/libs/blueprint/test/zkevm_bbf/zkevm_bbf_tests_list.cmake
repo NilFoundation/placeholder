@@ -3,6 +3,7 @@ set(ZKEVM_BBF_TESTS_FILES
     "${BLUEPRINT_TEST_ROOT}/zkevm_bbf/benchmarking"
     "${BLUEPRINT_TEST_ROOT}/zkevm_bbf/bytecode"
     "${BLUEPRINT_TEST_ROOT}/zkevm_bbf/vmtrace"
+    "${BLUEPRINT_TEST_ROOT}/zkevm_bbf/mpt"
     "${BLUEPRINT_TEST_ROOT}/zkevm_bbf/opcodes/pushx"
     "${BLUEPRINT_TEST_ROOT}/zkevm_bbf/opcodes/iszero"
     "${BLUEPRINT_TEST_ROOT}/zkevm_bbf/opcodes/mod_ops"
