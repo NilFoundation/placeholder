@@ -148,29 +148,25 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             lookup_table("zkevm_copy",lookup_columns,0,max_copy_events);
         }
 
-        static std::vector<TYPE> codecopy_lookup(
-            TYPE src_id,
-            TYPE src_offset,
-            TYPE call_id,
-            TYPE dst_counter_1,
-            TYPE dst_counter_2,
-            TYPE length
-        ){
-            std::vector<TYPE> result = {};
-            result.push_back(TYPE(copy_op_to_num(copy_operand_type::bytecode))); // src_type
-            result.push_back(src_id); // src_id
-            result.push_back(src_offset); // src_counter_1
-            result.push_back(TYPE(0)); // src_counter_2, not used in codecopy
-            result.push_back(TYPE(copy_op_to_num(copy_operand_type::memory))); // dst_type
-            for( std::size_t i = 0; i < 15; i++ ){
-                result.push_back(TYPE(0));
-            }
-            result.push_back(call_id); // dst_id, call_id
-            result.push_back(dst_counter_1); // dst_counter_1
-            result.push_back(dst_counter_2); // dst_counter_2
-            result.push_back(length); // length
-            return result;
-        }
+        // static std::vector<TYPE> copy_16_bit_lookup(
+        //     TYPE is_write,
+        //     TYPE cp_type,
+        //     TYPE id,
+        //     TYPE counter_1,
+        //     TYPE counter_2,
+        //     TYPE length
+        // ){
+        //     std::vector<TYPE> result = {};
+        //     result.push_back(is_write);
+        //     result.push_back(cp_type);
+        //     for( std::size_t i = 0; i < 15; i++ ){
+        //         result.push_back(TYPE(0));
+        //     }
+        //     result.push_back(id);
+        //     result.push_back(counter_1);
+        //     result.push_back(counter_2);
+        //     result.push_back(length);
+        //     return result;
+        // }
     };
 }
-
