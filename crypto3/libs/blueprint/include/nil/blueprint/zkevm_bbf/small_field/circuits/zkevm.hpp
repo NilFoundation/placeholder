@@ -386,8 +386,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                         opcode_selector_sum += opcode_selectors[1 + j][opcode_id];
                         current_opcode_constraint += opcode_selectors[1 + j][opcode_id] * opcode_to_number(current_opcode);
                         zkevm_opcode_row_selectors[{current_opcode, j}] = opcode_selectors[1 + j][opcode_id];
-                        // STOP opcode logic is controlled by opcode
-                        if( nil_opcodes.count(current_opcode) == 0 && current_opcode != zkevm_opcode::STOP ){
+                        if (!nil_opcodes.contains(current_opcode)) {
                             evm_opcode_constraint += opcode_selectors[1 + j][opcode_id];
                         }
                     }
