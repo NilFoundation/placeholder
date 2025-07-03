@@ -105,7 +105,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                 // + StateTable::get_witness_amount()
                 + RW256Table::get_witness_amount(instances_rw_256);
             std::size_t rows_amount = std::max(
-                std::max( max_zkevm_rows, max_state ),
+                max_zkevm_rows,
                 std::max(
                     max_copy_events * 2 + max_state,
                     std::max(max_exponentations, max_bytecode)
@@ -297,7 +297,10 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                         all_states[current_row].bytecode_id = bytecode_id;
                         all_states[current_row].pc = current_state.pc();
                         all_states[current_row].opcode = opcode_to_number(current_opcode);
-                        all_states[current_row].gas = current_state.gas();
+                        all_states[current_row].gas =
+                            current_state.gas() < MAX_ZKEVM_GAS_ERROR_BOUND?
+                            current_state.gas() :
+                            TYPE(0) - (std::numeric_limits<std::size_t>::max() -  current_state.gas());
                         all_states[current_row].stack_size = current_state.stack_size();
                         all_states[current_row].memory_size = current_state.memory_size();
                         all_states[current_row].rw_counter = current_state.rw_counter();
@@ -355,9 +358,9 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                     context_object.relative_lookup({context_object.relativize(opcode_area[i], -1)}, "chunk_16_bits/full", 0, max_zkevm_rows-1);
                 }
 
-                std::vector<TYPE> erc; // every row constraints
-                std::vector<TYPE> non_padding_rc; // 0 ... max_zkevm_rows - max_opcode_height
-                std::vector<TYPE> nfrc; // non-first row constraints
+                std::vector<std::pair<TYPE, std::string>> erc; // every row constraints
+                std::vector<std::pair<TYPE, std::string>> non_padding_rc; // 0 ... max_zkevm_rows - max_opcode_height
+                std::vector<std::pair<TYPE, std::string>> nfrc; // non-first row constraints
 
                 // Opcode selector marks the last row of the opcode.
                 // opcode_selector_sum is sum of all opcode_row_selector. It is always 1.
@@ -368,6 +371,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                 std::map<std::pair<zkevm_opcode, std::size_t>, TYPE> zkevm_opcode_row_selectors;
                 std::set<zkevm_opcode> nil_opcodes = {
                     zkevm_opcode::padding,
+                    zkevm_opcode::error_gas,
                     zkevm_opcode::start_block,
                     zkevm_opcode::end_block,
                     zkevm_opcode::start_transaction,
@@ -380,7 +384,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                     std::size_t opcode_id = (
                         std::find(implemented_opcodes.begin(), implemented_opcodes.end(), current_opcode) - implemented_opcodes.begin()
                     );
-                    erc.push_back(opcode_selectors[1][opcode_id] * (1 - opcode_selectors[1][opcode_id]));
+                    erc.push_back({opcode_selectors[1][opcode_id] * (1 - opcode_selectors[1][opcode_id]), "Opcode selector may be only 0 or 1"});
                     last_row += opcode_selectors[1][opcode_id];
                     for( std::size_t j = 0; j < impl->rows_amount(); j++){
                         opcode_selector_sum += opcode_selectors[1 + j][opcode_id];
@@ -393,26 +397,28 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                     }
                 }
                 // Last_row may be only zero or 1
-                erc.push_back(last_row * (last_row - 1));
+                erc.push_back({last_row * (last_row - 1), "last_row may be only 0 or 1"});
 
                 // Each table row is a row for some row of some opcode
-                non_padding_rc.push_back(1 - opcode_selector_sum);
+                non_padding_rc.push_back({1 - opcode_selector_sum, "One and only one of opcode_selectors in the row is 1"});
                 // State opcode field is correctly encoded by opcode-row selectors
-                non_padding_rc.push_back(current_opcode_constraint - all_states[1].opcode);
+
+                non_padding_rc.push_back({current_opcode_constraint - all_states[1].opcode, "Opcode is constructed correctly from opcode selectors"});
 
                 // Last max_opcode_height rows are padding
                 context_object.relative_constrain(
                     context_object.relativize(current_opcode_constraint - opcode_to_number(zkevm_opcode::padding), -1),
-                    max_zkevm_rows - max_opcode_height, max_zkevm_rows-1
+                    max_zkevm_rows - max_opcode_height, max_zkevm_rows-1,
+                    "Last " + std::to_string(max_opcode_height) + " rows are padding"
                 );
 
                 // Inside opcode state doesn't change
-                non_padding_rc.push_back((1 - last_row) * (all_states[1].gas - all_states[2].gas));
-                non_padding_rc.push_back((1 - last_row) * (all_states[1].stack_size - all_states[2].stack_size));
-                non_padding_rc.push_back((1 - last_row) * (all_states[1].memory_size - all_states[2].memory_size));
-                non_padding_rc.push_back((1 - last_row) * (all_states[1].pc - all_states[2].pc));
-                non_padding_rc.push_back((1 - last_row) * (all_states[1].rw_counter - all_states[2].rw_counter));
-                non_padding_rc.push_back((1 - last_row) * (all_states[1].bytecode_id - all_states[2].bytecode_id));
+                non_padding_rc.push_back({(1 - last_row) * (all_states[1].gas - all_states[2].gas), "Inside opcode gas doesn't change"});
+                non_padding_rc.push_back({(1 - last_row) * (all_states[1].stack_size - all_states[2].stack_size), "Inside opcode stack size doesn't change"});
+                non_padding_rc.push_back({(1 - last_row) * (all_states[1].memory_size - all_states[2].memory_size), "Inside opcode memory size doesn't change"});
+                non_padding_rc.push_back({(1 - last_row) * (all_states[1].pc - all_states[2].pc), "Inside opcode pc doesn't change"});
+                non_padding_rc.push_back({(1 - last_row) * (all_states[1].rw_counter - all_states[2].rw_counter), "Inside opcode rw_counter doesn't change"});
+                non_padding_rc.push_back({(1 - last_row) * (all_states[1].bytecode_id - all_states[2].bytecode_id), "Inside opcode bytecode_id doesn't change"});
 
                 std::map<std::pair<zkevm_opcode, std::size_t>, std::vector<TYPE>> opcode_constraints_aggregator;
                 std::map<std::tuple<zkevm_opcode, std::size_t, std::string>, std::vector<std::vector<TYPE>>> opcode_lookup_constraints_aggregator;
@@ -548,13 +554,13 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                 }
 
                 for( auto &constr: erc ){
-                    context_object.relative_constrain(context_object.relativize(constr, -1), 0, max_zkevm_rows - 1);
+                    context_object.relative_constrain(context_object.relativize(constr.first, -1), 0, max_zkevm_rows - 1, constr.second);
                 }
                 for( auto &constr: non_padding_rc ){
-                    context_object.relative_constrain(context_object.relativize(constr, -1), 0, max_zkevm_rows-max_opcode_height - 1);
+                    context_object.relative_constrain(context_object.relativize(constr.first, -1), 0, max_zkevm_rows-max_opcode_height - 1, constr.second);
                 }
                 for( auto &constr: nfrc ){
-                    context_object.relative_constrain(context_object.relativize(constr, -1), 1, max_zkevm_rows - 1);
+                    context_object.relative_constrain(context_object.relativize(constr.first, -1), 1, max_zkevm_rows - 1, constr.second);
                 }
 
                 std::vector<TYPE> tmp(5);

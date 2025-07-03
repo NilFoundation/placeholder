@@ -68,6 +68,19 @@ using namespace nil::blueprint::bbf;
 
 class zkEVMOpcodeTestFixture: public CircuitTestFixture {
 public:
+    bool assign = true;
+
+    zkEVMOpcodeTestFixture(){
+        std::size_t argc = boost::unit_test::framework::master_test_suite().argc;
+        auto &argv = boost::unit_test::framework::master_test_suite().argv;
+        for (std::size_t i = 0; i < argc; i++) {
+            std::string arg(argv[i]);
+            if (arg == "--no-assign") {
+                assign = false;
+            }
+        }
+    }
+
     template<typename BigFieldType, typename SmallFieldType>
     void complex_opcode_test(
         const zkevm_opcode_tester                       &opcode_tester,
@@ -77,6 +90,8 @@ public:
         nil::blueprint::bbf::zkevm_basic_input_generator circuit_inputs((abstract_block_loader*)(&loader));
         BOOST_LOG_TRIVIAL(info) << circuit_inputs.print_statistics();
         BOOST_ASSERT(circuit_inputs.get_execution_status());
+
+        if( !assign) return;
 
         using integral_type = typename BigFieldType::integral_type;
         using value_type = typename BigFieldType::value_type;

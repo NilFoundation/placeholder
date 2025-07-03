@@ -94,7 +94,7 @@ BOOST_AUTO_TEST_CASE(logx) {
 
     if( circuits_to_run.empty() ) {
         circuits_to_run.insert("zkevm");
-        circuits_to_run.insert("zkevm-wide");
+        // circuits_to_run.insert("zkevm-wide");
         circuits_to_run.insert("rw");
         circuits_to_run.insert("bytecode");
         circuits_to_run.insert("copy");

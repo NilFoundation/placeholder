@@ -173,4 +173,3 @@ namespace nil::blueprint::bbf::zkevm_small_field{
         }
     };
 }
-

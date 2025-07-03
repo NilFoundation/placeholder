@@ -256,7 +256,7 @@ namespace nil::blueprint::bbf::zkevm_big_field{
         opcodes[zkevm_opcode::REVERT] = std::make_shared<zkevm_revert_operation<BlueprintFieldType>>();
 
         // fake opcodes for errors and padding
-        opcodes[zkevm_opcode::err0] = std::make_shared<zkevm_err0_operation<BlueprintFieldType>>();
+        // opcodes[zkevm_opcode::err0] = std::make_shared<zkevm_err0_operation<BlueprintFieldType>>();
         opcodes[zkevm_opcode::err1] = std::make_shared<zkevm_err1_operation<BlueprintFieldType>>();
         opcodes[zkevm_opcode::padding] = std::make_shared<zkevm_padding_operation<BlueprintFieldType>>();
         opcodes[zkevm_opcode::start_block] = std::make_shared<zkevm_start_block_operation<BlueprintFieldType>>();
