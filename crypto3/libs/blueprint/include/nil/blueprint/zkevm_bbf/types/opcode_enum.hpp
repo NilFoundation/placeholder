@@ -528,9 +528,16 @@ namespace nil {
                 if( number == 0x106 ) return zkevm_opcode::end_call; // opcode for end call
                 if( number == 0x107 ) return zkevm_opcode::end_transaction; // opcode for end call
                 if( number == 0x108 ) return zkevm_opcode::end_block; // opcode for end call
-                std::cout << "Unknown opcode " << std::hex << number << std::dec << std::endl;
-                BOOST_ASSERT(false);
-                return zkevm_opcode::padding;
+                return zkevm_opcode(-1);
+            }
+
+            bool is_known_opcode_number(size_t opcode) {
+                switch (opcode) {
+                    #define ENUM_DEF(name) case zkevm_opcode::name: return true;
+                    ZKEVM_OPCODE_ENUM(ENUM_DEF)
+                    #undef ENUM_DEF
+                    default: return false;
+                }
             }
 
             zkevm_opcode  opcode_from_str(const std::string &str){
@@ -571,6 +578,8 @@ namespace nil {
                 #undef ENUM_DEF
                 return result;
             }
+
+            #undef ZKEVM_OPCODE_ENUM
         } // namespace bbf
     } // namespace blueprint
 } // namespace nil
