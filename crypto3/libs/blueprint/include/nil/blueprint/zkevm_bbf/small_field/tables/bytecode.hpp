@@ -74,36 +74,36 @@ class bytecode_table : public generic_component<FieldType, stage> {
 
         if constexpr (stage == GenerationStage::ASSIGNMENT) {
             const auto &bytecodes = input.get_data();
+
             size_t row = 0;
+            size_t current_index = 0;
+            size_t push_size = 0;
 
             for (size_t i = 0; i < bytecodes.size(); ++i) {
                 const auto &buffer = bytecodes[i].first;
+                BOOST_ASSERT(row + 1 + buffer.size() < max_bytecode_size);
 
                 // Header
-                BOOST_ASSERT(row < max_bytecode_size);
-                tag[row] = 1;
-                index[row] = 0;
+                tag[row] = 0;
+                index[row] = current_index = 0;
                 value[row] = buffer.size();
                 is_opcode[row] = 0;
                 bytecode_id[row] = i + 1;
                 ++row;
 
-                size_t j = 0;
                 size_t push_size = 0;
-
-                BOOST_ASSERT(row + buffer.size() < max_bytecode_size);
-                while (index < buffer.size()) {
-                    auto byte = buffer[index];
+                while (current_index < buffer.size()) {
+                    auto byte = buffer[current_index];
                     value[row] = byte;
-                    index[row] = j;
+                    index[row] = current_index;;
                     bytecode_id[row] = i + 1;
-                    tag[row] = 2;
+                    tag[row] = 1;
 
                     if (push_size == 0) {
                         is_opcode[row] = 1;
 
                         // Check for PUSH opcodes (0x60 to 0x7f) and set push_size
-                        if (byte >= PUSH1 && byte <= PUSH32) {
+                        if (byte > PUSH0 && byte <= PUSH32) {
                             push_size = byte - PUSH0;
                         }
                     } else {  // In a PUSH operation
@@ -111,7 +111,7 @@ class bytecode_table : public generic_component<FieldType, stage> {
                         --push_size;
                     }
 
-                    ++j, ++row;
+                    ++current_index, ++row;
                 }
 
                 // Add potentially accessed implicit zero bytes
@@ -119,22 +119,31 @@ class bytecode_table : public generic_component<FieldType, stage> {
 
                 while (push_size > 0) { // missing push arguments
                     BOOST_ASSERT(row < max_bytecode_size);
-                    tag[row] = 2;
-                    index[row] = j;
+                    tag[row] = 1;
+                    index[row] = current_index;
                     value[row] = 0;
                     is_opcode[row] = 0;
                     bytecode_id[row] = i + 1;
 
-                    ++j, ++row, --push_size;
+                    ++current_index, ++row, --push_size;
                 }
 
                 // Add implicit STOP instruction
-                tag[row] = 2;
-                index[row] = j;
+                tag[row] = 1;
+                index[row] = current_index;
                 value[row] = 0;
                 is_opcode[row] = 1;
                 bytecode_id[row] = i + 1;
-                ++row;
+                ++current_index, ++row;
+            }
+
+            while (row < max_bytecode_size) {
+                tag[row] = 1;
+                index[row] = current_index;
+                value[row] = 0;
+                is_opcode[row] = 1;
+                bytecode_id[row] = bytecodes.size();
+                ++current_index, ++row;
             }
         }
 

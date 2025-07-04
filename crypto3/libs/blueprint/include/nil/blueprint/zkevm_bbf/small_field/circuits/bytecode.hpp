@@ -119,70 +119,101 @@ class bytecode : public generic_component<FieldType, stage> {
         const std::vector<TYPE> &value = bc_t.value;
         const std::vector<TYPE> &is_opcode = bc_t.is_opcode;
         const std::vector<TYPE> &bytecode_id = bc_t.bytecode_id;
-        std::vector<TYPE> rlc_challenge(max_bytecode_size);
         std::vector<TYPE> length(max_bytecode_size);
-        std::vector<TYPE> push_size(max_bytecode_size);
-        std::vector<TYPE> is_padding(max_bytecode_size);
         std::vector<TYPE> value_rlc(max_bytecode_size);
+        std::vector<TYPE> push_size(max_bytecode_size);
+        std::vector<TYPE> push_size_inv(max_bytecode_size);
+        std::vector<TYPE> bytecode_end_witness(max_bytecode_size);
+        std::vector<TYPE> is_padding(max_bytecode_size);
+        std::vector<TYPE> rlc_challenge(max_bytecode_size);
+
         std::vector<TYPE> hash_value_rlc(max_bytecodes_amount);
-        std::vector<TYPE> is_last_byte(max_bytecode_size);
 
         if constexpr (stage == GenerationStage::ASSIGNMENT) {
+            const auto &bytecodes = input.bytecodes.get_data();
             rlc_challenge.assign(max_bytecode_size, input.rlc_challenge);
 
-            const auto &bytecodes = input.bytecodes.get_data();
             size_t row = 0;
+            size_t current_index = 0;
+            size_t push_size_value = 0;
+
+            auto add_byte = [&](uint8_t byte, bool padding) {
+                length[row] = length[row - 1];
+                value_rlc[row] = value_rlc[row - 1] * input.rlc_challenge + byte;
+
+                if (push_size_value == 0 && byte > PUSH0 && byte <= PUSH32) {
+                    push_size_value = byte - PUSH0;
+                } else {
+                    push_size_value--;
+                }
+
+                push_size[row] = push_size_value;
+                push_size_inv[row] = push_size[row] == 0 ? 0 : push_size[row].inversed();
+
+                auto length_diff = length[row] - (current_index + 1);
+                bytecode_end_witness[row] = length_diff == 0 ? 0 : length_diff.inversed();
+
+                is_padding[row] = padding;
+
+                ++current_index, ++row;
+            };
 
             for (size_t i = 0; i < bytecodes.size(); ++i) {
                 const auto &buffer = bytecodes[i].first;
                 BOOST_LOG_TRIVIAL(trace) << "Bytecode " << i << " size = " << buffer.size();
 
                 // Header
-                length_left[row] = total_len;
-                value_rlc[row] = total_len;
-                is_header[row] = 1;
+                current_index = 0;
+                length[row] = value_rlc[row] = buffer.size();
+                push_size_value = 0;
+                bytecode_end_witness[row] = length[row]  == 0 ? 0 : length[row].inversed();
                 ++row;
 
                 // Bytes
                 size_t push_size_value = 0;
-                for(size_t j = 0; j < buffer.size(); j++, cur++){
-                    length_left[cur] = length_left[cur - 1] - 1;
-                    auto byte = buffer[j];
-                    if (push_size_value == 0) {
-                        if (byte > 0x5f && byte < 0x80)  push_size_value = byte - 0x5f;  // Set PUSH size
-                    } else {
-                        push_size_value--;
-                    }
-                    push_size[cur] = push_size_value;
-                    rlc_challenge[cur] = input.rlc_challenge;
-                    value_rlc[cur] = value_rlc[cur - 1] * input.rlc_challenge + byte;
-                    if( is_opcode[cur] == 1 )
-                        BOOST_LOG_TRIVIAL(trace) << cur << ". " << std::hex << index[cur] << " " << opcode_from_number(byte);
-                    else if (is_executed[cur] == 1)
-                        BOOST_LOG_TRIVIAL(trace) << cur << ". " << std::hex << index[cur] << " Data  0x" << std::setw(2) << std::setfill('0') << size_t(byte) << std::dec;
+                for (uint8_t byte : buffer) {
+                    if (is_opcode[row] == 1) 
+                        BOOST_LOG_TRIVIAL(trace) << row << ". " << std::hex << current_index << " " << opcode_from_number(byte);
                     else
-                        BOOST_LOG_TRIVIAL(trace) << cur << ". " << std::hex << index[cur] << " Metadata 0x" << std::setw(2) << std::setfill('0') << size_t(byte) << std::dec;
+                        BOOST_LOG_TRIVIAL(trace) << row << ". " << std::hex << current_index << " Data  0x" << std::setw(2) << std::setfill('0') << size_t(byte) << std::dec;
+                    add_byte(byte, false);
                 }
-                is_last_byte[cur - 1] = 1;
-                hash_value_rlc[i] = value_rlc[cur - 1];
-             }
-        }
 
-        size_t is_last_byte_index = 0;
+                hash_value_rlc[i] = value_rlc[row - 1];
+
+                // Implicit zero bytes
+                BOOST_ASSERT(row + push_size_value + 1 < max_bytecode_size);
+
+                while (push_size_value > 0) { // missing push arguments
+                    add_byte(0, true);
+                }
+
+                add_byte(0, true);
+            }
+
+            while (row < max_bytecode_size) add_byte(0, true);
+        };
+
+        // size_t is_last_byte_index = 0;
         size_t index_index = bytecode_lookup_area[1];
         size_t bytecode_id_index = bytecode_lookup_area[4];
-        size_t value_rlc_index = bytecode_lookup_area[5];
+        size_t value_rlc_index;
         size_t last_column = 0;
-        for( size_t i = 0; i < max_bytecode_size; i++ ){
+        for (size_t i = 0; i < max_bytecode_size; ++i) {
             current_column = BytecodeTable::get_witness_amount() + std::max(KeccakTable::get_witness_amount(), BytecodeHashTable::get_witness_amount());
-            allocate(length_left[i], current_column++, i);
-            value_rlc_index = current_column; allocate(value_rlc[i], current_column++, i);
-            allocate(push_size[i], current_column++, i);
             allocate(rlc_challenge[i], current_column++, i);
-            is_last_byte_index = current_column; allocate(is_last_byte[i], current_column++, i);
+            allocate(length[i], current_column++, i);
+            value_rlc_index = current_column;
+            allocate(value_rlc[i], current_column++, i);
+            allocate(push_size[i], current_column++, i);
+            allocate(push_size_inv[i], current_column++, i);
+            // is_last_byte_index = current_column;
+            allocate(bytecode_end_witness[i], current_column++, i);
+            allocate(is_padding[i], current_column++, i);
             last_column = current_column;
         }
-        for( size_t i = 0; i < max_bytecodes_amount; i++ ){
+
+        for (size_t i = 0; i < max_bytecodes_amount; ++i) {
             allocate(hash_value_rlc[i], last_column, i);
         }
 
@@ -192,21 +223,15 @@ class bytecode : public generic_component<FieldType, stage> {
             allocate(zero_constant, 0, 0, column_type::constant);
             allocate(one_constant, 0, 1, column_type::constant);
 
-            // A header for empty block is hardcoded in the last row: it makes
-            // it impossible to avoid the hash lookup for the last block by
-            // making it so long, that its last byte is outside of table bounds.
-            copy_constrain(tag.back(), zero_constant);
-            copy_constrain(length.back(), zero_constant);
-
             auto constrain_rows = [&](TYPE c, const std::string &name = "") {
                 auto [has_vars, min_row, max_row] =
-                    nil::crypto3::zk::snark::expression_row_range_visitor<TYPE>::row_range(c);
-                BOOST_ASSERT(min_row < 2 && 1 <= max_row && max_row <= 2);
+                    crypto3::zk::snark::expression_row_range_visitor<typename context_type::var>::row_range(c);
+                BOOST_ASSERT(min_row < 2 && max_row == 1);
                 auto c_rel = context_object.relativize(c, -1);
                 auto first = min_row == 1 ? 0 : 1;
-                auto last = max_row == 1 ? max_bytecode_size - 1 : max_bytecode_size - 2;
+                auto last = max_bytecode_size - 1;
                 context_object.relative_constrain(c_rel, first, last, name);
-            }
+            };
 
             // RLC challenge correctness:
             copy_constrain(rlc_challenge[0], input.rlc_challenge);
@@ -220,8 +245,12 @@ class bytecode : public generic_component<FieldType, stage> {
             // values of index and rlc_value are done on header lines.
             copy_constrain(tag[0], zero_constant);
 
-            // 14. for all bytes bytecode_id is similar to previous
-            non_first_row_constraints.push_back((is_executed[1] + is_metadata[1]) * (bytecode_id[0] - bytecode_id[1]));
+            // For bytes, bytecode id and length are same as in header.
+            constrain_rows(tag[1] * (bytecode_id[1] - bytecode_id[0]),
+                           "bytecode_id validilty for bytes");
+            constrain_rows(tag[1] * (length[1] - length[0]),
+                           "length validity for bytes");
+
             // Index is 0 in headers, it allows accumulated length computation.
             constrain_rows((1 - tag[1]) * index[1], "header index is 0");
             // For bytes, index values start from 0 and increment sequentially.
@@ -230,12 +259,6 @@ class bytecode : public generic_component<FieldType, stage> {
                            "byte index definition");
             // Note that we can skip tag[1] factor in the first part, since
             // index is 0 in headers anyway.
-
-            // For bytes, buffer id and length are same as in header.
-            constrain_rows(tag[1] * (bytecode_id[1] - bytecode_id[0]),
-                           "bytecode_id validilty for bytes");
-            constrain_rows(tag[1] * (length[1] - length[0]),
-                           "length validity for bytes");
 
             // In headers, RLC is reset to bytecode length and then accumulates
             // byte values.
@@ -271,10 +294,10 @@ class bytecode : public generic_component<FieldType, stage> {
             // missing push arguments and implicitly defined STOP opcode.
             copy_constrain(is_padding[0], zero_constant);
             TYPE prev_length_diff = length[0] - (tag[0] + index[0]);
-            TYPE prev_is_end = 1 - prev_length__diff * bytecode_end_witness[0];
+            TYPE prev_is_end = 1 - prev_length_diff * bytecode_end_witness[0];
             constrain_rows(is_padding[1] - tag[1] * (prev_is_end + is_padding[0]),
                            "padding definition");
-            constrain_rows(is_padding[1] * value, "padding bytes are 0s");
+            constrain_rows(is_padding[1] * value[1], "padding bytes are 0s");
 
             // We need to make sure that if a bytecode is present in the table,
             // it's hash is checked, i.e. it reaches its last byte.
@@ -305,9 +328,9 @@ class bytecode : public generic_component<FieldType, stage> {
             context_object.relative_lookup(context_object.relativize(tmp, -1), "byte_range_table/full", 0,  max_bytecode_size);
 
             tmp = {
-                is_bytecode_end[1],
-                is_bytecode_end[1] * bytecode_id[1],
-                is_bytecode_end[1] * (tag[1] + index[1]),
+                is_bytecode_end,
+                is_bytecode_end * bytecode_id[1],
+                is_bytecode_end * (tag[1] + index[1]),
             };
             context_object.relative_lookup(context_object.relativize(tmp, -1), "zkevm_bytecode_hash", 0, max_bytecode_size);
 
