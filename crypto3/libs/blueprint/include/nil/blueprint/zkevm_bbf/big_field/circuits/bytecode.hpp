@@ -185,9 +185,8 @@ namespace nil::blueprint::bbf::zkevm_big_field{
                 std::vector<TYPE> tmp = {context_object.relativize(tag[0] * value[0], -1)};
                 context_object.relative_lookup(tmp, "byte_range_table/full", 0, max_bytecode_size - 1);
                 tmp = {context_object.relativize(std::vector<TYPE>({value[0] * is_opcode[0],
-                                                                    push_size[0] * is_opcode[0],
-                                                                    is_opcode[0]}), -1)};
-                context_object.relative_lookup(tmp, "zkevm_opcodes/full", 0, max_bytecode_size - 1);
+                                                                    push_size[0] * is_opcode[0]}), -1)};
+                context_object.relative_lookup(tmp, "opcode_push_size/full", 0, max_bytecode_size - 1);
                 tmp = {context_object.relativize(std::vector<TYPE>({
                     tag[1] + 1 - tag[1],
                     tag[0] * (1 - tag[1]) * value_rlc[0],
