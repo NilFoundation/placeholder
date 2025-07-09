@@ -28,8 +28,10 @@
 #include <numeric>
 
 #include <nil/blueprint/zkevm_bbf/types/zkevm_word.hpp>
-// #include <nil/blueprint/zkevm_bbf/big_field/subcomponents/memory_cost.hpp>
-// #include <nil/blueprint/zkevm_bbf/big_field/subcomponents/word_size.hpp>
+#include <nil/blueprint/zkevm_bbf/small_field/subcomponents/memory_range.hpp>
+#include <nil/blueprint/zkevm_bbf/small_field/subcomponents/memory_cost.hpp>
+#include <nil/blueprint/zkevm_bbf/small_field/subcomponents/max_30.hpp>
+#include <nil/blueprint/zkevm_bbf/small_field/subcomponents/word_size.hpp>
 #include <nil/blueprint/zkevm_bbf/small_field/opcodes/abstract_opcode.hpp>
 
 namespace nil::blueprint::bbf::zkevm_small_field{
@@ -50,98 +52,93 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             const opcode_input_type<FieldType, stage> &current_state)
             : generic_component<FieldType, stage>(context_object, false)
         {
-            const std::size_t two_25 = 1 << 25;
-            // ! Gas calculation not implemented yet
-            // using Word_Size = typename zkevm_big_field::word_size<FieldType, stage>;
-            // using Memory_Cost = typename zkevm_big_field::memory_cost<FieldType, stage>;
-            // TYPE offset, length, current_mem, next_mem, memory_expansion_cost,
-            //     memory_expansion_size, S;
+            using Memory_Cost = typename zkevm_small_field::memory_cost<FieldType, stage>;
+            using Max_30 = typename zkevm_small_field::max_30<FieldType, stage>;
+            using Word_Size = typename zkevm_small_field::word_size<FieldType, stage>;
+            using Memory_Range = typename zkevm_small_field::memory_range<FieldType, stage>;
 
-            std::array<TYPE, 32> bytes;
-            std::array<TYPE, 16> offset_chunks;
+            // 1.Process offset
+            std::vector<std::size_t> memory_range_area;
+            for( std::size_t i = 0; i < Memory_Range::range_checked_witness_amount; i++ ) {
+                memory_range_area.push_back(i);
+            }
+            for( std::size_t i = 0; i < Memory_Range::non_range_checked_witness_amount; i++ ) {
+                memory_range_area.push_back(47 - i);
+            }
 
-            TYPE subchunk_14_0, diff_14_0;    // < 2^9
-            TYPE subchunk_14_1, diff_14_1;    // < 2^7
-            TYPE offset; // offset == offset_chunks[15] + chunk_14_0 * 0x10000
-
-            TYPE high_chunks_sum; // sum of 14 high chunks and chunk_14_1
-            TYPE high_chunks_sum_inv; // 1 / high_chunks_sum
-            TYPE is_offset_in_range; // 1 if offset < 2^25, 0 otherwise
-
+            context_type memory_offset_ct = context_object.subcontext(memory_range_area, 0, 1);
+            typename Memory_Range::input_type offset_input;
             if constexpr (stage == GenerationStage::ASSIGNMENT) {
+                offset_input = current_state.stack_top();
+            }
+            Memory_Range memory_offset(memory_offset_ct, offset_input);
+            auto offset_chunks = memory_offset.chunks;
+
+            TYPE is_overflow = memory_offset.is_overflow;
+            allocate(is_overflow, 45, 1);
+
+            // 2. Calculate maximum memory word index touched by this operation
+            std::vector<std::size_t> max_area = {19, 20, 21, 42, 43, 44};
+            context_type word_size_ct = context_object.subcontext({0, 1, 2}, 1, 1);
+            Word_Size word_size_obj(word_size_ct, memory_offset.value + 1);
+
+            context_type new_memory_ct = context_object.subcontext(max_area, 1, 1);
+
+            // 3. Calculate new memory size
+            TYPE current_mem;
+            if constexpr (stage == GenerationStage::ASSIGNMENT) {
+                current_mem = (current_state.memory_size() + 31) / 32;
                 BOOST_LOG_TRIVIAL(trace) << "\t"
-                    << "address = " << std::hex << current_state.stack_top()
-                    << " value = " << current_state.stack_top(1) << std::dec;
-                auto a_chunks = w_to_16(current_state.stack_top());
-                for( std::size_t i = 0; i < 16; i++ ) { offset_chunks[i] = TYPE(a_chunks[i]); }
+                    << "Offset = " << std::hex << current_state.stack_top()
+                    << " is_overflow: " << is_overflow << std::dec;
+            }
+            allocate(current_mem, 46, 1);
+            Max_30 new_memory_obj(new_memory_ct, word_size_obj.size, current_mem);
 
-                subchunk_14_0 = a_chunks[14] >> 9; // 0x1ff = 511
-                subchunk_14_1 = a_chunks[14] & 0x1ff; // 0x1ff = 511
-                diff_14_0 = 0x7f - subchunk_14_0; // 0x7f = 127
-                diff_14_1 = 0x1ff - subchunk_14_1; // 0x1ff = 511
-                is_offset_in_range = (current_state.stack_top() <= 0x2000000 - 1) ? TYPE(1) : TYPE(0); // 0x2000000 = 2^25
-                std::size_t address = (a_chunks[14] & 0x1ff) * 0x10000 + a_chunks[15];
-                offset = address;
+            TYPE new_mem = new_memory_obj.max;
+            allocate(new_mem, 47, 1);
 
-                auto b = w_to_8(current_state.stack_top(1));
-                for (std::size_t i = 0; i < 32; i++) { bytes[i] = b[i]; }
+            // 4. Calculate proposed operation gas cost
+            if constexpr (stage == GenerationStage::ASSIGNMENT) {
+                BOOST_LOG_TRIVIAL(trace) << "\tmemory_size:" << current_mem << " => " << new_mem;
+            }
+            context_type current_memory_cost_ct = context_object.subcontext({3, 4, 5, 6, 7, 8}, 1, 1);
+            Memory_Cost current_memory_cost_obj(current_memory_cost_ct, current_mem);
 
-                for (std::size_t i = 0; i < 16; i++) {
-                    offset_chunks[i] = TYPE(a_chunks[i]);
+            context_type new_memory_cost_ct = context_object.subcontext({9, 10, 11, 12, 13, 14}, 1, 1);
+            Memory_Cost new_memory_cost_obj(new_memory_cost_ct, new_mem);
+
+            TYPE pre_cost = 3 + new_memory_cost_obj.cost - current_memory_cost_obj.cost;
+            allocate(pre_cost, 41, 1);
+
+            // 5. Allocate value received from stack
+            std::array<TYPE, 32> bytes;
+            if constexpr( stage == GenerationStage::ASSIGNMENT ) {
+                auto val = w_to_8(current_state.stack_top(1));
+                for (std::size_t i = 0; i < 32; i++) {
+                    bytes[i] = val[i];
                 }
-                for ( std::size_t i = 0; i < 14; i++ ) {
-                    high_chunks_sum += offset_chunks[i];
-                }
-                high_chunks_sum += subchunk_14_0;
-                high_chunks_sum_inv = (high_chunks_sum != 0) ? TYPE(1) / high_chunks_sum : TYPE(0);
             }
-            for (std::size_t i = 0; i < 16; i++) {
-                allocate(offset_chunks[i], i, 0);
-                allocate(bytes[i], i + 16, 0);
-                allocate(bytes[i + 16], i + 16, 1);
+            for( std::size_t i = 0; i < 32; i++ ) {
+                allocate(bytes[i], 22 + i%16, i/16);
             }
 
-            // Range-checked
-            allocate(subchunk_14_0, 0, 1);
-            allocate(diff_14_0, 1, 1);
-            allocate(subchunk_14_1, 2, 1);
-            allocate(diff_14_1, 3, 1);
-
-            // Non-range checked
-            allocate(offset, 32, 1);
-            allocate(is_offset_in_range, 33, 1);
-            allocate(high_chunks_sum, 34, 0);
-            allocate(high_chunks_sum_inv, 35, 0);
-
-            TYPE high_chunks_sum_constraint;
-            for( std::size_t i = 0; i < 14; i++ ){
-                high_chunks_sum_constraint += offset_chunks[i];
-            }
-            high_chunks_sum_constraint += subchunk_14_0;
-            constrain(high_chunks_sum_constraint - high_chunks_sum); // high_chunks_sum decomposition
-
-            constrain(is_offset_in_range * (is_offset_in_range - 1));                    // offset_in_range is 0 or 1
-            constrain(high_chunks_sum * high_chunks_sum_inv - (1 - is_offset_in_range)); // high_chunks_sum_inv is 0 or 1
-            constrain(is_offset_in_range * high_chunks_sum);                             // offset_in_range is 0 if high_chunks_sum is not
-            constrain(is_offset_in_range * high_chunks_sum_inv);                         // offset_in_range is 0 high_chunks_sum_inv is not
-            constrain(subchunk_14_0 + diff_14_0 - 0x7f);                                 // Range-check for subchunk_14_1
-            constrain(subchunk_14_1 + diff_14_1 - 0x1ff);                                // Range-check for subchunk_14_0
-            constrain(subchunk_14_0 * 0x200 + subchunk_14_1 - offset_chunks[14]);        // offset_chunks[14] decomposition
-            constrain(offset_chunks[15] + subchunk_14_1 * 0x10000 - offset);
-
+            TYPE need_lookup = 1 - is_overflow;
             if constexpr (stage == GenerationStage::CONSTRAINTS) {
-                constrain(current_state.pc_next() - current_state.pc(1) - 1);  // PC transition
-            //     constrain(current_state.gas(0) - current_state.gas_next() - 3 - memory_expansion_cost);  // GAS transition
-                constrain(current_state.stack_size(1) - current_state.stack_size_next() - 2);  // stack_size transition
-            //     constrain(current_state.memory_size(0) - current_mem);  // memory_size transition
-            //     constrain(current_state.memory_size_next() - next_mem);  // memory_size transition
-                constrain(current_state.rw_counter_next() - current_state.rw_counter(1) - 2 - is_offset_in_range);  // rw_counter transition
+                constrain(current_state.pc_next() - current_state.pc(1) - 1);                                   // PC transition
+                constrain(is_overflow * (current_state.gas_next() + 1));                                        // GAS transition in the case of overflow
+                constrain((1 - is_overflow) * (current_state.gas(1) - current_state.gas_next() - pre_cost));    // GAS transition without overflow
+                constrain(current_state.stack_size(1) - current_state.stack_size_next() - 2);                   // stack_size transition
+                constrain(current_state.memory_size(0) - current_mem);                                          // current_mem variable correctness
+                constrain(is_overflow * (current_state.memory_size_next() - current_state.memory_size(1)));     // memory_size transition in the case of overflow
+                constrain((1 - is_overflow) * (current_state.memory_size_next() - new_mem));                    // memory_size transition without overflow
+                constrain(current_state.rw_counter_next() - current_state.rw_counter(1) - 2 - need_lookup);     // rw_counter transition
 
                 lookup(rw_256_table<FieldType, stage>::stack_16_bit_lookup(
                     current_state.call_id(1),
                     current_state.stack_size(1) - 1,
                     current_state.rw_counter(1),
-                    TYPE(0),                                               // hi bytes are 0
+                    TYPE(0),                                               // is_write
                     offset_chunks
                 ), "zkevm_rw_256");
                 lookup(rw_256_table<FieldType, stage>::stack_8_bit_lookup(
@@ -153,12 +150,12 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                 ), "zkevm_rw_256");
                 std::vector<TYPE> tmp = rw_8_table<FieldType, stage>::memory_lookup(
                     current_state.call_id(0),
-                    offset,
+                    memory_offset.value,
                     current_state.rw_counter(0) + 2,
                     TYPE(1),                                               // is_write
                     bytes[31]
                 );
-                for( std::size_t j = 0; j < tmp.size(); j++ ) tmp[j] = tmp[j] * is_offset_in_range;
+                for( std::size_t j = 0; j < tmp.size(); j++ ) tmp[j] = tmp[j] * need_lookup;
                 lookup(tmp, "zkevm_rw_8");
             }
         }

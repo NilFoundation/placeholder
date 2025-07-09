@@ -44,16 +44,19 @@ namespace nil::blueprint::bbf::zkevm_small_field{
         word_size(context_type &context_object, TYPE byte_size_input)
             : generic_component<FieldType, stage>(context_object, false) {
             using integral_type = typename FieldType::integral_type;
-            TYPE words, R;
+            TYPE words, R, R_diff;
 
             if constexpr (stage == GenerationStage::ASSIGNMENT) {
                 words = (byte_size_input.to_integral() + 31) / 32;
                 R = (byte_size_input.to_integral() + 31) % 32;
+                R_diff = 31 - R;
             }
 
-            allocate(byte_size_input, 0, 0);
-            allocate(words, 1, 0);
-            allocate(R, 2, 0);
+            allocate(words, 0, 0);
+            allocate(R, 1, 0);
+            allocate(R_diff, 2, 0);
+
+            constrain(R_diff + R - 31);
             constrain(words * 32 - byte_size_input - 31 + R);
 
             size = words;

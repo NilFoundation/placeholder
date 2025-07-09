@@ -211,10 +211,10 @@ namespace nil {
 
                 virtual std::uint8_t memory(std::size_t addr) const override{
                     if( addr < memory_offset) {
-                        BOOST_LOG_TRIVIAL(fatal) << "Memory address is out of range! Address = " << addr << " memory_offset = " << memory_offset;
+                        BOOST_LOG_TRIVIAL(fatal) << "Memory address is out of range! Address = " << std::hex << addr << " memory_offset = " << memory_offset << std::dec;
                     }
                     if( addr >= memory_offset + _memory.size()){
-                        BOOST_LOG_TRIVIAL(fatal) << "Memory address is out of range! Address = " << addr << " memory_offset = " << memory_offset << " memory_size = " << _memory.size();
+                        BOOST_LOG_TRIVIAL(fatal) << "Memory address is out of range! Address = " << std::hex << addr << " memory_offset = " << memory_offset << std::dec << " memory_size = " << _memory.size();
                     }
                     BOOST_ASSERT( addr >= memory_offset && addr < memory_offset + _memory.size());
                     return _memory.at(addr - memory_offset);
