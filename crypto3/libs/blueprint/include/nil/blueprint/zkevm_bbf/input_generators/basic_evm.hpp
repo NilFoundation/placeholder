@@ -38,6 +38,13 @@
 namespace nil {
     namespace blueprint {
         namespace bbf {
+            static constexpr std::size_t MAX_ZKEVM_MEMORY_SIZE_LOG2 = 22;
+            static constexpr std::size_t MAX_ZKEVM_MEMORY_SIZE = (1 << MAX_ZKEVM_MEMORY_SIZE_LOG2);
+
+            static constexpr std::size_t MAX_ZKEVM_GAS_BOUND_LOG2 = MAX_ZKEVM_MEMORY_SIZE_LOG2 + 4; // TODO: substantiate this statement
+            static constexpr std::size_t MAX_ZKEVM_GAS_BOUND = (1 << MAX_ZKEVM_GAS_BOUND_LOG2);
+            static constexpr std::size_t MAX_ZKEVM_GAS_ERROR_BOUND = std::numeric_limits<std::size_t>::max() - MAX_ZKEVM_GAS_BOUND;
+
             class zkevm_basic_evm{
                 using extended_integral_type = nil::crypto3::multiprecision::big_uint<512>;
 
@@ -278,7 +285,9 @@ namespace nil {
                         zkevm_opcode op = (pc == bytecode.size())? zkevm_opcode::STOP: opcode_from_number(bytecode[pc]);
                         current_opcode = opcode_to_number(op);
                         std::string opcode = opcode_to_string(op);
-                        this->execute_opcode(); if( !execution_status ) return;
+                        this->execute_opcode();
+                        if( gas >= MAX_ZKEVM_GAS_ERROR_BOUND) gas_error();
+                        if( !execution_status ) return;
                     }
                 }
 
@@ -371,11 +380,17 @@ namespace nil {
                         current_opcode = opcode_to_number(op);
                         std::string opcode = opcode_to_string(op);
                         this->execute_opcode(); if( !execution_status ) return;
+                        if( gas >= MAX_ZKEVM_GAS_ERROR_BOUND) gas_error();
                     }
                 }
 
                 virtual void end_call(){
-                    BOOST_LOG_TRIVIAL(trace) << "Basic end call";
+                    BOOST_LOG_TRIVIAL(trace) << "Basic end call gas = " << std::hex << gas << " ... " << MAX_ZKEVM_GAS_ERROR_BOUND;
+
+                    // For gas eror processing
+                    if( gas >= MAX_ZKEVM_GAS_ERROR_BOUND) {
+                        gas = 0;
+                    }
 
                     if( _call_stack.size() > 2){
                         _call_stack[_call_stack.size()-2].was_accessed.insert(_call_stack.back().was_accessed.begin(), _call_stack.back().was_accessed.end());
@@ -386,16 +401,17 @@ namespace nil {
 
                     pc = _call_stack.back().call_pc + 1;
                     gas = _call_stack.back().before_call_gas - (call_gas - gas);
+                    BOOST_LOG_TRIVIAL(trace) << "\tFinal gas = " << std::hex <<  gas << std::dec;
                     memory = _call_stack.back().memory;
                     stack = _call_stack.back().stack;
                     call_value = _call_stack.back().call_value;
                     if( call_value != 0 ) gas += 2300;
 
-                    BOOST_LOG_TRIVIAL(trace) << "End call gas: " << gas;
+                    BOOST_LOG_TRIVIAL(trace) << "End call gas: " << std::hex <<  gas << std::dec;
                     if( call_is_create || call_is_create2 ){
                         decrease_gas(returndata.size() * 200);
                     }
-                    BOOST_LOG_TRIVIAL(trace) << "End call gas: " << gas;
+                    BOOST_LOG_TRIVIAL(trace) << "End call gas: " << std::hex <<  gas << std::dec;
 
                     _call_stack.pop_back();
                     bytecode = _call_stack.back().bytecode;
@@ -654,13 +670,12 @@ namespace nil {
 
                 virtual void mload(){
                     zkevm_word_type full_offset = stack.back(); stack.pop_back();
-                    if( full_offset > (1 << 25) - 32 ) {
-                        BOOST_LOG_TRIVIAL(error) << "MLOAD offset too large: " << std::hex << full_offset << std::dec;
-                        decrease_gas(gas+1);
+                    if( full_offset > (1 << 22) - 32 ) {
+                        BOOST_LOG_TRIVIAL(trace) << "MLOAD offset overflow: " << std::hex << full_offset << std::dec;
                         pc++;
+                        decrease_gas(gas+1);
                         return;
                     }
-                    // BOOST_LOG_TRIVIAL(trace) << "MLOAD offset: " << std::hex << full_offset << std::dec;
                     zkevm_word_type result = 0;
 
                     // TODO: process overflows
@@ -677,16 +692,16 @@ namespace nil {
                     for( std::size_t i = 0; i < 32; i++){
                         result = (result << 8) + memory[offset + i];
                     }
-                    decrease_gas(3 + memory_expansion);
 
                     stack.push_back(result);
                     pc++;
+                    decrease_gas(3 + memory_expansion);
                 }
 
                 virtual void mstore(){
                     auto full_offset = stack.back(); stack.pop_back();
                     auto value = stack.back(); stack.pop_back();
-                    if( full_offset > (1 << 25) - 32 ) {
+                    if( full_offset > (1 << 22) - 32 ) {
                         decrease_gas(gas+1);
                         pc++;
                         return;
@@ -711,7 +726,7 @@ namespace nil {
                 virtual void mstore8(){
                     auto full_offset = stack.back(); stack.pop_back();
                     auto value = stack.back(); stack.pop_back();
-                    if( full_offset > (1 << 25) - 1 ) {
+                    if( full_offset > (1 << 22) - 1 ) {
                         decrease_gas(gas+1);
                         pc++;
                         return;
@@ -1381,6 +1396,7 @@ namespace nil {
                     pc++;
                     decrease_gas(2);
                 }
+
                 virtual void returndatacopy(){
                     std::size_t dst = std::size_t(stack.back()); stack.pop_back();
                     std::size_t src = std::size_t(stack.back()); stack.pop_back();
@@ -1389,7 +1405,7 @@ namespace nil {
                     std::size_t minimum_word_size = (length + 31) / 32;
                     std::size_t next_mem = std::max(dst + length, memory.size());
                     std::size_t memory_expansion = memory_expansion_cost(next_mem, memory.size());
-                    std::size_t next_memory_size = (memory_size_word_util(next_mem))*32;
+                    std::size_t next_memory_size = next_mem;
 
                     if( memory.size() < dst + length) memory.resize(dst + length);
                     for( std::size_t i = 0; i < length; i++){
@@ -1567,37 +1583,41 @@ namespace nil {
                 virtual void codecopy() {
                     // 6M memory bytes gives 60M+ gas cost
                     // max gas cost is 36M for now, might go up to 60M
-                    constexpr static const std::size_t max_dest_offset = 8388608;  // 2^23
-                    // max contract size is 24,576 bytes, so offset and length need to fit in
-                    // first chunk
-                    constexpr static const std::size_t max_offset = 65536;
-                    constexpr static const std::size_t max_length = 65536;
-                    std::size_t dst = std::size_t(stack.back()); stack.pop_back();
-                    std::size_t src = std::size_t(stack.back()); stack.pop_back();
-                    std::size_t length = std::size_t(stack.back()); stack.pop_back();
+                    constexpr static const std::size_t max_dest_offset = MAX_ZKEVM_MEMORY_SIZE;
+                    constexpr static const std::size_t max_length = MAX_ZKEVM_MEMORY_SIZE;
+                    //  max contract size is 24,576 bytes, so offset need to fit in first chunk
+                    constexpr static const std::size_t max_offset = 1 << 16;
 
-                    bool overflow = (dst > max_dest_offset) ||
-                                    (src > max_offset) ||
-                                    (length > max_length);
+                    auto dst = stack.back(); stack.pop_back();
+                    auto src = stack.back(); stack.pop_back();
+                    auto lgt = stack.back(); stack.pop_back();
 
-                    std::size_t minimum_word_size = (length + 31) / 32;
-                    std::size_t next_mem = std::max(dst + length, memory.size());
-                    std::size_t memory_expansion = memory_expansion_cost(next_mem, memory.size());
-                    std::size_t next_memory_size = memory_size_word_util(next_mem) * 32;
+                    bool overflow = (dst >= max_dest_offset) || (lgt >= max_length);
 
-
-                    if (overflow) {
-                        memory.resize(memory.size() - 1);
-                        increase_gas(1);
-                    }
-                    else {
-                        if( memory.size() < dst + length) memory.resize(next_memory_size);
-                        for( std::size_t i = 0; i < length; i++){
-                            memory[dst+i] = src + i < bytecode.size()? bytecode[src+i]: 0;
-                        }
-                        decrease_gas(3 + 3 * minimum_word_size + memory_expansion); //dynamic gas
-                    }
                     pc++;
+                    if (lgt == 0 ){
+                        decrease_gas(3);
+                    } else if (overflow) {
+                        decrease_gas(gas + 1);
+                    } else {
+                        std::size_t destination = std::size_t(dst);
+                        std::size_t length = std::size_t(lgt);
+                        std::size_t source = src < max_offset ? std::size_t(src) : max_offset;
+
+
+                        std::size_t l_words = (length + 31) / 32;
+                        std::size_t next_mem = std::max(destination + length, memory.size());
+                        std::size_t memory_expansion = memory_expansion_cost(next_mem, memory.size());
+
+                        decrease_gas(3 + 3 * l_words + memory_expansion); //dynamic gas
+                        // Do memory operations only if
+                        if( gas < MAX_ZKEVM_GAS_BOUND ){
+                            if( memory.size() < destination + length) memory.resize(next_mem);
+                            for( std::size_t i = 0; i < length; i++){
+                                memory[destination+i] = source + i < bytecode.size()? bytecode[source+i]: 0;
+                            }
+                        }
+                    }
                 }
 
                 virtual void delegatecall(){
@@ -1854,7 +1874,8 @@ namespace nil {
                 void decrease_gas(std::size_t cost) {
                     if( cost > gas ){
                         BOOST_LOG_TRIVIAL(trace) << "Gas limit exceeded";
-                        this->gas_error();
+                        gas -= cost;
+                        is_end_call = true;
                     } else {
                         gas -= cost;
                     }

@@ -293,7 +293,9 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                 TYPE bytecode_selector = type_selector[1][copy_op_to_num(copy_operand_type::bytecode) - 1];
                 TYPE calldata_selector = type_selector[1][copy_op_to_num(copy_operand_type::calldata) - 1];
                 TYPE returndata_selector = type_selector[1][copy_op_to_num(copy_operand_type::returndata) - 1];
+                TYPE zero_selector = type_selector[1][copy_op_to_num(copy_operand_type::zero) - 1];
 
+                every.push_back({zero_selector * value[1], "value is 0 for zero copy type"});
                 even.push_back({keccak_selector, "Keccak_selector is always 0 on even rows"});
 
                 std::vector<TYPE> tmp;

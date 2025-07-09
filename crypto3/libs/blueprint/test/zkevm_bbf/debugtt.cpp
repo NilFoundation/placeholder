@@ -593,6 +593,62 @@ BOOST_AUTO_TEST_CASE(codecopy) {
     complex_test<big_field_type, small_field_extension_type>("codecopy.json", max_sizes);
 }
 
+BOOST_AUTO_TEST_CASE(codecopy_zerolength) {
+    l1_size_restrictions max_sizes;
+
+    max_sizes.max_keccak_blocks = 50;
+    max_sizes.max_bytecode = 700;
+    max_sizes.max_mpt = 0;
+    max_sizes.max_rw = 2000;
+    max_sizes.max_copy = 500;
+    max_sizes.max_copy_events = 70;
+    max_sizes.max_zkevm_rows = 500;
+    max_sizes.max_exponentiations = 50;
+    max_sizes.max_exp_rows = 500;
+
+    if( circuits_to_run.empty() ) {
+        // circuits_to_run.insert("zkevm");
+        //circuits_to_run.insert("zkevm-wide");
+        // circuits_to_run.insert("rw");
+        // circuits_to_run.insert("bytecode");
+        // circuits_to_run.insert("copy");
+        circuits_to_run.insert("bytecode-s");
+        circuits_to_run.insert("rw-s");
+        circuits_to_run.insert("copy-s");
+        circuits_to_run.insert("state-s");
+        circuits_to_run.insert("zkevm-s");
+    }
+    complex_test<big_field_type, small_field_extension_type>("codecopy_zerolength.json", max_sizes);
+}
+
+BOOST_AUTO_TEST_CASE(codecopy_overflow) {
+    l1_size_restrictions max_sizes;
+
+    max_sizes.max_keccak_blocks = 50;
+    max_sizes.max_bytecode = 1000;
+    max_sizes.max_mpt = 0;
+    max_sizes.max_rw = 2000;
+    max_sizes.max_copy = 500;
+    max_sizes.max_copy_events = 70;
+    max_sizes.max_zkevm_rows = 500;
+    max_sizes.max_exponentiations = 50;
+    max_sizes.max_exp_rows = 500;
+
+    if( circuits_to_run.empty() ) {
+        // circuits_to_run.insert("zkevm");
+        //circuits_to_run.insert("zkevm-wide");
+        // circuits_to_run.insert("rw");
+        // circuits_to_run.insert("bytecode");
+        // circuits_to_run.insert("copy");
+        circuits_to_run.insert("bytecode-s");
+        circuits_to_run.insert("rw-s");
+        circuits_to_run.insert("copy-s");
+        circuits_to_run.insert("state-s");
+        circuits_to_run.insert("zkevm-s");
+    }
+    complex_test<big_field_type, small_field_extension_type>("codecopy_overflow.json", max_sizes);
+}
+
 BOOST_AUTO_TEST_CASE(transient_storage) {
     l1_size_restrictions max_sizes;
 
@@ -685,7 +741,7 @@ BOOST_AUTO_TEST_CASE(call_large_memory_key) {
     max_sizes.max_zkevm_rows = 4000;
     max_sizes.max_exponentiations = 50;
     max_sizes.max_exp_rows = 500;
-    max_sizes.max_zkevm_small_field_rows = 6000;
+    max_sizes.max_zkevm_small_field_rows = 6500;
 
     if( circuits_to_run.empty() ) {
         // circuits_to_run.insert("zkevm");       // Previous version doesn't support large memory keys
@@ -693,6 +749,7 @@ BOOST_AUTO_TEST_CASE(call_large_memory_key) {
         // circuits_to_run.insert("bytecode");    // Doesn't work for now
         // circuits_to_run.insert("copy");        // Previous version doesn't support large memory keys
         // circuits_to_run.insert("bytecode-s");  // Doesn't work for now
+        circuits_to_run.insert("zkevm-s");
         circuits_to_run.insert("rw-s");
         circuits_to_run.insert("copy-s");
         circuits_to_run.insert("state-s");
@@ -719,6 +776,7 @@ BOOST_AUTO_TEST_CASE(call_large_mstore_key) {
         // circuits_to_run.insert("rw");
         // circuits_to_run.insert("bytecode");    // Doesn't work for now
         // circuits_to_run.insert("copy");        // Previous version doesn't support large memory keys
+        circuits_to_run.insert("zkevm-s");
         circuits_to_run.insert("bytecode-s");
         circuits_to_run.insert("rw-s");
         circuits_to_run.insert("copy-s");
@@ -746,6 +804,7 @@ BOOST_AUTO_TEST_CASE(call_large_mstore8_key) {
         // circuits_to_run.insert("rw");
         // circuits_to_run.insert("bytecode");    // Doesn't work for now
         // circuits_to_run.insert("copy");        // Previous version doesn't support large memory keys
+        circuits_to_run.insert("zkevm-s");
         circuits_to_run.insert("bytecode-s");
         circuits_to_run.insert("rw-s");
         circuits_to_run.insert("copy-s");

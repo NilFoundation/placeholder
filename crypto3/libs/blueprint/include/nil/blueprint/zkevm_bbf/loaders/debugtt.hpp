@@ -241,6 +241,16 @@ namespace nil {
                     executed_opcode--;
                 }
 
+                virtual void end_transaction() override{
+                    BOOST_LOG_TRIVIAL(trace) << "END TRANSACTION";
+                    if( executed_opcode != opcode_trace.size() ) {
+                        BOOST_LOG_TRIVIAL(fatal) << "Executed opcodes amount = " << executed_opcode
+                            << " != trace opcodes amount = " << opcode_trace.size();
+                        execution_status = false;
+                    }
+                    zkevm_basic_evm::end_transaction();
+                }
+
                 virtual void execute_opcode() override{
                     const auto &opcode_description = opcode_trace[executed_opcode];
 

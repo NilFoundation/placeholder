@@ -507,9 +507,9 @@ namespace nil {
                     zkevm_word_type full_offset = stack.back();
                     _zkevm_states.back().load_stack(stack,1);
                     append_stack_reads(1);
-                    if (full_offset < (1 << 25) - 31 ) _zkevm_states.back().load_memory(memory, std::size_t(full_offset), 32);
+                    if (full_offset <= (1 << 22) - 32 ) _zkevm_states.back().load_memory(memory, std::size_t(full_offset), 32);
                     zkevm_basic_evm::mload();
-                    if( full_offset < (1 << 25) - 31){
+                    if( full_offset <= (1 << 22) - 32  ){
                         std::size_t offset = std::size_t(full_offset);
                         for( std::size_t i = 0; i < 32; i++){
                             _short_rw_operations.push_back(memory_rw_operation(
@@ -530,7 +530,7 @@ namespace nil {
                     append_stack_reads(2);
                     zkevm_basic_evm::mstore();
 
-                    if( full_offset < (1 << 25) - 31 ){
+                    if( full_offset <= (1 << 22) - 32 ){
                         std::size_t offset = std::size_t(full_offset);
                         for( std::size_t i = 0; i < 32; i++){
                             _short_rw_operations.push_back(memory_rw_operation(
@@ -550,7 +550,7 @@ namespace nil {
                     append_stack_reads(2);
                     zkevm_basic_evm::mstore8();
 
-                    if( full_offset < (1 << 25) ){
+                    if( full_offset <= (1 << 22) - 1 ){
                         std::size_t offset = std::size_t(full_offset);
                         _short_rw_operations.push_back(memory_rw_operation(
                             call_id,
@@ -894,7 +894,18 @@ namespace nil {
                         call_context_field::call_status,
                         0
                     ));
+                    _zkevm_states.push_back(zkevm_state(
+                        call_id,
+                        bytecode_hash,
+                        pc,
+                        opcode_to_number(zkevm_opcode::error_gas),
+                        stack.size(),
+                        memory.size(),
+                        gas,
+                        rw_counter
+                    ));
                     zkevm_basic_evm::gas_error();
+                    BOOST_LOG_TRIVIAL(trace) << "Gas error finished";
                 }
 
                 virtual void gas_opcode() override{
@@ -1004,30 +1015,56 @@ namespace nil {
                 }
 
                 virtual void codecopy() override{
-                    std::size_t dst = std::size_t(stack[stack.size() - 1]);
-                    std::size_t src = std::size_t(stack[stack.size() - 2]);
-                    std::size_t length = std::size_t(stack[stack.size() - 3]);
+                    _zkevm_states.back().load_size_t_field(
+                        zkevm_state_size_t_field::bytecode_size, bytecode.size()
+                    );
+                    constexpr static const std::size_t max_offset = 65536;
+                    auto dst = stack[stack.size() - 1];
+                    auto src = stack[stack.size() - 2];
+                    auto lgt = stack[stack.size() - 3];
 
                     _zkevm_states.back().load_stack(stack, 3);
                     append_stack_reads(3);
 
                     zkevm_basic_evm::codecopy();
-                    if (memory.size() % 32 == 0) {
+                    if( lgt == 0 ) return;
+                    if( gas < MAX_ZKEVM_GAS_BOUND ){
+                        std::size_t destination = std::size_t(dst);
+                        std::size_t length = std::size_t(lgt);
+                        std::size_t source = src < max_offset ? std::size_t(src) : max_offset;
+
+                        std::size_t real_length = (source > bytecode.size()) ? 0 : std::min(length, bytecode.size() - source);
+                        std::size_t zero_length = length - real_length;
                         copy_event cpy = codecopy_copy_event(
                             bytecode_hash,
-                            src,
+                            source,
                             call_id,
-                            dst,
+                            destination,
                             rw_counter,
-                            length
+                            real_length
                         );
+
+                        copy_event cpy2 = zero_memory_copy_event(
+                            call_id,
+                            destination + real_length,
+                            rw_counter + real_length,
+                            zero_length
+                        );
+
                         for( std::size_t i = 0; i < length; i++){
                             _short_rw_operations.push_back(memory_rw_operation(
-                                call_id, dst + i, rw_counter++, true, memory[dst + i]
+                                call_id, destination + i, rw_counter++, true, memory[destination + i]
                             ));
-                            cpy.push_byte(memory[dst+i]);
+
+                            if (source + i < bytecode.size()) {
+                                cpy.push_byte(memory[destination + i]);
+                            }
+                            else {
+                                cpy2.push_byte(memory[destination + i]);
+                            }
                         }
-                        if( length > 0 ) _copy_events.push_back(cpy);
+                        if( real_length > 0 ) _copy_events.push_back(cpy);
+                        if( zero_length > 0 ) _copy_events.push_back(cpy2);
                     }
                 }
 
@@ -1153,7 +1190,13 @@ namespace nil {
                     append_stack_writes(1);
                 }
 
+                virtual void codesize() override{
+                    zkevm_basic_evm::codesize();
+                    append_stack_writes(1);
+                }
+
                 virtual void extcodesize() override{
+                    append_stack_reads(1);
                     zkevm_basic_evm::extcodesize();
                     append_stack_writes(1);
                 }

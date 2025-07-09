@@ -412,10 +412,12 @@ namespace nil {
                     auto [has_vars, min_row, max_row] = nil::crypto3::zk::snark::expression_row_range_visitor<var>::row_range(C);
                     if (!has_vars) {
                         BOOST_LOG_TRIVIAL(error) << "Constraint " << C << " has no variables!\n";
+                        throw std::logic_error("Constraint has no variables");
                     }
                     BOOST_ASSERT(has_vars);
                     if (!big_rotation && max_row - min_row > 2) {
-                        BOOST_LOG_TRIVIAL(warning) << "Constraint " << C << " spans over 3 rows!\n";
+                        BOOST_LOG_TRIVIAL(error) << "Constraint " << C << " spans over 3 rows!\n";
+                        throw std::logic_error("large constraint rotation");
                     }
                     std::size_t row = (min_row + max_row)/2;
 
@@ -482,6 +484,7 @@ namespace nil {
                         if (has_vars) { // NB: not having variables seems to be ok for a part of a lookup expression
                             if (max_row - min_row > 2) {
                                 BOOST_LOG_TRIVIAL(warning) << "Expression " << c_part << " in lookup constraint spans over 3 rows!\n";
+                                throw std::logic_error("large lookup constraint rotation");
                             }
                             std::size_t row = (min_row + max_row)/2;
                             std::set<std::size_t> current_base_rows = {row};

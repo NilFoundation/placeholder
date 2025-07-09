@@ -44,7 +44,8 @@ namespace nil {
                 calldata = 3,
                 log = 4,
                 keccak = 5,
-                returndata = 6
+                returndata = 6,
+                zero = 7
             };
             std::size_t copy_op_to_num(copy_operand_type copy_op){
                 return std::size_t(copy_op);
@@ -58,10 +59,11 @@ namespace nil {
                     case copy_operand_type::log: return "log";
                     case copy_operand_type::keccak: return "keccak";
                     case copy_operand_type::returndata: return "returndata";
+                    case copy_operand_type::zero: return "zero";
                     default: return "unknown";
                 }
             }
-            static constexpr std::size_t copy_operand_types_amount = 7;
+            static constexpr std::size_t copy_operand_types_amount = 8;
 
 
             struct copied_data_item{
@@ -288,6 +290,25 @@ namespace nil {
                 cpy.destination_type = copy_operand_type::memory;
                 cpy.destination_id = call_id;
                 cpy.dst_counter_1 = dst_offset; // Before copy writing
+                cpy.dst_counter_2 = rw_counter;
+                cpy.length = length;
+                return cpy;
+            }
+
+            copy_event zero_memory_copy_event(
+                std::size_t call_id,
+                std::size_t offset,
+                std::size_t rw_counter,
+                std::size_t length
+            ){
+                copy_event cpy;
+                cpy.source_type = copy_operand_type::zero;
+                cpy.source_id = 0; // No source id for zero
+                cpy.src_counter_1 = 0;
+                cpy.src_counter_2 = 0;
+                cpy.destination_type = copy_operand_type::memory;
+                cpy.destination_id = call_id;
+                cpy.dst_counter_1 = offset;
                 cpy.dst_counter_2 = rw_counter;
                 cpy.length = length;
                 return cpy;

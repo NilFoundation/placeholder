@@ -146,7 +146,7 @@ namespace nil::blueprint::bbf::zkevm_small_field{
                     if (total_len >= 2) {
                         // Metadata length is encoded in the last two bytes
                         std::size_t meta_len = (buffer[total_len - 2] << 8) + buffer[total_len - 1];
-
+                        
                         if (meta_len + 2 <= total_len) {
                             std::size_t boundary = total_len - meta_len - 2 - 1;  // Byte before metadata
                             // Check for stopping opcodes (STOP, INVALID, RETURN) that will

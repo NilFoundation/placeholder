@@ -187,7 +187,7 @@ namespace nil {
                 X(REVERT) \
                 X(INVALID) \
                 X(SELFDESTRUCT) \
-                X(err0) \
+                X(error_gas) \
                 X(err1) \
                 X(padding) \
                 X(start_block) \
@@ -354,7 +354,7 @@ namespace nil {
                 if( str == "INVALID" ) return 0xfe;
                 if( str == "SELFDESTRUCT" ) return 0xff;
                 // these are not real opcodes, they are for exception processing
-                if( str == "err0" ) return 0x100; // not enough static gas or incorrect stack size
+                if( str == "error_gas" ) return 0x100; // not enough static gas or incorrect stack size
                 if( str == "err1" ) return 0x101; // not enough static gas or incorrect stack size
                 if( str == "padding" ) return 0x102; // empty opcode for the fixed circuit size
                 if( str == "start_block" ) return 0x103; // start call
@@ -519,7 +519,7 @@ namespace nil {
                 if( number ==  0xfe) return zkevm_opcode::INVALID;
                 if( number ==  0xff) return zkevm_opcode::SELFDESTRUCT;
                 // these are not real opcodes, they are for exception processing
-                if( number == 0x100 ) return zkevm_opcode::err0; // incorrect stack size
+                if( number == 0x100 ) return zkevm_opcode::error_gas; // incorrect stack size
                 if( number == 0x101 ) return zkevm_opcode::err1; // not enough gas
                 if( number == 0x102 ) return zkevm_opcode::padding; // empty opcode for the fixed circuit size
                 if( number == 0x103 ) return zkevm_opcode::start_block; // opcode for start call
@@ -539,7 +539,7 @@ namespace nil {
                 ZKEVM_OPCODE_ENUM(ENUM_DEF)
                 #undef ENUM_DEF
                 std::cout << "Unknown opcode " << str << std::endl;
-                return zkevm_opcode::err0; // not enough static gas or incorrect stack size
+                return zkevm_opcode::err1; // not enough static gas or incorrect stack size
             }
 
             std::string opcode_to_string(const zkevm_opcode& opcode) {

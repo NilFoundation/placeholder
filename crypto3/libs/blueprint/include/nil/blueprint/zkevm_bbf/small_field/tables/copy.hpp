@@ -171,6 +171,27 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             result.push_back(length); // length
             return result;
         }
+
+        static std::vector<TYPE> zero_memory_lookup(
+            TYPE call_id,
+            TYPE dst_counter_1,
+            TYPE dst_counter_2,
+            TYPE length
+        ){
+            std::vector<TYPE> result = {};
+            result.push_back(TYPE(copy_op_to_num(copy_operand_type::zero))); // src_type
+            result.push_back(TYPE(0)); // src_id
+            result.push_back(TYPE(0)); // src_counter_1
+            result.push_back(TYPE(0)); // src_counter_2, not used in codecopy
+            result.push_back(TYPE(copy_op_to_num(copy_operand_type::memory))); // dst_type
+            for( std::size_t i = 0; i < 15; i++ ){
+                result.push_back(TYPE(0));
+            }
+            result.push_back(call_id); // dst_id, call_id
+            result.push_back(dst_counter_1); // dst_counter_1
+            result.push_back(dst_counter_2); // dst_counter_2
+            result.push_back(length); // length
+            return result;
+        }
     };
 }
-
