@@ -114,11 +114,11 @@ namespace nil::blueprint::bbf::zkevm_small_field {
             // 4. Process offset
             std::array<TYPE, 16> offset_chunks;
             if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                BOOST_LOG_TRIVIAL(trace)
-                    << "\td_overflow: " << d_range.is_overflow
-                    << ", l_overflow: " << l_range.is_overflow
-                    << ", is_length_zero: " << is_length_zero
-                    << ", overflow: " << is_overflow;
+                // BOOST_LOG_TRIVIAL(trace)
+                //     << "\td_overflow: " << d_range.is_overflow
+                //     << ", l_overflow: " << l_range.is_overflow
+                //     << ", is_length_zero: " << is_length_zero
+                //     << ", overflow: " << is_overflow;
                 auto o_chunks = w_to_16(current_state.stack_top(1));
                 for (std::size_t i = 0; i < 16; i++) {
                     offset_chunks[i] = o_chunks[i];
@@ -152,9 +152,9 @@ namespace nil::blueprint::bbf::zkevm_small_field {
             context_type new_memory_word_size_ct = context_object.subcontext(word_size_area, 0, 1);
             Word_Size max_written_obj(new_memory_word_size_ct, (d_range.value + l_range.value) * (1 - is_length_zero - is_overflow + is_length_zero * is_overflow));
             TYPE max_written = max_written_obj.size;
-            if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                BOOST_LOG_TRIVIAL(trace) << "\tmax_written word: " << std::hex << max_written << std::dec;
-            }
+            // if constexpr (stage == GenerationStage::ASSIGNMENT) {
+            //     BOOST_LOG_TRIVIAL(trace) << "\tmax_written word: " << std::hex << max_written << std::dec;
+            // }
 
             // 7. Calculate length in words (need for gas consumption calculation)
             context_type length_words_ct = context_object.subcontext(word_size_area, 1, 1);
@@ -203,16 +203,16 @@ namespace nil::blueprint::bbf::zkevm_small_field {
             TYPE is_gas_error = is_overflow + is_gas_error_obj.gt - is_overflow * is_gas_error_obj.gt;
             allocate(is_gas_error, 45, 2);
 
-            if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                BOOST_LOG_TRIVIAL(trace)
-                    << "\tcurrent_gas: "<< current_gas
-                    << " current memory cost: " << current_memory_cost
-                    << " new memory cost: " << new_memory_cost
-                    << " pre-cost: " << pre_cost
-                    << " current_memory: " << current_memory
-                    << " new_memory: " << new_memory
-                    << " is_gas_error: " << is_gas_error;
-            }
+            // if constexpr (stage == GenerationStage::ASSIGNMENT) {
+            //     BOOST_LOG_TRIVIAL(trace)
+            //         << "\tcurrent_gas: "<< current_gas
+            //         << " current memory cost: " << current_memory_cost
+            //         << " new memory cost: " << new_memory_cost
+            //         << " pre-cost: " << pre_cost
+            //         << " current_memory: " << current_memory
+            //         << " new_memory: " << new_memory
+            //         << " is_gas_error: " << is_gas_error;
+            // }
 
             // 12. Check offset+length ? bytecode_size
             TYPE offset = offset_chunks[15];
@@ -254,18 +254,18 @@ namespace nil::blueprint::bbf::zkevm_small_field {
             TYPE zero_lookup_length = need_zero_copy_lookup * (length - bytecode_lookup_length);
             allocate(zero_lookup_length, 45, 0);
 
-            if constexpr( stage == GenerationStage::ASSIGNMENT){
-                BOOST_LOG_TRIVIAL(trace) << "\t"
-                    << "offset: " << offset
-                    << " length: " << length
-                    << " bytecode_size: " << bytecode_size
-                    << " is_offset_overflow: " << is_offset_overflow;
-                BOOST_LOG_TRIVIAL(trace) << "\t"
-                    << "need_bytecode_copy_lookup: " << need_bytecode_copy_lookup
-                    << " need_zero_copy_lookup: " << need_zero_copy_lookup
-                    << " zero_lookup_length: " << zero_lookup_length
-                    << " bytecode_lookup_length: " << bytecode_lookup_length;
-            }
+            // if constexpr( stage == GenerationStage::ASSIGNMENT){
+            //     BOOST_LOG_TRIVIAL(trace) << "\t"
+            //         << "offset: " << offset
+            //         << " length: " << length
+            //         << " bytecode_size: " << bytecode_size
+            //         << " is_offset_overflow: " << is_offset_overflow;
+            //     BOOST_LOG_TRIVIAL(trace) << "\t"
+            //         << "need_bytecode_copy_lookup: " << need_bytecode_copy_lookup
+            //         << " need_zero_copy_lookup: " << need_zero_copy_lookup
+            //         << " zero_lookup_length: " << zero_lookup_length
+            //         << " bytecode_lookup_length: " << bytecode_lookup_length;
+            // }
 
             if constexpr (stage == GenerationStage::CONSTRAINTS) {
                 constrain(current_state.pc_next() - current_state.pc(2) - 1); // PC transition

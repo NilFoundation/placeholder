@@ -88,9 +88,6 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             TYPE current_mem;
             if constexpr (stage == GenerationStage::ASSIGNMENT) {
                 current_mem = (current_state.memory_size() + 31) / 32;
-                BOOST_LOG_TRIVIAL(trace) << "\t"
-                    << "Offset = " << std::hex << current_state.stack_top()
-                    << " is_overflow: " << is_overflow << std::dec;
             }
             allocate(current_mem, 46, 1);
             Max_30 new_memory_obj(new_memory_ct, word_size_obj.size, current_mem);
@@ -99,9 +96,6 @@ namespace nil::blueprint::bbf::zkevm_small_field{
             allocate(new_mem, 47, 1);
 
             // 4. Calculate proposed operation gas cost
-            if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                BOOST_LOG_TRIVIAL(trace) << "\tmemory_size:" << current_mem << " => " << new_mem;
-            }
             context_type current_memory_cost_ct = context_object.subcontext({3, 4, 5, 6, 7, 8}, 1, 1);
             Memory_Cost current_memory_cost_obj(current_memory_cost_ct, current_mem);
 
