@@ -12,4 +12,5 @@ systemd-run --scope --slice=benchexec -p Delegate=yes \
         --trace $BENCHMARKS_DIR/traces/hundred_plus_hundred_trace \
         --execution_mode subprocess \
         --scenario full \
-        --post-results
+        --post-results \
+        --otlp-endpoint $1
