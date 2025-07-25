@@ -98,6 +98,27 @@ BOOST_AUTO_TEST_SUITE(placeholder_circuit2_kzg)
 
 BOOST_AUTO_TEST_SUITE_END()
 
+BOOST_AUTO_TEST_SUITE(placeholder_circuit3_kzg)
+
+    using TestRunners = boost::mpl::list<
+            placeholder_kzg_test_runner<algebra::curves::mnt4_298, hash_type>,
+            placeholder_kzg_test_runner<algebra::curves::mnt6_298, hash_type>
+    >;
+
+    BOOST_AUTO_TEST_CASE_TEMPLATE(kzg_test, TestRunner, TestRunners) {
+        using field_type = typename TestRunner::field_type;
+        test_tools::random_test_initializer<field_type> random_test_initializer;
+        auto circuit = circuit_test_3<field_type>(
+                random_test_initializer.alg_random_engines.template get_alg_engine<field_type>(),
+                random_test_initializer.generic_random_engine
+        );
+        TestRunner test_runner(circuit);
+        BOOST_CHECK(test_runner.run_test());
+    }
+
+BOOST_AUTO_TEST_SUITE_END()
+
+
 BOOST_AUTO_TEST_SUITE(placeholder_circuit2_kzg_v2)
 
     using TestRunners = boost::mpl::list<
